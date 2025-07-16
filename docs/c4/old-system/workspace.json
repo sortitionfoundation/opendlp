@@ -1,0 +1,810 @@
+{
+  "configuration" : { },
+  "description" : "Description of how UK Delivery team works now",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedAgent" : "structurizr-ui",
+  "lastModifiedDate" : "2025-07-16T14:57:25Z",
+  "model" : {
+    "people" : [ {
+      "id" : "1",
+      "location" : "Unspecified",
+      "name" : "Client",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cl"
+      },
+      "relationships" : [ {
+        "description" : "Updates spec",
+        "destinationId" : "8",
+        "id" : "21",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Updates spec",
+        "destinationId" : "6",
+        "id" : "22",
+        "linkedRelationshipId" : "21",
+        "sourceId" : "1"
+      }, {
+        "description" : "Review invites",
+        "destinationId" : "9",
+        "id" : "25",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "id" : "2",
+      "location" : "Unspecified",
+      "name" : "Project Manager",
+      "properties" : {
+        "structurizr.dsl.identifier" : "pm"
+      },
+      "relationships" : [ {
+        "description" : "Create and write spec",
+        "destinationId" : "8",
+        "id" : "19",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Create and write spec",
+        "destinationId" : "6",
+        "id" : "20",
+        "linkedRelationshipId" : "19",
+        "sourceId" : "2"
+      }, {
+        "description" : "Manages Assembly",
+        "destinationId" : "7",
+        "id" : "23",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Create and review invites",
+        "destinationId" : "9",
+        "id" : "24",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Create registration form",
+        "destinationId" : "12",
+        "id" : "26",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Create registration form",
+        "destinationId" : "10",
+        "id" : "27",
+        "linkedRelationshipId" : "26",
+        "sourceId" : "2"
+      }, {
+        "description" : "Create QR code to go on invites",
+        "destinationId" : "18",
+        "id" : "28",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Sends emails to registrants",
+        "destinationId" : "11",
+        "id" : "32",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Sends print job",
+        "destinationId" : "14",
+        "id" : "39",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "id" : "3",
+      "location" : "Unspecified",
+      "name" : "Confirmation Caller",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cc"
+      },
+      "relationships" : [ {
+        "description" : "Sends text messages to many registrants",
+        "destinationId" : "15",
+        "id" : "35",
+        "sourceId" : "3",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Phones up registrants to confirm attendance",
+        "destinationId" : "16",
+        "id" : "36",
+        "sourceId" : "3",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "id" : "4",
+      "location" : "Unspecified",
+      "name" : "Registrant",
+      "properties" : {
+        "structurizr.dsl.identifier" : "rg"
+      },
+      "relationships" : [ {
+        "description" : "Scan QR code",
+        "destinationId" : "18",
+        "id" : "31",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Receive text messages and phone calls",
+        "destinationId" : "16",
+        "id" : "38",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Receives postal invite from Printer",
+        "destinationId" : "14",
+        "id" : "41",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Registers interest in assembly via registration form, receives emails",
+        "destinationId" : "12",
+        "id" : "42",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Registers interest in assembly via registration form, receives emails",
+        "destinationId" : "10",
+        "id" : "43",
+        "linkedRelationshipId" : "42",
+        "sourceId" : "4"
+      }, {
+        "description" : "Registers interest in assembly over phone",
+        "destinationId" : "17",
+        "id" : "44",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "id" : "5",
+      "location" : "Unspecified",
+      "name" : "Printer",
+      "properties" : {
+        "structurizr.dsl.identifier" : "prntr"
+      },
+      "relationships" : [ {
+        "description" : "Manages print system",
+        "destinationId" : "14",
+        "id" : "40",
+        "sourceId" : "5",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "containers" : [ {
+        "documentation" : { },
+        "id" : "7",
+        "name" : "Our Working Version",
+        "properties" : {
+          "structurizr.dsl.identifier" : "gd.owv"
+        },
+        "relationships" : [ {
+          "description" : "Reads specification data into our-working-version",
+          "destinationId" : "8",
+          "id" : "47",
+          "sourceId" : "7",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container"
+      }, {
+        "documentation" : { },
+        "id" : "8",
+        "name" : "Specification sheet",
+        "properties" : {
+          "structurizr.dsl.identifier" : "gd.spec"
+        },
+        "tags" : "Element,Container"
+      }, {
+        "documentation" : { },
+        "id" : "9",
+        "name" : "Invite documents",
+        "properties" : {
+          "structurizr.dsl.identifier" : "gd.inv"
+        },
+        "tags" : "Element,Container"
+      } ],
+      "documentation" : { },
+      "id" : "6",
+      "location" : "Unspecified",
+      "name" : "Google Drive",
+      "properties" : {
+        "structurizr.dsl.identifier" : "gd"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "containers" : [ {
+        "documentation" : { },
+        "id" : "11",
+        "name" : "Email Sending System",
+        "properties" : {
+          "structurizr.dsl.identifier" : "nb.eml"
+        },
+        "relationships" : [ {
+          "description" : "Read people details",
+          "destinationId" : "13",
+          "id" : "33",
+          "sourceId" : "11",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container"
+      }, {
+        "documentation" : { },
+        "id" : "12",
+        "name" : "Web Pages",
+        "properties" : {
+          "structurizr.dsl.identifier" : "nb.pg"
+        },
+        "relationships" : [ {
+          "description" : "Add registrant details",
+          "destinationId" : "13",
+          "id" : "34",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container"
+      }, {
+        "documentation" : { },
+        "id" : "13",
+        "name" : "People Database",
+        "properties" : {
+          "structurizr.dsl.identifier" : "nb.pdb"
+        },
+        "relationships" : [ {
+          "description" : "NationBuilder registrants copied over to our-working-version",
+          "destinationId" : "7",
+          "id" : "48",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        }, {
+          "description" : "NationBuilder registrants copied over to our-working-version",
+          "destinationId" : "6",
+          "id" : "49",
+          "linkedRelationshipId" : "48",
+          "sourceId" : "13"
+        } ],
+        "tags" : "Element,Container"
+      } ],
+      "documentation" : { },
+      "id" : "10",
+      "location" : "Unspecified",
+      "name" : "NationBuilder",
+      "properties" : {
+        "structurizr.dsl.identifier" : "nb"
+      },
+      "relationships" : [ {
+        "description" : "NationBuilder registrants copied over to our-working-version",
+        "destinationId" : "7",
+        "id" : "50",
+        "linkedRelationshipId" : "48",
+        "sourceId" : "10"
+      }, {
+        "description" : "NationBuilder registrants copied over to our-working-version",
+        "destinationId" : "6",
+        "id" : "51",
+        "linkedRelationshipId" : "48",
+        "sourceId" : "10"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "id" : "14",
+      "location" : "Unspecified",
+      "name" : "Printer System",
+      "properties" : {
+        "structurizr.dsl.identifier" : "prntsys"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "id" : "15",
+      "location" : "Unspecified",
+      "name" : "Text Magic",
+      "properties" : {
+        "structurizr.dsl.identifier" : "txt"
+      },
+      "relationships" : [ {
+        "description" : "Sends text messages to a phone",
+        "destinationId" : "16",
+        "id" : "37",
+        "sourceId" : "15",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "id" : "16",
+      "location" : "Unspecified",
+      "name" : "Phone",
+      "properties" : {
+        "structurizr.dsl.identifier" : "ph"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "id" : "17",
+      "location" : "Unspecified",
+      "name" : "Pocket Receptionist",
+      "properties" : {
+        "structurizr.dsl.identifier" : "pr"
+      },
+      "relationships" : [ {
+        "description" : "fills in registration form on behalf of registrant",
+        "destinationId" : "12",
+        "id" : "45",
+        "sourceId" : "17",
+        "tags" : "Relationship"
+      }, {
+        "description" : "fills in registration form on behalf of registrant",
+        "destinationId" : "10",
+        "id" : "46",
+        "linkedRelationshipId" : "45",
+        "sourceId" : "17"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "id" : "18",
+      "location" : "Unspecified",
+      "name" : "QR Code Generator site",
+      "properties" : {
+        "structurizr.dsl.identifier" : "qr"
+      },
+      "relationships" : [ {
+        "description" : "QR site redirect to registration page",
+        "destinationId" : "12",
+        "id" : "29",
+        "sourceId" : "18",
+        "tags" : "Relationship"
+      }, {
+        "description" : "QR site redirect to registration page",
+        "destinationId" : "10",
+        "id" : "30",
+        "linkedRelationshipId" : "29",
+        "sourceId" : "18"
+      } ],
+      "tags" : "Element,Software System"
+    } ]
+  },
+  "name" : "Current System",
+  "properties" : {
+    "structurizr.dsl" : "d29ya3NwYWNlICJDdXJyZW50IFN5c3RlbSIgIkRlc2NyaXB0aW9uIG9mIGhvdyBVSyBEZWxpdmVyeSB0ZWFtIHdvcmtzIG5vdyIKCiAgICAhaWRlbnRpZmllcnMgaGllcmFyY2hpY2FsCgogICAgbW9kZWwgewogICAgICAgIGNsID0gcGVyc29uICJDbGllbnQiCiAgICAgICAgcG0gPSBwZXJzb24gIlByb2plY3QgTWFuYWdlciIKICAgICAgICBjYyA9IHBlcnNvbiAiQ29uZmlybWF0aW9uIENhbGxlciIKICAgICAgICByZyA9IHBlcnNvbiAiUmVnaXN0cmFudCIKICAgICAgICBwcm50ciA9IHBlcnNvbiAiUHJpbnRlciIKCiAgICAgICAgZ2QgPSBzb2Z0d2FyZVN5c3RlbSAiR29vZ2xlIERyaXZlIiB7CiAgICAgICAgICAgIG93diA9IGNvbnRhaW5lciAiT3VyIFdvcmtpbmcgVmVyc2lvbiIKICAgICAgICAgICAgc3BlYyA9IGNvbnRhaW5lciAiU3BlY2lmaWNhdGlvbiBzaGVldCIKICAgICAgICAgICAgaW52ID0gY29udGFpbmVyICJJbnZpdGUgZG9jdW1lbnRzIgogICAgICAgIH0KICAgICAgICBuYiA9IHNvZnR3YXJlU3lzdGVtICJOYXRpb25CdWlsZGVyIiB7CiAgICAgICAgICAgIGVtbCA9IGNvbnRhaW5lciAiRW1haWwgU2VuZGluZyBTeXN0ZW0iCiAgICAgICAgICAgIHBnID0gY29udGFpbmVyICJXZWIgUGFnZXMiCiAgICAgICAgICAgIHBkYiA9IGNvbnRhaW5lciAiUGVvcGxlIERhdGFiYXNlIgogICAgICAgIH0KICAgICAgICBwcm50c3lzID0gc29mdHdhcmVTeXN0ZW0gIlByaW50ZXIgU3lzdGVtIgogICAgICAgIHR4dCA9IHNvZnR3YXJlU3lzdGVtICJUZXh0IE1hZ2ljIgogICAgICAgIHBoID0gc29mdHdhcmVTeXN0ZW0gIlBob25lIgogICAgICAgIHByID0gc29mdHdhcmVTeXN0ZW0gIlBvY2tldCBSZWNlcHRpb25pc3QiCiAgICAgICAgcXIgPSBzb2Z0d2FyZVN5c3RlbSAiUVIgQ29kZSBHZW5lcmF0b3Igc2l0ZSIKCiAgICAgICAgcG0gLT4gZ2Quc3BlYyAiQ3JlYXRlIGFuZCB3cml0ZSBzcGVjIgogICAgICAgIGNsIC0+IGdkLnNwZWMgIlVwZGF0ZXMgc3BlYyIKICAgICAgICBwbSAtPiBnZC5vd3YgIk1hbmFnZXMgQXNzZW1ibHkiCiAgICAgICAgcG0gLT4gZ2QuaW52ICJDcmVhdGUgYW5kIHJldmlldyBpbnZpdGVzIgogICAgICAgIGNsIC0+IGdkLmludiAiUmV2aWV3IGludml0ZXMiCiAgICAgICAgcG0gLT4gbmIucGcgIkNyZWF0ZSByZWdpc3RyYXRpb24gZm9ybSIKICAgICAgICBwbSAtPiBxciAiQ3JlYXRlIFFSIGNvZGUgdG8gZ28gb24gaW52aXRlcyIKICAgICAgICBxciAtPiBuYi5wZyAiUVIgc2l0ZSByZWRpcmVjdCB0byByZWdpc3RyYXRpb24gcGFnZSIKICAgICAgICByZyAtPiBxciAiU2NhbiBRUiBjb2RlIgogICAgICAgIHBtIC0+IG5iLmVtbCAiU2VuZHMgZW1haWxzIHRvIHJlZ2lzdHJhbnRzIgogICAgICAgIG5iLmVtbCAtPiBuYi5wZGIgIlJlYWQgcGVvcGxlIGRldGFpbHMiCiAgICAgICAgbmIucGcgLT4gbmIucGRiICJBZGQgcmVnaXN0cmFudCBkZXRhaWxzIgogICAgICAgIGNjIC0+IHR4dCAiU2VuZHMgdGV4dCBtZXNzYWdlcyB0byBtYW55IHJlZ2lzdHJhbnRzIgogICAgICAgIGNjIC0+IHBoICJQaG9uZXMgdXAgcmVnaXN0cmFudHMgdG8gY29uZmlybSBhdHRlbmRhbmNlIgogICAgICAgIHR4dCAtPiBwaCAiU2VuZHMgdGV4dCBtZXNzYWdlcyB0byBhIHBob25lIgogICAgICAgIHJnIC0+IHBoICJSZWNlaXZlIHRleHQgbWVzc2FnZXMgYW5kIHBob25lIGNhbGxzIgogICAgICAgIHBtIC0+IHBybnRzeXMgIlNlbmRzIHByaW50IGpvYiIKICAgICAgICBwcm50ciAtPiBwcm50c3lzICJNYW5hZ2VzIHByaW50IHN5c3RlbSIKICAgICAgICByZyAtPiBwcm50c3lzICJSZWNlaXZlcyBwb3N0YWwgaW52aXRlIGZyb20gUHJpbnRlciIKICAgICAgICByZyAtPiBuYi5wZyAiUmVnaXN0ZXJzIGludGVyZXN0IGluIGFzc2VtYmx5IHZpYSByZWdpc3RyYXRpb24gZm9ybSwgcmVjZWl2ZXMgZW1haWxzIgogICAgICAgIHJnIC0+IHByICJSZWdpc3RlcnMgaW50ZXJlc3QgaW4gYXNzZW1ibHkgb3ZlciBwaG9uZSIKICAgICAgICBwciAtPiBuYi5wZyAiZmlsbHMgaW4gcmVnaXN0cmF0aW9uIGZvcm0gb24gYmVoYWxmIG9mIHJlZ2lzdHJhbnQiCiAgICAgICAgZ2Qub3d2IC0+IGdkLnNwZWMgIlJlYWRzIHNwZWNpZmljYXRpb24gZGF0YSBpbnRvIG91ci13b3JraW5nLXZlcnNpb24iCiAgICAgICAgbmIucGRiIC0+IGdkLm93diAiTmF0aW9uQnVpbGRlciByZWdpc3RyYW50cyBjb3BpZWQgb3ZlciB0byBvdXItd29ya2luZy12ZXJzaW9uIgogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBzeXN0ZW1MYW5kc2NhcGUgIkxhbmRzY2FwZSIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgIyBhdXRvbGF5b3V0CiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1Db250ZXh0IGdkICJHb29nbGUtRHJpdmUtU3lzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvbGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1Db250ZXh0IG5iICJOYXRpb25CdWlsZGVyIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvbGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1Db250ZXh0IHBybnRzeXMgIlByaW50ZXIiIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9sYXlvdXQgbHIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBnZCAiR29vZ2xlLURyaXZlLUN0bnIiIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9sYXlvdXQgbHIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBuYiAiTmF0aW9uQnVpbGRlci1DdG5yIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvbGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBzdHlsZXMgewogICAgICAgICAgICBlbGVtZW50ICJFbGVtZW50IiB7CiAgICAgICAgICAgICAgICBjb2xvciAjMDc3M2FmCiAgICAgICAgICAgICAgICBzdHJva2UgIzA3NzNhZgogICAgICAgICAgICAgICAgc3Ryb2tlV2lkdGggNwogICAgICAgICAgICAgICAgc2hhcGUgcm91bmRlZGJveAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgc2hhcGUgcGVyc29uCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRGF0YWJhc2UiIHsKICAgICAgICAgICAgICAgIHNoYXBlIGN5bGluZGVyCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQm91bmRhcnkiIHsKICAgICAgICAgICAgICAgIHN0cm9rZVdpZHRoIDUKICAgICAgICAgICAgfQogICAgICAgICAgICByZWxhdGlvbnNoaXAgIlJlbGF0aW9uc2hpcCIgewogICAgICAgICAgICAgICAgdGhpY2tuZXNzIDQKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KCn0="
+  },
+  "views" : {
+    "configuration" : {
+      "branding" : { },
+      "lastSavedView" : "Landscape",
+      "metadataSymbols" : "SquareBrackets",
+      "styles" : {
+        "elements" : [ {
+          "color" : "#0773af",
+          "shape" : "RoundedBox",
+          "stroke" : "#0773af",
+          "strokeWidth" : 7,
+          "tag" : "Element"
+        }, {
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "shape" : "Cylinder",
+          "tag" : "Database"
+        }, {
+          "strokeWidth" : 5,
+          "tag" : "Boundary"
+        } ],
+        "relationships" : [ {
+          "tag" : "Relationship",
+          "thickness" : 4
+        } ]
+      },
+      "terminology" : { }
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Google-Drive-Ctnr",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "19"
+      }, {
+        "id" : "21"
+      }, {
+        "id" : "23"
+      }, {
+        "id" : "24"
+      }, {
+        "id" : "25"
+      }, {
+        "id" : "27"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "50"
+      } ],
+      "softwareSystemId" : "6"
+    }, {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "NationBuilder-Ctnr",
+      "order" : 6,
+      "relationships" : [ {
+        "id" : "20"
+      }, {
+        "id" : "26"
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "29"
+      }, {
+        "id" : "31"
+      }, {
+        "id" : "32"
+      }, {
+        "id" : "33"
+      }, {
+        "id" : "34"
+      }, {
+        "id" : "42"
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "45"
+      }, {
+        "id" : "49"
+      } ],
+      "softwareSystemId" : "10"
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "Google-Drive-Sys",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "20"
+      }, {
+        "id" : "22"
+      }, {
+        "id" : "27"
+      }, {
+        "id" : "51"
+      } ],
+      "softwareSystemId" : "6"
+    }, {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "NationBuilder",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "20"
+      }, {
+        "id" : "27"
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "30"
+      }, {
+        "id" : "31"
+      }, {
+        "id" : "43"
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "51"
+      } ],
+      "softwareSystemId" : "10"
+    }, {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "Printer",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      } ],
+      "softwareSystemId" : "14"
+    } ],
+    "systemLandscapeViews" : [ {
+      "dimensions" : {
+        "height" : 3615,
+        "width" : 3070
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 2379,
+        "y" : 165
+      }, {
+        "id" : "2",
+        "x" : 279,
+        "y" : 200
+      }, {
+        "id" : "3",
+        "x" : 2469,
+        "y" : 2805
+      }, {
+        "id" : "4",
+        "x" : 199,
+        "y" : 2105
+      }, {
+        "id" : "5",
+        "x" : 1760,
+        "y" : 1415
+      }, {
+        "id" : "6",
+        "x" : 1144,
+        "y" : 225
+      }, {
+        "id" : "10",
+        "x" : 1149,
+        "y" : 930
+      }, {
+        "id" : "14",
+        "x" : 1114,
+        "y" : 1495
+      }, {
+        "id" : "15",
+        "x" : 1189,
+        "y" : 2455
+      }, {
+        "id" : "16",
+        "x" : 1169,
+        "y" : 3080
+      }, {
+        "id" : "17",
+        "x" : 2084,
+        "y" : 2170
+      }, {
+        "id" : "18",
+        "x" : 145,
+        "y" : 890
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "Landscape",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "20"
+      }, {
+        "id" : "22",
+        "vertices" : [ {
+          "x" : 2044,
+          "y" : 355
+        } ]
+      }, {
+        "id" : "27",
+        "vertices" : [ {
+          "x" : 1044,
+          "y" : 710
+        } ]
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "30",
+        "vertices" : [ {
+          "x" : 725,
+          "y" : 1190
+        } ]
+      }, {
+        "id" : "31"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "36",
+        "vertices" : [ {
+          "x" : 2239,
+          "y" : 3135
+        }, {
+          "x" : 1919,
+          "y" : 3200
+        } ]
+      }, {
+        "id" : "37"
+      }, {
+        "id" : "38",
+        "vertices" : [ {
+          "x" : 839,
+          "y" : 2755
+        } ]
+      }, {
+        "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41",
+        "vertices" : [ {
+          "x" : 744,
+          "y" : 2065
+        }, {
+          "x" : 748,
+          "y" : 2060
+        } ]
+      }, {
+        "id" : "43",
+        "vertices" : [ {
+          "x" : 654,
+          "y" : 1720
+        }, {
+          "x" : 819,
+          "y" : 1350
+        } ]
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "46",
+        "vertices" : [ {
+          "x" : 2410,
+          "y" : 1235
+        } ]
+      }, {
+        "id" : "51"
+      } ]
+    } ]
+  }
+}
