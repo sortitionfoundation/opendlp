@@ -3,28 +3,39 @@ workspace "Current System" "Description of how UK Delivery team works now"
     !identifiers hierarchical
 
     model {
+        # people
         cl = person "Client"
         pm = person "Project Manager"
         cc = person "Confirmation Caller"
         rg = person "Registrant"
         prntr = person "Printer"
 
+        # systems
         gd = softwareSystem "Google Drive" {
+          description "Holding various docs in a project folder"
             owv = container "Our Working Version"
             spec = container "Specification sheet"
             inv = container "Invite documents"
         }
         nb = softwareSystem "NationBuilder" {
+          description "Registration pages, holds people's details and send mass emails"
             eml = container "Email Sending System"
             pg = container "Web Pages"
             pdb = container "People Database"
         }
         prntsys = softwareSystem "Printer System"
-        txt = softwareSystem "Text Magic"
+        txt = softwareSystem "Text Magic" {
+          description "A service for sending bulk text messages"
+        }
         ph = softwareSystem "Phone"
-        pr = softwareSystem "Pocket Receptionist"
-        qr = softwareSystem "QR Code Generator site"
+        pr = softwareSystem "Pocket Receptionist" {
+          description "A company who non-technical registrants can phone up - they will then fill in the form on the registrant's behalf."
+        }
+        qr = softwareSystem "QR Code Generator site" {
+          description "Generates a URL short code and QR code for that URL. We can edit the redirect target after the QR code is live."
+        }
 
+        # relationships
         pm -> gd.spec "Create and write spec"
         cl -> gd.spec "Updates spec"
         pm -> gd.owv "Manages Assembly"
@@ -39,6 +50,7 @@ workspace "Current System" "Description of how UK Delivery team works now"
         nb.pg -> nb.pdb "Add registrant details"
         cc -> txt "Sends text messages to many registrants"
         cc -> ph "Phones up registrants to confirm attendance"
+        cc -> gd.owv "Reads registrant details and records info from confirmation call"
         txt -> ph "Sends text messages to a phone"
         rg -> ph "Receive text messages and phone calls"
         pm -> prntsys "Sends print job"
