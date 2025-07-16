@@ -12,6 +12,6 @@ Open a terminal and change to this directory, then run:
 docker run -it --rm -p 8080:8080 -v $(pwd):/usr/local/structurizr structurizr/lite
 ```
 
-Then you can open <http://localhost:8080/workspace/> in your browser.
+Then you can open <http://localhost:8080/workspace/diagrams> in your browser.
 
 Alternatively you could use the online version at <https://structurizr.com/dsl>
