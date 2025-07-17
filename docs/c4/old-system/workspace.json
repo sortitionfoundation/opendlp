@@ -4,7 +4,7 @@
   "documentation" : { },
   "id" : 1,
   "lastModifiedAgent" : "structurizr-ui",
-  "lastModifiedDate" : "2025-07-16T15:58:47Z",
+  "lastModifiedDate" : "2025-07-17T09:16:29Z",
   "model" : {
     "people" : [ {
       "id" : "1",
@@ -397,7 +397,7 @@
   "views" : {
     "configuration" : {
       "branding" : { },
-      "lastSavedView" : "Landscape",
+      "lastSavedView" : "NationBuilder-Ctnr",
       "metadataSymbols" : "SquareBrackets",
       "styles" : {
         "elements" : [ {
@@ -439,31 +439,31 @@
       },
       "elements" : [ {
         "id" : "1",
-        "x" : 925,
+        "x" : 924,
         "y" : 165
       }, {
         "id" : "2",
-        "x" : 200,
+        "x" : 199,
         "y" : 1728
       }, {
         "id" : "3",
-        "x" : 925,
+        "x" : 924,
         "y" : 2682
       }, {
         "id" : "7",
-        "x" : 1650,
+        "x" : 1649,
         "y" : 1474
       }, {
         "id" : "8",
-        "x" : 2400,
+        "x" : 2399,
         "y" : 1474
       }, {
         "id" : "9",
-        "x" : 1650,
+        "x" : 1649,
         "y" : 874
       }, {
         "id" : "10",
-        "x" : 900,
+        "x" : 899,
         "y" : 1474
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
@@ -472,28 +472,28 @@
       "relationships" : [ {
         "id" : "19",
         "vertices" : [ {
-          "x" : 900,
+          "x" : 899,
           "y" : 3232
         }, {
-          "x" : 1350,
+          "x" : 1349,
           "y" : 3232
         } ]
       }, {
         "id" : "21",
         "vertices" : [ {
-          "x" : 2100,
+          "x" : 2099,
           "y" : 724
         } ]
       }, {
         "id" : "23",
         "vertices" : [ {
-          "x" : 1350,
+          "x" : 1349,
           "y" : 1924
         } ]
       }, {
         "id" : "24",
         "vertices" : [ {
-          "x" : 900,
+          "x" : 899,
           "y" : 1324
         } ]
       }, {
@@ -524,35 +524,35 @@
       },
       "elements" : [ {
         "id" : "2",
-        "x" : 200,
+        "x" : 199,
         "y" : 715
       }, {
         "id" : "4",
-        "x" : 200,
+        "x" : 199,
         "y" : 2224
       }, {
         "id" : "6",
-        "x" : 3150,
+        "x" : 3149,
         "y" : 165
       }, {
         "id" : "11",
-        "x" : 1650,
+        "x" : 1649,
         "y" : 774
       }, {
         "id" : "12",
-        "x" : 1650,
+        "x" : 1649,
         "y" : 1374
       }, {
         "id" : "13",
-        "x" : 2400,
+        "x" : 2399,
         "y" : 774
       }, {
         "id" : "17",
-        "x" : 900,
+        "x" : 899,
         "y" : 2274
       }, {
         "id" : "18",
-        "x" : 900,
+        "x" : 899,
         "y" : 1674
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
@@ -561,7 +561,7 @@
       "relationships" : [ {
         "id" : "20",
         "vertices" : [ {
-          "x" : 900,
+          "x" : 899,
           "y" : 690
         } ]
       }, {
@@ -581,10 +581,10 @@
       }, {
         "id" : "44",
         "vertices" : [ {
-          "x" : 900,
+          "x" : 899,
           "y" : 2724
         }, {
-          "x" : 1350,
+          "x" : 1349,
           "y" : 2724
         } ]
       }, {
@@ -657,33 +657,33 @@
         "vertices" : false
       },
       "dimensions" : {
-        "height" : 2133,
+        "height" : 2132,
         "width" : 3050
       },
       "elements" : [ {
         "id" : "2",
-        "x" : 200,
-        "y" : 165
+        "x" : 199,
+        "y" : 164
       }, {
         "id" : "4",
-        "x" : 200,
-        "y" : 1369
+        "x" : 199,
+        "y" : 1368
       }, {
         "id" : "6",
-        "x" : 2400,
-        "y" : 215
+        "x" : 2399,
+        "y" : 214
       }, {
         "id" : "10",
-        "x" : 1650,
-        "y" : 819
+        "x" : 1649,
+        "y" : 818
       }, {
         "id" : "17",
-        "x" : 900,
-        "y" : 1419
+        "x" : 899,
+        "y" : 1418
       }, {
         "id" : "18",
-        "x" : 900,
-        "y" : 819
+        "x" : 899,
+        "y" : 818
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "NationBuilder",
@@ -693,8 +693,8 @@
       }, {
         "id" : "27",
         "vertices" : [ {
-          "x" : 1350,
-          "y" : 669
+          "x" : 1349,
+          "y" : 668
         } ]
       }, {
         "id" : "28"
@@ -705,11 +705,11 @@
       }, {
         "id" : "45",
         "vertices" : [ {
-          "x" : 900,
-          "y" : 1869
+          "x" : 899,
+          "y" : 1868
         }, {
-          "x" : 1350,
-          "y" : 1869
+          "x" : 1349,
+          "y" : 1868
         } ]
       }, {
         "id" : "46"
@@ -721,7 +721,7 @@
       "softwareSystemId" : "10"
     }, {
       "automaticLayout" : {
-        "applied" : true,
+        "applied" : false,
         "edgeSeparation" : 0,
         "implementation" : "Graphviz",
         "nodeSeparation" : 300,
@@ -729,26 +729,22 @@
         "rankSeparation" : 300,
         "vertices" : false
       },
-      "dimensions" : {
-        "height" : 2200,
-        "width" : 1550
-      },
       "elements" : [ {
         "id" : "2",
-        "x" : 199,
-        "y" : 165
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "4",
-        "x" : 199,
-        "y" : 865
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "5",
-        "x" : 199,
-        "y" : 1565
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "14",
-        "x" : 899,
-        "y" : 915
+        "x" : 0,
+        "y" : 0
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "Printer",
