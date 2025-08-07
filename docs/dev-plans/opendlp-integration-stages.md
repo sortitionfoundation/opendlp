@@ -41,6 +41,8 @@ However GSheets will still be used for some of the process. For example, the ini
 
 At this stage, it will still auto-export to the "Our Working Version" spreadsheet to allow for anything not yet supported by OpenDLP. For example, we might move to this step before the reporting is done. In that case, the old spreadsheets can generate the pie charts and report table from the exported data.
 
+It will still be possible to do a manual import from the GSheet back into OpenDLP, in the case we need to do manual work outside OpenDLP.
+
 ### Stage 4: OpenDLP is source of truth - with manual export/import to/from GSheet
 
 At this point, there should be no automatic need to export to GSheet - standard reporting will be in OpenDLP. So there will be no _automatic_ export to GSheet. However OpenDLP will still support import and export to GSheet - it will just be manually run by the user. This will allow for any custom data manipulation not supported by OpenDLP itself.
