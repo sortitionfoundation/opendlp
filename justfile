@@ -40,6 +40,8 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   uv run flask run --debug
 
+run: flask
+
 psql:
   @echo "password is abc123"
   psql --host 127.0.0.1 --port 54321 --user allocation
