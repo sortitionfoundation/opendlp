@@ -160,6 +160,20 @@ All test output must be pristine to pass. Test configuration is in `pyproject.to
 - Standard fields as columns, variable data as JSON
 - Use imperative SQLAlchemy mapping in adapters
 
+**Important:** When using imperative SQLAlchemy mapping for mypy compatibility, use ORM table column references in repository implementations instead of domain object attributes:
+
+```python
+# ✅ CORRECT - use ORM table columns for filtering/ordering
+self.session.query(User).filter(orm.users.c.global_role == role)
+self.session.query(Assembly).order_by(orm.assemblies.c.created_at.desc())
+
+# ❌ INCORRECT - mypy cannot type-check domain object attributes
+self.session.query(User).filter(User.global_role == role)  # mypy error
+self.session.query(Assembly).order_by(Assembly.created_at.desc())  # mypy error
+```
+
+This approach maintains the separation between domain objects (plain Python) and persistence (SQLAlchemy) while ensuring full type safety. The SQLAlchemy mypy plugin is enabled via `plugins = ["sqlalchemy.ext.mypy.plugin"]` in pyproject.toml.
+
 ### Security
 
 - Use mature Flask extensions: flask-login, flask-session, flask-security
