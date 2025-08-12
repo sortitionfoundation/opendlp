@@ -152,6 +152,7 @@ All test output must be pristine to pass. Test configuration is in `pyproject.to
 - All code files start with 2-line ABOUTME comment
 - Type hints required (`mypy` configured with strict settings)
 - Line length: 120 characters (configured in Ruff)
+- don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
 
 ### Database Patterns
 
