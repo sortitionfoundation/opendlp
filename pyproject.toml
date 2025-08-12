@@ -17,7 +17,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["deptry>=0.23.1", "mypy>=1.17.1", "pytest>=8.4.1", "pytest-cov>=6.2.1"]
+dev = [
+  "deptry>=0.23.1",
+  "mypy>=1.17.1",
+  "pytest>=8.4.1",
+  "pytest-cov>=6.2.1",
+]
 
 [tool.mypy]
 files = ["src"]
@@ -29,13 +34,10 @@ warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 ignore_missing_imports = false
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [[tool.mypy.overrides]]
 module = 'pytest.*'
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = 'sqlalchemy.*'
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
