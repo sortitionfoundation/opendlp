@@ -2,7 +2,7 @@
 ABOUTME: Contains Assembly class representing policy questions and selection configuration"""
 
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from .value_objects import AssemblyStatus
 
@@ -39,18 +39,18 @@ class Assembly:
         self.gsheet = gsheet.strip()
         self.first_assembly_date = first_assembly_date
         self.status = status
-        self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(UTC)
+        self.updated_at = updated_at or datetime.now(UTC)
 
     def archive(self) -> None:
         """Archive this assembly."""
         self.status = AssemblyStatus.ARCHIVED
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def reactivate(self) -> None:
         """Reactivate this assembly."""
         self.status = AssemblyStatus.ACTIVE
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def update_details(
         self,
@@ -80,7 +80,7 @@ class Assembly:
                 raise ValueError("First assembly date must be in the future")
             self.first_assembly_date = first_assembly_date
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def is_active(self) -> bool:
         """Check if assembly is active."""

@@ -4,7 +4,7 @@ ABOUTME: Contains UserInvite class for managing invite codes and expiration"""
 import secrets
 import string
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from .value_objects import GlobalRole
 
@@ -35,7 +35,7 @@ class UserInvite:
         if expires_in_hours <= 0:
             raise ValueError("Expiry hours must be positive")
 
-        current_time = created_at or datetime.utcnow()
+        current_time = created_at or datetime.now(UTC)
 
         self.id = invite_id or uuid.uuid4()
         self.code = code or generate_invite_code()
@@ -48,7 +48,7 @@ class UserInvite:
 
     def is_valid(self) -> bool:
         """Check if invite is valid (not expired and not used)."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         return self.used_by is None and self.expires_at > now
 
     def use(self, user_id: uuid.UUID) -> None:
@@ -60,11 +60,11 @@ class UserInvite:
             raise ValueError("Cannot use invalid invite")
 
         self.used_by = user_id
-        self.used_at = datetime.utcnow()
+        self.used_at = datetime.now(UTC)
 
     def is_expired(self) -> bool:
         """Check if invite has expired."""
-        return datetime.utcnow() >= self.expires_at
+        return datetime.now(UTC) >= self.expires_at
 
     def is_used(self) -> bool:
         """Check if invite has been used."""
@@ -72,7 +72,7 @@ class UserInvite:
 
     def time_until_expiry(self) -> timedelta:
         """Get time remaining until expiry."""
-        return self.expires_at - datetime.utcnow()
+        return self.expires_at - datetime.now(UTC)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, UserInvite):

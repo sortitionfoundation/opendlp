@@ -2,7 +2,7 @@
 ABOUTME: Tests invite creation, validation, usage, expiry, and code generation"""
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -116,7 +116,7 @@ class TestUserInvite:
 
     def test_is_valid_expired(self):
         created_by = uuid.uuid4()
-        past_time = datetime.utcnow() - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
 
         invite = UserInvite(
             global_role=GlobalRole.USER,
@@ -132,7 +132,7 @@ class TestUserInvite:
         used_by = uuid.uuid4()
 
         invite = UserInvite(
-            global_role=GlobalRole.USER, created_by=created_by, used_by=used_by, used_at=datetime.utcnow()
+            global_role=GlobalRole.USER, created_by=created_by, used_by=used_by, used_at=datetime.now(UTC)
         )
 
         assert invite.is_valid() is False
@@ -167,7 +167,7 @@ class TestUserInvite:
     def test_use_expired_invite(self):
         created_by = uuid.uuid4()
         user_id = uuid.uuid4()
-        past_time = datetime.utcnow() - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
 
         invite = UserInvite(
             global_role=GlobalRole.USER,
@@ -187,7 +187,7 @@ class TestUserInvite:
         assert invite.is_expired() is False
 
         # Expired
-        past_time = datetime.utcnow() - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
         expired_invite = UserInvite(
             global_role=GlobalRole.USER,
             created_by=created_by,
@@ -206,7 +206,7 @@ class TestUserInvite:
 
         # Used
         used_invite = UserInvite(
-            global_role=GlobalRole.USER, created_by=created_by, used_by=user_id, used_at=datetime.utcnow()
+            global_role=GlobalRole.USER, created_by=created_by, used_by=user_id, used_at=datetime.now(UTC)
         )
         assert used_invite.is_used() is True
 
@@ -221,7 +221,7 @@ class TestUserInvite:
         assert 23.9 < time_until_expiry.total_seconds() / 3600 < 24.1
 
         # For expired invite, should be negative
-        past_time = datetime.utcnow() - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
         expired_invite = UserInvite(
             global_role=GlobalRole.USER,
             created_by=created_by,

@@ -2,7 +2,7 @@
 ABOUTME: Contains User and UserAssemblyRole classes as plain Python objects"""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from .value_objects import AssemblyRole, GlobalRole, validate_email, validate_username
 
@@ -35,7 +35,7 @@ class User:
         self.oauth_provider = oauth_provider
         self.oauth_id = oauth_id
         self.global_role = global_role
-        self.created_at = created_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(UTC)
         self.is_active = is_active
         self.assembly_roles: list[UserAssemblyRole] = []
 
@@ -90,7 +90,7 @@ class UserAssemblyRole:
         self.user_id = user_id
         self.assembly_id = assembly_id
         self.role = role
-        self.created_at = created_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(UTC)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, UserAssemblyRole):
