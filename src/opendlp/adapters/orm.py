@@ -6,8 +6,9 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Column, Date, Dialect, ForeignKey, String, Table, Text, TypeDecorator
+from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole

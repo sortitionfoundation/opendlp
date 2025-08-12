@@ -1,8 +1,9 @@
 """ABOUTME: Database connection setup and imperative mapping for OpenDLP
 ABOUTME: Configures SQLAlchemy sessions and maps domain objects to tables"""
 
-from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import orm
 from opendlp.domain import assembly, user_invites, users
@@ -14,7 +15,7 @@ class DatabaseError(Exception):
     pass
 
 
-def create_session_factory(database_url: str, echo: bool = False) -> sessionmaker[Session]:
+def create_session_factory(database_url: str, echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""
     engine = create_engine(
         database_url,
