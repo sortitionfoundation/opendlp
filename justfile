@@ -1,0 +1,84 @@
+set dotenv-load
+
+default: test
+
+# Test the code with pytest
+test:
+	@echo "🚀 Testing code: Running pytest"
+	@uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+
+# run the tests when an files change
+watch-tests:
+	ls *.py | entr uv run pytest --tb=short
+
+# Install the virtual environment, dependencies, an editable copy of this install and install the pre-commit hooks
+install:
+	@echo "🚀 Creating virtual environment using uv"
+	@uv sync
+	@uv pip install -e .
+	@uv run pre-commit install
+
+# Run code quality tools.
+check:
+	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
+	@uv lock --locked
+	@echo "🚀 Linting code: Running pre-commit"
+	@uv run pre-commit run -a
+	@echo "🚀 Static type checking: Running mypy"
+	@uv run mypy
+	@echo "🚀 Checking for obsolete dependencies: Running deptry"
+	@uv run deptry src
+
+# start the flask shell
+flask-shell:
+  @uv run flask shell
+
+# start the flask shell
+flsh: flask-shell
+
+# run flask locally
+flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
+  uv run flask run --debug
+
+psql:
+  @echo "password is abc123"
+  psql --host 127.0.0.1 --port 54321 --user allocation
+
+# shut down docker
+stop-docker:
+	@docker compose down
+
+# rebuild docker image
+build-docker:
+	@docker compose build
+
+# start docker and detach - note NO WATCH
+start-docker:
+	@docker compose up -d
+
+# start docker watching for changes and blocking - i.e. not detaching
+start-docker-b:
+	@docker compose up --watch
+
+# stop, rebuild, start docker and detach
+restart-docker: stop-docker build-docker start-docker
+
+# stop, rebuild, start docker blocking - i.e. not detaching
+restart-docker-b: stop-docker build-docker start-docker-b
+
+# start the postgres only docker composer
+start-services-docker:
+  @docker compose -f docker-compose.localdev.yml up -d
+
+# stop the postgres only docker composer
+stop-services-docker:
+  @docker compose -f docker-compose.localdev.yml down
+
+# run the editor with the environment available
+edit:
+  @uv run $EDITOR
+
+# run the editor with the environment available
+e: edit
+# run the editor with the environment available
+vim: edit
