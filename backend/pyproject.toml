@@ -1,0 +1,141 @@
+[project]
+name = "OpenDLP"
+version = "0.1.0"
+description = "Open Democratic Lottery Platform"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "alembic>=1.16.4",
+  "flask>=3.1.1",
+  "flask-login>=0.6.3",
+  "flask-session>=0.8.0",
+  "psycopg2-binary>=2.9.10",
+  "python-dotenv>=1.1.1",
+  "redis>=6.4.0",
+  "sqlalchemy>=2.0.43",
+  "werkzeug>=3.1.3",
+]
+
+[dependency-groups]
+dev = [
+  "deptry>=0.23.1",
+  "mypy>=1.17.1",
+  "pytest>=8.4.1",
+  "pytest-cov>=6.2.1",
+]
+
+[tool.mypy]
+files = ["src"]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+ignore_missing_imports = false
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[[tool.mypy.overrides]]
+module = 'pytest.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = 'flask_login.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = 'flask_wtf.*'
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+fix = true
+
+[tool.ruff.lint]
+select = [
+  # flake8-2020
+  "YTT",
+  # flake8-bandit
+  "S",
+  # flake8-bugbear
+  "B",
+  # flake8-builtins
+  "A",
+  # flake8-comprehensions
+  "C4",
+  # flake8-debugger
+  "T10",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
+  # mccabe
+  "C90",
+  # pycodestyle
+  "E",
+  "W",
+  # pyflakes
+  "F",
+  # pygrep-hooks
+  "PGH",
+  # pyupgrade
+  "UP",
+  # ruff
+  "RUF",
+  # tryceratops
+  # TODO: re-enable later
+  # "TRY",
+]
+ignore = [
+  # UnnecessaryCollectionCall - but using dict(a=x, b=y) can be nicer
+  "C408",
+  # LineTooLong
+  "E501",
+  # use assert in non-test code
+  "S101",
+  # DoNotAssignLambda
+  "E731",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/tests/**/*.py" = [
+  # at least these should be fine in tests:
+  "S105", # hardcoded passwords
+  "S106", # hardcoded passwords
+  "ARG",  # Unused function args -> fixtures nevertheless are functionally relevant...
+  "FBT",  # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+  # The below are debateable
+  "PLR2004", # Magic value used in comparison, ...
+  "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"**/tests/*" = [
+  # at least these should be fine in tests:
+  "S105", # hardcoded passwords
+  "S106", # hardcoded passwords
+  "ARG",  # Unused function args -> fixtures nevertheless are functionally relevant...
+  "FBT",  # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+  # The below are debateable
+  "PLR2004", # Magic value used in comparison, ...
+  "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+
+[tool.ruff.format]
+preview = true
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
