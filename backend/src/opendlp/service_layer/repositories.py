@@ -10,7 +10,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
-from opendlp.domain.users import User
+from opendlp.domain.users import User, UserAssemblyRole
 
 
 class AbstractRepository(abc.ABC):
@@ -96,4 +96,28 @@ class UserInviteRepository(AbstractRepository):
     @abc.abstractmethod
     def get_expired_invites(self) -> Iterable[UserInvite]:
         """Get all invites that have expired."""
+        raise NotImplementedError
+
+
+class UserAssemblyRoleRepository(AbstractRepository):
+    """Repository interface for UserAssemblyRole domain objects."""
+
+    @abc.abstractmethod
+    def get_by_user_and_assembly(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> UserAssemblyRole | None:
+        """Get a user's role for a specific assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_roles_for_user(self, user_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
+        """Get all assembly roles for a user."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_roles_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
+        """Get all user roles for an assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def remove_role(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
+        """Remove a user's role from an assembly. Returns True if role was found and removed."""
         raise NotImplementedError

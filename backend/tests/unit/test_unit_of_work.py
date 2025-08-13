@@ -101,18 +101,6 @@ class TestSqlAlchemyUnitOfWork:
 
         mock_session.flush.assert_called_once()
 
-    def test_no_session_operations_when_session_is_none(self):
-        """Test that operations are safe when session is None."""
-        mock_session_factory = MagicMock(spec=sessionmaker)
-
-        uow = SqlAlchemyUnitOfWork(mock_session_factory)
-        # Don't enter context, so session remains None
-
-        # These should not raise exceptions
-        uow.commit()
-        uow.rollback()
-        uow.flush()
-
     def test_repository_initialization(self):
         """Test that repositories are properly initialized with the session."""
         mock_session = MagicMock(spec=Session)

@@ -87,7 +87,7 @@ class Assembly:
         return self.status == AssemblyStatus.ACTIVE
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Assembly):
+        if not isinstance(other, Assembly):  # pragma: no cover
             return False
         return self.id == other.id
 

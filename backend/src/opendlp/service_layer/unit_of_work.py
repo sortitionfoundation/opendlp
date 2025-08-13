@@ -14,15 +14,21 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
 )
+from opendlp.service_layer.repositories import (
+    AssemblyRepository,
+    UserAssemblyRoleRepository,
+    UserInviteRepository,
+    UserRepository,
+)
 
 
 class AbstractUnitOfWork(abc.ABC):
     """Abstract Unit of Work interface."""
 
-    users: SqlAlchemyUserRepository
-    assemblies: SqlAlchemyAssemblyRepository
-    user_invites: SqlAlchemyUserInviteRepository
-    user_assembly_roles: SqlAlchemyUserAssemblyRoleRepository
+    users: UserRepository
+    assemblies: AssemblyRepository
+    user_invites: UserInviteRepository
+    user_assembly_roles: UserAssemblyRoleRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -54,11 +60,16 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __init__(self, session_factory: sessionmaker) -> None:
         self.session_factory = session_factory
-        self.session: Session | None = None
+        self._session: Session | None = None
+
+    @property
+    def session(self) -> Session:
+        if self._session is None:
+            self._session = self.session_factory()
+        assert isinstance(self._session, Session)
+        return self._session
 
     def __enter__(self) -> SqlAlchemyUnitOfWork:
-        self.session = self.session_factory()
-
         # Initialize repositories with the session
         self.users = SqlAlchemyUserRepository(self.session)
         self.assemblies = SqlAlchemyAssemblyRepository(self.session)
@@ -78,23 +89,19 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         else:
             self.commit()
 
-        if self.session:
-            self.session.close()
+        self.session.close()
 
     def commit(self) -> None:
         """Commit the current transaction."""
-        if self.session:
-            self.session.commit()
+        self.session.commit()
 
     def rollback(self) -> None:
         """Rollback the current transaction."""
-        if self.session:
-            self.session.rollback()
+        self.session.rollback()
 
     def flush(self) -> None:
         """Flush pending changes to the database without committing."""
-        if self.session:
-            self.session.flush()
+        self.session.flush()
 
 
 class UnitOfWorkError(Exception):

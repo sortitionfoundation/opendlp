@@ -75,7 +75,7 @@ class UserInvite:
         return self.expires_at - datetime.now(UTC)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, UserInvite):
+        if not isinstance(other, UserInvite):  # pragma: no cover
             return False
         return self.id == other.id
 

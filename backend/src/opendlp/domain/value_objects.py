@@ -22,13 +22,14 @@ class AssemblyStatus(Enum):
 
 def validate_email(email: str) -> None:
     """Basic email validation."""
+    # TODO: use email-validator library - or maybe Django email validation
     if not email or "@" not in email:
         raise ValueError("Invalid email address")
 
 
 def validate_username(username: str) -> None:
     """Basic username validation."""
-    if not username or len(username) < 3:
-        raise ValueError("Username must be at least 3 characters long")
+    if not username or len(username) < 3 or len(username) > 200:
+        raise ValueError("Username must be between 3 and 200 characters long")
     if not username.replace("_", "").replace("-", "").isalnum():
         raise ValueError("Username must contain only letters, numbers, underscores, and hyphens")

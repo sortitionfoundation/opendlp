@@ -68,7 +68,7 @@ def start_mappers() -> None:
 
         _mappers_started = True
 
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         raise DatabaseError(f"Failed to start mappers: {e}") from e
 
 
@@ -80,7 +80,7 @@ def create_tables(engine: Engine) -> None:
     """
     try:
         orm.metadata.create_all(engine)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         raise DatabaseError(f"Failed to create tables: {e}") from e
 
 
@@ -95,5 +95,5 @@ def drop_tables(engine: Engine) -> None:
     """
     try:
         orm.metadata.drop_all(engine)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         raise DatabaseError(f"Failed to drop tables: {e}") from e

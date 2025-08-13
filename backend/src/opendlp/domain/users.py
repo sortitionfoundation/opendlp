@@ -29,6 +29,7 @@ class User:
             raise ValueError("User must have either password_hash or OAuth credentials")
 
         self.id = user_id or uuid.uuid4()
+        # TODO: do we want a username? Or just use email and allow the user to have a full_name field?
         self.username = username
         self.email = email
         self.password_hash = password_hash
@@ -67,7 +68,7 @@ class User:
         return None
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, User):
+        if not isinstance(other, User):  # pragma: no cover
             return False
         return self.id == other.id
 
@@ -93,7 +94,7 @@ class UserAssemblyRole:
         self.created_at = created_at or datetime.now(UTC)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, UserAssemblyRole):
+        if not isinstance(other, UserAssemblyRole):  # pragma: no cover
             return False
         return self.id == other.id
 

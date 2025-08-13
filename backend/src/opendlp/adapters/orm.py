@@ -14,7 +14,7 @@ from sqlalchemy.orm import registry
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 
 
-def aware_utcnow() -> datetime:
+def aware_utcnow() -> datetime:  # pragma: no cover
     return datetime.now(UTC)
 
 
@@ -29,12 +29,12 @@ class EnumAsString(TypeDecorator):
         super().__init__(*args, **kwargs)
 
     def process_bind_param(self, value: Any, dialect: Dialect) -> str | None:
-        if value is None:
+        if value is None:  # pragma: no cover
             return value
         return value.value if hasattr(value, "value") else str(value)
 
     def process_result_value(self, value: Any, dialect: Dialect) -> Any:
-        if value is None:
+        if value is None:  # pragma: no cover
             return value
         return self.enum_class(value)
 

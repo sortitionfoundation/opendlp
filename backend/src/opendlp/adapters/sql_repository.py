@@ -17,6 +17,7 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from opendlp.service_layer.repositories import (
     AssemblyRepository,
+    UserAssemblyRoleRepository,
     UserInviteRepository,
     UserRepository,
 )
@@ -224,7 +225,7 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
         return count
 
 
-class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository):
+class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRoleRepository):
     """SQLAlchemy implementation for UserAssemblyRole operations."""
 
     def add(self, role: UserAssemblyRole) -> None:
@@ -234,6 +235,10 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository):
     def get(self, role_id: uuid.UUID) -> UserAssemblyRole | None:
         """Get a role by its ID."""
         return self.session.query(UserAssemblyRole).filter_by(id=role_id).first()
+
+    def list(self) -> Iterable[UserAssemblyRole]:
+        """List all invites."""
+        return self.session.query(UserAssemblyRole).order_by(orm.user_assembly_roles.c.created_at.desc()).all()
 
     def get_by_user_and_assembly(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> UserAssemblyRole | None:
         """Get a user's role for a specific assembly."""
