@@ -56,6 +56,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 5432:5432
     defaults:
       run:
         working-directory: ./backend
@@ -76,7 +78,7 @@ jobs:
 
       - name: Run tests
         env:
-          DB_HOST: postgres
+          DB_HOST: localhost
         run: |
           uv pip install -e .
           uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
