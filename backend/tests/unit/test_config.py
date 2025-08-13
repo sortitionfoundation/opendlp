@@ -40,9 +40,10 @@ class TestToBool:
 class TestFlaskConfigClass:
     """Test the base Config class."""
 
-    def test_config_defaults(self, temp_env_vars):
+    def test_config_defaults(self, temp_env_vars, clear_env_vars):
         """Test that Config loads expected default values."""
         # Clear FLASK_ENV to test defaults
+        clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME")
         temp_env_vars(FLASK_ENV="development")
 
         config = FlaskConfig()

@@ -35,6 +35,24 @@ def set_test_env():
 
 
 @pytest.fixture
+def clear_env_vars():
+    """Fixture to temporarily set environment variables for testing."""
+    original_vars = {}
+
+    def _set_env_vars(*args):
+        for key in args:
+            original_vars[key] = os.environ.get(key)
+            os.environ.pop(key, None)
+
+    yield _set_env_vars
+
+    # Restore original environment variables
+    for key, value in original_vars.items():
+        if value is not None:
+            os.environ[key] = value
+
+
+@pytest.fixture
 def temp_env_vars():
     """Fixture to temporarily set environment variables for testing."""
     original_vars = {}
