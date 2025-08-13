@@ -13,7 +13,7 @@ inputs:
   working-directory:
     description: "the working directory for uv commands"
     required: false
-    default: ""
+    default: "./"
 
 runs:
   using: "composite"

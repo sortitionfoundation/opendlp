@@ -26,6 +26,8 @@ jobs:
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
+        with:
+          working-directory: ./backend
 
       - uses: extractions/setup-just@v3
 
@@ -50,6 +52,7 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
+          working-directory: ./backend
 
       - name: Run tests
         run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
@@ -74,6 +77,8 @@ jobs:
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
+        with:
+          working-directory: ./backend
 
       - name: Check if documentation can be built
         run: uv run mkdocs build -s
