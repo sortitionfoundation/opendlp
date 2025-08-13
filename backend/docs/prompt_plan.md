@@ -118,7 +118,7 @@ All domain models should be plain Python classes with no database dependencies. 
 
 ---
 
-### Step 3: Database Setup with SQLAlchemy
+### Step 3: Database Setup with SQLAlchemy ✅ COMPLETED
 
 ```text
 Set up SQLAlchemy with imperative mapping to keep domain models separate from database concerns.
@@ -206,7 +206,7 @@ Use dependency injection patterns. Repositories should return domain objects, no
 
 ---
 
-### Step 5: User Service Layer
+### Step 5: User Service Layer ✅ COMPLETED
 
 ```text
 Create the user management service layer with business logic for user operations.
@@ -235,7 +235,7 @@ Implement in src/opendlp/service_layer/:
    - Test user creation with OAuth
    - Test authentication success/failure
    - Test invite validation and usage
-   - Mock the UoW and repositories
+   - Use Fake UoW and repository classes
 
 5. Write tests/integration/test_user_service_integration.py:
    - Test full user creation flow with database
@@ -272,7 +272,7 @@ Implement in src/opendlp/service_layer/:
    - Test assembly creation
    - Test permission checks for different roles
    - Test assembly updates
-   - Mock repositories and UoW
+   - Use Fake UoW and repository classes
 
 4. Write tests/integration/test_assembly_service_integration.py:
    - Test full assembly lifecycle
@@ -425,7 +425,7 @@ Create src/opendlp/cli/:
 6. Write tests/unit/test_cli.py:
    - Test command parsing
    - Test output formatting
-   - Mock service layer calls
+   - Use Fake UoW and repository classes
 
 7. Write tests/integration/test_cli_integration.py:
    - Test actual user creation
