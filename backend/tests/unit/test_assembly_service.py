@@ -30,10 +30,10 @@ class TestCreateAssembly:
         assembly = assembly_service.create_assembly(
             uow=uow,
             title="Test Assembly",
+            created_by_user_id=admin_user.id,
             question="Test question?",
             gsheet="test-sheet",
             first_assembly_date=future_date,
-            created_by_user_id=admin_user.id,
         )
 
         assert assembly.title == "Test Assembly"
@@ -60,10 +60,10 @@ class TestCreateAssembly:
         assembly = assembly_service.create_assembly(
             uow=uow,
             title="Test Assembly",
+            created_by_user_id=organiser_user.id,
             question="Test question?",
             gsheet="test-sheet",
             first_assembly_date=future_date,
-            created_by_user_id=organiser_user.id,
         )
 
         assert assembly.title == "Test Assembly"
@@ -83,10 +83,10 @@ class TestCreateAssembly:
             assembly_service.create_assembly(
                 uow=uow,
                 title="Test Assembly",
+                created_by_user_id=regular_user.id,
                 question="Test question?",
                 gsheet="test-sheet",
                 first_assembly_date=future_date,
-                created_by_user_id=regular_user.id,
             )
 
     def test_create_assembly_user_not_found(self):
@@ -98,13 +98,35 @@ class TestCreateAssembly:
             assembly_service.create_assembly(
                 uow=uow,
                 title="Test Assembly",
+                created_by_user_id=uuid.uuid4(),
                 question="Test question?",
                 gsheet="test-sheet",
                 first_assembly_date=future_date,
-                created_by_user_id=uuid.uuid4(),
             )
 
         assert "not found" in str(exc_info.value)
+
+    def test_create_assembly_minimal_data(self):
+        """Test creating assembly with only required fields."""
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )
+        uow.users.add(admin_user)
+
+        assembly = assembly_service.create_assembly(
+            uow=uow,
+            title="Minimal Assembly",
+            created_by_user_id=admin_user.id,
+        )
+
+        assert assembly.title == "Minimal Assembly"
+        assert assembly.question == ""
+        assert assembly.gsheet == ""
+        assert assembly.first_assembly_date is None
+        assert assembly.status == AssemblyStatus.ACTIVE
+        assert len(uow.assemblies.list()) == 1
+        assert uow.committed
 
 
 class TestUpdateAssembly:

@@ -1,6 +1,7 @@
 """ABOUTME: Unit tests for permission checking utilities
 ABOUTME: Tests role-based access control functions and decorators with various user roles"""
 
+import uuid
 from datetime import date, timedelta
 
 import pytest
@@ -18,6 +19,7 @@ from opendlp.service_layer.permissions import (
     require_assembly_permission,
     require_global_role,
 )
+from tests.fakes import FakeUnitOfWork
 
 
 class TestCanManageAssembly:
@@ -380,8 +382,6 @@ class TestRequireAssemblyPermissionDecorator:
 
     def test_require_assembly_permission_success(self):
         """Test decorator allows access with sufficient permission."""
-        from tests.fakes import FakeUnitOfWork
-
         uow = FakeUnitOfWork()
         admin_user = User(
             username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
@@ -407,8 +407,6 @@ class TestRequireAssemblyPermissionDecorator:
 
     def test_require_assembly_permission_failure(self):
         """Test decorator blocks access with insufficient permission."""
-        from tests.fakes import FakeUnitOfWork
-
         uow = FakeUnitOfWork()
         regular_user = User(
             username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
@@ -434,10 +432,6 @@ class TestRequireAssemblyPermissionDecorator:
 
     def test_require_assembly_permission_user_not_found(self):
         """Test decorator handles user not found."""
-        import uuid
-
-        from tests.fakes import FakeUnitOfWork
-
         uow = FakeUnitOfWork()
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -459,10 +453,6 @@ class TestRequireAssemblyPermissionDecorator:
 
     def test_require_assembly_permission_assembly_not_found(self):
         """Test decorator handles assembly not found."""
-        import uuid
-
-        from tests.fakes import FakeUnitOfWork
-
         uow = FakeUnitOfWork()
         admin_user = User(
             username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
@@ -480,8 +470,6 @@ class TestRequireAssemblyPermissionDecorator:
 
     def test_require_assembly_permission_different_permission_functions(self):
         """Test decorator works with different permission functions."""
-        from tests.fakes import FakeUnitOfWork
-
         uow = FakeUnitOfWork()
         regular_user = User(
             username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"

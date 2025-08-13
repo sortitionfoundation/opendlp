@@ -30,6 +30,19 @@ class TestAssembly:
         assert isinstance(assembly.created_at, datetime)
         assert isinstance(assembly.updated_at, datetime)
 
+    def test_create_assembly_with_only_title(self):
+        """Test creating assembly with only required title field."""
+        assembly = Assembly(title="Minimal Assembly")
+
+        assert assembly.title == "Minimal Assembly"
+        assert assembly.question == ""
+        assert assembly.gsheet == ""
+        assert assembly.first_assembly_date is None
+        assert assembly.status == AssemblyStatus.ACTIVE
+        assert isinstance(assembly.id, uuid.UUID)
+        assert isinstance(assembly.created_at, datetime)
+        assert isinstance(assembly.updated_at, datetime)
+
     def test_create_assembly_with_custom_values(self):
         future_date = date.today() + timedelta(days=30)
         assembly_id = uuid.uuid4()
@@ -66,22 +79,18 @@ class TestAssembly:
         assert assembly.gsheet == "spaced-sheet"
 
     def test_validate_required_fields(self):
-        future_date = date.today() + timedelta(days=30)
-
-        # Empty title
+        # Only title is required, empty title should fail
         with pytest.raises(ValueError, match="Assembly title is required"):
-            Assembly(title="", question="Question?", gsheet="sheet", first_assembly_date=future_date)
+            Assembly(title="")
 
         with pytest.raises(ValueError, match="Assembly title is required"):
-            Assembly(title="   ", question="Question?", gsheet="sheet", first_assembly_date=future_date)
+            Assembly(title="   ")
 
-        # Empty question
-        with pytest.raises(ValueError, match="Assembly question is required"):
-            Assembly(title="Title", question="", gsheet="sheet", first_assembly_date=future_date)
-
-        # Empty gsheet
-        with pytest.raises(ValueError, match="Google sheet reference is required"):
-            Assembly(title="Title", question="Question?", gsheet="", first_assembly_date=future_date)
+        # Empty question and gsheet should be allowed now
+        assembly = Assembly(title="Valid Title", question="", gsheet="")
+        assert assembly.title == "Valid Title"
+        assert assembly.question == ""
+        assert assembly.gsheet == ""
 
     def test_validate_future_date(self):
         past_date = date.today() - timedelta(days=1)
@@ -90,19 +99,22 @@ class TestAssembly:
 
         # Past date should fail
         with pytest.raises(ValueError, match="First assembly date must be in the future"):
-            Assembly(title="Title", question="Question?", gsheet="sheet", first_assembly_date=past_date)
+            Assembly(title="Title", first_assembly_date=past_date)
 
         # Today should fail
         with pytest.raises(ValueError, match="First assembly date must be in the future"):
-            Assembly(title="Title", question="Question?", gsheet="sheet", first_assembly_date=today)
+            Assembly(title="Title", first_assembly_date=today)
 
         # Future date should work
-        assembly = Assembly(title="Title", question="Question?", gsheet="sheet", first_assembly_date=future_date)
+        assembly = Assembly(title="Title", first_assembly_date=future_date)
         assert assembly.first_assembly_date == future_date
 
+        # None date should work
+        assembly_no_date = Assembly(title="Title", first_assembly_date=None)
+        assert assembly_no_date.first_assembly_date is None
+
     def test_archive(self):
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(title="Title", question="Question?", gsheet="sheet", first_assembly_date=future_date)
+        assembly = Assembly(title="Title")
 
         original_updated_at = assembly.updated_at
 
@@ -117,12 +129,8 @@ class TestAssembly:
         assert assembly.updated_at > original_updated_at
 
     def test_reactivate(self):
-        future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
             title="Title",
-            question="Question?",
-            gsheet="sheet",
-            first_assembly_date=future_date,
             status=AssemblyStatus.ARCHIVED,
         )
 
@@ -139,21 +147,13 @@ class TestAssembly:
         assert assembly.updated_at > original_updated_at
 
     def test_is_active(self):
-        future_date = date.today() + timedelta(days=30)
-
         active_assembly = Assembly(
             title="Active",
-            question="Question?",
-            gsheet="sheet",
-            first_assembly_date=future_date,
             status=AssemblyStatus.ACTIVE,
         )
 
         archived_assembly = Assembly(
             title="Archived",
-            question="Question?",
-            gsheet="sheet",
-            first_assembly_date=future_date,
             status=AssemblyStatus.ARCHIVED,
         )
 
@@ -210,9 +210,7 @@ class TestAssembly:
         assert assembly.first_assembly_date == future_date  # Unchanged
 
     def test_update_details_strips_whitespace(self):
-        future_date = date.today() + timedelta(days=30)
-
-        assembly = Assembly(title="Original", question="Original?", gsheet="original", first_assembly_date=future_date)
+        assembly = Assembly(title="Original", question="Original?", gsheet="original")
 
         assembly.update_details(title="  New Title  ", question="  New question?  ", gsheet="  new-sheet  ")
 
@@ -221,24 +219,20 @@ class TestAssembly:
         assert assembly.gsheet == "new-sheet"
 
     def test_update_details_validation(self):
-        future_date = date.today() + timedelta(days=30)
         past_date = date.today() - timedelta(days=1)
 
-        assembly = Assembly(title="Title", question="Question?", gsheet="sheet", first_assembly_date=future_date)
+        assembly = Assembly(title="Title")
 
-        # Empty title
+        # Empty title should still fail
         with pytest.raises(ValueError, match="Assembly title cannot be empty"):
             assembly.update_details(title="")
 
-        # Empty question
-        with pytest.raises(ValueError, match="Assembly question cannot be empty"):
-            assembly.update_details(question="")
+        # Empty question and gsheet should be allowed now
+        assembly.update_details(question="", gsheet="")
+        assert assembly.question == ""
+        assert assembly.gsheet == ""
 
-        # Empty gsheet
-        with pytest.raises(ValueError, match="Google sheet reference cannot be empty"):
-            assembly.update_details(gsheet="")
-
-        # Past date
+        # Past date should still fail
         with pytest.raises(ValueError, match="First assembly date must be in the future"):
             assembly.update_details(first_assembly_date=past_date)
 
@@ -262,9 +256,7 @@ class TestAssembly:
             first_assembly_date=future_date,
         )
 
-        assembly3 = Assembly(
-            title="Assembly 3", question="Question 3?", gsheet="sheet3", first_assembly_date=future_date
-        )
+        assembly3 = Assembly(title="Assembly 3")
 
         assert assembly1 == assembly2  # Same ID
         assert assembly1 != assembly3  # Different ID

@@ -158,8 +158,7 @@ def require_assembly_permission(
                 # Check permission using the provided function
                 if not permission_func(user, assembly):
                     raise InsufficientPermissions(
-                        action=func.__name__,
-                        required_role=f"permission check: {permission_func.__name__}"
+                        action=func.__name__, required_role=f"permission check: {permission_func.__name__}"
                     )
 
             return func(*args, **kwargs)

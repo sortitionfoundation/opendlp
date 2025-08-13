@@ -14,25 +14,24 @@ from .unit_of_work import AbstractUnitOfWork
 from .user_service import get_user_assemblies
 
 
-# TODO: question and gsheet can be empty string. date can be None
 def create_assembly(
     uow: AbstractUnitOfWork,
     title: str,
-    question: str,
-    gsheet: str,
-    first_assembly_date: date,
     created_by_user_id: uuid.UUID,
+    question: str = "",
+    gsheet: str = "",
+    first_assembly_date: date | None = None,
 ) -> Assembly:
     """
     Create a new assembly.
 
     Args:
         uow: Unit of Work for database operations
-        title: Assembly title
-        question: Assembly question
-        gsheet: Google Sheets identifier
-        first_assembly_date: Date of first assembly meeting
+        title: Assembly title (required)
         created_by_user_id: ID of user creating the assembly
+        question: Assembly question (optional, defaults to empty string)
+        gsheet: Google Sheets identifier (optional, defaults to empty string)
+        first_assembly_date: Date of first assembly meeting (optional)
 
     Returns:
         Created Assembly instance

@@ -13,9 +13,9 @@ class Assembly:
     def __init__(
         self,
         title: str,
-        question: str,
-        gsheet: str,
-        first_assembly_date: date,
+        question: str = "",
+        gsheet: str = "",
+        first_assembly_date: date | None = None,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         created_at: datetime | None = None,
@@ -24,13 +24,7 @@ class Assembly:
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
 
-        if not question or not question.strip():
-            raise ValueError("Assembly question is required")
-
-        if not gsheet or not gsheet.strip():
-            raise ValueError("Google sheet reference is required")
-
-        if first_assembly_date <= date.today():
+        if first_assembly_date is not None and first_assembly_date <= date.today():
             raise ValueError("First assembly date must be in the future")
 
         self.id = assembly_id or uuid.uuid4()
@@ -66,13 +60,9 @@ class Assembly:
             self.title = title.strip()
 
         if question is not None:
-            if not question.strip():
-                raise ValueError("Assembly question cannot be empty")
             self.question = question.strip()
 
         if gsheet is not None:
-            if not gsheet.strip():
-                raise ValueError("Google sheet reference cannot be empty")
             self.gsheet = gsheet.strip()
 
         if first_assembly_date is not None:

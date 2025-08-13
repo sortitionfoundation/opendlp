@@ -136,6 +136,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 force-single-line = false
+known-first-party = ["opendlp", "src", "tests"]
 
 [tool.ruff.format]
 preview = true

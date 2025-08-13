@@ -221,6 +221,7 @@ def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
 
         # This is a simplified version - actual implementation might need
         # a proper delete method in the repository
+        # TODO: add the delete method
         uow.commit()
         return expired_count
 
