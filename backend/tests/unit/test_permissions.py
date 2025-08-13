@@ -15,6 +15,7 @@ from opendlp.service_layer.permissions import (
     can_view_assembly,
     has_global_admin,
     has_global_organiser,
+    require_assembly_permission,
     require_global_role,
 )
 
@@ -372,3 +373,150 @@ class TestRequireGlobalRoleDecorator:
         # Should succeed with exact match
         result = test_function(None, organiser_user)
         assert result == "success"
+
+
+class TestRequireAssemblyPermissionDecorator:
+    """Test assembly permission requirement decorator."""
+
+    def test_require_assembly_permission_success(self):
+        """Test decorator allows access with sufficient permission."""
+        from tests.fakes import FakeUnitOfWork
+
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet="test-sheet",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        @require_assembly_permission(can_manage_assembly)
+        def test_function(uow, user_id, assembly_id, data):
+            return f"success with {data}"
+
+        # Should succeed because admin can manage any assembly
+        result = test_function(uow, admin_user.id, assembly.id, "test_data")
+        assert result == "success with test_data"
+
+    def test_require_assembly_permission_failure(self):
+        """Test decorator blocks access with insufficient permission."""
+        from tests.fakes import FakeUnitOfWork
+
+        uow = FakeUnitOfWork()
+        regular_user = User(
+            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )
+        uow.users.add(regular_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet="test-sheet",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        @require_assembly_permission(can_manage_assembly)
+        def test_function(uow, user_id, assembly_id, data):
+            return f"success with {data}"
+
+        # Should fail because regular user cannot manage assembly
+        with pytest.raises(InsufficientPermissions):
+            test_function(uow, regular_user.id, assembly.id, "test_data")
+
+    def test_require_assembly_permission_user_not_found(self):
+        """Test decorator handles user not found."""
+        import uuid
+
+        from tests.fakes import FakeUnitOfWork
+
+        uow = FakeUnitOfWork()
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet="test-sheet",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        @require_assembly_permission(can_manage_assembly)
+        def test_function(uow, user_id, assembly_id, data):
+            return f"success with {data}"
+
+        # Should fail with user not found
+        with pytest.raises(ValueError) as exc_info:
+            test_function(uow, uuid.uuid4(), assembly.id, "test_data")
+        assert "User" in str(exc_info.value) and "not found" in str(exc_info.value)
+
+    def test_require_assembly_permission_assembly_not_found(self):
+        """Test decorator handles assembly not found."""
+        import uuid
+
+        from tests.fakes import FakeUnitOfWork
+
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )
+        uow.users.add(admin_user)
+
+        @require_assembly_permission(can_manage_assembly)
+        def test_function(uow, user_id, assembly_id, data):
+            return f"success with {data}"
+
+        # Should fail with assembly not found
+        with pytest.raises(ValueError) as exc_info:
+            test_function(uow, admin_user.id, uuid.uuid4(), "test_data")
+        assert "Assembly" in str(exc_info.value) and "not found" in str(exc_info.value)
+
+    def test_require_assembly_permission_different_permission_functions(self):
+        """Test decorator works with different permission functions."""
+        from tests.fakes import FakeUnitOfWork
+
+        uow = FakeUnitOfWork()
+        regular_user = User(
+            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )
+        uow.users.add(regular_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet="test-sheet",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add assembly role so user can view but not manage
+        assembly_role = UserAssemblyRole(
+            user_id=regular_user.id,
+            assembly_id=assembly.id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+        )
+        regular_user.assembly_roles.append(assembly_role)
+
+        @require_assembly_permission(can_view_assembly)
+        def view_function(uow, user_id, assembly_id):
+            return "can view"
+
+        @require_assembly_permission(can_manage_assembly)
+        def manage_function(uow, user_id, assembly_id):
+            return "can manage"
+
+        # Should succeed for view (user has assembly role)
+        result = view_function(uow, regular_user.id, assembly.id)
+        assert result == "can view"
+
+        # Should fail for manage (user cannot manage)
+        with pytest.raises(InsufficientPermissions):
+            manage_function(uow, regular_user.id, assembly.id)

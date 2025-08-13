@@ -11,8 +11,10 @@ from opendlp.domain.value_objects import AssemblyStatus
 from .exceptions import InsufficientPermissions
 from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
 from .unit_of_work import AbstractUnitOfWork
+from .user_service import get_user_assemblies
 
 
+# TODO: question and gsheet can be empty string. date can be None
 def create_assembly(
     uow: AbstractUnitOfWork,
     title: str,
@@ -214,6 +216,5 @@ def get_user_accessible_assemblies(
             raise ValueError(f"User {user_id} not found")
 
         # Use existing user_service function for consistency
-        from .user_service import get_user_assemblies
 
         return get_user_assemblies(uow, user_id)

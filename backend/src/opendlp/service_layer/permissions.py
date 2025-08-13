@@ -131,13 +131,37 @@ def require_assembly_permission(
 
     Returns:
         Decorator function
+
+    Usage:
+        @require_assembly_permission(can_manage_assembly)
+        def update_assembly(uow, user_id, assembly_id, **updates):
+            ...
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            # This is more complex as we need to extract assembly from args/kwargs
-            # For now, service functions should handle permission checks manually
+            # Extract UoW, user_id, and assembly_id from arguments
+            # Expect signature: func(uow, user_id, assembly_id, ...)
+            if len(args) >= 3:
+                uow, user_id, assembly_id = args[0], args[1], args[2]
+
+                # Get user and assembly from repositories
+                user = uow.users.get(user_id)
+                if not user:
+                    raise ValueError(f"User {user_id} not found")
+
+                assembly = uow.assemblies.get(assembly_id)
+                if not assembly:
+                    raise ValueError(f"Assembly {assembly_id} not found")
+
+                # Check permission using the provided function
+                if not permission_func(user, assembly):
+                    raise InsufficientPermissions(
+                        action=func.__name__,
+                        required_role=f"permission check: {permission_func.__name__}"
+                    )
+
             return func(*args, **kwargs)
 
         return wrapper
