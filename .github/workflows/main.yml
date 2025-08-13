@@ -33,7 +33,9 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run checks
-        run: just check
+        run: |
+          uv pip install -e .
+          just check
 
   tests-and-type-check:
     runs-on: ubuntu-latest
@@ -56,7 +58,9 @@ jobs:
           working-directory: ./backend
 
       - name: Run tests
-        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+        run: |
+          uv pip install -e .
+          uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run mypy
