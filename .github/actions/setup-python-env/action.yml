@@ -10,6 +10,10 @@ inputs:
     description: "uv version to use"
     required: true
     default: "0.8.8"
+  working-directory:
+    description: "the working directory for uv commands"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -26,5 +30,6 @@ runs:
         cache-suffix: ${{ matrix.python-version }}
 
     - name: Install Python dependencies
+      working-directory: ${{ inputs.working-directory }}
       run: uv sync --frozen
       shell: bash
