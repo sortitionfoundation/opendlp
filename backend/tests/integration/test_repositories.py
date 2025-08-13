@@ -25,7 +25,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 @pytest.fixture
 def db_engine():
     """Create a test database engine using PostgreSQL."""
-    test_database_uri = get_postgres_uri(db_name="opendlp_test")
+    test_database_uri = get_postgres_uri(default_db_name="opendlp_test")
 
     # Create engine for test database
     engine = create_engine(test_database_uri, echo=False)

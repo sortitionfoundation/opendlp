@@ -9,11 +9,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_postgres_uri(db_name: str = "opendlp", user: str = "opendlp") -> str:
+def get_postgres_uri(default_db_name: str = "opendlp", user: str = "opendlp") -> str:
     host = os.environ.get("DB_HOST", "localhost")
     default_port = 54321 if host == "localhost" else 5432
     port = int(os.environ.get("DB_PORT", default_port))
     password = os.environ.get("DB_PASSWORD", "abc123")
+    db_name = os.environ.get("DB_NAME", default_db_name)
     return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
 
