@@ -11,7 +11,8 @@ load_dotenv()
 
 def get_postgres_uri() -> str:
     host = os.environ.get("DB_HOST", "localhost")
-    port = 54321 if host == "localhost" else 5432
+    default_port = 54321 if host == "localhost" else 5432
+    port = int(os.environ.get("DB_PORT", default_port))
     password = os.environ.get("DB_PASSWORD", "abc123")
     user, db_name = "opendlp", "opendlp"
     return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
