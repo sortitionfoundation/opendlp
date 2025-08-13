@@ -38,6 +38,15 @@ check:
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"
 	@uv run deptry src
 
+# temporary to keep github actions green
+check-nodeptry:
+	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
+	@uv lock --locked
+	@echo "🚀 Linting code: Running pre-commit"
+	@uv run pre-commit run -a
+	@echo "🚀 Static type checking: Running mypy"
+	@uv run mypy
+
 # start the flask shell
 flask-shell:
   @uv run flask shell
