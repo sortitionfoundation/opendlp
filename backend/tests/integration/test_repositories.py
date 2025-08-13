@@ -1,7 +1,6 @@
 """ABOUTME: Integration tests for repository implementations
 ABOUTME: Tests repository methods with actual database operations"""
 
-import os
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
@@ -16,6 +15,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
 )
+from opendlp.config import get_postgres_uri
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
@@ -25,13 +25,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 @pytest.fixture
 def db_engine():
     """Create a test database engine using PostgreSQL."""
-    # Build test database URI
-    host = os.environ.get("DB_HOST", "localhost")
-    port = 54321 if host == "localhost" else 5432
-    password = os.environ.get("DB_PASSWORD", "abc123")
-    user = "opendlp"
-    test_db_name = "opendlp_test"
-    test_database_uri = f"postgresql://{user}:{password}@{host}:{port}/{test_db_name}"
+    test_database_uri = get_postgres_uri(db_name="opendlp_test")
 
     # Create engine for test database
     engine = create_engine(test_database_uri, echo=False)

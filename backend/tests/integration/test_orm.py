@@ -1,7 +1,6 @@
 """ABOUTME: Integration tests for ORM mapping and database operations
 ABOUTME: Tests that domain objects can be saved, retrieved, and relationships work correctly"""
 
-import os
 import uuid
 from datetime import date, datetime, timedelta
 
@@ -11,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
+from opendlp.config import get_postgres_uri
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
@@ -21,14 +21,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 def db_engine():
     """Create a test database engine using PostgreSQL."""
     # For integration tests, use PostgreSQL with a test database name
-
-    # Build test database URI
-    host = os.environ.get("DB_HOST", "localhost")
-    port = 54321 if host == "localhost" else 5432
-    password = os.environ.get("DB_PASSWORD", "abc123")
-    user = "opendlp"
-    test_db_name = "opendlp_test"
-    test_database_uri = f"postgresql://{user}:{password}@{host}:{port}/{test_db_name}"
+    test_database_uri = get_postgres_uri(db_name="opendlp_test")
 
     # Create engine for test database
     engine = create_engine(test_database_uri, echo=False)
