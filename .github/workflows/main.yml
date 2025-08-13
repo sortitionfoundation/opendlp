@@ -39,6 +39,23 @@ jobs:
 
   tests-and-type-check:
     runs-on: ubuntu-latest
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_DB: opendlp
+          POSTGRES_USER: opendlp
+          POSTGRES_PASSWORD: abc123
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: ./backend
@@ -58,6 +75,8 @@ jobs:
           working-directory: ./backend
 
       - name: Run tests
+        env:
+          DB_HOST: postgres
         run: |
           uv pip install -e .
           uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
