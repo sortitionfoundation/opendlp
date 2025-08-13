@@ -51,7 +51,7 @@ class TestUser:
         assert user.username == "valid_user-123"
 
         # Invalid usernames
-        with pytest.raises(ValueError, match="Username must be at least 3 characters long"):
+        with pytest.raises(ValueError, match="Username must be between 3 and 200 characters long"):
             User(username="ab", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         with pytest.raises(ValueError, match="Username must contain only letters"):

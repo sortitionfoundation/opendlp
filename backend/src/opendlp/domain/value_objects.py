@@ -3,6 +3,9 @@ ABOUTME: Defines shared enums and validation functions used across domain object
 
 from enum import Enum
 
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
+
 
 class GlobalRole(Enum):
     ADMIN = "admin"
@@ -22,9 +25,12 @@ class AssemblyStatus(Enum):
 
 def validate_email(email: str) -> None:
     """Basic email validation."""
-    # TODO: use email-validator library - or maybe Django email validation
-    if not email or "@" not in email:
-        raise ValueError("Invalid email address")
+    # we use the well-tested and maintained Django EmailValidator
+    validator = EmailValidator(message="Invalid email address")
+    try:
+        validator(email)
+    except ValidationError as error:
+        raise ValueError("Invalid email address") from error
 
 
 def validate_username(username: str) -> None:
