@@ -26,6 +26,10 @@ class AssemblyStatus(Enum):
 def validate_email(email: str) -> None:
     """Basic email validation."""
     # we use the well-tested and maintained Django EmailValidator
+    # Note that passing in the message is important - if we don't do that then
+    # the validator will try to use the default message, which will trigger the
+    # auto localisation of the string which then blows up.
+    # If this breaks, consider copying in the whole file.
     validator = EmailValidator(message="Invalid email address")
     try:
         validator(email)

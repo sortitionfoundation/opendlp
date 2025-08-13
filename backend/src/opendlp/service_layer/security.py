@@ -1,7 +1,13 @@
 """ABOUTME: Security utilities for password hashing and invite code generation
 ABOUTME: Provides functions for secure password handling and unique invite code creation"""
 
+from dataclasses import dataclass, fields
+
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from werkzeug.security import check_password_hash, generate_password_hash
+
+from opendlp.vendor import password_validation as pv
 
 
 def hash_password(password: str) -> str:
@@ -17,23 +23,36 @@ def verify_password(password: str, password_hash: str) -> bool:
 # If you want to generate an invite code, use opendlp.domain.user_invites.generate_invite_code()
 
 
-def validate_password_strength(password: str) -> tuple[bool, str]:
+@dataclass
+class TempUser:
+    """
+    Temporary user to pass to password validation, so we can check the password
+    for similarity to username, email etc.
+
+    Try to keep this up to date with domain.users.User
+    """
+
+    username: str
+    email: str
+
+
+def validate_password_strength(password: str, user: object) -> tuple[bool, str]:
     """
     Validate password strength requirements.
 
     Returns tuple of (is_valid, error_message)
     """
-    # TODO: consider using Django password strength validation
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-
-    if not any(c.isupper() for c in password):
-        return False, "Password must contain at least one uppercase letter"
-
-    if not any(c.islower() for c in password):
-        return False, "Password must contain at least one lowercase letter"
-
-    if not any(c.isdigit() for c in password):
-        return False, "Password must contain at least one digit"
+    # We use the well maintained Django password validation
+    validators = (
+        pv.SafeCommonPasswordValidator(),
+        pv.MinimumLengthValidator(min_length=9),
+        pv.NumericPasswordValidator(),
+        # this means we check every attribute of TempUser
+        pv.UserAttributeSimilarityValidator(user_attributes=(f.name for f in fields(TempUser))),
+    )
+    try:
+        validate_password(password, user=user, password_validators=validators)
+    except ValidationError as error:
+        return False, str(error)
 
     return True, ""

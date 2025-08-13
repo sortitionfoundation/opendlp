@@ -96,14 +96,23 @@ class TestCreateUser:
 
         assert "test@example.com" in str(exc_info.value)
 
-    def test_create_user_weak_password(self):
+    @pytest.mark.parametrize(
+        "password,msg",
+        [
+            ("weak", "must contain at least 9 characters"),
+            ("123412341234", "password is entirely numeric"),
+            ("testuser2", "password is too similar to the username"),
+            ("spongebob1", "password is too common"),
+        ],
+    )
+    def test_create_user_weak_password(self, password, msg):
         """Test user creation fails with weak password."""
         uow = FakeUnitOfWork()
 
         with pytest.raises(PasswordTooWeak) as exc_info:
-            user_service.create_user(uow=uow, username="testuser", email="test@example.com", password="weak")
+            user_service.create_user(uow=uow, username="testuser", email="test@example.com", password=password)
 
-        assert "Password must be at least 8 characters" in str(exc_info.value)
+        assert msg in str(exc_info.value)
 
     def test_create_user_invalid_invite(self):
         """Test user creation fails with invalid invite."""

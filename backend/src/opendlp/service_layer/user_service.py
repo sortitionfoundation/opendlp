@@ -8,7 +8,7 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
 from .exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
-from .security import hash_password, validate_password_strength, verify_password
+from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
 
@@ -56,10 +56,13 @@ def create_user(
         if invite_code:
             invite_role = validate_and_use_invite(uow, invite_code)
 
+        # temporary user to pass to password validation
+        temp_user = TempUser(username=username, email=email)
+
         # Handle password validation and hashing
         password_hash = None
         if password:
-            is_valid, error_msg = validate_password_strength(password)
+            is_valid, error_msg = validate_password_strength(password, temp_user)
             if not is_valid:
                 raise PasswordTooWeak(error_msg)
             password_hash = hash_password(password)

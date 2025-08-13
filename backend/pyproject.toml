@@ -51,6 +51,10 @@ ignore_missing_imports = true
 module = 'flask_wtf.*'
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = 'django.*'
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
