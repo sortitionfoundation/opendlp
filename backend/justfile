@@ -1,11 +1,20 @@
 set dotenv-load
 
+# Test the code with pytest (HTML report)
 default: test
 
-# Test the code with pytest
-test:
+# Test the code with pytest (HTML report)
+test-html:
 	@echo "🚀 Testing code: Running pytest"
 	@uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+
+# Test the code with pytest (XML report)
+test-xml:
+	@echo "🚀 Testing code: Running pytest"
+	@uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
+
+# Test the code with pytest (HTML report)
+test: test-html
 
 # run the tests when an files change
 watch-tests:
@@ -40,8 +49,10 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   uv run flask run --debug
 
+# run flask locally
 run: flask
 
+# connect to docker postgres
 psql:
   @echo "password is abc123"
   psql --host 127.0.0.1 --port 54321 --user allocation

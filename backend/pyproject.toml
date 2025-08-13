@@ -18,6 +18,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "covdefaults>=2.3.0",
   "deptry>=0.23.1",
   "mypy>=1.17.1",
   "pre-commit>=4.3.0",
@@ -134,9 +135,10 @@ force-single-line = false
 [tool.ruff.format]
 preview = true
 
+[tool.coverage.run]
+source = ["src", "tests"]
+plugins = ["covdefaults"]
+
 [tool.coverage.report]
 skip_empty = true
-
-[tool.coverage.run]
-branch = true
-source = ["src"]
+fail_under = 90
