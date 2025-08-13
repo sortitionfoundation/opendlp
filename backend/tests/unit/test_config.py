@@ -1,7 +1,6 @@
 """ABOUTME: Unit tests for OpenDLP configuration module
 ABOUTME: Tests environment variable loading and configuration class behavior"""
 
-import os
 from typing import ClassVar
 
 import pytest
@@ -33,8 +32,12 @@ class TestToBool:
     ]
 
     @pytest.mark.parametrize("bool_str,expected", test_values)
-    def test_to_bool(self, bool_str: str, expected: bool) -> None:
+    def test_to_bool(self, bool_str: str, expected: bool):
         assert to_bool(bool_str) == expected
+
+    def test_to_bool_raises_on_bad_value(self):
+        with pytest.raises(ValueError):
+            to_bool("invalid")
 
 
 class TestFlaskConfigClass:
@@ -141,18 +144,12 @@ class TestGetConfig:
 
         assert isinstance(config, FlaskProductionConfig)
 
-    def test_get_config_default(self):
+    def test_get_config_default(self, clear_env_vars):
         """Test get_config returns Config by default."""
         # Remove FLASK_ENV if present
-        original_env = os.environ.get("FLASK_ENV")
-        if "FLASK_ENV" in os.environ:
-            del os.environ["FLASK_ENV"]
+        clear_env_vars("FLASK_ENV")
 
-        try:
-            config = get_config()
-            assert isinstance(config, FlaskConfig)
-            assert not isinstance(config, FlaskTestConfig)
-            assert not isinstance(config, FlaskProductionConfig)
-        finally:
-            if original_env:
-                os.environ["FLASK_ENV"] = original_env
+        config = get_config()
+        assert isinstance(config, FlaskConfig)
+        assert not isinstance(config, FlaskTestConfig)
+        assert not isinstance(config, FlaskProductionConfig)
