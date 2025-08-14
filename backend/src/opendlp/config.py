@@ -94,6 +94,11 @@ class FlaskConfig:
         self.SESSION_TYPE = "redis"
         self.SESSION_REDIS = None  # Will be set by Flask-Session
 
+        # Babel/i18n configuration
+        self.LANGUAGES = self._get_supported_language_codes()
+        self.BABEL_DEFAULT_LOCALE = os.environ.get("BABEL_DEFAULT_LOCALE", "en")
+        self.BABEL_DEFAULT_TIMEZONE = os.environ.get("BABEL_DEFAULT_TIMEZONE", "UTC")
+
         # OAuth configuration
         self.OAUTH_GOOGLE_CLIENT_ID: str = os.environ.get("OAUTH_GOOGLE_CLIENT_ID", "")
         self.OAUTH_GOOGLE_CLIENT_SECRET: str = os.environ.get("OAUTH_GOOGLE_CLIENT_SECRET", "")
@@ -103,6 +108,33 @@ class FlaskConfig:
         self.SELECTION_TIMEOUT: int = int(os.environ.get("SELECTION_TIMEOUT", "600"))
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
+
+    def _get_supported_language_codes(self) -> list[str]:
+        """Get list of supported language codes from environment or default."""
+        languages_env = os.environ.get("SUPPORTED_LANGUAGES", "en,es,fr,de")
+        languages = [lang.strip() for lang in languages_env.split(",") if lang.strip()]
+        # Ensure we always have at least English as a fallback
+        return languages if languages else ["en"]
+
+    def get_supported_languages(self) -> list[tuple[str, str]]:
+        """Get list of supported languages as (code, name) tuples."""
+        # Language code to name mapping
+        language_names = {
+            "en": "English",
+            "es": "Español",
+            "fr": "Français",
+            "de": "Deutsch",
+            "it": "Italiano",
+            "pt": "Português",
+            "ru": "Русский",
+            "zh": "中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "ar": "العربية",
+            "hi": "हिन्दी",
+        }
+
+        return [(code, language_names.get(code, code.upper())) for code in self.LANGUAGES]
 
 
 class FlaskTestConfig(FlaskConfig):

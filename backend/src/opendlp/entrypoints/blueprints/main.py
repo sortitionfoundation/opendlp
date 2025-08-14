@@ -8,7 +8,6 @@ from werkzeug import Response
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import get_user_assemblies
 
-
 main_bp = Blueprint("main", __name__)
 
 
@@ -46,4 +45,3 @@ def assemblies() -> tuple[str, int]:
     except Exception as e:
         current_app.logger.error(f"Assemblies list error for user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
-

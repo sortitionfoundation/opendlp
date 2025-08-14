@@ -89,4 +89,3 @@ def configure_logging(app: Flask) -> None:
 
         app.logger.setLevel(logging.INFO)
         app.logger.info("OpenDLP application startup")
-

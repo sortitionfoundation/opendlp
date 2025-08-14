@@ -208,4 +208,3 @@ class TestConfiguration:
         """Test that secret key is configured."""
         app = create_app("testing")
         assert app.config.get("SECRET_KEY") is not None
-

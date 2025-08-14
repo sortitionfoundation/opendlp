@@ -3,7 +3,8 @@ ABOUTME: Sets up Flask-Login, Flask-Session, security headers, and database sess
 
 import uuid
 
-from flask import Flask
+from flask import Flask, request, session
+from flask_babel import Babel
 from flask_login import LoginManager
 from flask_session import Session
 from flask_talisman import Talisman
@@ -11,11 +12,11 @@ from flask_talisman import Talisman
 from opendlp.domain.users import User
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
-
 # Initialize extensions
 login_manager = LoginManager()
 session_store = Session()
 talisman = Talisman()
+babel = Babel()
 
 
 def init_extensions(app: Flask) -> None:
@@ -44,6 +45,39 @@ def init_extensions(app: Flask) -> None:
         },
     )
 
+    # Initialize Flask-Babel for i18n/l10n
+    babel.init_app(app, locale_selector=get_locale)
+
+
+def get_locale() -> str:
+    """Get the best language match for the user."""
+    from flask import current_app
+
+    supported_languages = current_app.config.get("LANGUAGES", ["en"])
+
+    # Check URL parameter first (for language switching)
+    requested_language = request.args.get("lang")
+    if requested_language and requested_language in supported_languages:
+        session["language"] = requested_language
+        return requested_language
+
+    # Check session (user preference)
+    if "language" in session and session["language"] in supported_languages:
+        return str(session["language"])
+
+    # Check user preferences (if logged in)
+    from flask_login import current_user
+
+    if (
+        hasattr(current_user, "preferred_language")
+        and current_user.preferred_language
+        and current_user.preferred_language in supported_languages
+    ):
+        return str(current_user.preferred_language)
+
+    # Fall back to browser language detection
+    return request.accept_languages.best_match(supported_languages) or supported_languages[0]
+
 
 @login_manager.user_loader
 def load_user(user_id: str) -> User | None:
@@ -55,4 +89,3 @@ def load_user(user_id: str) -> User | None:
             return uow.users.get(user_uuid)
     except (ValueError, TypeError):
         return None
-

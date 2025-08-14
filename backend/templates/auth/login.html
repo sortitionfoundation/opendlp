@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - OpenDLP{% endblock %}
+{% block title %}{{ _('Login') }} - OpenDLP{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -8,31 +8,31 @@
         <div class="col-md-6 col-lg-4">
             <div class="card mt-5">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> Login</h4>
+                    <h4 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}</h4>
                 </div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
+                            <label for="username" class="form-label">{{ _('Username') }}</label>
                             <input type="text" class="form-control" id="username" name="username" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
+                            <label for="password" class="form-label">{{ _('Password') }}</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        
+
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                            <label class="form-check-label" for="remember">Remember me</label>
+                            <label class="form-check-label" for="remember">{{ _('Remember me') }}</label>
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
+
+                        <button type="submit" class="btn btn-primary w-100">{{ _('Login') }}</button>
                     </form>
                 </div>
                 <div class="card-footer text-center">
                     <small class="text-muted">
-                        Don't have an account? You need an <strong>invite code</strong> to register.
+                        {{ _("Don't have an account? You need an") }} <strong>{{ _('invite code') }}</strong> {{ _('to register.') }}
                     </small>
                 </div>
             </div>

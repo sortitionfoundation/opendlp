@@ -8,7 +8,7 @@ from werkzeug import Response
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import authenticate_user, create_user
-
+from opendlp.translations import _
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -25,7 +25,7 @@ def login() -> Response | str:
         remember = bool(request.form.get("remember"))
 
         if not username or not password:
-            flash("Please provide both username and password.", "error")
+            flash(_("Please provide both username and password."), "error")
             return render_template("auth/login.html")
 
         try:
@@ -40,10 +40,10 @@ def login() -> Response | str:
                 return redirect(url_for("main.dashboard"))
 
         except InvalidCredentials:
-            flash("Invalid username or password.", "error")
+            flash(_("Invalid username or password."), "error")
         except Exception as e:
             current_app.logger.error(f"Login error: {e}")
-            flash("An error occurred during login. Please try again.", "error")
+            flash(_("An error occurred during login. Please try again."), "error")
 
     return render_template("auth/login.html")
 
@@ -53,7 +53,7 @@ def login() -> Response | str:
 def logout() -> Response:
     """User logout."""
     logout_user()
-    flash("You have been logged out.", "info")
+    flash(_("You have been logged out."), "info")
     return redirect(url_for("main.index"))
 
 
@@ -77,11 +77,11 @@ def register(invite_code: str = "") -> Response | str:
 
         # Basic validation
         if not all([username, email, password, password_confirm, invite_code]):
-            flash("All fields are required.", "error")
+            flash(_("All fields are required."), "error")
             return render_template("auth/register.html", invite_code=invite_code)
 
         if password != password_confirm:
-            flash("Passwords do not match.", "error")
+            flash(_("Passwords do not match."), "error")
             return render_template("auth/register.html", invite_code=invite_code)
 
         try:
@@ -90,7 +90,7 @@ def register(invite_code: str = "") -> Response | str:
 
                 # Log the user in immediately after registration
                 login_user(user)
-                flash("Registration successful! Welcome to OpenDLP.", "success")
+                flash(_("Registration successful! Welcome to OpenDLP."), "success")
                 return redirect(url_for("main.dashboard"))
 
         except UserAlreadyExists as e:
@@ -98,10 +98,9 @@ def register(invite_code: str = "") -> Response | str:
         except InvalidInvite as e:
             flash(str(e), "error")
         except PasswordTooWeak as e:
-            flash(f"Password is too weak: {e}", "error")
+            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
         except Exception as e:
             current_app.logger.error(f"Registration error: {e}")
-            flash("An error occurred during registration. Please try again.", "error")
+            flash(_("An error occurred during registration. Please try again."), "error")
 
     return render_template("auth/register.html", invite_code=invite_code)
-

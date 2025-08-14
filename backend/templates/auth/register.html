@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Register - OpenDLP{% endblock %}
+{% block title %}{{ _('Register') }} - OpenDLP{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -8,43 +8,43 @@
         <div class="col-md-6 col-lg-5">
             <div class="card mt-5">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-person-plus"></i> Register</h4>
+                    <h4 class="mb-0"><i class="bi bi-person-plus"></i> {{ _('Register') }}</h4>
                 </div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
-                            <label for="invite_code" class="form-label">Invite Code</label>
-                            <input type="text" class="form-control" id="invite_code" name="invite_code" 
+                            <label for="invite_code" class="form-label">{{ _('Invite Code') }}</label>
+                            <input type="text" class="form-control" id="invite_code" name="invite_code"
                                    value="{{ invite_code or '' }}" required>
-                            <div class="form-text">Enter your invitation code to register</div>
+                            <div class="form-text">{{ _('Enter your invitation code to register') }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
+                            <label for="username" class="form-label">{{ _('Username') }}</label>
                             <input type="text" class="form-control" id="username" name="username" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
+                            <label for="email" class="form-label">{{ _('Email') }}</label>
                             <input type="email" class="form-control" id="email" name="email" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
+                            <label for="password" class="form-label">{{ _('Password') }}</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="password_confirm" class="form-label">Confirm Password</label>
+                            <label for="password_confirm" class="form-label">{{ _('Confirm Password') }}</label>
                             <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
+
+                        <button type="submit" class="btn btn-primary w-100">{{ _('Register') }}</button>
                     </form>
                 </div>
                 <div class="card-footer text-center">
                     <small class="text-muted">
-                        Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>
+                        {{ _('Already have an account?') }} <a href="{{ url_for('auth.login') }}">{{ _('Login here') }}</a>
                     </small>
                 </div>
             </div>

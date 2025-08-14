@@ -8,6 +8,7 @@ dependencies = [
   "alembic>=1.16.4",
   "django>=5.2.5",
   "flask>=3.1.1",
+  "flask-babel>=4.0.0",
   "flask-login>=0.6.3",
   "flask-session>=0.8.0",
   "flask-talisman>=1.1.0",
@@ -53,6 +54,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = 'flask_talisman.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = 'flask_babel.*'
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
