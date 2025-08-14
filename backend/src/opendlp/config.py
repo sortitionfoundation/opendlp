@@ -37,7 +37,8 @@ class RedisCfg:
     @classmethod
     def from_env(cls) -> "RedisCfg":
         host = os.environ.get("REDIS_HOST", "localhost")
-        port = 63791 if host == "localhost" else 6379
+        default_port = 63791 if host == "localhost" else 6379
+        port = int(os.environ.get("REDIS_PORT", default_port))
         return RedisCfg(host=host, port=port)
 
 
