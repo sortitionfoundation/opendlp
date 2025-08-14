@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - OpenDLP{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-primary text-white py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold">OpenDLP</h1>
+                <p class="lead mb-4">Open Democratic Lottery Platform for Citizens' Assemblies</p>
+                <p class="mb-4">
+                    OpenDLP supports democratic participation through stratified selection processes, 
+                    enabling fair and representative Citizens' Assemblies worldwide.
+                </p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg me-3">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="bi bi-people-fill" style="font-size: 8rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-diagram-3 text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Stratified Selection</h5>
+                    <p class="card-text">
+                        Fair and representative selection algorithms ensure diverse participation 
+                        across demographic groups.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Secure & Transparent</h5>
+                    <p class="card-text">
+                        Role-based access control and audit trails maintain security while 
+                        ensuring transparency in the democratic process.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Citizens' Assemblies</h5>
+                    <p class="card-text">
+                        Purpose-built for managing Citizens' Assemblies from registration 
+                        through to selection and coordination.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="bg-light py-5">
+    <div class="container text-center">
+        <h3>Ready to participate in democratic decision-making?</h3>
+        <p class="lead mb-4">Contact your assembly organizer for an invitation code.</p>
+        <p class="text-muted">
+            <small>OpenDLP is an open-source platform supporting democratic participation worldwide.</small>
+        </p>
+    </div>
+</div>
+{% endblock %}

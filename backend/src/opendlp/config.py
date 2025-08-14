@@ -2,7 +2,9 @@
 ABOUTME: Loads environment variables and provides configuration objects for different environments"""
 
 import os
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -114,6 +116,9 @@ class FlaskTestConfig(FlaskConfig):
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
         self.SESSION_TYPE = "filesystem"  # Use filesystem for testing
+        session_file_dir = Path(tempfile.gettempdir()) / "flask_session"
+        session_file_dir.mkdir(exist_ok=True)
+        self.SESSION_FILE_DIR = str(session_file_dir)
 
 
 class FlaskProductionConfig(FlaskConfig):
@@ -122,6 +127,9 @@ class FlaskProductionConfig(FlaskConfig):
     def __init__(self) -> None:
         super().__init__()
         self.FLASK_ENV = "production"
+        # TODO: consider this for all production?
+        # self.LOG_TO_STDOUT = True
+
         # Ensure production has proper secret key
         if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105
             raise ValueError("SECRET_KEY must be set in production")
