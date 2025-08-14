@@ -32,11 +32,10 @@ jobs:
 
       - uses: extractions/setup-just@v3
 
-      # TODO: change from just check-nodeptry to just check
       - name: Run checks
         run: |
           uv pip install -e .
-          just check-nodeptry
+          just check
 
   tests-and-type-check:
     runs-on: ubuntu-latest
