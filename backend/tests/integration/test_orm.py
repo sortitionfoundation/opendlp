@@ -21,7 +21,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 def db_engine():
     """Create a test database engine using PostgreSQL."""
     # For integration tests, use PostgreSQL with a test database name
-    test_database_uri = get_postgres_uri(default_db_name="opendlp_test")
+    test_database_uri = get_postgres_uri(default_db_name="opendlp")
 
     # Create engine for test database
     engine = create_engine(test_database_uri, echo=False)
