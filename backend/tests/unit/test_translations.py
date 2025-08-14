@@ -60,4 +60,3 @@ class TestTranslations:
         # Test InvalidCredentials
         exc = InvalidCredentials()
         assert "Invalid username or password" in str(exc)
-
