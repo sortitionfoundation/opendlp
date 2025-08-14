@@ -43,13 +43,6 @@ class FakeRepository(AbstractRepository):
 class FakeUserRepository(FakeRepository, UserRepository):
     """Fake implementation of UserRepository."""
 
-    def get_by_username(self, username: str) -> User | None:
-        """Get a user by their username."""
-        for user in self._items:
-            if user.username == username:
-                return user
-        return None
-
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         for user in self._items:

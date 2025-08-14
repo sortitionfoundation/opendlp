@@ -49,14 +49,10 @@ class TestTranslations:
     def test_translations_in_exceptions(self) -> None:
         """Test that translations work in domain exceptions."""
 
-        # Test UserAlreadyExists with username
-        exc = UserAlreadyExists(username="testuser")
-        assert "testuser" in str(exc)
-
         # Test UserAlreadyExists with email
         exc = UserAlreadyExists(email="test@example.com")
         assert "test@example.com" in str(exc)
 
         # Test InvalidCredentials
         exc = InvalidCredentials()
-        assert "Invalid username or password" in str(exc)
+        assert "Invalid email or password" in str(exc)

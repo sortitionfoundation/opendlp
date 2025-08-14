@@ -27,9 +27,7 @@ class TestCanManageAssembly:
 
     def test_admin_can_manage_any_assembly(self):
         """Test admin can manage any assembly."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -44,7 +42,6 @@ class TestCanManageAssembly:
     def test_global_organiser_can_manage_any_assembly(self):
         """Test global organiser can manage any assembly."""
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -62,9 +59,7 @@ class TestCanManageAssembly:
 
     def test_assembly_manager_can_manage_specific_assembly(self):
         """Test assembly manager can manage their assigned assembly."""
-        manager_user = User(
-            username="manager", email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -86,9 +81,7 @@ class TestCanManageAssembly:
 
     def test_confirmation_caller_cannot_manage_assembly(self):
         """Test confirmation caller cannot manage assembly."""
-        caller_user = User(
-            username="caller", email="caller@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        caller_user = User(email="caller@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -110,9 +103,7 @@ class TestCanManageAssembly:
 
     def test_regular_user_cannot_manage_assembly(self):
         """Test regular user cannot manage assembly."""
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -130,9 +121,7 @@ class TestCanViewAssembly:
 
     def test_admin_can_view_any_assembly(self):
         """Test admin can view any assembly."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -147,7 +136,6 @@ class TestCanViewAssembly:
     def test_global_organiser_can_view_any_assembly(self):
         """Test global organiser can view any assembly."""
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -165,7 +153,7 @@ class TestCanViewAssembly:
 
     def test_assembly_role_can_view_assembly(self):
         """Test user with assembly role can view assembly."""
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -187,9 +175,7 @@ class TestCanViewAssembly:
 
     def test_regular_user_cannot_view_assembly(self):
         """Test regular user cannot view assembly without role."""
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -207,9 +193,7 @@ class TestCanCallConfirmations:
 
     def test_admin_can_call_confirmations(self):
         """Test admin can call confirmations for any assembly."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -223,9 +207,7 @@ class TestCanCallConfirmations:
 
     def test_assembly_manager_can_call_confirmations(self):
         """Test assembly manager can call confirmations."""
-        manager_user = User(
-            username="manager", email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -247,9 +229,7 @@ class TestCanCallConfirmations:
 
     def test_confirmation_caller_can_call_confirmations(self):
         """Test confirmation caller can call confirmations."""
-        caller_user = User(
-            username="caller", email="caller@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        caller_user = User(email="caller@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -271,9 +251,7 @@ class TestCanCallConfirmations:
 
     def test_regular_user_cannot_call_confirmations(self):
         """Test regular user cannot call confirmations."""
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -291,18 +269,13 @@ class TestGlobalRoleChecks:
 
     def test_has_global_admin(self):
         """Test global admin detection."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
         )
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assert has_global_admin(admin_user) is True
         assert has_global_admin(organiser_user) is False
@@ -310,18 +283,13 @@ class TestGlobalRoleChecks:
 
     def test_has_global_organiser(self):
         """Test global organiser detection."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
         )
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assert has_global_organiser(admin_user) is True  # Admin includes organiser privileges
         assert has_global_organiser(organiser_user) is True
@@ -333,9 +301,7 @@ class TestRequireGlobalRoleDecorator:
 
     def test_require_global_role_success(self):
         """Test decorator allows access with sufficient role."""
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         @require_global_role(GlobalRole.GLOBAL_ORGANISER)
         def test_function(uow, user):
@@ -347,9 +313,7 @@ class TestRequireGlobalRoleDecorator:
 
     def test_require_global_role_failure(self):
         """Test decorator blocks access with insufficient role."""
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         @require_global_role(GlobalRole.GLOBAL_ORGANISER)
         def test_function(uow, user):
@@ -362,7 +326,6 @@ class TestRequireGlobalRoleDecorator:
     def test_require_global_role_exact_match(self):
         """Test decorator allows access with exact role match."""
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -383,9 +346,7 @@ class TestRequireAssemblyPermissionDecorator:
     def test_require_assembly_permission_success(self):
         """Test decorator allows access with sufficient permission."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -408,9 +369,7 @@ class TestRequireAssemblyPermissionDecorator:
     def test_require_assembly_permission_failure(self):
         """Test decorator blocks access with insufficient permission."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -454,9 +413,7 @@ class TestRequireAssemblyPermissionDecorator:
     def test_require_assembly_permission_assembly_not_found(self):
         """Test decorator handles assembly not found."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         @require_assembly_permission(can_manage_assembly)
@@ -471,9 +428,7 @@ class TestRequireAssemblyPermissionDecorator:
     def test_require_assembly_permission_different_permission_functions(self):
         """Test decorator works with different permission functions."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)

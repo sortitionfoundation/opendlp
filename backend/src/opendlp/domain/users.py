@@ -4,7 +4,7 @@ ABOUTME: Contains User and UserAssemblyRole classes as plain Python objects"""
 import uuid
 from datetime import UTC, datetime
 
-from .value_objects import AssemblyRole, GlobalRole, validate_email, validate_username
+from .value_objects import AssemblyRole, GlobalRole, validate_email
 
 
 class User:
@@ -12,9 +12,10 @@ class User:
 
     def __init__(
         self,
-        username: str,
         email: str,
         global_role: GlobalRole,
+        first_name: str = "",
+        last_name: str = "",
         user_id: uuid.UUID | None = None,
         password_hash: str | None = None,
         oauth_provider: str | None = None,
@@ -22,16 +23,15 @@ class User:
         created_at: datetime | None = None,
         is_active: bool = True,
     ):
-        validate_username(username)
         validate_email(email)
 
         if not password_hash and not (oauth_provider and oauth_id):
             raise ValueError("User must have either password_hash or OAuth credentials")
 
         self.id = user_id or uuid.uuid4()
-        # TODO: do we want a username? Or just use email and allow the user to have a full_name field?
-        self.username = username
         self.email = email
+        self.first_name = first_name
+        self.last_name = last_name
         self.password_hash = password_hash
         self.oauth_provider = oauth_provider
         self.oauth_id = oauth_id
@@ -39,6 +39,18 @@ class User:
         self.created_at = created_at or datetime.now(UTC)
         self.is_active = is_active
         self.assembly_roles: list[UserAssemblyRole] = []
+
+    @property
+    def display_name(self) -> str:
+        """Get user's display name, preferring full name over email."""
+        if self.first_name or self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        return self.email.split("@")[0]  # Use email prefix as fallback
+
+    @property
+    def full_name(self) -> str:
+        """Get user's full name."""
+        return f"{self.first_name} {self.last_name}".strip()
 
     def can_access_assembly(self, assembly_id: uuid.UUID) -> bool:
         """Check if user can access the given assembly."""

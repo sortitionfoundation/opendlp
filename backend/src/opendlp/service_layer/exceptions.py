@@ -17,15 +17,9 @@ class PasswordTooWeak(ServiceLayerError):
 class UserAlreadyExists(ServiceLayerError):
     """Raised when attempting to create a user that already exists."""
 
-    def __init__(self, username: str = "", email: str = "") -> None:
-        if username:
-            message = _l("User with username '%(username)s' already exists", username=username)
-        elif email:
-            message = _l("User with email '%(email)s' already exists", email=email)
-        else:
-            message = _l("User already exists")
+    def __init__(self, email: str = "") -> None:
+        message = _l("User with email '%(email)s' already exists", email=email) if email else _l("User already exists")
         super().__init__(message)
-        self.username = username
         self.email = email
 
 
@@ -34,7 +28,7 @@ class InvalidCredentials(ServiceLayerError):
 
     def __init__(self, message: str = "") -> None:
         if not message:
-            message = _l("Invalid username or password")
+            message = _l("Invalid email or password")
         super().__init__(message)
 
 

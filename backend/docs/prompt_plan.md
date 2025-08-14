@@ -360,14 +360,14 @@ Enhance authentication in src/opendlp/entrypoints/:
    - LoginForm with CSRF protection
    - RegistrationForm with password confirmation
    - Invite code validation in forms
-   - Use Flask-WTF for form handling
+   - Use Flask-WTF for form handling with govuk-frontend-jinja and govuk-frontend-wtf to match the gov.uk design system
 
 3. Create entrypoints/decorators.py with:
    - require_global_role(role) decorator
    - require_assembly_role(role) decorator
    - Combined permission decorators
 
-4. Update templates for authentication:
+4. Update templates for authentication using WTForms
    - templates/auth/login.html
    - templates/auth/register.html
    - templates/auth/password_reset.html
@@ -385,7 +385,7 @@ Enhance authentication in src/opendlp/entrypoints/:
    - Token generation preparation (for future API)
    - Proper error responses
 
-Implement proper session management with Redis backend. Include rate limiting for login attempts. Prepare the structure for OAuth addition.
+Implement proper server-side session management with Redis backend (using flask-session). Include rate limiting for login attempts (using flask-limiter). Prepare the structure for OAuth addition.
 ```
 
 ---

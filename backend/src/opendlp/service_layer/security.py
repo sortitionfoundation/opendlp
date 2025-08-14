@@ -27,13 +27,14 @@ def verify_password(password: str, password_hash: str) -> bool:
 class TempUser:
     """
     Temporary user to pass to password validation, so we can check the password
-    for similarity to username, email etc.
+    for similarity to user attributes like email, first_name, last_name etc.
 
     Try to keep this up to date with domain.users.User
     """
 
-    username: str
     email: str
+    first_name: str = ""
+    last_name: str = ""
 
 
 def validate_password_strength(password: str, user: object) -> tuple[bool, str]:

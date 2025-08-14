@@ -20,9 +20,7 @@ class TestGenerateInvite:
     def test_generate_invite_success_admin(self):
         """Test successful invite generation by admin."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         invite = invite_service.generate_invite(
@@ -41,7 +39,6 @@ class TestGenerateInvite:
         """Test successful invite generation by global organiser."""
         uow = FakeUnitOfWork()
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -59,9 +56,7 @@ class TestGenerateInvite:
     def test_generate_invite_insufficient_permissions(self):
         """Test invite generation fails for regular user."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -83,9 +78,7 @@ class TestGenerateBatchInvites:
     def test_generate_batch_invites_success(self):
         """Test successful batch invite generation."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         invites = invite_service.generate_batch_invites(
@@ -102,9 +95,7 @@ class TestGenerateBatchInvites:
     def test_generate_batch_invites_invalid_count(self):
         """Test batch invite generation fails with invalid count."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         with pytest.raises(ValueError) as exc_info:
@@ -122,9 +113,7 @@ class TestGenerateBatchInvites:
     def test_generate_batch_invites_insufficient_permissions(self):
         """Test batch invite generation fails for regular user."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -139,9 +128,7 @@ class TestListInvites:
     def test_list_invites_success(self):
         """Test successful invite listing."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         # Add some invites
@@ -172,9 +159,7 @@ class TestListInvites:
     def test_list_invites_insufficient_permissions(self):
         """Test invite listing fails for regular user."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -187,9 +172,7 @@ class TestRevokeInvite:
     def test_revoke_invite_success(self):
         """Test successful invite revocation."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         invite = UserInvite(
@@ -210,12 +193,8 @@ class TestRevokeInvite:
     def test_revoke_invite_insufficient_permissions(self):
         """Test invite revocation fails for regular user."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(admin_user)
         uow.users.add(regular_user)
 
@@ -233,9 +212,7 @@ class TestRevokeInvite:
     def test_revoke_invite_not_found(self):
         """Test invite revocation fails when invite not found."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         with pytest.raises(ValueError) as exc_info:
@@ -251,9 +228,7 @@ class TestCleanupExpiredInvites:
     def test_cleanup_expired_invites_success(self):
         """Test successful cleanup of expired invites."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         # Add expired unused invite
@@ -302,9 +277,7 @@ class TestGetInviteStatistics:
     def test_get_invite_statistics_success(self):
         """Test successful invite statistics retrieval."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         # Add various invites
@@ -345,9 +318,7 @@ class TestGetInviteStatistics:
     def test_get_invite_statistics_empty(self):
         """Test invite statistics with no invites."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         stats = invite_service.get_invite_statistics(uow=uow, user_id=admin_user.id)
@@ -361,9 +332,7 @@ class TestGetInviteStatistics:
     def test_get_invite_statistics_insufficient_permissions(self):
         """Test invite statistics fails for regular user."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):

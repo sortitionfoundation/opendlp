@@ -160,7 +160,7 @@ All test output must be pristine to pass. Test configuration is in `pyproject.to
 All user-facing strings must be wrapped in gettext calls for translation:
 
 - Use `_()` for immediate translation in templates and flash messages
-- Use `_l()` for lazy translation in exceptions and class-level definitions  
+- Use `_l()` for lazy translation in exceptions and class-level definitions
 - Import from `opendlp.translations`: `from opendlp.translations import _, _l`
 - In templates use: `{{ _('Text to translate') }}`
 - Support parameters: `_('Hello %(name)s', name=user.name)`

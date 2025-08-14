@@ -20,17 +20,17 @@ def login() -> Response | str:
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         remember = bool(request.form.get("remember"))
 
-        if not username or not password:
-            flash(_("Please provide both username and password."), "error")
+        if not email or not password:
+            flash(_("Please provide both email and password."), "error")
             return render_template("auth/login.html")
 
         try:
             with SqlAlchemyUnitOfWork() as uow:
-                user = authenticate_user(uow, username, password)
+                user = authenticate_user(uow, email, password)
                 login_user(user, remember=remember)
 
                 # Redirect to next page if specified, otherwise dashboard
@@ -40,7 +40,7 @@ def login() -> Response | str:
                 return redirect(url_for("main.dashboard"))
 
         except InvalidCredentials:
-            flash(_("Invalid username or password."), "error")
+            flash(_("Invalid email or password."), "error")
         except Exception as e:
             current_app.logger.error(f"Login error: {e}")
             flash(_("An error occurred during login. Please try again."), "error")
@@ -69,24 +69,36 @@ def register(invite_code: str = "") -> Response | str:
         invite_code = request.form.get("invite_code", "").strip()
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         password_confirm = request.form.get("password_confirm", "")
         invite_code = request.form.get("invite_code", "").strip()
 
         # Basic validation
-        if not all([username, email, password, password_confirm, invite_code]):
-            flash(_("All fields are required."), "error")
-            return render_template("auth/register.html", invite_code=invite_code)
+        if not all([email, password, password_confirm, invite_code]):
+            flash(_("Email, password, password confirmation, and invite code are required."), "error")
+            return render_template(
+                "auth/register.html", invite_code=invite_code, first_name=first_name, last_name=last_name, email=email
+            )
 
         if password != password_confirm:
             flash(_("Passwords do not match."), "error")
-            return render_template("auth/register.html", invite_code=invite_code)
+            return render_template(
+                "auth/register.html", invite_code=invite_code, first_name=first_name, last_name=last_name, email=email
+            )
 
         try:
             with SqlAlchemyUnitOfWork() as uow:
-                user = create_user(uow=uow, username=username, email=email, password=password, invite_code=invite_code)
+                user = create_user(
+                    uow=uow,
+                    email=email,
+                    password=password,
+                    invite_code=invite_code,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
 
                 # Log the user in immediately after registration
                 login_user(user)

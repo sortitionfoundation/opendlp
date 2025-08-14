@@ -45,10 +45,6 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         """List all users."""
         return self.session.query(User).all()
 
-    def get_by_username(self, username: str) -> User | None:
-        """Get a user by their username."""
-        return self.session.query(User).filter_by(username=username).first()
-
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         return self.session.query(User).filter_by(email=email).first()

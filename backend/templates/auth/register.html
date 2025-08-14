@@ -19,14 +19,27 @@
                             <div class="form-text">{{ _('Enter your invitation code to register') }}</div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="username" class="form-label">{{ _('Username') }}</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">{{ _('First Name') }} ({{ _('optional') }})</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                           value="{{ first_name or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">{{ _('Last Name') }} ({{ _('optional') }})</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                           value="{{ last_name or '' }}">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="email" class="form-label">{{ _('Email') }}</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ email or '' }}" required>
                         </div>
 
                         <div class="mb-3">

@@ -104,4 +104,3 @@ OpenDLP detects user language in this order:
 - [GNU gettext Manual](https://www.gnu.org/software/gettext/manual/)
 - [Babel Documentation](https://babel.pocoo.org/)
 - [Python i18n Best Practices](https://docs.python.org/3/library/gettext.html)
-

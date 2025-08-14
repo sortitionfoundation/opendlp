@@ -141,8 +141,8 @@ class TestAuthBlueprint:
         response = client.post(
             "/auth/register",
             data={
-                "username": "test",
-                # Missing other required fields
+                "first_name": "Test",
+                # Missing other required fields (email, password, etc.)
             },
         )
         assert response.status_code == 200  # Returns form with error

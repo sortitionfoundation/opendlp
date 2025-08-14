@@ -35,11 +35,3 @@ def validate_email(email: str) -> None:
         validator(email)
     except ValidationError as error:
         raise ValueError("Invalid email address") from error
-
-
-def validate_username(username: str) -> None:
-    """Basic username validation."""
-    if not username or len(username) < 3 or len(username) > 200:
-        raise ValueError("Username must be between 3 and 200 characters long")
-    if not username.replace("_", "").replace("-", "").isalnum():
-        raise ValueError("Username must contain only letters, numbers, underscores, and hyphens")

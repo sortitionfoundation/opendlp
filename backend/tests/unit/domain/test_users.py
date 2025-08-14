@@ -13,11 +13,16 @@ from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 class TestUser:
     def test_create_user_with_password(self):
         user = User(
-            username="testuser", email="test@example.com", global_role=GlobalRole.USER, password_hash="hashed_password"
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",
+            first_name="Test",
+            last_name="User",
         )
 
-        assert user.username == "testuser"
         assert user.email == "test@example.com"
+        assert user.first_name == "Test"
+        assert user.last_name == "User"
         assert user.global_role == GlobalRole.USER
         assert user.password_hash == "hashed_password"
         assert user.oauth_provider is None
@@ -28,11 +33,12 @@ class TestUser:
 
     def test_create_user_with_oauth(self):
         user = User(
-            username="oauthuser",
             email="oauth@example.com",
             global_role=GlobalRole.USER,
             oauth_provider="google",
             oauth_id="12345",
+            first_name="OAuth",
+            last_name="User",
         )
 
         assert user.oauth_provider == "google"
@@ -41,42 +47,46 @@ class TestUser:
 
     def test_create_user_requires_auth_method(self):
         with pytest.raises(ValueError, match="User must have either password_hash or OAuth credentials"):
-            User(username="noauth", email="noauth@example.com", global_role=GlobalRole.USER)
+            User(email="noauth@example.com", global_role=GlobalRole.USER)
 
-    def test_validate_username(self):
-        # Valid username
-        user = User(
-            username="valid_user-123", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash"
+    def test_display_name_property(self):
+        # User with both first and last name
+        user1 = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",
+            first_name="John",
+            last_name="Doe",
         )
-        assert user.username == "valid_user-123"
+        assert user1.display_name == "John Doe"
+        assert user1.full_name == "John Doe"
 
-        # Invalid usernames
-        with pytest.raises(ValueError, match="Username must be between 3 and 200 characters long"):
-            User(username="ab", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        # User with only first name
+        user2 = User(email="test2@example.com", global_role=GlobalRole.USER, password_hash="hash", first_name="Jane")
+        assert user2.display_name == "Jane"
+        assert user2.full_name == "Jane"
 
-        with pytest.raises(ValueError, match="Username must contain only letters"):
-            User(username="user@domain", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        # User with no names - falls back to email prefix
+        user3 = User(email="fallback@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        assert user3.display_name == "fallback"
+        assert user3.full_name == ""
 
     def test_validate_email(self):
         # Valid email
-        user = User(username="testuser", email="valid@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="valid@example.com", global_role=GlobalRole.USER, password_hash="hash")
         assert user.email == "valid@example.com"
 
         # Invalid emails
         with pytest.raises(ValueError, match="Invalid email address"):
-            User(username="testuser", email="invalid", global_role=GlobalRole.USER, password_hash="hash")
+            User(email="invalid", global_role=GlobalRole.USER, password_hash="hash")
 
         with pytest.raises(ValueError, match="Invalid email address"):
-            User(username="testuser", email="", global_role=GlobalRole.USER, password_hash="hash")
+            User(email="", global_role=GlobalRole.USER, password_hash="hash")
 
     def test_has_global_admin(self):
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assert admin_user.has_global_admin() is True
         assert regular_user.has_global_admin() is False
@@ -85,14 +95,11 @@ class TestUser:
         assembly_id = uuid.uuid4()
 
         # Admin can access any assembly
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         assert admin_user.can_access_assembly(assembly_id) is True
 
         # Global organiser can access any assembly
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -100,13 +107,11 @@ class TestUser:
         assert organiser_user.can_access_assembly(assembly_id) is True
 
         # Regular user cannot access without specific role
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         assert regular_user.can_access_assembly(assembly_id) is False
 
     def test_can_access_assembly_with_assembly_role(self):
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assembly1_id = uuid.uuid4()
         assembly2_id = uuid.uuid4()
@@ -120,7 +125,7 @@ class TestUser:
         assert user.can_access_assembly(assembly2_id) is False
 
     def test_get_assembly_role(self):
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assembly_id = uuid.uuid4()
         user.assembly_roles.append(
@@ -131,9 +136,7 @@ class TestUser:
         assert user.get_assembly_role(uuid.uuid4()) is None
 
     def test_switch_to_oauth(self):
-        user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="original_hash"
-        )
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="original_hash")
 
         user.switch_to_oauth("google", "oauth123")
 
@@ -142,7 +145,7 @@ class TestUser:
         assert user.password_hash is None
 
     def test_switch_to_oauth_requires_provider_and_id(self):
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         with pytest.raises(ValueError, match="Provider and OAuth ID are required"):
             user.switch_to_oauth("", "oauth123")
@@ -155,21 +158,23 @@ class TestUser:
 
         user1 = User(
             user_id=user_id,
-            username="user1",
             email="user1@example.com",
             global_role=GlobalRole.USER,
             password_hash="hash",
+            first_name="First",
+            last_name="User",
         )
 
         user2 = User(
             user_id=user_id,
-            username="user2",  # Different username but same ID
-            email="user2@example.com",
+            email="user2@example.com",  # Different email but same ID
             global_role=GlobalRole.ADMIN,
             password_hash="hash2",
+            first_name="Second",
+            last_name="User",
         )
 
-        user3 = User(username="user3", email="user3@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user3 = User(email="user3@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assert user1 == user2  # Same ID
         assert user1 != user3  # Different ID

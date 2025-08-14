@@ -36,11 +36,6 @@ class UserRepository(AbstractRepository):
     """Repository interface for User domain objects."""
 
     @abc.abstractmethod
-    def get_by_username(self, username: str) -> User | None:
-        """Get a user by their username."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         raise NotImplementedError

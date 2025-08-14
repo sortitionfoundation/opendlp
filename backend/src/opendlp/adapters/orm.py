@@ -48,8 +48,9 @@ users = Table(
     "users",
     metadata,
     Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("username", String(50), nullable=False, unique=True),
     Column("email", String(255), nullable=False, unique=True),
+    Column("first_name", String(100), nullable=False, default=""),
+    Column("last_name", String(100), nullable=False, default=""),
     Column("password_hash", String(255), nullable=True),
     Column("oauth_provider", String(50), nullable=True),
     Column("oauth_id", String(255), nullable=True),
@@ -106,7 +107,6 @@ def create_indexes() -> None:
     from sqlalchemy import Index
 
     # User indexes
-    Index("ix_users_username", users.c.username)
     Index("ix_users_email", users.c.email)
     Index("ix_users_oauth_provider_id", users.c.oauth_provider, users.c.oauth_id)
 

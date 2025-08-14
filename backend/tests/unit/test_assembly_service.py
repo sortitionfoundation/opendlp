@@ -20,9 +20,7 @@ class TestCreateAssembly:
     def test_create_assembly_success_admin(self):
         """Test successful assembly creation by admin."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -48,7 +46,6 @@ class TestCreateAssembly:
         """Test successful assembly creation by global organiser."""
         uow = FakeUnitOfWork()
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -72,9 +69,7 @@ class TestCreateAssembly:
     def test_create_assembly_insufficient_permissions(self):
         """Test assembly creation fails for regular user."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -109,9 +104,7 @@ class TestCreateAssembly:
     def test_create_assembly_minimal_data(self):
         """Test creating assembly with only required fields."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         assembly = assembly_service.create_assembly(
@@ -135,9 +128,7 @@ class TestUpdateAssembly:
     def test_update_assembly_success_admin(self):
         """Test successful assembly update by admin."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -165,9 +156,7 @@ class TestUpdateAssembly:
     def test_update_assembly_success_assembly_manager(self):
         """Test successful assembly update by assembly manager."""
         uow = FakeUnitOfWork()
-        manager_user = User(
-            username="manager", email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(manager_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -197,9 +186,7 @@ class TestUpdateAssembly:
     def test_update_assembly_insufficient_permissions(self):
         """Test assembly update fails for user without permissions."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -219,9 +206,7 @@ class TestUpdateAssembly:
     def test_update_assembly_not_found(self):
         """Test assembly update fails when assembly not found."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         with pytest.raises(ValueError) as exc_info:
@@ -239,9 +224,7 @@ class TestGetAssemblyWithPermissions:
     def test_get_assembly_success_admin(self):
         """Test successful assembly retrieval by admin."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -262,7 +245,7 @@ class TestGetAssemblyWithPermissions:
     def test_get_assembly_success_with_role(self):
         """Test successful assembly retrieval by user with assembly role."""
         uow = FakeUnitOfWork()
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(user)
 
         future_date = date.today() + timedelta(days=30)
@@ -291,9 +274,7 @@ class TestGetAssemblyWithPermissions:
     def test_get_assembly_insufficient_permissions(self):
         """Test assembly retrieval fails without permissions."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -315,9 +296,7 @@ class TestArchiveAssembly:
     def test_archive_assembly_success(self):
         """Test successful assembly archival."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -337,9 +316,7 @@ class TestArchiveAssembly:
     def test_archive_assembly_insufficient_permissions(self):
         """Test assembly archival fails without permissions."""
         uow = FakeUnitOfWork()
-        regular_user = User(
-            username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
         future_date = date.today() + timedelta(days=30)
@@ -361,9 +338,7 @@ class TestGetUserAccessibleAssemblies:
     def test_get_accessible_assemblies_admin(self):
         """Test admin can access all assemblies."""
         uow = FakeUnitOfWork()
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         # Add assemblies

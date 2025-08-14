@@ -56,7 +56,11 @@ class TestUserORM:
     def test_save_and_retrieve_user(self, db_session: Session):
         """Test that User objects can be saved and retrieved."""
         user = User(
-            username="testuser", email="test@example.com", global_role=GlobalRole.USER, password_hash="hashed_password"
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",
+            first_name="Test",
+            last_name="User",
         )
 
         # Save user
@@ -64,11 +68,12 @@ class TestUserORM:
         db_session.commit()
 
         # Retrieve user
-        retrieved_user = db_session.query(User).filter_by(username="testuser").first()
+        retrieved_user = db_session.query(User).filter_by(email="test@example.com").first()
 
         assert retrieved_user is not None
-        assert retrieved_user.username == "testuser"
         assert retrieved_user.email == "test@example.com"
+        assert retrieved_user.first_name == "Test"
+        assert retrieved_user.last_name == "User"
         assert retrieved_user.global_role == GlobalRole.USER
         assert retrieved_user.password_hash == "hashed_password"
         assert retrieved_user.is_active is True
@@ -78,33 +83,33 @@ class TestUserORM:
     def test_user_oauth_fields(self, db_session: Session):
         """Test that OAuth fields are properly stored and retrieved."""
         user = User(
-            username="oauthuser",
             email="oauth@example.com",
             global_role=GlobalRole.USER,
             oauth_provider="google",
             oauth_id="12345",
+            first_name="OAuth",
+            last_name="User",
         )
 
         db_session.add(user)
         db_session.commit()
 
-        retrieved_user = db_session.query(User).filter_by(username="oauthuser").first()
+        retrieved_user = db_session.query(User).filter_by(email="oauth@example.com").first()
 
         assert retrieved_user.oauth_provider == "google"
         assert retrieved_user.oauth_id == "12345"
         assert retrieved_user.password_hash is None
 
     def test_user_unique_constraints(self, db_session: Session):
-        """Test that username and email unique constraints work."""
-        user1 = User(username="testuser", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash1")
+        """Test that email unique constraints work."""
+        user1 = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash1")
 
         db_session.add(user1)
         db_session.commit()
 
-        # Try to create user with same username
+        # Try to create user with same email
         user2 = User(
-            username="testuser",  # Same username
-            email="different@example.com",
+            email="test@example.com",  # Same email
             global_role=GlobalRole.USER,
             password_hash="hash2",
         )
@@ -173,7 +178,7 @@ class TestUserAssemblyRoleORM:
     def test_save_and_retrieve_user_assembly_role(self, db_session: Session):
         """Test that UserAssemblyRole objects can be saved and retrieved."""
         # Create user and assembly first
-        user = User(username="testuser", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -219,7 +224,7 @@ class TestUserInviteORM:
     def test_save_and_retrieve_user_invite(self, db_session: Session):
         """Test that UserInvite objects can be saved and retrieved."""
         # Create user first
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         db_session.add(user)
         db_session.flush()  # Get user ID
@@ -246,7 +251,7 @@ class TestUserInviteORM:
 
     def test_invite_code_unique_constraint(self, db_session: Session):
         """Test that invite codes are unique."""
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         db_session.add(user)
         db_session.flush()
@@ -272,13 +277,9 @@ class TestUserInviteORM:
     def test_invite_usage(self, db_session: Session):
         """Test that invite usage is properly tracked."""
         # Create creator and user
-        creator = User(
-            username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        creator = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
-        invitee = User(
-            username="invitee", email="invitee@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
+        invitee = User(email="invitee@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         db_session.add(creator)
         db_session.add(invitee)
@@ -305,7 +306,7 @@ class TestRelationships:
     def test_cascade_delete_user_roles(self, db_session: Session):
         """Test that deleting a user cascades to their roles."""
         # Create user and assembly
-        user = User(username="testuser", email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -335,7 +336,7 @@ class TestRelationships:
     def test_cascade_delete_invites(self, db_session: Session):
         """Test that deleting a user cascades to invites they created."""
         # Create admin user
-        admin = User(username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         db_session.add(admin)
         db_session.flush()

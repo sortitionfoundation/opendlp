@@ -84,10 +84,11 @@ class TestUserRepository:
     def test_add_and_get_user(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test adding and retrieving a user."""
         user = User(
-            username="testuser",
             email="test@example.com",
             global_role=GlobalRole.USER,
             password_hash="hash123",
+            first_name="Test",
+            last_name="User",
         )
 
         user_repo.add(user)
@@ -96,32 +97,13 @@ class TestUserRepository:
         # Test get by ID
         retrieved = user_repo.get(user.id)
         assert retrieved is not None
-        assert retrieved.username == "testuser"
         assert retrieved.email == "test@example.com"
-
-    def test_get_by_username(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
-        """Test retrieving user by username."""
-        user = User(
-            username="testuser",
-            email="test@example.com",
-            global_role=GlobalRole.USER,
-            password_hash="hash123",
-        )
-
-        user_repo.add(user)
-        db_session.commit()
-
-        retrieved = user_repo.get_by_username("testuser")
-        assert retrieved is not None
-        assert retrieved.id == user.id
-
-        # Test non-existent username
-        assert user_repo.get_by_username("nonexistent") is None
+        assert retrieved.first_name == "Test"
+        assert retrieved.last_name == "User"
 
     def test_get_by_email(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test retrieving user by email."""
         user = User(
-            username="testuser",
             email="test@example.com",
             global_role=GlobalRole.USER,
             password_hash="hash123",
@@ -140,7 +122,6 @@ class TestUserRepository:
     def test_get_by_oauth_credentials(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test retrieving user by OAuth credentials."""
         user = User(
-            username="oauthuser",
             email="oauth@example.com",
             global_role=GlobalRole.USER,
             oauth_provider="google",
@@ -159,8 +140,8 @@ class TestUserRepository:
 
     def test_list_users(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test listing all users."""
-        user1 = User(username="user1", email="user1@example.com", global_role=GlobalRole.USER, password_hash="hash1")
-        user2 = User(username="user2", email="user2@example.com", global_role=GlobalRole.ADMIN, password_hash="hash2")
+        user1 = User(email="user1@example.com", global_role=GlobalRole.USER, password_hash="hash1")
+        user2 = User(email="user2@example.com", global_role=GlobalRole.ADMIN, password_hash="hash2")
 
         user_repo.add(user1)
         user_repo.add(user2)
@@ -168,9 +149,9 @@ class TestUserRepository:
 
         users = user_repo.list()
         assert len(users) == 2
-        usernames = [u.username for u in users]
-        assert "user1" in usernames
-        assert "user2" in usernames
+        emails = [u.email for u in users]
+        assert "user1@example.com" in emails
+        assert "user2@example.com" in emails
 
     def test_get_users_for_assembly(
         self,
@@ -181,9 +162,9 @@ class TestUserRepository:
     ):
         """Test getting users who have roles in an assembly."""
         # Create users and assembly
-        user1 = User(username="user1", email="user1@example.com", global_role=GlobalRole.USER, password_hash="hash1")
-        user2 = User(username="user2", email="user2@example.com", global_role=GlobalRole.USER, password_hash="hash2")
-        user3 = User(username="user3", email="user3@example.com", global_role=GlobalRole.USER, password_hash="hash3")
+        user1 = User(email="user1@example.com", global_role=GlobalRole.USER, password_hash="hash1")
+        user2 = User(email="user2@example.com", global_role=GlobalRole.USER, password_hash="hash2")
+        user3 = User(email="user3@example.com", global_role=GlobalRole.USER, password_hash="hash3")
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
@@ -207,22 +188,20 @@ class TestUserRepository:
         # Get users for assembly
         users = user_repo.get_users_for_assembly(assembly.id)
         assert len(users) == 2
-        usernames = [u.username for u in users]
-        assert "user1" in usernames
-        assert "user2" in usernames
-        assert "user3" not in usernames
+        emails = [u.email for u in users]
+        assert "user1@example.com" in emails
+        assert "user2@example.com" in emails
+        assert "user3@example.com" not in emails
 
     def test_get_active_users(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test getting only active users."""
         active_user = User(
-            username="active",
             email="active@example.com",
             global_role=GlobalRole.USER,
             password_hash="hash",
             is_active=True,
         )
         inactive_user = User(
-            username="inactive",
             email="inactive@example.com",
             global_role=GlobalRole.USER,
             password_hash="hash",
@@ -235,18 +214,13 @@ class TestUserRepository:
 
         active_users = user_repo.get_active_users()
         assert len(active_users) == 1
-        assert active_users[0].username == "active"
+        assert active_users[0].email == "active@example.com"
 
     def test_get_admins(self, user_repo: SqlAlchemyUserRepository, db_session: Session):
         """Test getting users with admin privileges."""
-        regular_user = User(
-            username="regular", email="regular@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        regular_user = User(email="regular@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         organiser_user = User(
-            username="organiser",
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
             password_hash="hash",
@@ -259,10 +233,10 @@ class TestUserRepository:
 
         admins = user_repo.get_admins()
         assert len(admins) == 2
-        usernames = [u.username for u in admins]
-        assert "admin" in usernames
-        assert "organiser" in usernames
-        assert "regular" not in usernames
+        emails = [u.email for u in admins]
+        assert "admin@example.com" in emails
+        assert "organiser@example.com" in emails
+        assert "regular@example.com" not in emails
 
 
 class TestAssemblyRepository:
@@ -317,9 +291,7 @@ class TestAssemblyRepository:
         future_date = date.today() + timedelta(days=30)
 
         # Create admin user
-        admin_user = User(
-            username="admin", email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
         # Create assemblies
         assembly1 = Assembly(
@@ -349,7 +321,7 @@ class TestAssemblyRepository:
         future_date = date.today() + timedelta(days=30)
 
         # Create regular user
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         # Create assemblies
         assembly1 = Assembly(
@@ -423,7 +395,7 @@ class TestUserInviteRepository:
     ):
         """Test adding and retrieving an invite."""
         # Create user first
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         user_repo.add(user)
         db_session.flush()
 
@@ -439,7 +411,7 @@ class TestUserInviteRepository:
         self, invite_repo: SqlAlchemyUserInviteRepository, user_repo: SqlAlchemyUserRepository, db_session: Session
     ):
         """Test retrieving invite by code."""
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         user_repo.add(user)
         db_session.flush()
 
@@ -457,7 +429,7 @@ class TestUserInviteRepository:
         self, invite_repo: SqlAlchemyUserInviteRepository, user_repo: SqlAlchemyUserRepository, db_session: Session
     ):
         """Test getting valid invites."""
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         user_repo.add(user)
         db_session.flush()
 
@@ -489,7 +461,7 @@ class TestUserInviteRepository:
         self, invite_repo: SqlAlchemyUserInviteRepository, user_repo: SqlAlchemyUserRepository, db_session: Session
     ):
         """Test getting expired invites."""
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         user_repo.add(user)
         db_session.flush()
 
@@ -517,7 +489,7 @@ class TestUserInviteRepository:
         self, invite_repo: SqlAlchemyUserInviteRepository, user_repo: SqlAlchemyUserRepository, db_session: Session
     ):
         """Test cleanup of expired invites."""
-        user = User(username="creator", email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         user_repo.add(user)
         db_session.flush()
 
@@ -558,7 +530,7 @@ class TestUserAssemblyRoleRepository:
     ):
         """Test adding and retrieving a role."""
         # Create user and assembly
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
             title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
@@ -584,7 +556,7 @@ class TestUserAssemblyRoleRepository:
         db_session: Session,
     ):
         """Test getting role by user and assembly."""
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
             title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
@@ -613,7 +585,7 @@ class TestUserAssemblyRoleRepository:
         db_session: Session,
     ):
         """Test removing a role."""
-        user = User(username="user", email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
             title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date

@@ -14,9 +14,10 @@ from .unit_of_work import AbstractUnitOfWork
 
 def create_user(
     uow: AbstractUnitOfWork,
-    username: str,
     email: str,
     password: str | None = None,
+    first_name: str = "",
+    last_name: str = "",
     oauth_provider: str | None = None,
     oauth_id: str | None = None,
     invite_code: str | None = None,
@@ -26,9 +27,10 @@ def create_user(
 
     Args:
         uow: Unit of Work for database operations
-        username: Unique username
         email: User's email address
         password: Plain text password (will be hashed)
+        first_name: User's first name (optional)
+        last_name: User's last name (optional)
         oauth_provider: OAuth provider (e.g., 'google')
         oauth_id: OAuth provider user ID
         invite_code: Required invite code for registration
@@ -37,16 +39,12 @@ def create_user(
         Created User instance
 
     Raises:
-        UserAlreadyExists: If username or email already exists
+        UserAlreadyExists: If email already exists
         InvalidInvite: If invite code is invalid/expired/used
         ValueError: If password validation fails
     """
     with uow:
         # Check for existing users
-        existing_user = uow.users.get_by_username(username)
-        if existing_user:
-            raise UserAlreadyExists(username=username)
-
         existing_user = uow.users.get_by_email(email)
         if existing_user:
             raise UserAlreadyExists(email=email)
@@ -57,7 +55,7 @@ def create_user(
             invite_role = validate_and_use_invite(uow, invite_code)
 
         # temporary user to pass to password validation
-        temp_user = TempUser(username=username, email=email)
+        temp_user = TempUser(email=email, first_name=first_name, last_name=last_name)
 
         # Handle password validation and hashing
         password_hash = None
@@ -69,9 +67,10 @@ def create_user(
 
         # Create the user
         user = User(
-            username=username,
             email=email,
             global_role=invite_role,
+            first_name=first_name,
+            last_name=last_name,
             password_hash=password_hash,
             oauth_provider=oauth_provider,
             oauth_id=oauth_id,
@@ -82,13 +81,13 @@ def create_user(
         return user
 
 
-def authenticate_user(uow: AbstractUnitOfWork, username: str, password: str) -> User:
+def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> User:
     """
-    Authenticate a user with username and password.
+    Authenticate a user with email and password.
 
     Args:
         uow: Unit of Work for database operations
-        username: Username or email
+        email: User's email address
         password: Plain text password
 
     Returns:
@@ -98,10 +97,7 @@ def authenticate_user(uow: AbstractUnitOfWork, username: str, password: str) -> 
         InvalidCredentials: If authentication fails
     """
     with uow:
-        # Try username first, then email
-        user = uow.users.get_by_username(username)
-        if not user:
-            user = uow.users.get_by_email(username)
+        user = uow.users.get_by_email(email)
 
         if not user or not user.is_active:
             raise InvalidCredentials()
@@ -216,7 +212,8 @@ def find_or_create_oauth_user(
     provider: str,
     oauth_id: str,
     email: str,
-    name: str,
+    first_name: str = "",
+    last_name: str = "",
     invite_code: str | None = None,
 ) -> tuple[User, bool]:
     """
@@ -227,7 +224,8 @@ def find_or_create_oauth_user(
         provider: OAuth provider (e.g., 'google')
         oauth_id: Provider's user ID
         email: User's email from OAuth
-        name: User's name from OAuth (used as username if creating)
+        first_name: User's first name from OAuth
+        last_name: User's last name from OAuth
         invite_code: Required for new user creation
 
     Returns:
@@ -249,19 +247,11 @@ def find_or_create_oauth_user(
             return existing_user, False
 
         # Create new user
-        # Generate username from name/email
-        username = name.replace(" ", "_").lower()
-        if uow.users.get_by_username(username):
-            # Add suffix if username exists
-            counter = 1
-            while uow.users.get_by_username(f"{username}_{counter}"):
-                counter += 1
-            username = f"{username}_{counter}"
-
         user = create_user(
             uow=uow,
-            username=username,
             email=email,
+            first_name=first_name,
+            last_name=last_name,
             oauth_provider=provider,
             oauth_id=oauth_id,
             invite_code=invite_code,

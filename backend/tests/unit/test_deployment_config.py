@@ -38,4 +38,3 @@ class TestDeploymentConfiguration:
             assert login_url.startswith("/opendlp/auth/login")  # or login_url == "/auth/login"
             # Note: In test context without actual reverse proxy,
             # Flask may not prepend APPLICATION_ROOT to generated URLs
-
