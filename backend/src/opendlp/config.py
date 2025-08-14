@@ -74,9 +74,11 @@ def to_bool(value: str | None, context_str: str = "") -> bool:
 
 
 class FlaskConfig:
+    """Base configuration class that loads from environment variables."""
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
-    """Base configuration class that loads from environment variables."""
+    TESTING = False
 
     def __init__(self) -> None:
         self.SQLALCHEMY_DATABASE_URI = get_postgres_uri()
@@ -84,6 +86,10 @@ class FlaskConfig:
         self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
         self.DEBUG: bool = to_bool(os.environ.get("DEBUG", "False"), context_str="DEBUG=")
+
+        # Session configuration
+        self.SESSION_TYPE = "redis"
+        self.SESSION_REDIS = None  # Will be set by Flask-Session
 
         # OAuth configuration
         self.OAUTH_GOOGLE_CLIENT_ID: str = os.environ.get("OAUTH_GOOGLE_CLIENT_ID", "")
@@ -99,11 +105,15 @@ class FlaskConfig:
 class FlaskTestConfig(FlaskConfig):
     """Test configuration that uses SQLite in-memory database."""
 
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+
     def __init__(self) -> None:
         super().__init__()
         self.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
+        self.SESSION_TYPE = "filesystem"  # Use filesystem for testing
 
 
 class FlaskProductionConfig(FlaskConfig):
@@ -117,9 +127,10 @@ class FlaskProductionConfig(FlaskConfig):
             raise ValueError("SECRET_KEY must be set in production")
 
 
-def get_config() -> FlaskConfig:
-    """Return the appropriate configuration based on FLASK_ENV."""
-    env = os.environ.get("FLASK_ENV", "development").lower().strip()
+def get_config(config_name: str = "") -> FlaskConfig:
+    """Return the appropriate configuration based on FLASK_ENV or config_name."""
+    env = config_name.strip() or os.environ.get("FLASK_ENV", "development")
+    env = env.lower().strip()
 
     config_classes = {
         "development": FlaskConfig,
@@ -127,4 +138,6 @@ def get_config() -> FlaskConfig:
         "production": FlaskProductionConfig,
     }
 
-    return config_classes[env]()
+    # Fall back to development if unknown config
+    config_cls = config_classes.get(env, FlaskConfig)
+    return config_cls()
