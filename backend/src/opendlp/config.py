@@ -109,6 +109,9 @@ class FlaskConfig:
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
 
+        # Deployment configuration
+        self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")
+
     def _get_supported_language_codes(self) -> list[str]:
         """Get list of supported language codes from environment or default."""
         languages_env = os.environ.get("SUPPORTED_LANGUAGES", "en,es,fr,de")
