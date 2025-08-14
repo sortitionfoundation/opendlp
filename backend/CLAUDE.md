@@ -155,6 +155,18 @@ All test output must be pristine to pass. Test configuration is in `pyproject.to
 - don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
 - prefer the empty string as the default for string arguments, rather than `str | None`
 
+### Internationalization (i18n)
+
+All user-facing strings must be wrapped in gettext calls for translation:
+
+- Use `_()` for immediate translation in templates and flash messages
+- Use `_l()` for lazy translation in exceptions and class-level definitions  
+- Import from `opendlp.translations`: `from opendlp.translations import _, _l`
+- In templates use: `{{ _('Text to translate') }}`
+- Support parameters: `_('Hello %(name)s', name=user.name)`
+
+See `docs/translations.md` for translation management workflow.
+
 ### Database Patterns
 
 - Foreign keys are regular UUID columns (not SQLAlchemy relationships in domain)
