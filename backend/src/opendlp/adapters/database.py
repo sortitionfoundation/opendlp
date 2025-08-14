@@ -6,6 +6,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import orm
+from opendlp.config import get_postgres_uri
 from opendlp.domain import assembly, user_invites, users
 
 
@@ -15,8 +16,9 @@ class DatabaseError(Exception):
     pass
 
 
-def create_session_factory(database_url: str, echo: bool = False) -> sessionmaker:
+def create_session_factory(database_url: str = "", echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""
+    database_url = database_url or get_postgres_uri()
     engine = create_engine(
         database_url,
         echo=echo,

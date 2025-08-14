@@ -8,6 +8,7 @@ from types import TracebackType
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyUserAssemblyRoleRepository,
@@ -55,10 +56,13 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
 
+DEFAULT_SESSION_FACTORY = create_session_factory()
+
+
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     """SQLAlchemy implementation of Unit of Work pattern."""
 
-    def __init__(self, session_factory: sessionmaker) -> None:
+    def __init__(self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY) -> None:
         self.session_factory = session_factory
         self._session: Session | None = None
 
