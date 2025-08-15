@@ -157,8 +157,115 @@ curl http://localhost:5000/opendlp/auth/login
 - Check that static files are served with correct paths
 - Confirm session cookies have the appropriate path restriction
 
+## Database Migrations
+
+OpenDLP uses Alembic for database schema migrations. The migration configuration is in `alembic.ini` and migration scripts are stored in the `migrations/versions/` directory.
+
+### Running Migrations
+
+Before deploying a new version of the application, run any pending database migrations:
+
+```bash
+# Run all pending migrations
+uv run alembic upgrade head
+
+# Check current migration status
+uv run alembic current
+
+# Show migration history
+uv run alembic history
+```
+
+### Production Deployment Process
+
+For production deployments, follow this sequence:
+
+1. **Backup the database** (always backup before migrations)
+2. **Stop the application** (to prevent concurrent access during migration)
+3. **Run migrations**: `uv run alembic upgrade head`
+4. **Start the new application version**
+
+```bash
+# Example deployment script
+#!/bin/bash
+set -e
+
+# Backup database
+pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Stop application
+docker-compose down opendlp
+
+# Run migrations
+uv run alembic upgrade head
+
+# Start new application version
+docker-compose up -d opendlp
+```
+
+### Migration Rollback
+
+To rollback to a previous migration (use with caution in production):
+
+```bash
+# Rollback to specific revision
+uv run alembic downgrade <revision_id>
+
+# Rollback one migration
+uv run alembic downgrade -1
+```
+
+### Creating New Migrations
+
+During development, generate new migrations after model changes:
+
+```bash
+# Generate migration from model changes
+uv run alembic revision --autogenerate -m "description of changes"
+
+# Create empty migration for manual changes
+uv run alembic revision -m "manual migration description"
+```
+
+### Docker Deployments
+
+For Docker deployments, run migrations as part of your deployment process:
+
+```yaml
+# docker-compose.yml - run migrations before starting app
+version: '3.8'
+services:
+  opendlp:
+    build: .
+    depends_on:
+      - postgres
+    command: >
+      sh -c "uv run alembic upgrade head &&
+             uv run flask run --host=0.0.0.0"
+```
+
+Or use an init container:
+
+```yaml
+services:
+  migrate:
+    build: .
+    depends_on:
+      - postgres
+    command: uv run alembic upgrade head
+    environment:
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/opendlp
+    
+  opendlp:
+    build: .
+    depends_on:
+      - migrate
+    command: uv run flask run --host=0.0.0.0
+```
+
 ## Further Reading
 
 - [Flask Documentation: Application Dispatching](https://flask.palletsprojects.com/en/3.0.x/patterns/appdispatch/)
 - [Werkzeug Middleware](https://werkzeug.palletsprojects.com/en/3.0.x/middleware/)
 - [Deploying to a subpath](https://flask.palletsprojects.com/en/3.0.x/config/#APPLICATION_ROOT)
+- [Alembic Documentation](https://alembic.sqlalchemy.org/en/latest/)

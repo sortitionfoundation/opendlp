@@ -55,7 +55,11 @@ run: flask
 # connect to docker postgres
 psql:
   @echo "password is abc123"
-  psql --host 127.0.0.1 --port 54321 --user allocation
+  psql --host 127.0.0.1 --port 54321 --user opendlp opendlp
+
+# run the database migrations
+migrate:
+  uv run alembic upgrade head
 
 # shut down docker
 stop-docker:
