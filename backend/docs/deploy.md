@@ -255,7 +255,7 @@ services:
     command: uv run alembic upgrade head
     environment:
       - DATABASE_URL=postgresql://user:pass@postgres:5432/opendlp
-    
+
   opendlp:
     build: .
     depends_on:
