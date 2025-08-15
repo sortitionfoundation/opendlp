@@ -2,8 +2,8 @@
 ABOUTME: Handles home page, dashboard, and assembly views with login requirements"""
 
 from flask import Blueprint, current_app, redirect, render_template
+from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
-from werkzeug import Response
 
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import get_user_assemblies
@@ -12,7 +12,7 @@ main_bp = Blueprint("main", __name__)
 
 
 @main_bp.route("/")
-def index() -> Response | tuple[str, int]:
+def index() -> ResponseReturnValue:
     """Home page - redirects to dashboard if logged in, otherwise shows landing page."""
     if current_user.is_authenticated:
         return redirect("main.dashboard")
@@ -21,7 +21,7 @@ def index() -> Response | tuple[str, int]:
 
 @main_bp.route("/dashboard")
 @login_required
-def dashboard() -> tuple[str, int]:
+def dashboard() -> ResponseReturnValue:
     """User dashboard showing accessible assemblies."""
     try:
         with SqlAlchemyUnitOfWork() as uow:
@@ -35,7 +35,7 @@ def dashboard() -> tuple[str, int]:
 
 @main_bp.route("/assemblies")
 @login_required
-def assemblies() -> tuple[str, int]:
+def assemblies() -> ResponseReturnValue:
     """List all assemblies user has access to."""
     try:
         with SqlAlchemyUnitOfWork() as uow:

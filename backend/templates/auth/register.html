@@ -3,65 +3,112 @@
 {% block title %}{{ _('Register') }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card mt-5">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-person-plus"></i> {{ _('Register') }}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label for="invite_code" class="form-label">{{ _('Invite Code') }}</label>
-                            <input type="text" class="form-control" id="invite_code" name="invite_code"
-                                   value="{{ invite_code or '' }}" required>
-                            <div class="form-text">{{ _('Enter your invitation code to register') }}</div>
-                        </div>
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <h1 class="govuk-heading-xl">{{ _('Create an account') }}</h1>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="first_name" class="form-label">{{ _('First Name') }} ({{ _('optional') }})</label>
-                                    <input type="text" class="form-control" id="first_name" name="first_name"
-                                           value="{{ first_name or '' }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="last_name" class="form-label">{{ _('Last Name') }} ({{ _('optional') }})</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name"
-                                           value="{{ last_name or '' }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="email" class="form-label">{{ _('Email') }}</label>
-                            <input type="email" class="form-control" id="email" name="email"
-                                   value="{{ email or '' }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">{{ _('Password') }}</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password_confirm" class="form-label">{{ _('Confirm Password') }}</label>
-                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">{{ _('Register') }}</button>
-                    </form>
-                </div>
-                <div class="card-footer text-center">
-                    <small class="text-muted">
-                        {{ _('Already have an account?') }} <a href="{{ url_for('auth.login') }}">{{ _('Login here') }}</a>
-                    </small>
-                </div>
-            </div>
+        <div class="govuk-inset-text">
+            {{ _('You need an invitation code to create an account. If you do not have one, please contact your administrator.') }}
         </div>
+
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
+                {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
+                {% if form.invite_code.description %}
+                    <div id="invite-hint" class="govuk-hint">{{ form.invite_code.description }}</div>
+                {% endif %}
+                {% if form.invite_code.errors %}
+                    {% for error in form.invite_code.errors %}
+                        <p id="invite-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else ""),
+                                   aria_describedby=("invite-hint" if form.invite_code.description else "") + (" invite-error" if form.invite_code.errors else "")) }}
+            </div>
+
+            <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
+                {{ form.first_name.label(class="govuk-label govuk-label--m") }}
+                {% if form.first_name.description %}
+                    <div id="first-name-hint" class="govuk-hint">{{ form.first_name.description }}</div>
+                {% endif %}
+                {% if form.first_name.errors %}
+                    {% for error in form.first_name.errors %}
+                        <p id="first-name-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else ""),
+                                  aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
+            </div>
+
+            <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
+                {{ form.last_name.label(class="govuk-label govuk-label--m") }}
+                {% if form.last_name.description %}
+                    <div id="last-name-hint" class="govuk-hint">{{ form.last_name.description }}</div>
+                {% endif %}
+                {% if form.last_name.errors %}
+                    {% for error in form.last_name.errors %}
+                        <p id="last-name-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else ""),
+                                 aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
+            </div>
+
+            <div class="govuk-form-group{% if form.email.errors %} govuk-form-group--error{% endif %}">
+                {{ form.email.label(class="govuk-label govuk-label--m") }}
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <p id="email-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else ""),
+                             aria_describedby=("email-error" if form.email.errors else "")) }}
+            </div>
+
+            <div class="govuk-form-group{% if form.password.errors %} govuk-form-group--error{% endif %}">
+                {{ form.password.label(class="govuk-label govuk-label--m") }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <p id="password-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.password(class="govuk-input" + (" govuk-input--error" if form.password.errors else ""),
+                                aria_describedby=("password-error" if form.password.errors else "")) }}
+            </div>
+
+            <div class="govuk-form-group{% if form.password_confirm.errors %} govuk-form-group--error{% endif %}">
+                {{ form.password_confirm.label(class="govuk-label govuk-label--m") }}
+                {% if form.password_confirm.errors %}
+                    {% for error in form.password_confirm.errors %}
+                        <p id="password-confirm-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+                {{ form.password_confirm(class="govuk-input" + (" govuk-input--error" if form.password_confirm.errors else ""),
+                                        aria_describedby=("password-confirm-error" if form.password_confirm.errors else "")) }}
+            </div>
+
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+                {{ _('Create account') }}
+            </button>
+        </form>
+
+        <p class="govuk-body">
+            {{ _('Already have an account?') }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _('Sign in') }}</a>
+        </p>
     </div>
 </div>
 {% endblock %}

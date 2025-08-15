@@ -1,110 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="govuk-template">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
     <title>{% block title %}OpenDLP - Open Democratic Lottery Platform{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0c0c">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
+    <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="mask-icon" href="/assets/images/govuk-mask-icon.svg" color="#0b0c0c">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/govuk-apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/govuk-apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
+
+    <!-- GOV.UK Frontend CSS -->
+    <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/govuk-frontend.min.css" 
+    integrity="sha256-QMf86xDJSnxyTkNRnuixV/BKKF3PenEn60Ap2y67cW8=" 
+    crossorigin="anonymous">
+    <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" 
+    integrity="sha256-zRgmWB5PK4CvTx4FiXsxbHaYRBBjz/rvu97sOC7kzXI=" 
+    crossorigin="anonymous">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="bi bi-people-fill"></i> OpenDLP
-            </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body class="govuk-template__body">
+    <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                                <i class="bi bi-house"></i> {{ _('Dashboard') }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.assemblies') }}">
-                                <i class="bi bi-list-ul"></i> {{ _('Assemblies') }}
-                            </a>
-                        </li>
-                    {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="https://www.sortitionfoundation.org/lab">
-                                <i class="bi bi-list-ul"></i> {{ _('Sortition Lab') }}
-                            </a>
-                        </li>
-                </ul>
+    <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
 
-                <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i> {{ current_user.email }}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><span class="dropdown-item-text">{{ current_user.email }}</span></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                    <i class="bi bi-box-arrow-right"></i> {{ _('Logout') }}
-                                </a></li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">
-                                <i class="bi bi-box-arrow-in-right"></i> {{ _('Login') }}
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
+    <header class="govuk-header" role="banner" data-module="govuk-header">
+        <div class="govuk-header__container govuk-width-container">
+            <div class="govuk-header__logo">
+                <a href="{{ url_for('main.index') }}" class="govuk-header__link govuk-header__link--homepage">
+                    <span class="govuk-header__logotype">
+                        <span class="govuk-header__logotype-text">
+                            OpenDLP
+                        </span>
+                    </span>
+                </a>
             </div>
-        </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <div class="container mt-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
+            {% if current_user.is_authenticated %}
+            <div class="govuk-header__content">
+                <nav class="govuk-header__navigation" role="navigation" aria-label="Primary navigation">
+                    <button type="button" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide primary navigation menu">
+                        Menu
+                    </button>
+                    <ul id="navigation" class="govuk-header__navigation-list">
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">
+                                {{ _('Dashboard') }}
+                            </a>
+                        </li>
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('main.assemblies') }}">
+                                {{ _('Assemblies') }}
+                            </a>
+                        </li>
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="https://www.sortitionfoundation.org/lab" target="_blank">
+                                {{ _('Sortition Lab') }}
+                            </a>
+                        </li>
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('auth.logout') }}">
+                                {{ _('Sign out') }} ({{ current_user.display_name }})
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            {% else %}
+            <div class="govuk-header__content">
+                <nav class="govuk-header__navigation" role="navigation" aria-label="Primary navigation">
+                    <ul id="navigation" class="govuk-header__navigation-list">
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('auth.login') }}">
+                                {{ _('Sign in') }}
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
             {% endif %}
-        {% endwith %}
+        </div>
+    </header>
+
+    <div class="govuk-width-container">
+        {% if get_flashed_messages() %}
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+                {% if category == 'success' %}
+                    <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+                        <div class="govuk-notification-banner__header">
+                            <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+                                Success
+                            </h2>
+                        </div>
+                        <div class="govuk-notification-banner__content">
+                            <p class="govuk-notification-banner__heading">{{ message }}</p>
+                        </div>
+                    </div>
+                {% elif category == 'info' %}
+                    <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+                        <div class="govuk-notification-banner__header">
+                            <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+                                Important
+                            </h2>
+                        </div>
+                        <div class="govuk-notification-banner__content">
+                            <p class="govuk-notification-banner__heading">{{ message }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <main class="govuk-main-wrapper" id="main-content" role="main">
+            {% block content %}{% endblock %}
+        </main>
     </div>
 
-    <!-- Main Content -->
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+    <footer class="govuk-footer" role="contentinfo">
+        <div class="govuk-width-container">
+            <div class="govuk-footer__meta">
+                <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+                    <h2 class="govuk-visually-hidden">Support links</h2>
+                    <ul class="govuk-footer__inline-list">
+                        <li class="govuk-footer__inline-list-item">
+                            <a class="govuk-footer__link" href="https://github.com/sortition-foundation/opendlp" target="_blank">
+                                GitHub
+                            </a>
+                        </li>
+                        <li class="govuk-footer__inline-list-item">
+                            <a class="govuk-footer__link" href="https://www.sortitionfoundation.org" target="_blank">
+                                Sortition Foundation
+                            </a>
+                        </li>
+                    </ul>
 
-    <!-- Footer -->
-    <footer class="bg-light mt-5 py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">&copy; 2024 OpenDLP. Open source democratic lottery platform.</p>
+                    <div class="govuk-footer__meta-custom">
+                        <p class="govuk-body-s">
+                            OpenDLP is an open source platform for democratic lottery and Citizens' Assembly management.
+                        </p>
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <small class="text-muted">Supporting Citizens' Assemblies worldwide</small>
+                <div class="govuk-footer__meta-item">
+                    <a class="govuk-footer__link govuk-footer__copyright-logo" href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">
+                        © Crown copyright
+                    </a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" integrity="sha256-lel57Jim1/CW4I1iEkaHexK/J9h/ZRneeORKiQuNOIg=" crossorigin="anonymous"></script>
+    <script>
+        window.GOVUKFrontend.initAll()
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

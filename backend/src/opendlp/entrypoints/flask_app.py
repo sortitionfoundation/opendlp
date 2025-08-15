@@ -50,11 +50,13 @@ def create_app(config_name: str = "") -> Flask:
 
 def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
+    from .api_auth import api_auth_bp
     from .blueprints.auth import auth_bp
     from .blueprints.main import main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(api_auth_bp)
 
 
 def register_error_handlers(app: Flask) -> None:

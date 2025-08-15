@@ -2,9 +2,10 @@
 ABOUTME: Handles user authentication flow with invite-based registration"""
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required, login_user, logout_user
-from werkzeug import Response
 
+from opendlp.entrypoints.forms import LoginForm, RegistrationForm
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import authenticate_user, create_user
@@ -14,24 +15,21 @@ auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
-def login() -> Response | str:
+def login() -> ResponseReturnValue:
     """User login page."""
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 
-    if request.method == "POST":
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        remember = bool(request.form.get("remember"))
+    form = LoginForm()
 
-        if not email or not password:
-            flash(_("Please provide both email and password."), "error")
-            return render_template("auth/login.html")
-
+    if form.validate_on_submit():
         try:
             with SqlAlchemyUnitOfWork() as uow:
-                user = authenticate_user(uow, email, password)
-                login_user(user, remember=remember)
+                # After form validation, these fields are guaranteed to be non-None
+                assert form.email.data is not None
+                assert form.password.data is not None
+                user = authenticate_user(uow, form.email.data, form.password.data)
+                login_user(user, remember=form.remember_me.data)
 
                 # Redirect to next page if specified, otherwise dashboard
                 next_page = request.args.get("next")
@@ -45,12 +43,12 @@ def login() -> Response | str:
             current_app.logger.error(f"Login error: {e}")
             flash(_("An error occurred during login. Please try again."), "error")
 
-    return render_template("auth/login.html")
+    return render_template("auth/login.html", form=form)
 
 
 @auth_bp.route("/logout")
 @login_required
-def logout() -> Response:
+def logout() -> ResponseReturnValue:
     """User logout."""
     logout_user()
     flash(_("You have been logged out."), "info")
@@ -59,45 +57,31 @@ def logout() -> Response:
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/register/<invite_code>", methods=["GET", "POST"])
-def register(invite_code: str = "") -> Response | str:
+def register(invite_code: str = "") -> ResponseReturnValue:
     """User registration with invite code."""
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 
-    # Get invite code from URL or form
-    if not invite_code:
-        invite_code = request.form.get("invite_code", "").strip()
+    form = RegistrationForm()
 
-    if request.method == "POST":
-        first_name = request.form.get("first_name", "").strip()
-        last_name = request.form.get("last_name", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        password_confirm = request.form.get("password_confirm", "")
-        invite_code = request.form.get("invite_code", "").strip()
+    # Pre-populate invite code from URL
+    if invite_code and not form.invite_code.data:
+        form.invite_code.data = invite_code
 
-        # Basic validation
-        if not all([email, password, password_confirm, invite_code]):
-            flash(_("Email, password, password confirmation, and invite code are required."), "error")
-            return render_template(
-                "auth/register.html", invite_code=invite_code, first_name=first_name, last_name=last_name, email=email
-            )
-
-        if password != password_confirm:
-            flash(_("Passwords do not match."), "error")
-            return render_template(
-                "auth/register.html", invite_code=invite_code, first_name=first_name, last_name=last_name, email=email
-            )
-
+    if form.validate_on_submit():
         try:
             with SqlAlchemyUnitOfWork() as uow:
+                # After form validation, required fields are guaranteed to be non-None
+                assert form.email.data is not None
+                assert form.password.data is not None
+                assert form.invite_code.data is not None
                 user = create_user(
                     uow=uow,
-                    email=email,
-                    password=password,
-                    invite_code=invite_code,
-                    first_name=first_name,
-                    last_name=last_name,
+                    email=form.email.data,
+                    password=form.password.data,
+                    invite_code=form.invite_code.data,
+                    first_name=form.first_name.data or "",
+                    last_name=form.last_name.data or "",
                 )
 
                 # Log the user in immediately after registration
@@ -115,4 +99,4 @@ def register(invite_code: str = "") -> Response | str:
             current_app.logger.error(f"Registration error: {e}")
             flash(_("An error occurred during registration. Please try again."), "error")
 
-    return render_template("auth/register.html", invite_code=invite_code)
+    return render_template("auth/register.html", form=form)

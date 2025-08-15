@@ -8,6 +8,7 @@ from flask_babel import Babel
 from flask_login import LoginManager
 from flask_session import Session
 from flask_talisman import Talisman
+from flask_wtf.csrf import CSRFProtect
 
 from opendlp.domain.users import User
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -17,6 +18,7 @@ login_manager = LoginManager()
 session_store = Session()
 talisman = Talisman()
 babel = Babel()
+csrf = CSRFProtect()
 
 
 def init_extensions(app: Flask) -> None:
@@ -47,6 +49,9 @@ def init_extensions(app: Flask) -> None:
 
     # Initialize Flask-Babel for i18n/l10n
     babel.init_app(app, locale_selector=get_locale)
+
+    # Initialize Flask-WTF CSRF protection
+    csrf.init_app(app)
 
 
 def get_locale() -> str:

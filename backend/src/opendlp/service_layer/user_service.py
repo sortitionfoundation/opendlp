@@ -49,11 +49,6 @@ def create_user(
         if existing_user:
             raise UserAlreadyExists(email=email)
 
-        # Validate and use invite code
-        invite_role = GlobalRole.USER  # default
-        if invite_code:
-            invite_role = validate_and_use_invite(uow, invite_code)
-
         # temporary user to pass to password validation
         temp_user = TempUser(email=email, first_name=first_name, last_name=last_name)
 
@@ -64,6 +59,13 @@ def create_user(
             if not is_valid:
                 raise PasswordTooWeak(error_msg)
             password_hash = hash_password(password)
+
+        # Validate and use invite code
+        # Do this AFTER checking the password, so the invite does not become used
+        # if the password is invalid.
+        invite_role = GlobalRole.USER  # default
+        if invite_code:
+            invite_role = validate_and_use_invite(uow, invite_code)
 
         # Create the user
         user = User(
