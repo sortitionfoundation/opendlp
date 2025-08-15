@@ -91,6 +91,10 @@ start-services-docker:
 stop-services-docker:
   @docker compose -f docker-compose.localdev.yml down
 
+# drop the docker volume holding the postgres database
+drop-docker-db:
+  @docker volume rm backend_sqla_opendlp_pgdata
+
 # run the editor with the environment available
 edit:
   @uv run $EDITOR
