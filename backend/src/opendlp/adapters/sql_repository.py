@@ -45,6 +45,16 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         """List all users."""
         return self.session.query(User).all()
 
+    def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
+        """List users filtered by criteria."""
+        user_query = self.session.query(User)
+        if role:
+            role_enum = GlobalRole(role.lower())
+            user_query = user_query.filter(orm.users.c.role == role_enum)
+        if active is not None:
+            user_query = user_query.filter(orm.users.c.active == active)
+        return user_query.all()
+
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         return self.session.query(User).filter_by(email=email).first()

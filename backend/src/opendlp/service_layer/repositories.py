@@ -36,6 +36,11 @@ class UserRepository(AbstractRepository):
     """Repository interface for User domain objects."""
 
     @abc.abstractmethod
+    def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
+        """List users filtered by criteria."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         raise NotImplementedError

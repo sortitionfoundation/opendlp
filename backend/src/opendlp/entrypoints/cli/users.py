@@ -18,65 +18,37 @@ def users() -> None:
 
 @users.command("add")
 @click.option("--email", required=True, help="User email address")
-@click.option("--first-name", help="User first name")
-@click.option("--last-name", help="User last name")
-@click.option(
-    "--role",
-    type=click.Choice([r.value for r in GlobalRole], case_sensitive=False),
-    default=GlobalRole.USER.value,
-    help="Global role for the user",
-)
 @click.option("--password", help="Password (will prompt if not provided)")
-@click.option("--invite-code", help="Invite code (required for non-admin users)")
 @click.pass_context
 def add_user(
     ctx: click.Context,
     email: str,
-    first_name: str | None,
-    last_name: str | None,
-    role: str,
     password: str | None,
-    invite_code: str | None,
 ) -> None:
     """Add a new user to the system."""
     try:
-        # Convert role string to enum
-        global_role = GlobalRole(role.lower())
-
         # Prompt for password if not provided
         if not password:
             password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
-
-        # Admin users don't need invite codes
-        if global_role != GlobalRole.ADMIN and not invite_code:
-            invite_code = click.prompt("Invite code")
 
         with SqlAlchemyUnitOfWork() as uow:
             user = create_user(
                 uow=uow,
                 email=email,
                 password=password,
-                invite_code=invite_code,
-                first_name=first_name or "",
-                last_name=last_name or "",
             )
 
             # For admin users, override role after creation (CLI-only)
-            if global_role == GlobalRole.ADMIN:
-                user.global_role = GlobalRole.ADMIN
-                uow.users.add(user)
-                uow.commit()
+            user.global_role = GlobalRole.ADMIN
+            uow.users.add(user)
+            uow.commit()
 
             click.echo(click.style("✓ User created successfully:", "green"))
             click.echo(f"  ID: {user.id}")
             click.echo(f"  Email: {user.email}")
-            click.echo(f"  Name: {user.display_name}")
             click.echo(f"  Role: {user.global_role.value}")
 
     except UserAlreadyExists as e:
-        click.echo(click.style(f"✗ Error: {e}", "red"))
-        raise click.Abort() from e
-    except InvalidInvite as e:
         click.echo(click.style(f"✗ Error: {e}", "red"))
         raise click.Abort() from e
     except PasswordTooWeak as e:
@@ -96,15 +68,7 @@ def list_users(role: str | None, active: bool | None) -> None:
     """List users in the system."""
     try:
         with SqlAlchemyUnitOfWork() as uow:
-            users_list = uow.users.list()
-
-            # Apply filters
-            if role:
-                role_enum = GlobalRole(role.lower())
-                users_list = [u for u in users_list if u.global_role == role_enum]
-
-            if active is not None:
-                users_list = [u for u in users_list if u.is_active == active]
+            users_list = uow.users.filter(role, active)
 
             if not users_list:
                 click.echo("No users found matching criteria.")
