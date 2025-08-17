@@ -90,7 +90,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
                 existing_user = uow.users.get_by_email(email.data)
                 if existing_user:
                     raise ValidationError(_l("This email address is already registered."))
-        except Exception:
+        except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly
             pass
@@ -104,7 +104,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
                     raise ValidationError(_l("Invalid or expired invite code."))
-        except Exception:
+        except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly
             pass

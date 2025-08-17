@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+SQLITE_DB_URI = "sqlite:///:memory:"
+
 
 def get_postgres_uri(default_db_name: str = "opendlp", user: str = "opendlp") -> str:
     host = os.environ.get("DB_HOST", "localhost")
@@ -18,6 +20,11 @@ def get_postgres_uri(default_db_name: str = "opendlp", user: str = "opendlp") ->
     password = os.environ.get("DB_PASSWORD", "abc123")
     db_name = os.environ.get("DB_NAME", default_db_name)
     return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
+
+def get_db_uri(default_db_url: str = "") -> str:
+    default_db_url = default_db_url or get_postgres_uri()
+    return os.environ.get("DB_URL", default_db_url)
 
 
 def get_api_url() -> str:
@@ -84,7 +91,7 @@ class FlaskConfig:
     TESTING = False
 
     def __init__(self) -> None:
-        self.SQLALCHEMY_DATABASE_URI = get_postgres_uri()
+        self.SQLALCHEMY_DATABASE_URI = get_db_uri()
         self.REDIS_URL = RedisCfg.from_env().to_url()
         self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
@@ -148,7 +155,7 @@ class FlaskTestConfig(FlaskConfig):
 
     def __init__(self) -> None:
         super().__init__()
-        self.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+        self.SQLALCHEMY_DATABASE_URI = SQLITE_DB_URI
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
         self.SESSION_TYPE = "filesystem"  # Use filesystem for testing

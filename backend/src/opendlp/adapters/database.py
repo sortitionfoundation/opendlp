@@ -2,11 +2,10 @@
 ABOUTME: Configures SQLAlchemy sessions and maps domain objects to tables"""
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import orm
-from opendlp.config import get_postgres_uri
+from opendlp.config import get_db_uri
 from opendlp.domain import assembly, user_invites, users
 
 
@@ -18,7 +17,7 @@ class DatabaseError(Exception):
 
 def create_session_factory(database_url: str = "", echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""
-    database_url = database_url or get_postgres_uri()
+    database_url = database_url or get_db_uri()
     engine = create_engine(
         database_url,
         echo=echo,
@@ -72,30 +71,3 @@ def start_mappers() -> None:
 
     except Exception as e:  # pragma: no cover
         raise DatabaseError(f"Failed to start mappers: {e}") from e
-
-
-def create_tables(engine: Engine) -> None:
-    """Create all database tables.
-
-    Args:
-        engine: SQLAlchemy engine instance
-    """
-    try:
-        orm.metadata.create_all(engine)
-    except Exception as e:  # pragma: no cover
-        raise DatabaseError(f"Failed to create tables: {e}") from e
-
-
-def drop_tables(engine: Engine) -> None:
-    """Drop all database tables.
-
-    Args:
-        engine: SQLAlchemy engine instance
-
-    Warning:
-        This will permanently delete all data in the database!
-    """
-    try:
-        orm.metadata.drop_all(engine)
-    except Exception as e:  # pragma: no cover
-        raise DatabaseError(f"Failed to drop tables: {e}") from e

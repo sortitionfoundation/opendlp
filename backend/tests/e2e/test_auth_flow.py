@@ -325,7 +325,7 @@ class TestAuthenticationFlow:
 
     def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
         """Helper to extract CSRF token from form."""
-        response = client.get(endpoint)
+        _ = client.get(endpoint)
         # This is a simplified approach - actual implementation would parse HTML
         # and extract the CSRF token from the form
         return "csrf_token_placeholder"  # Placeholder for now
@@ -371,7 +371,7 @@ class TestAuthenticationEdgeCases:
     def test_csrf_protection_enabled(self, client: FlaskClient):
         """Test that CSRF protection is working."""
         # Try to submit form without CSRF token
-        response = client.post(
+        _ = client.post(
             "/auth/login",
             data={
                 "email": "test@example.com",
