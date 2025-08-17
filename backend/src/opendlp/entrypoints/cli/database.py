@@ -1,6 +1,7 @@
 """ABOUTME: CLI commands for database management operations
 ABOUTME: Provides commands to initialize, upgrade, and seed the database"""
 
+import os
 import click
 from alembic import command
 from alembic.config import Config
@@ -15,88 +16,6 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 def database() -> None:
     """Database management commands."""
     pass
-
-
-@database.command("init")
-@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-@click.pass_context
-def init_db(ctx: click.Context, confirm: bool) -> None:
-    """Initialize the database with tables."""
-    try:
-        if not confirm and not click.confirm("This will create all database tables. Continue?"):
-            click.echo("Operation cancelled.")
-            return
-
-        # Create alembic configuration
-        alembic_cfg = Config("alembic.ini")
-
-        # Run migration to head
-        command.upgrade(alembic_cfg, "head")
-
-        click.echo(click.style("✓ Database initialized successfully.", "green"))
-
-    except Exception as e:
-        click.echo(click.style(f"✗ Error initializing database: {e}", "red"))
-        raise click.Abort() from e
-
-
-@database.command("upgrade")
-@click.option("--revision", default="head", help="Target revision (default: head)")
-@click.pass_context
-def upgrade_db(ctx: click.Context, revision: str) -> None:
-    """Run database migrations."""
-    try:
-        # Create alembic configuration
-        alembic_cfg = Config("alembic.ini")
-
-        # Run migration
-        command.upgrade(alembic_cfg, revision)
-
-        click.echo(click.style(f"✓ Database upgraded to {revision}.", "green"))
-
-    except Exception as e:
-        click.echo(click.style(f"✗ Error upgrading database: {e}", "red"))
-        raise click.Abort() from e
-
-
-@database.command("downgrade")
-@click.argument("revision")
-@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-@click.pass_context
-def downgrade_db(ctx: click.Context, revision: str, confirm: bool) -> None:
-    """Downgrade database to a specific revision."""
-    try:
-        if not confirm and not click.confirm(f"This will downgrade the database to {revision}. Continue?"):
-            click.echo("Operation cancelled.")
-            return
-
-        # Create alembic configuration
-        alembic_cfg = Config("alembic.ini")
-
-        # Run downgrade
-        command.downgrade(alembic_cfg, revision)
-
-        click.echo(click.style(f"✓ Database downgraded to {revision}.", "green"))
-
-    except Exception as e:
-        click.echo(click.style(f"✗ Error downgrading database: {e}", "red"))
-        raise click.Abort() from e
-
-
-@database.command("current")
-@click.pass_context
-def current_revision(ctx: click.Context) -> None:
-    """Show current database revision."""
-    try:
-        # Create alembic configuration
-        alembic_cfg = Config("alembic.ini")
-
-        # Show current revision
-        command.current(alembic_cfg)
-
-    except Exception as e:
-        click.echo(click.style(f"✗ Error getting current revision: {e}", "red"))
-        raise click.Abort() from e
 
 
 @database.command("seed")
@@ -121,26 +40,27 @@ def seed_db(ctx: click.Context, confirm: bool) -> None:
 
     except UserAlreadyExists as e:
         click.echo(click.style("Database already contains users. Skipping seed.", "yellow"))
-        raise click.Abort() from e
+        return
     except Exception as e:
         click.echo(click.style(f"✗ Error seeding database: {e}", "red"))
         raise click.Abort() from e
 
 
 @database.command("reset")
-@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def reset_db(ctx: click.Context, confirm: bool) -> None:
+def reset_db(ctx: click.Context) -> None:
     """Reset the database (drop all tables and recreate)."""
     try:
-        if not confirm:
-            click.echo(click.style("⚠️  WARNING: This will destroy ALL data in the database!", "red"))
-            # TODO: make the confirm more work - say "type: 'delete everything' if you want to continue"
-            # TODO: get rid of `--confirm` option
-            # TODO: check for production in dotenv file as well, or maybe ALLOW_RESET_DB=true or something
-            if not click.confirm("Are you absolutely sure you want to continue?"):
-                click.echo("Operation cancelled.")
-                return
+        if os.environ.get("ALLOW_RESET_DB", "") != "DANGEROUS":
+            click.echo("Resetting the database is a dangerous operation. In order to enable it set the")
+            click.echo("environment variable ALLOW_RESET_DB to DANGEROUS.")
+            return
+
+        click.echo(click.style("⚠️  WARNING: This will destroy ALL data in the database!", "red"))
+        delete_confirm = click.prompt("Type 'delete everything' if you want to continue.")
+        if delete_confirm != "delete everything":
+            click.echo("Operation cancelled.")
+            return
 
         with SqlAlchemyUnitOfWork() as uow:
             # Drop all tables

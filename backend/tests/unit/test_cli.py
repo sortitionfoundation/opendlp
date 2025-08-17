@@ -196,27 +196,6 @@ class TestCliDatabase:
         """Set up test fixtures."""
         self.runner = CliRunner()
 
-    @patch("opendlp.entrypoints.cli.database.command")
-    @patch("opendlp.entrypoints.cli.database.Config")
-    @patch("opendlp.entrypoints.cli.start_mappers")
-    def test_init_db_success(self, mock_start_mappers, mock_config, mock_command):
-        """Test successful database initialization."""
-        result = self.runner.invoke(cli, ["database", "init", "--confirm"])
-
-        assert result.exit_code == 0
-        assert "✓ Database initialized successfully." in result.output
-        mock_command.upgrade.assert_called_once()
-
-    @patch("opendlp.entrypoints.cli.database.command")
-    @patch("opendlp.entrypoints.cli.database.Config")
-    def test_upgrade_db_success(self, mock_config, mock_command):
-        """Test successful database upgrade."""
-        result = self.runner.invoke(cli, ["database", "upgrade"])
-
-        assert result.exit_code == 0
-        assert "✓ Database upgraded to head." in result.output
-        mock_command.upgrade.assert_called_once_with(mock_config.return_value, "head")
-
     @patch("opendlp.entrypoints.cli.database.SqlAlchemyUnitOfWork")
     @patch("opendlp.entrypoints.cli.start_mappers")
     def test_seed_db_success(self, mock_start_mappers, mock_uow_class):
