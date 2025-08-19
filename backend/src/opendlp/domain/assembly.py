@@ -83,3 +83,17 @@ class Assembly:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    def create_detached_copy(self) -> "Assembly":
+        """Create a detached copy of this user for use outside SQLAlchemy sessions"""
+        detached_assembly = Assembly(
+            title=self.title,
+            question=self.question,
+            gsheet=self.gsheet,
+            first_assembly_date=self.first_assembly_date,
+            assembly_id=self.id,
+            status=self.status,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+        )
+        return detached_assembly

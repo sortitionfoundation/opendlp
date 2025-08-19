@@ -32,6 +32,7 @@ dev = [
   "pre-commit>=4.3.0",
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
+  "tenacity>=9.1.2",
   "types-wtforms>=3.2.1.20250809",
 ]
 

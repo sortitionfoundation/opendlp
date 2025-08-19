@@ -85,7 +85,9 @@ class TestCreateUser:
         uow.users.add(existing_user)
 
         with pytest.raises(UserAlreadyExists) as exc_info:
-            user_service.create_user(uow=uow, email="test@example.com", password="StrongPass123")
+            user_service.create_user(
+                uow=uow, email="test@example.com", password="StrongPass123", global_role=GlobalRole.USER
+            )
 
         assert "test@example.com" in str(exc_info.value)
 
@@ -103,7 +105,7 @@ class TestCreateUser:
         uow = FakeUnitOfWork()
 
         with pytest.raises(PasswordTooWeak) as exc_info:
-            user_service.create_user(uow=uow, email="test@example.com", password=password)
+            user_service.create_user(uow=uow, email="test@example.com", password=password, global_role=GlobalRole.USER)
 
         assert msg in str(exc_info.value).lower()
 

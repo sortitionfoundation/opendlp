@@ -3,7 +3,6 @@ ABOUTME: Provides subcommands for user management, invites, and database operati
 
 import click
 
-from opendlp.adapters.database import start_mappers
 from opendlp.config import get_config
 
 
@@ -17,7 +16,6 @@ def cli(ctx: click.Context) -> None:
     # Initialize configuration and database mappers
     config = get_config()
     ctx.obj["config"] = config
-    start_mappers()
 
 
 @cli.command()

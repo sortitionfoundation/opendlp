@@ -7,7 +7,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
-from .exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
+from .exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, ServiceLayerError, UserAlreadyExists
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -21,6 +21,7 @@ def create_user(
     oauth_provider: str | None = None,
     oauth_id: str | None = None,
     invite_code: str | None = None,
+    global_role: GlobalRole | None = None,
 ) -> User:
     """
     Create a new user with proper validation.
@@ -33,7 +34,8 @@ def create_user(
         last_name: User's last name (optional)
         oauth_provider: OAuth provider (e.g., 'google')
         oauth_id: OAuth provider user ID
-        invite_code: Required invite code for registration
+        invite_code: invite code for registration
+        global_role: role for the user
 
     Returns:
         Created User instance
@@ -43,6 +45,10 @@ def create_user(
         InvalidInvite: If invite code is invalid/expired/used
         ValueError: If password validation fails
     """
+    if global_role and invite_code:
+        raise ServiceLayerError("create_user: Cannot have both invite_code and global_role")
+    if not global_role and not invite_code:
+        raise ServiceLayerError("create_user: Need either invite_code or global_role")
     with uow:
         # Check for existing users
         existing_user = uow.users.get_by_email(email)
@@ -63,14 +69,13 @@ def create_user(
         # Validate and use invite code
         # Do this AFTER checking the password, so the invite does not become used
         # if the password is invalid.
-        invite_role = GlobalRole.USER  # default
-        if invite_code:
-            invite_role = validate_and_use_invite(uow, invite_code)
+        user_role = validate_and_use_invite(uow, invite_code) if invite_code else global_role
+        assert isinstance(user_role, GlobalRole)
 
         # Create the user
         user = User(
             email=email,
-            global_role=invite_role,
+            global_role=user_role,
             first_name=first_name,
             last_name=last_name,
             password_hash=password_hash,
@@ -79,8 +84,9 @@ def create_user(
         )
 
         uow.users.add(user)
+        detached_user = user.create_detached_copy()
         uow.commit()
-        return user
+        return detached_user
 
 
 def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> User:
@@ -107,7 +113,7 @@ def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> Use
         if not user.password_hash or not verify_password(password, user.password_hash):
             raise InvalidCredentials()
 
-        return user
+        return user.create_detached_copy()
 
 
 def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Assembly]:
@@ -258,4 +264,4 @@ def find_or_create_oauth_user(
             oauth_id=oauth_id,
             invite_code=invite_code,
         )
-        return user, True
+        return user.create_detached_copy(), True

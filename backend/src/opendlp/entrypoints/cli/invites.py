@@ -5,68 +5,60 @@ import uuid
 
 import click
 
+from opendlp import bootstrap
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from opendlp.service_layer import invite_service
 
 
 @click.group()
-def invites() -> None:
+@click.pass_context
+def invites(ctx: click.Context) -> None:
     """Invite management commands."""
-    pass
+    ctx.ensure_object(dict)
 
 
 @invites.command("generate")
+@click.option("--inviter-email", type=str, help="email of user account that the invite is from.")
 @click.option(
     "--role",
     type=click.Choice([r.value for r in GlobalRole], case_sensitive=False),
     default=GlobalRole.USER.value,
     help="Global role for the invite",
 )
-@click.option("--expires-in", type=int, default=168, help="Expiry time in hours (default: 168 = 1 week)")
 @click.option("--count", type=int, default=1, help="Number of invites to generate")
 @click.pass_context
-def generate_invites(ctx: click.Context, role: str, expires_in: int, count: int) -> None:
+def generate_invites(ctx: click.Context, inviter_email: str, role: str, count: int) -> None:
     """Generate new invite codes."""
     try:
         global_role = GlobalRole(role.lower())
 
-        with SqlAlchemyUnitOfWork() as uow:
-            # For CLI usage, we need a system user ID - use a special UUID for system generation
-            # Using the nil UUID to indicate system-generated
-            created_by_user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
+            inviter_user = uow.users.get_by_email(inviter_email)
+            if inviter_user is None or inviter_user.global_role != GlobalRole.ADMIN:
+                click.echo(f"Could not find admin user with email {inviter_email}")
+                raise click.Abort()
+            inviter_user_id = inviter_user.id
 
-            # For CLI usage, bypass service layer and create invites directly
-
-            from opendlp.domain.user_invites import UserInvite, generate_invite_code
-
-            invites_list = []
-            for _ in range(count):
-                # Generate unique invite code
-                code = generate_invite_code()
-                while uow.user_invites.get_by_code(code):
-                    code = generate_invite_code()
-
-                invite = UserInvite(
-                    global_role=global_role,
-                    created_by=created_by_user_id,
-                    expires_in_hours=expires_in,
-                    code=code,
-                )
-                uow.user_invites.add(invite)
+        # For CLI usage, bypass service layer and create invites directly
+        invites_list = []
+        for _ in range(count):
+            uow = bootstrap.bootstrap(session_factory=session_factory)
+            with uow:
+                invite = invite_service.generate_invite(uow, inviter_user_id, global_role)
                 invites_list.append(invite)
 
-            uow.commit()
+        click.echo(click.style(f"✓ Generated {count} invite(s) successfully:", "green"))
 
-            click.echo(click.style(f"✓ Generated {count} invite(s) successfully:", "green"))
+        # Display header
+        click.echo(f"{'Code':<20} {'Role':<15} {'Expires':<19}")
+        click.echo("-" * 55)
 
-            # Display header
-            click.echo(f"{'Code':<20} {'Role':<15} {'Expires':<19}")
-            click.echo("-" * 55)
-
-            # Display invites
-            for invite in invites_list:
-                expires_str = invite.expires_at.strftime("%Y-%m-%d %H:%M:%S")
-                click.echo(f"{invite.code:<20} {invite.global_role.value:<15} {expires_str:<19}")
+        # Display invites
+        for invite in invites_list:
+            expires_str = invite.expires_at.strftime("%Y-%m-%d %H:%M:%S")
+            click.echo(f"{invite.code:<20} {invite.global_role.value:<15} {expires_str:<19}")
 
     except Exception as e:
         click.echo(click.style(f"✗ Error generating invites: {e}", "red"))
@@ -79,10 +71,13 @@ def generate_invites(ctx: click.Context, role: str, expires_in: int, count: int)
 @click.option(
     "--role", type=click.Choice([r.value for r in GlobalRole], case_sensitive=False), help="Filter by global role"
 )
-def list_invites_cmd(include_expired: bool, include_used: bool, role: str | None) -> None:
+@click.pass_context
+def list_invites_cmd(ctx: click.Context, include_expired: bool, include_used: bool, role: str | None) -> None:
     """List invite codes."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             # For CLI usage, bypass service layer and list invites directly
             all_invites = uow.user_invites.list()
 
@@ -138,10 +133,13 @@ def list_invites_cmd(include_expired: bool, include_used: bool, role: str | None
 @invites.command("revoke")
 @click.argument("code")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-def revoke_invite_cmd(code: str, confirm: bool) -> None:
+@click.pass_context
+def revoke_invite_cmd(ctx: click.Context, code: str, confirm: bool) -> None:
     """Revoke an invite code."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             invite = uow.user_invites.get_by_code(code)
             if not invite:
                 click.echo(click.style(f"✗ Invite with code '{code}' not found.", "red"))
@@ -176,10 +174,13 @@ def revoke_invite_cmd(code: str, confirm: bool) -> None:
 
 @invites.command("cleanup")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-def cleanup_expired(confirm: bool) -> None:
+@click.pass_context
+def cleanup_expired(ctx: click.Context, confirm: bool) -> None:
     """Remove expired invite codes from the database."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             # Get all expired invites
             all_invites = uow.user_invites.list()
             expired_invites = [i for i in all_invites if not i.is_valid() and not i.used_by]

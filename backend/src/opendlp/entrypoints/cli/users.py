@@ -3,17 +3,18 @@ ABOUTME: Provides commands to add, list, deactivate users and reset passwords"""
 
 import click
 
+from opendlp import bootstrap
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.exceptions import PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.security import hash_password
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 
 
 @click.group()
-def users() -> None:
+@click.pass_context
+def users(ctx: click.Context) -> None:
     """User management commands."""
-    pass
+    ctx.ensure_object(dict)
 
 
 @users.command("add")
@@ -31,17 +32,15 @@ def add_user(
         if not password:
             password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
 
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             user = create_user(
                 uow=uow,
                 email=email,
                 password=password,
+                global_role=GlobalRole.ADMIN,
             )
-
-            # For admin users, override role after creation (CLI-only)
-            user.global_role = GlobalRole.ADMIN
-            uow.users.add(user)
-            uow.commit()
 
             click.echo(click.style("✓ User created successfully:", "green"))
             click.echo(f"  ID: {user.id}")
@@ -64,10 +63,13 @@ def add_user(
     "--role", type=click.Choice([r.value for r in GlobalRole], case_sensitive=False), help="Filter by global role"
 )
 @click.option("--active/--inactive", default=None, help="Filter by active status")
-def list_users(role: str | None, active: bool | None) -> None:
+@click.pass_context
+def list_users(ctx: click.Context, role: str | None, active: bool | None) -> None:
     """List users in the system."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             users_list = uow.users.filter(role, active)
 
             if not users_list:
@@ -96,10 +98,13 @@ def list_users(role: str | None, active: bool | None) -> None:
 @users.command("deactivate")
 @click.argument("email")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-def deactivate_user(email: str, confirm: bool) -> None:
+@click.pass_context
+def deactivate_user(ctx: click.Context, email: str, confirm: bool) -> None:
     """Deactivate a user account."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             user = uow.users.get_by_email(email)
             if not user:
                 click.echo(click.style(f"✗ User with email '{email}' not found.", "red"))
@@ -128,10 +133,13 @@ def deactivate_user(email: str, confirm: bool) -> None:
 @users.command("reset-password")
 @click.argument("email")
 @click.option("--password", help="New password (will prompt if not provided)")
-def reset_password(email: str, password: str | None) -> None:
+@click.pass_context
+def reset_password(ctx: click.Context, email: str, password: str | None) -> None:
     """Reset a user's password."""
     try:
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             user = uow.users.get_by_email(email)
             if not user:
                 click.echo(click.style(f"✗ User with email '{email}' not found.", "red"))

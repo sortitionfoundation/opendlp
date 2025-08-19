@@ -5,6 +5,7 @@ import os
 
 import click
 
+from opendlp import bootstrap
 from opendlp.adapters.orm import metadata
 from opendlp.service_layer.db_utils import seed_database
 from opendlp.service_layer.exceptions import UserAlreadyExists
@@ -12,9 +13,10 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
 @click.group()
-def database() -> None:
+@click.pass_context
+def database(ctx: click.Context) -> None:
     """Database management commands."""
-    pass
+    ctx.ensure_object(dict)
 
 
 @database.command("seed")
@@ -27,7 +29,8 @@ def seed_db(ctx: click.Context, confirm: bool) -> None:
             click.echo("Operation cancelled.")
             return
 
-        user_passwords, invites, assemblies = seed_database()
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        user_passwords, invites, assemblies = seed_database(session_factory)
 
         click.echo(click.style("✓ Database seeded successfully with test data:", "green"))
         for user, password in user_passwords:
@@ -61,7 +64,9 @@ def reset_db(ctx: click.Context) -> None:
             click.echo("Operation cancelled.")
             return
 
-        with SqlAlchemyUnitOfWork() as uow:
+        session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        uow = bootstrap.bootstrap(session_factory=session_factory)
+        with uow:
             # Drop all tables
             if uow.session.bind is not None:
                 metadata.drop_all(uow.session.bind)

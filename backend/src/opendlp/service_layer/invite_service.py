@@ -57,8 +57,9 @@ def generate_invite(
         )
 
         uow.user_invites.add(invite)
+        detached_invite = invite.create_detached_copy()
         uow.commit()
-        return invite
+        return detached_invite
 
 
 def generate_batch_invites(
@@ -114,7 +115,7 @@ def generate_batch_invites(
             )
 
             uow.user_invites.add(invite)
-            invites.append(invite)
+            invites.append(invite.create_detached_copy())
 
         uow.commit()
         return invites
@@ -193,7 +194,7 @@ def revoke_invite(
 
         uow.commit()
         # Explicit typing to satisfy mypy
-        revoked_invite: UserInvite = invite
+        revoked_invite: UserInvite = invite.create_detached_copy()
         return revoked_invite
 
 
@@ -226,7 +227,7 @@ def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
         return expired_count
 
 
-def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:
+def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[str, float]:
     """
     Get statistics about invites.
 

@@ -5,10 +5,8 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
-from click.testing import CliRunner
 
 from opendlp.adapters.database import start_mappers
-from opendlp.config import SQLITE_DB_URI
 from opendlp.domain.user_invites import UserInvite, generate_invite_code
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.cli import cli
@@ -26,119 +24,61 @@ def setup_mappers():
 class TestCliUsersIntegration:
     """Integration tests for user management CLI commands."""
 
-    def test_add_and_list_user_flow(self, temp_env_vars):
+    def test_add_and_list_user_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test complete user creation and listing flow."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
-
-        # First, create an invite to use for user creation
-        with SqlAlchemyUnitOfWork() as uow:
-            # Create a system invite (created_by=None for CLI usage)
-            invite = generate_invite(
-                uow=uow, created_by_user_id=None, global_role=GlobalRole.USER, expires_in_hours=168
-            )
-            invite_code = invite.code
-
         # Add a user using the CLI
-        result = runner.invoke(
+        result = cli_with_session_factory(
             cli,
             [
                 "users",
                 "add",
                 "--email",
                 "integration-test@example.com",
-                "--first-name",
-                "Integration",
-                "--last-name",
-                "Test",
                 "--password",
-                "password123",
-                "--invite-code",
-                invite_code,
+                "pass123dfsaio",
             ],
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "✓ User created successfully:" in result.output
         assert "integration-test@example.com" in result.output
 
         # List users and verify the new user appears
-        result = runner.invoke(cli, ["users", "list"])
+        result = cli_with_session_factory(cli, ["users", "list"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "integration-test@example.com" in result.output
-        assert "Integration Test" in result.output
 
         # Verify user was actually created in database
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             user = uow.users.get_by_email("integration-test@example.com")
             assert user is not None
-            assert user.first_name == "Integration"
-            assert user.last_name == "Test"
-            assert user.global_role == GlobalRole.USER
+            assert user.global_role == GlobalRole.ADMIN
             assert user.is_active
 
-    def test_add_admin_user_without_invite(self, temp_env_vars):
-        """Test creating admin user without invite code."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
-
-        result = runner.invoke(
-            cli,
-            [
-                "users",
-                "add",
-                "--email",
-                "admin-test@example.com",
-                "--first-name",
-                "Admin",
-                "--last-name",
-                "Test",
-                "--role",
-                "admin",
-                "--password",
-                "adminpass123",
-            ],
-        )
-
-        assert result.exit_code == 0
-        assert "✓ User created successfully:" in result.output
-
-        # Verify admin user was created
-        with SqlAlchemyUnitOfWork() as uow:
-            user = uow.users.get_by_email("admin-test@example.com")
-            assert user is not None
-            assert user.global_role == GlobalRole.ADMIN
-
-    def test_deactivate_user_flow(self, temp_env_vars):
+    def test_deactivate_user_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test user deactivation flow."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
 
         # Create a user first
-        with SqlAlchemyUnitOfWork() as uow:
-            invite = generate_invite(
-                uow=uow, created_by_user_id=None, global_role=GlobalRole.USER, expires_in_hours=168
-            )
-
+        user_email = "deactivate-test@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             user = create_user(
                 uow=uow,
-                email="deactivate-test@example.com",
-                password="password123",
-                invite_code=invite.code,
+                email=user_email,
+                password="pass123oiua",
                 first_name="Deactivate",
                 last_name="Test",
+                global_role=GlobalRole.USER,
             )
-            user_email = user.email
 
         # Deactivate the user
-        result = runner.invoke(cli, ["users", "deactivate", user_email, "--confirm"])
+        result = cli_with_session_factory(cli, ["users", "deactivate", user_email, "--confirm"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert f"✓ User '{user_email}' has been deactivated." in result.output
 
         # Verify user is deactivated
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             user = uow.users.get_by_email(user_email)
             assert user is not None
             assert not user.is_active
@@ -147,63 +87,69 @@ class TestCliUsersIntegration:
 class TestCliInvitesIntegration:
     """Integration tests for invite management CLI commands."""
 
-    def test_generate_and_list_invites_flow(self, temp_env_vars):
+    def test_generate_and_list_invites_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test complete invite generation and listing flow."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
+        user_email = "gen-invite-test@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            create_user(uow=uow, email=user_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
 
         # Generate invites
-        result = runner.invoke(cli, ["invites", "generate", "--role", "user", "--expires-in", "168", "--count", "2"])
+        result = cli_with_session_factory(
+            cli, ["invites", "generate", "--role", "user", "--inviter-email", user_email, "--count", "2"]
+        )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "✓ Generated 2 invite(s) successfully:" in result.output
 
         # List invites and verify they appear
-        result = runner.invoke(cli, ["invites", "list"])
+        result = cli_with_session_factory(cli, ["invites", "list"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         # Should show the 2 invites we just created
         lines = result.output.split("\n")
         invite_lines = [line for line in lines if "user" in line and "Valid" in line]
         assert len(invite_lines) >= 2
 
-    def test_revoke_invite_flow(self, temp_env_vars):
+    def test_revoke_invite_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test invite revocation flow."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
-
         # Create an invite first
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = create_user(
+                uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
+            )
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             invite = generate_invite(
-                uow=uow, created_by_user_id=None, global_role=GlobalRole.USER, expires_in_hours=168
+                uow=uow, created_by_user_id=user.id, global_role=GlobalRole.USER, expires_in_hours=168
             )
             invite_code = invite.code
 
         # Revoke the invite
-        result = runner.invoke(cli, ["invites", "revoke", invite_code, "--confirm"])
+        result = cli_with_session_factory(cli, ["invites", "revoke", invite_code, "--confirm"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert f"✓ Invite '{invite_code}' has been revoked." in result.output
 
         # Verify invite is no longer valid
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             invite = uow.user_invites.get_by_code(invite_code)
             assert invite is not None
             # Revoked invites should not be valid
             assert not invite.is_valid()
 
-    def test_cleanup_expired_invites(self, temp_env_vars):
+    def test_cleanup_expired_invites(self, sqlite_session_factory, cli_with_session_factory):
         """Test cleanup of expired invites."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = create_user(
+                uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
+            )
 
         # Create an expired invite directly
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             expired_invite = UserInvite(
                 invite_id=uuid.uuid4(),
                 code=generate_invite_code(),
                 global_role=GlobalRole.USER,
-                created_by=None,
+                created_by=user.id,
                 created_at=datetime.now(UTC),
                 expires_at=datetime(2023, 1, 1, tzinfo=UTC),  # Expired
             )
@@ -213,13 +159,13 @@ class TestCliInvitesIntegration:
             expired_code = expired_invite.code
 
         # Run cleanup
-        result = runner.invoke(cli, ["invites", "cleanup", "--confirm"])
+        result = cli_with_session_factory(cli, ["invites", "cleanup", "--confirm"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "✓ Cleaned up" in result.output and "expired invite(s)." in result.output
 
         # Verify expired invite was removed
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             invite = uow.user_invites.get_by_code(expired_code)
             assert invite is None
 
@@ -227,20 +173,18 @@ class TestCliInvitesIntegration:
 class TestCliDatabaseIntegration:
     """Integration tests for database CLI commands."""
 
-    def test_seed_database_flow(self, temp_env_vars):
+    def test_seed_database_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test database seeding flow."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
 
         # Seed the database
-        result = runner.invoke(cli, ["database", "seed", "--confirm"])
+        result = cli_with_session_factory(cli, ["database", "seed", "--confirm"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "✓ Database seeded successfully with test data:" in result.output
         assert "admin@opendlp.example" in result.output
 
         # Verify seeded data exists
-        with SqlAlchemyUnitOfWork() as uow:
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             # Check admin user exists
             admin_user = uow.users.get_by_email("admin@opendlp.example")
             assert admin_user is not None
@@ -264,28 +208,22 @@ class TestCliDatabaseIntegration:
             assemblies = uow.assemblies.list()
             assert len(assemblies) >= 1  # At least the sample assembly
 
-    def test_seed_already_seeded_database(self, temp_env_vars):
+    def test_seed_already_seeded_database(self, sqlite_session_factory, cli_with_session_factory):
         """Test seeding when database already has data."""
-        temp_env_vars(DB_URI=SQLITE_DB_URI)
-        runner = CliRunner()
 
         # Create a user first to simulate existing data
-        with SqlAlchemyUnitOfWork() as uow:
-            invite = generate_invite(
-                uow=uow, created_by_user_id=None, global_role=GlobalRole.USER, expires_in_hours=168
-            )
-
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             create_user(
                 uow=uow,
                 email="existing@example.com",
-                password="password123",
-                invite_code=invite.code,
+                password="pass123,muq",
                 first_name="Existing",
                 last_name="User",
+                global_role=GlobalRole.USER,
             )
 
         # Try to seed - should skip
-        result = runner.invoke(cli, ["database", "seed", "--confirm"])
+        result = cli_with_session_factory(cli, ["database", "seed", "--confirm"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "Database already contains users. Skipping seed." in result.output

@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.domain.assembly import Assembly
@@ -41,11 +42,14 @@ def drop_tables(engine: Engine) -> None:
         raise database.DatabaseError(f"Failed to drop tables: {e}") from e
 
 
-def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], Iterable[Assembly]]:
+def seed_database(
+    session_factory: sessionmaker | None = None,
+) -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], Iterable[Assembly]]:
     """Seed the database with test data."""
-    with SqlAlchemyUnitOfWork() as uow:
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
         # Check if data already exists
         admin_email = "admin@opendlp.example"
+        admin_user_id = uuid.uuid4()
         existing_users = uow.users.list()
         if existing_users:
             raise UserAlreadyExists(admin_email)
@@ -54,7 +58,7 @@ def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], I
 
         # Create admin user
         admin_user = User(
-            user_id=uuid.uuid4(),
+            user_id=admin_user_id,
             email=admin_email,
             password_hash=hash_password("admin123"),
             first_name="Admin",
@@ -91,13 +95,18 @@ def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], I
         )
         uow.users.add(regular_user)
         # we need to commit so that the following items can refer to these
+        user_passwords = (
+            (admin_user.create_detached_copy(), "admin123"),
+            (organiser_user.create_detached_copy(), "organiser123"),
+            (regular_user.create_detached_copy(), "user123"),
+        )
         uow.commit()
 
-    with SqlAlchemyUnitOfWork() as uow:
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
         # Create some sample invites
         admin_invite = UserInvite(
             global_role=GlobalRole.ADMIN,
-            created_by=admin_user.id,
+            created_by=admin_user_id,
             expires_in_hours=168,
             invite_id=uuid.uuid4(),
             code=generate_invite_code(),
@@ -108,7 +117,7 @@ def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], I
 
         organiser_invite = UserInvite(
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            created_by=admin_user.id,
+            created_by=admin_user_id,
             expires_in_hours=168,
             invite_id=uuid.uuid4(),
             code=generate_invite_code(),
@@ -119,7 +128,7 @@ def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], I
 
         user_invite = UserInvite(
             global_role=GlobalRole.USER,
-            created_by=admin_user.id,
+            created_by=admin_user_id,
             expires_in_hours=168,
             invite_id=uuid.uuid4(),
             code=generate_invite_code(),
@@ -140,10 +149,13 @@ def seed_database() -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], I
         )
         uow.assemblies.add(assembly)
 
+        invites = (
+            admin_invite.create_detached_copy(),
+            organiser_invite.create_detached_copy(),
+            user_invite.create_detached_copy(),
+        )
+        assemblies = (assembly.create_detached_copy(),)
+
         uow.commit()
 
-    return (
-        ((admin_user, "admin123"), (organiser_user, "organiser123"), (regular_user, "user123")),
-        (admin_invite, organiser_invite, user_invite),
-        (assembly,),
-    )
+    return user_passwords, invites, assemblies

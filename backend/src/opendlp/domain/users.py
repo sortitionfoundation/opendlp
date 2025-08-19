@@ -87,6 +87,22 @@ class User:
     def __hash__(self) -> int:
         return hash(self.id)
 
+    def create_detached_copy(self) -> "User":
+        """Create a detached copy of this user for use outside SQLAlchemy sessions"""
+        detached_user = User(
+            email=self.email,
+            global_role=self.global_role,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            user_id=self.id,
+            password_hash=self.password_hash,
+            oauth_provider=self.oauth_provider,
+            oauth_id=self.oauth_id,
+            created_at=self.created_at,
+            is_active=self.is_active,
+        )
+        return detached_user
+
 
 class UserAssemblyRole:
     """User role assignment for specific assemblies."""

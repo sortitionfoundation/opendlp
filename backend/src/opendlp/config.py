@@ -13,18 +13,32 @@ load_dotenv()
 SQLITE_DB_URI = "sqlite:///:memory:"
 
 
-def get_postgres_uri(default_db_name: str = "opendlp", user: str = "opendlp") -> str:
-    host = os.environ.get("DB_HOST", "localhost")
-    default_port = 54321 if host == "localhost" else 5432
-    port = int(os.environ.get("DB_PORT", default_port))
-    password = os.environ.get("DB_PASSWORD", "abc123")
-    db_name = os.environ.get("DB_NAME", default_db_name)
-    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+@dataclass(slots=True, kw_only=True)
+class PostgresCfg:
+    user: str
+    password: str
+    host: str
+    port: int
+    db_name: str
+
+    def to_url(self) -> str:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+
+    @classmethod
+    def from_env(cls, default_db_name: str = "opendlp", user: str = "opendlp") -> "PostgresCfg":
+        host = os.environ.get("DB_HOST", "localhost")
+        default_port = 54321 if host == "localhost" else 5432
+        return PostgresCfg(
+            user=user,
+            password=os.environ.get("DB_PASSWORD", "abc123"),
+            host=host,
+            port=int(os.environ.get("DB_PORT", default_port)),
+            db_name=os.environ.get("DB_NAME", default_db_name),
+        )
 
 
-def get_db_uri(default_db_url: str = "") -> str:
-    default_db_url = default_db_url or get_postgres_uri()
-    return os.environ.get("DB_URL", default_db_url)
+def get_db_uri() -> str:
+    return os.environ.get("DB_URI", PostgresCfg.from_env().to_url())
 
 
 def get_api_url() -> str:
@@ -33,7 +47,7 @@ def get_api_url() -> str:
     return f"http://{host}:{port}"
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class RedisCfg:
     host: str
     port: int
@@ -49,7 +63,7 @@ class RedisCfg:
         return RedisCfg(host=host, port=port)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class EmailCfg:
     host: str
     port: int

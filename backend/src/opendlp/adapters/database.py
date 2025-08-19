@@ -2,6 +2,7 @@
 ABOUTME: Configures SQLAlchemy sessions and maps domain objects to tables"""
 
 from sqlalchemy import create_engine
+from sqlalchemy.orm import clear_mappers as sqla_clear_mappers
 from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import orm
@@ -18,14 +19,15 @@ class DatabaseError(Exception):
 def create_session_factory(database_url: str = "", echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""
     database_url = database_url or get_db_uri()
-    engine = create_engine(
-        database_url,
-        echo=echo,
-        pool_pre_ping=True,  # Verify connections before use
-        pool_recycle=3600,  # Recycle connections after 1 hour
-        pool_size=10,  # Connection pool size
-        max_overflow=20,  # Additional connections beyond pool_size
-    )
+    extra_args: dict[str, int | bool] = {}
+    if database_url.startswith("postgresql://"):
+        extra_args = {
+            "pool_pre_ping": True,  # Verify connections before use
+            "pool_recycle": 3600,  # Recycle connections after 1 hour
+            "pool_size": 10,  # Connection pool size
+            "max_overflow": 20,  # Additional connections beyond pool_size
+        }
+    engine = create_engine(database_url, echo=echo, **extra_args)
 
     # Create indexes
     orm.create_indexes()
@@ -71,3 +73,10 @@ def start_mappers() -> None:
 
     except Exception as e:  # pragma: no cover
         raise DatabaseError(f"Failed to start mappers: {e}") from e
+
+
+def clear_mappers() -> None:
+    sqla_clear_mappers()
+
+    global _mappers_started
+    _mappers_started = False

@@ -62,8 +62,8 @@ DEFAULT_SESSION_FACTORY = create_session_factory()
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     """SQLAlchemy implementation of Unit of Work pattern."""
 
-    def __init__(self, session_factory: sessionmaker = DEFAULT_SESSION_FACTORY) -> None:
-        self.session_factory = session_factory
+    def __init__(self, session_factory: sessionmaker | None = None) -> None:
+        self.session_factory = session_factory or DEFAULT_SESSION_FACTORY
         self._session: Session | None = None
 
     @property
