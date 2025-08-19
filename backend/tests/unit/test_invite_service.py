@@ -261,14 +261,21 @@ class TestCleanupExpiredInvites:
         uow.user_invites.add(used_expired_invite)
         uow.user_invites.add(valid_invite)
 
-        # This is a simplified test - the actual cleanup implementation
-        # would need repository delete methods
+        # Run cleanup
         count = invite_service.cleanup_expired_invites(uow=uow)
 
-        # For now, we expect it to return count but not actually delete
-        # In a real implementation, expired_count would be based on actual deletion
-        assert isinstance(count, int)
+        # Should have deleted only the expired unused invite
+        assert count == 1
         assert uow.committed
+
+        # Verify the expired unused invite was deleted
+        remaining_invites = list(uow.user_invites.list())
+        assert len(remaining_invites) == 2
+        assert expired_invite not in remaining_invites
+
+        # Used expired invite and valid invite should remain
+        assert used_expired_invite in remaining_invites
+        assert valid_invite in remaining_invites
 
 
 class TestGetInviteStatistics:

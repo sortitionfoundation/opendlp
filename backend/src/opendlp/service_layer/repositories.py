@@ -98,6 +98,11 @@ class UserInviteRepository(AbstractRepository):
         """Get all invites that have expired."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def delete(self, item: UserInvite) -> None:
+        """Delete an invite from the repository."""
+        raise NotImplementedError
+
 
 class UserAssemblyRoleRepository(AbstractRepository):
     """Repository interface for UserAssemblyRole domain objects."""

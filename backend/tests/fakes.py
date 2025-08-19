@@ -116,6 +116,11 @@ class FakeUserInviteRepository(FakeRepository, UserInviteRepository):
         """Get all invites that have expired."""
         return [invite for invite in self._items if not invite.is_valid()]
 
+    def delete(self, item: UserInvite) -> None:
+        """Delete an invite from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
 
 class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository):
     """Fake implementation for UserAssemblyRole repository."""

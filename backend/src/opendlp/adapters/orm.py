@@ -60,7 +60,7 @@ class TZAwareDatetime(TypeDecorator):
         if isinstance(value, datetime) and value.tzinfo is None:
             return value.replace(tzinfo=UTC)
 
-        return value
+        return value  # type: ignore[no-any-return]
 
 
 class CrossDatabaseUUID(TypeDecorator):

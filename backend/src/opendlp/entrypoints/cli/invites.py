@@ -180,30 +180,27 @@ def cleanup_expired(ctx: click.Context, confirm: bool) -> None:
     try:
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
+
+        # First check what we'll clean up
         with uow:
-            # Get all expired invites
             all_invites = uow.user_invites.list()
             expired_invites = [i for i in all_invites if not i.is_valid() and not i.used_by]
 
-            if not expired_invites:
-                click.echo("No expired invites to clean up.")
+        if not expired_invites:
+            click.echo("No expired invites to clean up.")
+            return
+
+        # Confirmation prompt
+        if not confirm:
+            click.echo(f"Found {len(expired_invites)} expired invite(s) to remove.")
+            if not click.confirm("Are you sure you want to delete these expired invites?"):
+                click.echo("Operation cancelled.")
                 return
 
-            # Confirmation prompt
-            if not confirm:
-                click.echo(f"Found {len(expired_invites)} expired invite(s) to remove.")
-                if not click.confirm("Are you sure you want to delete these expired invites?"):
-                    click.echo("Operation cancelled.")
-                    return
+        # Use the service layer function to actually clean up
+        cleaned_count = invite_service.cleanup_expired_invites(uow)
 
-            # For now, just show expired invites (delete functionality needs repository method)
-            click.echo(f"Found {len(expired_invites)} expired invite(s):")
-            for invite in expired_invites:
-                click.echo(f"  - {invite.code} (expired: {invite.expires_at})")
-
-            click.echo(
-                click.style("Note: Automatic cleanup not implemented yet. Expired invites shown above.", "yellow")
-            )
+        click.echo(click.style(f"✓ Cleaned up {cleaned_count} expired invite(s).", "green"))
 
     except Exception as e:
         click.echo(click.style(f"✗ Error cleaning up invites: {e}", "red"))

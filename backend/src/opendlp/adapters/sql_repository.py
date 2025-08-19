@@ -219,6 +219,10 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
             .all()
         )
 
+    def delete(self, item: UserInvite) -> None:
+        """Delete an invite from the repository."""
+        self.session.delete(item)
+
     def cleanup_expired_invites(self) -> int:
         """Remove expired invites and return count of deleted items."""
         now = datetime.now(UTC)

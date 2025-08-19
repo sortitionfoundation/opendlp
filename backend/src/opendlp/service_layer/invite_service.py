@@ -218,11 +218,9 @@ def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
                 # Remove unused expired invites
                 # Note: In practice, you might want to keep them for audit purposes
                 # and just mark them differently, but for simplicity we'll remove them
+                uow.user_invites.delete(invite)
                 expired_count += 1
 
-        # This is a simplified version - actual implementation might need
-        # a proper delete method in the repository
-        # TODO: add the delete method
         uow.commit()
         return expired_count
 

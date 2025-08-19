@@ -1,3 +1,5 @@
+from sqlalchemy.orm import sessionmaker
+
 from opendlp.adapters import database
 from opendlp.config import get_db_uri
 from opendlp.service_layer import unit_of_work
@@ -6,7 +8,7 @@ from opendlp.service_layer import unit_of_work
 def bootstrap(
     start_orm: bool = True,
     uow: unit_of_work.AbstractUnitOfWork | None = None,
-    session_factory=None,
+    session_factory: sessionmaker | None = None,
 ) -> unit_of_work.AbstractUnitOfWork:
     if start_orm:
         database.start_mappers()

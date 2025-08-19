@@ -66,6 +66,7 @@ def reset_db(ctx: click.Context) -> None:
 
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
+        assert isinstance(uow, SqlAlchemyUnitOfWork)
         with uow:
             # Drop all tables
             if uow.session.bind is not None:
