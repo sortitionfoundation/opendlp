@@ -2,9 +2,8 @@
 ABOUTME: Provides commands to initialize, upgrade, and seed the database"""
 
 import os
+
 import click
-from alembic import command
-from alembic.config import Config
 
 from opendlp.adapters.orm import metadata
 from opendlp.service_layer.db_utils import seed_database
@@ -38,7 +37,7 @@ def seed_db(ctx: click.Context, confirm: bool) -> None:
         for assembly in assemblies:
             click.echo(f"  Sample assembly: {assembly.title}")
 
-    except UserAlreadyExists as e:
+    except UserAlreadyExists:
         click.echo(click.style("Database already contains users. Skipping seed.", "yellow"))
         return
     except Exception as e:

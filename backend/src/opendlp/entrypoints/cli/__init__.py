@@ -38,4 +38,3 @@ cli.add_command(users)
 
 if __name__ == "__main__":
     cli()
-

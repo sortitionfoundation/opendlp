@@ -64,6 +64,14 @@ module = 'flask_login.*'
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = 'flask_session.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = 'flask_talisman.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = 'flask_wtf.*'
 ignore_missing_imports = true
 

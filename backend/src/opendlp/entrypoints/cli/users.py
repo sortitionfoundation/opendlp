@@ -4,7 +4,7 @@ ABOUTME: Provides commands to add, list, deactivate users and reset passwords"""
 import click
 
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.exceptions import InvalidInvite, PasswordTooWeak, UserAlreadyExists
+from opendlp.service_layer.exceptions import PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
