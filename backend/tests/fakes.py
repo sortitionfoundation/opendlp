@@ -43,6 +43,15 @@ class FakeRepository(AbstractRepository):
 class FakeUserRepository(FakeRepository, UserRepository):
     """Fake implementation of UserRepository."""
 
+    def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
+        """List users filtered by criteria."""
+        users = list(self._items)
+        if role:
+            users = [user for user in users if user.role == role]
+        if active is not None:
+            users = [user for user in users if user.active == active]
+        return users
+
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         for user in self._items:
