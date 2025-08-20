@@ -40,6 +40,18 @@ class User:
         self.is_active = is_active
         self.assembly_roles: list[UserAssemblyRole] = []
 
+    # couple of things required for flask_login
+    @property
+    def is_authenticated(self) -> bool:
+        return self.is_active
+
+    @property
+    def is_anonymous(self) -> bool:
+        return False
+
+    def get_id(self) -> str:
+        return str(self.id)
+
     @property
     def display_name(self) -> str:
         """Get user's display name, preferring full name over email."""
