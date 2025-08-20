@@ -92,6 +92,11 @@ def load_user(user_id: str) -> User | None:
         user_uuid = uuid.UUID(user_id)
         uow = bootstrap.bootstrap()
         with uow:
-            return uow.users.get(user_uuid)
+            db_user = uow.users.get(user_uuid)
+            if db_user:
+                user = db_user.create_detached_copy()
+                assert isinstance(user, User)
+                return user
+            return None
     except (ValueError, TypeError):
         return None

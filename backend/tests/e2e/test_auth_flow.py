@@ -13,13 +13,15 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from opendlp.service_layer.user_service import create_user
 
 
 @pytest.fixture
-def app():
+def app(temp_env_vars):
     """Create test Flask application."""
+    temp_env_vars(DB_URI="postgresql://opendlp:abc123@localhost:54322/opendlp")
     start_mappers()  # Initialize SQLAlchemy mappings
-    app = create_app("testing")
+    app = create_app("testing_postgres")
     return app
 
 
@@ -30,12 +32,12 @@ def client(app):
 
 
 @pytest.fixture
-def valid_invite():
+def valid_invite(postgres_session_factory):
     """Create a valid invite in the database."""
-    with SqlAlchemyUnitOfWork() as uow:
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        uow.users.add(admin_user)
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        admin_user = create_user(uow, email="admin@example.com", global_role=GlobalRole.ADMIN, password="pass123=jvl")
 
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = UserInvite(
             code="VALID123",
             global_role=GlobalRole.USER,
@@ -43,18 +45,19 @@ def valid_invite():
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
         uow.user_invites.add(invite)
+        detached_invite = invite.create_detached_copy()
         uow.commit()
 
-        return invite
+        return detached_invite
 
 
 @pytest.fixture
-def expired_invite():
+def expired_invite(postgres_session_factory):
     """Create an expired invite in the database."""
-    with SqlAlchemyUnitOfWork() as uow:
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        uow.users.add(admin_user)
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        admin_user = create_user(uow, email="admin@example.com", global_role=GlobalRole.ADMIN, password="pass123=jvl")
 
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = UserInvite(
             code="EXPIRED123",
             global_role=GlobalRole.USER,
@@ -62,15 +65,16 @@ def expired_invite():
             expires_at=datetime.now(UTC) - timedelta(hours=1),  # Expired
         )
         uow.user_invites.add(invite)
+        detached_invite = invite.create_detached_copy()
         uow.commit()
 
-        return invite
+        return detached_invite
 
 
 @pytest.fixture
-def test_user():
+def test_user(postgres_session_factory):
     """Create a test user in the database."""
-    with SqlAlchemyUnitOfWork() as uow:
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
@@ -79,9 +83,10 @@ def test_user():
             last_name="User",
         )
         uow.users.add(user)
+        detached_user = user.create_detached_copy()
         uow.commit()
 
-        return user
+        return detached_user
 
 
 class TestAuthenticationFlow:
@@ -107,15 +112,16 @@ class TestAuthenticationFlow:
                 "password_confirm": "securepassword123",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
             },
-            follow_redirects=True,
+            follow_redirects=False,
         )
 
-        assert response.status_code == 200
-        assert b"Registration successful" in response.data or b"Dashboard" in response.data
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/dashboard"
 
         # Verify user is logged in (check session)
-        with client.session_transaction() as sess:
-            assert "_user_id" in sess
+        with client.session_transaction() as session:
+            assert "_user_id" in session
+            assert any("Registration successful" in f[1] for f in session["_flashes"])
 
     def test_register_with_expired_invite_fails(self, client: FlaskClient, expired_invite: UserInvite):
         """Test registration fails with expired invite."""
@@ -133,7 +139,7 @@ class TestAuthenticationFlow:
         )
 
         assert response.status_code == 200  # Returns form with error
-        assert b"Invalid or expired invite code" in response.data or b"error" in response.data
+        assert b"Invalid invite code" in response.data
 
     def test_register_with_invalid_invite_fails(self, client: FlaskClient):
         """Test registration fails with non-existent invite."""
@@ -200,12 +206,12 @@ class TestAuthenticationFlow:
                 "password": "testpassword123",
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
-            follow_redirects=True,
+            follow_redirects=False,
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 302
         # Should redirect to dashboard after login
-        assert b"Dashboard" in response.data or b"Welcome" in response.data
+        assert response.headers["Location"] == "/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as sess:
@@ -248,15 +254,16 @@ class TestAuthenticationFlow:
                 "remember_me": True,
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
-            follow_redirects=True,
+            follow_redirects=False,
         )
 
-        assert response.status_code == 200
-
+        assert response.status_code == 302
+        #
         # Check that remember me cookie is set (implementation may vary)
-        cookies = [cookie for cookie in client.cookie_jar if "remember" in cookie.name.lower()]
-        # This test is basic - real implementation would check cookie expiration
-        assert cookies
+        cookie = client.get_cookie("remember_token")
+        assert cookie is not None
+        assert isinstance(cookie.expires, datetime)
+        assert cookie.expires > datetime.now(UTC) + timedelta(days=5)
 
     def test_logout_success(self, client: FlaskClient, test_user: User):
         """Test successful logout."""
