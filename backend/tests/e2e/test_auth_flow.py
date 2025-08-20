@@ -285,6 +285,23 @@ class TestAuthenticationFlow:
         with client.session_transaction() as sess:
             assert "_user_id" not in sess
 
+    def test_assemblies_view_access(self, client: FlaskClient, test_user: User):
+        """Test that assemblies view is accessible when logged in."""
+        # Login first
+        client.post(
+            "/auth/login",
+            data={
+                "email": test_user.email,
+                "password": "testpassword123",
+                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+            },
+        )
+
+        # Access assemblies page
+        response = client.get("/assemblies")
+        assert response.status_code == 200
+        assert b"Assemblies" in response.data or b"assemblies" in response.data
+
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient):
         """Test that protected pages redirect to login."""
         response = client.get("/dashboard")

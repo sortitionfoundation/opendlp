@@ -4,6 +4,7 @@
 import re
 from collections.abc import Iterable
 from difflib import SequenceMatcher
+from typing import Protocol
 
 from django.contrib.auth.password_validation import CommonPasswordValidator, exceeds_maximum_length_ratio
 from django.core.exceptions import ValidationError
@@ -15,6 +16,12 @@ from django.core.exceptions import ValidationError
 # - CommonPasswordValidator is complicated - so we just override the text.
 # - UserAttributeSimilarityValidator expects user to be a Django model with _meta - so
 #   we just copy it all and chop out that code.
+
+
+class PasswordValidator(Protocol):
+    def validate(self, password: str, user: object | None = None) -> None: ...
+    def get_error_message(self) -> str: ...
+    def get_help_text(self) -> str: ...
 
 
 class MinimumLengthValidator:

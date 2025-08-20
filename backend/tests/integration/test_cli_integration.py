@@ -83,6 +83,38 @@ class TestCliUsersIntegration:
             assert user is not None
             assert not user.is_active
 
+    def test_reset_password_flow(self, sqlite_session_factory, cli_with_session_factory, monkeypatch):
+        """Test user password reset flow."""
+        user_email = "reset-password-test@example.com"
+        original_password = "original123abc"
+        new_password = "newpassword456def"
+
+        # Create a user first
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = create_user(
+                uow=uow,
+                email=user_email,
+                password=original_password,
+                first_name="Reset",
+                last_name="Test",
+                global_role=GlobalRole.USER,
+            )
+            original_hash = user.password_hash
+
+        # Reset the password using CLI with explicit password
+        result = cli_with_session_factory(cli, ["users", "reset-password", user_email, "--password", new_password])
+
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+        assert f"✓ Password reset for user '{user_email}'." in result.output
+
+        # Verify password was changed
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = uow.users.get_by_email(user_email)
+            assert user is not None
+            assert user.password_hash != original_hash
+            # Verify new password hash is set
+            assert user.password_hash is not None
+
 
 class TestCliInvitesIntegration:
     """Integration tests for invite management CLI commands."""
@@ -227,3 +259,37 @@ class TestCliDatabaseIntegration:
 
         assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "Database already contains users. Skipping seed." in result.output
+
+    def test_reset_database_flow(self, sqlite_session_factory, cli_with_session_factory, monkeypatch):
+        """Test database reset flow."""
+        # Enable dangerous reset operation
+        monkeypatch.setenv("ALLOW_RESET_DB", "DANGEROUS")
+
+        # Create some initial data
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            create_user(
+                uow=uow,
+                email="before-reset@example.com",
+                password="pass123oiua",
+                global_role=GlobalRole.USER,
+            )
+
+        # Verify initial data exists
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = uow.users.get_by_email("before-reset@example.com")
+            assert user is not None
+
+        # Mock the confirmation input to "delete everything"
+        with monkeypatch.context() as m:
+            m.setattr("click.prompt", lambda msg: "delete everything")
+
+            # Reset the database
+            result = cli_with_session_factory(cli, ["database", "reset"])
+
+            assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+            assert "✓ Database reset successfully." in result.output
+
+        # Verify data was cleared
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            user = uow.users.get_by_email("before-reset@example.com")
+            assert user is None  # Should be gone after reset

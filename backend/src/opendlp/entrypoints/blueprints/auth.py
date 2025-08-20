@@ -8,6 +8,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from opendlp import bootstrap
 from opendlp.entrypoints.forms import LoginForm, RegistrationForm
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
+from opendlp.service_layer.security import password_validators_help_text_html
 from opendlp.service_layer.user_service import authenticate_user, create_user
 from opendlp.translations import _
 
@@ -101,4 +102,4 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             current_app.logger.error(f"Registration error: {e}")
             flash(_("An error occurred during registration. Please try again."), "error")
 
-    return render_template("auth/register.html", form=form)
+    return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())

@@ -49,7 +49,7 @@ def _(message: str, **kwargs: Any) -> str:
                 if kwargs:
                     return str(flask_gettext(message, **kwargs))
                 return str(flask_gettext(message))
-        except (ImportError, KeyError):
+        except (ImportError, KeyError):  # pragma: no cover
             # Flask-Babel not available or not initialized
             pass
 
@@ -65,7 +65,7 @@ def _l(message: str, **kwargs: Any) -> str:
                 if kwargs:
                     return str(flask_lazy_gettext(message, **kwargs))
                 return str(flask_lazy_gettext(message))
-        except (ImportError, KeyError):
+        except (ImportError, KeyError):  # pragma: no cover
             # Flask-Babel not available or not initialized
             pass
 

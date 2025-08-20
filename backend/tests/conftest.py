@@ -16,21 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from tenacity import retry, stop_after_delay
 
 from opendlp.adapters import database, orm
-from opendlp.config import FlaskTestSQLiteConfig, PostgresCfg, RedisCfg, get_api_url, get_config
-
-
-@pytest.fixture(scope="session")
-def test_config():
-    """Provide test configuration for the entire test session."""
-    # Ensure we're using test configuration
-    os.environ["FLASK_ENV"] = "testing"
-    return FlaskTestSQLiteConfig()
-
-
-@pytest.fixture(scope="function")
-def config():
-    """Provide configuration for individual test functions."""
-    return get_config()
+from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 
 
 @pytest.fixture(autouse=True)
@@ -39,7 +25,7 @@ def set_test_env():
     original_env = os.environ.get("FLASK_ENV")
     os.environ["FLASK_ENV"] = "testing"
     yield
-    if original_env is not None:
+    if original_env is not None:  # pragma: no cover
         os.environ["FLASK_ENV"] = original_env
     else:
         os.environ.pop("FLASK_ENV", None)
@@ -59,7 +45,7 @@ def clear_env_vars():
 
     # Restore original environment variables
     for key, value in original_vars.items():
-        if value is not None:
+        if value is not None:  # pragma: no cover
             os.environ[key] = value
 
 
@@ -81,13 +67,6 @@ def temp_env_vars():
             os.environ[key] = value
         else:
             os.environ.pop(key, None)
-
-
-@pytest.fixture
-def mappers():
-    database.start_mappers()
-    yield
-    database.clear_mappers()
 
 
 @pytest.fixture

@@ -41,6 +41,7 @@
                             <span class="govuk-visually-hidden">Error:</span> {{ error }}
                         </p>
                     {% endfor %}
+                    {{ password_help }}
                 {% endif %}
                 {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else ""),
                                   aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}

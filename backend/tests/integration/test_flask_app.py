@@ -187,9 +187,9 @@ class TestConfiguration:
             assert app.config["FLASK_ENV"] == "development"
         finally:
             # Restore original environment
-            if original_env is not None:
+            if original_env is not None:  # pragma: no cover
                 os.environ["FLASK_ENV"] = original_env
-            elif "FLASK_ENV" in os.environ:
+            elif "FLASK_ENV" in os.environ:  # pragma: no cover
                 del os.environ["FLASK_ENV"]
 
     def test_testing_config(self) -> None:

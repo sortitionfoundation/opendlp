@@ -317,7 +317,7 @@ class TestRequireGlobalRoleDecorator:
 
         @require_global_role(GlobalRole.GLOBAL_ORGANISER)
         def test_function(uow, user):
-            return "success"
+            return "success"  # pragma: no cover
 
         # Should fail because user < global organiser
         with pytest.raises(InsufficientPermissions):
@@ -383,7 +383,7 @@ class TestRequireAssemblyPermissionDecorator:
 
         @require_assembly_permission(can_manage_assembly)
         def test_function(uow, user_id, assembly_id, data):
-            return f"success with {data}"
+            return f"success with {data}"  # pragma: no cover
 
         # Should fail because regular user cannot manage assembly
         with pytest.raises(InsufficientPermissions):
@@ -403,7 +403,7 @@ class TestRequireAssemblyPermissionDecorator:
 
         @require_assembly_permission(can_manage_assembly)
         def test_function(uow, user_id, assembly_id, data):
-            return f"success with {data}"
+            return f"success with {data}"  # pragma: no cover
 
         # Should fail with user not found
         with pytest.raises(ValueError) as exc_info:
@@ -418,7 +418,7 @@ class TestRequireAssemblyPermissionDecorator:
 
         @require_assembly_permission(can_manage_assembly)
         def test_function(uow, user_id, assembly_id, data):
-            return f"success with {data}"
+            return f"success with {data}"  # pragma: no cover
 
         # Should fail with assembly not found
         with pytest.raises(ValueError) as exc_info:
@@ -454,7 +454,7 @@ class TestRequireAssemblyPermissionDecorator:
 
         @require_assembly_permission(can_manage_assembly)
         def manage_function(uow, user_id, assembly_id):
-            return "can manage"
+            return "can manage"  # pragma: no cover
 
         # Should succeed for view (user has assembly role)
         result = view_function(uow, regular_user.id, assembly.id)
