@@ -5,7 +5,14 @@ from typing import ClassVar
 
 import pytest
 
-from opendlp.config import FlaskConfig, FlaskProductionConfig, FlaskTestConfig, get_config, to_bool
+from opendlp.config import (
+    FlaskConfig,
+    FlaskProductionConfig,
+    FlaskTestPostgresConfig,
+    FlaskTestSQLiteConfig,
+    get_config,
+    to_bool,
+)
 
 
 class TestToBool:
@@ -46,7 +53,7 @@ class TestFlaskConfigClass:
     def test_config_defaults(self, temp_env_vars, clear_env_vars):
         """Test that Config loads expected default values."""
         # Clear FLASK_ENV to test defaults
-        clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME")
+        clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
         temp_env_vars(FLASK_ENV="development")
 
         config = FlaskConfig()
@@ -64,6 +71,7 @@ class TestFlaskConfigClass:
         temp_env_vars(
             DB_HOST="db.server.net",
             DB_PASSWORD="db-secret",
+            DB_PORT="5432",
             SECRET_KEY="test-secret",
             FLASK_ENV="production",
             SELECTION_TIMEOUT="300",
@@ -86,11 +94,23 @@ class TestFlaskConfigClass:
 class TestFlaskTestConfig:
     """Test the DevTestConfig class."""
 
-    def test_test_config_overrides(self):
-        """Test that DevTestConfig overrides appropriate values."""
-        config = FlaskTestConfig()
+    def test_test_sqlite_config_overrides(self):
+        """Test that FlaskTestSQLiteConfig overrides appropriate values."""
+        config = FlaskTestSQLiteConfig()
 
         assert config.SQLALCHEMY_DATABASE_URI == "sqlite:///:memory:"
+        assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
+        assert config.FLASK_ENV == "testing"
+        # Should inherit other defaults
+        assert config.SELECTION_TIMEOUT == 600
+        assert config.INVITE_EXPIRY_HOURS == 168
+
+    def test_test_postgres_config_overrides(self, clear_env_vars):
+        """Test that FlaskTestPostgresConfig overrides appropriate values."""
+        clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
+        config = FlaskTestPostgresConfig()
+
+        assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54322/opendlp"
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
@@ -109,8 +129,9 @@ class TestFlaskProductionConfig:
 
         assert config.SECRET_KEY == "production-secret-key"
 
-    def test_production_config_without_secret_key(self):
+    def test_production_config_without_secret_key(self, clear_env_vars):
         """Test that ProductionConfig raises error without proper SECRET_KEY."""
+        clear_env_vars("SECRET_KEY")
         with pytest.raises(ValueError, match="SECRET_KEY must be set in production"):
             FlaskProductionConfig()
 
@@ -125,16 +146,25 @@ class TestGetConfig:
         config = get_config()
 
         assert isinstance(config, FlaskConfig)
-        assert not isinstance(config, FlaskTestConfig)
+        assert not isinstance(config, FlaskTestSQLiteConfig)
+        assert not isinstance(config, FlaskTestPostgresConfig)
         assert not isinstance(config, FlaskProductionConfig)
 
-    def test_get_config_testing(self, temp_env_vars):
+    @pytest.mark.parametrize(
+        "name,klass",
+        [
+            ("testing", FlaskTestSQLiteConfig),
+            ("testing_sqlite", FlaskTestSQLiteConfig),
+            ("testing_postgres", FlaskTestPostgresConfig),
+        ],
+    )
+    def test_get_config_testing(self, name, klass, temp_env_vars):
         """Test get_config returns TestConfig for testing."""
-        temp_env_vars(FLASK_ENV="testing")
+        temp_env_vars(FLASK_ENV=name)
 
         config = get_config()
 
-        assert isinstance(config, FlaskTestConfig)
+        assert isinstance(config, klass)
 
     def test_get_config_production(self, temp_env_vars):
         """Test get_config returns ProductionConfig for production."""
@@ -151,5 +181,6 @@ class TestGetConfig:
 
         config = get_config()
         assert isinstance(config, FlaskConfig)
-        assert not isinstance(config, FlaskTestConfig)
+        assert not isinstance(config, FlaskTestSQLiteConfig)
+        assert not isinstance(config, FlaskTestPostgresConfig)
         assert not isinstance(config, FlaskProductionConfig)
