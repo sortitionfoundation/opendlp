@@ -84,11 +84,11 @@ restart-docker: stop-docker build-docker start-docker
 restart-docker-b: stop-docker build-docker start-docker-b
 
 # start the postgres only docker composer for services for local dev
-start-services-docker:
+start-local-docker:
   @docker compose -f docker-compose.localdev.yml up -d
 
 # stop the postgres only docker composer for services for local dev
-stop-services-docker:
+stop-local-docker:
   @docker compose -f docker-compose.localdev.yml down
 
 # start the postgres only docker composer for services for tests
