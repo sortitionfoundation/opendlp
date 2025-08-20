@@ -5,9 +5,9 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required, login_user, logout_user
 
+from opendlp import bootstrap
 from opendlp.entrypoints.forms import LoginForm, RegistrationForm
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import authenticate_user, create_user
 from opendlp.translations import _
 
@@ -24,7 +24,8 @@ def login() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            with SqlAlchemyUnitOfWork() as uow:
+            uow = bootstrap.bootstrap()
+            with uow:
                 # After form validation, these fields are guaranteed to be non-None
                 assert form.email.data is not None
                 assert form.password.data is not None
@@ -70,7 +71,8 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            with SqlAlchemyUnitOfWork() as uow:
+            uow = bootstrap.bootstrap()
+            with uow:
                 # After form validation, required fields are guaranteed to be non-None
                 assert form.email.data is not None
                 assert form.password.data is not None

@@ -7,7 +7,7 @@ services:
     ports:
       - "54321:5432"
     volumes:
-      - sqla_opendlp_pgdata:/var/lib/postgresql/data
+      - sqla_opendlp_local_pgdata:/var/lib/postgresql/data
 
   redis_local:
     image: redis:alpine
@@ -15,4 +15,4 @@ services:
       - "6379:6379"
 
 volumes:
-  sqla_opendlp_pgdata:
+  sqla_opendlp_local_pgdata:

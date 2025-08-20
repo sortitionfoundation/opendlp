@@ -10,8 +10,8 @@ from flask_session import Session
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect
 
+from opendlp import bootstrap
 from opendlp.domain.users import User
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 # Initialize extensions
 login_manager = LoginManager()
@@ -90,7 +90,8 @@ def load_user(user_id: str) -> User | None:
 
     try:
         user_uuid = uuid.UUID(user_id)
-        with SqlAlchemyUnitOfWork() as uow:
+        uow = bootstrap.bootstrap()
+        with uow:
             return uow.users.get(user_uuid)
     except (ValueError, TypeError):
         return None

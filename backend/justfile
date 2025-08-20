@@ -83,17 +83,29 @@ restart-docker: stop-docker build-docker start-docker
 # stop, rebuild, start docker blocking - i.e. not detaching
 restart-docker-b: stop-docker build-docker start-docker-b
 
-# start the postgres only docker composer
+# start the postgres only docker composer for services for local dev
 start-services-docker:
   @docker compose -f docker-compose.localdev.yml up -d
 
-# stop the postgres only docker composer
+# stop the postgres only docker composer for services for local dev
 stop-services-docker:
   @docker compose -f docker-compose.localdev.yml down
 
-# drop the docker volume holding the postgres database
-drop-docker-db:
-  @docker volume rm backend_sqla_opendlp_pgdata
+# start the postgres only docker composer for services for tests
+start-test-docker:
+  @docker compose -f docker-compose.test.yml up -d
+
+# stop the postgres only docker composer for services for tests
+stop-test-docker:
+  @docker compose -f docker-compose.test.yml down
+
+# drop the docker volume holding the postgres database for local services
+drop-local-docker-db:
+  @docker volume rm backend_sqla_opendlp_local_pgdata
+
+# drop the docker volume holding the postgres database for test
+drop-test-docker-db:
+  @docker volume rm backend_sqla_opendlp_test_pgdata
 
 # run the editor with the environment available
 edit:

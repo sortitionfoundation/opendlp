@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from tenacity import retry, stop_after_delay
 
 from opendlp.adapters import database, orm
-from opendlp.config import FlaskTestConfig, PostgresCfg, RedisCfg, get_api_url, get_config
+from opendlp.config import FlaskTestSQLiteConfig, PostgresCfg, RedisCfg, get_api_url, get_config
 
 
 @pytest.fixture(scope="session")
@@ -24,7 +24,7 @@ def test_config():
     """Provide test configuration for the entire test session."""
     # Ensure we're using test configuration
     os.environ["FLASK_ENV"] = "testing"
-    return FlaskTestConfig()
+    return FlaskTestSQLiteConfig()
 
 
 @pytest.fixture(scope="function")

@@ -161,7 +161,7 @@ class FlaskConfig:
         return [(code, language_names.get(code, code.upper())) for code in self.LANGUAGES]
 
 
-class FlaskTestConfig(FlaskConfig):
+class FlaskTestSQLiteConfig(FlaskConfig):
     """Test configuration that uses SQLite in-memory database."""
 
     TESTING = True
@@ -176,6 +176,14 @@ class FlaskTestConfig(FlaskConfig):
         session_file_dir = Path(tempfile.gettempdir()) / "flask_session"
         session_file_dir.mkdir(exist_ok=True)
         self.SESSION_FILE_DIR = str(session_file_dir)
+
+
+class FlaskTestPostgresConfig(FlaskTestSQLiteConfig):
+    def __init__(self) -> None:
+        super().__init__()
+        postgres_cfg = PostgresCfg.from_env()
+        postgres_cfg.port = 54322
+        self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
 
 
 class FlaskProductionConfig(FlaskConfig):
@@ -199,7 +207,9 @@ def get_config(config_name: str = "") -> FlaskConfig:
 
     config_classes = {
         "development": FlaskConfig,
-        "testing": FlaskTestConfig,
+        "testing": FlaskTestSQLiteConfig,
+        "testing_postgres": FlaskTestPostgresConfig,
+        "testing_sqlite": FlaskTestSQLiteConfig,
         "production": FlaskProductionConfig,
     }
 
