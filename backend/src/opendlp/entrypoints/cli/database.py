@@ -30,6 +30,7 @@ def seed_db(ctx: click.Context, confirm: bool) -> None:
             return
 
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
+        session_factory = bootstrap.bootstrap_session_factory(session_factory=session_factory)
         user_passwords, invites, assemblies = seed_database(session_factory)
 
         click.echo(click.style("✓ Database seeded successfully with test data:", "green"))
