@@ -53,7 +53,7 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
 
             return f(*args, **kwargs)
 
-        return decorated_function
+        return decorated_function  # type: ignore[return-value]
 
     return decorator
 
@@ -114,7 +114,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
             except (ValueError, TypeError):
                 abort(400)
 
-        return decorated_function
+        return decorated_function  # type: ignore[return-value]
 
     return decorator
 
@@ -146,7 +146,7 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
 
     def decorator(f: F) -> F:
         @wraps(f)
-        def decorated_function(*args: Any, **kwargs: Any) -> Callable:
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
             if not current_user.is_authenticated:
                 flash(_("Please log in to access this page."), "error")
                 return redirect(url_for("auth.login", next=request.url))
@@ -183,7 +183,7 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
             except (ValueError, TypeError):
                 abort(400)
 
-        return decorated_function
+        return decorated_function  # type: ignore[return-value]
 
     return decorator
 
