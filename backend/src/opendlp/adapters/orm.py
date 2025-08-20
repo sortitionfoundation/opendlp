@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, String, Table, Text, TypeDecorator
+from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
@@ -120,7 +120,7 @@ users = Table(
     "users",
     metadata,
     Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("email", String(255), nullable=False, unique=True),
+    Column("email", String(255), nullable=False, index=True, unique=True),
     Column("first_name", String(100), nullable=False, default=""),
     Column("last_name", String(100), nullable=False, default=""),
     Column("password_hash", String(255), nullable=True),
@@ -129,6 +129,7 @@ users = Table(
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("is_active", Boolean, nullable=False, default=True),
+    Index("ix_users_oauth_provider_id", "oauth_provider", "oauth_id"),
 )
 
 # Assemblies table
@@ -140,8 +141,8 @@ assemblies = Table(
     Column("question", Text, nullable=False, default=""),
     Column("gsheet", String(500), nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
-    Column("status", EnumAsString(AssemblyStatus, 50), nullable=False),
-    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
+    Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # JSON column for flexible assembly configuration
     Column("config", JSON, nullable=True),
@@ -152,10 +153,13 @@ user_assembly_roles = Table(
     "user_assembly_roles",
     metadata,
     Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-    Column("assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False),
+    Column(
+        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), index=True, nullable=False
+    ),
     Column("role", EnumAsString(AssemblyRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Index("ix_user_assembly_roles_user_assembly", "user_id", "assembly_id"),
 )
 
 # User invites table
@@ -163,36 +167,11 @@ user_invites = Table(
     "user_invites",
     metadata,
     Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("code", String(50), nullable=False, unique=True),
+    Column("code", String(50), nullable=False, index=True, unique=True),
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
-    Column("created_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    Column("created_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    Column("expires_at", TZAwareDatetime(), nullable=False),
-    Column("used_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True),
+    Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
+    Column("used_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True),
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
-
-
-# Create indexes for performance
-def create_indexes() -> None:
-    """Create database indexes for commonly queried fields."""
-    from sqlalchemy import Index
-
-    # User indexes
-    Index("ix_users_email", users.c.email)
-    Index("ix_users_oauth_provider_id", users.c.oauth_provider, users.c.oauth_id)
-
-    # Assembly indexes
-    Index("ix_assemblies_status", assemblies.c.status)
-    Index("ix_assemblies_created_at", assemblies.c.created_at)
-
-    # User assembly roles indexes
-    Index("ix_user_assembly_roles_user_id", user_assembly_roles.c.user_id)
-    Index("ix_user_assembly_roles_assembly_id", user_assembly_roles.c.assembly_id)
-    Index("ix_user_assembly_roles_user_assembly", user_assembly_roles.c.user_id, user_assembly_roles.c.assembly_id)
-
-    # User invites indexes
-    Index("ix_user_invites_code", user_invites.c.code)
-    Index("ix_user_invites_created_by", user_invites.c.created_by)
-    Index("ix_user_invites_expires_at", user_invites.c.expires_at)
-    Index("ix_user_invites_used_by", user_invites.c.used_by)

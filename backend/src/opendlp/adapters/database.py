@@ -29,9 +29,6 @@ def create_session_factory(database_url: str = "", echo: bool = False) -> sessio
         }
     engine = create_engine(database_url, echo=echo, **extra_args)
 
-    # Create indexes
-    orm.create_indexes()
-
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
