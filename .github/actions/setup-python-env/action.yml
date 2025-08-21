@@ -42,9 +42,11 @@ runs:
       run: uv sync --frozen
       shell: bash
 
+    # extra echo adds newline to end of file - avoids the quality check failing
     - name: Install Node.js dependencies
       working-directory: ${{ inputs.working-directory }}
       run: |
         npm install
         npm run build:sass
+        echo "" >> static/css/application.css.map
       shell: bash
