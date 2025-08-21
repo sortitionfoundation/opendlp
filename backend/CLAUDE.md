@@ -211,3 +211,189 @@ Two Docker Compose configurations:
 - `docker-compose.localdev.yml`: Services only for local development
 
 The application runs on port 5005, PostgreSQL on 54321 (mapped from 5432).
+
+## Frontend Design System
+
+### GOV.UK Design System with Sortition Foundation Branding
+
+This project uses the GOV.UK Frontend framework v5.11.1 with custom Sortition Foundation styling. The design system is built using Sass/SCSS compilation.
+
+**Key Files:**
+- `src/scss/application.scss` - Main SCSS file importing govuk-frontend and custom styles
+- `src/scss/_sortition.scss` - Sortition Foundation color palette variables
+- `static/css/application.css` - Compiled CSS output (never edit directly)
+
+### Build Pipeline
+
+CSS must be built using npm/Sass before running the application:
+
+```bash
+# Build CSS once
+just build-css
+# or: npm run build:sass
+
+# Watch and rebuild CSS on changes
+just watch-css  
+# or: npm run watch:sass
+
+# Build and run application
+just run  # Automatically builds CSS first
+```
+
+### Sortition Foundation Color Palette
+
+Custom color variables defined in `_sortition.scss`:
+
+```scss
+$hot-pink: #e91e63;
+$burnt-orange: #ff7043;
+$purple-red: #9c27b0;
+$blood-red: #c62828;
+$sap-green: #4caf50;
+$woad-blue: #3f51b5;
+$scarlet-red: #f44336;
+$saffron-yellow: #ffeb3b;
+$buttermilk: #f5f5dc;
+$dark-grey: #424242;
+$white: #ffffff;
+```
+
+### HTML Template Requirements
+
+All templates must extend `base.html` which includes:
+
+1. **Required CSS classes on body element:**
+   ```html
+   <body class="govuk-template__body govuk-frontend-supported">
+   ```
+
+2. **CSS import (compiled, not CDN):**
+   ```html
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
+   ```
+
+3. **JavaScript initialization:**
+   ```html
+   <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
+   <script>
+       document.addEventListener('DOMContentLoaded', function() {
+           if (typeof window.GOVUKFrontend !== 'undefined') {
+               window.GOVUKFrontend.initAll();
+           }
+       });
+   </script>
+   ```
+
+### GOV.UK Component Usage
+
+**Common Layout Structure:**
+```html
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <!-- Content -->
+        </div>
+    </div>
+</div>
+```
+
+**Grid System:**
+- `govuk-grid-column-full` - Full width
+- `govuk-grid-column-two-thirds` - 2/3 width
+- `govuk-grid-column-one-third` - 1/3 width
+- `govuk-grid-column-one-half` - 1/2 width
+
+**Typography:**
+- `govuk-heading-xl` - Extra large heading
+- `govuk-heading-l` - Large heading  
+- `govuk-heading-m` - Medium heading
+- `govuk-heading-s` - Small heading
+- `govuk-body` - Body text
+- `govuk-body-l` - Large body text
+- `govuk-body-s` - Small body text
+
+**Buttons:**
+- `govuk-button` - Primary button
+- `govuk-button--secondary` - Secondary button
+- `govuk-button--start` - Start button with arrow icon
+- `govuk-button--white` - Custom white button (Sortition styling)
+
+**Navigation:**
+- Mobile-responsive navigation handled by GOV.UK Frontend JavaScript
+- Custom styling for Sortition Foundation branding in `application.scss`
+- Mobile menu button becomes visible on screens < 48.0625em
+- Cross-browser compatibility (Chrome/Firefox differences handled)
+
+**Tags and Status:**
+```html
+<strong class="govuk-tag govuk-tag--green">Status</strong>
+<strong class="govuk-tag govuk-tag--blue">Role</strong>
+<strong class="govuk-tag govuk-tag--red">Alert</strong>
+```
+
+**Summary Lists (for key-value data):**
+```html
+<dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Label</dt>
+        <dd class="govuk-summary-list__value">Value</dd>
+    </div>
+</dl>
+```
+
+### Custom Components
+
+**Assembly Cards:**
+```html
+<div class="assembly-card">
+    <h3 class="govuk-heading-m">Title</h3>
+    <p class="govuk-body-s">Description</p>
+    <dl class="govuk-summary-list">
+        <!-- Summary list content -->
+    </dl>
+</div>
+```
+
+**Feature Cards (front page):**
+```html
+<div class="feature-card">
+    <h3 class="govuk-heading-m">Feature Title</h3>
+    <p class="govuk-body">Feature description</p>
+</div>
+```
+
+**Key Details Bars (dashboard):**
+```html
+<div class="dwp-key-details-bar">
+    <div class="dwp-key-details-bar__key-details">
+        <dt class="govuk-heading-s">Label</dt>
+        <dd class="dwp-key-details-bar__primary">Value</dd>
+    </div>
+</div>
+```
+
+**Hero Section:**
+```html
+<div class="hero-section govuk-!-padding-top-6 govuk-!-padding-bottom-6">
+    <!-- Hero content with burnt-orange background -->
+</div>
+```
+
+### Accessibility Requirements
+
+- All interactive elements must be keyboard accessible
+- Color contrast ratios must meet WCAG standards
+- Screen reader compatibility maintained
+- Mobile navigation close button hidden but functional for assistive technology
+- Focus styles use saffron-yellow highlighting
+
+### Migration Notes
+
+When converting from Bootstrap to GOV.UK:
+- Replace Bootstrap grid (`row`, `col-*`) with GOV.UK grid (`govuk-grid-row`, `govuk-grid-column-*`)
+- Replace Bootstrap buttons (`btn`, `btn-primary`) with GOV.UK buttons (`govuk-button`)
+- Replace Bootstrap cards with custom styled components
+- Use GOV.UK spacing utilities (`govuk-!-margin-*`, `govuk-!-padding-*`)
+- Ensure all custom styling uses Sortition Foundation color palette
+- Test mobile navigation across Chrome and Firefox
+- Verify CSS specificity doesn't conflict with GOV.UK base styles
