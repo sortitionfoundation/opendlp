@@ -50,7 +50,7 @@ jobs:
           working-directory: ./backend
 
       - name: Install Playwright browsers
-        run: uv run playwright install --with-deps chromium
+        run: uv run python -m playwright install --with-deps chromium
 
       - name: Run database migrations
         run: uv run alembic upgrade head

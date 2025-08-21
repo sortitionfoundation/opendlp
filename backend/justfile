@@ -28,7 +28,7 @@ test-bdd:
 # Run BDD tests in headless mode (for CI)
 test-bdd-headless:
 	@echo "🚀 Running BDD tests (headless)"
-	@CI=true uv run python -m pytest tests/bdd/ -v --tb=short
+	@CI=true uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
 
 # run the tests when an files change
 watch-tests:
