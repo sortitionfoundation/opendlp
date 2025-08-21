@@ -1,6 +1,8 @@
 // ABOUTME: Main SCSS file for OpenDLP frontend styling using govuk-frontend with Sortition Foundation customizations
 // ABOUTME: Imports govuk-frontend base styles and applies custom color palette and component styling
 
+$govuk-assets-path: "/static/";
+
 @import "govuk-frontend/dist/govuk/index";
 @import "sortition";
 
