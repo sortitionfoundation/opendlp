@@ -26,7 +26,7 @@
 
 // Typography
 
-.govuk-heading-xl { 
+.govuk-heading-xl {
     font-size: 2em;
     color: $dark-grey;
 }
@@ -52,11 +52,11 @@
 // Header navigation
 .govuk-header__navigation-list .govuk-header__link {
     color: $dark-grey !important;
-    
+
     &:hover, &:focus {
         color: $purple-red !important;
     }
-    
+
     &:visited {
         color: $dark-grey !important;
     }
@@ -67,7 +67,7 @@
 .govuk-header__menu-button {
     display: none;
     color: $dark-grey !important;
-    
+
     &:hover, &:focus {
         color: $purple-red !important;
     }
@@ -82,21 +82,21 @@
     .govuk-header__menu-button {
         display: block;
     }
-    
+
     // Let gov.uk JS handle the navigation visibility
     .govuk-header__navigation {
         display: none;
-        
+
         // Show when JS removes hidden attribute (Firefox approach)
         &:not([hidden]) {
             display: block;
         }
-        
+
         // Show when JS adds js-visible class (Chrome approach)
         &.js-visible {
             display: block;
         }
-        
+
         // Show when JS adds the open class (alternative approach)
         &.govuk-header__navigation--open {
             display: block;
@@ -110,15 +110,15 @@
     background-color: $purple-red;
     margin-left: 1em;
     padding: 15px;
-    
+
     // Ensure all text is readable on dark background
     color: $white;
-    
+
     .govuk-heading-s {
         color: $white !important;
         margin-bottom: 5px;
     }
-    
+
     dt.govuk-heading-s {
         color: $buttermilk !important;
         font-weight: normal;
@@ -169,21 +169,21 @@ strong.govuk-tag.dwp-key-details-bar__status--dwp-default {
 
 // Focus styles
 .govuk-frontend-supported .govuk-accordion__show-all:focus,
-.govuk-frontend-supported .govuk-accordion__section-button:focus 
-.govuk-accordion__section-heading-text-focus, 
-.govuk-frontend-supported .govuk-accordion__section-button:focus 
-.govuk-accordion__section-summary-focus, 
-.govuk-frontend-supported 
-.govuk-accordion__section-button:focus 
+.govuk-frontend-supported .govuk-accordion__section-button:focus
+.govuk-accordion__section-heading-text-focus,
+.govuk-frontend-supported .govuk-accordion__section-button:focus
+.govuk-accordion__section-summary-focus,
+.govuk-frontend-supported
+.govuk-accordion__section-button:focus
 .govuk-accordion__section-toggle-focus,
-.uc-section-card__link:focus, 
-.uc-action-card__link:focus, 
-.dwp-side-navigation__link:focus, 
-a:focus, .govuk-link:focus, 
+.uc-section-card__link:focus,
+.uc-action-card__link:focus,
+.dwp-side-navigation__link:focus,
+a:focus, .govuk-link:focus,
 .dwp-timeline__link:focus {
     background-color: $saffron-yellow;
     box-shadow: 0 -2px $saffron-yellow, 0 4px $dark-grey;
-} 
+}
 
 // Tag styling with custom colors
 .govuk-tag--green {
@@ -254,14 +254,14 @@ a:focus, .govuk-link:focus,
 .card {
     border: 1px solid #b1b4b6;
     border-radius: 0;
-    
+
     .card-header {
         background-color: #f3f2f1;
         border-bottom: 1px solid #b1b4b6;
         font-weight: bold;
         color: $dark-grey;
     }
-    
+
     .card-body {
         color: $dark-grey;
     }
@@ -271,12 +271,12 @@ a:focus, .govuk-link:focus,
 .hero-section {
     background-color: $burnt-orange;
     color: $white;
-    
+
     .btn-light {
         background-color: $white;
         color: $dark-grey;
         border: none;
-        
+
         &:hover {
             background-color: $buttermilk;
             color: $dark-grey;
@@ -289,7 +289,7 @@ a:focus, .govuk-link:focus,
     background-color: $purple-red;
     color: $white;
     border: none;
-    
+
     &:hover {
         background-color: $blood-red;
         color: $white;
@@ -300,20 +300,20 @@ a:focus, .govuk-link:focus,
     background-color: $white !important;
     color: $dark-grey !important;
     border: 2px solid $dark-grey !important;
-    
+
     &:hover {
         background-color: $buttermilk !important;
         color: $dark-grey !important;
         border-color: $purple-red !important;
     }
-    
+
     &:focus {
         background-color: $saffron-yellow !important;
         color: $dark-grey !important;
         border-color: $dark-grey !important;
         box-shadow: 0 -2px $saffron-yellow, 0 4px $dark-grey !important;
     }
-    
+
     .govuk-button__start-icon {
         fill: $dark-grey !important;
     }
@@ -326,12 +326,12 @@ a:focus, .govuk-link:focus,
     background-color: $white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     height: 100%;
-    
+
     &:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         border-color: $woad-blue;
     }
-    
+
     .govuk-heading-m {
         color: $purple-red;
     }
@@ -345,17 +345,17 @@ a:focus, .govuk-link:focus,
     background-color: $white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     height: 100%;
-    
+
     &:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         border-left-color: $purple-red;
     }
-    
+
     .govuk-heading-m {
         color: $purple-red;
         margin-bottom: 10px;
     }
-    
+
     .govuk-summary-list {
         border-top: 1px solid #f3f2f1;
         margin-top: 15px;

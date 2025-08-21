@@ -1,6 +1,6 @@
 {
   "name": "opendlp-frontend",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "description": "Frontend assets for OpenDLP",
   "scripts": {
     "build:sass": "sass src/scss:static/css --load-path=node_modules --style=compressed",
