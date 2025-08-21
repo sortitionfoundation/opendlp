@@ -1,0 +1,16 @@
+{
+  "name": "opendlp-frontend",
+  "version": "1.0.0", 
+  "description": "Frontend assets for OpenDLP",
+  "scripts": {
+    "build:sass": "sass src/scss:static/css --load-path=node_modules --style=compressed",
+    "watch:sass": "sass src/scss:static/css --load-path=node_modules --watch",
+    "build": "npm run build:sass"
+  },
+  "dependencies": {
+    "govuk-frontend": "^5.11.1"
+  },
+  "devDependencies": {
+    "sass": "^1.69.0"
+  }
+}

@@ -1,0 +1,374 @@
+// ABOUTME: Main SCSS file for OpenDLP frontend styling using govuk-frontend with Sortition Foundation customizations
+// ABOUTME: Imports govuk-frontend base styles and applies custom color palette and component styling
+
+@import "govuk-frontend/dist/govuk/index";
+@import "sortition";
+
+// Header Styling
+
+.govuk-header__container, .uc-claimant-header__container, .uc-agent-header__container, .govuk-header, .uc-claimant-header, .uc-agent-header, .dwp-header{
+    background-color:  $white;
+  }
+
+  .govuk-header__container, .uc-claimant-header__container, .uc-agent-header__container{
+    border-bottom: 4px solid $burnt-orange;
+  }
+
+  .govuk-template{
+    background-color: $burnt-orange;
+  }
+
+// Logo styling for Sortition Foundation SVG logo
+.govuk-header__logo img {
+    height: 40px;
+    width: auto;
+}
+
+// Typography
+
+.govuk-heading-xl { 
+    font-size: 2em;
+    color: $dark-grey;
+}
+
+.govuk-heading-l, .govuk-heading-m, .govuk-heading-s, .govuk-frontend-supported .govuk-accordion__section-button {
+    color: $dark-grey;
+}
+
+// Navigation
+
+.govuk-service-navigation {
+    background-color: $white;
+}
+
+.govuk-service-navigation__link:not(:hover):not(:focus) {
+    color: $dark-grey;
+}
+
+.govuk-service-navigation__item--active {
+    border-bottom-color: $purple-red;
+}
+
+// Header navigation
+.govuk-header__navigation-list .govuk-header__link {
+    color: $dark-grey !important;
+    
+    &:hover, &:focus {
+        color: $purple-red !important;
+    }
+    
+    &:visited {
+        color: $dark-grey !important;
+    }
+}
+
+
+// Hide mobile navigation elements by default on desktop
+.govuk-header__menu-button {
+    display: none;
+    color: $dark-grey !important;
+    
+    &:hover, &:focus {
+        color: $purple-red !important;
+    }
+}
+
+.govuk-header__navigation-close {
+    display: none;
+}
+
+// Show mobile menu elements on smaller screens
+@media (max-width: 48.0625em) {
+    .govuk-header__menu-button {
+        display: block;
+    }
+    
+    // Let gov.uk JS handle the navigation visibility
+    .govuk-header__navigation {
+        display: none;
+        
+        // Show when JS removes hidden attribute (Firefox approach)
+        &:not([hidden]) {
+            display: block;
+        }
+        
+        // Show when JS adds js-visible class (Chrome approach)
+        &.js-visible {
+            display: block;
+        }
+        
+        // Show when JS adds the open class (alternative approach)
+        &.govuk-header__navigation--open {
+            display: block;
+        }
+    }
+}
+
+// Assembly Dashboard
+
+.dwp-key-details-bar {
+    background-color: $purple-red;
+    margin-left: 1em;
+    padding: 15px;
+    
+    // Ensure all text is readable on dark background
+    color: $white;
+    
+    .govuk-heading-s {
+        color: $white !important;
+        margin-bottom: 5px;
+    }
+    
+    dt.govuk-heading-s {
+        color: $buttermilk !important;
+        font-weight: normal;
+    }
+}
+
+.dwp-key-details-bar__key-details .dwp-key-details-bar__primary {
+    font-size: 2em;
+    font-weight: 600;
+    color: $white !important;
+}
+
+strong.govuk-tag.dwp-key-details-bar__status--dwp-default {
+    color: white;
+    background: $sap-green;
+    padding: 0.5em 1em;
+    font-weight: bold;
+}
+
+#assembly-status-summary {
+    padding-top: 1em;
+    padding-left: 2em;
+    margin-bottom: 3em;
+}
+
+.govuk-summary-list{
+    font-size: 1em;
+}
+
+// Assembly Tasklist
+
+.govuk-grid-column-full {
+    border-top: 5px solid $purple-red;
+    padding-top: 2em;
+}
+
+.govuk-task-list__status.section-status {
+    display: block;
+    position: relative;
+    top: 1.5em;
+    margin-bottom: -1.5em;
+}
+
+.govuk-task-list__status.section-status > .govuk-tag{
+    padding: 0.5em 1em;
+    font-weight: bold;
+}
+
+// Focus styles
+.govuk-frontend-supported .govuk-accordion__show-all:focus,
+.govuk-frontend-supported .govuk-accordion__section-button:focus 
+.govuk-accordion__section-heading-text-focus, 
+.govuk-frontend-supported .govuk-accordion__section-button:focus 
+.govuk-accordion__section-summary-focus, 
+.govuk-frontend-supported 
+.govuk-accordion__section-button:focus 
+.govuk-accordion__section-toggle-focus,
+.uc-section-card__link:focus, 
+.uc-action-card__link:focus, 
+.dwp-side-navigation__link:focus, 
+a:focus, .govuk-link:focus, 
+.dwp-timeline__link:focus {
+    background-color: $saffron-yellow;
+    box-shadow: 0 -2px $saffron-yellow, 0 4px $dark-grey;
+} 
+
+// Tag styling with custom colors
+.govuk-tag--green {
+    background-color: $sap-green;
+    color: $white;
+}
+
+.govuk-tag--blue {
+    background-color: $woad-blue;
+    color: $white;
+}
+
+.govuk-tag--red {
+    background-color: $scarlet-red;
+    color: $white;
+}
+
+// Assembly progress monitor
+#assembly-progress-monitor {
+    padding-left: 3em;
+    padding-top: 1em;
+}
+
+// Assembly Timeline
+#assembly-timeline {
+    padding-left: 3em;
+}
+
+.dwp-timeline__items {
+    border-left: 3px solid $burnt-orange;
+}
+
+.dwp-timeline__item {
+    position: relative;
+    top: -8px;
+    margin: 20px 0;
+}
+
+.dwp-timeline__datetime {
+    color: $burnt-orange;
+    font-weight: bold;
+}
+
+.dwp-timeline__heading{
+    font-size: 1.2em;
+    color: $dark-grey;
+    font-weight: 600;
+}
+
+.dwp-timeline__by-line {
+    color: $dark-grey;
+    font-weight: lighter;
+    font-size: 0.9em;
+    line-height: 0.5em;
+}
+
+.dwp-timeline__link {
+    color: $woad-blue;
+    font-size: 1em;
+    line-height: 1em;
+}
+
+.dwp-timeline__item::before, .dwp-timeline__item:last-of-type::after {
+    border-top: 3px solid $burnt-orange;
+}
+
+// Cards and panels - adapting Bootstrap cards to govuk styling
+.card {
+    border: 1px solid #b1b4b6;
+    border-radius: 0;
+    
+    .card-header {
+        background-color: #f3f2f1;
+        border-bottom: 1px solid #b1b4b6;
+        font-weight: bold;
+        color: $dark-grey;
+    }
+    
+    .card-body {
+        color: $dark-grey;
+    }
+}
+
+// Hero section styling
+.hero-section {
+    background-color: $burnt-orange;
+    color: $white;
+    
+    .btn-light {
+        background-color: $white;
+        color: $dark-grey;
+        border: none;
+        
+        &:hover {
+            background-color: $buttermilk;
+            color: $dark-grey;
+        }
+    }
+}
+
+// Custom button styling
+.btn-sortition {
+    background-color: $purple-red;
+    color: $white;
+    border: none;
+    
+    &:hover {
+        background-color: $blood-red;
+        color: $white;
+    }
+}
+
+.govuk-button--white {
+    background-color: $white !important;
+    color: $dark-grey !important;
+    border: 2px solid $dark-grey !important;
+    
+    &:hover {
+        background-color: $buttermilk !important;
+        color: $dark-grey !important;
+        border-color: $purple-red !important;
+    }
+    
+    &:focus {
+        background-color: $saffron-yellow !important;
+        color: $dark-grey !important;
+        border-color: $dark-grey !important;
+        box-shadow: 0 -2px $saffron-yellow, 0 4px $dark-grey !important;
+    }
+    
+    .govuk-button__start-icon {
+        fill: $dark-grey !important;
+    }
+}
+
+// Feature cards for front page
+.feature-card {
+    border: 1px solid #b1b4b6;
+    padding: 20px;
+    background-color: $white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 100%;
+    
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        border-color: $woad-blue;
+    }
+    
+    .govuk-heading-m {
+        color: $purple-red;
+    }
+}
+
+// Assembly cards for dashboard
+.assembly-card {
+    border: 1px solid #b1b4b6;
+    border-left: 5px solid $burnt-orange;
+    padding: 20px;
+    background-color: $white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 100%;
+    
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        border-left-color: $purple-red;
+    }
+    
+    .govuk-heading-m {
+        color: $purple-red;
+        margin-bottom: 10px;
+    }
+    
+    .govuk-summary-list {
+        border-top: 1px solid #f3f2f1;
+        margin-top: 15px;
+        padding-top: 10px;
+    }
+}
+
+// Footer styling to match header
+.govuk-footer {
+    border-top: 5px solid $purple-red;
+}
+
+// Ensure proper text contrast on all elements
+body {
+    color: $dark-grey;
+}

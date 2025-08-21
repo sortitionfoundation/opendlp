@@ -3,83 +3,79 @@
 {% block title %}Dashboard - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-house"></i> Dashboard</h2>
-                <span class="text-muted">Welcome back, {{ current_user.display_name }}!</span>
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="govuk-!-margin-bottom-4">
+                <h1 class="govuk-heading-xl">Dashboard</h1>
+                <p class="govuk-body">Welcome back, {{ current_user.display_name }}!</p>
             </div>
 
             <!-- User Role Info -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">Your Role</h6>
-                            <p class="card-text">
-                                <span class="badge bg-primary">{{ current_user.global_role.value }}</span>
-                            </p>
+            <div class="govuk-grid-row govuk-!-margin-bottom-6">
+                <div class="govuk-grid-column-one-half">
+                    <div class="dwp-key-details-bar">
+                        <div class="dwp-key-details-bar__key-details">
+                            <dt class="govuk-heading-s govuk-!-margin-bottom-2">Your Role</dt>
+                            <dd class="dwp-key-details-bar__primary">
+                                <strong class="govuk-tag govuk-tag--blue">{{ current_user.global_role.value }}</strong>
+                            </dd>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">Active Assemblies</h6>
-                            <p class="card-text">
-                                <span class="display-6">{{ assemblies|length }}</span>
-                            </p>
+                <div class="govuk-grid-column-one-half">
+                    <div class="dwp-key-details-bar">
+                        <div class="dwp-key-details-bar__key-details">
+                            <dt class="govuk-heading-s govuk-!-margin-bottom-2">Active Assemblies</dt>
+                            <dd class="dwp-key-details-bar__primary">{{ assemblies|length }}</dd>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Assemblies Section -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Your Assemblies</h5>
-                    <a href="{{ url_for('main.assemblies') }}" class="btn btn-outline-primary btn-sm">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-!-margin-bottom-4">
+                    <h2 class="govuk-heading-l">Your Assemblies</h2>
+                    <a href="{{ url_for('main.assemblies') }}" class="govuk-button govuk-button--secondary">
                         View All
                     </a>
                 </div>
-                <div class="card-body">
-                    {% if assemblies %}
-                        <div class="row">
-                            {% for assembly in assemblies %}
-                                <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card h-100">
-                                        <div class="card-body">
-                                            <h6 class="card-title">{{ assembly.title }}</h6>
-                                            {% if assembly.question %}
-                                                <p class="card-text text-muted small">{{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}</p>
-                                            {% endif %}
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">
-                                                    Created {{ assembly.created_at.strftime('%b %d, %Y') }}
-                                                </small>
-                                                {% if assembly.first_assembly_date %}
-                                                    <small class="text-muted">
-                                                        Starts {{ assembly.first_assembly_date.strftime('%b %d') }}
-                                                    </small>
-                                                {% endif %}
-                                            </div>
+                
+                {% if assemblies %}
+                    <div class="govuk-grid-row">
+                        {% for assembly in assemblies %}
+                            <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
+                                <div class="assembly-card">
+                                    <h3 class="govuk-heading-m">{{ assembly.title }}</h3>
+                                    {% if assembly.question %}
+                                        <p class="govuk-body-s">{{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}</p>
+                                    {% endif %}
+                                    <dl class="govuk-summary-list govuk-!-margin-bottom-0">
+                                        <div class="govuk-summary-list__row">
+                                            <dt class="govuk-summary-list__key">Created</dt>
+                                            <dd class="govuk-summary-list__value">{{ assembly.created_at.strftime('%b %d, %Y') }}</dd>
                                         </div>
-                                    </div>
+                                        {% if assembly.first_assembly_date %}
+                                        <div class="govuk-summary-list__row">
+                                            <dt class="govuk-summary-list__key">Starts</dt>
+                                            <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%b %d') }}</dd>
+                                        </div>
+                                        {% endif %}
+                                    </dl>
                                 </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3 text-muted">No assemblies yet</h5>
-                            <p class="text-muted">You don't have access to any assemblies at the moment.</p>
-                            {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
-                                <p class="text-muted">As a {{ current_user.global_role.value }}, you can create new assemblies.</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="govuk-inset-text">
+                        <h3 class="govuk-heading-m">No assemblies yet</h3>
+                        <p class="govuk-body">You don't have access to any assemblies at the moment.</p>
+                        {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
+                            <p class="govuk-body">As a {{ current_user.global_role.value }}, you can create new assemblies.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

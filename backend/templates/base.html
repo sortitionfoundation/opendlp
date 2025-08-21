@@ -15,21 +15,12 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
     <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
 
-    <!-- GOV.UK Frontend CSS -->
-    <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/govuk-frontend.min.css"
-    integrity="sha256-QMf86xDJSnxyTkNRnuixV/BKKF3PenEn60Ap2y67cW8="
-    crossorigin="anonymous">
-    <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-    integrity="sha256-zRgmWB5PK4CvTx4FiXsxbHaYRBBjz/rvu97sOC7kzXI="
-    crossorigin="anonymous">
+    <!-- OpenDLP with GOV.UK Frontend CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="govuk-template__body">
+<body class="govuk-template__body govuk-frontend-supported">
     <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
 
     <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
@@ -38,18 +29,18 @@
         <div class="govuk-header__container govuk-width-container">
             <div class="govuk-header__logo">
                 <a href="{{ url_for('main.index') }}" class="govuk-header__link govuk-header__link--homepage">
-                    <span class="govuk-header__logotype">
-                        <span class="govuk-header__logotype-text">
-                            OpenDLP
-                        </span>
-                    </span>
+                    <img alt="Sortition Foundation Logo" src="{{ url_for('static', filename='img/logosortition.svg') }}">
                 </a>
             </div>
 
             {% if current_user.is_authenticated %}
             <div class="govuk-header__content">
-                <nav class="govuk-header__navigation" role="navigation" aria-label="Primary navigation">
-                    <ul id="navigation" class="govuk-header__navigation-list">
+                <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">Menu</a>
+                <nav class="govuk-header__navigation" id="navigation">
+                    <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
+                        <span class="govuk-visually-hidden">Close menu</span>
+                    </button>
+                    <ul class="govuk-header__navigation-list">
                         <li class="govuk-header__navigation-item">
                             <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">
                                 {{ _('Dashboard') }}
@@ -75,8 +66,12 @@
             </div>
             {% else %}
             <div class="govuk-header__content">
-                <nav class="govuk-header__navigation" role="navigation" aria-label="Primary navigation">
-                    <ul id="navigation" class="govuk-header__navigation-list">
+                <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">Menu</a>
+                <nav class="govuk-header__navigation" id="navigation">
+                    <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
+                        <span class="govuk-visually-hidden">Close menu</span>
+                    </button>
+                    <ul class="govuk-header__navigation-list">
                         <li class="govuk-header__navigation-item">
                             <a class="govuk-header__link" href="{{ url_for('auth.login') }}">
                                 {{ _('Sign in') }}
@@ -165,9 +160,12 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" integrity="sha256-lel57Jim1/CW4I1iEkaHexK/J9h/ZRneeORKiQuNOIg=" crossorigin="anonymous"></script>
     <script>
-        window.GOVUKFrontend.initAll()
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.GOVUKFrontend !== 'undefined') {
+                window.GOVUKFrontend.initAll();
+            }
+        });
     </script>
     {% block extra_js %}{% endblock %}
 </body>

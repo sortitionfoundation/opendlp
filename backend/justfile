@@ -26,6 +26,8 @@ install:
 	@uv sync
 	@uv pip install -e .
 	@uv run pre-commit install
+	@npm install
+	@npm run build:sass
 
 # Run code quality tools.
 check:
@@ -49,8 +51,18 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   uv run flask run --debug
 
+# build CSS from SCSS
+build-css:
+  @echo "🚀 Building CSS from SCSS"
+  @npm run build:sass
+
+# watch and rebuild CSS from SCSS
+watch-css:
+  @echo "🚀 Watching and building CSS from SCSS"
+  @npm run watch:sass
+
 # run flask locally
-run: flask
+run: build-css flask
 
 # connect to docker postgres
 psql:
