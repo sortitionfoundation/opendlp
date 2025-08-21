@@ -43,6 +43,7 @@ runs:
       shell: bash
 
     - name: Install Node.js dependencies
+      working-directory: ${{ inputs.working-directory }}
       run: |
         npm install
         npm run build:sass
