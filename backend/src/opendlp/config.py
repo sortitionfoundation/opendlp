@@ -6,7 +6,9 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
+from redis import Redis
 
 load_dotenv()
 
@@ -97,7 +99,7 @@ def to_bool(value: str | None, context_str: str = "") -> bool:
     )
 
 
-class FlaskConfig:
+class FlaskBaseConfig:
     """Base configuration class that loads from environment variables."""
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -106,14 +108,9 @@ class FlaskConfig:
 
     def __init__(self) -> None:
         self.SQLALCHEMY_DATABASE_URI = get_db_uri()
-        self.REDIS_URL = RedisCfg.from_env().to_url()
         self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
         self.DEBUG: bool = to_bool(os.environ.get("DEBUG", "False"), context_str="DEBUG=")
-
-        # Session configuration
-        self.SESSION_TYPE = "redis"
-        self.SESSION_REDIS = None  # Will be set by Flask-Session
 
         # Babel/i18n configuration
         self.LANGUAGES = self._get_supported_language_codes()
@@ -161,7 +158,16 @@ class FlaskConfig:
         return [(code, language_names.get(code, code.upper())) for code in self.LANGUAGES]
 
 
-class FlaskTestSQLiteConfig(FlaskConfig):
+class FlaskConfig(FlaskBaseConfig):
+    def __init__(self) -> None:
+        super().__init__()
+        # Session configuration
+        redis_cfg = RedisCfg.from_env()
+        self.SESSION_TYPE = "redis"
+        self.SESSION_REDIS = Redis(host=redis_cfg.host, port=redis_cfg.port)
+
+
+class FlaskTestSQLiteConfig(FlaskBaseConfig):
     """Test configuration that uses SQLite in-memory database."""
 
     TESTING = True
@@ -172,10 +178,12 @@ class FlaskTestSQLiteConfig(FlaskConfig):
         self.SQLALCHEMY_DATABASE_URI = SQLITE_DB_URI
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
-        self.SESSION_TYPE = "filesystem"  # Use filesystem for testing
+
+        # Use filesystem for session cache for testing
+        self.SESSION_TYPE = "cachelib"
         session_file_dir = Path(tempfile.gettempdir()) / "flask_session"
         session_file_dir.mkdir(exist_ok=True)
-        self.SESSION_FILE_DIR = str(session_file_dir)
+        self.SESSION_CACHELIB = FileSystemCache(str(session_file_dir))
 
 
 class FlaskTestPostgresConfig(FlaskTestSQLiteConfig):
@@ -200,7 +208,7 @@ class FlaskProductionConfig(FlaskConfig):
             raise ValueError("SECRET_KEY must be set in production")
 
 
-def get_config(config_name: str = "") -> FlaskConfig:
+def get_config(config_name: str = "") -> FlaskBaseConfig:
     """Return the appropriate configuration based on FLASK_ENV or config_name."""
     env = config_name.strip() or os.environ.get("FLASK_ENV", "development")
     env = env.lower().strip()
