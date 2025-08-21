@@ -66,10 +66,10 @@ def create_user(
                 raise PasswordTooWeak(error_msg)
             password_hash = hash_password(password)
 
-        # Validate and use invite code
-        # Do this AFTER checking the password, so the invite does not become used
-        # if the password is invalid.
-        user_role = validate_and_use_invite(uow, invite_code) if invite_code else global_role
+        # Validate invite code (but don't mark as used yet)
+        # Do this AFTER checking the password, so the invite validation happens
+        # before creating the user, but we mark it as used only after user creation succeeds.
+        user_role = validate_invite(uow, invite_code) if invite_code else global_role
         assert isinstance(user_role, GlobalRole)
 
         # Create the user
@@ -84,6 +84,11 @@ def create_user(
         )
 
         uow.users.add(user)
+
+        # Mark invite as used now that user creation succeeded
+        if invite_code:
+            use_invite(uow, invite_code, user.id)
+
         detached_user = user.create_detached_copy()
         uow.commit()
         return detached_user
@@ -181,14 +186,13 @@ def assign_assembly_role(
         return assembly_role
 
 
-def validate_and_use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: uuid.UUID | None = None) -> GlobalRole:
+def validate_invite(uow: AbstractUnitOfWork, invite_code: str) -> GlobalRole:
     """
-    Validate an invite code and mark it as used.
+    Validate an invite code without marking it as used.
 
     Args:
         uow: Unit of Work for database operations
         invite_code: The invite code to validate
-        user_id: Optional user ID if marking as used
 
     Returns:
         GlobalRole that the invite grants
@@ -208,11 +212,52 @@ def validate_and_use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: 
         else:
             raise InvalidInvite(invite_code, "Invite code expired")
 
-    # Mark as used if user_id provided
-    if user_id:
-        invite.use(user_id)
-
     return invite.global_role
+
+
+def use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: uuid.UUID) -> None:
+    """
+    Mark an invite code as used by a user.
+
+    Args:
+        uow: Unit of Work for database operations
+        invite_code: The invite code to mark as used
+        user_id: ID of the user using the invite
+
+    Raises:
+        InvalidInvite: If invite is not found
+        ValueError: If invite is already used or invalid
+    """
+    # Note this is called from create_user() inside a `with uow:` block
+    # so we don't need a `with uow:` block in this function.
+    invite = uow.user_invites.get_by_code(invite_code)
+    if not invite:
+        raise InvalidInvite(invite_code, "Invite code not found")
+
+    invite.use(user_id)
+
+
+def validate_and_use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: uuid.UUID | None = None) -> GlobalRole:
+    """
+    Validate an invite code and optionally mark it as used.
+
+    DEPRECATED: Use validate_invite() and use_invite() separately for clearer logic.
+
+    Args:
+        uow: Unit of Work for database operations
+        invite_code: The invite code to validate
+        user_id: Optional user ID if marking as used
+
+    Returns:
+        GlobalRole that the invite grants
+
+    Raises:
+        InvalidInvite: If invite is invalid, expired, or already used
+    """
+    role = validate_invite(uow, invite_code)
+    if user_id:
+        use_invite(uow, invite_code, user_id)
+    return role
 
 
 def find_or_create_oauth_user(

@@ -159,6 +159,96 @@ class TestAuthenticateUser:
             user_service.authenticate_user(uow=uow, email="test@example.com", password="testpass")
 
 
+class TestValidateInvite:
+    """Test invite validation (without usage)."""
+
+    def test_validate_invite_success(self):
+        """Test successful invite validation returns correct role."""
+        uow = FakeUnitOfWork()
+
+        invite = UserInvite(
+            code="VALIDCODE",
+            global_role=GlobalRole.GLOBAL_ORGANISER,
+            created_by=uuid.uuid4(),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        role = user_service.validate_invite(uow=uow, invite_code="VALIDCODE")
+
+        assert role == GlobalRole.GLOBAL_ORGANISER
+        # Verify invite is NOT marked as used
+        assert invite.used_by is None
+        assert invite.used_at is None
+
+    def test_validate_invite_not_found(self):
+        """Test invite validation fails when code not found."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(InvalidInvite) as exc_info:
+            user_service.validate_invite(uow=uow, invite_code="NOTFOUND")
+
+        assert "not found" in str(exc_info.value).lower()
+
+
+class TestUseInvite:
+    """Test invite usage (marking as used)."""
+
+    def test_use_invite_success(self):
+        """Test successfully marking invite as used."""
+        uow = FakeUnitOfWork()
+        user_id = uuid.uuid4()
+
+        invite = UserInvite(
+            code="VALIDCODE",
+            global_role=GlobalRole.USER,
+            created_by=uuid.uuid4(),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        # Initially not used
+        assert invite.used_by is None
+        assert invite.used_at is None
+
+        user_service.use_invite(uow=uow, invite_code="VALIDCODE", user_id=user_id)
+
+        # Now should be marked as used
+        assert invite.used_by == user_id
+        assert invite.used_at is not None
+
+    def test_use_invite_not_found(self):
+        """Test using invite fails when code not found."""
+        uow = FakeUnitOfWork()
+        user_id = uuid.uuid4()
+
+        with pytest.raises(InvalidInvite) as exc_info:
+            user_service.use_invite(uow=uow, invite_code="NOTFOUND", user_id=user_id)
+
+        assert "not found" in str(exc_info.value).lower()
+
+    def test_use_invite_already_used(self):
+        """Test using invite fails when already used."""
+        uow = FakeUnitOfWork()
+        first_user_id = uuid.uuid4()
+        second_user_id = uuid.uuid4()
+
+        invite = UserInvite(
+            code="USEDCODE",
+            global_role=GlobalRole.USER,
+            created_by=uuid.uuid4(),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+            used_by=first_user_id,
+            used_at=datetime.now(UTC),
+        )
+        uow.user_invites.add(invite)
+
+        with pytest.raises(ValueError) as exc_info:
+            user_service.use_invite(uow=uow, invite_code="USEDCODE", user_id=second_user_id)
+
+        assert "already been used" in str(exc_info.value).lower()
+
+
 class TestValidateAndUseInvite:
     """Test invite validation functionality."""
 
