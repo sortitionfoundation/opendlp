@@ -39,6 +39,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    defaults:
+      run:
+        working-directory: ./backend
+        shell: bash
     steps:
       - name: Check out
         uses: actions/checkout@v4
