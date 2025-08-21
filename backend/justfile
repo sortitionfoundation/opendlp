@@ -1,7 +1,7 @@
 set dotenv-load
 
 # Test the code with pytest (HTML report)
-default: test
+default: test-nobdd
 
 # Test the code with pytest (HTML report)
 test-html:
@@ -16,6 +16,20 @@ test-xml:
 # Test the code with pytest (HTML report)
 test: test-html
 
+test-nobdd:
+	@echo "🚀 Testing code: Running pytest"
+	@uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html
+
+# Run BDD tests with pytest-bdd and Playwright
+test-bdd:
+	@echo "🚀 Running BDD tests"
+	@uv run python -m pytest tests/bdd/ -v --tb=short
+
+# Run BDD tests in headless mode (for CI)
+test-bdd-headless:
+	@echo "🚀 Running BDD tests (headless)"
+	@CI=true uv run python -m pytest tests/bdd/ -v --tb=short
+
 # run the tests when an files change
 watch-tests:
 	ls *.py | entr uv run pytest --tb=short
@@ -28,6 +42,10 @@ install:
 	@uv run pre-commit install
 	@npm install
 	@npm run build:sass
+
+install-dev:
+	@echo "🚀 Installing development dependencies"
+	@uv run playwright install
 
 # Run code quality tools.
 check:

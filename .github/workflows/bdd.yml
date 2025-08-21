@@ -1,0 +1,81 @@
+name: BDD Tests
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/**"
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  bdd-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: opendlp
+          POSTGRES_USER: opendlp
+          POSTGRES_PASSWORD: abc123
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 63791:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+          working-directory: ./backend
+
+      - name: Install Playwright browsers
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run database migrations
+        run: uv run alembic upgrade head
+        env:
+          DB_HOST: localhost
+          DB_PORT: 54322
+          DB_PASSWORD: abc123
+          REDIS_HOST: localhost
+          REDIS_PORT: 63791
+
+      - name: Run BDD tests
+        run: just test-bdd-headless
+        env:
+          DB_HOST: localhost
+          DB_PORT: 54322
+          DB_PASSWORD: abc123
+          REDIS_HOST: localhost
+          REDIS_PORT: 63791
+          SECRET_KEY: test-secret-key-for-ci
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bdd-test-results
+          path: |
+            test-results/
+            screenshots/

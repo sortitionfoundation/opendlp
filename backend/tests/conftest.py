@@ -153,7 +153,7 @@ def restart_redis_pubsub():
         print("skipping restar, assumes running in container")
         return
     subprocess.run(  # noqa: S603
-        ["docker", "compose", "restart", "-t", "0", "redis_pubsub"],  # noqa: S607
+        ["docker", "compose", "restart", "-t", "0", "redis_pubsub"],
         check=True,
     )
 
@@ -166,6 +166,11 @@ def wait_for_postgres_to_come_up(engine):
 @retry(stop=stop_after_delay(10))
 def wait_for_webapp_to_come_up():
     return urllib.request.urlopen(get_api_url()).read()  # noqa: S310
+
+
+@retry(stop=stop_after_delay(10))
+def wait_for_webapp_to_come_up_on_port(port: int = 5002):
+    return urllib.request.urlopen(f"http://localhost:{port}").read()
 
 
 @retry(stop=stop_after_delay(10))

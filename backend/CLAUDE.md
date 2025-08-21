@@ -127,6 +127,47 @@ The project has three levels of testing:
 
 All test output must be pristine to pass. Test configuration is in `pyproject.toml`.
 
+### BDD Testing
+
+The project includes Behavior-Driven Development (BDD) tests using pytest-bdd and Playwright for end-to-end testing:
+
+**BDD Test Structure:**
+
+- `features/` - Gherkin feature files (.feature)
+- `tests/bdd/` - BDD test implementation and fixtures
+- `tests/bdd/conftest.py` - BDD-specific fixtures including server management
+- `tests/bdd/config.py` - Test configuration (URLs, credentials)
+
+**Running BDD Tests:**
+
+```bash
+# Run BDD tests (shows browser)
+just test-bdd
+
+# Run BDD tests headless (for CI)
+just test-bdd-headless
+
+# Install development dependencies (including Playwright browsers)
+just install-dev
+```
+
+**BDD Test Infrastructure:**
+
+- Uses `FlaskTestPostgresConfig` (port 54322) for database isolation
+- Auto-starts Flask test server on port 5002 (avoids conflict with dev server on 5000)
+- Creates admin user and fresh database state for each test
+- Service layer integration for creating test data (invites, users)
+- Playwright for browser automation with cross-browser support
+
+**Key BDD Fixtures:**
+
+- `test_database` - PostgreSQL test database setup
+- `test_server` - Auto-managed Flask server (session scope)
+- `admin_user` - Pre-created admin user for testing
+- `user_invite` - Valid invite code generated via service layer
+- `clean_database` - Fresh database state per test
+- `logged_in_page` - Browser page with admin user logged in
+
 ## Core Domain Models
 
 ### Primary Entities
@@ -219,6 +260,7 @@ The application runs on port 5005, PostgreSQL on 54321 (mapped from 5432).
 This project uses the GOV.UK Frontend framework v5.11.1 with custom Sortition Foundation styling. The design system is built using Sass/SCSS compilation.
 
 **Key Files:**
+
 - `src/scss/application.scss` - Main SCSS file importing govuk-frontend and custom styles
 - `src/scss/_sortition.scss` - Sortition Foundation color palette variables
 - `static/css/application.css` - Compiled CSS output (never edit directly)
@@ -233,7 +275,7 @@ just build-css
 # or: npm run build:sass
 
 # Watch and rebuild CSS on changes
-just watch-css  
+just watch-css
 # or: npm run watch:sass
 
 # Build and run application
@@ -263,49 +305,58 @@ $white: #ffffff;
 All templates must extend `base.html` which includes:
 
 1. **Required CSS classes on body element:**
+
    ```html
-   <body class="govuk-template__body govuk-frontend-supported">
+   <body class="govuk-template__body govuk-frontend-supported"></body>
    ```
 
 2. **CSS import (compiled, not CDN):**
+
    ```html
-   <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
+   <link
+     rel="stylesheet"
+     href="{{ url_for('static', filename='css/application.css') }}"
+   />
    ```
 
 3. **JavaScript initialization:**
+
    ```html
    <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
    <script>
-       document.addEventListener('DOMContentLoaded', function() {
-           if (typeof window.GOVUKFrontend !== 'undefined') {
-               window.GOVUKFrontend.initAll();
-           }
-       });
+     document.addEventListener("DOMContentLoaded", function () {
+       if (typeof window.GOVUKFrontend !== "undefined") {
+         window.GOVUKFrontend.initAll();
+       }
+     });
    </script>
    ```
 
 ### GOV.UK Component Usage
 
 **Common Layout Structure:**
+
 ```html
 <div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-            <!-- Content -->
-        </div>
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      <!-- Content -->
     </div>
+  </div>
 </div>
 ```
 
 **Grid System:**
+
 - `govuk-grid-column-full` - Full width
 - `govuk-grid-column-two-thirds` - 2/3 width
 - `govuk-grid-column-one-third` - 1/3 width
 - `govuk-grid-column-one-half` - 1/2 width
 
 **Typography:**
+
 - `govuk-heading-xl` - Extra large heading
-- `govuk-heading-l` - Large heading  
+- `govuk-heading-l` - Large heading
 - `govuk-heading-m` - Medium heading
 - `govuk-heading-s` - Small heading
 - `govuk-body` - Body text
@@ -313,18 +364,21 @@ All templates must extend `base.html` which includes:
 - `govuk-body-s` - Small body text
 
 **Buttons:**
+
 - `govuk-button` - Primary button
 - `govuk-button--secondary` - Secondary button
 - `govuk-button--start` - Start button with arrow icon
 - `govuk-button--white` - Custom white button (Sortition styling)
 
 **Navigation:**
+
 - Mobile-responsive navigation handled by GOV.UK Frontend JavaScript
 - Custom styling for Sortition Foundation branding in `application.scss`
 - Mobile menu button becomes visible on screens < 48.0625em
 - Cross-browser compatibility (Chrome/Firefox differences handled)
 
 **Tags and Status:**
+
 ```html
 <strong class="govuk-tag govuk-tag--green">Status</strong>
 <strong class="govuk-tag govuk-tag--blue">Role</strong>
@@ -332,50 +386,55 @@ All templates must extend `base.html` which includes:
 ```
 
 **Summary Lists (for key-value data):**
+
 ```html
 <dl class="govuk-summary-list">
-    <div class="govuk-summary-list__row">
-        <dt class="govuk-summary-list__key">Label</dt>
-        <dd class="govuk-summary-list__value">Value</dd>
-    </div>
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key">Label</dt>
+    <dd class="govuk-summary-list__value">Value</dd>
+  </div>
 </dl>
 ```
 
 ### Custom Components
 
 **Assembly Cards:**
+
 ```html
 <div class="assembly-card">
-    <h3 class="govuk-heading-m">Title</h3>
-    <p class="govuk-body-s">Description</p>
-    <dl class="govuk-summary-list">
-        <!-- Summary list content -->
-    </dl>
+  <h3 class="govuk-heading-m">Title</h3>
+  <p class="govuk-body-s">Description</p>
+  <dl class="govuk-summary-list">
+    <!-- Summary list content -->
+  </dl>
 </div>
 ```
 
 **Feature Cards (front page):**
+
 ```html
 <div class="feature-card">
-    <h3 class="govuk-heading-m">Feature Title</h3>
-    <p class="govuk-body">Feature description</p>
+  <h3 class="govuk-heading-m">Feature Title</h3>
+  <p class="govuk-body">Feature description</p>
 </div>
 ```
 
 **Key Details Bars (dashboard):**
+
 ```html
 <div class="dwp-key-details-bar">
-    <div class="dwp-key-details-bar__key-details">
-        <dt class="govuk-heading-s">Label</dt>
-        <dd class="dwp-key-details-bar__primary">Value</dd>
-    </div>
+  <div class="dwp-key-details-bar__key-details">
+    <dt class="govuk-heading-s">Label</dt>
+    <dd class="dwp-key-details-bar__primary">Value</dd>
+  </div>
 </div>
 ```
 
 **Hero Section:**
+
 ```html
 <div class="hero-section govuk-!-padding-top-6 govuk-!-padding-bottom-6">
-    <!-- Hero content with burnt-orange background -->
+  <!-- Hero content with burnt-orange background -->
 </div>
 ```
 
@@ -390,6 +449,7 @@ All templates must extend `base.html` which includes:
 ### Migration Notes
 
 When converting from Bootstrap to GOV.UK:
+
 - Replace Bootstrap grid (`row`, `col-*`) with GOV.UK grid (`govuk-grid-row`, `govuk-grid-column-*`)
 - Replace Bootstrap buttons (`btn`, `btn-primary`) with GOV.UK buttons (`govuk-button`)
 - Replace Bootstrap cards with custom styled components

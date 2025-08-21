@@ -31,9 +31,12 @@ dev = [
   "covdefaults>=2.3.0",
   "deptry>=0.23.1",
   "mypy>=1.17.1",
+  "playwright>=1.54.0",
   "pre-commit>=4.3.0",
   "pytest>=8.4.1",
+  "pytest-bdd>=8.1.0",
   "pytest-cov>=6.2.1",
+  "pytest-playwright>=0.7.0",
   "tenacity>=9.1.2",
   "types-wtforms>=3.2.1.20250809",
 ]
@@ -128,6 +131,8 @@ ignore = [
   "E501",
   # use assert in non-test code
   "S101",
+  # partial path in subprocess - "uv" rather than "/usr/bin/uv"
+  "S607",
   # DoNotAssignLambda
   "E731",
 ]
