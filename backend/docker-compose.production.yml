@@ -8,33 +8,23 @@ services:
       - redis
     environment:
       - DB_HOST=postgres
-      - DB_PASSWORD=abc123
-      - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
-    ports:
-      - "5005:5005"
-    entrypoint:
-      - /app/bin/flask
-      - run
-      - --host=0.0.0.0
-      - --port=5005
-      - --debug
+    # define DB_PASSWORD in the .env file
     env_file: .env
-    develop:
-      watch:
-        - action: sync
-          path: ./src
-          target: /app
-          ignore:
-            - __pycache__/
-        - action: rebuild
-          path: uv.lock
+    ports:
+      - "8080:8080"
+    entrypoint:
+      - /app/bin/gunicorn
+      - --bind=0.0.0.0:8080
+      - --log-level=info
+      - app:app
 
   postgres:
     image: postgres:16
     environment:
       - POSTGRES_USER=opendlp
-      - POSTGRES_PASSWORD=abc123
+    # define POSTGRES_PASSWORD in the .env file
+    env_file: .env
     volumes:
       - sqla_opendlp_pgdata:/var/lib/postgresql/data
 

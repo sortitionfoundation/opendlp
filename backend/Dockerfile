@@ -12,14 +12,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 ### Start build prep.
 ### This should be a separate build container for better reuse.
 
-RUN apt-get update -qy && \
-  apt-get install -qyy \
+RUN <<EOT
+apt-get update -qy
+apt-get install -qyy \
   -o APT::Install-Recommends=false \
   -o APT::Install-Suggests=false \
   build-essential \
   ca-certificates \
   python3-setuptools \
-  python3.12-dev
+  python3.12-dev \
+  nodejs \
+  npm
+EOT
 
 # Security-conscious organizations should package/review uv themselves.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -52,17 +56,31 @@ RUN --mount=type=cache,target=/root/.cache \
   --no-dev \
   --no-install-project
 
+RUN mkdir /src
+COPY package.json /src/
+COPY package-lock.json /src/
+
+WORKDIR /src
+# and the same for the npm dependencies
+# Build the sass files fresh
+RUN --mount=type=cache,target=/root/.cache \
+  npm install
+
+COPY . /src
+
+# Build the sass files fresh
+# Need the sass files copied in before we run this of course
+RUN --mount=type=cache,target=/root/.cache \
+  npm run build:sass
+
 # Now install the rest from `/src`: The APPLICATION w/o dependencies.
 # `/src` will NOT be copied into the runtime container.
-# LEAVE THIS OUT if your application is NOT a proper Python package.
-COPY . /src
-WORKDIR /src
 RUN --mount=type=cache,target=/root/.cache \
   uv sync \
   --locked \
   --no-dev \
-  --no-editable
-
+  --no-editable \
+  --extra production
 
 ##########################################################################
 
@@ -73,46 +91,53 @@ SHELL ["sh", "-exc"]
 ENV PATH=/app/bin:$PATH
 
 # Don't run your app as root.
-RUN groupadd -r app && useradd -r -d /app -g app -N app
+RUN <<EOT
+groupadd -r app
+useradd -r -d /app -g app -N app
+EOT
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 # See <https://hynek.me/articles/docker-signals/>.
 STOPSIGNAL SIGINT
 
 # Note how the runtime dependencies differ from build-time ones.
 # Notably, there is no uv either!
-RUN apt-get update -qy && \
-  apt-get install -qyy \
+RUN <<EOT
+apt-get update -qy
+apt-get install -qyy \
   -o APT::Install-Recommends=false \
   -o APT::Install-Suggests=false \
   python3.12 \
   libpython3.12 \
   libpcre3 \
-  libxml2 && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  libxml2
 
-COPY docker-entrypoint.sh /
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+EOT
+
 # COPY uwsgi.ini /app/etc/uwsgi.ini
+
+# Copy things we need to work before the app - the app is most likely to change
+# Copy in order from least likely to change to most likely
+# Copy from local if possible
+COPY alembic.ini babel.cfg wsgi.py migrations templates translations /app/
+
+# static includes css files built from sass, so copy them from the build container
+COPY --from=build --chown=app:app /src/static /app/static
 
 # Copy the pre-built `/app` directory to the runtime container
 # and change the ownership to user app and group app in one step.
 COPY --from=build --chown=app:app /app /app
 
-# COPY *.py /app/
-
-# If your application is NOT a proper Python package that got
-# pip-installed above, you need to copy your application into
-# the container HERE:
-# COPY . /app/whereever-your-entrypoint-finds-it
-COPY --chown=app:app /src /app
-
 USER app
 WORKDIR /app
 
-ENV FLASK_APP=opendlp/entrypoints/flask_app.py FLASK_DEBUG=1 PYTHONUNBUFFERED=1
-
 # Strictly optional, but I like it for introspection of what I've built
 # and run a smoke test that the application can, in fact, be imported.
-RUN /app/bin/python -V && \
-  /app/bin/python -Im site
+RUN <<EOT
+/app/bin/python -V
+/app/bin/python -Im site
+/app/bin/python -Ic 'import opendlp'
+EOT
+
+ENV FLASK_APP=opendlp.entrypoints.flask_app
