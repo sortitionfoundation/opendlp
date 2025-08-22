@@ -1,13 +1,18 @@
-# Exclude the project virtual environment from image builds
 .venv
-
 .claude
-.coverage
-.env
-.git
-.mypy_cache
-.pre-commit-config.yaml
-.pytest_cache
 .ruff_cache
+.pytest_cache/
+.mypy_cache
+.coverage
+__pycache__/
+assets/node_modules/
+public/
+
+.coverage
+.dockerignore
+.env*
+docker-compose.override.yml
+
+.pre-commit-config.yaml
 htmlcov
 notes.md
