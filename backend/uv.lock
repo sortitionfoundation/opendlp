@@ -306,6 +306,18 @@ wheels = [
 ]
 
 [[package]]
+name = "gunicorn"
+version = "23.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/34/72/9614c465dc206155d93eff0ca20d42e1e35afc533971379482de953521a4/gunicorn-23.0.0.tar.gz", hash = "sha256:f014447a0101dc57e294f6c18ca6b40227a4c90e9bdb586042628030cba004ec", size = 375031, upload-time = "2024-08-10T20:25:27.378Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/7d/6dac2a6e1eba33ee43f318edbed4ff29151a49b5d37f080aad1e6469bca4/gunicorn-23.0.0-py3-none-any.whl", hash = "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d", size = 85029, upload-time = "2024-08-10T20:25:24.996Z" },
+]
+
+[[package]]
 name = "identify"
 version = "2.6.13"
 source = { registry = "https://pypi.org/simple" }
@@ -439,7 +451,7 @@ wheels = [
 [[package]]
 name = "opendlp"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "cachelib" },
@@ -458,6 +470,11 @@ dependencies = [
     { name = "werkzeug" },
     { name = "whitenoise" },
     { name = "wtforms" },
+]
+
+[package.optional-dependencies]
+production = [
+    { name = "gunicorn" },
 ]
 
 [package.dev-dependencies]
@@ -487,6 +504,7 @@ requires-dist = [
     { name = "flask-session", specifier = ">=0.8.0" },
     { name = "flask-talisman", specifier = ">=1.1.0" },
     { name = "flask-wtf", specifier = ">=1.2.2" },
+    { name = "gunicorn", marker = "extra == 'production'", specifier = ">=23.0.0" },
     { name = "markupsafe", specifier = ">=3.0.2" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "redis", specifier = ">=6.4.0" },
@@ -495,6 +513,7 @@ requires-dist = [
     { name = "whitenoise", specifier = ">=6.9.0" },
     { name = "wtforms", specifier = ">=3.2.1" },
 ]
+provides-extras = ["production"]
 
 [package.metadata.requires-dev]
 dev = [

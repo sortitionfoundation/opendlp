@@ -27,6 +27,15 @@ dependencies = [
 [project.scripts]
 opendlp = "opendlp.entrypoints.cli:cli"
 
+[project.optional-dependencies]
+production = [
+    "gunicorn>=23.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.13,<0.9.0"]
+build-backend = "uv_build"
+
 [dependency-groups]
 dev = [
   "covdefaults>=2.3.0",
