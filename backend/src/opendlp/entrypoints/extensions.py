@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_session import Session
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect
+from whitenoise import WhiteNoise
 
 from opendlp import bootstrap
 from opendlp.domain.users import User
@@ -52,6 +53,9 @@ def init_extensions(app: Flask) -> None:
 
     # Initialize Flask-WTF CSRF protection
     csrf.init_app(app)
+
+    # Initialise whitenoise - for serving staticfiles
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix="static/")
 
 
 def get_locale() -> str:
