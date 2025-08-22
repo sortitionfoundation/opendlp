@@ -1,8 +1,6 @@
 """ABOUTME: CLI commands for invite management operations
 ABOUTME: Provides commands to generate, list, and revoke user invites"""
 
-import uuid
-
 import click
 
 from opendlp import bootstrap
@@ -132,13 +130,29 @@ def list_invites_cmd(ctx: click.Context, include_expired: bool, include_used: bo
 
 @invites.command("revoke")
 @click.argument("code")
+@click.option("--admin-email", required=True, type=str, help="Email of admin user performing the revocation")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def revoke_invite_cmd(ctx: click.Context, code: str, confirm: bool) -> None:
+def revoke_invite_cmd(ctx: click.Context, code: str, admin_email: str, confirm: bool) -> None:
     """Revoke an invite code."""
     try:
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
+
+        # First, verify the admin user exists and has proper permissions
+        with uow:
+            admin_user = uow.users.get_by_email(admin_email)
+            if not admin_user:
+                click.echo(click.style(f"✗ Admin user with email '{admin_email}' not found.", "red"))
+                raise click.Abort()
+
+            if admin_user.global_role != GlobalRole.ADMIN:
+                click.echo(click.style(f"✗ User '{admin_email}' must have ADMIN role to revoke invites.", "red"))
+                raise click.Abort()
+
+            admin_user_id = admin_user.id
+
+        # Now find and revoke the invite
         with uow:
             invite = uow.user_invites.get_by_code(code)
             if not invite:
@@ -158,14 +172,10 @@ def revoke_invite_cmd(ctx: click.Context, code: str, confirm: bool) -> None:
                 click.echo("Operation cancelled.")
                 return
 
-            # For CLI usage, revoke invite directly by marking as used
-            # Use the nil UUID to indicate system revocation
-            system_user_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
-            invite.use(system_user_id)
-            uow.user_invites.add(invite)
-            uow.commit()
+            # Use the service layer to revoke the invite properly
+            invite_service.revoke_invite(uow, invite.id, admin_user_id)
 
-            click.echo(click.style(f"✓ Invite '{code}' has been revoked.", "green"))
+            click.echo(click.style(f"✓ Invite '{code}' has been revoked by {admin_email}.", "green"))
 
     except Exception as e:
         click.echo(click.style(f"✗ Error revoking invite: {e}", "red"))

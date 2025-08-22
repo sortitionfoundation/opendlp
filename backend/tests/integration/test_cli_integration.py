@@ -144,22 +144,23 @@ class TestCliInvitesIntegration:
 
     def test_revoke_invite_flow(self, sqlite_session_factory, cli_with_session_factory):
         """Test invite revocation flow."""
-        # Create an invite first
+        # Create an admin user and invite
+        admin_email = "revoke-admin@example.com"
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            user = create_user(
-                uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
-            )
+            admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             invite = generate_invite(
-                uow=uow, created_by_user_id=user.id, global_role=GlobalRole.USER, expires_in_hours=168
+                uow=uow, created_by_user_id=admin_user.id, global_role=GlobalRole.USER, expires_in_hours=168
             )
             invite_code = invite.code
 
-        # Revoke the invite
-        result = cli_with_session_factory(cli, ["invites", "revoke", invite_code, "--confirm"])
+        # Revoke the invite using the admin user
+        result = cli_with_session_factory(
+            cli, ["invites", "revoke", invite_code, "--admin-email", admin_email, "--confirm"]
+        )
 
         assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
-        assert f"✓ Invite '{invite_code}' has been revoked." in result.output
+        assert f"✓ Invite '{invite_code}' has been revoked by {admin_email}." in result.output
 
         # Verify invite is no longer valid
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
@@ -167,6 +168,41 @@ class TestCliInvitesIntegration:
             assert invite is not None
             # Revoked invites should not be valid
             assert not invite.is_valid()
+            # Should be marked as used by the admin user
+            assert invite.used_by == admin_user.id
+
+    def test_revoke_invite_non_admin_fails(self, sqlite_session_factory, cli_with_session_factory):
+        """Test that non-admin users cannot revoke invites."""
+        # Create admin user and invite
+        admin_email = "revoke-admin2@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
+
+        # Create non-admin user
+        non_admin_email = "regular-user@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            create_user(uow=uow, email=non_admin_email, password="pass123oiua", global_role=GlobalRole.USER)
+
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            invite = generate_invite(
+                uow=uow, created_by_user_id=admin_user.id, global_role=GlobalRole.USER, expires_in_hours=168
+            )
+            invite_code = invite.code
+
+        # Try to revoke with non-admin user - should fail
+        result = cli_with_session_factory(
+            cli, ["invites", "revoke", invite_code, "--admin-email", non_admin_email, "--confirm"]
+        )
+
+        assert result.exit_code == 1, f"Expected failure but got exit code: {result.exit_code}. Output: {result.output}"
+        assert f"✗ User '{non_admin_email}' must have ADMIN role to revoke invites." in result.output
+
+        # Verify invite is still valid
+        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            invite = uow.user_invites.get_by_code(invite_code)
+            assert invite is not None
+            assert invite.is_valid()  # Should still be valid since revoke failed
+            assert invite.used_by is None
 
     def test_cleanup_expired_invites(self, sqlite_session_factory, cli_with_session_factory):
         """Test cleanup of expired invites."""
