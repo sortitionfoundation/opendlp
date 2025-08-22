@@ -6,6 +6,8 @@ services:
       - POSTGRES_PASSWORD=abc123
     ports:
       - "54321:5432"
+    networks:
+      - local_net
     volumes:
       - sqla_opendlp_local_pgdata:/var/lib/postgresql/data
 
@@ -13,6 +15,11 @@ services:
     image: redis:alpine
     ports:
       - "63791:6379"
+    networks:
+      - local_net
+
+networks:
+  local_net:
 
 volumes:
   sqla_opendlp_local_pgdata:
