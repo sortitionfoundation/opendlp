@@ -15,11 +15,11 @@ services:
       - .env.prod
     ports:
       - "8080:8080"
-    entrypoint:
-      - /app/bin/gunicorn
+    entrypoint: /app/bin/gunicorn
+    command:
       - --bind=0.0.0.0:8080
       - --log-level=info
-      - app:app
+      - "opendlp.entrypoints.flask_app:create_app()"
 
   postgres:
     image: postgres:16
