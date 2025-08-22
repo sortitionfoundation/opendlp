@@ -34,7 +34,7 @@ def create_app(config_name: str = "") -> Flask:
     app.config.from_object(config)
 
     # Initialize extensions
-    init_extensions(app)
+    init_extensions(app, config)
 
     # Register blueprints
     register_blueprints(app)

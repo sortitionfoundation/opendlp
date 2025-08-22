@@ -12,6 +12,7 @@ from flask_wtf.csrf import CSRFProtect
 from whitenoise import WhiteNoise
 
 from opendlp import bootstrap
+from opendlp.config import FlaskBaseConfig
 from opendlp.domain.users import User
 
 # Initialize extensions
@@ -22,7 +23,7 @@ babel = Babel()
 csrf = CSRFProtect()
 
 
-def init_extensions(app: Flask) -> None:
+def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     """Initialize Flask extensions with app instance."""
 
     # Initialize Flask-Login
@@ -55,7 +56,12 @@ def init_extensions(app: Flask) -> None:
     csrf.init_app(app)
 
     # Initialise whitenoise - for serving staticfiles
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix="static/")
+    if config.APPLICATION_ROOT == "/":
+        whitenoise_prefix = "static/"
+    else:
+        app_root = config.APPLICATION_ROOT.strip("/")
+        whitenoise_prefix = f"{app_root}/static/"
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix=whitenoise_prefix)  # type: ignore[method-assign]
 
 
 def get_locale() -> str:
