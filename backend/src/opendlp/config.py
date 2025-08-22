@@ -145,6 +145,7 @@ class FlaskBaseConfig:
             "es": "Español",
             "fr": "Français",
             "de": "Deutsch",
+            "hu": "Magyar",
             "it": "Italiano",
             "pt": "Português",
             "ru": "Русский",
