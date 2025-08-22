@@ -43,7 +43,7 @@ install:
 	@npm install
 	@npm run build:sass
 
-install-dev:
+install-dev: install
 	@echo "🚀 Installing development dependencies"
 	@uv run playwright install
 
