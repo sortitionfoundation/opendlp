@@ -8,8 +8,9 @@ from opendlp.translations import get_supported_languages
 class TestLanguageConfiguration:
     """Test language configuration functionality."""
 
-    def test_default_languages(self) -> None:
+    def test_default_languages(self, clear_env_vars) -> None:
         """Test default language configuration."""
+        clear_env_vars("SUPPORTED_LANGUAGES")
         config = FlaskConfig()
         assert config.LANGUAGES == ["en", "es", "fr", "de"]
 
