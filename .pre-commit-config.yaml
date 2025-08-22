@@ -2,17 +2,24 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v5.0.0"
     hooks:
+      - id: check-added-large-files
       - id: check-case-conflict
       - id: check-merge-conflict
+      - id: check-json
+      - id: check-symlinks
       - id: check-toml
       - id: check-yaml
-      - id: check-json
         exclude: ^.devcontainer/devcontainer.json
+      - id: detect-private-key
       - id: pretty-format-json
         exclude: ^.devcontainer/devcontainer.json
         args: [--autofix, --no-sort-keys]
       - id: end-of-file-fixer
       - id: trailing-whitespace
+
+  # TODO: consider
+  # - csslint
+  # - javascript
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.11.5"
@@ -20,3 +27,16 @@ repos:
       - id: ruff
         args: [--exit-non-zero-on-fix]
       - id: ruff-format
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  # check for secrets, ssh keys etc
+  - repo: https://github.com/thoughtworks/talisman
+    rev: "v1.32.2" # Update me!
+    hooks:
+      # both pre-commit and pre-push supported
+      # -   id: talisman-push
+      - id: talisman-commit
