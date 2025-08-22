@@ -28,9 +28,7 @@ dependencies = [
 opendlp = "opendlp.entrypoints.cli:cli"
 
 [project.optional-dependencies]
-production = [
-    "gunicorn>=23.0.0",
-]
+production = ["gunicorn>=23.0.0"]
 
 [build-system]
 requires = ["uv_build>=0.8.13,<0.9.0"]
@@ -89,6 +87,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = 'flask_wtf.*'
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = 'whitenoise.*'
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -191,4 +193,4 @@ fail_under = 90
 [tool.deptry.per_rule_ignores]
 # these are not imported directly, but are used.
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
-DEP002 = ["alembic", "redis"]
+DEP002 = ["alembic", "gunicorn"]
