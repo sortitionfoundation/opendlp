@@ -58,8 +58,7 @@ RUN --mount=type=cache,target=/root/.cache \
   --extra production
 
 RUN mkdir /src
-COPY package.json /src/
-COPY package-lock.json /src/
+COPY package.json package-lock.json /src/
 
 WORKDIR /src
 # and the same for the npm dependencies
@@ -80,7 +79,8 @@ RUN --mount=type=cache,target=/root/.cache \
   uv sync \
   --locked \
   --no-dev \
-  --no-editable
+  --no-editable \
+  --extra production
 
 ##########################################################################
 
