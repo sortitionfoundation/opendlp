@@ -34,9 +34,9 @@ repos:
       - id: shellcheck
 
   # check for secrets, ssh keys etc
-  - repo: https://github.com/thoughtworks/talisman
-    rev: "v1.32.2" # Update me!
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
     hooks:
-      # both pre-commit and pre-push supported
-      # -   id: talisman-push
-      - id: talisman-commit
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: package.lock.json,migrations/versions/*.py
