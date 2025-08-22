@@ -54,7 +54,8 @@ RUN --mount=type=cache,target=/root/.cache \
   uv sync \
   --locked \
   --no-dev \
-  --no-install-project
+  --no-install-project \
+  --extra production
 
 RUN mkdir /src
 COPY package.json /src/
@@ -79,8 +80,7 @@ RUN --mount=type=cache,target=/root/.cache \
   uv sync \
   --locked \
   --no-dev \
-  --no-editable \
-  --extra production
+  --no-editable
 
 ##########################################################################
 
