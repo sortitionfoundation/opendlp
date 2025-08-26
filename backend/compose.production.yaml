@@ -20,6 +20,8 @@ services:
       - --bind=0.0.0.0:8080
       - --log-level=info
       - "opendlp.entrypoints.flask_app:create_app()"
+    networks:
+      - opendlp_prod_net
 
   postgres:
     image: postgres:16
@@ -30,10 +32,17 @@ services:
       - .env
       - .env.prod
     volumes:
-      - sqla_opendlp_pgdata:/var/lib/postgresql/data
+      - sqla_opendlp_prod_pgdata:/var/lib/postgresql/data
+    networks:
+      - opendlp_prod_net
 
   redis:
     image: redis:alpine
+    networks:
+      - opendlp_prod_net
+
+networks:
+  opendlp_prod_net:
 
 volumes:
-  sqla_opendlp_pgdata:
+  sqla_opendlp_prod_pgdata:
