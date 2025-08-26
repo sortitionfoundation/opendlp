@@ -82,6 +82,13 @@ RUN --mount=type=cache,target=/root/.cache \
   --no-editable \
   --extra production
 
+# copy all the files we need into app (ignoring the ones we don't need)
+# so that we can do a single copy in the final build stage.
+RUN cp -r /src/static /app/static
+COPY --chown=app:app alembic.ini babel.cfg wsgi.py /app/
+COPY --chown=app:app migrations /app/migrations
+COPY --chown=app:app templates /app/templates
+COPY --chown=app:app translations /app/translations
 ##########################################################################
 
 FROM ubuntu:noble
@@ -114,16 +121,6 @@ apt-get install -qyy \
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT
-
-# COPY uwsgi.ini /app/etc/uwsgi.ini
-
-# Copy things we need to work before the app - the app is most likely to change
-# Copy in order from least likely to change to most likely
-# Copy from local if possible
-COPY alembic.ini babel.cfg wsgi.py migrations templates translations /app/
-
-# static includes css files built from sass, so copy them from the build container
-COPY --from=build --chown=app:app /src/static /app/static
 
 # Copy the pre-built `/app` directory to the runtime container
 # and change the ownership to user app and group app in one step.
