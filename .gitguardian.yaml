@@ -1,0 +1,24 @@
+version: 2
+
+secret:
+  ignored_matches:
+    - match: admin123
+      name: password only used in setting up test data (see db_utils.py)
+    - match: organiser123
+      name: password only used in setting up test data (see db_utils.py)
+    - match: user123
+      name: password only used in setting up test data (see db_utils.py)
+    - match: abc123
+      name: password only used in dev postgres set up
+    - match: strongpass123
+      name: password only used in tests
+
+  ignored_paths:
+    - "**/README.md"
+    - docs/*
+    - LICENSE
+    - .dockerignore
+    - .gitignore
+    - .env
+    - backend/env.example
+    - "backend/tests/**/*.py"
