@@ -225,3 +225,18 @@ def get_config(config_name: str = "") -> FlaskBaseConfig:
     # Fall back to development if unknown config
     config_cls = config_classes.get(env, FlaskConfig)
     return config_cls()
+
+
+def _get_project_root() -> Path:
+    # Get project root - go up from src/opendlp/entrypoints/flask_app.py to project root
+    # But if installed in venv (as in production) then use PROJECT_ROOT
+    relative_project_root = Path(__file__).parents[3]
+    return Path(os.environ.get("PROJECT_ROOT", str(relative_project_root)))
+
+
+def get_templates_path() -> Path:
+    return _get_project_root() / "templates"
+
+
+def get_static_path() -> Path:
+    return _get_project_root() / "static"

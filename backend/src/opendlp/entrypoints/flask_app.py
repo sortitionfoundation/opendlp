@@ -2,16 +2,12 @@
 ABOUTME: Creates and configures Flask app instance with all necessary extensions and routes"""
 
 import logging
-from pathlib import Path
 
 from flask import Flask, render_template
 from werkzeug.exceptions import HTTPException
 
-from opendlp.config import get_config
+from opendlp import config
 from opendlp.entrypoints.extensions import init_extensions
-
-# Get project root - go up from src/opendlp/entrypoints/flask_app.py to project root
-BACKEND_ROOT = Path(__file__).parents[3]
 
 
 def create_app(config_name: str = "") -> Flask:
@@ -24,17 +20,18 @@ def create_app(config_name: str = "") -> Flask:
     Returns:
         Configured Flask application instance
     """
-    template_path = BACKEND_ROOT / "templates"
-    static_path = BACKEND_ROOT / "static"
-
-    app = Flask(__name__, template_folder=str(template_path), static_folder=str(static_path))
+    app = Flask(
+        __name__,
+        template_folder=str(config.get_templates_path()),
+        static_folder=str(config.get_static_path()),
+    )
 
     # Load configuration
-    config = get_config(config_name)
-    app.config.from_object(config)
+    flask_config = config.get_config(config_name)
+    app.config.from_object(flask_config)
 
     # Initialize extensions
-    init_extensions(app, config)
+    init_extensions(app, flask_config)
 
     # Register blueprints
     register_blueprints(app)

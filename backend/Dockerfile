@@ -138,3 +138,4 @@ RUN <<EOT
 EOT
 
 ENV FLASK_APP=opendlp.entrypoints.flask_app
+ENV PROJECT_ROOT=/app
