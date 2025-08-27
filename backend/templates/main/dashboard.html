@@ -72,7 +72,7 @@
                       <h3 class="govuk-heading-m">{{ _('No assemblies yet') }}</h3>
                       <p class="govuk-body">{{ _("You don't have access to any assemblies at the moment.") }}</p>
                         {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
-                        <p class="govuk-body">{{ _('As a %(role), you can create new assemblies.', role=current_user.global_role.value) }}</p>
+                        <p class="govuk-body">{{ _('As a %(role)s, you can create new assemblies.', role=current_user.global_role.value) }}</p>
                         {% endif %}
                     </div>
                 {% endif %}

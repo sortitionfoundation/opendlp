@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-27 22:03+0100\n"
+"POT-Creation-Date: 2025-08-27 22:47+0100\n"
 "PO-Revision-Date: 2025-08-27 09:44+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -21,7 +21,6 @@ msgstr ""
 #: src/opendlp/entrypoints/decorators.py:40
 #: src/opendlp/entrypoints/decorators.py:85
 #: src/opendlp/entrypoints/decorators.py:151
-#: src/opendlp/entrypoints/extensions.py:33
 #, fuzzy
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
@@ -361,7 +360,8 @@ msgid "You don't have access to any assemblies at the moment."
 msgstr ""
 
 #: templates/main/assemblies.html:83 templates/main/dashboard.html:75
-msgid "As a %(role), you can create new assemblies."
+#, python-format
+msgid "As a %(role)s, you can create new assemblies."
 msgstr ""
 
 #: templates/main/assemblies.html:85
@@ -484,3 +484,6 @@ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 
 #~ msgid "User with email %(email)s already exists"
 #~ msgstr "A(z) %(email)s e-mail címmel rendelkező felhasználó már létezik"
+
+#~ msgid "As a %(role), you can create new assemblies."
+#~ msgstr ""
