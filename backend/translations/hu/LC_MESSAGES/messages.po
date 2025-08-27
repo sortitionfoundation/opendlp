@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-27 16:56+0100\n"
+"POT-Creation-Date: 2025-08-27 22:03+0100\n"
 "PO-Revision-Date: 2025-08-27 09:44+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -26,76 +26,76 @@ msgstr ""
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
-#: src/opendlp/entrypoints/forms.py:23
+#: src/opendlp/entrypoints/forms.py:24
 msgid "Empty email address"
 msgstr "Email cím hiányzik"
 
-#: src/opendlp/entrypoints/forms.py:27
+#: src/opendlp/entrypoints/forms.py:28
 msgid "Invalid email address"
 msgstr "Érvénytelen email cím"
 
-#: src/opendlp/entrypoints/forms.py:35 src/opendlp/entrypoints/forms.py:69
-#: src/opendlp/entrypoints/forms.py:117
+#: src/opendlp/entrypoints/forms.py:36 src/opendlp/entrypoints/forms.py:70
+#: src/opendlp/entrypoints/forms.py:118
 msgid "Email address"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:39 src/opendlp/entrypoints/forms.py:75
+#: src/opendlp/entrypoints/forms.py:40 src/opendlp/entrypoints/forms.py:76
 msgid "Password"
 msgstr "Jelszó"
 
-#: src/opendlp/entrypoints/forms.py:42
+#: src/opendlp/entrypoints/forms.py:43
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:49
+#: src/opendlp/entrypoints/forms.py:50
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:51
+#: src/opendlp/entrypoints/forms.py:52
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:55
+#: src/opendlp/entrypoints/forms.py:56
 msgid "First Name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:57
+#: src/opendlp/entrypoints/forms.py:58
 msgid "Optional - your first name"
 msgstr "Keresztnév - nem kötelező"
 
-#: src/opendlp/entrypoints/forms.py:62
+#: src/opendlp/entrypoints/forms.py:63
 msgid "Last Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:64
+#: src/opendlp/entrypoints/forms.py:65
 msgid "Optional - your last name"
 msgstr "Vezetéknév - nem kötelező"
 
-#: src/opendlp/entrypoints/forms.py:79
+#: src/opendlp/entrypoints/forms.py:80
 msgid "Confirm Password"
 msgstr "Jelszó megerősítése"
 
-#: src/opendlp/entrypoints/forms.py:80 src/opendlp/entrypoints/forms.py:133
+#: src/opendlp/entrypoints/forms.py:81 src/opendlp/entrypoints/forms.py:134
 msgid "Passwords must match"
 msgstr "A jelszavaknak egyeznie kell"
 
-#: src/opendlp/entrypoints/forms.py:92
+#: src/opendlp/entrypoints/forms.py:93
 msgid "This email address is already registered."
 msgstr "Ezen az emailcímen már van regisztráció."
 
-#: src/opendlp/entrypoints/forms.py:106
+#: src/opendlp/entrypoints/forms.py:107
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/forms.py:119
+#: src/opendlp/entrypoints/forms.py:120
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:128
+#: src/opendlp/entrypoints/forms.py:129
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:132
+#: src/opendlp/entrypoints/forms.py:133
 msgid "Confirm New Password"
 msgstr "Új jelszó megerősítése"
 
@@ -112,7 +112,6 @@ msgid "You have been logged out."
 msgstr "Kijelentkeztél."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:92
-#: tests/unit/test_translations.py:20
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
@@ -202,7 +201,7 @@ msgstr ""
 
 #: templates/base.html:41 templates/errors/404.html:24
 #: templates/errors/500.html:24 templates/main/dashboard.html:3
-#: templates/main/dashboard.html:10 tests/unit/test_translations.py:46
+#: templates/main/dashboard.html:10
 msgid "Dashboard"
 msgstr "Irányító pult"
 
@@ -249,16 +248,11 @@ msgid ""
 msgstr ""
 
 #: templates/auth/login.html:55
-msgid "Don't have an account? You need an"
+#, fuzzy
+msgid ""
+"Don't have an account? You need an <strong>invite code</strong> to "
+"register."
 msgstr "Még nincs fiókod? Szükséged lesz egy"
-
-#: templates/auth/login.html:55
-msgid "invite code"
-msgstr "meghívó kódra"
-
-#: templates/auth/login.html:55
-msgid "to register."
-msgstr "a regisztrációhoz."
 
 #: templates/auth/login.html:56
 msgid "Register here"
@@ -464,19 +458,14 @@ msgid ""
 "                It is a project of"
 msgstr ""
 
-#: tests/unit/test_translations.py:15 tests/unit/test_translations.py:38
+#: tests/unit/test_translations.py:16 tests/unit/test_translations.py:41
 msgid "Login"
 msgstr "Bejelentkezés"
 
-#: tests/unit/test_translations.py:25
+#: tests/unit/test_translations.py:27
 #, python-format
 msgid "User with username %(username)s already exists"
 msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
-
-#: tests/unit/test_translations.py:30
-#, python-format
-msgid "User with email %(email)s already exists"
-msgstr "A(z) %(email)s e-mail címmel rendelkező felhasználó már létezik"
 
 #~ msgid "Assemblies"
 #~ msgstr "Gyűlések"
@@ -486,3 +475,12 @@ msgstr "A(z) %(email)s e-mail címmel rendelkező felhasználó már létezik"
 
 #~ msgid "Sign out"
 #~ msgstr "Jelentkezzen ki"
+
+#~ msgid "invite code"
+#~ msgstr "meghívó kódra"
+
+#~ msgid "to register."
+#~ msgstr "a regisztrációhoz."
+
+#~ msgid "User with email %(email)s already exists"
+#~ msgstr "A(z) %(email)s e-mail címmel rendelkező felhasználó már létezik"

@@ -9,7 +9,8 @@ from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
 
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from opendlp.translations import _l
+from opendlp.translations import gettext as _
+from opendlp.translations import lazy_gettext as _l
 
 
 class DomainEmailValidator:
@@ -20,11 +21,11 @@ class DomainEmailValidator:
 
     def __call__(self, form: Any, field: Any) -> None:
         if not field.data:
-            raise ValidationError(_l("Empty email address"))
+            raise ValidationError(_("Empty email address"))
         try:
             domain_validate_email(field.data)
         except ValueError as error:
-            message = self.message or _l("Invalid email address")
+            message = self.message or _("Invalid email address")
             raise ValidationError(message) from error
 
 
@@ -89,7 +90,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
             with SqlAlchemyUnitOfWork() as uow:
                 existing_user = uow.users.get_by_email(email.data)
                 if existing_user:
-                    raise ValidationError(_l("This email address is already registered."))
+                    raise ValidationError(_("This email address is already registered."))
         except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly
@@ -103,7 +104,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
             with SqlAlchemyUnitOfWork() as uow:
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
-                    raise ValidationError(_l("Invalid or expired invite code."))
+                    raise ValidationError(_("Invalid or expired invite code."))
         except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly

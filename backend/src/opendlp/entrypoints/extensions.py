@@ -14,7 +14,7 @@ from whitenoise import WhiteNoise
 from opendlp import bootstrap
 from opendlp.config import FlaskBaseConfig
 from opendlp.domain.users import User
-from opendlp.translations import _l
+from opendlp.translations import lazy_gettext as _l
 
 # Initialize extensions
 login_manager = LoginManager()

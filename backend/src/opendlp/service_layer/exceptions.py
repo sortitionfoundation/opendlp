@@ -1,7 +1,7 @@
 """ABOUTME: Custom exceptions for service layer operations
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
-from opendlp.translations import _l
+from opendlp.translations import gettext as _
 
 
 class ServiceLayerError(Exception):
@@ -18,7 +18,7 @@ class UserAlreadyExists(ServiceLayerError):
     """Raised when attempting to create a user that already exists."""
 
     def __init__(self, email: str = "") -> None:
-        message = _l("User with email '%(email)s' already exists", email=email) if email else _l("User already exists")
+        message = _("User with email '%(email)s' already exists", email=email) if email else _("User already exists")
         super().__init__(message)
         self.email = email
 
@@ -28,7 +28,7 @@ class InvalidCredentials(ServiceLayerError):
 
     def __init__(self, message: str = "") -> None:
         if not message:
-            message = _l("Invalid email or password")
+            message = _("Invalid email or password")
         super().__init__(message)
 
 
@@ -37,13 +37,13 @@ class InvalidInvite(ServiceLayerError):
 
     def __init__(self, code: str = "", reason: str = "") -> None:
         if code and reason:
-            message = _l("Invalid invite code '%(code)s': %(reason)s", code=code, reason=reason)
+            message = _("Invalid invite code '%(code)s': %(reason)s", code=code, reason=reason)
         elif code:
-            message = _l("Invalid invite code '%(code)s'", code=code)
+            message = _("Invalid invite code '%(code)s'", code=code)
         elif reason:
-            message = _l("Invalid invite code: %(reason)s", reason=reason)
+            message = _("Invalid invite code: %(reason)s", reason=reason)
         else:
-            message = _l("Invalid invite code")
+            message = _("Invalid invite code")
         super().__init__(message)
         self.code = code
         self.reason = reason
@@ -54,17 +54,17 @@ class InsufficientPermissions(ServiceLayerError):
 
     def __init__(self, action: str = "", required_role: str = "") -> None:
         if action and required_role:
-            message = _l(
+            message = _(
                 "Insufficient permissions for action: %(action)s (requires role: %(required_role)s)",
                 action=action,
                 required_role=required_role,
             )
         elif action:
-            message = _l("Insufficient permissions for action: %(action)s", action=action)
+            message = _("Insufficient permissions for action: %(action)s", action=action)
         elif required_role:
-            message = _l("Insufficient permissions (requires role: %(required_role)s)", required_role=required_role)
+            message = _("Insufficient permissions (requires role: %(required_role)s)", required_role=required_role)
         else:
-            message = _l("Insufficient permissions")
+            message = _("Insufficient permissions")
         super().__init__(message)
         self.action = action
         self.required_role = required_role

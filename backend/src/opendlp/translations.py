@@ -1,16 +1,16 @@
 """ABOUTME: Translation utilities for i18n/l10n support
 ABOUTME: Provides gettext functions that work both in Flask context and standalone"""
 
-import gettext
 import os
+from gettext import GNUTranslations
 from typing import Any
 
 from flask import current_app, has_app_context
+from flask_babel import LazyString
 from flask_babel import gettext as flask_gettext
-from flask_babel import lazy_gettext as flask_lazy_gettext
 
 # Global translation objects for fallback
-_translations: dict[str, gettext.GNUTranslations] = {}
+_translations: dict[str, GNUTranslations] = {}
 _default_locale = "en"
 
 
@@ -33,22 +33,13 @@ def _get_text_fallback(message: str, **kwargs: Any) -> str:
     return translated
 
 
-def _lazy_gettext_fallback(message: str, **kwargs: Any) -> str:
-    """Fallback lazy_gettext that works without Flask context."""
-    # For now, just return the message - in a more sophisticated setup
-    # this would return a lazy string object that evaluates later
-    return _get_text_fallback(message, **kwargs)
-
-
-def _(message: str, **kwargs: Any) -> str:
+def gettext(message: str, **kwargs: Any) -> str:
     """Get translated string - works both in Flask context and standalone."""
     if has_app_context():
         try:
             # Check if babel extension is initialized
             if hasattr(current_app, "extensions") and "babel" in current_app.extensions:
-                if kwargs:
-                    return str(flask_gettext(message, **kwargs))
-                return str(flask_gettext(message))
+                return str(flask_gettext(message, **kwargs))
         except (ImportError, KeyError):  # pragma: no cover
             # Flask-Babel not available or not initialized
             pass
@@ -56,20 +47,13 @@ def _(message: str, **kwargs: Any) -> str:
     return _get_text_fallback(message, **kwargs)
 
 
-def _l(message: str, **kwargs: Any) -> str:
+def lazy_gettext(message: str, **kwargs: Any) -> LazyString:  # type: ignore[no-any-unimported]
     """Get lazy translated string - works both in Flask context and standalone."""
-    if has_app_context():
-        try:
-            # Check if babel extension is initialized
-            if hasattr(current_app, "extensions") and "babel" in current_app.extensions:
-                if kwargs:
-                    return str(flask_lazy_gettext(message, **kwargs))
-                return str(flask_lazy_gettext(message))
-        except (ImportError, KeyError):  # pragma: no cover
-            # Flask-Babel not available or not initialized
-            pass
+    return LazyString(gettext, message, **kwargs)
 
-    return _lazy_gettext_fallback(message, **kwargs)
+
+_ = gettext
+_l = lazy_gettext
 
 
 def load_translations(locale_dir: str) -> None:
@@ -86,7 +70,7 @@ def load_translations(locale_dir: str) -> None:
         locale_path = os.path.join(locale_dir, locale, "LC_MESSAGES", "messages.mo")
         if os.path.exists(locale_path):
             with open(locale_path, "rb") as fp:
-                _translations[locale] = gettext.GNUTranslations(fp)
+                _translations[locale] = GNUTranslations(fp)
 
 
 def get_supported_languages() -> list[tuple[str, str]]:
