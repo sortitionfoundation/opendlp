@@ -39,4 +39,4 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: package.lock.json,migrations/versions/*.py
+        exclude: package.lock.json,migrations/versions/.*\.py
