@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Server Error - OpenDLP{% endblock %}
+{% block title %}{{ _('Server Error') }} - OpenDLP{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,24 +10,24 @@
                 <i class="bi bi-exclamation-diamond text-danger" style="font-size: 5rem;"></i>
             </div>
             <h1 class="display-4">500</h1>
-            <h3 class="mb-3">Internal Server Error</h3>
+            <h3 class="mb-3">{{ _('Internal Server Error') }}</h3>
             <p class="text-muted mb-4">
-                Something went wrong on our end. We're working to fix this issue.
-                Please try again in a few moments.
+                {{ _("Something went wrong on our end. We're working to fix this issue.
+                Please try again in a few moments.") }}
             </p>
             <div class="d-flex justify-content-center gap-3">
                 <a href="{{ url_for('main.index') }}" class="btn btn-primary">
-                    <i class="bi bi-house"></i> Go Home
+                  <i class="bi bi-house"></i> {{ _('Go Home') }}
                 </a>
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-speedometer2"></i> Dashboard
+                      <i class="bi bi-speedometer2"></i> {{ _('Dashboard') }}
                     </a>
                 {% endif %}
             </div>
             <div class="mt-4">
                 <small class="text-muted">
-                    If this problem persists, please contact your system administrator.
+                  {{ _('If this problem persists, please contact your system administrator.') }}
                 </small>
             </div>
         </div>

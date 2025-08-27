@@ -2,7 +2,7 @@
 <html lang="en" class="govuk-template">
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}OpenDLP - Open Democratic Lottery Platform{% endblock %}</title>
+    <title>{% block title %}OpenDLP - {{ _('Open Democratic Lottery Platform') }}{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c0c">
 
@@ -18,22 +18,22 @@
 <body class="govuk-template__body govuk-frontend-supported">
     <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
 
-    <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
+    <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">{{ _('Skip to main content') }}</a>
 
     <header class="govuk-header" role="banner" data-module="govuk-header">
         <div class="govuk-header__container govuk-width-container">
             <div class="govuk-header__logo">
                 <a href="{{ url_for('main.index') }}" class="govuk-header__link govuk-header__link--homepage">
-                    <img alt="Sortition Foundation Logo" src="{{ url_for('static', filename='img/logosortition.svg') }}">
+                  <img alt="{{ _('Sortition Foundation Logo') }}" src="{{ url_for('static', filename='img/logosortition.svg') }}">
                 </a>
             </div>
 
             {% if current_user.is_authenticated %}
             <div class="govuk-header__content">
-                <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">Menu</a>
+              <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">{{ _('Menu<') }}/a>
                 <nav class="govuk-header__navigation" id="navigation">
                     <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
-                        <span class="govuk-visually-hidden">Close menu</span>
+                      <span class="govuk-visually-hidden">{{ _('Close menu') }}</span>
                     </button>
                     <ul class="govuk-header__navigation-list">
                         <li class="govuk-header__navigation-item">
@@ -61,10 +61,10 @@
             </div>
             {% else %}
             <div class="govuk-header__content">
-                <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">Menu</a>
+              <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">{{ _('Menu') }}</a>
                 <nav class="govuk-header__navigation" id="navigation">
                     <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
-                        <span class="govuk-visually-hidden">Close menu</span>
+                      <span class="govuk-visually-hidden">{{ _('Close menu') }}</span>
                     </button>
                     <ul class="govuk-header__navigation-list">
                         <li class="govuk-header__navigation-item">
@@ -91,7 +91,7 @@
                   <div class="govuk-error-summary" data-module="govuk-error-summary">
                     <div role="alert">
                       <h2 class="govuk-error-summary__title">
-                        There is a problem
+                        {{ _('There is a problem') }}
                       </h2>
                       <div class="govuk-error-summary__body">
                         {{ message }}
@@ -110,7 +110,7 @@
                     data-module="govuk-notification-banner">
                       <div class="govuk-notification-banner__header">
                           <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-                            {% if category == 'success' %} Success {% else %} Important {% endif %}
+                            {% if category == 'success' %} {{ _('Success') }} {% else %} {{ _('Important') }} {% endif %}
                           </h2>
                       </div>
                       <div class="govuk-notification-banner__content">
@@ -146,7 +146,7 @@
 
                     <div class="govuk-footer__meta-custom">
                         <p class="govuk-body-s">
-                            OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management.
+                        {{ _("OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management.") }}
                         </p>
                     </div>
                 </div>

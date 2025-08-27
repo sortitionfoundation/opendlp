@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Welcome - OpenDLP{% endblock %}
+{% block title %}{{ _('Welcome') }} - OpenDLP{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -9,13 +9,13 @@
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-two-thirds">
                 <h1 class="govuk-heading-xl">OpenDLP</h1>
-                <p class="govuk-body-l">Open Democratic Lottery Platform for Citizens' Assemblies</p>
+                <p class="govuk-body-l">{{ _("Open Democratic Lottery Platform for Citizens' Assemblies") }}</p>
                 <p class="govuk-body">
-                    OpenDLP supports democratic participation through stratified selection processes,
-                    enabling fair and representative Citizens' Assemblies worldwide.
+                {{ _("OpenDLP supports democratic participation through stratified selection processes,
+                enabling fair and representative Citizens' Assemblies worldwide.") }}
                 </p>
                 <a href="{{ url_for('auth.login') }}" class="govuk-button govuk-button--start govuk-button--white">
-                    Login
+                  {{ _('Sign in') }}
                     <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
                         <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z"></path>
                     </svg>
@@ -33,30 +33,30 @@
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
             <div class="feature-card">
-                <h3 class="govuk-heading-m">Stratified Selection</h3>
+              <h3 class="govuk-heading-m">{{ _('Stratified Selection') }}</h3>
                 <p class="govuk-body">
-                    Fair and representative selection algorithms ensure diverse participation
-                    across demographic groups.
+                {{ _('Fair and representative selection algorithms ensure diverse participation
+                across demographic groups.') }}
                 </p>
             </div>
         </div>
 
         <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
             <div class="feature-card">
-                <h3 class="govuk-heading-m">Secure & Transparent</h3>
+              <h3 class="govuk-heading-m">{{ _('Secure &amp; Transparent') }}</h3>
                 <p class="govuk-body">
-                    Role-based access control and audit trails maintain security while
-                    ensuring transparency in the democratic process.
+                {{ _('Role-based access control and audit trails maintain security while
+                ensuring transparency in the democratic process.') }}
                 </p>
             </div>
         </div>
 
         <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
             <div class="feature-card">
-                <h3 class="govuk-heading-m">Citizens' Assemblies</h3>
+              <h3 class="govuk-heading-m">{{ _("Citizens' Assemblies") }}</h3>
                 <p class="govuk-body">
-                    Purpose-built for managing Citizens' Assemblies from registration
-                    through to selection and coordination.
+                {{ _("Purpose-built for managing Citizens' Assemblies from registration
+                through to selection and coordination.") }}
                 </p>
             </div>
         </div>
@@ -68,11 +68,11 @@
     <div class="govuk-width-container">
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-full">
-                <h3 class="govuk-heading-m">Ready to participate in democratic decision-making?</h3>
-                <p class="govuk-body-l">Contact your assembly organizer for an invitation code.</p>
+              <h3 class="govuk-heading-m">{{ _('Ready to participate in democratic decision-making?') }}</h3>
+              <p class="govuk-body-l">{{ _('Contact your assembly organizer for an invitation code.') }}</p>
                 <p class="govuk-body-s">
-                    OpenDLP is an open-source platform supporting democratic participation worldwide.
-                    It is a project of <a href="https://www.sortitionfoundation.org/lab" class="govuk-link">Sortition Lab</a>.
+                {{ _('OpenDLP is an open-source platform supporting democratic participation worldwide.
+                It is a project of') }} <a href="https://www.sortitionfoundation.org/lab" class="govuk-link">Sortition Lab</a>.
                 </p>
             </div>
         </div>

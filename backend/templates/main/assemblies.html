@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Assemblies - OpenDLP{% endblock %}
+{% block title %}{{ _('Assemblies') }} - OpenDLP{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-list-ul"></i> Assemblies</h2>
+              <h2><i class="bi bi-list-ul"></i> {{ _('Assemblies') }}</h2>
                 {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
                     <button class="btn btn-primary" disabled>
-                        <i class="bi bi-plus"></i> Create Assembly
+                      <i class="bi bi-plus"></i> {{ _('Create Assembly') }}
                     </button>
                 {% endif %}
             </div>
@@ -30,14 +30,14 @@
                                     {% endif %}
 
                                     <div class="mt-3">
-                                        <h6 class="text-muted">Details</h6>
+                                      <h6 class="text-muted">{{ _('Details') }}</h6>
                                         <ul class="list-unstyled small">
-                                            <li><i class="bi bi-calendar"></i> Created: {{ assembly.created_at.strftime('%B %d, %Y') }}</li>
+                                          <li><i class="bi bi-calendar"></i> {{ _('Created') }}: {{ assembly.created_at.strftime('%B %d, %Y') }}</li>
                                             {% if assembly.first_assembly_date %}
-                                                <li><i class="bi bi-calendar-event"></i> Starts: {{ assembly.first_assembly_date.strftime('%B %d, %Y') }}</li>
+                                            <li><i class="bi bi-calendar-event"></i> {{ _('Starts') }}: {{ assembly.first_assembly_date.strftime('%B %d, %Y') }}</li>
                                             {% endif %}
                                             {% if assembly.gsheet %}
-                                                <li><i class="bi bi-file-earmark-spreadsheet"></i> Connected to Google Sheets</li>
+                                            <li><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Connected to Google Sheets') }}</li>
                                             {% endif %}
                                         </ul>
                                     </div>
@@ -45,11 +45,11 @@
                                 <div class="card-footer">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <button class="btn btn-outline-primary btn-sm" disabled>
-                                            <i class="bi bi-eye"></i> View Details
+                                          <i class="bi bi-eye"></i> {{ _('View Details') }}
                                         </button>
                                         <small class="text-muted">
                                             <!-- User's role in this assembly would go here -->
-                                            Member
+                                            {{ _('Member') }}
                                         </small>
                                     </div>
                                 </div>
@@ -63,13 +63,13 @@
                     <nav aria-label="Assembly pagination" class="mt-4">
                         <ul class="pagination justify-content-center">
                             <li class="page-item disabled">
-                                <a class="page-link" href="#" tabindex="-1">Previous</a>
+                              <a class="page-link" href="#" tabindex="-1">{{ _('Previous') }}</a>
                             </li>
                             <li class="page-item active">
                                 <a class="page-link" href="#">1</a>
                             </li>
                             <li class="page-item disabled">
-                                <a class="page-link" href="#">Next</a>
+                              <a class="page-link" href="#">{{ _('Next') }}</a>
                             </li>
                         </ul>
                     </nav>
@@ -77,15 +77,15 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3 text-muted">No assemblies found</h4>
-                    <p class="text-muted">You don't have access to any assemblies at the moment.</p>
+                    <h4 class="mt-3 text-muted">{{ _('No assemblies found') }}</h4>
+                    <p class="text-muted">{{ _("You don't have access to any assemblies at the moment.") }}</p>
                     {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
-                        <p class="text-muted">As a {{ current_user.global_role.value }}, you can create new assemblies.</p>
+                    <p class="text-muted">{{ _('As a %(role), you can create new assemblies.', role=current_user.global_role.value) }}</p>
                         <button class="btn btn-primary mt-3" disabled>
-                            <i class="bi bi-plus"></i> Create Your First Assembly
+                          <i class="bi bi-plus"></i> {{ _('Create Your First Assembly') }}
                         </button>
                     {% else %}
-                        <p class="text-muted">Contact an administrator to be added to an assembly.</p>
+                    <p class="text-muted">{{ _('Contact an administrator to be added to an assembly.') }}</p>
                     {% endif %}
                 </div>
             {% endif %}
