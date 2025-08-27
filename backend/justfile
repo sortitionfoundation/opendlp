@@ -69,6 +69,10 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   uv run flask run --debug
 
+# run gunicorn locally
+gunicorn:
+  uv run gunicorn --bind=0.0.0.0:8080 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
+
 # build CSS from SCSS
 build-css:
   @echo "🚀 Building CSS from SCSS"
