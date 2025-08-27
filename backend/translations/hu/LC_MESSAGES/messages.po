@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-08-22 11:30+0100\n"
-"PO-Revision-Date: 2025-08-25 15:45+0200\n"
+"PO-Revision-Date: 2025-08-27 09:44+0200\n"
 "Last-Translator: \n"
 "Language-Team: hu <LL@li.org>\n"
 "Language: hu\n"
@@ -26,9 +26,8 @@ msgid "Please log in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
 #: src/opendlp/entrypoints/forms.py:23
-#, fuzzy
 msgid "Empty email address"
-msgstr "Üres e-mail cím"
+msgstr "Email cím hiányzik"
 
 #: src/opendlp/entrypoints/forms.py:27
 msgid "Invalid email address"
@@ -60,19 +59,16 @@ msgid "First Name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:57
-#, fuzzy
 msgid "Optional - your first name"
-msgstr "Az Ön keresztneve - nem kötelező "
+msgstr "Keresztnév - nem kötelező"
 
 #: src/opendlp/entrypoints/forms.py:62
-#, fuzzy
 msgid "Last Name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:64
-#, fuzzy
 msgid "Optional - your last name"
-msgstr "Az Ön vezetékneve - nem kötelező "
+msgstr "Vezetéknév - nem kötelező"
 
 #: src/opendlp/entrypoints/forms.py:79
 msgid "Confirm Password"
@@ -84,11 +80,11 @@ msgstr "A jelszavaknak egyeznie kell"
 
 #: src/opendlp/entrypoints/forms.py:92
 msgid "This email address is already registered."
-msgstr "Ezen az emailcímen már van regisztráció"
+msgstr "Ezen az emailcímen már van regisztráció."
 
 #: src/opendlp/entrypoints/forms.py:106
 msgid "Invalid or expired invite code."
-msgstr "Érvénytelen vagy lejárt meghívó kód"
+msgstr "Érvénytelen vagy lejárt meghívó kód."
 
 #: src/opendlp/entrypoints/forms.py:119
 msgid "Enter your email address to receive a password reset link"
@@ -104,11 +100,11 @@ msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/blueprints/auth.py:43
 msgid "Invalid email or password."
-msgstr "Érvénytelen email cím vagy jelszó"
+msgstr "Érvénytelen email cím vagy jelszó."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:46
 msgid "An error occurred during login. Please try again."
-msgstr "Hiba történt a bejelentkezés során. Kérjük, próbálja újra."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:56
 msgid "You have been logged out."
@@ -116,9 +112,8 @@ msgstr "Kijelentkeztél."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:92
 #: tests/unit/test_translations.py:20
-#, fuzzy
 msgid "Registration successful! Welcome to OpenDLP."
-msgstr "Sikeres regisztráció! Üdvözöljük az OpenDLP-ben."
+msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:100
 #, python-format
@@ -126,14 +121,13 @@ msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/auth.py:103
-#, fuzzy
 msgid "An error occurred during registration. Please try again."
-msgstr "Hiba történt a regisztráció során. Kérjük, próbálja újra."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/service_layer/exceptions.py:21
 #, python-format
 msgid "User with email '%(email)s' already exists"
-msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik."
+msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
 #: src/opendlp/service_layer/exceptions.py:21
 msgid "User already exists"
@@ -168,19 +162,19 @@ msgid ""
 "Insufficient permissions for action: %(action)s (requires role: "
 "%(required_role)s)"
 msgstr ""
-"Nincs elegendő jogosultság a következő művelethez: %(action)s (szerepkör "
-"szükséges: %(required_role)s)"
+"Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
+"szerepkör: %(required_role)s)"
 
 #: src/opendlp/service_layer/exceptions.py:63
-#, fuzzy, python-format
+#, python-format
 msgid "Insufficient permissions for action: %(action)s"
 msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
 
 #: src/opendlp/service_layer/exceptions.py:65
-#, fuzzy, python-format
+#, python-format
 msgid "Insufficient permissions (requires role: %(required_role)s)"
 msgstr ""
-"Nincsenek megfelelő jogosultságok (szerepkör szükséges: "
+"Nincsenek megfelelő jogosultságok (szükséges szerepkör: "
 "%(required_role)s)"
 
 #: src/opendlp/service_layer/exceptions.py:67
@@ -188,14 +182,12 @@ msgid "Insufficient permissions"
 msgstr "Nincsenek megfelelő jogosultságok"
 
 #: templates/base.html:41 tests/unit/test_translations.py:46
-#, fuzzy
 msgid "Dashboard"
-msgstr "Műszerfal"
+msgstr "Irányító pult"
 
 #: templates/base.html:46
-#, fuzzy
 msgid "Assemblies"
-msgstr "Szerelvények"
+msgstr "Gyűlések"
 
 #: templates/base.html:51 templates/base.html:77
 msgid "Sortition Lab"
@@ -216,40 +208,36 @@ msgid "Login"
 msgstr "Bejelentkezés"
 
 #: templates/auth/login.html:55
-#, fuzzy
 msgid "Don't have an account? You need an"
-msgstr "Nincs fiókod? Szükséged van rá"
+msgstr "Még nincs fiókod? Szükséged lesz egy"
 
 #: templates/auth/login.html:55
 msgid "invite code"
-msgstr "meghívó kód"
+msgstr "meghívó kódra"
 
 #: templates/auth/login.html:55
-#, fuzzy
 msgid "to register."
-msgstr "regisztrálni."
+msgstr "a regisztrációhoz."
 
 #: templates/auth/login.html:56
 msgid "Register here"
-msgstr "Regisztráljon itt"
+msgstr "Regisztrálj itt"
 
 #: templates/auth/register.html:3
-#, fuzzy
 msgid "Register"
-msgstr "Nyilvántartás"
+msgstr "Regisztráció"
 
 #: templates/auth/register.html:8
 msgid "Create an account"
-msgstr "Create an account"
+msgstr "Fiók létrehozása"
 
 #: templates/auth/register.html:11
-#, fuzzy
 msgid ""
 "You need an invitation code to create an account. If you do not have "
 "one, please contact your administrator."
 msgstr ""
-"Fiók létrehozásához meghívókódra van szüksége. Ha nincs ilyen, kérjük, "
-"vegye fel a kapcsolatot az adminisztrátorral."
+"Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
+"kapcsolatba az adminisztrátorral."
 
 #: templates/auth/register.html:106
 msgid "Create account"
@@ -257,7 +245,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/auth/register.html:111
 msgid "Already have an account?"
-msgstr "Már van fiókja?"
+msgstr "Már van fiókod?"
 
 #: tests/unit/test_translations.py:25
 #, python-format

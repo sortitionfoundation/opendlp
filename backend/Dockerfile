@@ -73,6 +73,10 @@ COPY . /src
 RUN --mount=type=cache,target=/root/.cache \
   npm run build:sass
 
+# Create the .mo files from the .po files
+# Note that .mo files are in the .gitignore
+RUN uv run pybabel compile -d translations
+
 # Now install the rest from `/src`: The APPLICATION w/o dependencies.
 # `/src` will NOT be copied into the runtime container.
 RUN --mount=type=cache,target=/root/.cache \
