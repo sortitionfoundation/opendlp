@@ -116,6 +116,7 @@ class FlaskBaseConfig:
         self.LANGUAGES = self._get_supported_language_codes()
         self.BABEL_DEFAULT_LOCALE = os.environ.get("BABEL_DEFAULT_LOCALE", "en")
         self.BABEL_DEFAULT_TIMEZONE = os.environ.get("BABEL_DEFAULT_TIMEZONE", "UTC")
+        self.BABEL_TRANSLATION_DIRECTORIES = str(get_translations_path())
 
         # OAuth configuration
         self.OAUTH_GOOGLE_CLIENT_ID: str = os.environ.get("OAUTH_GOOGLE_CLIENT_ID", "")
@@ -240,3 +241,7 @@ def get_templates_path() -> Path:
 
 def get_static_path() -> Path:
     return _get_project_root() / "static"
+
+
+def get_translations_path() -> Path:
+    return _get_project_root() / "translations"
