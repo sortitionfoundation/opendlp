@@ -1,4 +1,4 @@
-Feature: User Login and Registration
+Feature: User Sign in and Registration
 
   Scenario: Register fails with invalid invite code
     Given the user is on the register page
@@ -10,12 +10,12 @@ Feature: User Login and Registration
     When the user registers using a valid invite code
     Then the user should be redirected to the dashboard
 
-  Scenario: Log out
+  Scenario: Sign out
     Given the user is on the dashboard page
     When the user clicks the logout link
     Then the user should be redirected to the front page
 
-  Scenario: Successful login with valid credentials
+  Scenario: Successful Sign in with valid credentials
     Given the user is on the login page
     When the user logs in with valid credentials
     Then the user should be redirected to the dashboard

@@ -196,7 +196,7 @@ class TestAuthenticationFlow:
         # GET login form
         response = client.get("/auth/login")
         assert response.status_code == 200
-        assert b"Login" in response.data
+        assert b"Sign in" in response.data
 
         # POST login credentials
         response = client.post(

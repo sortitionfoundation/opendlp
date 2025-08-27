@@ -14,6 +14,7 @@ from whitenoise import WhiteNoise
 from opendlp import bootstrap
 from opendlp.config import FlaskBaseConfig
 from opendlp.domain.users import User
+from opendlp.translations import _l
 
 # Initialize extensions
 login_manager = LoginManager()
@@ -29,7 +30,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     # Initialize Flask-Login
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
-    login_manager.login_message = "Please log in to access this page."
+    login_manager.login_message = _l("Please sign in to access this page.")
     login_manager.login_message_category = "info"
 
     # Initialize Flask-Session with Redis

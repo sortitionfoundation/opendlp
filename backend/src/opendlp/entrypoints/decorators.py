@@ -37,7 +37,7 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
             if not current_user.is_authenticated:
-                flash(_("Please log in to access this page."), "error")
+                flash(_("Please sign in to access this page."), "error")
                 return redirect(url_for("auth.login", next=request.url))
 
             # Check global role hierarchy: ADMIN > GLOBAL_ORGANISER > USER
@@ -82,7 +82,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
             if not current_user.is_authenticated:
-                flash(_("Please log in to access this page."), "error")
+                flash(_("Please sign in to access this page."), "error")
                 return redirect(url_for("auth.login", next=request.url))
 
             # Extract assembly_id from kwargs or args
@@ -148,7 +148,7 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
             if not current_user.is_authenticated:
-                flash(_("Please log in to access this page."), "error")
+                flash(_("Please sign in to access this page."), "error")
                 return redirect(url_for("auth.login", next=request.url))
 
             # Extract assembly_id from kwargs or URL

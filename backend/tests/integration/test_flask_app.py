@@ -116,7 +116,7 @@ class TestAuthBlueprint:
         """Test login GET request shows login form."""
         response = client.get("/auth/login")
         assert response.status_code == 200
-        assert b"Login" in response.data
+        assert b"Sign in" in response.data
 
     def test_register_get(self, client: FlaskClient) -> None:
         """Test register GET request shows registration form."""
