@@ -12,6 +12,11 @@ from redis import Redis
 
 load_dotenv()
 
+
+class InvalidConfig(Exception):
+    """Error for when the config is not valid"""
+
+
 SQLITE_DB_URI = "sqlite:///:memory:"
 
 
@@ -207,7 +212,7 @@ class FlaskProductionConfig(FlaskConfig):
 
         # Ensure production has proper secret key
         if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105
-            raise ValueError("SECRET_KEY must be set in production")
+            raise InvalidConfig("SECRET_KEY must be set in production")
 
 
 def get_config(config_name: str = "") -> FlaskBaseConfig:
@@ -231,8 +236,28 @@ def get_config(config_name: str = "") -> FlaskBaseConfig:
 def _get_project_root() -> Path:
     # Get project root - go up from src/opendlp/entrypoints/flask_app.py to project root
     # But if installed in venv (as in production) then use PROJECT_ROOT
-    relative_project_root = Path(__file__).parents[3]
-    return Path(os.environ.get("PROJECT_ROOT", str(relative_project_root)))
+    required_sub_dirs = ("static", "templates", "translations")
+
+    def _is_valid_project_root(path: Path) -> bool:
+        return path.is_dir() and all((path / sub_dir).is_dir() for sub_dir in required_sub_dirs)
+
+    # this is in order of priority to use
+    # 1. explicitly set by environment variable
+    # 2. editable install or direct run - so relative within the git repo
+    # 3. inferred when running in github actions
+    # 4. current working directory (eg. running tests)
+    possible_roots = (
+        Path(os.environ.get("PROJECT_ROOT", "/non-existent")),
+        Path(__file__).parents[3],
+        Path(os.environ.get("GITHUB_WORKSPACE", "/non-existent")) / "backend",
+        Path.cwd(),
+    )
+    valid_roots = [p for p in possible_roots if _is_valid_project_root(p)]
+    if not valid_roots:
+        raise InvalidConfig(
+            f"Could not find project root containing required directories: {' '.join(required_sub_dirs)}"
+        )
+    return valid_roots[0]
 
 
 def get_templates_path() -> Path:

@@ -10,6 +10,7 @@ from opendlp.config import (
     FlaskProductionConfig,
     FlaskTestPostgresConfig,
     FlaskTestSQLiteConfig,
+    InvalidConfig,
     get_config,
     to_bool,
 )
@@ -132,7 +133,7 @@ class TestFlaskProductionConfig:
     def test_production_config_without_secret_key(self, clear_env_vars):
         """Test that ProductionConfig raises error without proper SECRET_KEY."""
         clear_env_vars("SECRET_KEY")
-        with pytest.raises(ValueError, match="SECRET_KEY must be set in production"):
+        with pytest.raises(InvalidConfig, match="SECRET_KEY must be set in production"):
             FlaskProductionConfig()
 
 
