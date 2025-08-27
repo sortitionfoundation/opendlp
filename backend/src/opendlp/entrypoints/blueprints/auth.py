@@ -10,7 +10,7 @@ from opendlp.entrypoints.forms import LoginForm, RegistrationForm
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.security import password_validators_help_text_html
 from opendlp.service_layer.user_service import authenticate_user, create_user
-from opendlp.translations import _
+from opendlp.translations import gettext as _
 
 auth_bp = Blueprint("auth", __name__)
 

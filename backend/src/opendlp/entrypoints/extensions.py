@@ -14,7 +14,7 @@ from whitenoise import WhiteNoise
 from opendlp import bootstrap
 from opendlp.config import FlaskBaseConfig
 from opendlp.domain.users import User
-from opendlp.translations import lazy_gettext as _l
+from opendlp.translations import gettext
 
 # Initialize extensions
 login_manager = LoginManager()
@@ -30,8 +30,13 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     # Initialize Flask-Login
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
-    login_manager.login_message = _l("Please sign in to access this page.")
+    # note we do NOT wrap this in lazy_gettext() - as putting LazyString
+    # objects into the session in Redis causes errors. Instead we set
+    # the `localize_callback` - the string will be passed to that within
+    # a request callback and just return a normal string.
+    login_manager.login_message = "Please sign in to access this page."
     login_manager.login_message_category = "info"
+    login_manager.localize_callback = gettext
 
     # Initialize Flask-Session with Redis
     session_store.init_app(app)
