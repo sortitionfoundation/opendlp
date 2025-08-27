@@ -57,9 +57,7 @@ jobs:
         run: uv run python -m playwright install --with-deps chromium
 
       - name: Run database migrations
-        run: |
-          uv pip install -e .
-          uv run alembic upgrade head
+        run: uv run alembic upgrade head
         env:
           DB_HOST: localhost
           DB_PORT: 54322
@@ -68,9 +66,7 @@ jobs:
           REDIS_PORT: 63791
 
       - name: Run BDD tests
-        run: |
-          uv pip install -e .
-          uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
+        run: uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
         env:
           DB_HOST: localhost
           DB_PORT: 54322

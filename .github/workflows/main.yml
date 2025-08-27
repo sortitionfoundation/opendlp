@@ -33,9 +33,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run checks
-        run: |
-          uv pip install -e .
-          just check
+        run: just check
 
   tests-and-type-check:
     runs-on: ubuntu-latest
@@ -81,9 +79,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 54322
           DB_NAME: opendlp
-        run: |
-          uv pip install -e .
-          uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run mypy
