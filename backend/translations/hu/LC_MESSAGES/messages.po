@@ -8,20 +8,20 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-08-27 22:47+0100\n"
-"PO-Revision-Date: 2025-08-27 09:44+0200\n"
+"PO-Revision-Date: 2025-08-28 12:50+0200\n"
 "Last-Translator: \n"
-"Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.7\n"
 
 #: src/opendlp/entrypoints/decorators.py:40
 #: src/opendlp/entrypoints/decorators.py:85
 #: src/opendlp/entrypoints/decorators.py:151
-#, fuzzy
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
@@ -157,12 +157,8 @@ msgstr "Érvénytelen meghívókód"
 
 #: src/opendlp/service_layer/exceptions.py:58
 #, python-format
-msgid ""
-"Insufficient permissions for action: %(action)s (requires role: "
-"%(required_role)s)"
-msgstr ""
-"Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
-"szerepkör: %(required_role)s)"
+msgid "Insufficient permissions for action: %(action)s (requires role: %(required_role)s)"
+msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges szerepkör: %(required_role)s)"
 
 #: src/opendlp/service_layer/exceptions.py:63
 #, python-format
@@ -180,23 +176,23 @@ msgstr "Nincsenek megfelelő jogosultságok"
 
 #: templates/base.html:5
 msgid "Open Democratic Lottery Platform"
-msgstr ""
+msgstr "Open Democratic Lottery Platform"
 
 #: templates/base.html:21
 msgid "Skip to main content"
-msgstr ""
+msgstr "Ugrás a főoldalra"
 
 #: templates/base.html:27
 msgid "Sortition Foundation Logo"
-msgstr ""
+msgstr "Sortition Foundation Logo"
 
 #: templates/base.html:33
 msgid "Menu<"
-msgstr ""
+msgstr "Menü"
 
 #: templates/base.html:36 templates/base.html:67
 msgid "Close menu"
-msgstr ""
+msgstr "Menü bezárása"
 
 #: templates/base.html:41 templates/errors/404.html:24
 #: templates/errors/500.html:24 templates/main/dashboard.html:3
@@ -207,20 +203,19 @@ msgstr "Irányító pult"
 #: templates/base.html:46 templates/main/assemblies.html:3
 #: templates/main/assemblies.html:10
 msgid "Assemblies"
-msgstr ""
+msgstr "Közösségi gyűlések"
 
 #: templates/base.html:51 templates/base.html:77
 msgid "Sortition Lab"
-msgstr ""
+msgstr "Sortition Lab"
 
 #: templates/base.html:56
-#, fuzzy
 msgid "Sign out"
-msgstr "Jelentkezzen be"
+msgstr "Kilépés"
 
 #: templates/base.html:64
 msgid "Menu"
-msgstr ""
+msgstr "Menü"
 
 #: templates/auth/login.html:3 templates/auth/login.html:8
 #: templates/auth/login.html:50 templates/auth/register.html:111
@@ -230,28 +225,23 @@ msgstr "Jelentkezzen be"
 
 #: templates/base.html:94
 msgid "There is a problem"
-msgstr ""
+msgstr "Valami probléma van"
 
 #: templates/base.html:113
 msgid "Success"
-msgstr ""
+msgstr "Sikerült"
 
 #: templates/base.html:113
 msgid "Important"
-msgstr ""
+msgstr "Fontos"
 
 #: templates/base.html:149
-msgid ""
-"OpenDLP is an open source platform for Democratic Lottery and Citizens' "
-"Assembly management."
-msgstr ""
+msgid "OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management."
+msgstr "Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére és a résztvevők véletlenszerű kiválasztására."
 
 #: templates/auth/login.html:55
-#, fuzzy
-msgid ""
-"Don't have an account? You need an <strong>invite code</strong> to "
-"register."
-msgstr "Még nincs fiókod? Szükséged lesz egy"
+msgid "Don't have an account? You need an <strong>invite code</strong> to register."
+msgstr "Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a bejelentkezéshez."
 
 #: templates/auth/login.html:56
 msgid "Register here"
@@ -266,12 +256,8 @@ msgid "Create an account"
 msgstr "Fiók létrehozása"
 
 #: templates/auth/register.html:11
-msgid ""
-"You need an invitation code to create an account. If you do not have one,"
-" please contact your administrator."
-msgstr ""
-"Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
-"kapcsolatba az adminisztrátorral."
+msgid "You need an invitation code to create an account. If you do not have one, please contact your administrator."
+msgstr "Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj kapcsolatba az adminisztrátorral."
 
 #: templates/auth/register.html:106
 msgid "Create account"
@@ -283,180 +269,174 @@ msgstr "Már van fiókod?"
 
 #: templates/errors/404.html:3 templates/errors/404.html:13
 msgid "Page Not Found"
-msgstr ""
+msgstr "Az oldal nem elérhető"
 
 #: templates/errors/404.html:15
-msgid ""
-"Sorry, the page you're looking for doesn't exist. It may have been moved,"
-"\n"
+msgid "Sorry, the page you're looking for doesn't exist. It may have been moved,\n"
 "                deleted, or you may have entered an incorrect URL."
-msgstr ""
+msgstr "Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
+"                törölték, vagy az URL, amit beírtál, hibás."
 
 #: templates/errors/404.html:20 templates/errors/500.html:20
 msgid "Go Home"
-msgstr ""
+msgstr "Menjen a főoldalra"
 
 #: templates/errors/500.html:3
 msgid "Server Error"
-msgstr ""
+msgstr "Szerver hiba"
 
 #: templates/errors/500.html:13
 msgid "Internal Server Error"
-msgstr ""
+msgstr "Belső szerver hiba"
 
 #: templates/errors/500.html:15
-msgid ""
-"Something went wrong on our end. We're working to fix this issue.\n"
+msgid "Something went wrong on our end. We're working to fix this issue.\n"
 "                Please try again in a few moments."
-msgstr ""
+msgstr "Valami hiba van a mi oldalunkon. Dolgozunk a kijavításán.\n"
+"                Próbáld újra néhány pillanat múlva."
 
 #: templates/errors/500.html:30
 msgid "If this problem persists, please contact your system administrator."
-msgstr ""
+msgstr "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer adminisztrátoroddal."
 
 #: templates/main/assemblies.html:13
 msgid "Create Assembly"
-msgstr ""
+msgstr "Hozzon létre közösségi gyűlést"
 
 #: templates/main/assemblies.html:33
 msgid "Details"
-msgstr ""
+msgstr "Részletek"
 
 #: templates/main/assemblies.html:35 templates/main/dashboard.html:56
 msgid "Created"
-msgstr ""
+msgstr "Létrehozva"
 
 #: templates/main/assemblies.html:37 templates/main/dashboard.html:61
 msgid "Starts"
-msgstr ""
+msgstr "Kezdés"
 
 #: templates/main/assemblies.html:40
 msgid "Connected to Google Sheets"
-msgstr ""
+msgstr "Összekapcsolva a Google Sheets-el"
 
 #: templates/main/assemblies.html:48
 msgid "View Details"
-msgstr ""
+msgstr "Részletek mutatása"
 
 #: templates/main/assemblies.html:52
-#, fuzzy
 msgid "Member"
-msgstr "Maradjak bejelentkezve"
+msgstr "Tag"
 
 #: templates/main/assemblies.html:66
 msgid "Previous"
-msgstr ""
+msgstr "Előző"
 
 #: templates/main/assemblies.html:72
 msgid "Next"
-msgstr ""
+msgstr "Következő"
 
 #: templates/main/assemblies.html:80
 msgid "No assemblies found"
-msgstr ""
+msgstr "Egy gyűlést sem talált"
 
 #: templates/main/assemblies.html:81 templates/main/dashboard.html:73
 msgid "You don't have access to any assemblies at the moment."
-msgstr ""
+msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 
 #: templates/main/assemblies.html:83 templates/main/dashboard.html:75
 #, python-format
 msgid "As a %(role)s, you can create new assemblies."
-msgstr ""
+msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
 
 #: templates/main/assemblies.html:85
 msgid "Create Your First Assembly"
-msgstr ""
+msgstr "Hozd létre az első közösségi gyűlésedet"
 
 #: templates/main/assemblies.html:88
 msgid "Contact an administrator to be added to an assembly."
-msgstr ""
+msgstr "Lépj kapcsolatba egy adminisztrátorral, hogy adjon hozzáférést egy közösségi gyűléshez."
 
 #: templates/main/dashboard.html:11
 msgid "Welcome back"
-msgstr ""
+msgstr "Üdvözlünk újra az OpenDLP-ben"
 
 #: templates/main/dashboard.html:19
 msgid "Your Role"
-msgstr ""
+msgstr "Szereped/jogosultságod"
 
 #: templates/main/dashboard.html:29
 msgid "Active Assemblies"
-msgstr ""
+msgstr "Aktív gyűlések"
 
 #: templates/main/dashboard.html:39
 msgid "Your Assemblies"
-msgstr ""
+msgstr "Gyűléseid"
 
 #: templates/main/dashboard.html:41
 msgid "View All"
-msgstr ""
+msgstr "Mutasd mindet"
 
 #: templates/main/dashboard.html:72
 msgid "No assemblies yet"
-msgstr ""
+msgstr "Még nincsenek gyűlések"
 
 #: templates/main/index.html:3
 msgid "Welcome"
-msgstr ""
+msgstr "Üdvözlünk"
 
 #: templates/main/index.html:12
 msgid "Open Democratic Lottery Platform for Citizens' Assemblies"
-msgstr ""
+msgstr "Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi gyűlések szervezéséhez"
 
 #: templates/main/index.html:14
-msgid ""
-"OpenDLP supports democratic participation through stratified selection "
-"processes,\n"
-"                enabling fair and representative Citizens' Assemblies "
-"worldwide."
-msgstr ""
+msgid "OpenDLP supports democratic participation through stratified selection processes,\n"
+"                enabling fair and representative Citizens' Assemblies worldwide."
+msgstr "Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a részvételi demokráciát,\n"
+"                lehetővé téve az igazságos és reprezentatív polgári gyűléseket világszerte."
 
 #: templates/main/index.html:36
 msgid "Stratified Selection"
-msgstr ""
+msgstr "Rétegzett kiválasztás"
 
 #: templates/main/index.html:38
-msgid ""
-"Fair and representative selection algorithms ensure diverse participation"
-"\n"
+msgid "Fair and representative selection algorithms ensure diverse participation\n"
 "                across demographic groups."
-msgstr ""
+msgstr "A pártatlan és reprezentatív kiválasztási algoritmusok biztosítják a sokszínű részvételt \n"
+"                a demográfiai csoportok között."
 
 #: templates/main/index.html:46
 msgid "Secure &amp; Transparent"
-msgstr ""
+msgstr "Biztonságos &amp; átlátható"
 
 #: templates/main/index.html:48
-msgid ""
-"Role-based access control and audit trails maintain security while\n"
+msgid "Role-based access control and audit trails maintain security while\n"
 "                ensuring transparency in the democratic process."
-msgstr ""
+msgstr "A szerepköralapú jogosultság-kiosztás és az auditnaplók garantálják a biztonságot, miközben\n"
+"                 biztosítják a demokratikus folyamat átláthatóságát."
 
 #: templates/main/index.html:56
 msgid "Citizens' Assemblies"
-msgstr ""
+msgstr "Közösségi gyűlések"
 
 #: templates/main/index.html:58
-msgid ""
-"Purpose-built for managing Citizens' Assemblies from registration\n"
+msgid "Purpose-built for managing Citizens' Assemblies from registration\n"
 "                through to selection and coordination."
-msgstr ""
+msgstr "Kifejezetten a kjözösségi gyűlések lebonyolítására készült a regisztrációtól\n"
+"                 a kiválasztáson át a koordinációig."
 
 #: templates/main/index.html:71
 msgid "Ready to participate in democratic decision-making?"
-msgstr ""
+msgstr "Készen állsz, hogy részt vegyél a demokratikus döntéshozásban?"
 
 #: templates/main/index.html:72
 msgid "Contact your assembly organizer for an invitation code."
-msgstr ""
+msgstr "Meghívókódért lépj kapcsolatba a közösségi gyűlésed szervezőjével."
 
 #: templates/main/index.html:74
-msgid ""
-"OpenDLP is an open-source platform supporting democratic participation "
-"worldwide.\n"
+msgid "OpenDLP is an open-source platform supporting democratic participation worldwide.\n"
 "                It is a project of"
-msgstr ""
+msgstr "Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a demokratikus részvételt.\n"
+"                Ez egy projekt a"
 
 #: tests/unit/test_translations.py:16 tests/unit/test_translations.py:41
 msgid "Login"
