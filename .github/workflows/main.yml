@@ -33,7 +33,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run checks
-        run: just check
+        run: just check-ci
 
   tests-and-type-check:
     runs-on: ubuntu-latest
