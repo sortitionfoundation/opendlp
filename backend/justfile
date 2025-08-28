@@ -1,3 +1,5 @@
+# Note if the command starts with `@` then it will NOT be echoed to the terminal
+
 set dotenv-load
 
 # Test the code with pytest (HTML report)
@@ -6,24 +8,24 @@ default: test-nobdd
 # Test the code with pytest (HTML report)
 test-html:
 	@echo "🚀 Testing code: Running pytest"
-	@uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+	uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
 
 # Test the code with pytest (XML report)
 test-xml:
 	@echo "🚀 Testing code: Running pytest"
-	@uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
+	uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
 
 # Test the code with pytest (HTML report)
 test: test-html
 
 test-nobdd:
 	@echo "🚀 Testing code: Running pytest"
-	@uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html
+	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html
 
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
 	@echo "🚀 Running BDD tests"
-	@uv run python -m pytest tests/bdd/ -v --tb=short
+	uv run python -m pytest tests/bdd/ -v --tb=short
 
 # Run BDD tests in headless mode (for CI)
 test-bdd-headless:
@@ -38,10 +40,13 @@ watch-tests:
 install:
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
-	@uv pip install -e .
+	@echo "🚀 Setting up pre-commit hooks"
 	@uv run pre-commit install
+	@echo "🚀 Install node dependencies & build sass into css"
 	@npm install
 	@npm run build:sass
+	@echo "🚀 Compile translations"
+	@uv run pybabel compile -d translations
 
 install-dev: install
 	@echo "🚀 Installing development dependencies"
@@ -78,11 +83,11 @@ flsh: flask-shell
 
 # run flask locally
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
-  uv run flask run --debug
+  @uv run flask run --debug
 
 # run gunicorn locally
 gunicorn:
-  uv run gunicorn --bind=0.0.0.0:8080 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
+  @uv run gunicorn --bind=0.0.0.0:8080 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
 
 # build CSS from SCSS
 build-css:
@@ -105,6 +110,15 @@ psql:
 # run the database migrations
 migrate:
   uv run alembic upgrade head
+
+# extract strings to translate from code and templates
+translate-regen:
+  uv run pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+  uv run pybabel update -i translations/messages.pot -d translations
+
+# compile translations from .po files so flask can use them
+translate-compile:
+  uv run pybabel compile -d translations
 
 # shut down docker
 stop-docker:
