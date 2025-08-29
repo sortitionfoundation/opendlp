@@ -137,6 +137,7 @@ The project includes Behavior-Driven Development (BDD) tests using pytest-bdd an
 - `tests/bdd/` - BDD test implementation and fixtures
 - `tests/bdd/conftest.py` - BDD-specific fixtures including server management
 - `tests/bdd/config.py` - Test configuration (URLs, credentials)
+- `tests/bdd/shared/ui_shared.py` - Shared step definitions
 
 **Running BDD Tests:**
 
@@ -202,7 +203,7 @@ All user-facing strings must be wrapped in gettext calls for translation:
 
 - Use `_()` for immediate translation in templates and flash messages
 - Use `_l()` for lazy translation in exceptions and class-level definitions
-- Import from `opendlp.translations`: `from opendlp.translations import _, _l`
+- Import from `opendlp.translations`: `from opendlp.translations import getext as _, lazy_gettext as _l`
 - In templates use: `{{ _('Text to translate') }}`
 - Support parameters: `_('Hello %(name)s', name=user.name)`
 
@@ -248,8 +249,10 @@ The application includes a background task system for long-running operations li
 
 Two Docker Compose configurations:
 
-- `docker-compose.yml`: Full application with PostgreSQL
-- `docker-compose.localdev.yml`: Services only for local development
+- `compose.yaml`: Full application with PostgreSQL
+- `compose.production.yaml`: Full application with PostgreSQL, for production deployment
+- `compose.localdev.yaml`: Services only for local development
+- `compose.test.yaml`: Services only for local testing
 
 The application runs on port 5005, PostgreSQL on 54321 (mapped from 5432).
 
