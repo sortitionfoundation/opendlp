@@ -17,6 +17,8 @@ from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
 
+pytest_plugins = ["tests.bdd.shared.ui_shared"]
+
 
 @pytest.fixture(scope="session")
 def test_database():

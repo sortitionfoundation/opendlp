@@ -1,4 +1,7 @@
 Feature: User Sign in and Registration
+  As an Assembly Manager
+  I want to be able to Register and Sign In
+  So that I can view and edit my assemblies.
 
   Scenario: Register fails with invalid invite code
     Given the user is on the register page
