@@ -22,6 +22,7 @@ def create_user(
     oauth_id: str | None = None,
     invite_code: str | None = None,
     global_role: GlobalRole | None = None,
+    accept_data_agreement: bool = False,
 ) -> User:
     """
     Create a new user with proper validation.
@@ -36,6 +37,7 @@ def create_user(
         oauth_id: OAuth provider user ID
         invite_code: invite code for registration
         global_role: role for the user
+        accept_data_agreement: whether user has accepted data agreement
 
     Returns:
         Created User instance
@@ -82,6 +84,10 @@ def create_user(
             oauth_provider=oauth_provider,
             oauth_id=oauth_id,
         )
+
+        # Mark data agreement as accepted if provided
+        if accept_data_agreement:
+            user.mark_data_agreement_agreed()
 
         uow.users.add(user)
 
@@ -268,6 +274,7 @@ def find_or_create_oauth_user(
     first_name: str = "",
     last_name: str = "",
     invite_code: str | None = None,
+    accept_data_agreement: bool = False,
 ) -> tuple[User, bool]:
     """
     Find existing OAuth user or create new one.
@@ -280,6 +287,7 @@ def find_or_create_oauth_user(
         first_name: User's first name from OAuth
         last_name: User's last name from OAuth
         invite_code: Required for new user creation
+        accept_data_agreement: whether user has accepted data agreement
 
     Returns:
         Tuple of (User, created_flag) where created_flag is True if user was created
@@ -308,5 +316,6 @@ def find_or_create_oauth_user(
             oauth_provider=provider,
             oauth_id=oauth_id,
             invite_code=invite_code,
+            accept_data_agreement=accept_data_agreement,
         )
         return user.create_detached_copy(), True

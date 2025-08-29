@@ -129,6 +129,7 @@ users = Table(
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("is_active", Boolean, nullable=False, default=True),
+    Column("user_data_agreement_agreed_at", TZAwareDatetime(), nullable=True),
     Index("ix_users_oauth_provider_id", "oauth_provider", "oauth_id"),
 )
 
