@@ -22,6 +22,7 @@ class User:
         oauth_id: str | None = None,
         created_at: datetime | None = None,
         is_active: bool = True,
+        user_data_agreement_agreed_at: datetime | None = None,
     ):
         validate_email(email)
 
@@ -38,6 +39,7 @@ class User:
         self.global_role = global_role
         self.created_at = created_at or datetime.now(UTC)
         self.is_active = is_active
+        self.user_data_agreement_agreed_at = user_data_agreement_agreed_at
         self.assembly_roles: list[UserAssemblyRole] = []
 
     # couple of things required for flask_login
@@ -91,6 +93,10 @@ class User:
                 return role.role
         return None
 
+    def mark_data_agreement_agreed(self) -> None:
+        """Mark that the user has agreed to the data agreement at the current time."""
+        self.user_data_agreement_agreed_at = datetime.now(UTC)
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, User):  # pragma: no cover
             return False
@@ -112,6 +118,7 @@ class User:
             oauth_id=self.oauth_id,
             created_at=self.created_at,
             is_active=self.is_active,
+            user_data_agreement_agreed_at=self.user_data_agreement_agreed_at,
         )
         return detached_user
 

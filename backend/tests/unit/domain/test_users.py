@@ -2,7 +2,7 @@
 ABOUTME: Tests user creation, role checking, OAuth switching, and assembly access"""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -28,6 +28,7 @@ class TestUser:
         assert user.oauth_provider is None
         assert user.oauth_id is None
         assert user.is_active is True
+        assert user.user_data_agreement_agreed_at is None
         assert isinstance(user.id, uuid.UUID)
         assert isinstance(user.created_at, datetime)
 
@@ -152,6 +153,29 @@ class TestUser:
 
         with pytest.raises(ValueError, match="Provider and OAuth ID are required"):
             user.switch_to_oauth("google", "")
+
+    def test_mark_data_agreement_agreed(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+
+        assert user.user_data_agreement_agreed_at is None
+
+        before_time = datetime.now(UTC)
+        user.mark_data_agreement_agreed()
+        after_time = datetime.now(UTC)
+
+        assert user.user_data_agreement_agreed_at is not None
+        assert before_time <= user.user_data_agreement_agreed_at <= after_time
+
+    def test_create_user_with_data_agreement_time(self):
+        agreement_time = datetime.now(UTC)
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",
+            user_data_agreement_agreed_at=agreement_time,
+        )
+
+        assert user.user_data_agreement_agreed_at == agreement_time
 
     def test_user_equality_and_hash(self):
         user_id = uuid.uuid4()
