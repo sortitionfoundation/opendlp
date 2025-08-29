@@ -4,6 +4,7 @@ ABOUTME: Handles user authentication flow with invite-based registration"""
 import markdown
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
+from flask_babel import get_locale
 from flask_login import current_user, login_required, login_user, logout_user
 
 from opendlp import bootstrap
@@ -111,9 +112,9 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 @auth_bp.route("/user-data-agreement")
 def user_data_agreement() -> ResponseReturnValue:
     """Display the user data agreement."""
-    # TODO: In the future, get language from user preferences or accept-language header
-    # For now, default to English
-    language_code = "en"
+    # default to English
+    locale = get_locale()
+    language_code = locale.language if locale else "en"
 
     try:
         markdown_content = get_user_data_agreement_content(language_code)
