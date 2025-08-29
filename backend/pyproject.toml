@@ -15,6 +15,7 @@ dependencies = [
   "flask-session>=0.8.0",
   "flask-talisman>=1.1.0",
   "flask-wtf>=1.2.2",
+  "markdown>=3.8.2",
   "markupsafe>=3.0.2",
   "python-dotenv>=1.1.1",
   "redis>=6.4.0",
@@ -46,6 +47,7 @@ dev = [
   "pytest-cov>=6.2.1",
   "pytest-playwright>=0.7.0",
   "tenacity>=9.1.2",
+  "types-markdown>=3.8.0.20250809",
   "types-wtforms>=3.2.1.20250809",
 ]
 

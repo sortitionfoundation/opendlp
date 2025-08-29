@@ -1,11 +1,13 @@
 """ABOUTME: Authentication routes for login, logout, and registration
 ABOUTME: Handles user authentication flow with invite-based registration"""
 
+import markdown
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required, login_user, logout_user
 
 from opendlp import bootstrap
+from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.forms import LoginForm, RegistrationForm
 from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.security import password_validators_help_text_html
@@ -85,6 +87,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                     invite_code=form.invite_code.data,
                     first_name=form.first_name.data or "",
                     last_name=form.last_name.data or "",
+                    accept_data_agreement=form.accept_data_agreement.data or False,
                 )
 
                 # Log the user in immediately after registration
@@ -103,3 +106,21 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             flash(_("An error occurred during registration. Please try again."), "error")
 
     return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())
+
+
+@auth_bp.route("/user-data-agreement")
+def user_data_agreement() -> ResponseReturnValue:
+    """Display the user data agreement."""
+    # TODO: In the future, get language from user preferences or accept-language header
+    # For now, default to English
+    language_code = "en"
+
+    try:
+        markdown_content = get_user_data_agreement_content(language_code)
+        html_content = markdown.markdown(markdown_content)
+    except KeyError:
+        # Fallback to English if language not available
+        markdown_content = get_user_data_agreement_content("en")
+        html_content = markdown.markdown(markdown_content)
+
+    return render_template("auth/user_data_agreement.html", agreement_content=html_content)
