@@ -7,6 +7,7 @@ class Urls:
     login = f"{base}/auth/login"
     register = f"{base}/auth/register"
     dashboard = f"{base}/dashboard"
+    user_data_agreement = f"{base}/auth/user-data-agreement"
 
 
 ADMIN_EMAIL = "admin@opendlp.example"

@@ -17,7 +17,7 @@ class TestUserDataAgreement:
 
         assert isinstance(content, str)
         assert len(content) > 0
-        assert "You agree to let the Sortition Foundation to hold" in content
+        assert "You agree to let the Sortition Foundation hold" in content
         assert "# User Data Agreement" in content
 
     def test_get_hungarian_content(self):

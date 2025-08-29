@@ -110,6 +110,7 @@ class TestAuthenticationFlow:
                 "email": "newuser@example.com",
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
+                "accept_data_agreement": "y",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -134,6 +135,7 @@ class TestAuthenticationFlow:
                 "email": "newuser@example.com",
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
+                "accept_data_agreement": "y",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
             },
         )
@@ -152,6 +154,7 @@ class TestAuthenticationFlow:
                 "email": "newuser@example.com",
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
+                "accept_data_agreement": "y",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
             },
         )
@@ -184,6 +187,7 @@ class TestAuthenticationFlow:
                 "email": "newuser@example.com",
                 "password": "securepassword123",
                 "password_confirm": "differentpassword",
+                "accept_data_agreement": "y",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
             },
         )
@@ -350,7 +354,7 @@ class TestAuthenticationFlow:
     def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
         """Helper to extract CSRF token from form."""
         _ = client.get(endpoint)
-        # This is a simplified approach - actual implementation would parse HTML
+        # TODO: This is a simplified approach - actual implementation would parse HTML
         # and extract the CSRF token from the form
         return "csrf_token_placeholder"  # Placeholder for now
 
@@ -389,7 +393,7 @@ class TestAuthenticationEdgeCases:
                 },
             )
 
-        # This test would check for rate limiting behavior
+        # TODO: This test would check for rate limiting behavior
         # The actual implementation may vary
 
     def test_csrf_protection_enabled(self, client: FlaskClient):

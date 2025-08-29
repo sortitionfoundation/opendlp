@@ -82,6 +82,12 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         render_kw={"autocomplete": "new-password"},
     )
 
+    accept_data_agreement = BooleanField(
+        _l("Accept Data Agreement"),
+        validators=[DataRequired(message=_l("You must accept the data agreement to register"))],
+        description=_l("I agree to the data agreement"),
+    )
+
     def validate_email(self, email: EmailField) -> None:
         """Validate that email is not already registered."""
         if not email.data:

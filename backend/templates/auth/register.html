@@ -102,6 +102,33 @@
                                         aria_describedby=("password-confirm-error" if form.password_confirm.errors else "")) }}
             </div>
 
+            <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
+                <fieldset class="govuk-fieldset" aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
+                    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                        {{ _('Data Agreement') }}
+                    </legend>
+                    <div id="data-agreement-hint" class="govuk-hint">
+                        {{ _('Please read and accept our data agreement to proceed.') }}
+                        <a href="{{ url_for('auth.user_data_agreement') }}" class="govuk-link" target="_blank" rel="noopener noreferrer">
+                            {{ _('View data agreement') }}
+                        </a>
+                    </div>
+                    {% if form.accept_data_agreement.errors %}
+                        {% for error in form.accept_data_agreement.errors %}
+                            <p id="data-agreement-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                        <div class="govuk-checkboxes__item">
+                            {{ form.accept_data_agreement(class="govuk-checkboxes__input") }}
+                            {{ form.accept_data_agreement.label(class="govuk-label govuk-checkboxes__label") }}
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
             <button type="submit" class="govuk-button" data-module="govuk-button">
                 {{ _('Create account') }}
             </button>

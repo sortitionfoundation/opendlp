@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Page, sync_playwright
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -16,8 +16,6 @@ from opendlp.service_layer.user_service import create_user
 from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come_up_on_port
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
-
-pytest_plugins = ["tests.bdd.shared.ui_shared"]
 
 
 @pytest.fixture(scope="session")
@@ -104,6 +102,7 @@ def admin_user(test_database):
         first_name="Test",
         last_name="Admin",
         global_role=GlobalRole.ADMIN,
+        accept_data_agreement=True,
     )
 
     return admin
@@ -135,6 +134,24 @@ def page(context):
 
 
 @pytest.fixture
+def logged_out_page(page: Page, admin_user, clean_database):
+    # Clear any existing session/cookies to ensure clean state
+    page.context.clear_cookies()
+    return page
+
+
+@pytest.fixture
+def logged_in_page(page: Page, admin_user, clean_database):
+    """Page with admin user logged in"""
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', ADMIN_EMAIL)
+    page.fill('input[name="password"]', ADMIN_PASSWORD)
+    page.click('button[type="submit"]')
+    page.wait_for_url(Urls.dashboard)
+    return page
+
+
+@pytest.fixture
 def clean_database(test_database):
     """Clean database state before each test"""
     session_factory = test_database
@@ -151,17 +168,6 @@ def clean_database(test_database):
         yield
     finally:
         session.close()
-
-
-@pytest.fixture
-def logged_in_page(page, admin_user, clean_database):
-    """Page with admin user logged in"""
-    page.goto(Urls.login)
-    page.fill('input[name="email"]', ADMIN_EMAIL)
-    page.fill('input[name="password"]', ADMIN_PASSWORD)
-    page.click('button[type="submit"]')
-    page.wait_for_url(Urls.dashboard)
-    return page
 
 
 @pytest.fixture

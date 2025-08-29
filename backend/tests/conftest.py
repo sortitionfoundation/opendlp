@@ -18,6 +18,8 @@ from tenacity import retry, stop_after_delay
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 
+pytest_plugins = ["tests.bdd.shared.ui_shared"]
+
 
 @pytest.fixture(autouse=True)
 def set_test_env():

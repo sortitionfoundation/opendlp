@@ -7,7 +7,7 @@ USER_DATA_AGREEMENT_CONTENT: dict[str, str] = {
 
 ## Data We Collect
 
-You agree to let the Sortition Foundation to hold the following data about you:
+You agree to let the Sortition Foundation hold the following data about you:
 
 - Your email address
 - Your name (first and last name)

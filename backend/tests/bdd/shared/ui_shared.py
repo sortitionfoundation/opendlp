@@ -10,8 +10,8 @@ def navigate_to_login_page(page: Page):
 
 
 @given("the user is on the register page")
-def navigate_to_register_page(page: Page):
-    page.goto(Urls.register)
+def navigate_to_register_page(logged_out_page: Page):
+    logged_out_page.goto(Urls.register)
 
 
 @given("the user is on the dashboard page")
@@ -32,7 +32,8 @@ def fill_in_registration_form_invalid(page: Page):
     page.fill('input[name="email"]', ADMIN_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
-    page.click('button[type="submit"]')
+    page.get_by_role("checkbox", name="Accept Data Agreement").check()
+    # Note: Don't check data agreement here - let the explicit steps handle it
 
 
 @when("the user registers using a valid invite code")
@@ -41,12 +42,32 @@ def fill_in_registration_form(page: Page, user_invite: str):
     page.fill('input[name="email"]', "newuser@example.com")
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
+    page.get_by_role("checkbox", name="Accept Data Agreement").check()
+    # Note: Don't check data agreement here - let the explicit steps handle it
+
+
+@when("the registration form is submitted")
+def submit_registration_form(page: Page):
     page.click('button[type="submit"]')
 
 
 @when("the user clicks the logout link")
 def click_log_out_link(page: Page):
     page.get_by_text("Sign out").click()
+
+
+@when("the data agreement is accepted")
+def data_agreement_is_accepted(page: Page):
+    checkbox = page.get_by_role("checkbox", name="Accept Data Agreement")
+    if not checkbox.is_checked():
+        checkbox.check()
+
+
+@when("the data agreement is not accepted")
+def data_agreement_not_accepted(page: Page):
+    checkbox = page.get_by_role("checkbox", name="Accept Data Agreement")
+    if checkbox.is_checked():
+        checkbox.uncheck()
 
 
 @then("the user should be on the register page")
