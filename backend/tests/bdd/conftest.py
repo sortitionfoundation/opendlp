@@ -17,6 +17,9 @@ from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
 
+# The value is milliseconds - so 5000 is 5 seconds
+# The default is 30 seconds - which means if a page fails to load
+# then the tests take a long time to fail.
 PLAYWRIGHT_TIMEOUT = 5_000
 expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
 
@@ -139,14 +142,14 @@ def page(context):
 
 
 @pytest.fixture
-def logged_out_page(page: Page, clean_database):
+def logged_out_page(page: Page):
     # Clear any existing session/cookies to ensure clean state
     page.context.clear_cookies()
     return page
 
 
 @pytest.fixture
-def logged_in_page(page: Page, admin_user, clean_database):
+def logged_in_page(page: Page, admin_user):
     """Page with admin user logged in"""
     # we might already be logged in - try
     page.goto(Urls.dashboard)
@@ -160,7 +163,7 @@ def logged_in_page(page: Page, admin_user, clean_database):
     return page
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def clean_database(test_database):
     """Clean database state before each test"""
     session_factory = test_database
@@ -180,7 +183,7 @@ def clean_database(test_database):
 
 
 @pytest.fixture
-def user_invite(test_database, admin_user, clean_database) -> str:
+def user_invite(test_database, admin_user) -> str:
     """Create a valid user invite in the database"""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
