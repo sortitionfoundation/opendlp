@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import Page, expect, sync_playwright
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -16,6 +16,9 @@ from opendlp.service_layer.user_service import create_user
 from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come_up_on_port
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
+
+PLAYWRIGHT_TIMEOUT = 5_000
+expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @pytest.fixture(scope="session")
@@ -121,6 +124,8 @@ def browser():
 def context(browser, test_server):
     """Browser context that waits for server to be ready"""
     context = browser.new_context()
+    context.set_default_navigation_timeout(PLAYWRIGHT_TIMEOUT)
+    context.set_default_timeout(PLAYWRIGHT_TIMEOUT)
     yield context
     context.close()
 
@@ -134,7 +139,7 @@ def page(context):
 
 
 @pytest.fixture
-def logged_out_page(page: Page, admin_user, clean_database):
+def logged_out_page(page: Page, clean_database):
     # Clear any existing session/cookies to ensure clean state
     page.context.clear_cookies()
     return page
@@ -143,11 +148,15 @@ def logged_out_page(page: Page, admin_user, clean_database):
 @pytest.fixture
 def logged_in_page(page: Page, admin_user, clean_database):
     """Page with admin user logged in"""
-    page.goto(Urls.login)
-    page.fill('input[name="email"]', ADMIN_EMAIL)
-    page.fill('input[name="password"]', ADMIN_PASSWORD)
-    page.click('button[type="submit"]')
-    page.wait_for_url(Urls.dashboard)
+    # we might already be logged in - try
+    page.goto(Urls.dashboard)
+    page.wait_for_load_state()
+    if page.url != Urls.dashboard:
+        page.goto(Urls.login)
+        page.fill('input[name="email"]', admin_user.email)
+        page.fill('input[name="password"]', ADMIN_PASSWORD)
+        page.click('button[type="submit"]')
+        page.wait_for_url(Urls.dashboard)
     return page
 
 
