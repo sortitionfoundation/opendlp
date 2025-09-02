@@ -8,15 +8,16 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2025-08-29 17:05+0100\n"
-"PO-Revision-Date: 2025-08-28 12:50+0200\n"
+"PO-Revision-Date: 2025-09-02 15:00+0200\n"
 "Last-Translator: \n"
-"Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.7\n"
 
 #: src/opendlp/entrypoints/decorators.py:40
 #: src/opendlp/entrypoints/decorators.py:85
@@ -79,15 +80,15 @@ msgstr "A jelszavaknak egyeznie kell"
 
 #: src/opendlp/entrypoints/forms.py:86
 msgid "Accept Data Agreement"
-msgstr ""
+msgstr "Adatkezelési megállapodás elfogadása"
 
 #: src/opendlp/entrypoints/forms.py:87
 msgid "You must accept the data agreement to register"
-msgstr ""
+msgstr "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési megállapodásunkat."
 
 #: src/opendlp/entrypoints/forms.py:88
 msgid "I agree to the data agreement"
-msgstr ""
+msgstr "Elfogadom az adatkezelési megállapodást"
 
 #: src/opendlp/entrypoints/forms.py:99
 msgid "This email address is already registered."
@@ -168,12 +169,8 @@ msgstr "Érvénytelen meghívókód"
 
 #: src/opendlp/service_layer/exceptions.py:58
 #, python-format
-msgid ""
-"Insufficient permissions for action: %(action)s (requires role: "
-"%(required_role)s)"
-msgstr ""
-"Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
-"szerepkör: %(required_role)s)"
+msgid "Insufficient permissions for action: %(action)s (requires role: %(required_role)s)"
+msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges szerepkör: %(required_role)s)"
 
 #: src/opendlp/service_layer/exceptions.py:63
 #, python-format
@@ -251,20 +248,12 @@ msgid "Important"
 msgstr "Fontos"
 
 #: templates/base.html:149
-msgid ""
-"OpenDLP is an open source platform for Democratic Lottery and Citizens' "
-"Assembly management."
-msgstr ""
-"Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére "
-"és a résztvevők véletlenszerű kiválasztására."
+msgid "OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management."
+msgstr "Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére és a résztvevők véletlenszerű kiválasztására."
 
 #: templates/auth/login.html:55
-msgid ""
-"Don't have an account? You need an <strong>invite code</strong> to "
-"register."
-msgstr ""
-"Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a "
-"bejelentkezéshez."
+msgid "Don't have an account? You need an <strong>invite code</strong> to register."
+msgstr "Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a bejelentkezéshez."
 
 #: templates/auth/login.html:56
 msgid "Register here"
@@ -279,28 +268,24 @@ msgid "Create an account"
 msgstr "Fiók létrehozása"
 
 #: templates/auth/register.html:11
-msgid ""
-"You need an invitation code to create an account. If you do not have one,"
-" please contact your administrator."
-msgstr ""
-"Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
-"kapcsolatba az adminisztrátorral."
+msgid "You need an invitation code to create an account. If you do not have one, please contact your administrator."
+msgstr "Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj kapcsolatba az adminisztrátorral."
 
 #: templates/auth/register.html:108
 msgid "Data Agreement"
-msgstr ""
+msgstr "Adatkezelési Megállapodás"
 
 #: templates/auth/register.html:111
 msgid "Please read and accept our data agreement to proceed."
-msgstr ""
+msgstr "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési megállapodásunkat."
 
 #: templates/auth/register.html:113
 msgid "View data agreement"
-msgstr ""
+msgstr "Adatkezelési megállapodás megtekintése"
 
 #: templates/auth/register.html:119
 msgid "Error"
-msgstr ""
+msgstr "Hiba történt"
 
 #: templates/auth/register.html:133
 msgid "Create account"
@@ -312,23 +297,20 @@ msgstr "Már van fiókod?"
 
 #: templates/auth/user_data_agreement.html:3
 msgid "User Data Agreement"
-msgstr ""
+msgstr "Felhasználói Adatkezelési Megállapodás"
 
 #: templates/auth/user_data_agreement.html:14
 msgid "Back to Registration"
-msgstr ""
+msgstr "Vissza a regisztrációhoz"
 
 #: templates/errors/404.html:3 templates/errors/404.html:13
 msgid "Page Not Found"
 msgstr "Az oldal nem elérhető"
 
 #: templates/errors/404.html:15
-msgid ""
-"Sorry, the page you're looking for doesn't exist. It may have been moved,"
-"\n"
+msgid "Sorry, the page you're looking for doesn't exist. It may have been moved,\n"
 "                deleted, or you may have entered an incorrect URL."
-msgstr ""
-"Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
+msgstr "Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
 "                törölték, vagy az URL, amit beírtál, hibás."
 
 #: templates/errors/404.html:20 templates/errors/500.html:20
@@ -344,18 +326,14 @@ msgid "Internal Server Error"
 msgstr "Belső szerver hiba"
 
 #: templates/errors/500.html:15
-msgid ""
-"Something went wrong on our end. We're working to fix this issue.\n"
+msgid "Something went wrong on our end. We're working to fix this issue.\n"
 "                Please try again in a few moments."
-msgstr ""
-"Valami hiba van a mi oldalunkon. Dolgozunk a kijavításán.\n"
+msgstr "Valami hiba van a mi oldalunkon. Dolgozunk a kijavításán.\n"
 "                Próbáld újra néhány pillanat múlva."
 
 #: templates/errors/500.html:30
 msgid "If this problem persists, please contact your system administrator."
-msgstr ""
-"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer "
-"adminisztrátoroddal."
+msgstr "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer adminisztrátoroddal."
 
 #: templates/main/assemblies.html:13
 msgid "Create Assembly"
@@ -412,9 +390,7 @@ msgstr "Hozd létre az első közösségi gyűlésedet"
 
 #: templates/main/assemblies.html:88
 msgid "Contact an administrator to be added to an assembly."
-msgstr ""
-"Lépj kapcsolatba egy adminisztrátorral, hogy adjon hozzáférést egy "
-"közösségi gyűléshez."
+msgstr "Lépj kapcsolatba egy adminisztrátorral, hogy adjon hozzáférést egy közösségi gyűléshez."
 
 #: templates/main/dashboard.html:11
 msgid "Welcome back"
@@ -446,34 +422,22 @@ msgstr "Üdvözlünk"
 
 #: templates/main/index.html:12
 msgid "Open Democratic Lottery Platform for Citizens' Assemblies"
-msgstr ""
-"Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi "
-"gyűlések szervezéséhez"
+msgstr "Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi gyűlések szervezéséhez"
 
 #: templates/main/index.html:14
-msgid ""
-"OpenDLP supports democratic participation through stratified selection "
-"processes,\n"
-"                enabling fair and representative Citizens' Assemblies "
-"worldwide."
-msgstr ""
-"Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a "
-"részvételi demokráciát,\n"
-"                lehetővé téve az igazságos és reprezentatív polgári "
-"gyűléseket világszerte."
+msgid "OpenDLP supports democratic participation through stratified selection processes,\n"
+"                enabling fair and representative Citizens' Assemblies worldwide."
+msgstr "Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a részvételi demokráciát,\n"
+"                lehetővé téve az igazságos és reprezentatív polgári gyűléseket világszerte."
 
 #: templates/main/index.html:36
 msgid "Stratified Selection"
 msgstr "Rétegzett kiválasztás"
 
 #: templates/main/index.html:38
-msgid ""
-"Fair and representative selection algorithms ensure diverse participation"
-"\n"
+msgid "Fair and representative selection algorithms ensure diverse participation\n"
 "                across demographic groups."
-msgstr ""
-"A pártatlan és reprezentatív kiválasztási algoritmusok biztosítják a "
-"sokszínű részvételt \n"
+msgstr "A pártatlan és reprezentatív kiválasztási algoritmusok biztosítják a sokszínű részvételt \n"
 "                a demográfiai csoportok között."
 
 #: templates/main/index.html:46
@@ -481,12 +445,9 @@ msgid "Secure &amp; Transparent"
 msgstr "Biztonságos &amp; átlátható"
 
 #: templates/main/index.html:48
-msgid ""
-"Role-based access control and audit trails maintain security while\n"
+msgid "Role-based access control and audit trails maintain security while\n"
 "                ensuring transparency in the democratic process."
-msgstr ""
-"A szerepköralapú jogosultság-kiosztás és az auditnaplók garantálják a "
-"biztonságot, miközben\n"
+msgstr "A szerepköralapú jogosultság-kiosztás és az auditnaplók garantálják a biztonságot, miközben\n"
 "                 biztosítják a demokratikus folyamat átláthatóságát."
 
 #: templates/main/index.html:56
@@ -494,12 +455,9 @@ msgid "Citizens' Assemblies"
 msgstr "Közösségi gyűlések"
 
 #: templates/main/index.html:58
-msgid ""
-"Purpose-built for managing Citizens' Assemblies from registration\n"
+msgid "Purpose-built for managing Citizens' Assemblies from registration\n"
 "                through to selection and coordination."
-msgstr ""
-"Kifejezetten a kjözösségi gyűlések lebonyolítására készült a "
-"regisztrációtól\n"
+msgstr "Kifejezetten a kjözösségi gyűlések lebonyolítására készült a regisztrációtól\n"
 "                 a kiválasztáson át a koordinációig."
 
 #: templates/main/index.html:71
@@ -511,13 +469,9 @@ msgid "Contact your assembly organizer for an invitation code."
 msgstr "Meghívókódért lépj kapcsolatba a közösségi gyűlésed szervezőjével."
 
 #: templates/main/index.html:74
-msgid ""
-"OpenDLP is an open-source platform supporting democratic participation "
-"worldwide.\n"
+msgid "OpenDLP is an open-source platform supporting democratic participation worldwide.\n"
 "                It is a project of"
-msgstr ""
-"Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a "
-"demokratikus részvételt.\n"
+msgstr "Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a demokratikus részvételt.\n"
 "                Ez egy projekt a"
 
 #: tests/unit/test_translations.py:16 tests/unit/test_translations.py:41
