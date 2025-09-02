@@ -104,7 +104,10 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.session.rollback()
 
     def flush(self) -> None:
-        """Flush pending changes to the database without committing."""
+        """
+        Flush pending changes to the database without committing.
+        This allows new objects to get an ID that can be referenced by other objects.
+        """
         self.session.flush()
 
 

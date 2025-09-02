@@ -59,7 +59,8 @@ def create_assembly(
 
         uow.assemblies.add(assembly)
         uow.commit()
-        return assembly
+        detached_assembly = assembly.create_detached_copy()
+        return detached_assembly
 
 
 def update_assembly(
