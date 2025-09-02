@@ -6,29 +6,11 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from flask.testing import FlaskClient
 
-from opendlp.adapters.database import start_mappers
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.entrypoints.flask_app import create_app
-from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
-
-
-@pytest.fixture
-def app(temp_env_vars):
-    """Create test Flask application."""
-    temp_env_vars(DB_URI="postgresql://opendlp:abc123@localhost:54322/opendlp")
-    start_mappers()  # Initialize SQLAlchemy mappings
-    app = create_app("testing_postgres")
-    return app
-
-
-@pytest.fixture
-def client(app):
-    """Create test client."""
-    return app.test_client()
 
 
 @pytest.fixture
@@ -69,24 +51,6 @@ def expired_invite(postgres_session_factory):
         uow.commit()
 
         return detached_invite
-
-
-@pytest.fixture
-def test_user(postgres_session_factory):
-    """Create a test user in the database."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = User(
-            email="test@example.com",
-            global_role=GlobalRole.USER,
-            password_hash=hash_password("testpassword123"),
-            first_name="Test",
-            last_name="User",
-        )
-        uow.users.add(user)
-        detached_user = user.create_detached_copy()
-        uow.commit()
-
-        return detached_user
 
 
 class TestAuthenticationFlow:
@@ -195,7 +159,7 @@ class TestAuthenticationFlow:
         assert response.status_code == 200  # Returns form with error
         assert b"Passwords do not match" in response.data or b"error" in response.data
 
-    def test_login_success(self, client: FlaskClient, test_user: User):
+    def test_login_success(self, client: FlaskClient, regular_user: User):
         """Test successful login."""
         # GET login form
         response = client.get("/auth/login")
@@ -206,8 +170,8 @@ class TestAuthenticationFlow:
         response = client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
             follow_redirects=False,
@@ -221,12 +185,12 @@ class TestAuthenticationFlow:
         with client.session_transaction() as sess:
             assert "_user_id" in sess
 
-    def test_login_invalid_credentials_fails(self, client: FlaskClient, test_user: User):
+    def test_login_invalid_credentials_fails(self, client: FlaskClient, regular_user: User):
         """Test login fails with invalid credentials."""
         response = client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
+                "email": regular_user.email,
                 "password": "wrongpassword",
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
@@ -248,13 +212,13 @@ class TestAuthenticationFlow:
 
         assert response.status_code == 200  # Returns form with error
 
-    def test_login_remember_me_functionality(self, client: FlaskClient, test_user: User):
+    def test_login_remember_me_functionality(self, client: FlaskClient, regular_user: User):
         """Test remember me functionality."""
         response = client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "remember_me": True,
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
@@ -269,14 +233,14 @@ class TestAuthenticationFlow:
         assert isinstance(cookie.expires, datetime)
         assert cookie.expires > datetime.now(UTC) + timedelta(days=5)
 
-    def test_logout_success(self, client: FlaskClient, test_user: User):
+    def test_logout_success(self, client: FlaskClient, regular_user: User):
         """Test successful logout."""
         # First login
         client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
         )
@@ -289,14 +253,14 @@ class TestAuthenticationFlow:
         with client.session_transaction() as sess:
             assert "_user_id" not in sess
 
-    def test_assemblies_view_access(self, client: FlaskClient, test_user: User):
+    def test_assemblies_view_access(self, client: FlaskClient, regular_user: User):
         """Test that assemblies view is accessible when logged in."""
         # Login first
         client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
         )
@@ -312,14 +276,14 @@ class TestAuthenticationFlow:
         assert response.status_code == 302  # Redirect to login
         assert "login" in response.location
 
-    def test_protected_page_accessible_when_logged_in(self, client: FlaskClient, test_user: User):
+    def test_protected_page_accessible_when_logged_in(self, client: FlaskClient, regular_user: User):
         """Test that protected pages are accessible when logged in."""
         # Login first
         client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
         )
@@ -328,14 +292,14 @@ class TestAuthenticationFlow:
         response = client.get("/dashboard")
         assert response.status_code == 200
 
-    def test_session_persistence_across_requests(self, client: FlaskClient, test_user: User):
+    def test_session_persistence_across_requests(self, client: FlaskClient, regular_user: User):
         """Test that session persists across multiple requests."""
         # Login
         client.post(
             "/auth/login",
             data={
-                "email": test_user.email,
-                "password": "testpassword123",
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
                 "csrf_token": self._get_csrf_token(client, "/auth/login"),
             },
         )
@@ -354,15 +318,16 @@ class TestAuthenticationFlow:
     def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
         """Helper to extract CSRF token from form."""
         _ = client.get(endpoint)
-        # TODO: This is a simplified approach - actual implementation would parse HTML
+        # This is a simplified approach - actual implementation would parse HTML
         # and extract the CSRF token from the form
+        # TODO: actually implement this properly - and make it shared between classes
         return "csrf_token_placeholder"  # Placeholder for now
 
 
 class TestAuthenticationEdgeCases:
     """Test edge cases and security aspects of authentication."""
 
-    def test_register_duplicate_email_fails(self, client: FlaskClient, test_user: User, valid_invite: UserInvite):
+    def test_register_duplicate_email_fails(self, client: FlaskClient, regular_user: User, valid_invite: UserInvite):
         """Test registration fails when email already exists."""
         response = client.post(
             "/auth/register",
@@ -370,7 +335,7 @@ class TestAuthenticationEdgeCases:
                 "invite_code": valid_invite.code,
                 "first_name": "Another",
                 "last_name": "User",
-                "email": test_user.email,  # Already exists
+                "email": regular_user.email,  # Already exists
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
                 "csrf_token": self._get_csrf_token(client, "/auth/register"),
@@ -379,7 +344,7 @@ class TestAuthenticationEdgeCases:
 
         assert response.status_code == 200  # Returns form with error
 
-    def test_login_rate_limiting_basic(self, client: FlaskClient, test_user: User):
+    def test_login_rate_limiting_basic(self, client: FlaskClient, regular_user: User):
         """Basic test for login rate limiting (if implemented)."""
         # This test assumes rate limiting might be implemented
         # Make multiple failed login attempts
@@ -387,13 +352,13 @@ class TestAuthenticationEdgeCases:
             client.post(
                 "/auth/login",
                 data={
-                    "email": test_user.email,
+                    "email": regular_user.email,
                     "password": "wrongpassword",
                     "csrf_token": self._get_csrf_token(client, "/auth/login"),
                 },
             )
 
-        # TODO: This test would check for rate limiting behavior
+        # TODO: This test would check for rate limiting behavior - there is no assert right now
         # The actual implementation may vary
 
     def test_csrf_protection_enabled(self, client: FlaskClient):
@@ -408,8 +373,8 @@ class TestAuthenticationEdgeCases:
             },
         )
 
-        # Should fail due to CSRF protection (actual behavior may vary)
-        # This test verifies CSRF protection is active
+        # TODO: Should fail due to CSRF protection (actual behavior may vary)
+        # There is no assert in this test right now
 
     def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
         """Helper to extract CSRF token from form."""
