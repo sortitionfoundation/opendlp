@@ -4,8 +4,8 @@ ABOUTME: Uses GOV.UK Design System components for consistent government service 
 from typing import Any
 
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, EmailField, PasswordField, StringField
-from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
+from wtforms import BooleanField, DateField, EmailField, PasswordField, StringField, TextAreaField
+from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -140,3 +140,40 @@ class PasswordResetForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired(), EqualTo("password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
+
+
+class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Assembly creation and editing form."""
+
+    title = StringField(
+        _l("Assembly Title"),
+        validators=[DataRequired(), Length(min=3, max=200)],
+        description=_l("Enter the title for this assembly"),
+    )
+
+    question = TextAreaField(
+        _l("Assembly Question"),
+        validators=[Optional(), Length(max=1000)],
+        description=_l("Optional - the key question this assembly will address"),
+        render_kw={"rows": 3},
+    )
+
+    gsheet = StringField(
+        _l("Google Sheets ID"),
+        validators=[Optional(), Length(max=200)],
+        description=_l("Optional - Google Sheets identifier for data integration"),
+    )
+
+    first_assembly_date = DateField(
+        _l("First Assembly Date"),
+        validators=[Optional()],
+        description=_l("Optional - when the first assembly meeting will take place"),
+    )
+
+
+class CreateAssemblyForm(AssemblyForm):
+    """Form specifically for creating assemblies."""
+
+
+class EditAssemblyForm(AssemblyForm):
+    """Form specifically for editing assemblies."""

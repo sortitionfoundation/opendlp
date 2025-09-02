@@ -1,4 +1,9 @@
+import typing
+
 BDD_PORT = 5002  # Test server on 5002 to avoid conflict with dev server
+ADMIN_EMAIL = "admin@opendlp.example"
+ADMIN_PASSWORD = "admin8d2wpass"
+FRESH_PASSWORD = "sortition2x8w"
 
 
 class Urls:
@@ -8,8 +13,14 @@ class Urls:
     register = f"{base}/auth/register"
     dashboard = f"{base}/dashboard"
     user_data_agreement = f"{base}/auth/user-data-agreement"
+    view_assembly_list = f"{base}/assemblies"
+    create_assembly = f"{base}/assemblies/new"
 
+    assembly_urls: typing.ClassVar = {
+        "view_assembly": "{base}/assemblies/{assembly_id}",
+        "update_assembly": "{base}/assemblies/{assembly_id}/edit",
+    }
 
-ADMIN_EMAIL = "admin@opendlp.example"
-ADMIN_PASSWORD = "admin8d2wpass"
-FRESH_PASSWORD = "sortition2x8w"
+    @classmethod
+    def for_assembly(cls, url_name: str, assembly_id: str) -> str:
+        return cls.assembly_urls[url_name].format(base=cls.base, assembly_id=assembly_id)

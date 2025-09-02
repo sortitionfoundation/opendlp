@@ -86,7 +86,7 @@ flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   @uv run flask run --debug
 
 # run flask for BDD tests - they will use this server if it exists
-flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FLASK_ENV="testing_postgres" $DB_NO_POOL="true":
+flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FLASK_ENV="testing_postgres":
   @uv run flask run --port=5002 --host=127.0.0.1 --debug
 
 # run gunicorn locally
@@ -106,10 +106,15 @@ watch-css:
 # run flask locally
 run: build-css flask
 
-# connect to docker postgres
+# connect to docker postgres (local services)
 psql:
   @echo "password is abc123"
   psql --host 127.0.0.1 --port 54321 --user opendlp opendlp
+
+# connect to docker postgres (tests)
+psql-test:
+  @echo "password is abc123"
+  psql --host 127.0.0.1 --port 54322 --user opendlp opendlp
 
 # run the database migrations
 migrate:

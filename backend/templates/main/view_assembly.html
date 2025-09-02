@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assembly.title }} - Assembly - OpenDLP{% endblock %}
+
+{% block content %}
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.assemblies') }}">{{ _('Assemblies') }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        {{ assembly.title }}
+                    </li>
+                </ol>
+            </div>
+
+            <div class="main govuk-!-margin-top-6">
+                <h2 class="govuk-heading-l">{{ assembly.title }}</h2>
+
+                {% if assembly.question %}
+                <div class="govuk-!-margin-bottom-6">
+                    <h3 class="govuk-heading-m">{{ _('Assembly Question') }}</h3>
+                    <p class="govuk-body">{{ assembly.question }}</p>
+                </div>
+                {% endif %}
+
+                <dl class="govuk-summary-list">
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('Status') }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            <strong class="govuk-tag govuk-tag--green">{{ assembly.status.value }}</strong>
+                        </dd>
+                    </div>
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('Created') }}</dt>
+                        <dd class="govuk-summary-list__value">{{ assembly.created_at.strftime('%d %B %Y') }}</dd>
+                    </div>
+                    {% if assembly.first_assembly_date %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('First Assembly Date') }}</dt>
+                        <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%d %B %Y') }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if assembly.gsheet %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('Google Sheets') }}</dt>
+                        <dd class="govuk-summary-list__value">{{ _('Connected') }}</dd>
+                    </div>
+                    {% endif %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('Last Updated') }}</dt>
+                        <dd class="govuk-summary-list__value">{{ assembly.updated_at.strftime('%d %B %Y at %H:%M') }}</dd>
+                    </div>
+                </dl>
+
+                <div class="govuk-button-group govuk-!-margin-top-6">
+                    <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}"
+                       class="govuk-button">
+                        {{ _('Edit Assembly') }}
+                    </a>
+                    <a href="{{ url_for('main.assemblies') }}"
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Back to Assemblies') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

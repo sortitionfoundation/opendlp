@@ -23,9 +23,7 @@ def create_session_factory(database_url: str = "", echo: bool = False) -> sessio
     database_url = database_url or get_db_uri()
     echo = to_bool(os.environ.get("DB_ECHO")) or echo
     extra_args: dict[str, int | bool] = {}
-    # we don't want BDD tests to use the database pool
-    use_db_pool = not to_bool(os.environ.get("DB_NO_POOL"), context_str="DB_NO_POOL:")
-    if database_url.startswith("postgresql://") and use_db_pool:
+    if database_url.startswith("postgresql://"):
         extra_args = {
             "pool_pre_ping": True,  # Verify connections before use
             "pool_recycle": 3600,  # Recycle connections after 1 hour

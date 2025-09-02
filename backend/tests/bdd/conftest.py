@@ -9,7 +9,9 @@ from sqlalchemy.orm import sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
+from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
@@ -112,6 +114,19 @@ def admin_user(test_database):
     )
 
     return admin
+
+
+@pytest.fixture
+def assembly_creator(test_database, admin_user):
+    """Create assembly for testing"""
+
+    def _create_assembly(title: str, question: str = "") -> Assembly:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, question=question)
+        return assembly
+
+    return _create_assembly
 
 
 @pytest.fixture(scope="session")

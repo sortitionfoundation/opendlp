@@ -1,5 +1,7 @@
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, then, when
+from pytest_bdd import given, parsers, step, then, when
+
+from opendlp.domain.assembly import Assembly
 
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
@@ -17,6 +19,22 @@ def navigate_to_register_page(logged_out_page: Page):
 @given("the user is on the dashboard page")
 def navigate_to_dashboard_page(logged_in_page: Page):
     logged_in_page.goto(Urls.dashboard)
+
+
+# can be "given" or "when"
+@step(parsers.parse("the user opens the {page_name} page"))
+def navigate_to_named_page(logged_in_page: Page, page_name: str):
+    url_name = "_".join(page_name.lower().split())
+    url = getattr(Urls, url_name)
+    logged_in_page.goto(url)
+
+
+# can be "given" or "when"
+@step(parsers.parse("the user opens the {page_name} page for an assembly"))
+def navigate_to_named_assembly_page(logged_in_page: Page, page_name: str, assembly: Assembly):
+    url_name = "_".join(page_name.lower().split())
+    url = Urls.for_assembly(url_name, str(assembly.id))
+    logged_in_page.goto(url)
 
 
 @when("the user logs in with valid credentials")
