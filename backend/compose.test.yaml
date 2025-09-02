@@ -8,8 +8,7 @@ services:
       - "54322:5432"
     networks:
       - test_net
-    volumes:
-      - sqla_opendlp_test_pgdata:/var/lib/postgresql/data
+    # for test we don't use a volume so it is created fresh each time
 
   redis_test:
     image: redis:alpine
@@ -20,6 +19,3 @@ services:
 
 networks:
   test_net:
-
-volumes:
-  sqla_opendlp_test_pgdata:
