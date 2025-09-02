@@ -46,8 +46,8 @@ def fill_in_registration_form(page: Page, user_invite: str):
     # Note: Don't check data agreement here - let the explicit steps handle it
 
 
-@when("the registration form is submitted")
-def submit_registration_form(page: Page):
+@when("the form is submitted")
+def submit_form(page: Page):
     page.click('button[type="submit"]')
 
 

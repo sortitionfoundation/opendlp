@@ -6,13 +6,13 @@ Feature: User Sign in and Registration
   Scenario: Register fails with invalid invite code
     Given the user is on the register page
     When the user registers using an invalid invite code
-    And the registration form is submitted
+    And the form is submitted
     Then the user should be on the register page
 
   Scenario: Register with valid invite code
     Given the user is on the register page
     When the user registers using a valid invite code
-    And the registration form is submitted
+    And the form is submitted
     Then the user should be redirected to the dashboard
 
   Scenario: Sign out

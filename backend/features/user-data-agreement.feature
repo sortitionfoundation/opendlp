@@ -12,12 +12,12 @@ Feature: User Data Agreement
     Given the user is on the register page
     When the user registers using a valid invite code
     And the data agreement is not accepted
-    And the registration form is submitted
+    And the form is submitted
     Then the user should be on the register page
 
   Scenario: Register with data agreement
     Given the user is on the register page
     When the user registers using a valid invite code
     And the data agreement is accepted
-    And the registration form is submitted
+    And the form is submitted
     Then the user should be redirected to the dashboard
