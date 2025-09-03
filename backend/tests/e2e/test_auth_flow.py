@@ -401,3 +401,51 @@ class TestAuthenticationEdgeCases:
     def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
         """Helper to extract CSRF token from form."""
         return "csrf_token_placeholder"  # Placeholder for now
+
+
+class TestCacheHeaders:
+    """Test cache control headers for authenticated vs unauthenticated pages."""
+
+    def test_public_page_allows_caching_when_logged_out(self, client: FlaskClient):
+        """Test that public pages don't have no-cache headers when user is logged out."""
+        # Test the login page (public page accessible when logged out)
+        response = client.get("/auth/login")
+        assert response.status_code == 200
+
+        # Public pages should not have no-cache headers
+        assert "Cache-Control" not in response.headers or "no-cache" not in response.headers.get("Cache-Control", "")
+        assert "Pragma" not in response.headers or response.headers.get("Pragma") != "no-cache"
+        assert "Expires" not in response.headers or response.headers.get("Expires") != "0"
+
+    def test_dashboard_has_no_cache_headers_when_logged_in(self, client: FlaskClient, regular_user: User):
+        """Test that protected pages have no-cache headers when user is logged in."""
+        # First login
+        client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
+                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+            },
+        )
+
+        # Test protected page (dashboard) when logged in
+        response = client.get("/dashboard")
+        assert response.status_code == 200
+
+        # Protected pages should have no-cache headers when user is logged in
+        cache_control = response.headers.get("Cache-Control", "")
+        assert "no-cache" in cache_control or "no-store" in cache_control
+
+    def test_dashboard_redirects_when_logged_out(self, client: FlaskClient):
+        """Test that protected pages redirect when logged out (baseline behavior)."""
+        response = client.get("/dashboard")
+        assert response.status_code == 302  # Redirect to login
+        assert "login" in response.location
+
+        # When redirected, no special cache headers should be present
+        assert "Cache-Control" not in response.headers or "no-cache" not in response.headers.get("Cache-Control", "")
+
+    def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
+        """Helper to extract CSRF token from form."""
+        return "csrf_token_placeholder"  # Placeholder for now

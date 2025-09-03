@@ -3,7 +3,8 @@ ABOUTME: Creates and configures Flask app instance with all necessary extensions
 
 import logging
 
-from flask import Flask, render_template
+from flask import Flask, Response, render_template
+from flask_login import current_user
 from werkzeug.exceptions import HTTPException
 
 from opendlp import config
@@ -39,6 +40,9 @@ def create_app(config_name: str = "") -> Flask:
     # Register error handlers
     register_error_handlers(app)
 
+    # Register after request handlers
+    register_after_request_handlers(app)
+
     # Configure logging
     configure_logging(app)
 
@@ -72,6 +76,27 @@ def register_error_handlers(app: Flask) -> None:
     def forbidden(error: HTTPException) -> tuple[str, int]:
         """Handle 403 Forbidden errors."""
         return render_template("errors/403.html"), 403
+
+
+def register_after_request_handlers(app: Flask) -> None:
+    """Register after request handlers."""
+
+    @app.after_request
+    def add_cache_headers_for_authenticated_users(response: Response) -> Response:
+        """
+        Add no-cache headers for authenticated users to prevent browser caching of sensitive pages.
+
+        This prevents browsers from caching pages that contain user-specific or sensitive information
+        when a user is logged in. Public pages (when not logged in) can still be cached normally.
+        """
+        # Check if user is authenticated
+        if current_user.is_authenticated:
+            # Add comprehensive no-cache headers
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+        return response
 
 
 def configure_logging(app: Flask) -> None:
