@@ -92,27 +92,6 @@ class TestAssembly:
         assert assembly.question == ""
         assert assembly.gsheet == ""
 
-    def test_validate_future_date(self):
-        past_date = date.today() - timedelta(days=1)
-        today = date.today()
-        future_date = date.today() + timedelta(days=1)
-
-        # Past date should fail
-        with pytest.raises(ValueError, match="First assembly date must be in the future"):
-            Assembly(title="Title", first_assembly_date=past_date)
-
-        # Today should fail
-        with pytest.raises(ValueError, match="First assembly date must be in the future"):
-            Assembly(title="Title", first_assembly_date=today)
-
-        # Future date should work
-        assembly = Assembly(title="Title", first_assembly_date=future_date)
-        assert assembly.first_assembly_date == future_date
-
-        # None date should work
-        assembly_no_date = Assembly(title="Title", first_assembly_date=None)
-        assert assembly_no_date.first_assembly_date is None
-
     def test_archive(self):
         assembly = Assembly(title="Title")
 
@@ -219,8 +198,6 @@ class TestAssembly:
         assert assembly.gsheet == "new-sheet"
 
     def test_update_details_validation(self):
-        past_date = date.today() - timedelta(days=1)
-
         assembly = Assembly(title="Title")
 
         # Empty title should still fail
@@ -231,10 +208,6 @@ class TestAssembly:
         assembly.update_details(question="", gsheet="")
         assert assembly.question == ""
         assert assembly.gsheet == ""
-
-        # Past date should still fail
-        with pytest.raises(ValueError, match="First assembly date must be in the future"):
-            assembly.update_details(first_assembly_date=past_date)
 
     def test_assembly_equality_and_hash(self):
         assembly_id = uuid.uuid4()

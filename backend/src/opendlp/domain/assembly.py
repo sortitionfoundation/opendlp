@@ -24,9 +24,6 @@ class Assembly:
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
 
-        if first_assembly_date is not None and first_assembly_date <= date.today():
-            raise ValueError("First assembly date must be in the future")
-
         self.id = assembly_id or uuid.uuid4()
         self.title = title.strip()
         self.question = question.strip()
@@ -66,8 +63,6 @@ class Assembly:
             self.gsheet = gsheet.strip()
 
         if first_assembly_date is not None:
-            if first_assembly_date <= date.today():
-                raise ValueError("First assembly date must be in the future")
             self.first_assembly_date = first_assembly_date
 
         self.updated_at = datetime.now(UTC)
