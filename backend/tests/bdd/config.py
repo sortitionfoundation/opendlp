@@ -7,6 +7,9 @@ FRESH_PASSWORD = "sortition2x8w"
 
 
 class Urls:
+    # note that we can't use url_for() in the BDD code as there is no app context.
+    # Hence the duplication here.
+    # TODO: investigate making a copy of the app object to use here
     base = f"http://localhost:{BDD_PORT}"
     front_page = f"{base}/"
     login = f"{base}/auth/login"
