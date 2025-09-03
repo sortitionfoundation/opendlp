@@ -270,6 +270,28 @@ class TestAuthenticationFlow:
         assert response.status_code == 200
         assert b"Assemblies" in response.data or b"assemblies" in response.data
 
+    def test_root_page_shows_text_when_not_logged_in(self, client: FlaskClient):
+        """Test that the root page shows the landing page if you are not logged in."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "Ready to participate" in response.text
+
+    def test_root_page_redirects_when_logged_in(self, client: FlaskClient, regular_user: User):
+        """Test that the root page redirects to the dashboard when you are logged in."""
+        client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
+                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+            },
+        )
+        response = client.get("/")
+        assert response.status_code == 302  # Redirect to login
+        assert "dashboard" in response.location
+        response = client.get("/", follow_redirects=True)
+        assert "Your Assemblies" in response.text
+
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient):
         """Test that protected pages redirect to login."""
         response = client.get("/dashboard")

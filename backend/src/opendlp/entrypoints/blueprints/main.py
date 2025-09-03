@@ -26,7 +26,7 @@ main_bp = Blueprint("main", __name__)
 def index() -> ResponseReturnValue:
     """Home page - redirects to dashboard if logged in, otherwise shows landing page."""
     if current_user.is_authenticated:
-        return redirect("main.dashboard")
+        return redirect(url_for("main.dashboard"))
     return render_template("main/index.html"), 200
 
 
