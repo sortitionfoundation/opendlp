@@ -5,6 +5,6 @@ Feature: View Assembly.
 
   Scenario: View Assembly
     Given there is an assembly created
-    When the user opens the view assembly page for an assembly
+    When the user sees the assembly
     Then the user should see the "title" of the Assembly
     And the user should see the "question" of the Assembly

@@ -5,8 +5,8 @@ Feature: Update Assembly.
 
   Scenario: Edit Assembly
     Given there is an assembly created
-    And the user opens the update assembly page for an assembly
-    When the user fills in the question field with "What should Liliput do about the Climate Emergency?"
-    And the form is submitted
-    Then the user should be redirected to the view assembly page after edit
-    And the assembly question "What should Liliput do about the Climate Emergency?" should be visible
+    And the user starts editing the assembly
+    When the user makes the question "What should Liliput do about the Climate Emergency?"
+    And the user finishes editing the assembly
+    Then the user should see the edited assembly
+    And the user should see the assembly question "What should Liliput do about the Climate Emergency?"

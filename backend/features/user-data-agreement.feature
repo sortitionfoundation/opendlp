@@ -4,20 +4,22 @@ Feature: User Data Agreement
   so that we comply with our responsibilities under the GDPR (and similar legislation).
 
   Scenario: Can view the data agreement
-    Given the user is on the register page
-    When the user clicks on the link to the data agreement
+    Given the user is starting to register
+    When the user goes to the data agreement
     Then the user sees the data agreement text
 
   Scenario: Register fails without data agreement
-    Given the user is on the register page
-    When the user registers using a valid invite code
-    And the data agreement is not accepted
-    And the form is submitted
-    Then the user should be on the register page
+    Given the user is starting to register
+    When the user uses a valid invite code
+    And the user does not accept the data agreement
+    And the user finishes registration
+    Then the user should not be registered
+    Then the user should be directed to try registering again
 
   Scenario: Register with data agreement
-    Given the user is on the register page
-    When the user registers using a valid invite code
-    And the data agreement is accepted
-    And the form is submitted
-    Then the user should be redirected to the dashboard
+    Given the user is starting to register
+    When the user uses a valid invite code
+    And the user accepts the data agreement
+    And the user finishes registration
+    Then the user should be registered
+    And the user should see the default view for an authorised user

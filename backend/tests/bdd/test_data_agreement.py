@@ -9,8 +9,9 @@ scenarios("../../features/user-data-agreement.feature")
 # included from conftest via `pytest_plugins`
 
 
-@when("the user clicks on the link to the data agreement")
-def click_link_data_agreement(page: Page):
+@when("the user goes to the data agreement")
+def _(page: Page):
+    """the user goes to the data agreement."""
     # first find the link on the registration page
     data_agreement_link = page.get_by_role("link", name="View data agreement")
     expect(data_agreement_link).to_be_visible()
