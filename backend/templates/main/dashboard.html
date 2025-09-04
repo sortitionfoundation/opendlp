@@ -36,10 +36,23 @@
             <!-- Assemblies Section -->
             <div class="govuk-grid-column-full">
                 <div class="govuk-!-margin-bottom-4">
-                  <h2 class="govuk-heading-l">{{ _('Your Assemblies') }}</h2>
-                    <a href="{{ url_for('main.assemblies') }}" class="govuk-button govuk-button--secondary">
-                      {{ _('View All') }}
-                    </a>
+                  <div class="govuk-grid-column-two-thirds">
+                    <h2 class="govuk-heading-l">{{ _('Your Assemblies') }}</h2>
+                  </div>
+                  <div class="govuk-grid-column-one-third">
+                    <div class="govuk-!-text-align-right">
+                      <a href="{{ url_for('main.assemblies') }}" class="govuk-button govuk-button--secondary">
+                        {{ _('View All') }}
+                      </a>
+                      {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
+                          <a href="{{ url_for('main.create_assembly_page') }}"
+                              class="govuk-button"
+                              data-module="govuk-button">
+                              {{ _('Create Assembly') }}
+                          </a>
+                      {% endif %}
+                      </div>
+                    </div>
                 </div>
 
                 {% if assemblies %}
