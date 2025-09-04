@@ -51,7 +51,7 @@
                                     {% if assembly.question %}
                                         <p class="govuk-body-s">{{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}</p>
                                     {% endif %}
-                                    <dl class="govuk-summary-list govuk-!-margin-bottom-0">
+                                    <dl class="govuk-summary-list">
                                         <div class="govuk-summary-list__row">
                                           <dt class="govuk-summary-list__key">{{ _('Created') }}</dt>
                                             <dd class="govuk-summary-list__value">{{ assembly.created_at.strftime('%b %d, %Y') }}</dd>
@@ -63,6 +63,16 @@
                                         </div>
                                         {% endif %}
                                     </dl>
+                                    <div class="govuk-button-group">
+                                        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
+                                          class="govuk-button govuk-button--secondary">
+                                            {{ _('View Details') }}
+                                        </a>
+                                        <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}"
+                                          class="govuk-button govuk-button--secondary">
+                                            {{ _('Edit') }}
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
