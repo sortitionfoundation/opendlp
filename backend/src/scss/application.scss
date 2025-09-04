@@ -339,7 +339,44 @@ a:focus, .govuk-link:focus,
     }
 }
 
-// Assembly cards for dashboard
+// Assembly cards for dashboard - high specificity to override GOV.UK grid
+.govuk-width-container .assembly-cards-container.govuk-grid-row {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 1.5rem;
+    margin-left: -15px !important;  // Restore negative margins for proper edge alignment
+    margin-right: -15px !important;
+
+    .govuk-grid-column-one-third {
+        flex: 1 1 calc(33.33% - 20px) !important;
+        min-width: 280px;
+        margin-bottom: 0 !important;
+        width: auto !important;
+        float: none !important;
+        padding: 0 15px !important;  // Restore horizontal padding for proper spacing
+        box-sizing: border-box !important;
+    }
+
+    // Responsive adjustments
+    @media (max-width: 48.0625em) {
+        .govuk-grid-column-one-third {
+            flex: 1 1 100% !important;
+        }
+    }
+
+    @media (min-width: 48.0625em) and (max-width: 64em) {
+        .govuk-grid-column-one-third {
+            flex: 1 1 calc(50% - 20px) !important;
+        }
+    }
+
+    // Clear float-based clearing
+    &::after {
+        display: none !important;
+    }
+}
+
 .assembly-card {
     border: 1px solid #b1b4b6;
     border-left: 5px solid $burnt-orange;
@@ -347,6 +384,8 @@ a:focus, .govuk-link:focus,
     background-color: $white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     height: 100%;
+    display: flex;
+    flex-direction: column;
 
     &:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
@@ -362,6 +401,12 @@ a:focus, .govuk-link:focus,
         border-top: 1px solid #f3f2f1;
         margin-top: 15px;
         padding-top: 10px;
+        flex-grow: 1;
+    }
+
+    .govuk-button-group {
+        margin-top: auto;
+        padding-top: 15px;
     }
 }
 
