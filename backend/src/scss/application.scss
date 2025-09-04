@@ -349,9 +349,11 @@ a:focus, .govuk-link:focus,
     margin-right: -15px !important;
 
     .govuk-grid-column-one-third {
-        flex: 1 1 calc(33.33% - 20px) !important;
+        // Use flex-basis instead of flex shorthand to prevent growing
+        flex: 0 0 calc(33.33% - 20px) !important;
+        max-width: calc(33.33% - 20px) !important;
         min-width: 280px;
-        margin-bottom: 0 !important;
+        margin-bottom: 20px !important;  // Add margin between rows
         width: auto !important;
         float: none !important;
         padding: 0 15px !important;  // Restore horizontal padding for proper spacing
@@ -361,13 +363,15 @@ a:focus, .govuk-link:focus,
     // Responsive adjustments
     @media (max-width: 48.0625em) {
         .govuk-grid-column-one-third {
-            flex: 1 1 100% !important;
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
         }
     }
 
     @media (min-width: 48.0625em) and (max-width: 64em) {
         .govuk-grid-column-one-third {
-            flex: 1 1 calc(50% - 20px) !important;
+            flex: 0 0 calc(50% - 20px) !important;
+            max-width: calc(50% - 20px) !important;
         }
     }
 
@@ -383,7 +387,7 @@ a:focus, .govuk-link:focus,
     padding: 20px;
     background-color: $white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    height: 100%;
+    height: calc(100% - 20px); // Account for the margin-bottom of the parent
     display: flex;
     flex-direction: column;
 
