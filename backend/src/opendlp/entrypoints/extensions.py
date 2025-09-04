@@ -67,7 +67,15 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     else:
         app_root = config.APPLICATION_ROOT.strip("/")
         whitenoise_prefix = f"{app_root}/static/"
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix=whitenoise_prefix)  # type: ignore[method-assign]
+
+    # Configure whitenoise with proper settings to prevent file truncation
+    app.wsgi_app = WhiteNoise(
+        app.wsgi_app,
+        root="static/",
+        prefix=whitenoise_prefix,
+        # max_age=31536000,  # 1 year cache for static files
+        charset="utf-8",  # Explicit charset to prevent encoding issues
+    )  # type: ignore[method-assign]
 
 
 def get_locale() -> str:
