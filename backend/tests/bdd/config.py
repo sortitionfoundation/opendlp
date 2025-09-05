@@ -16,7 +16,7 @@ class Urls:
     register = f"{base}/auth/register"
     dashboard = f"{base}/dashboard"
     user_data_agreement = f"{base}/auth/user-data-agreement"
-    view_assembly_list = f"{base}/assemblies"
+    view_assembly_list = f"{base}/dashboard"
     create_assembly = f"{base}/assemblies/new"
 
     assembly_urls: typing.ClassVar = {
