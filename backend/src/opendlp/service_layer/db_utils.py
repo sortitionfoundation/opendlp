@@ -100,9 +100,8 @@ def seed_database(
             (organiser_user.create_detached_copy(), "organiser123"),
             (regular_user.create_detached_copy(), "user123"),
         )
-        uow.commit()
+        uow.flush()  # make sqlalchemy commit enough to get user IDs
 
-    with SqlAlchemyUnitOfWork(session_factory) as uow:
         # Create some sample invites
         admin_invite = UserInvite(
             global_role=GlobalRole.ADMIN,

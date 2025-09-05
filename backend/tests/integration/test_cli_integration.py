@@ -148,7 +148,7 @@ class TestCliInvitesIntegration:
         admin_email = "revoke-admin@example.com"
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            uow.flush()  # make sqlalchemy commit enough to get a user ID
             invite = generate_invite(
                 uow=uow, created_by_user_id=admin_user.id, global_role=GlobalRole.USER, expires_in_hours=168
             )
@@ -173,17 +173,16 @@ class TestCliInvitesIntegration:
 
     def test_revoke_invite_non_admin_fails(self, sqlite_session_factory, cli_with_session_factory):
         """Test that non-admin users cannot revoke invites."""
-        # Create admin user and invite
         admin_email = "revoke-admin2@example.com"
+        non_admin_email = "regular-user@example.com"
+        # Create admin user and invite
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
 
-        # Create non-admin user
-        non_admin_email = "regular-user@example.com"
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+            # Create non-admin user
             create_user(uow=uow, email=non_admin_email, password="pass123oiua", global_role=GlobalRole.USER)
+            uow.flush()  # make sqlalchemy commit enough to get a user ID
 
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             invite = generate_invite(
                 uow=uow, created_by_user_id=admin_user.id, global_role=GlobalRole.USER, expires_in_hours=168
             )
