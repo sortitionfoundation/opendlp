@@ -12,9 +12,6 @@
                         <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
                     </li>
                     <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.assemblies') }}">{{ _('Assemblies') }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
                         {{ assembly.title }}
                     </li>
                 </ol>
@@ -64,9 +61,9 @@
                        class="govuk-button">
                         {{ _('Edit Assembly') }}
                     </a>
-                    <a href="{{ url_for('main.assemblies') }}"
+                    <a href="{{ url_for('main.dashboard') }}"
                        class="govuk-button govuk-button--secondary">
-                        {{ _('Back to Assemblies') }}
+                        {{ _('Back to Dashboard') }}
                     </a>
                 </div>
             </div>

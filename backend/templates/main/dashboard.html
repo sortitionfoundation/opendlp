@@ -41,9 +41,6 @@
                   </div>
                   <div class="govuk-grid-column-one-third">
                     <div class="govuk-!-text-align-right">
-                      <a href="{{ url_for('main.assemblies') }}" class="govuk-button govuk-button--secondary">
-                        {{ _('View All') }}
-                      </a>
                       {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
                           <a href="{{ url_for('main.create_assembly_page') }}"
                               class="govuk-button"

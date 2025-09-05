@@ -61,18 +61,18 @@ def _get_csrf_token(client: FlaskClient, endpoint: str) -> str:
 
 
 class TestAssemblyListView:
-    """Test Assembly list view functionality."""
+    """Test Assembly list view functionality - the dashboard for now."""
 
     def test_assemblies_list_empty_state(self, logged_in_admin):
         """Test assemblies list shows empty state when no assemblies exist."""
-        response = logged_in_admin.get("/assemblies")
+        response = logged_in_admin.get("/dashboard")
         assert response.status_code == 200
         assert b"Assemblies" in response.data
         assert b"You don" in response.data or b"no assemblies" in response.data
 
     def test_assemblies_list_shows_existing(self, logged_in_admin, existing_assembly):
         """Test assemblies list shows existing assemblies."""
-        response = logged_in_admin.get("/assemblies")
+        response = logged_in_admin.get("/dashboard")
         assert response.status_code == 200
         assert b"Assemblies" in response.data
         assert existing_assembly.title.encode() in response.data
@@ -80,20 +80,20 @@ class TestAssemblyListView:
 
     def test_assemblies_list_create_button_for_admin(self, logged_in_admin):
         """Test create assembly button is shown for admin users."""
-        response = logged_in_admin.get("/assemblies")
+        response = logged_in_admin.get("/dashboard")
         assert response.status_code == 200
         assert b"Create Assembly" in response.data
 
     def test_assemblies_list_no_create_button_for_user(self, logged_in_user):
         """Test create assembly button is not shown for regular users."""
-        response = logged_in_user.get("/assemblies")
+        response = logged_in_user.get("/dashboard")
         assert response.status_code == 200
         # Regular users can still see assemblies but not create button
         assert b"Assemblies" in response.data
 
     def test_assemblies_list_redirects_when_not_logged_in(self, client):
         """Test assemblies list redirects to login when not authenticated."""
-        response = client.get("/assemblies")
+        response = client.get("/dashboard")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -223,7 +223,7 @@ class TestAssemblyViewDetail:
         response = logged_in_admin.get("/assemblies/00000000-0000-0000-0000-000000000000")
         # Should redirect to assemblies list with error message
         assert response.status_code == 302
-        assert "/assemblies" in response.location
+        assert "/dashboard" in response.location
 
     def test_view_assembly_redirects_when_not_logged_in(self, client, existing_assembly):
         """Test view assembly redirects to login when not authenticated."""
@@ -289,7 +289,7 @@ class TestAssemblyEditView:
         response = logged_in_admin.get("/assemblies/00000000-0000-0000-0000-000000000000/edit")
         # Should redirect to assemblies list with error message
         assert response.status_code == 302
-        assert "/assemblies" in response.location
+        assert "/dashboard" in response.location
 
     def test_edit_assembly_permission_denied_for_user(self, logged_in_user, existing_assembly):
         """Test regular users cannot edit assemblies."""
@@ -370,7 +370,7 @@ class TestAssemblyWorkflowIntegration:
         )
 
         # Check it appears in list
-        list_response = logged_in_admin.get("/assemblies")
+        list_response = logged_in_admin.get("/dashboard")
         assert list_response.status_code == 200
         assert b"List Test Assembly" in list_response.data
         assert b"Will this appear in the list?" in list_response.data
@@ -383,20 +383,19 @@ class TestAssemblyWorkflowIntegration:
 
         # Should have breadcrumb navigation
         assert b"Dashboard" in response.data or b"dashboard" in response.data
-        assert b"Assemblies" in response.data
 
         # Edit form should also have breadcrumbs
         edit_response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/edit")
         assert edit_response.status_code == 200
-        assert b"Assemblies" in edit_response.data or b"assemblies" in edit_response.data
+        assert b"Dashboard" in response.data or b"dashboard" in response.data
 
 
 class TestAssemblyPermissions:
     """Test assembly permission handling."""
 
-    def test_regular_user_can_view_assemblies_list(self, logged_in_user):
+    def test_regular_user_can_view_assemblies_list_on_dashboard(self, logged_in_user):
         """Test regular users can view assemblies list."""
-        response = logged_in_user.get("/assemblies")
+        response = logged_in_user.get("/dashboard")
         assert response.status_code == 200
         assert b"Assemblies" in response.data
 
@@ -409,6 +408,6 @@ class TestAssemblyPermissions:
     def test_permissions_properly_enforced(self, logged_in_user):
         """Test that permission restrictions are properly enforced."""
         # Regular users should not see create buttons or edit links
-        response = logged_in_user.get("/assemblies")
+        response = logged_in_user.get("/dashboard")
         # This test depends on the implementation - may show different UI for different roles
         assert response.status_code == 200

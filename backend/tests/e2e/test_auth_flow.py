@@ -253,8 +253,8 @@ class TestAuthenticationFlow:
         with client.session_transaction() as sess:
             assert "_user_id" not in sess
 
-    def test_assemblies_view_access(self, client: FlaskClient, regular_user: User):
-        """Test that assemblies view is accessible when logged in."""
+    def test_dashboard_view_access(self, client: FlaskClient, regular_user: User):
+        """Test that dashboard view is accessible when logged in."""
         # Login first
         client.post(
             "/auth/login",
@@ -266,7 +266,7 @@ class TestAuthenticationFlow:
         )
 
         # Access assemblies page
-        response = client.get("/assemblies")
+        response = client.get("/dashboard")
         assert response.status_code == 200
         assert b"Assemblies" in response.data or b"assemblies" in response.data
 

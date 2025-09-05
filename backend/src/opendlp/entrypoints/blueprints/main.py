@@ -45,21 +45,6 @@ def dashboard() -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@main_bp.route("/assemblies")
-@login_required
-def assemblies() -> ResponseReturnValue:
-    """List all assemblies user has access to."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            user_assemblies = get_user_assemblies(uow, current_user.id)
-
-        return render_template("main/assemblies.html", assemblies=user_assemblies), 200
-    except Exception as e:
-        current_app.logger.error(f"Assemblies list error for user {current_user.id}: {e}")
-        return render_template("errors/500.html"), 500
-
-
 @main_bp.route("/assemblies/<uuid:assembly_id>")
 @login_required
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -73,12 +58,12 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
-        return redirect(url_for("main.assemblies"))
+        return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         # TODO: consider change to "Assembly not found" so as not to leak info
         flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("main.assemblies"))
+        return redirect(url_for("main.dashboard"))
     except Exception as e:
         current_app.logger.error(f"View assembly error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
@@ -109,7 +94,7 @@ def create_assembly_page() -> ResponseReturnValue:
         except InsufficientPermissions as e:
             current_app.logger.warning(f"Insufficient permissions to create assembly for user {current_user.id}: {e}")
             flash(_("You don't have permission to create assemblies"), "error")
-            return redirect(url_for("main.assemblies"))
+            return redirect(url_for("main.dashboard"))
         except ValueError as e:
             current_app.logger.error(f"Create assembly validation error for user {current_user.id}: {e}")
             flash(_("Please check your input and try again"), "error")
@@ -165,13 +150,13 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
-        return redirect(url_for("main.assemblies"))
+        return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         current_app.logger.warning(
             f"Insufficient permissions to view assembly {assembly_id} for edit by user {current_user.id}: {e}"
         )
         flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("main.assemblies"))
+        return redirect(url_for("main.dashboard"))
     except Exception as e:
         current_app.logger.error(f"Edit assembly page error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500

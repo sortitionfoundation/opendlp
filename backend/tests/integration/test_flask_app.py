@@ -95,13 +95,6 @@ class TestMainBlueprint:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
-    def test_assemblies_requires_login(self, client: FlaskClient) -> None:
-        """Test assemblies route requires authentication."""
-        response = client.get("/assemblies")
-        # Should redirect to login
-        assert response.status_code == 302
-        assert "/auth/login" in response.location
-
 
 class TestAuthBlueprint:
     """Test auth blueprint routes."""
