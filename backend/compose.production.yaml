@@ -22,6 +22,7 @@ services:
       - "opendlp.entrypoints.flask_app:create_app()"
     networks:
       - opendlp_prod_net
+    restart: always
 
   postgres:
     image: postgres:16
@@ -35,11 +36,13 @@ services:
       - sqla_opendlp_prod_pgdata:/var/lib/postgresql/data
     networks:
       - opendlp_prod_net
+    restart: always
 
   redis:
     image: redis:alpine
     networks:
       - opendlp_prod_net
+    restart: always
 
 networks:
   opendlp_prod_net:
