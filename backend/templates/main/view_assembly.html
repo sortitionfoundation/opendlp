@@ -47,7 +47,7 @@
                     {% if assembly.gsheet_url %}
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _('Google Spreadsheet URL') }}</dt>
-                        <dd class="govuk-summary-list__value">{{ _('Connected') }}</dd>
+                        <dd class="govuk-summary-list__value"><a href="{{ assembly.gsheet_url }}" target="_blank">{{ _('Connected') }}</a></dd>
                     </div>
                     {% endif %}
                     <div class="govuk-summary-list__row">
