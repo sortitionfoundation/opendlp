@@ -7,6 +7,7 @@ from flask_wtf import FlaskForm
 from wtforms import BooleanField, DateField, EmailField, PasswordField, StringField, TextAreaField
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import gettext as _
@@ -158,10 +159,13 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
         render_kw={"rows": 3},
     )
 
-    gsheet = StringField(
-        _l("Google Sheets ID"),
-        validators=[Optional(), Length(max=200)],
-        description=_l("Optional - Google Sheets identifier for data integration"),
+    gsheet_url = StringField(
+        _l("Google Spreadsheet URL"),
+        validators=[
+            Optional(),
+            GoogleSpreadsheetURLValidator(message=_l("Please provide a valid Google Spreadsheet URL")),
+        ],
+        description=_l("Optional - Google Spreadsheet URL for data integration"),
     )
 
     first_assembly_date = DateField(

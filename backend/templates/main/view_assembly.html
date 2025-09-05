@@ -44,9 +44,9 @@
                         <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%d %B %Y') }}</dd>
                     </div>
                     {% endif %}
-                    {% if assembly.gsheet %}
+                    {% if assembly.gsheet_url %}
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Google Sheets') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _('Google Spreadsheet URL') }}</dt>
                         <dd class="govuk-summary-list__value">{{ _('Connected') }}</dd>
                     </div>
                     {% endif %}

@@ -142,7 +142,7 @@ def seed_database(
             assembly_id=uuid.uuid4(),
             title="Sample Citizens' Assembly",
             question="How can we improve public transportation in our city?",
-            gsheet="https://docs.google.com/spreadsheets/d/example",
+            gsheet_url="https://docs.google.com/spreadsheets/d/example",
             status=AssemblyStatus.ACTIVE,
             created_at=now,
             updated_at=now,

@@ -4,6 +4,7 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from datetime import UTC, date, datetime
 
+from .validators import GoogleSpreadsheetURLValidator
 from .value_objects import AssemblyStatus
 
 
@@ -14,7 +15,7 @@ class Assembly:
         self,
         title: str,
         question: str = "",
-        gsheet: str = "",
+        gsheet_url: str = "",
         first_assembly_date: date | None = None,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
@@ -27,7 +28,13 @@ class Assembly:
         self.id = assembly_id or uuid.uuid4()
         self.title = title.strip()
         self.question = question.strip()
-        self.gsheet = gsheet.strip()
+
+        # Validate gsheet_url if provided (empty string is allowed)
+        if gsheet_url.strip():
+            validator = GoogleSpreadsheetURLValidator()
+            validator.validate_str(gsheet_url.strip())
+
+        self.gsheet_url = gsheet_url.strip()
         self.first_assembly_date = first_assembly_date
         self.status = status
         self.created_at = created_at or datetime.now(UTC)
@@ -47,7 +54,7 @@ class Assembly:
         self,
         title: str | None = None,
         question: str | None = None,
-        gsheet: str | None = None,
+        gsheet_url: str | None = None,
         first_assembly_date: date | None = None,
     ) -> None:
         """Update assembly details."""
@@ -59,8 +66,13 @@ class Assembly:
         if question is not None:
             self.question = question.strip()
 
-        if gsheet is not None:
-            self.gsheet = gsheet.strip()
+        if gsheet_url is not None:
+            # Validate gsheet_url if provided (empty string is allowed)
+            if gsheet_url.strip():
+                validator = GoogleSpreadsheetURLValidator()
+                validator.validate_str(gsheet_url.strip())
+
+            self.gsheet_url = gsheet_url.strip()
 
         if first_assembly_date is not None:
             self.first_assembly_date = first_assembly_date
@@ -84,7 +96,7 @@ class Assembly:
         detached_assembly = Assembly(
             title=self.title,
             question=self.question,
-            gsheet=self.gsheet,
+            gsheet_url=self.gsheet_url,
             first_assembly_date=self.first_assembly_date,
             assembly_id=self.id,
             status=self.status,

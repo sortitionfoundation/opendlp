@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.data import VALID_GSHEET_URL
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def existing_assembly(postgres_session_factory, admin_user):
             title="Existing Assembly",
             created_by_user_id=admin_user.id,
             question="What is the existing question?",
-            gsheet="existing-gsheet-id",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
         )
         return assembly.create_detached_copy()
@@ -108,7 +109,7 @@ class TestAssemblyCreateView:
         assert b"Create Assembly" in response.data
         assert b"Assembly Title" in response.data
         assert b"Assembly Question" in response.data
-        assert b"Google Sheets ID" in response.data
+        assert b"Google Spreadsheet URL" in response.data
         assert b"First Assembly Date" in response.data
 
     def test_create_assembly_success(self, logged_in_admin):
@@ -119,7 +120,7 @@ class TestAssemblyCreateView:
             data={
                 "title": "New Test Assembly",
                 "question": "What should we discuss in this assembly?",
-                "gsheet": "test-gsheet-id",
+                "gsheet_url": VALID_GSHEET_URL,
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "csrf_token": _get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
@@ -212,8 +213,8 @@ class TestAssemblyViewDetail:
         assert b"Status" in response.data or b"status" in response.data
         assert b"Created" in response.data or b"created" in response.data
 
-        if existing_assembly.gsheet:
-            assert b"Connected" in response.data  # Template shows "Connected" for gsheet status
+        if existing_assembly.gsheet_url:
+            assert b"Connected" in response.data  # Template shows "Connected" for gsheet_url status
         if existing_assembly.first_assembly_date:
             # Date should be formatted and displayed
             assert str(existing_assembly.first_assembly_date.year).encode() in response.data
@@ -254,7 +255,7 @@ class TestAssemblyEditView:
             data={
                 "title": updated_title,
                 "question": updated_question,
-                "gsheet": "updated-gsheet-id",
+                "gsheet_url": f"{VALID_GSHEET_URL}?some=stuff",
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/edit"),
             },
@@ -316,7 +317,7 @@ class TestAssemblyWorkflowIntegration:
             data={
                 "title": "Workflow Test Assembly",
                 "question": "What should we test?",
-                "gsheet": "workflow-gsheet",
+                "gsheet_url": VALID_GSHEET_URL,
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "csrf_token": _get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
@@ -331,7 +332,7 @@ class TestAssemblyWorkflowIntegration:
         assert view_response.status_code == 200
         assert b"Workflow Test Assembly" in view_response.data
         assert b"What should we test?" in view_response.data
-        assert b"Connected" in view_response.data  # Template shows "Connected" for gsheet status
+        assert b"Connected" in view_response.data  # Template shows "Connected" for gsheet_url status
 
         # Step 3: Edit the assembly
         assembly_id = assembly_url.split("/")[-1]
@@ -341,7 +342,7 @@ class TestAssemblyWorkflowIntegration:
             data={
                 "title": "Updated Workflow Test Assembly",
                 "question": "What should we test after update?",
-                "gsheet": "updated-workflow-gsheet",
+                "gsheet_url": f"{VALID_GSHEET_URL}?some=stuff",
                 "first_assembly_date": updated_date.strftime("%Y-%m-%d"),
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_id}/edit"),
             },

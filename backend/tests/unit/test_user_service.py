@@ -405,13 +405,13 @@ class TestGetUserAssemblies:
         assembly1 = Assembly(
             title="Assembly 1",
             question="Question 1",
-            gsheet="sheet1",
+            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=1),
         )
         assembly2 = Assembly(
             title="Assembly 2",
             question="Question 2",
-            gsheet="sheet2",
+            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=2),
         )
         uow.assemblies.add(assembly1)
@@ -443,7 +443,7 @@ class TestAssignAssemblyRole:
         assembly = Assembly(
             title="Test Assembly",
             question="Test Question",
-            gsheet="sheet",
+            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=1),
         )
         uow.users.add(user)

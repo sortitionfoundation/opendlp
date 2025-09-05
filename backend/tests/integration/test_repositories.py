@@ -17,6 +17,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from tests.data import VALID_GSHEET_URL
 
 
 @pytest.fixture
@@ -131,7 +132,10 @@ class TestUserRepository:
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         user_repo.add(user1)
@@ -207,7 +211,10 @@ class TestAssemblyRepository:
         """Test adding and retrieving an assembly."""
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         assembly_repo.add(assembly)
@@ -224,14 +231,14 @@ class TestAssemblyRepository:
         active_assembly = Assembly(
             title="Active Assembly",
             question="Active question?",
-            gsheet="active-sheet",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
             status=AssemblyStatus.ACTIVE,
         )
         archived_assembly = Assembly(
             title="Archived Assembly",
             question="Archived question?",
-            gsheet="archived-sheet",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
             status=AssemblyStatus.ARCHIVED,
         )
@@ -258,10 +265,10 @@ class TestAssemblyRepository:
 
         # Create assemblies
         assembly1 = Assembly(
-            title="Assembly 1", question="Question 1?", gsheet="sheet1", first_assembly_date=future_date
+            title="Assembly 1", question="Question 1?", gsheet_url=VALID_GSHEET_URL, first_assembly_date=future_date
         )
         assembly2 = Assembly(
-            title="Assembly 2", question="Question 2?", gsheet="sheet2", first_assembly_date=future_date
+            title="Assembly 2", question="Question 2?", gsheet_url=VALID_GSHEET_URL, first_assembly_date=future_date
         )
 
         user_repo.add(admin_user)
@@ -288,10 +295,10 @@ class TestAssemblyRepository:
 
         # Create assemblies
         assembly1 = Assembly(
-            title="Assembly 1", question="Question 1?", gsheet="sheet1", first_assembly_date=future_date
+            title="Assembly 1", question="Question 1?", gsheet_url=VALID_GSHEET_URL, first_assembly_date=future_date
         )
         assembly2 = Assembly(
-            title="Assembly 2", question="Question 2?", gsheet="sheet2", first_assembly_date=future_date
+            title="Assembly 2", question="Question 2?", gsheet_url=VALID_GSHEET_URL, first_assembly_date=future_date
         )
 
         user_repo.add(user)
@@ -316,19 +323,19 @@ class TestAssemblyRepository:
         assembly1 = Assembly(
             title="Climate Change Assembly",
             question="Climate question?",
-            gsheet="sheet1",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
         assembly2 = Assembly(
             title="Healthcare Assembly",
             question="Healthcare question?",
-            gsheet="sheet2",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
         assembly3 = Assembly(
             title="Education Policy Assembly",
             question="Education question?",
-            gsheet="sheet3",
+            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -511,7 +518,10 @@ class TestUserAssemblyRoleRepository:
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         user_repo.add(user)
@@ -537,7 +547,10 @@ class TestUserAssemblyRoleRepository:
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         user_repo.add(user)
@@ -566,7 +579,10 @@ class TestUserAssemblyRoleRepository:
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         user_repo.add(user)

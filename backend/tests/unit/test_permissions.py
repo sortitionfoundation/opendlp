@@ -33,7 +33,7 @@ class TestCanManageAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -51,7 +51,7 @@ class TestCanManageAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -65,7 +65,7 @@ class TestCanManageAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -87,7 +87,7 @@ class TestCanManageAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -109,7 +109,7 @@ class TestCanManageAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -127,7 +127,7 @@ class TestCanViewAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -145,7 +145,7 @@ class TestCanViewAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -159,7 +159,7 @@ class TestCanViewAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -181,7 +181,7 @@ class TestCanViewAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -199,7 +199,7 @@ class TestCanCallConfirmations:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -213,7 +213,7 @@ class TestCanCallConfirmations:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -235,7 +235,7 @@ class TestCanCallConfirmations:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -257,7 +257,7 @@ class TestCanCallConfirmations:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
 
@@ -353,7 +353,7 @@ class TestRequireAssemblyPermissionDecorator:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -376,7 +376,7 @@ class TestRequireAssemblyPermissionDecorator:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -396,7 +396,7 @@ class TestRequireAssemblyPermissionDecorator:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -435,7 +435,7 @@ class TestRequireAssemblyPermissionDecorator:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet="test-sheet",
+            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)

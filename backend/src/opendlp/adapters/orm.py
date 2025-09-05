@@ -140,7 +140,7 @@ assemblies = Table(
     Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
     Column("title", String(255), nullable=False),
     Column("question", Text, nullable=False, default=""),
-    Column("gsheet", String(500), nullable=False, default=""),
+    Column("gsheet_url", String(500), nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
     Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
     Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),

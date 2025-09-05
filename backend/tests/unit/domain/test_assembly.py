@@ -5,6 +5,7 @@ import uuid
 from datetime import date, datetime, timedelta
 
 import pytest
+from wtforms import ValidationError
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyStatus
@@ -17,13 +18,16 @@ class TestAssembly:
         assembly = Assembly(
             title="Climate Assembly",
             question="How should we address climate change?",
-            gsheet="https://docs.google.com/spreadsheets/d/abc123",
+            gsheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit",
             first_assembly_date=future_date,
         )
 
         assert assembly.title == "Climate Assembly"
         assert assembly.question == "How should we address climate change?"
-        assert assembly.gsheet == "https://docs.google.com/spreadsheets/d/abc123"
+        assert (
+            assembly.gsheet_url
+            == "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+        )
         assert assembly.first_assembly_date == future_date
         assert assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(assembly.id, uuid.UUID)
@@ -36,7 +40,7 @@ class TestAssembly:
 
         assert assembly.title == "Minimal Assembly"
         assert assembly.question == ""
-        assert assembly.gsheet == ""
+        assert assembly.gsheet_url == ""
         assert assembly.first_assembly_date is None
         assert assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(assembly.id, uuid.UUID)
@@ -52,7 +56,7 @@ class TestAssembly:
             assembly_id=assembly_id,
             title="Custom Assembly",
             question="Custom question?",
-            gsheet="custom-sheet",
+            gsheet_url="",  # Empty string is allowed
             first_assembly_date=future_date,
             status=AssemblyStatus.ARCHIVED,
             created_at=created_time,
@@ -70,13 +74,16 @@ class TestAssembly:
         assembly = Assembly(
             title="  Spaced Title  ",
             question="  Spaced Question?  ",
-            gsheet="  spaced-sheet  ",
+            gsheet_url="  https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit  ",
             first_assembly_date=future_date,
         )
 
         assert assembly.title == "Spaced Title"
         assert assembly.question == "Spaced Question?"
-        assert assembly.gsheet == "spaced-sheet"
+        assert (
+            assembly.gsheet_url
+            == "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+        )
 
     def test_validate_required_fields(self):
         # Only title is required, empty title should fail
@@ -86,11 +93,11 @@ class TestAssembly:
         with pytest.raises(ValueError, match="Assembly title is required"):
             Assembly(title="   ")
 
-        # Empty question and gsheet should be allowed now
-        assembly = Assembly(title="Valid Title", question="", gsheet="")
+        # Empty question and gsheet_url should be allowed now
+        assembly = Assembly(title="Valid Title", question="", gsheet_url="")
         assert assembly.title == "Valid Title"
         assert assembly.question == ""
-        assert assembly.gsheet == ""
+        assert assembly.gsheet_url == ""
 
     def test_archive(self):
         assembly = Assembly(title="Title")
@@ -146,7 +153,7 @@ class TestAssembly:
         assembly = Assembly(
             title="Original Title",
             question="Original question?",
-            gsheet="original-sheet",
+            gsheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit",
             first_assembly_date=future_date,
         )
 
@@ -160,13 +167,16 @@ class TestAssembly:
         assembly.update_details(
             title="Updated Title",
             question="Updated question?",
-            gsheet="updated-sheet",
+            gsheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing",
             first_assembly_date=new_future_date,
         )
 
         assert assembly.title == "Updated Title"
         assert assembly.question == "Updated question?"
-        assert assembly.gsheet == "updated-sheet"
+        assert (
+            assembly.gsheet_url
+            == "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
+        )
         assert assembly.first_assembly_date == new_future_date
         assert assembly.updated_at > original_updated_at
 
@@ -176,7 +186,7 @@ class TestAssembly:
         assembly = Assembly(
             title="Original Title",
             question="Original question?",
-            gsheet="original-sheet",
+            gsheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit",
             first_assembly_date=future_date,
         )
 
@@ -185,17 +195,27 @@ class TestAssembly:
 
         assert assembly.title == "New Title"
         assert assembly.question == "Original question?"  # Unchanged
-        assert assembly.gsheet == "original-sheet"  # Unchanged
+        assert (
+            assembly.gsheet_url
+            == "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+        )  # Unchanged
         assert assembly.first_assembly_date == future_date  # Unchanged
 
     def test_update_details_strips_whitespace(self):
-        assembly = Assembly(title="Original", question="Original?", gsheet="original")
+        assembly = Assembly(title="Original", question="Original?", gsheet_url="")
 
-        assembly.update_details(title="  New Title  ", question="  New question?  ", gsheet="  new-sheet  ")
+        assembly.update_details(
+            title="  New Title  ",
+            question="  New question?  ",
+            gsheet_url="  https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit  ",
+        )
 
         assert assembly.title == "New Title"
         assert assembly.question == "New question?"
-        assert assembly.gsheet == "new-sheet"
+        assert (
+            assembly.gsheet_url
+            == "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+        )
 
     def test_update_details_validation(self):
         assembly = Assembly(title="Title")
@@ -204,10 +224,10 @@ class TestAssembly:
         with pytest.raises(ValueError, match="Assembly title cannot be empty"):
             assembly.update_details(title="")
 
-        # Empty question and gsheet should be allowed now
-        assembly.update_details(question="", gsheet="")
+        # Empty question and gsheet_url should be allowed now
+        assembly.update_details(question="", gsheet_url="")
         assert assembly.question == ""
-        assert assembly.gsheet == ""
+        assert assembly.gsheet_url == ""
 
     def test_assembly_equality_and_hash(self):
         assembly_id = uuid.uuid4()
@@ -217,7 +237,7 @@ class TestAssembly:
             assembly_id=assembly_id,
             title="Assembly 1",
             question="Question 1?",
-            gsheet="sheet1",
+            gsheet_url="",  # Empty string is allowed
             first_assembly_date=future_date,
         )
 
@@ -225,7 +245,7 @@ class TestAssembly:
             assembly_id=assembly_id,
             title="Assembly 2",  # Different title but same ID
             question="Question 2?",
-            gsheet="sheet2",
+            gsheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit",
             first_assembly_date=future_date,
         )
 
@@ -235,3 +255,39 @@ class TestAssembly:
         assert assembly1 != assembly3  # Different ID
         assert hash(assembly1) == hash(assembly2)
         assert hash(assembly1) != hash(assembly3)
+
+    def test_invalid_gsheet_url_validation(self):
+        """Test that invalid Google Spreadsheet URLs raise ValidationError."""
+        # Invalid URL
+        with pytest.raises(ValidationError, match="Invalid URL"):
+            Assembly(title="Test", gsheet_url="not-a-url")
+
+        # HTTP URL (should be HTTPS)
+        with pytest.raises(ValidationError, match="Google Spreadsheet URLs must use HTTPS"):
+            Assembly(title="Test", gsheet_url="http://docs.google.com/spreadsheets/d/abc123/edit")
+
+        # HTTPS URL that's not a Google Spreadsheet
+        with pytest.raises(ValidationError, match="Invalid Google Spreadsheet URL"):
+            Assembly(title="Test", gsheet_url="https://github.com/some/repo")
+
+    def test_valid_gsheet_url_validation(self):
+        """Test that valid Google Spreadsheet URLs are accepted."""
+        valid_urls = [
+            "",  # Empty string should be allowed
+            "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit",
+            "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0",
+            "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing",
+        ]
+
+        for url in valid_urls:
+            # Should not raise any exception
+            assembly = Assembly(title="Test", gsheet_url=url)
+            assert assembly.gsheet_url == url
+
+    def test_update_details_invalid_gsheet_url(self):
+        """Test that update_details validates gsheet_url."""
+        assembly = Assembly(title="Test")
+
+        # Invalid URL should raise ValidationError
+        with pytest.raises(ValidationError, match="Invalid URL"):
+            assembly.update_details(gsheet_url="not-a-url")

@@ -13,6 +13,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from tests.data import VALID_GSHEET_URL
 
 
 class TestUserORM:
@@ -90,7 +91,10 @@ class TestAssemblyORM:
         future_date = date.today() + timedelta(days=30)
 
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         # Save assembly
@@ -103,7 +107,7 @@ class TestAssemblyORM:
         assert retrieved_assembly is not None
         assert retrieved_assembly.title == "Test Assembly"
         assert retrieved_assembly.question == "Test question?"
-        assert retrieved_assembly.gsheet == "test-sheet"
+        assert retrieved_assembly.gsheet_url == VALID_GSHEET_URL
         assert retrieved_assembly.first_assembly_date == future_date
         assert retrieved_assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(retrieved_assembly.id, uuid.UUID)
@@ -118,7 +122,10 @@ class TestAssemblyORM:
 
         # Create assembly with custom ID to set config
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         postgres_session.add(assembly)
@@ -148,7 +155,10 @@ class TestUserAssemblyRoleORM:
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         postgres_session.add(user)
@@ -281,7 +291,10 @@ class TestRelationships:
 
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
-            title="Test Assembly", question="Test question?", gsheet="test-sheet", first_assembly_date=future_date
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
         )
 
         postgres_session.add(user)

@@ -85,7 +85,7 @@ def create_assembly_page() -> ResponseReturnValue:
                     title=form.title.data,  # type: ignore[arg-type]
                     created_by_user_id=current_user.id,
                     question=form.question.data or "",
-                    gsheet=form.gsheet.data or "",
+                    gsheet_url=form.gsheet_url.data or "",
                     first_assembly_date=form.first_assembly_date.data,
                 )
 
@@ -125,7 +125,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         user_id=current_user.id,
                         title=form.title.data,
                         question=form.question.data or "",
-                        gsheet=form.gsheet.data or "",
+                        gsheet_url=form.gsheet_url.data or "",
                         first_assembly_date=form.first_assembly_date.data,
                     )
 
