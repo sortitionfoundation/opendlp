@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-02 23:13+0100\n"
+"POT-Creation-Date: 2025-09-05 09:12+0100\n"
 "PO-Revision-Date: 2025-09-02 15:00+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -120,7 +120,7 @@ msgstr "Közösségi gyűlések"
 msgid "Enter the title for this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:155 templates/main/view_assembly.html:28
+#: src/opendlp/entrypoints/forms.py:155 templates/main/view_assembly.html:25
 #, fuzzy
 msgid "Assembly Question"
 msgstr "Közösségi gyűlések"
@@ -138,7 +138,7 @@ msgstr "Összekapcsolva a Google Sheets-el"
 msgid "Optional - Google Sheets identifier for data integration"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:168 templates/main/view_assembly.html:46
+#: src/opendlp/entrypoints/forms.py:168 templates/main/view_assembly.html:43
 #, fuzzy
 msgid "First Assembly Date"
 msgstr "Hozzon létre közösségi gyűlést"
@@ -172,46 +172,46 @@ msgstr "A jelszó túl gyenge: %(error)s"
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/main.py:75
-#: src/opendlp/entrypoints/blueprints/main.py:167
+#: src/opendlp/entrypoints/blueprints/main.py:60
+#: src/opendlp/entrypoints/blueprints/main.py:152
 #, fuzzy
 msgid "Assembly not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/main.py:80
-#: src/opendlp/entrypoints/blueprints/main.py:173
+#: src/opendlp/entrypoints/blueprints/main.py:65
+#: src/opendlp/entrypoints/blueprints/main.py:158
 msgid "You don't have permission to view this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:107
+#: src/opendlp/entrypoints/blueprints/main.py:92
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:111
+#: src/opendlp/entrypoints/blueprints/main.py:96
 #, fuzzy
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 
-#: src/opendlp/entrypoints/blueprints/main.py:115
-#: src/opendlp/entrypoints/blueprints/main.py:159
+#: src/opendlp/entrypoints/blueprints/main.py:100
+#: src/opendlp/entrypoints/blueprints/main.py:144
 msgid "Please check your input and try again"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:118
+#: src/opendlp/entrypoints/blueprints/main.py:103
 msgid "An error occurred while creating the assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:147
+#: src/opendlp/entrypoints/blueprints/main.py:132
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:153
+#: src/opendlp/entrypoints/blueprints/main.py:138
 msgid "You don't have permission to edit this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:162
+#: src/opendlp/entrypoints/blueprints/main.py:147
 msgid "An error occurred while updating the assembly"
 msgstr ""
 
@@ -286,57 +286,49 @@ msgstr "Sortition Foundation Logo"
 msgid "Menu<"
 msgstr "Menü"
 
-#: templates/base.html:36 templates/base.html:67
+#: templates/base.html:36 templates/base.html:62
 msgid "Close menu"
 msgstr "Menü bezárása"
 
 #: templates/base.html:41 templates/errors/404.html:24
-#: templates/errors/500.html:24 templates/main/assemblies.html:12
-#: templates/main/create_assembly.html:12 templates/main/dashboard.html:3
-#: templates/main/dashboard.html:10 templates/main/edit_assembly.html:12
-#: templates/main/view_assembly.html:12
+#: templates/errors/500.html:24 templates/main/create_assembly.html:12
+#: templates/main/dashboard.html:3 templates/main/dashboard.html:10
+#: templates/main/edit_assembly.html:12 templates/main/view_assembly.html:12
 msgid "Dashboard"
 msgstr "Irányító pult"
 
-#: templates/base.html:46 templates/main/assemblies.html:3
-#: templates/main/assemblies.html:15 templates/main/assemblies.html:23
-#: templates/main/create_assembly.html:15 templates/main/edit_assembly.html:15
-#: templates/main/view_assembly.html:15
-msgid "Assemblies"
-msgstr "Közösségi gyűlések"
-
-#: templates/base.html:51 templates/base.html:77
+#: templates/base.html:46 templates/base.html:72
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/base.html:56
+#: templates/base.html:51
 msgid "Sign out"
 msgstr "Kilépés"
 
-#: templates/base.html:64
+#: templates/base.html:59
 msgid "Menu"
 msgstr "Menü"
 
 #: templates/auth/login.html:3 templates/auth/login.html:8
 #: templates/auth/login.html:50 templates/auth/register.html:138
-#: templates/base.html:72 templates/errors/404.html:28
+#: templates/base.html:67 templates/errors/404.html:28
 #: templates/errors/500.html:28 templates/main/index.html:18
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
-#: templates/base.html:94
+#: templates/base.html:89
 msgid "There is a problem"
 msgstr "Valami probléma van"
 
-#: templates/base.html:113
+#: templates/base.html:108
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:113
+#: templates/base.html:108
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/base.html:149
+#: templates/base.html:144
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -445,82 +437,20 @@ msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer "
 "adminisztrátoroddal."
 
-#: templates/main/assemblies.html:24
-#, fuzzy
-msgid "Manage and view your citizens' assemblies."
-msgstr "Közösségi gyűlések"
-
-#: templates/main/assemblies.html:32 templates/main/create_assembly.html:3
-#: templates/main/create_assembly.html:18
-#: templates/main/create_assembly.html:23
-#: templates/main/create_assembly.html:106
+#: templates/main/create_assembly.html:3 templates/main/create_assembly.html:15
+#: templates/main/create_assembly.html:20
+#: templates/main/create_assembly.html:103 templates/main/dashboard.html:48
 msgid "Create Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/main/assemblies.html:56 templates/main/view_assembly.html:35
-#, fuzzy
-msgid "Status"
-msgstr "Kezdés"
-
-#: templates/main/assemblies.html:62 templates/main/dashboard.html:56
-#: templates/main/view_assembly.html:41
-msgid "Created"
-msgstr "Létrehozva"
-
-#: templates/main/assemblies.html:67 templates/main/dashboard.html:61
-msgid "Starts"
-msgstr "Kezdés"
-
-#: templates/main/assemblies.html:73 templates/main/view_assembly.html:52
-#, fuzzy
-msgid "Google Sheets"
-msgstr "Összekapcsolva a Google Sheets-el"
-
-#: templates/main/assemblies.html:74 templates/main/view_assembly.html:53
-#, fuzzy
-msgid "Connected"
-msgstr "Létrehozva"
-
-#: templates/main/assemblies.html:82
-msgid "View Details"
-msgstr "Részletek mutatása"
-
-#: templates/main/assemblies.html:86 templates/main/edit_assembly.html:21
-msgid "Edit"
-msgstr ""
-
-#: templates/main/assemblies.html:95
-#, fuzzy
-msgid "You don't have access to any assemblies"
-msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
-
-#: templates/main/assemblies.html:96
-msgid "There are no assemblies available for you to view at the moment."
-msgstr ""
-
-#: templates/main/assemblies.html:98 templates/main/dashboard.html:75
-#, python-format
-msgid "As a %(role)s, you can create new assemblies."
-msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
-
-#: templates/main/assemblies.html:102
-msgid "Create Your First Assembly"
-msgstr "Hozd létre az első közösségi gyűlésedet"
-
-#: templates/main/assemblies.html:105
-msgid "Contact an administrator to be added to an assembly."
-msgstr ""
-"Lépj kapcsolatba egy adminisztrátorral, hogy adjon hozzáférést egy "
-"közösségi gyűléshez."
-
-#: templates/main/create_assembly.html:25
+#: templates/main/create_assembly.html:22
 msgid ""
 "Create a new citizens' assembly to begin the selection and deliberation "
 "process."
 msgstr ""
 
-#: templates/main/create_assembly.html:108
-#: templates/main/edit_assembly.html:111
+#: templates/main/create_assembly.html:105
+#: templates/main/edit_assembly.html:108
 msgid "Cancel"
 msgstr ""
 
@@ -536,33 +466,50 @@ msgstr "Szereped/jogosultságod"
 msgid "Active Assemblies"
 msgstr "Aktív gyűlések"
 
-#: templates/main/dashboard.html:39
+#: templates/main/dashboard.html:40
 msgid "Your Assemblies"
 msgstr "Gyűléseid"
 
-#: templates/main/dashboard.html:41
-msgid "View All"
-msgstr "Mutasd mindet"
+#: templates/main/dashboard.html:66 templates/main/view_assembly.html:38
+msgid "Created"
+msgstr "Létrehozva"
 
-#: templates/main/dashboard.html:72
+#: templates/main/dashboard.html:71
+msgid "Starts"
+msgstr "Kezdés"
+
+#: templates/main/dashboard.html:79
+msgid "View Details"
+msgstr "Részletek mutatása"
+
+#: templates/main/dashboard.html:83 templates/main/edit_assembly.html:18
+msgid "Edit"
+msgstr ""
+
+#: templates/main/dashboard.html:92
 msgid "No assemblies yet"
 msgstr "Még nincsenek gyűlések"
 
-#: templates/main/dashboard.html:73
+#: templates/main/dashboard.html:93
 msgid "You don't have access to any assemblies at the moment."
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 
-#: templates/main/edit_assembly.html:3 templates/main/edit_assembly.html:26
-#: templates/main/view_assembly.html:65
+#: templates/main/dashboard.html:95
+#, python-format
+msgid "As a %(role)s, you can create new assemblies."
+msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
+
+#: templates/main/edit_assembly.html:3 templates/main/edit_assembly.html:23
+#: templates/main/view_assembly.html:62
 #, fuzzy
 msgid "Edit Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/main/edit_assembly.html:28
+#: templates/main/edit_assembly.html:25
 msgid "Update the details for this citizens' assembly."
 msgstr ""
 
-#: templates/main/edit_assembly.html:109
+#: templates/main/edit_assembly.html:106
 msgid "Save Changes"
 msgstr ""
 
@@ -646,15 +593,30 @@ msgstr ""
 "demokratikus részvételt.\n"
 "                Ez egy projekt a"
 
-#: templates/main/view_assembly.html:57
+#: templates/main/view_assembly.html:32
+#, fuzzy
+msgid "Status"
+msgstr "Kezdés"
+
+#: templates/main/view_assembly.html:49
+#, fuzzy
+msgid "Google Sheets"
+msgstr "Összekapcsolva a Google Sheets-el"
+
+#: templates/main/view_assembly.html:50
+#, fuzzy
+msgid "Connected"
+msgstr "Létrehozva"
+
+#: templates/main/view_assembly.html:54
 #, fuzzy
 msgid "Last Updated"
 msgstr "Vezetéknév"
 
-#: templates/main/view_assembly.html:69
+#: templates/main/view_assembly.html:66
 #, fuzzy
-msgid "Back to Assemblies"
-msgstr "Aktív gyűlések"
+msgid "Back to Dashboard"
+msgstr "Irányító pult"
 
 #: tests/unit/test_translations.py:16 tests/unit/test_translations.py:41
 msgid "Login"
@@ -666,7 +628,7 @@ msgid "User with username %(username)s already exists"
 msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 
 #~ msgid "Assemblies"
-#~ msgstr "Gyűlések"
+#~ msgstr "Közösségi gyűlések"
 
 #~ msgid "Sortition Lab"
 #~ msgstr "Sortition Lab"
@@ -700,3 +662,26 @@ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 
 #~ msgid "No assemblies found"
 #~ msgstr "Egy gyűlést sem talált"
+
+#~ msgid "Manage and view your citizens' assemblies."
+#~ msgstr "Közösségi gyűlések"
+
+#~ msgid "You don't have access to any assemblies"
+#~ msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
+
+#~ msgid "There are no assemblies available for you to view at the moment."
+#~ msgstr ""
+
+#~ msgid "Create Your First Assembly"
+#~ msgstr "Hozd létre az első közösségi gyűlésedet"
+
+#~ msgid "Contact an administrator to be added to an assembly."
+#~ msgstr ""
+#~ "Lépj kapcsolatba egy adminisztrátorral, hogy"
+#~ " adjon hozzáférést egy közösségi gyűléshez."
+
+#~ msgid "View All"
+#~ msgstr "Mutasd mindet"
+
+#~ msgid "Back to Assemblies"
+#~ msgstr "Aktív gyűlések"
