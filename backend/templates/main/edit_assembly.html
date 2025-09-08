@@ -20,6 +20,27 @@
                 </ol>
             </div>
 
+            {% if form.errors %}
+            <div class="govuk-error-summary" data-module="govuk-error-summary">
+                <div role="alert">
+                    <h2 class="govuk-error-summary__title">
+                        {{ _('There is a problem') }}
+                    </h2>
+                    <div class="govuk-error-summary__body">
+                        <ul class="govuk-list govuk-error-summary__list">
+                            {% for field_name, errors in form.errors.items() %}
+                                {% for error in errors %}
+                                <li>
+                                    <a href="#{{ form[field_name].id }}">{{ error }}</a>
+                                </li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Edit Assembly') }}</h1>
 
             <p class="govuk-body">{{ _('Update the details for this citizens\' assembly.') }}</p>
