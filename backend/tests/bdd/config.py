@@ -22,6 +22,7 @@ class Urls:
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
         "update_assembly": "{base}/assemblies/{assembly_id}/edit",
+        "gsheet_select": "{base}/assemblies/{assembly_id}/gsheet_select",
     }
 
     @classmethod

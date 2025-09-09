@@ -120,10 +120,12 @@ def admin_user(test_database):
 def assembly_creator(test_database, admin_user):
     """Create assembly for testing"""
 
-    def _create_assembly(title: str, question: str = "") -> Assembly:
+    def _create_assembly(title: str, question: str = "", gsheet_url: str = "") -> Assembly:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, question=question)
+        assembly = create_assembly(
+            uow=uow, title=title, created_by_user_id=admin_user.id, question=question, gsheet_url=gsheet_url
+        )
         return assembly
 
     return _create_assembly

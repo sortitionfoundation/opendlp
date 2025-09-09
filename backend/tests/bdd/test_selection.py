@@ -1,0 +1,52 @@
+"""Democratic Lottery part 2 feature tests."""
+
+from playwright.sync_api import Page, expect
+from pytest_bdd import given, scenarios, then, when
+
+from tests.bdd.config import Urls
+from tests.bdd.helpers import check_follow_link
+from tests.data import VALID_GSHEET_URL
+
+scenarios("../../features/selection.feature")
+
+
+@given("people are registered")
+def _():
+    """people are registered."""
+    # For this version, the registrants details are in the GSheet
+    pass
+
+
+@given('that the assembly is set up for "manual gsheet setup"', target_fixture="assembly_to_select")
+def _(assembly_creator):
+    """that the assembly is set up for "manual gsheet setup"."""
+    assembly = assembly_creator("Assembly to select", gsheet_url=VALID_GSHEET_URL)
+    return assembly
+
+
+@when('I open the Assembly with "manual gsheet setup"')
+def _(page: Page, assembly_to_select):
+    """I open the Assembly with "manual gsheet setup"."""
+    link_url = Urls.for_assembly("view_assembly", assembly_to_select.id)
+    check_follow_link(page, link_name="Start Selection (Google Spreadsheet)", link_url=link_url)
+
+
+@then('I can configure the options for selection in "manual gsheet setup"')
+def _(page: Page):
+    """I can configure the options for selection in "manual gsheet setup"."""
+    generate_remaining = page.get_by_label("Generate remaining tab")
+    expect(generate_remaining).to_be_visible()
+
+
+@then('I can specify the categories and targets in "manual gsheet setup"')
+def _(page: Page):
+    """I can specify the categories and targets in "manual gsheet setup"."""
+    categories_field = page.get_by_label("Google Spreadsheet categories tab")
+    expect(categories_field).to_be_visible()
+
+
+@then('I can specify the source of the respondents data in "manual gsheet setup"')
+def _(page: Page):
+    """I can specify the source of the respondents data in "manual gsheet setup"."""
+    respondents_field = page.get_by_label("Google Spreadsheet respondents tab")
+    expect(respondents_field).to_be_visible()
