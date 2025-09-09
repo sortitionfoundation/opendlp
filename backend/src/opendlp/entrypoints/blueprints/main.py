@@ -17,7 +17,7 @@ from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
-from ..forms import CreateAssemblyForm, EditAssemblyForm
+from ..forms import CreateAssemblyForm, EditAssemblyForm, GsheetSelectionForm
 
 main_bp = Blueprint("main", __name__)
 
@@ -66,6 +66,37 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
     except Exception as e:
         current_app.logger.error(f"View assembly error for assembly {assembly_id} user {current_user.id}: {e}")
+        return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
+@login_required
+def gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Configure Google Spreadsheet selection for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Check if assembly has a valid gsheet URL
+        if not assembly.gsheet_url:
+            flash(_("Please configure a Google Spreadsheet URL before running selection"), "error")
+            return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+
+        form = GsheetSelectionForm()
+        return render_template("main/gsheet_select.html", assembly=assembly, form=form), 200
+    except ValueError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for gsheet select by user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for gsheet select on assembly {assembly_id} by user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to configure selection for this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Gsheet select error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
 
 

@@ -181,3 +181,27 @@ class CreateAssemblyForm(AssemblyForm):
 
 class EditAssemblyForm(AssemblyForm):
     """Form specifically for editing assemblies."""
+
+
+class GsheetSelectionForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for configuring Google Spreadsheet selection parameters."""
+
+    respondents_tab = StringField(
+        _l("Google Spreadsheet respondents tab"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        description=_l("Name of the tab containing respondent data in the Google Spreadsheet"),
+        default="Respondents",
+    )
+
+    categories_tab = StringField(
+        _l("Google Spreadsheet categories tab"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        description=_l("Name of the tab containing categories, category values and targets"),
+        default="Categories",
+    )
+
+    generate_remaining = BooleanField(
+        _l("Generate remaining tab"),
+        description=_l("Create a tab with remaining participants after selection"),
+        default=True,
+    )

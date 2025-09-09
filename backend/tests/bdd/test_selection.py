@@ -4,7 +4,6 @@ from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
 
 from tests.bdd.config import Urls
-from tests.bdd.helpers import check_follow_link
 from tests.data import VALID_GSHEET_URL
 
 scenarios("../../features/selection.feature")
@@ -25,10 +24,17 @@ def _(assembly_creator):
 
 
 @when('I open the Assembly with "manual gsheet setup"')
-def _(page: Page, assembly_to_select):
+def _(logged_in_page: Page, assembly_to_select):
     """I open the Assembly with "manual gsheet setup"."""
-    link_url = Urls.for_assembly("view_assembly", assembly_to_select.id)
-    check_follow_link(page, link_name="Start Selection (Google Spreadsheet)", link_url=link_url)
+    # First navigate to the assembly view page
+    view_url = Urls.for_assembly("view_assembly", assembly_to_select.id)
+    logged_in_page.goto(view_url)
+
+    # Then check that the Start Selection link goes to the gsheet_select page
+    link = logged_in_page.get_by_role("link", name="Start Selection (Google Spreadsheet)")
+    expect(link).to_be_visible()
+    link.click()
+    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", assembly_to_select.id))
 
 
 @then('I can configure the options for selection in "manual gsheet setup"')

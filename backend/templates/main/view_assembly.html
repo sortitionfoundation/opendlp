@@ -61,6 +61,21 @@
                        class="govuk-button">
                         {{ _('Edit Assembly') }}
                     </a>
+
+                    {% if assembly.gsheet_url %}
+                    <a href="{{ url_for('main.gsheet_select', assembly_id=assembly.id) }}"
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Start Selection (Google Spreadsheet)') }}
+                    </a>
+                    {% else %}
+                    <button class="govuk-button govuk-button--secondary" disabled>
+                        {{ _('Start Selection (Google Spreadsheet)') }}
+                    </button>
+                    <p class="govuk-body govuk-!-margin-top-2">
+                        <strong>{{ _('To enable selection:') }}</strong> {{ _('Configure a Google Spreadsheet URL by editing the assembly.') }}
+                    </p>
+                    {% endif %}
+
                     <a href="{{ url_for('main.dashboard') }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Back to Dashboard') }}

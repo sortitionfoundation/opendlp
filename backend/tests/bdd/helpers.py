@@ -3,6 +3,7 @@ from playwright.sync_api import Page, expect
 
 def check_follow_link(page: Page, link_name: str, link_url: str) -> None:
     """
+    This allows us to check links which open in a new tab - eg with `target="_blank"`
     - Find a link in the page,
     - check following it leads to an expected URL,
     - have the main page object actually go to that URL.
