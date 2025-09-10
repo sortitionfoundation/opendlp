@@ -2,7 +2,7 @@ from playwright.sync_api import Page, expect
 from pytest_bdd import scenarios, then, when
 
 from tests.bdd.config import Urls
-from tests.bdd.helpers import check_follow_url
+from tests.bdd.helpers import check_follow_link
 
 scenarios("../../features/user-data-agreement.feature")
 
@@ -13,7 +13,7 @@ scenarios("../../features/user-data-agreement.feature")
 @when("the user goes to the data agreement")
 def _(page: Page):
     """the user goes to the data agreement."""
-    check_follow_url(page, link_name="View data agreement", link_url=Urls.user_data_agreement)
+    check_follow_link(page, link_name="View data agreement", link_url=Urls.user_data_agreement)
 
 
 @then("the user sees the data agreement text")
