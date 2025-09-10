@@ -56,34 +56,26 @@
                     <div class="govuk-grid-row assembly-cards-container">
                         {% for assembly in assemblies %}
                             <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
-                                <div class="assembly-card">
-                                    <h3 class="govuk-heading-m">{{ assembly.title }}</h3>
-                                    {% if assembly.question %}
-                                        <p class="govuk-body-s">{{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}</p>
-                                    {% endif %}
-                                    <dl class="govuk-summary-list">
-                                        <div class="govuk-summary-list__row">
-                                          <dt class="govuk-summary-list__key">{{ _('Created') }}</dt>
-                                            <dd class="govuk-summary-list__value">{{ assembly.created_at.strftime('%b %d, %Y') }}</dd>
-                                        </div>
-                                        {% if assembly.first_assembly_date %}
-                                        <div class="govuk-summary-list__row">
-                                          <dt class="govuk-summary-list__key">{{ _('Starts') }}</dt>
-                                            <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%b %d') }}</dd>
-                                        </div>
+                                <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}" class="assembly-card-link">
+                                    <div class="assembly-card">
+                                        <h3 class="govuk-heading-m">{{ assembly.title }}</h3>
+                                        {% if assembly.question %}
+                                            <p class="govuk-body-s">{{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}</p>
                                         {% endif %}
-                                    </dl>
-                                    <div class="govuk-button-group">
-                                        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-                                          class="govuk-button govuk-button--secondary">
-                                            {{ _('View Details') }}
-                                        </a>
-                                        <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}"
-                                          class="govuk-button govuk-button--secondary">
-                                            {{ _('Edit') }}
-                                        </a>
+                                        <dl class="govuk-summary-list">
+                                            <div class="govuk-summary-list__row">
+                                              <dt class="govuk-summary-list__key">{{ _('Created') }}</dt>
+                                                <dd class="govuk-summary-list__value">{{ assembly.created_at.strftime('%b %d, %Y') }}</dd>
+                                            </div>
+                                            {% if assembly.first_assembly_date %}
+                                            <div class="govuk-summary-list__row">
+                                              <dt class="govuk-summary-list__key">{{ _('Starts') }}</dt>
+                                                <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%b %d') }}</dd>
+                                            </div>
+                                            {% endif %}
+                                        </dl>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         {% endfor %}
                     </div>
