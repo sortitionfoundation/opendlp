@@ -91,13 +91,13 @@ Or use `APPLICATION_ROOT` in the Flask app configuration.
 When using Docker with subpath deployment:
 
 ```dockerfile
-# Set environment variable in Dockerfile or docker-compose.yml
+# Set environment variable in Dockerfile or compose.yaml
 ENV APPLICATION_ROOT=/opendlp
 ```
 
 ```yaml
-# docker-compose.yml
-version: '3.8'
+# compose.yaml
+version: "3.8"
 services:
   opendlp:
     build: .
@@ -194,13 +194,13 @@ set -e
 pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Stop application
-docker-compose down opendlp
+docker compose down opendlp
 
 # Run migrations
 uv run alembic upgrade head
 
 # Start new application version
-docker-compose up -d opendlp
+docker compose up -d opendlp
 ```
 
 ### Migration Rollback
@@ -232,8 +232,7 @@ uv run alembic revision -m "manual migration description"
 For Docker deployments, run migrations as part of your deployment process:
 
 ```yaml
-# docker-compose.yml - run migrations before starting app
-version: '3.8'
+# compose.yaml - run migrations before starting app
 services:
   opendlp:
     build: .
@@ -261,6 +260,12 @@ services:
     depends_on:
       - migrate
     command: uv run flask run --host=0.0.0.0
+```
+
+Or you could run commands outside, perhaps using ansible, once docker compose is already up.
+
+```sh
+docker compose -f compose.production.yaml exec app /app/bin/alembic upgrade head
 ```
 
 ## Further Reading
