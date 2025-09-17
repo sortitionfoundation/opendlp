@@ -20,10 +20,10 @@ class Assembly:
         self,
         title: str,
         question: str = "",
-        gsheet_url: str = "",
         first_assembly_date: date | None = None,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
+        gsheet: "AssemblyGSheet | None" = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
@@ -34,14 +34,9 @@ class Assembly:
         self.title = title.strip()
         self.question = question.strip()
 
-        # Validate gsheet_url if provided (empty string is allowed)
-        if gsheet_url.strip():
-            validator = GoogleSpreadsheetURLValidator()
-            validator.validate_str(gsheet_url.strip())
-
-        self.gsheet_url = gsheet_url.strip()
         self.first_assembly_date = first_assembly_date
         self.status = status
+        self.gsheet = gsheet
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
@@ -59,7 +54,6 @@ class Assembly:
         self,
         title: str | None = None,
         question: str | None = None,
-        gsheet_url: str | None = None,
         first_assembly_date: date | None = None,
     ) -> None:
         """Update assembly details."""
@@ -70,14 +64,6 @@ class Assembly:
 
         if question is not None:
             self.question = question.strip()
-
-        if gsheet_url is not None:
-            # Validate gsheet_url if provided (empty string is allowed)
-            if gsheet_url.strip():
-                validator = GoogleSpreadsheetURLValidator()
-                validator.validate_str(gsheet_url.strip())
-
-            self.gsheet_url = gsheet_url.strip()
 
         if first_assembly_date is not None:
             self.first_assembly_date = first_assembly_date
@@ -101,10 +87,10 @@ class Assembly:
         detached_assembly = Assembly(
             title=self.title,
             question=self.question,
-            gsheet_url=self.gsheet_url,
             first_assembly_date=self.first_assembly_date,
             assembly_id=self.id,
             status=self.status,
+            gsheet=self.gsheet,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )

@@ -405,13 +405,11 @@ class TestGetUserAssemblies:
         assembly1 = Assembly(
             title="Assembly 1",
             question="Question 1",
-            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=1),
         )
         assembly2 = Assembly(
             title="Assembly 2",
             question="Question 2",
-            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=2),
         )
         uow.assemblies.add(assembly1)
@@ -428,7 +426,7 @@ class TestGetUserAssemblies:
         """Test error when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match="User .* not found"):
+        with pytest.raises(ValueError, match=r"User .* not found"):
             user_service.get_user_assemblies(uow=uow, user_id=uuid.uuid4())
 
 
@@ -443,7 +441,6 @@ class TestAssignAssemblyRole:
         assembly = Assembly(
             title="Test Assembly",
             question="Test Question",
-            gsheet_url="",
             first_assembly_date=date.today() + timedelta(days=1),
         )
         uow.users.add(user)
@@ -465,7 +462,7 @@ class TestAssignAssemblyRole:
         """Test role assignment fails when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match="User .* not found"):
+        with pytest.raises(ValueError, match=r"User .* not found"):
             user_service.assign_assembly_role(
                 uow=uow,
                 user_id=uuid.uuid4(),

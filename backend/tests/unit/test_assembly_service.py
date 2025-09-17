@@ -11,7 +11,6 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import assembly_service
 from opendlp.service_layer.exceptions import InsufficientPermissions
-from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeUnitOfWork
 
 
@@ -31,13 +30,11 @@ class TestCreateAssembly:
             title="Test Assembly",
             created_by_user_id=admin_user.id,
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
         assert assembly.title == "Test Assembly"
         assert assembly.question == "Test question?"
-        assert assembly.gsheet_url == VALID_GSHEET_URL
         assert assembly.first_assembly_date == future_date
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.list()) == 1
@@ -60,7 +57,6 @@ class TestCreateAssembly:
             title="Test Assembly",
             created_by_user_id=organiser_user.id,
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -81,7 +77,6 @@ class TestCreateAssembly:
                 title="Test Assembly",
                 created_by_user_id=regular_user.id,
                 question="Test question?",
-                gsheet_url="",  # Empty is allowed
                 first_assembly_date=future_date,
             )
 
@@ -96,7 +91,6 @@ class TestCreateAssembly:
                 title="Test Assembly",
                 created_by_user_id=uuid.uuid4(),
                 question="Test question?",
-                gsheet_url="",  # Empty is allowed
                 first_assembly_date=future_date,
             )
 
@@ -116,7 +110,6 @@ class TestCreateAssembly:
 
         assert assembly.title == "Minimal Assembly"
         assert assembly.question == ""
-        assert assembly.gsheet_url == ""
         assert assembly.first_assembly_date is None
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.list()) == 1
@@ -136,7 +129,6 @@ class TestUpdateAssembly:
         assembly = Assembly(
             title="Original Title",
             question="Original question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -151,7 +143,6 @@ class TestUpdateAssembly:
 
         assert updated_assembly.title == "Updated Title"
         assert updated_assembly.question == "Updated question?"
-        assert updated_assembly.gsheet_url == VALID_GSHEET_URL
         assert uow.committed
 
     def test_update_assembly_success_assembly_manager(self):
@@ -164,7 +155,6 @@ class TestUpdateAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -194,7 +184,6 @@ class TestUpdateAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -232,7 +221,6 @@ class TestGetAssemblyWithPermissions:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -253,7 +241,6 @@ class TestGetAssemblyWithPermissions:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -282,7 +269,6 @@ class TestGetAssemblyWithPermissions:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -304,7 +290,6 @@ class TestArchiveAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -324,7 +309,6 @@ class TestArchiveAssembly:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         uow.assemblies.add(assembly)
@@ -347,13 +331,11 @@ class TestGetUserAccessibleAssemblies:
         assembly1 = Assembly(
             title="Assembly 1",
             question="Question 1?",
-            gsheet_url="",
             first_assembly_date=future_date,
         )
         assembly2 = Assembly(
             title="Assembly 2",
             question="Question 2?",
-            gsheet_url="",
             first_assembly_date=future_date + timedelta(days=1),
         )
         uow.assemblies.add(assembly1)

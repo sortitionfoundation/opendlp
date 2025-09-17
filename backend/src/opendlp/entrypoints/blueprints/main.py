@@ -78,10 +78,10 @@ def gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        # Check if assembly has a valid gsheet URL
-        if not assembly.gsheet_url:
-            flash(_("Please configure a Google Spreadsheet URL before running selection"), "error")
-            return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        # TODO: Check if assembly has a valid gsheet URL
+        # if not assembly.gsheet.url:
+        # flash(_("Please configure a Google Spreadsheet URL before running selection"), "error")
+        # return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
 
         form = GsheetSelectionForm()
         return render_template("main/gsheet_select.html", assembly=assembly, form=form), 200
@@ -116,7 +116,6 @@ def create_assembly_page() -> ResponseReturnValue:
                     title=form.title.data,  # type: ignore[arg-type]
                     created_by_user_id=current_user.id,
                     question=form.question.data or "",
-                    gsheet_url=form.gsheet_url.data or "",
                     first_assembly_date=form.first_assembly_date.data,
                 )
 
@@ -156,7 +155,6 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         user_id=current_user.id,
                         title=form.title.data,
                         question=form.question.data or "",
-                        gsheet_url=form.gsheet_url.data or "",
                         first_assembly_date=form.first_assembly_date.data,
                     )
 

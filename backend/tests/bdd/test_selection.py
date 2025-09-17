@@ -4,7 +4,6 @@ from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
 
 from tests.bdd.config import Urls
-from tests.data import VALID_GSHEET_URL
 
 scenarios("../../features/selection.feature")
 
@@ -19,7 +18,9 @@ def _():
 @given('that the assembly is set up for "manual gsheet setup"', target_fixture="assembly_to_select")
 def _(assembly_creator):
     """that the assembly is set up for "manual gsheet setup"."""
-    assembly = assembly_creator("Assembly to select", gsheet_url=VALID_GSHEET_URL)
+    # TODO: do this properly with a google sheet
+    # assembly = assembly_creator("Assembly to select", gsheet_url=VALID_GSHEET_URL)
+    assembly = assembly_creator("Assembly to select")
     return assembly
 
 

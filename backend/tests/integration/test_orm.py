@@ -93,7 +93,6 @@ class TestAssemblyORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -107,7 +106,6 @@ class TestAssemblyORM:
         assert retrieved_assembly is not None
         assert retrieved_assembly.title == "Test Assembly"
         assert retrieved_assembly.question == "Test question?"
-        assert retrieved_assembly.gsheet_url == VALID_GSHEET_URL
         assert retrieved_assembly.first_assembly_date == future_date
         assert retrieved_assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(retrieved_assembly.id, uuid.UUID)
@@ -124,7 +122,6 @@ class TestAssemblyORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -157,7 +154,6 @@ class TestUserAssemblyRoleORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -293,7 +289,6 @@ class TestRelationships:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -350,7 +345,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -401,7 +395,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -438,7 +431,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -491,7 +483,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -524,7 +515,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -564,7 +554,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Test Assembly",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 
@@ -600,7 +589,6 @@ class TestAssemblyGSheetORM:
         assembly = Assembly(
             title="Assembly Without GSheet",
             question="Test question?",
-            gsheet_url=VALID_GSHEET_URL,
             first_assembly_date=future_date,
         )
 

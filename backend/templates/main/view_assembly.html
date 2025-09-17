@@ -44,12 +44,6 @@
                         <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%d %B %Y') }}</dd>
                     </div>
                     {% endif %}
-                    {% if assembly.gsheet_url %}
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Google Spreadsheet URL') }}</dt>
-                        <dd class="govuk-summary-list__value"><a href="{{ assembly.gsheet_url }}" target="_blank">{{ _('Connected') }}</a></dd>
-                    </div>
-                    {% endif %}
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _('Last Updated') }}</dt>
                         <dd class="govuk-summary-list__value">{{ assembly.updated_at.strftime('%d %B %Y at %H:%M') }}</dd>
@@ -62,7 +56,7 @@
                         {{ _('Edit Assembly') }}
                     </a>
 
-                    {% if assembly.gsheet_url %}
+                    {% if assembly.gsheet.url %}
                     <a href="{{ url_for('main.gsheet_select', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Start Selection (Google Spreadsheet)') }}

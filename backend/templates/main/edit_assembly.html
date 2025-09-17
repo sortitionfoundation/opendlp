@@ -104,24 +104,6 @@
                     {{ form.first_assembly_date(class="govuk-input govuk-date-input__input govuk-input--width-10" + (" govuk-input--error" if form.first_assembly_date.errors else "")) }}
                 </div>
 
-                <div class="govuk-form-group {% if form.gsheet_url.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.gsheet_url.id }}">
-                        {{ form.gsheet_url.label.text }}
-                    </label>
-                    {% if form.gsheet_url.description %}
-                    <div class="govuk-hint">
-                        {{ form.gsheet_url.description }}
-                    </div>
-                    {% endif %}
-                    {% if form.gsheet_url.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.gsheet_url.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.gsheet_url(class="govuk-input" + (" govuk-input--error" if form.gsheet_url.errors else "")) }}
-                </div>
-
                 <div class="govuk-button-group">
                     <button type="submit" class="govuk-button" data-module="govuk-button">
                         {{ _('Save Changes') }}

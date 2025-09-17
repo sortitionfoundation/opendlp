@@ -19,7 +19,6 @@ def create_assembly(
     title: str,
     created_by_user_id: uuid.UUID,
     question: str = "",
-    gsheet_url: str = "",
     first_assembly_date: date | None = None,
 ) -> Assembly:
     """
@@ -30,7 +29,6 @@ def create_assembly(
         title: Assembly title (required)
         created_by_user_id: ID of user creating the assembly
         question: Assembly question (optional, defaults to empty string)
-        gsheet_url: Google Spreadsheet URL (optional, defaults to empty string)
         first_assembly_date: Date of first assembly meeting (optional)
 
     Returns:
@@ -53,7 +51,6 @@ def create_assembly(
         assembly = Assembly(
             title=title,
             question=question,
-            gsheet_url=gsheet_url,
             first_assembly_date=first_assembly_date,
         )
 
@@ -76,7 +73,6 @@ def update_assembly(
         uow: Unit of Work for database operations
         assembly_id: ID of assembly to update
         user_id: ID of user performing the update
-        **updates: Fields to update (title, question, gsheet_url, first_assembly_date)
 
     Returns:
         Updated Assembly instance
@@ -145,7 +141,7 @@ def get_assembly_with_permissions(
             raise InsufficientPermissions(action="view assembly", required_role="assembly role or global privileges")
 
         # Explicit typing to satisfy mypy
-        retrieved_assembly: Assembly = assembly
+        retrieved_assembly: Assembly = assembly.create_detached_copy()
         return retrieved_assembly
 
 
