@@ -15,6 +15,7 @@ def check_follow_link(page: Page, link_name: str, link_url: str) -> None:
     with page.context.expect_page() as followed_page:
         link.click()
     expect(followed_page.value).to_have_url(link_url)
+    followed_page.value.close()
     # now we've confirmed the NEW page has the expected URL
     # we manually navigate the original page to that URL, so that
     # we are ready for the "then" step to check the contents of the page

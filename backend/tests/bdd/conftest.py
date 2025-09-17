@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Page, expect, sync_playwright
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
@@ -180,6 +180,16 @@ def logged_in_page(page: Page, admin_user):
     return page
 
 
+def delete_all_except_admin_user(session: Session) -> None:
+    # Clean up test data (keep admin user)
+    session.execute(orm.user_invites.delete())
+    session.execute(orm.assemblies.delete())
+    session.execute(orm.user_assembly_roles.delete())
+    # Keep admin user, clean others
+    session.execute(orm.users.delete().where(orm.users.c.email != ADMIN_EMAIL))
+    session.commit()
+
+
 @pytest.fixture(autouse=True)
 def clean_database(test_database):
     """Clean database state before each test"""
@@ -187,15 +197,10 @@ def clean_database(test_database):
     session = session_factory()
 
     try:
-        # Clean up test data (keep admin user)
-        session.execute(orm.user_invites.delete())
-        session.execute(orm.assemblies.delete())
-        session.execute(orm.user_assembly_roles.delete())
-        # Keep admin user, clean others
-        session.execute(orm.users.delete().where(orm.users.c.email != ADMIN_EMAIL))
-        session.commit()
         yield
     finally:
+        # Clean up test data (keep admin user)
+        delete_all_except_admin_user(session)
         session.close()
 
 
