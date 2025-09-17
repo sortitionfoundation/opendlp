@@ -54,6 +54,10 @@ def get_api_url() -> str:
     return f"http://{host}:{port}"
 
 
+def get_google_auth_json_path() -> Path:
+    return Path(os.environ.get("GOOGLE_AUTH_JSON_PATH", "/no-such-file"))
+
+
 @dataclass(slots=True, kw_only=True)
 class RedisCfg:
     host: str
