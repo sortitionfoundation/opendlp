@@ -10,12 +10,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
+    SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
     SqlAlchemyUserAssemblyRoleRepository,
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
 )
 from opendlp.service_layer.repositories import (
+    AssemblyGSheetRepository,
     AssemblyRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
@@ -28,6 +30,7 @@ class AbstractUnitOfWork(abc.ABC):
 
     users: UserRepository
     assemblies: AssemblyRepository
+    assembly_gsheets: AssemblyGSheetRepository
     user_invites: UserInviteRepository
     user_assembly_roles: UserAssemblyRoleRepository
 
@@ -77,6 +80,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         # Initialize repositories with the session
         self.users = SqlAlchemyUserRepository(self.session)
         self.assemblies = SqlAlchemyAssemblyRepository(self.session)
+        self.assembly_gsheets = SqlAlchemyAssemblyGSheetRepository(self.session)
         self.user_invites = SqlAlchemyUserInviteRepository(self.session)
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
 

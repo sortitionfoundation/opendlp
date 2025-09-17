@@ -5,11 +5,12 @@ import uuid
 from collections.abc import Iterable
 from typing import Any
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.service_layer.repositories import (
     AbstractRepository,
+    AssemblyGSheetRepository,
     AssemblyRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
@@ -149,12 +150,36 @@ class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository)
         return True
 
 
+class FakeAssemblyGSheetRepository(FakeRepository, AssemblyGSheetRepository):
+    """Fake implementation of AssemblyGSheetRepository."""
+
+    def get(self, item_id: uuid.UUID) -> AssemblyGSheet | None:
+        """Get an AssemblyGSheet by its ID."""
+        for item in self._items:
+            if item.assembly_gsheet_id == item_id:
+                return item
+        return None
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyGSheet | None:
+        """Get an AssemblyGSheet by its assembly ID."""
+        for item in self._items:
+            if item.assembly_id == assembly_id:
+                return item
+        return None
+
+    def delete(self, item: AssemblyGSheet) -> None:
+        """Delete an AssemblyGSheet from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
     def __init__(self) -> None:
         self.users = self.fake_users = FakeUserRepository()
         self.assemblies = self.fake_assemblies = FakeAssemblyRepository()
+        self.assembly_gsheets = self.fake_assembly_gsheets = FakeAssemblyGSheetRepository()
         self.user_invites = self.fake_user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = self.fake_user_assembly_roles = FakeUserAssemblyRoleRepository()
         self.committed = False
@@ -173,6 +198,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         """Clear all repositories."""
         self.fake_users._items.clear()
         self.fake_assemblies._items.clear()
+        self.fake_assembly_gsheets._items.clear()
         self.fake_user_invites._items.clear()
         self.fake_user_assembly_roles._items.clear()
         self.committed = False

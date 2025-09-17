@@ -11,11 +11,12 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from opendlp.service_layer.repositories import (
+    AssemblyGSheetRepository,
     AssemblyRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
@@ -279,3 +280,27 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
             self.session.delete(role)
             return True
         return False
+
+
+class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRepository):
+    """SQLAlchemy implementation of AssemblyGSheetRepository."""
+
+    def add(self, item: AssemblyGSheet) -> None:
+        """Add an AssemblyGSheet to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> AssemblyGSheet | None:
+        """Get an AssemblyGSheet by its ID."""
+        return self.session.query(AssemblyGSheet).filter_by(assembly_gsheet_id=item_id).first()
+
+    def list(self) -> Iterable[AssemblyGSheet]:
+        """List all AssemblyGSheets."""
+        return self.session.query(AssemblyGSheet).all()
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyGSheet | None:
+        """Get an AssemblyGSheet by its assembly ID."""
+        return self.session.query(AssemblyGSheet).filter_by(assembly_id=assembly_id).first()
+
+    def delete(self, item: AssemblyGSheet) -> None:
+        """Delete an AssemblyGSheet from the repository."""
+        self.session.delete(item)

@@ -6,11 +6,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import assembly_service
 from opendlp.service_layer.exceptions import InsufficientPermissions
+from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeUnitOfWork
 
 
@@ -353,3 +354,329 @@ class TestGetUserAccessibleAssemblies:
             assembly_service.get_user_accessible_assemblies(uow=uow, user_id=uuid.uuid4())
 
         assert "not found" in str(exc_info.value)
+
+
+class TestAssemblyGSheetOperations:
+    """Test AssemblyGSheet management operations."""
+
+    def test_add_assembly_gsheet_success_admin(self):
+        """Test successful AssemblyGSheet creation by admin."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        assembly_gsheet = assembly_service.add_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            url=VALID_GSHEET_URL,
+            team="uk",
+        )
+
+        assert assembly_gsheet.assembly_id == assembly.id
+        assert assembly_gsheet.url == VALID_GSHEET_URL
+        assert assembly_gsheet.id_column == "nationbuilder_id"  # UK default
+        assert len(uow.assembly_gsheets.list()) == 1
+        assert uow.committed
+
+    def test_add_assembly_gsheet_with_overrides(self):
+        """Test adding AssemblyGSheet with custom options."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        assembly_gsheet = assembly_service.add_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            url=VALID_GSHEET_URL,
+            team="uk",
+            select_registrants_tab="Custom Registrants",
+            id_column="custom_id",
+        )
+
+        assert assembly_gsheet.select_registrants_tab == "Custom Registrants"
+        assert assembly_gsheet.id_column == "custom_id"
+        assert uow.committed
+
+    def test_add_assembly_gsheet_assembly_manager(self):
+        """Test AssemblyGSheet creation by assembly manager."""
+        uow = FakeUnitOfWork()
+        manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(manager_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add assembly role
+        assembly_role = UserAssemblyRole(
+            user_id=manager_user.id,
+            assembly_id=assembly.id,
+            role=AssemblyRole.ASSEMBLY_MANAGER,
+        )
+        manager_user.assembly_roles.append(assembly_role)
+
+        assembly_gsheet = assembly_service.add_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=manager_user.id,
+            url=VALID_GSHEET_URL,
+        )
+
+        assert assembly_gsheet.assembly_id == assembly.id
+        assert uow.committed
+
+    def test_add_assembly_gsheet_insufficient_permissions(self):
+        """Test AssemblyGSheet creation fails for user without permissions."""
+        uow = FakeUnitOfWork()
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(regular_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.add_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=regular_user.id,
+                url=VALID_GSHEET_URL,
+            )
+
+    def test_add_assembly_gsheet_already_exists(self):
+        """Test AssemblyGSheet creation fails when assembly already has one."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add first gsheet
+        existing_gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(existing_gsheet)
+
+        with pytest.raises(ValueError) as exc_info:
+            assembly_service.add_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=admin_user.id,
+                url=VALID_GSHEET_URL,
+            )
+
+        assert "already has a Google Sheet configuration" in str(exc_info.value)
+
+    def test_update_assembly_gsheet_success(self):
+        """Test successful AssemblyGSheet update."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add existing gsheet
+        existing_gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(existing_gsheet)
+
+        updated_gsheet = assembly_service.update_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            select_registrants_tab="Updated Tab",
+            id_column="updated_id",
+        )
+
+        assert updated_gsheet.select_registrants_tab == "Updated Tab"
+        assert updated_gsheet.id_column == "updated_id"
+        assert uow.committed
+
+    def test_update_assembly_gsheet_not_found(self):
+        """Test AssemblyGSheet update fails when gsheet doesn't exist."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(ValueError) as exc_info:
+            assembly_service.update_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=admin_user.id,
+                select_registrants_tab="Updated Tab",
+            )
+
+        assert "does not have a Google Sheet configuration" in str(exc_info.value)
+
+    def test_remove_assembly_gsheet_success(self):
+        """Test successful AssemblyGSheet removal."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add existing gsheet
+        existing_gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(existing_gsheet)
+
+        assembly_service.remove_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+        )
+
+        assert len(uow.assembly_gsheets.list()) == 0
+        assert uow.committed
+
+    def test_remove_assembly_gsheet_not_found(self):
+        """Test AssemblyGSheet removal fails when gsheet doesn't exist."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(ValueError) as exc_info:
+            assembly_service.remove_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=admin_user.id,
+            )
+
+        assert "does not have a Google Sheet configuration" in str(exc_info.value)
+
+    def test_get_assembly_gsheet_success(self):
+        """Test successful AssemblyGSheet retrieval."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add existing gsheet
+        existing_gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="Custom Tab",
+        )
+        uow.assembly_gsheets.add(existing_gsheet)
+
+        retrieved_gsheet = assembly_service.get_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+        )
+
+        assert retrieved_gsheet is not None
+        assert retrieved_gsheet.assembly_id == assembly.id
+        assert retrieved_gsheet.url == VALID_GSHEET_URL
+        assert retrieved_gsheet.select_registrants_tab == "Custom Tab"
+
+    def test_get_assembly_gsheet_not_found(self):
+        """Test AssemblyGSheet retrieval returns None when not found."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        retrieved_gsheet = assembly_service.get_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+        )
+
+        assert retrieved_gsheet is None
+
+    def test_get_assembly_gsheet_insufficient_permissions(self):
+        """Test AssemblyGSheet retrieval fails without permissions."""
+        uow = FakeUnitOfWork()
+        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(regular_user)
+
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+        uow.assemblies.add(assembly)
+
+        # Add existing gsheet
+        existing_gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(existing_gsheet)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.get_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=regular_user.id,
+            )

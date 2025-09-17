@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Iterable
 from typing import Any
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 
@@ -125,4 +125,18 @@ class UserAssemblyRoleRepository(AbstractRepository):
     @abc.abstractmethod
     def remove_role(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
         """Remove a user's role from an assembly. Returns True if role was found and removed."""
+        raise NotImplementedError
+
+
+class AssemblyGSheetRepository(AbstractRepository):
+    """Repository interface for AssemblyGSheet domain objects."""
+
+    @abc.abstractmethod
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyGSheet | None:
+        """Get an AssemblyGSheet by its assembly ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: AssemblyGSheet) -> None:
+        """Delete an AssemblyGSheet from the repository."""
         raise NotImplementedError

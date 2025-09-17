@@ -5,7 +5,7 @@ import uuid
 from datetime import date
 from typing import Any
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.value_objects import AssemblyStatus
 
 from .exceptions import InsufficientPermissions
@@ -214,3 +214,199 @@ def get_user_accessible_assemblies(
         # Use existing user_service function for consistency
 
         return get_user_assemblies(uow, user_id)
+
+
+def add_assembly_gsheet(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    url: str,
+    team: str = "uk",
+    **gsheet_options: Any,
+) -> AssemblyGSheet:
+    """
+    Add a Google Sheet configuration to an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly to add the gsheet to
+        user_id: ID of user performing the operation
+        url: Google Sheets URL
+        team: Team configuration to use (uk, eu, aus)
+        **gsheet_options: Additional options to override team defaults
+
+    Returns:
+        Created AssemblyGSheet instance
+
+    Raises:
+        ValueError: If assembly or user not found, or if assembly already has a gsheet
+        InsufficientPermissions: If user cannot manage this assembly
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Check permissions
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="add gsheet to assembly", required_role="assembly-manager, global-organiser or admin"
+            )
+
+        # Check if assembly already has a gsheet
+        existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+        if existing_gsheet:
+            raise ValueError(f"Assembly {assembly_id} already has a Google Sheet configuration")
+
+        # Create the AssemblyGSheet with team defaults
+        assembly_gsheet = AssemblyGSheet.for_team(team, assembly_id, url)
+
+        # Apply any override options
+        for field, value in gsheet_options.items():
+            if hasattr(assembly_gsheet, field):
+                setattr(assembly_gsheet, field, value)
+
+        uow.assembly_gsheets.add(assembly_gsheet)
+        uow.commit()
+
+        return assembly_gsheet.create_detached_copy()
+
+
+def update_assembly_gsheet(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    **updates: Any,
+) -> AssemblyGSheet:
+    """
+    Update a Google Sheet configuration for an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly whose gsheet to update
+        user_id: ID of user performing the operation
+        **updates: Fields to update
+
+    Returns:
+        Updated AssemblyGSheet instance
+
+    Raises:
+        ValueError: If assembly, user, or gsheet not found
+        InsufficientPermissions: If user cannot manage this assembly
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Check permissions
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="update assembly gsheet", required_role="assembly-manager, global-organiser or admin"
+            )
+
+        # Get the existing gsheet
+        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+        if not assembly_gsheet:
+            raise ValueError(f"Assembly {assembly_id} does not have a Google Sheet configuration")
+
+        # Apply updates
+        for field, value in updates.items():
+            if hasattr(assembly_gsheet, field):
+                setattr(assembly_gsheet, field, value)
+
+        uow.commit()
+
+        return assembly_gsheet.create_detached_copy()
+
+
+def remove_assembly_gsheet(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> None:
+    """
+    Remove a Google Sheet configuration from an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly to remove gsheet from
+        user_id: ID of user performing the operation
+
+    Raises:
+        ValueError: If assembly, user, or gsheet not found
+        InsufficientPermissions: If user cannot manage this assembly
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Check permissions
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="remove assembly gsheet", required_role="assembly-manager, global-organiser or admin"
+            )
+
+        # Get the existing gsheet
+        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+        if not assembly_gsheet:
+            raise ValueError(f"Assembly {assembly_id} does not have a Google Sheet configuration")
+
+        uow.assembly_gsheets.delete(assembly_gsheet)
+        uow.commit()
+
+
+def get_assembly_gsheet(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> AssemblyGSheet | None:
+    """
+    Get the Google Sheet configuration for an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly to get gsheet for
+        user_id: ID of user requesting the gsheet
+
+    Returns:
+        AssemblyGSheet instance or None if not found
+
+    Raises:
+        ValueError: If assembly or user not found
+        InsufficientPermissions: If user cannot view this assembly
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Check permissions
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view assembly gsheet", required_role="assembly role or global privileges"
+            )
+
+        # Get the gsheet
+        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+        if assembly_gsheet:
+            return assembly_gsheet.create_detached_copy()
+
+        return None
