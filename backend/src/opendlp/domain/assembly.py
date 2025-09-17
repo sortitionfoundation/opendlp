@@ -172,7 +172,7 @@ DEFAULT_COLS_TO_KEEP = {
 class AssemblyGSheet:
     """Google Spreadsheet Details for an Assembly"""
 
-    assembly_id: str  # foreign key to Assembly
+    assembly_id: uuid.UUID  # foreign key to Assembly
     url: str
     assembly_gsheet_id: uuid.UUID | None = None
     select_registrants_tab: str = "Respondents"
@@ -199,7 +199,7 @@ class AssemblyGSheet:
         return url
 
     @classmethod
-    def for_team(cls, team: str, assembly_id: str, url: str) -> "AssemblyGSheet":
+    def for_team(cls, team: str, assembly_id: uuid.UUID, url: str) -> "AssemblyGSheet":
         return AssemblyGSheet(
             assembly_id=assembly_id,
             url=url,

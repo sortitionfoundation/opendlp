@@ -176,3 +176,24 @@ user_invites = Table(
     Column("used_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True),
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
+
+# Assembly GSheets table
+assembly_gsheets = Table(
+    "assembly_gsheets",
+    metadata,
+    Column("assembly_gsheet_id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, unique=True
+    ),
+    Column("url", String(500), nullable=False),
+    Column("select_registrants_tab", String(100), nullable=False, default="Respondents"),
+    Column("select_targets_tab", String(100), nullable=False, default="Categories"),
+    Column("replace_registrants_tab", String(100), nullable=False, default="Remaining"),
+    Column("replace_targets_tab", String(100), nullable=False, default="Replacement Categories"),
+    Column("generate_remaining_tab", Boolean, nullable=False, default=True),
+    Column("id_column", String(100), nullable=False, default="nationbuilder_id"),
+    Column("check_same_address", Boolean, nullable=False, default=True),
+    Column("check_same_address_cols", JSON, nullable=False, default=list),
+    Column("columns_to_keep", JSON, nullable=False, default=list),
+    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+)

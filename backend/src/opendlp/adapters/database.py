@@ -5,7 +5,7 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import clear_mappers as sqla_clear_mappers
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 
 from opendlp.adapters import orm
 from opendlp.config import get_db_uri, to_bool
@@ -64,10 +64,33 @@ def start_mappers() -> None:
         orm.mapper_registry.map_imperatively(users.UserAssemblyRole, orm.user_assembly_roles)
 
         # Map Assembly domain object to assemblies table
-        orm.mapper_registry.map_imperatively(assembly.Assembly, orm.assemblies)
+        orm.mapper_registry.map_imperatively(
+            assembly.Assembly,
+            orm.assemblies,
+            properties={
+                "gsheet": relationship(
+                    assembly.AssemblyGSheet,
+                    back_populates="assembly",
+                    cascade="all, delete-orphan",
+                    uselist=False,  # Makes this a one-to-one relationship
+                ),
+            },
+        )
 
         # Map UserInvite domain object to user_invites table
         orm.mapper_registry.map_imperatively(user_invites.UserInvite, orm.user_invites)
+
+        # Map AssemblyGSheet domain object to assembly_gsheets table
+        orm.mapper_registry.map_imperatively(
+            assembly.AssemblyGSheet,
+            orm.assembly_gsheets,
+            properties={
+                "assembly": relationship(
+                    assembly.Assembly,
+                    back_populates="gsheet",
+                ),
+            },
+        )
 
         _mappers_started = True
 

@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
@@ -340,3 +340,275 @@ class TestRelationships:
 
         # Verify invite was cascade deleted
         assert postgres_session.query(UserInvite).filter_by(created_by=admin.id).count() == 0
+
+
+class TestAssemblyGSheetORM:
+    def test_save_and_retrieve_assembly_gsheet(self, postgres_session: Session):
+        """Test that AssemblyGSheet objects can be saved and retrieved."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()  # Get assembly ID
+
+        # Create AssemblyGSheet
+        assembly_gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="Registrants",
+            select_targets_tab="Targets",
+            replace_registrants_tab="Remaining",
+            replace_targets_tab="Replacement Targets",
+            generate_remaining_tab=True,
+            id_column="custom_id",
+            check_same_address=False,
+            check_same_address_cols=["address1", "postcode"],
+            columns_to_keep=["name", "email", "phone"],
+            selection_algorithm="stratified",
+        )
+
+        postgres_session.add(assembly_gsheet)
+        postgres_session.commit()
+
+        # Retrieve AssemblyGSheet
+        retrieved_gsheet = postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).first()
+
+        assert retrieved_gsheet is not None
+        assert retrieved_gsheet.assembly_id == assembly.id
+        assert retrieved_gsheet.url == VALID_GSHEET_URL
+        assert retrieved_gsheet.select_registrants_tab == "Registrants"
+        assert retrieved_gsheet.select_targets_tab == "Targets"
+        assert retrieved_gsheet.replace_registrants_tab == "Remaining"
+        assert retrieved_gsheet.replace_targets_tab == "Replacement Targets"
+        assert retrieved_gsheet.generate_remaining_tab is True
+        assert retrieved_gsheet.id_column == "custom_id"
+        assert retrieved_gsheet.check_same_address is False
+        assert retrieved_gsheet.check_same_address_cols == ["address1", "postcode"]
+        assert retrieved_gsheet.columns_to_keep == ["name", "email", "phone"]
+        assert retrieved_gsheet.selection_algorithm == "stratified"
+        assert isinstance(retrieved_gsheet.assembly_gsheet_id, uuid.UUID)
+
+    def test_assembly_gsheet_defaults(self, postgres_session: Session):
+        """Test that AssemblyGSheet default values work correctly."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create AssemblyGSheet with minimal data (defaults should apply)
+        assembly_gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+        )
+
+        postgres_session.add(assembly_gsheet)
+        postgres_session.commit()
+
+        # Retrieve and check defaults
+        retrieved_gsheet = postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).first()
+
+        assert retrieved_gsheet.select_registrants_tab == "Respondents"
+        assert retrieved_gsheet.select_targets_tab == "Categories"
+        assert retrieved_gsheet.replace_registrants_tab == "Remaining"
+        assert retrieved_gsheet.replace_targets_tab == "Replacement Categories"
+        assert retrieved_gsheet.generate_remaining_tab is True
+        assert retrieved_gsheet.id_column == "nationbuilder_id"
+        assert retrieved_gsheet.check_same_address is True
+        assert retrieved_gsheet.check_same_address_cols == []
+        assert retrieved_gsheet.columns_to_keep == []
+        assert retrieved_gsheet.selection_algorithm == "maximin"
+
+    def test_assembly_gsheet_for_team(self, postgres_session: Session):
+        """Test that AssemblyGSheet.for_team() class method works correctly."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create AssemblyGSheet using for_team class method
+        assembly_gsheet = AssemblyGSheet.for_team("uk", assembly.id, VALID_GSHEET_URL)
+
+        postgres_session.add(assembly_gsheet)
+        postgres_session.commit()
+
+        # Retrieve and check UK-specific defaults
+        retrieved_gsheet = postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).first()
+
+        assert retrieved_gsheet.id_column == "nationbuilder_id"  # UK default
+        assert retrieved_gsheet.check_same_address_cols == ["primary_address1", "zip_royal_mail"]  # UK default
+        expected_uk_columns = [
+            "first_name",
+            "last_name",
+            "mobile_number",
+            "email",
+            "primary_address1",
+            "primary_address2",
+            "primary_city",
+            "zip_royal_mail",
+            "tag_list",
+            "age",
+            "gender",
+        ]
+        assert retrieved_gsheet.columns_to_keep == expected_uk_columns
+
+    def test_assembly_gsheet_foreign_key_constraint(self, postgres_session: Session):
+        """Test that foreign key constraint works for assembly_id."""
+        # Try to create AssemblyGSheet without valid assembly
+        assembly_gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),  # Non-existent assembly
+            url=VALID_GSHEET_URL,
+        )
+
+        postgres_session.add(assembly_gsheet)
+
+        with pytest.raises(IntegrityError):  # Should raise foreign key constraint error
+            postgres_session.commit()
+
+    def test_cascade_delete_assembly_gsheet(self, postgres_session: Session):
+        """Test that deleting an assembly cascades to its AssemblyGSheet."""
+        # Create assembly
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create AssemblyGSheet
+        assembly_gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+        )
+
+        postgres_session.add(assembly_gsheet)
+        postgres_session.commit()
+
+        # Verify AssemblyGSheet exists
+        assert postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).count() == 1
+
+        # Delete assembly
+        postgres_session.delete(assembly)
+        postgres_session.commit()
+
+        # Verify AssemblyGSheet was cascade deleted
+        assert postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).count() == 0
+
+    def test_assembly_gsheet_one_to_one_relationship(self, postgres_session: Session):
+        """Test that SQLAlchemy one-to-one relationship works correctly between Assembly and AssemblyGSheet."""
+        # Create assembly
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create single AssemblyGSheet for the assembly
+        gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="Registrants",
+        )
+
+        postgres_session.add(gsheet)
+        postgres_session.commit()
+
+        # Test Assembly -> AssemblyGSheet relationship (one-to-one)
+        retrieved_assembly = postgres_session.query(Assembly).filter_by(id=assembly.id).first()
+        assert retrieved_assembly is not None
+        assert hasattr(retrieved_assembly, "gsheet")
+        assert retrieved_assembly.gsheet is not None
+        assert retrieved_assembly.gsheet.select_registrants_tab == "Registrants"
+
+        # Test AssemblyGSheet -> Assembly relationship (one-to-one back reference)
+        retrieved_gsheet = (
+            postgres_session.query(AssemblyGSheet).filter_by(select_registrants_tab="Registrants").first()
+        )
+        assert retrieved_gsheet is not None
+        assert hasattr(retrieved_gsheet, "assembly")
+        assert retrieved_gsheet.assembly.id == assembly.id
+        assert retrieved_gsheet.assembly.title == "Test Assembly"
+
+    def test_assembly_gsheet_unique_constraint(self, postgres_session: Session):
+        """Test that the unique constraint on assembly_id prevents multiple AssemblyGSheets for one Assembly."""
+        # Create assembly
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create first AssemblyGSheet
+        gsheet1 = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="Registrants1",
+        )
+
+        postgres_session.add(gsheet1)
+        postgres_session.commit()
+
+        # Try to create second AssemblyGSheet for the same assembly
+        gsheet2 = AssemblyGSheet(
+            assembly_id=assembly.id,  # Same assembly_id
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="Registrants2",
+        )
+
+        postgres_session.add(gsheet2)
+
+        with pytest.raises(IntegrityError):  # Should raise unique constraint error
+            postgres_session.commit()
+
+    def test_assembly_without_gsheet(self, postgres_session: Session):
+        """Test that an Assembly can exist without an AssemblyGSheet (optional one-to-one)."""
+        # Create assembly without any AssemblyGSheet
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Assembly Without GSheet",
+            question="Test question?",
+            gsheet_url=VALID_GSHEET_URL,
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.commit()
+
+        # Retrieve assembly and verify no gsheet is associated
+        retrieved_assembly = postgres_session.query(Assembly).filter_by(id=assembly.id).first()
+        assert retrieved_assembly is not None
+        assert hasattr(retrieved_assembly, "gsheet")
+        assert retrieved_assembly.gsheet is None  # Should be None for optional one-to-one
