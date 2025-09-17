@@ -62,8 +62,11 @@ def get_google_auth_json_path() -> Path:
 class RedisCfg:
     host: str
     port: int
+    db: str = ""
 
     def to_url(self) -> str:
+        if self.db:
+            return f"redis://{self.host}:{self.port}/{self.db}"
         return f"redis://{self.host}:{self.port}"
 
     @classmethod
