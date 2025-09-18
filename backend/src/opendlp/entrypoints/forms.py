@@ -4,7 +4,15 @@ ABOUTME: Uses GOV.UK Design System components for consistent government service 
 from typing import Any
 
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, DateField, EmailField, PasswordField, SelectField, StringField, TextAreaField
+from wtforms import (
+    BooleanField,
+    DateField,
+    EmailField,
+    PasswordField,
+    RadioField,
+    StringField,
+    TextAreaField,
+)
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
@@ -184,7 +192,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
-    team = SelectField(
+    team = RadioField(
         _l("Team Configuration"),
         choices=[("uk", _l("UK Team")), ("eu", _l("EU Team")), ("aus", _l("Australia Team"))],
         default="uk",
