@@ -2,8 +2,9 @@
 ABOUTME: Contains Assembly class representing policy questions and selection configuration"""
 
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
+from typing import Literal, get_args
 
 from sortition_algorithms import adapters, settings
 
@@ -96,6 +97,8 @@ class Assembly:
         return detached_assembly
 
 
+Teams = Literal["aus", "eu", "uk", "other"]
+VALID_TEAMS = get_args(Teams)
 DEFAULT_ID_COLUMN = {
     "uk": "nationbuilder_id",
     "eu": "unique_id",
@@ -184,14 +187,33 @@ class AssemblyGSheet:
         return url
 
     @classmethod
-    def for_team(cls, team: str, assembly_id: uuid.UUID, url: str) -> "AssemblyGSheet":
-        return AssemblyGSheet(
-            assembly_id=assembly_id,
-            url=url,
-            id_column=DEFAULT_ID_COLUMN[team],
-            check_same_address_cols=DEFAULT_ADDRESS_COLS[team],
-            columns_to_keep=DEFAULT_COLS_TO_KEEP[team],
-        )
+    def for_team(cls, team: Teams, assembly_id: uuid.UUID, url: str) -> "AssemblyGSheet":
+        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url)
+        assembly_gsheet.update_team_settings(team)
+        return assembly_gsheet
+
+    @classmethod
+    def _updatable_fields(cls) -> list[str]:
+        non_updatable = ("assembly_id", "assembly_gsheet_id")
+        return [f.name for f in fields(AssemblyGSheet) if f not in non_updatable]
+
+    def update_values(self, url: str = "", team: Teams = "other", **kwargs: str | bool | list[str]) -> None:
+        """Update values of the object."""
+        if url:
+            self.url = self._validate_url(url)
+        for field_name, value in kwargs.items():
+            if field_name not in self._updatable_fields():
+                raise ValueError(f"Cannot update field {field_name} in AssemblyGSheet")
+            setattr(self, field_name, value)
+        # do this last so it will override anything else set
+        if team != "other":
+            self.update_team_settings(team)
+
+    def update_team_settings(self, team: Teams) -> None:
+        if team != "other":
+            self.id_column = DEFAULT_ID_COLUMN[team]
+            self.check_same_address_cols = DEFAULT_ADDRESS_COLS[team]
+            self.columns_to_keep = DEFAULT_COLS_TO_KEEP[team]
 
     def to_settings(self) -> settings.Settings:
         return settings.Settings(

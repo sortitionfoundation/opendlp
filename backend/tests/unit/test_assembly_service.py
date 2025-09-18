@@ -406,7 +406,7 @@ class TestAssemblyGSheetOperations:
             assembly_id=assembly.id,
             user_id=admin_user.id,
             url=VALID_GSHEET_URL,
-            team="uk",
+            team="other",
             select_registrants_tab="Custom Registrants",
             id_column="custom_id",
         )

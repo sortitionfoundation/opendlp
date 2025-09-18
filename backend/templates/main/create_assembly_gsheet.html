@@ -68,6 +68,106 @@
                     {{ form.url(class="govuk-input" + (" govuk-input--error" if form.url.errors else "")) }}
                 </div>
 
+                <div class="govuk-form-group {% if form.select_registrants_tab.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.select_registrants_tab.id }}">
+                        {{ form.select_registrants_tab.label.text }}
+                    </label>
+                    {% if form.select_registrants_tab.description %}
+                    <div class="govuk-hint">
+                        {{ form.select_registrants_tab.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.select_registrants_tab.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.select_registrants_tab.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.select_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.select_registrants_tab.errors else "")) }}
+                </div>
+
+                <div class="govuk-form-group {% if form.select_targets_tab.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.select_targets_tab.id }}">
+                        {{ form.select_targets_tab.label.text }}
+                    </label>
+                    {% if form.select_targets_tab.description %}
+                    <div class="govuk-hint">
+                        {{ form.select_targets_tab.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.select_targets_tab.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.select_targets_tab.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.select_targets_tab(class="govuk-input" + (" govuk-input--error" if form.select_targets_tab.errors else "")) }}
+                </div>
+
+                <div class="govuk-form-group {% if form.replace_registrants_tab.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.replace_registrants_tab.id }}">
+                        {{ form.replace_registrants_tab.label.text }}
+                    </label>
+                    {% if form.replace_registrants_tab.description %}
+                    <div class="govuk-hint">
+                        {{ form.replace_registrants_tab.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.replace_registrants_tab.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.replace_registrants_tab.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.replace_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.replace_registrants_tab.errors else "")) }}
+                </div>
+
+                <div class="govuk-form-group {% if form.replace_targets_tab.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.replace_targets_tab.id }}">
+                        {{ form.replace_targets_tab.label.text }}
+                    </label>
+                    {% if form.replace_targets_tab.description %}
+                    <div class="govuk-hint">
+                        {{ form.replace_targets_tab.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.replace_targets_tab.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.replace_targets_tab.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.replace_targets_tab(class="govuk-input" + (" govuk-input--error" if form.replace_targets_tab.errors else "")) }}
+                </div>
+
+                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        {{ form.check_same_address(class="govuk-checkboxes__input") }}
+                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.check_same_address.id }}">
+                            {{ form.check_same_address.label.text }}
+                        </label>
+                        {% if form.check_same_address.description %}
+                        <div class="govuk-hint govuk-checkboxes__hint">
+                            {{ form.check_same_address.description }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        {{ form.generate_remaining_tab(class="govuk-checkboxes__input") }}
+                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.generate_remaining_tab.id }}">
+                            {{ form.generate_remaining_tab.label.text }}
+                        </label>
+                        {% if form.generate_remaining_tab.description %}
+                        <div class="govuk-hint govuk-checkboxes__hint">
+                            {{ form.generate_remaining_tab.description }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
                 <div class="govuk-form-group {% if form.team.errors %}govuk-form-group--error{% endif %}">
                     <fieldset class="govuk-fieldset">
                         <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
@@ -99,42 +199,6 @@
                     </fieldset>
                 </div>
 
-                <div class="govuk-form-group {% if form.respondents_tab.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.respondents_tab.id }}">
-                        {{ form.respondents_tab.label.text }}
-                    </label>
-                    {% if form.respondents_tab.description %}
-                    <div class="govuk-hint">
-                        {{ form.respondents_tab.description }}
-                    </div>
-                    {% endif %}
-                    {% if form.respondents_tab.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.respondents_tab.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.respondents_tab(class="govuk-input" + (" govuk-input--error" if form.respondents_tab.errors else "")) }}
-                </div>
-
-                <div class="govuk-form-group {% if form.categories_tab.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.categories_tab.id }}">
-                        {{ form.categories_tab.label.text }}
-                    </label>
-                    {% if form.categories_tab.description %}
-                    <div class="govuk-hint">
-                        {{ form.categories_tab.description }}
-                    </div>
-                    {% endif %}
-                    {% if form.categories_tab.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.categories_tab.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.categories_tab(class="govuk-input" + (" govuk-input--error" if form.categories_tab.errors else "")) }}
-                </div>
-
                 <div class="govuk-form-group {% if form.id_column.errors %}govuk-form-group--error{% endif %}">
                     <label class="govuk-label govuk-label--s" for="{{ form.id_column.id }}">
                         {{ form.id_column.label.text }}
@@ -151,34 +215,6 @@
                     </p>
                     {% endif %}
                     {{ form.id_column(class="govuk-input" + (" govuk-input--error" if form.id_column.errors else "")) }}
-                </div>
-
-                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                    <div class="govuk-checkboxes__item">
-                        {{ form.check_same_address(class="govuk-checkboxes__input") }}
-                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.check_same_address.id }}">
-                            {{ form.check_same_address.label.text }}
-                        </label>
-                        {% if form.check_same_address.description %}
-                        <div class="govuk-hint govuk-checkboxes__hint">
-                            {{ form.check_same_address.description }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                    <div class="govuk-checkboxes__item">
-                        {{ form.generate_remaining_tab(class="govuk-checkboxes__input") }}
-                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.generate_remaining_tab.id }}">
-                            {{ form.generate_remaining_tab.label.text }}
-                        </label>
-                        {% if form.generate_remaining_tab.description %}
-                        <div class="govuk-hint govuk-checkboxes__hint">
-                            {{ form.generate_remaining_tab.description }}
-                        </div>
-                        {% endif %}
-                    </div>
                 </div>
 
                 <div class="govuk-button-group">

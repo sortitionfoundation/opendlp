@@ -63,16 +63,12 @@
                             </dd>
                         </div>
                         <div class="govuk-summary-list__row">
-                            <dt class="govuk-summary-list__key">{{ _('Team Configuration') }}</dt>
-                            <dd class="govuk-summary-list__value">{{ gsheet.team.upper() }}</dd>
-                        </div>
-                        <div class="govuk-summary-list__row">
                             <dt class="govuk-summary-list__key">{{ _('Respondents Tab') }}</dt>
-                            <dd class="govuk-summary-list__value">{{ gsheet.respondents_tab }}</dd>
+                            <dd class="govuk-summary-list__value">{{ gsheet.select_registrants_tab }}</dd>
                         </div>
                         <div class="govuk-summary-list__row">
                             <dt class="govuk-summary-list__key">{{ _('Categories Tab') }}</dt>
-                            <dd class="govuk-summary-list__value">{{ gsheet.categories_tab }}</dd>
+                            <dd class="govuk-summary-list__value">{{ gsheet.select_targets_tab }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -97,10 +93,14 @@
                     {% endif %}
 
                     {% if gsheet and gsheet.url %}
+                    disabled for now
+                    {#
                     <a href="{{ url_for('main.gsheet_select', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Start Selection (Google Spreadsheet)') }}
                     </a>
+                    #}
+
                     {% else %}
                     <button class="govuk-button govuk-button--secondary" disabled>
                         {{ _('Start Selection (Google Spreadsheet)') }}

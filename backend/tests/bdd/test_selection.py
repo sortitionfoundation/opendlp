@@ -46,12 +46,12 @@ def _(page: Page):
 @then('I can specify the categories and targets in "manual gsheet setup"')
 def _(page: Page):
     """I can specify the categories and targets in "manual gsheet setup"."""
-    categories_field = page.get_by_label("Categories Tab Name")
+    categories_field = page.get_by_label("Selection Targets Tab Name")
     expect(categories_field).to_be_visible()
 
 
 @then('I can specify the source of the respondents data in "manual gsheet setup"')
 def _(page: Page):
     """I can specify the source of the respondents data in "manual gsheet setup"."""
-    respondents_field = page.get_by_label("Respondents Tab Name")
+    respondents_field = page.get_by_label("Selection Registrants Tab Name")
     expect(respondents_field).to_be_visible()

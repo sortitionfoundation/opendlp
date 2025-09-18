@@ -192,32 +192,32 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
-    team = RadioField(
-        _l("Team Configuration"),
-        choices=[("uk", _l("UK Team")), ("eu", _l("EU Team")), ("aus", _l("Australia Team"))],
-        default="uk",
-        validators=[DataRequired()],
-        description=_l("Select the team configuration to use for default settings"),
-    )
-
-    respondents_tab = StringField(
-        _l("Respondents Tab Name"),
+    select_registrants_tab = StringField(
+        _l("Selection Registrants Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondent data in the Google Spreadsheet"),
+        description=_l("Name of the tab containing registrant data in the Google Spreadsheet - for initial Selection"),
         default="Respondents",
     )
 
-    categories_tab = StringField(
-        _l("Categories Tab Name"),
+    select_targets_tab = StringField(
+        _l("Selection Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing categories, category values and targets"),
+        description=_l("Name of the tab containing categories, category values and targets - for initial Selection"),
         default="Categories",
     )
 
-    id_column = StringField(
-        _l("ID Column"),
+    replace_registrants_tab = StringField(
+        _l("Replacement Registrants Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Column name containing unique identifiers for respondents"),
+        description=_l("Name of the tab containing registrant data in the Google Spreadsheet - for Replacements"),
+        default="Remaining",
+    )
+
+    replace_targets_tab = StringField(
+        _l("Replacement Targets Tab Name"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        description=_l("Name of the tab containing categories, category values and targets - for Replacements"),
+        default="Replacement Categories",
     )
 
     check_same_address = BooleanField(
@@ -230,6 +230,28 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("Generate Remaining Tab"),
         description=_l("Create a tab with remaining participants after selection"),
         default=True,
+    )
+
+    team = RadioField(
+        _l("Team Configuration"),
+        choices=[
+            ("uk", _l("UK Team")),
+            ("eu", _l("EU Team")),
+            ("aus", _l("Australia Team")),
+            ("other", _l("Custom configuration")),
+        ],
+        default="other",
+        validators=[DataRequired()],
+        description=_l(
+            "Select the team configuration to use for default settings for ID Column, columns to keep and address columns."
+        ),
+    )
+
+    id_column = StringField(
+        _l("ID Column"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        default="nationbuilder_id",
+        description=_l("Column name containing unique identifiers for respondents"),
     )
 
 

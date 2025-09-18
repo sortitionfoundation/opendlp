@@ -42,8 +42,8 @@ def assembly_with_gsheet(postgres_session_factory, admin_user):
             user_id=admin_user.id,
             url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
             team="uk",
-            respondents_tab="TestRespondents",
-            categories_tab="TestCategories",
+            select_registrants_tab="TestRespondents",
+            select_targets_tab="TestCategories",
             id_column="test_id_column",
             check_same_address=True,
             generate_remaining_tab=False,
@@ -113,8 +113,8 @@ class TestAssemblyGSheetCreateView:
         assert b"Australia Team" in response.data
 
         # Tab names
-        assert b"Respondents Tab Name" in response.data
-        assert b"Categories Tab Name" in response.data
+        assert b"Selection Registrants Tab Name" in response.data
+        assert b"Selection Targets Tab Name" in response.data
 
         # ID column
         assert b"ID Column" in response.data
@@ -130,8 +130,8 @@ class TestAssemblyGSheetCreateView:
             data={
                 "url": "https://docs.google.com/spreadsheets/d/1234567890abcdef123456789/edit",
                 "team": "uk",
-                "respondents_tab": "Respondents",
-                "categories_tab": "Categories",
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
                 "id_column": "nationbuilder_id",
                 "check_same_address": True,
                 "generate_remaining_tab": True,
@@ -156,8 +156,8 @@ class TestAssemblyGSheetCreateView:
             data={
                 "url": "https://invalid-url.com/not-google-sheets",
                 "team": "uk",
-                "respondents_tab": "Respondents",
-                "categories_tab": "Categories",
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
                 "id_column": "nationbuilder_id",
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
             },
@@ -219,8 +219,8 @@ class TestAssemblyGSheetEditView:
             data={
                 "url": updated_url,
                 "team": "eu",  # Changed from uk
-                "respondents_tab": "UpdatedRespondents",
-                "categories_tab": "UpdatedCategories",
+                "select_registrants_tab": "UpdatedRespondents",
+                "select_targets_tab": "UpdatedCategories",
                 "id_column": "updated_id_column",
                 "check_same_address": False,  # Changed from True
                 "generate_remaining_tab": True,  # Changed from False
@@ -336,8 +336,8 @@ class TestAssemblyGSheetWorkflowIntegration:
             data={
                 "url": "https://docs.google.com/spreadsheets/d/workflow123456789/edit",
                 "team": "uk",
-                "respondents_tab": "WorkflowRespondents",
-                "categories_tab": "WorkflowCategories",
+                "select_registrants_tab": "WorkflowRespondents",
+                "select_targets_tab": "WorkflowCategories",
                 "id_column": "workflow_id",
                 "check_same_address": True,
                 "generate_remaining_tab": False,
@@ -355,8 +355,8 @@ class TestAssemblyGSheetWorkflowIntegration:
             data={
                 "url": "https://docs.google.com/spreadsheets/d/updated_workflow123456789/edit",
                 "team": "eu",
-                "respondents_tab": "UpdatedWorkflowRespondents",
-                "categories_tab": "UpdatedWorkflowCategories",
+                "select_registrants_tab": "UpdatedWorkflowRespondents",
+                "select_targets_tab": "UpdatedWorkflowCategories",
                 "id_column": "updated_workflow_id",
                 "check_same_address": False,
                 "generate_remaining_tab": True,
@@ -402,8 +402,8 @@ class TestAssemblyGSheetWorkflowIntegration:
             data={
                 "url": "https://docs.google.com/spreadsheets/d/state123456789/edit",
                 "team": "uk",
-                "respondents_tab": "StateRespondents",
-                "categories_tab": "StateCategories",
+                "select_registrants_tab": "StateRespondents",
+                "select_targets_tab": "StateCategories",
                 "id_column": "state_id",
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
@@ -448,8 +448,8 @@ class TestAssemblyGSheetWorkflowIntegration:
             data={
                 "url": "https://docs.google.com/spreadsheets/d/breadcrumb123456789/edit",
                 "team": "uk",
-                "respondents_tab": "BreadcrumbRespondents",
-                "categories_tab": "BreadcrumbCategories",
+                "select_registrants_tab": "BreadcrumbRespondents",
+                "select_targets_tab": "BreadcrumbCategories",
                 "id_column": "breadcrumb_id",
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
@@ -505,8 +505,8 @@ class TestAssemblyGSheetPermissions:
                 data={
                     "url": invalid_url,
                     "team": "uk",
-                    "respondents_tab": "Test",
-                    "categories_tab": "Test",
+                    "select_registrants_tab": "Test",
+                    "select_targets_tab": "Test",
                     "id_column": "test_id",
                     "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
                 },

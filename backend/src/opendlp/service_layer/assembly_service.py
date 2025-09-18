@@ -3,9 +3,9 @@ ABOUTME: Provides functions for assembly creation, updates, permissions, and lif
 
 import uuid
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import VALID_TEAMS, Assembly, AssemblyGSheet, Teams
 from opendlp.domain.value_objects import AssemblyStatus
 
 from .exceptions import InsufficientPermissions
@@ -221,7 +221,7 @@ def add_assembly_gsheet(
     assembly_id: uuid.UUID,
     user_id: uuid.UUID,
     url: str,
-    team: str = "uk",
+    team: str = "other",
     **gsheet_options: Any,
 ) -> AssemblyGSheet:
     """
@@ -263,12 +263,9 @@ def add_assembly_gsheet(
             raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
 
         # Create the AssemblyGSheet with team defaults
-        assembly_gsheet = AssemblyGSheet.for_team(team, assembly_id, url)
-
-        # Apply any override options
-        for field, value in gsheet_options.items():
-            if hasattr(assembly_gsheet, field):
-                setattr(assembly_gsheet, field, value)
+        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url, **gsheet_options)
+        if team in VALID_TEAMS:
+            assembly_gsheet.update_team_settings(cast(Teams, team))
 
         uow.assembly_gsheets.add(assembly_gsheet)
         uow.commit()
@@ -319,9 +316,7 @@ def update_assembly_gsheet(
             raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
         # Apply updates
-        for field, value in updates.items():
-            if hasattr(assembly_gsheet, field):
-                setattr(assembly_gsheet, field, value)
+        assembly_gsheet.update_values(**updates)
 
         uow.commit()
 
