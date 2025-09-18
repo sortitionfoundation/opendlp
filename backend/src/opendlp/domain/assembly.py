@@ -203,10 +203,9 @@ class AssemblyGSheet:
         )
 
     def to_adapter(self) -> adapters.GSheetAdapter:
-        gen_rem_tab = "on" if self.generate_remaining_tab else "off"
         return adapters.GSheetAdapter(
             auth_json_path=config.get_google_auth_json_path(),
-            gen_rem_tab=gen_rem_tab,
+            gen_rem_tab=self.generate_remaining_tab,
         )
 
     def registrants_tab(self, for_replacements: bool = False) -> str:
