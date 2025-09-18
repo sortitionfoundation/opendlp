@@ -1,9 +1,8 @@
 """ABOUTME: Assembly domain model for Citizens' Assembly management
 ABOUTME: Contains Assembly class representing policy questions and selection configuration"""
 
-import copy
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
 
 from sortition_algorithms import adapters, settings
@@ -218,5 +217,5 @@ class AssemblyGSheet:
 
     def create_detached_copy(self) -> "AssemblyGSheet":
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
-        detached_assembly_gsheet = copy.deepcopy(self)
+        detached_assembly_gsheet = AssemblyGSheet(**asdict(self))
         return detached_assembly_gsheet

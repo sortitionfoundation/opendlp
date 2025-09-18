@@ -495,7 +495,7 @@ class TestAssemblyGSheetOperations:
                 url=VALID_GSHEET_URL,
             )
 
-        assert "already has a Google Sheet configuration" in str(exc_info.value)
+        assert "already has a Google Spreadsheet configuration" in str(exc_info.value)
 
     def test_update_assembly_gsheet_success(self):
         """Test successful AssemblyGSheet update."""
@@ -549,7 +549,7 @@ class TestAssemblyGSheetOperations:
                 select_registrants_tab="Updated Tab",
             )
 
-        assert "does not have a Google Sheet configuration" in str(exc_info.value)
+        assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
 
     def test_remove_assembly_gsheet_success(self):
         """Test successful AssemblyGSheet removal."""
@@ -599,7 +599,7 @@ class TestAssemblyGSheetOperations:
                 user_id=admin_user.id,
             )
 
-        assert "does not have a Google Sheet configuration" in str(exc_info.value)
+        assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
 
     def test_get_assembly_gsheet_success(self):
         """Test successful AssemblyGSheet retrieval."""

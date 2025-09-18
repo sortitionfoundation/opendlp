@@ -18,8 +18,6 @@ def _():
 @given('that the assembly is set up for "manual gsheet setup"', target_fixture="assembly_to_select")
 def _(assembly_creator):
     """that the assembly is set up for "manual gsheet setup"."""
-    # TODO: do this properly with a google sheet
-    # assembly = assembly_creator("Assembly to select", gsheet_url=VALID_GSHEET_URL)
     assembly = assembly_creator("Assembly to select")
     return assembly
 
@@ -32,10 +30,10 @@ def _(logged_in_page: Page, assembly_to_select):
     logged_in_page.goto(view_url)
 
     # Then check that the Start Selection link goes to the gsheet_select page
-    link = logged_in_page.get_by_role("link", name="Start Selection (Google Spreadsheet)")
+    link = logged_in_page.get_by_role("link", name="Configure Google Spreadsheet")
     expect(link).to_be_visible()
     link.click()
-    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", assembly_to_select.id))
+    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_configure", assembly_to_select.id))
 
 
 @then('I can configure the options for selection in "manual gsheet setup"')
@@ -48,12 +46,12 @@ def _(page: Page):
 @then('I can specify the categories and targets in "manual gsheet setup"')
 def _(page: Page):
     """I can specify the categories and targets in "manual gsheet setup"."""
-    categories_field = page.get_by_label("Google Spreadsheet categories tab")
+    categories_field = page.get_by_label("Categories Tab Name")
     expect(categories_field).to_be_visible()
 
 
 @then('I can specify the source of the respondents data in "manual gsheet setup"')
 def _(page: Page):
     """I can specify the source of the respondents data in "manual gsheet setup"."""
-    respondents_field = page.get_by_label("Google Spreadsheet respondents tab")
+    respondents_field = page.get_by_label("Respondents Tab Name")
     expect(respondents_field).to_be_visible()

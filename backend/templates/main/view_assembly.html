@@ -50,13 +50,53 @@
                     </div>
                 </dl>
 
+                {% if gsheet %}
+                <div class="govuk-!-margin-top-6">
+                    <h3 class="govuk-heading-m">{{ _('Google Spreadsheet Configuration') }}</h3>
+                    <dl class="govuk-summary-list">
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Spreadsheet URL') }}</dt>
+                            <dd class="govuk-summary-list__value">
+                                <a href="{{ gsheet.url }}" class="govuk-link" target="_blank" rel="noopener noreferrer">
+                                    {{ _('View Spreadsheet') }}
+                                </a>
+                            </dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Team Configuration') }}</dt>
+                            <dd class="govuk-summary-list__value">{{ gsheet.team.upper() }}</dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Respondents Tab') }}</dt>
+                            <dd class="govuk-summary-list__value">{{ gsheet.respondents_tab }}</dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Categories Tab') }}</dt>
+                            <dd class="govuk-summary-list__value">{{ gsheet.categories_tab }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                {% endif %}
+
                 <div class="govuk-button-group govuk-!-margin-top-6">
                     <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}"
                        class="govuk-button">
                         {{ _('Edit Assembly') }}
                     </a>
 
-                    {% if assembly.gsheet.url %}
+                    {% if gsheet %}
+                    <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Edit Google Spreadsheet') }}
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Configure Google Spreadsheet') }}
+                    </a>
+                    {% endif %}
+
+                    {% if gsheet and gsheet.url %}
                     <a href="{{ url_for('main.gsheet_select', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Start Selection (Google Spreadsheet)') }}
@@ -66,7 +106,7 @@
                         {{ _('Start Selection (Google Spreadsheet)') }}
                     </button>
                     <p class="govuk-body govuk-!-margin-top-2">
-                        <strong>{{ _('To enable selection:') }}</strong> {{ _('Configure a Google Spreadsheet URL by editing the assembly.') }}
+                        <strong>{{ _('To enable selection:') }}</strong> {{ _('Configure Google Spreadsheet settings first.') }}
                     </p>
                     {% endif %}
 

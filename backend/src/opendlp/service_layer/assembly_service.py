@@ -225,13 +225,13 @@ def add_assembly_gsheet(
     **gsheet_options: Any,
 ) -> AssemblyGSheet:
     """
-    Add a Google Sheet configuration to an assembly.
+    Add a Google Spreadsheet configuration to an assembly.
 
     Args:
         uow: Unit of Work for database operations
         assembly_id: ID of assembly to add the gsheet to
         user_id: ID of user performing the operation
-        url: Google Sheets URL
+        url: Google Spreadsheet URL
         team: Team configuration to use (uk, eu, aus)
         **gsheet_options: Additional options to override team defaults
 
@@ -260,7 +260,7 @@ def add_assembly_gsheet(
         # Check if assembly already has a gsheet
         existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
         if existing_gsheet:
-            raise ValueError(f"Assembly {assembly_id} already has a Google Sheet configuration")
+            raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
 
         # Create the AssemblyGSheet with team defaults
         assembly_gsheet = AssemblyGSheet.for_team(team, assembly_id, url)
@@ -283,7 +283,7 @@ def update_assembly_gsheet(
     **updates: Any,
 ) -> AssemblyGSheet:
     """
-    Update a Google Sheet configuration for an assembly.
+    Update a Google Spreadsheet configuration for an assembly.
 
     Args:
         uow: Unit of Work for database operations
@@ -316,7 +316,7 @@ def update_assembly_gsheet(
         # Get the existing gsheet
         assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
         if not assembly_gsheet:
-            raise ValueError(f"Assembly {assembly_id} does not have a Google Sheet configuration")
+            raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
         # Apply updates
         for field, value in updates.items():
@@ -334,7 +334,7 @@ def remove_assembly_gsheet(
     user_id: uuid.UUID,
 ) -> None:
     """
-    Remove a Google Sheet configuration from an assembly.
+    Remove a Google Spreadsheet configuration from an assembly.
 
     Args:
         uow: Unit of Work for database operations
@@ -363,7 +363,7 @@ def remove_assembly_gsheet(
         # Get the existing gsheet
         assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
         if not assembly_gsheet:
-            raise ValueError(f"Assembly {assembly_id} does not have a Google Sheet configuration")
+            raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
         uow.assembly_gsheets.delete(assembly_gsheet)
         uow.commit()
@@ -375,7 +375,7 @@ def get_assembly_gsheet(
     user_id: uuid.UUID,
 ) -> AssemblyGSheet | None:
     """
-    Get the Google Sheet configuration for an assembly.
+    Get the Google Spreadsheet configuration for an assembly.
 
     Args:
         uow: Unit of Work for database operations

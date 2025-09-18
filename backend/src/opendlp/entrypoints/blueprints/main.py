@@ -9,15 +9,19 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.service_layer.assembly_service import (
+    add_assembly_gsheet,
     create_assembly,
+    get_assembly_gsheet,
     get_assembly_with_permissions,
+    remove_assembly_gsheet,
     update_assembly,
+    update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
-from ..forms import CreateAssemblyForm, EditAssemblyForm, GsheetSelectionForm
+from ..forms import CreateAssemblyForm, CreateAssemblyGSheetForm, EditAssemblyForm, EditAssemblyGSheetForm
 
 main_bp = Blueprint("main", __name__)
 
@@ -53,8 +57,9 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("main/view_assembly.html", assembly=assembly), 200
+        return render_template("main/view_assembly.html", assembly=assembly, gsheet=gsheet), 200
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
@@ -69,35 +74,120 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet", methods=["GET", "POST"])
 @login_required
-def gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Configure Google Spreadsheet selection for an assembly."""
+def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Create or edit Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        # TODO: Check if assembly has a valid gsheet URL
-        # if not assembly.gsheet.url:
-        # flash(_("Please configure a Google Spreadsheet URL before running selection"), "error")
-        # return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        # Choose form based on whether gsheet exists
+        if existing_gsheet:
+            form = EditAssemblyGSheetForm(obj=existing_gsheet)
+            template = "main/edit_assembly_gsheet.html"
+            action = "edit"
+        else:
+            form = CreateAssemblyGSheetForm()
+            template = "main/create_assembly_gsheet.html"
+            action = "create"
 
-        form = GsheetSelectionForm()
-        return render_template("main/gsheet_select.html", assembly=assembly, form=form), 200
+        if form.validate_on_submit():
+            try:
+                if action == "create":
+                    with uow:
+                        add_assembly_gsheet(
+                            uow=uow,
+                            assembly_id=assembly_id,
+                            user_id=current_user.id,
+                            url=form.url.data,  # type: ignore[arg-type]
+                            team=form.team.data,
+                            respondents_tab=form.respondents_tab.data,
+                            categories_tab=form.categories_tab.data,
+                            id_column=form.id_column.data,
+                            check_same_address=form.check_same_address.data,
+                            generate_remaining_tab=form.generate_remaining_tab.data,
+                        )
+                    flash(_("Google Spreadsheet configuration created successfully"), "success")
+                else:
+                    with uow:
+                        update_assembly_gsheet(
+                            uow=uow,
+                            assembly_id=assembly_id,
+                            user_id=current_user.id,
+                            url=form.url.data,
+                            team=form.team.data,
+                            respondents_tab=form.respondents_tab.data,
+                            categories_tab=form.categories_tab.data,
+                            id_column=form.id_column.data,
+                            check_same_address=form.check_same_address.data,
+                            generate_remaining_tab=form.generate_remaining_tab.data,
+                        )
+                    flash(_("Google Spreadsheet configuration updated successfully"), "success")
+
+                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+            except InsufficientPermissions as e:
+                current_app.logger.warning(
+                    f"Insufficient permissions to {action} gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
+                )
+                flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+            except ValueError as e:
+                current_app.logger.error(
+                    f"Gsheet {action} validation error for assembly {assembly_id} user {current_user.id}: {e}"
+                )
+                flash(_("Please check your input and try again"), "error")
+            except Exception as e:
+                current_app.logger.error(
+                    f"Gsheet {action} error for assembly {assembly_id} user {current_user.id}: {e}"
+                )
+                flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+
+        return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet), 200
     except ValueError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for gsheet select by user {current_user.id}: {e}")
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for gsheet management by user {current_user.id}: {e}"
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         current_app.logger.warning(
-            f"Insufficient permissions for gsheet select on assembly {assembly_id} by user {current_user.id}: {e}"
+            f"Insufficient permissions to view assembly {assembly_id} for gsheet management by user {current_user.id}: {e}"
         )
-        flash(_("You don't have permission to configure selection for this assembly"), "error")
+        flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Gsheet select error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.error(f"Gsheet management page error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
+@login_required
+def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Remove Google Spreadsheet configuration from an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            remove_assembly_gsheet(uow, assembly_id, current_user.id)
+
+        flash(_("Google Spreadsheet configuration removed successfully"), "success")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except ValueError as e:
+        current_app.logger.warning(f"Assembly or gsheet not found for deletion by user {current_user.id}: {e}")
+        flash(_("Google Spreadsheet configuration not found"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to delete gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Gsheet deletion error for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
 
 
 @main_bp.route("/assemblies/new", methods=["GET", "POST"])

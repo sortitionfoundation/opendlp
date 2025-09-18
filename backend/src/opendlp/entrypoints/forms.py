@@ -4,9 +4,10 @@ ABOUTME: Uses GOV.UK Design System components for consistent government service 
 from typing import Any
 
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, DateField, EmailField, PasswordField, StringField, TextAreaField
+from wtforms import BooleanField, DateField, EmailField, PasswordField, SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import gettext as _
@@ -173,25 +174,60 @@ class EditAssemblyForm(AssemblyForm):
     """Form specifically for editing assemblies."""
 
 
-class GsheetSelectionForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for configuring Google Spreadsheet selection parameters."""
+class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for configuring Google Spreadsheet settings for an assembly."""
+
+    url = StringField(
+        _l("Google Spreadsheet URL"),
+        validators=[DataRequired(), GoogleSpreadsheetURLValidator()],
+        description=_l("Full URL of the Google Spreadsheet containing respondent data"),
+        render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
+    )
+
+    team = SelectField(
+        _l("Team Configuration"),
+        choices=[("uk", _l("UK Team")), ("eu", _l("EU Team")), ("aus", _l("Australia Team"))],
+        default="uk",
+        validators=[DataRequired()],
+        description=_l("Select the team configuration to use for default settings"),
+    )
 
     respondents_tab = StringField(
-        _l("Google Spreadsheet respondents tab"),
+        _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing respondent data in the Google Spreadsheet"),
         default="Respondents",
     )
 
     categories_tab = StringField(
-        _l("Google Spreadsheet categories tab"),
+        _l("Categories Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing categories, category values and targets"),
         default="Categories",
     )
 
-    generate_remaining = BooleanField(
-        _l("Generate remaining tab"),
+    id_column = StringField(
+        _l("ID Column"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        description=_l("Column name containing unique identifiers for respondents"),
+    )
+
+    check_same_address = BooleanField(
+        _l("Check Same Address"),
+        description=_l("Enable checking for participants with the same address"),
+        default=True,
+    )
+
+    generate_remaining_tab = BooleanField(
+        _l("Generate Remaining Tab"),
         description=_l("Create a tab with remaining participants after selection"),
         default=True,
     )
+
+
+class CreateAssemblyGSheetForm(AssemblyGSheetForm):
+    """Form specifically for creating assembly Google Spreadsheet configuration."""
+
+
+class EditAssemblyGSheetForm(AssemblyGSheetForm):
+    """Form specifically for editing assembly Google Spreadsheet configuration."""
