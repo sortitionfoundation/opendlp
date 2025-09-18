@@ -4,7 +4,7 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 
 from sortition_algorithms import adapters, settings
 
@@ -197,6 +197,27 @@ class AssemblyGSheet:
         non_updatable = ("assembly_id", "assembly_gsheet_id")
         return [f.name for f in fields(AssemblyGSheet) if f not in non_updatable]
 
+    @staticmethod
+    def _str_to_list_str(string_with_commas: Any) -> list[str]:
+        if string_with_commas is None:
+            return []
+        assert isinstance(string_with_commas, str)
+        return [col.strip() for col in string_with_commas.split(",") if col.strip()]
+
+    @classmethod
+    def convert_str_kwargs(cls, **kwargs: Any) -> dict[str, Any]:
+        """Auto convert string with commas into list of strings for two particular fields"""
+        new_kwargs: dict[str, Any] = {}
+        for field_name, value in kwargs.items():
+            if field_name == "check_same_address_cols_string":
+                field_name = "check_same_address_cols"
+                value = cls._str_to_list_str(value)
+            if field_name == "columns_to_keep_string":
+                field_name = "columns_to_keep"
+                value = cls._str_to_list_str(value)
+            new_kwargs[field_name] = value
+        return new_kwargs
+
     def update_values(self, url: str = "", team: Teams = "other", **kwargs: str | bool | list[str]) -> None:
         """Update values of the object."""
         if url:
@@ -214,6 +235,16 @@ class AssemblyGSheet:
             self.id_column = DEFAULT_ID_COLUMN[team]
             self.check_same_address_cols = DEFAULT_ADDRESS_COLS[team]
             self.columns_to_keep = DEFAULT_COLS_TO_KEEP[team]
+
+    @property
+    def check_same_address_cols_string(self) -> str:
+        """Get check_same_address_cols as a comma-separated string."""
+        return ", ".join(self.check_same_address_cols)
+
+    @property
+    def columns_to_keep_string(self) -> str:
+        """Get columns_to_keep as a comma-separated string."""
+        return ", ".join(self.columns_to_keep)
 
     def to_settings(self) -> settings.Settings:
         return settings.Settings(

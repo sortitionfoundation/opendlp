@@ -254,6 +254,20 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("Column name containing unique identifiers for respondents"),
     )
 
+    check_same_address_cols_string = StringField(
+        _l("Address Columns"),
+        validators=[Optional(), Length(max=500)],
+        description=_l(
+            "Comma-separated list of column names used for checking same address (e.g., primary_address1, zip_royal_mail)"
+        ),
+    )
+
+    columns_to_keep_string = StringField(
+        _l("Columns to Keep"),
+        validators=[Optional(), Length(max=1000)],
+        description=_l("Comma-separated list of column names to keep in output (e.g., first_name, last_name, email)"),
+    )
+
 
 class CreateAssemblyGSheetForm(AssemblyGSheetForm):
     """Form specifically for creating assembly Google Spreadsheet configuration."""

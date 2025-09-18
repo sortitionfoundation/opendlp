@@ -209,9 +209,8 @@ class TestAssemblyViewDetail:
         assert b"Status" in response.data or b"status" in response.data
         assert b"Created" in response.data or b"created" in response.data
 
-        if existing_assembly.first_assembly_date:
-            # Date should be formatted and displayed
-            assert str(existing_assembly.first_assembly_date.year).encode() in response.data
+        # Date should be formatted and displayed
+        assert str(existing_assembly.first_assembly_date.year).encode() in response.data
 
     def test_view_nonexistent_assembly(self, logged_in_admin):
         """Test viewing non-existent assembly shows error."""

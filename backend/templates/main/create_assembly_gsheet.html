@@ -217,6 +217,42 @@
                     {{ form.id_column(class="govuk-input" + (" govuk-input--error" if form.id_column.errors else "")) }}
                 </div>
 
+                <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.check_same_address_cols_string.id }}">
+                        {{ form.check_same_address_cols_string.label.text }}
+                    </label>
+                    {% if form.check_same_address_cols_string.description %}
+                    <div class="govuk-hint">
+                        {{ form.check_same_address_cols_string.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.check_same_address_cols_string.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.check_same_address_cols_string.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.check_same_address_cols_string(class="govuk-input" + (" govuk-input--error" if form.check_same_address_cols_string.errors else "")) }}
+                </div>
+
+                <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}">
+                    <label class="govuk-label govuk-label--s" for="{{ form.columns_to_keep_string.id }}">
+                        {{ form.columns_to_keep_string.label.text }}
+                    </label>
+                    {% if form.columns_to_keep_string.description %}
+                    <div class="govuk-hint">
+                        {{ form.columns_to_keep_string.description }}
+                    </div>
+                    {% endif %}
+                    {% if form.columns_to_keep_string.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.columns_to_keep_string.errors[0] }}
+                    </p>
+                    {% endif %}
+                    {{ form.columns_to_keep_string(class="govuk-input" + (" govuk-input--error" if form.columns_to_keep_string.errors else "")) }}
+                </div>
+
                 <div class="govuk-button-group">
                     <button type="submit" class="govuk-button" data-module="govuk-button">
                         {{ _('Save Configuration') }}

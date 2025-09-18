@@ -87,6 +87,9 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Choose form based on whether gsheet exists
         if existing_gsheet:
             form = EditAssemblyGSheetForm(obj=existing_gsheet)
+            # Populate string fields from list data
+            form.check_same_address_cols_string.data = existing_gsheet.check_same_address_cols_string
+            form.columns_to_keep_string.data = existing_gsheet.columns_to_keep_string
             template = "main/edit_assembly_gsheet.html"
             action = "edit"
         else:
@@ -97,38 +100,40 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if form.validate_on_submit():
             try:
                 if action == "create":
-                    with uow:
-                        add_assembly_gsheet(
-                            uow=uow,
-                            assembly_id=assembly_id,
-                            user_id=current_user.id,
-                            url=form.url.data,  # type: ignore[arg-type]
-                            team=form.team.data,
-                            select_registrants_tab=form.select_registrants_tab.data,
-                            select_targets_tab=form.select_targets_tab.data,
-                            replace_registrants_tab=form.replace_registrants_tab.data,
-                            replace_targets_tab=form.replace_targets_tab.data,
-                            id_column=form.id_column.data,
-                            check_same_address=form.check_same_address.data,
-                            generate_remaining_tab=form.generate_remaining_tab.data,
-                        )
+                    add_assembly_gsheet(
+                        uow=uow,
+                        assembly_id=assembly_id,
+                        user_id=current_user.id,
+                        url=form.url.data,  # type: ignore[arg-type]
+                        team=form.team.data,
+                        select_registrants_tab=form.select_registrants_tab.data,
+                        select_targets_tab=form.select_targets_tab.data,
+                        replace_registrants_tab=form.replace_registrants_tab.data,
+                        replace_targets_tab=form.replace_targets_tab.data,
+                        id_column=form.id_column.data,
+                        check_same_address=form.check_same_address.data,
+                        generate_remaining_tab=form.generate_remaining_tab.data,
+                        check_same_address_cols_string=form.check_same_address_cols_string.data,
+                        columns_to_keep_string=form.columns_to_keep_string.data,
+                    )
                     flash(_("Google Spreadsheet configuration created successfully"), "success")
                 else:
-                    with uow:
-                        update_assembly_gsheet(
-                            uow=uow,
-                            assembly_id=assembly_id,
-                            user_id=current_user.id,
-                            url=form.url.data,
-                            team=form.team.data,
-                            select_registrants_tab=form.select_registrants_tab.data,
-                            select_targets_tab=form.select_targets_tab.data,
-                            replace_registrants_tab=form.replace_registrants_tab.data,
-                            replace_targets_tab=form.replace_targets_tab.data,
-                            id_column=form.id_column.data,
-                            check_same_address=form.check_same_address.data,
-                            generate_remaining_tab=form.generate_remaining_tab.data,
-                        )
+                    update_assembly_gsheet(
+                        uow=uow,
+                        assembly_id=assembly_id,
+                        user_id=current_user.id,
+                        url=form.url.data,
+                        team=form.team.data,
+                        select_registrants_tab=form.select_registrants_tab.data,
+                        select_targets_tab=form.select_targets_tab.data,
+                        replace_registrants_tab=form.replace_registrants_tab.data,
+                        replace_targets_tab=form.replace_targets_tab.data,
+                        id_column=form.id_column.data,
+                        check_same_address=form.check_same_address.data,
+                        generate_remaining_tab=form.generate_remaining_tab.data,
+                        check_same_address_cols_string=form.check_same_address_cols_string.data,
+                        columns_to_keep_string=form.columns_to_keep_string.data,
+                    )
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
                 return redirect(url_for("main.view_assembly", assembly_id=assembly_id))

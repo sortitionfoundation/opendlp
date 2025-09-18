@@ -119,6 +119,10 @@ class TestAssemblyGSheetCreateView:
         # ID column
         assert b"ID Column" in response.data
 
+        # String list fields
+        assert b"Address Columns" in response.data
+        assert b"Columns to Keep" in response.data
+
         # Checkboxes
         assert b"Check Same Address" in response.data
         assert b"Generate Remaining Tab" in response.data
@@ -133,6 +137,8 @@ class TestAssemblyGSheetCreateView:
                 "select_registrants_tab": "Respondents",
                 "select_targets_tab": "Categories",
                 "id_column": "nationbuilder_id",
+                "check_same_address_cols_string": "primary_address1, zip_royal_mail",
+                "columns_to_keep_string": "first_name, last_name, email, mobile_number",
                 "check_same_address": True,
                 "generate_remaining_tab": True,
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
@@ -159,6 +165,8 @@ class TestAssemblyGSheetCreateView:
                 "select_registrants_tab": "Respondents",
                 "select_targets_tab": "Categories",
                 "id_column": "nationbuilder_id",
+                "check_same_address_cols_string": "address1, postal_code",
+                "columns_to_keep_string": "name, email",
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
             },
         )
@@ -180,6 +188,34 @@ class TestAssemblyGSheetCreateView:
         # Should return form with validation errors
         assert response.status_code == 200
         assert b"error" in response.data or b"required" in response.data
+
+    def test_create_gsheet_with_custom_team_and_string_fields(self, logged_in_admin, assembly_with_admin):
+        """Test creating gsheet with 'other' team and custom string field values."""
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_with_admin.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/custom123456789/edit",
+                "team": "other",  # Custom configuration
+                "select_registrants_tab": "CustomRespondents",
+                "select_targets_tab": "CustomCategories",
+                "id_column": "custom_id",
+                "check_same_address_cols_string": "street_address, postal_code, city",
+                "columns_to_keep_string": "first_name, last_name, email, phone, address",
+                "check_same_address": True,
+                "generate_remaining_tab": False,
+                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
+            },
+            follow_redirects=False,
+        )
+
+        # Should succeed
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly_with_admin.id}" in response.location
+
+        # Check flash message
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("configuration created successfully" in msg for msg in flash_messages)
 
     def test_create_gsheet_permission_denied_for_user(self, logged_in_user, assembly_with_admin):
         """Test regular users cannot create gsheet configurations."""
@@ -222,6 +258,8 @@ class TestAssemblyGSheetEditView:
                 "select_registrants_tab": "UpdatedRespondents",
                 "select_targets_tab": "UpdatedCategories",
                 "id_column": "updated_id_column",
+                "check_same_address_cols_string": "address_line1, postcode",  # EU team defaults
+                "columns_to_keep_string": "first_name, last_name, email, phone_number, city",
                 "check_same_address": False,  # Changed from True
                 "generate_remaining_tab": True,  # Changed from False
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),

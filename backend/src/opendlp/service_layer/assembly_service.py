@@ -263,7 +263,9 @@ def add_assembly_gsheet(
             raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
 
         # Create the AssemblyGSheet with team defaults
-        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url, **gsheet_options)
+        assembly_gsheet = AssemblyGSheet(
+            assembly_id=assembly_id, url=url, **AssemblyGSheet.convert_str_kwargs(**gsheet_options)
+        )
         if team in VALID_TEAMS:
             assembly_gsheet.update_team_settings(cast(Teams, team))
 
@@ -316,7 +318,7 @@ def update_assembly_gsheet(
             raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
         # Apply updates
-        assembly_gsheet.update_values(**updates)
+        assembly_gsheet.update_values(**AssemblyGSheet.convert_str_kwargs(**updates))
 
         uow.commit()
 

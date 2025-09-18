@@ -680,3 +680,122 @@ class TestAssemblyGSheetOperations:
                 assembly_id=assembly.id,
                 user_id=regular_user.id,
             )
+
+
+class TestAssemblyGSheetDomainModel:
+    """Test AssemblyGSheet domain model functionality."""
+
+    def test_check_same_address_cols_string_property(self):
+        """Test check_same_address_cols_string property converts list to comma-separated string."""
+        gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols=["primary_address1", "zip_royal_mail", "city"],
+        )
+
+        assert gsheet.check_same_address_cols_string == "primary_address1, zip_royal_mail, city"
+
+    def test_check_same_address_cols_string_property_empty_list(self):
+        """Test check_same_address_cols_string property with empty list."""
+        gsheet = AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL, check_same_address_cols=[])
+
+        assert gsheet.check_same_address_cols_string == ""
+
+    def test_columns_to_keep_string_property(self):
+        """Test columns_to_keep_string property converts list to comma-separated string."""
+        gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            columns_to_keep=["first_name", "last_name", "email", "mobile_number"],
+        )
+
+        assert gsheet.columns_to_keep_string == "first_name, last_name, email, mobile_number"
+
+    def test_columns_to_keep_string_property_empty_list(self):
+        """Test columns_to_keep_string property with empty list."""
+        gsheet = AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL, columns_to_keep=[])
+
+        assert gsheet.columns_to_keep_string == ""
+
+    def test_convert_str_kwargs_address_cols(self):
+        """Test convert_str_kwargs method updates check_same_address_cols from string."""
+        kwargs = dict(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols_string="address1, postal_code, city",
+        )
+        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+
+        assert gsheet.check_same_address_cols == ["address1", "postal_code", "city"]
+
+    def test_convert_str_kwargs_columns_to_keep(self):
+        """Test convert_str_kwargs method updates columns_to_keep from string."""
+        kwargs = dict(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            columns_to_keep_string="first_name, last_name, email",
+        )
+        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+
+        assert gsheet.columns_to_keep == ["first_name", "last_name", "email"]
+
+    def test_convert_str_kwargs_both_fields(self):
+        """Test convert_str_kwargs method updates both fields simultaneously."""
+        kwargs = dict(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols_string="street, postcode",
+            columns_to_keep_string="name, email, phone",
+        )
+        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+
+        assert gsheet.check_same_address_cols == ["street", "postcode"]
+        assert gsheet.columns_to_keep == ["name", "email", "phone"]
+
+    def test_convert_str_kwargs_with_spaces_and_empty_values(self):
+        """Test convert_str_kwargs handles extra spaces and empty values."""
+        kwargs = dict(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols_string="  address1 ,  , postal_code ,  city  ",
+            columns_to_keep_string="first_name, , last_name,  email , ",
+        )
+        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+
+        assert gsheet.check_same_address_cols == ["address1", "postal_code", "city"]
+        assert gsheet.columns_to_keep == ["first_name", "last_name", "email"]
+
+    def test_convert_str_kwargs_empty_strings(self):
+        """Test convert_str_kwargs with empty strings does update fields."""
+        original_address_cols = ["original_address"]
+        original_columns = ["original_column"]
+
+        gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols=original_address_cols.copy(),
+            columns_to_keep=original_columns.copy(),
+        )
+        gsheet.update_values(
+            **AssemblyGSheet.convert_str_kwargs(check_same_address_cols_string="", columns_to_keep_string="")
+        )
+
+        # Should remain unchanged
+        assert gsheet.check_same_address_cols == []
+        assert gsheet.columns_to_keep == []
+
+    def test_convert_str_kwargs_single_field(self):
+        """Test convert_str_kwargs with only one field provided."""
+        gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            check_same_address_cols=["original_address"],
+            columns_to_keep=["original_column"],
+        )
+        # Update only address columns
+        gsheet.update_values(
+            **AssemblyGSheet.convert_str_kwargs(check_same_address_cols_string="new_address, new_postcode")
+        )
+
+        assert gsheet.check_same_address_cols == ["new_address", "new_postcode"]
+        assert gsheet.columns_to_keep == ["original_column"]  # Should remain unchanged
