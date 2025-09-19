@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from flask.testing import FlaskClient
 
+from opendlp.domain.assembly import DEFAULT_ADDRESS_COLS, DEFAULT_COLS_TO_KEEP, DEFAULT_ID_COLUMN
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -139,8 +140,8 @@ class TestAssemblyGSheetCreateView:
                 "id_column": "nationbuilder_id",
                 "check_same_address_cols_string": "primary_address1, zip_royal_mail",
                 "columns_to_keep_string": "first_name, last_name, email, mobile_number",
-                "check_same_address": True,
-                "generate_remaining_tab": True,
+                "check_same_address": "y",
+                "generate_remaining_tab": "y",
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
             },
             follow_redirects=False,
@@ -245,8 +246,8 @@ class TestAssemblyGSheetEditView:
         assert b"Save Changes" in response.data
         assert b"Remove Configuration" in response.data
 
-    def test_edit_gsheet_success(self, logged_in_admin, assembly_with_gsheet):
-        """Test successful gsheet editing."""
+    def test_edit_gsheet_success_with_team_eu(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test successful gsheet editing with eu team overriding some settings."""
         assembly, gsheet = assembly_with_gsheet
         updated_url = "https://docs.google.com/spreadsheets/d/updated123456789/edit"
 
@@ -257,11 +258,8 @@ class TestAssemblyGSheetEditView:
                 "team": "eu",  # Changed from uk
                 "select_registrants_tab": "UpdatedRespondents",
                 "select_targets_tab": "UpdatedCategories",
-                "id_column": "updated_id_column",
-                "check_same_address_cols_string": "address_line1, postcode",  # EU team defaults
-                "columns_to_keep_string": "first_name, last_name, email, phone_number, city",
-                "check_same_address": False,  # Changed from True
-                "generate_remaining_tab": True,  # Changed from False
+                # "check_same_address": False - omit to set to False
+                "generate_remaining_tab": "y",  # "y" to set to True
                 "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
             follow_redirects=False,
@@ -275,6 +273,70 @@ class TestAssemblyGSheetEditView:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("configuration updated successfully" in msg for msg in flash_messages)
+
+        # Verify the changes were actually saved to the database
+        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
+            assert saved_gsheet is not None
+
+            # Check that all form values were properly saved
+            assert saved_gsheet.url == updated_url
+            assert saved_gsheet.select_registrants_tab == "UpdatedRespondents"
+            assert saved_gsheet.select_targets_tab == "UpdatedCategories"
+            assert saved_gsheet.id_column == DEFAULT_ID_COLUMN["eu"]
+            assert saved_gsheet.check_same_address is False
+            assert saved_gsheet.generate_remaining_tab is True
+
+            # Check that the string fields were properly converted to lists
+            assert saved_gsheet.check_same_address_cols == DEFAULT_ADDRESS_COLS["eu"]
+            assert saved_gsheet.columns_to_keep == DEFAULT_COLS_TO_KEEP["eu"]
+
+    def test_edit_gsheet_success_with_team_custom(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test successful gsheet editing."""
+        assembly, gsheet = assembly_with_gsheet
+        updated_url = "https://docs.google.com/spreadsheets/d/updated123456789/edit"
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/gsheet",
+            data={
+                "url": updated_url,
+                "team": "other",  # Changed from uk
+                "select_registrants_tab": "UpdatedRespondents",
+                "select_targets_tab": "UpdatedCategories",
+                "id_column": "updated_id_column",
+                "check_same_address_cols_string": "address_line, postcode",  # EU team defaults
+                "columns_to_keep_string": "first_name, last_name, email, phone_number, city",
+                # "check_same_address": False - omit to set to False
+                "generate_remaining_tab": "y",  # "y" to set to True
+                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+            },
+            follow_redirects=False,
+        )
+
+        # Should redirect to view assembly page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}" in response.location
+
+        # Check flash message
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("configuration updated successfully" in msg for msg in flash_messages)
+
+        # Verify the changes were actually saved to the database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
+            assert saved_gsheet is not None
+
+            # Check that all form values were properly saved
+            assert saved_gsheet.id_column == "updated_id_column"
+
+            # Check that the string fields were properly converted to lists
+            assert saved_gsheet.check_same_address_cols == ["address_line", "postcode"]
+            assert saved_gsheet.columns_to_keep == ["first_name", "last_name", "email", "phone_number", "city"]
 
     def test_edit_gsheet_validation_errors(self, logged_in_admin, assembly_with_gsheet):
         """Test form validation errors on gsheet editing."""

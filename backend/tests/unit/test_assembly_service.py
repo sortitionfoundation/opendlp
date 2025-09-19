@@ -521,10 +521,13 @@ class TestAssemblyGSheetOperations:
             user_id=admin_user.id,
             select_registrants_tab="Updated Tab",
             id_column="updated_id",
+            check_same_address_cols_string="updated, columns, here",
+            team="other",
         )
 
         assert updated_gsheet.select_registrants_tab == "Updated Tab"
         assert updated_gsheet.id_column == "updated_id"
+        assert updated_gsheet.check_same_address_cols == ["updated", "columns", "here"]
         assert uow.committed
 
     def test_update_assembly_gsheet_not_found(self):

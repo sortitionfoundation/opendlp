@@ -87,9 +87,6 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Choose form based on whether gsheet exists
         if existing_gsheet:
             form = EditAssemblyGSheetForm(obj=existing_gsheet)
-            # Populate string fields from list data
-            form.check_same_address_cols_string.data = existing_gsheet.check_same_address_cols_string
-            form.columns_to_keep_string.data = existing_gsheet.columns_to_keep_string
             template = "main/edit_assembly_gsheet.html"
             action = "edit"
         else:
