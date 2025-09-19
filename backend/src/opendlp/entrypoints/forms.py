@@ -243,7 +243,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         default="other",
         validators=[DataRequired()],
         description=_l(
-            "Select the team configuration to use for default settings for ID Column, columns to keep and address columns."
+            "Select the team configuration to use for default settings for ID Column, Address Columns and Columns To Keep."
         ),
     )
 
@@ -251,21 +251,27 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("ID Column"),
         validators=[DataRequired(), Length(min=1, max=100)],
         default="nationbuilder_id",
-        description=_l("Column name containing unique identifiers for respondents"),
+        description=_l(
+            "Column name containing unique identifiers for respondents. Note will be overridden if the Team Configuration is not 'Custom'."
+        ),
     )
 
     check_same_address_cols_string = StringField(
         _l("Address Columns"),
         validators=[Optional(), Length(max=500)],
         description=_l(
-            "Comma-separated list of column names used for checking same address (e.g., primary_address1, zip_royal_mail)"
+            "Comma-separated list of column names used for checking same address (e.g., primary_address1, zip_royal_mail). "
+            "Note will be overridden if the Team Configuration is not 'Custom'."
         ),
     )
 
     columns_to_keep_string = StringField(
         _l("Columns to Keep"),
         validators=[Optional(), Length(max=1000)],
-        description=_l("Comma-separated list of column names to keep in output (e.g., first_name, last_name, email)"),
+        description=_l(
+            "Comma-separated list of column names to keep in output (e.g., first_name, last_name, email). "
+            "Note will be overridden if the Team Configuration is not 'Custom'."
+        ),
     )
 
 
