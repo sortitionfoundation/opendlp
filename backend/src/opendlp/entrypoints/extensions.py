@@ -48,10 +48,11 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
         strict_transport_security=True,
         content_security_policy={
             "default-src": "'self'",
-            "script-src": "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
             "style-src": "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "font-src": "'self' https://cdn.jsdelivr.net",
             "img-src": "'self' data:",
+            "connect-src": "'self'",
         },
     )
 

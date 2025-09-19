@@ -45,7 +45,7 @@
 
             <p class="govuk-body">{{ _('Update the Google Spreadsheet settings for this assembly.') }}</p>
 
-            <form method="post" novalidate>
+            <form method="post" novalidate x-data="{ selectedTeam: '{{ form.team.data or 'other' }}' }">
                 {{ form.hidden_tag() }}
 
                 <div class="govuk-form-group {% if form.url.errors %}govuk-form-group--error{% endif %}">
@@ -189,7 +189,7 @@
                         <div class="govuk-radios" data-module="govuk-radios">
                             {% for value, label in form.team.choices %}
                             <div class="govuk-radios__item">
-                                <input class="govuk-radios__input" id="{{ form.team.id }}-{{ value }}" name="{{ form.team.name }}" type="radio" value="{{ value }}" {% if form.team.data == value %}checked{% endif %}>
+                                <input class="govuk-radios__input" id="{{ form.team.id }}-{{ value }}" name="{{ form.team.name }}" type="radio" value="{{ value }}" x-model="selectedTeam" {% if form.team.data == value %}checked{% endif %}>
                                 <label class="govuk-label govuk-radios__label" for="{{ form.team.id }}-{{ value }}">
                                     {{ label }}
                                 </label>
@@ -199,7 +199,7 @@
                     </fieldset>
                 </div>
 
-                <div class="govuk-form-group {% if form.id_column.errors %}govuk-form-group--error{% endif %}">
+                <div class="govuk-form-group {% if form.id_column.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
                     <label class="govuk-label govuk-label--s" for="{{ form.id_column.id }}">
                         {{ form.id_column.label.text }}
                     </label>
@@ -217,7 +217,7 @@
                     {{ form.id_column(class="govuk-input" + (" govuk-input--error" if form.id_column.errors else "")) }}
                 </div>
 
-                <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}">
+                <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
                     <label class="govuk-label govuk-label--s" for="{{ form.check_same_address_cols_string.id }}">
                         {{ form.check_same_address_cols_string.label.text }}
                     </label>
@@ -235,7 +235,7 @@
                     {{ form.check_same_address_cols_string(class="govuk-input" + (" govuk-input--error" if form.check_same_address_cols_string.errors else "")) }}
                 </div>
 
-                <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}">
+                <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
                     <label class="govuk-label govuk-label--s" for="{{ form.columns_to_keep_string.id }}">
                         {{ form.columns_to_keep_string.label.text }}
                     </label>
