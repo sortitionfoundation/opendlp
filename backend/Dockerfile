@@ -19,6 +19,7 @@ apt-get install -qyy \
   -o APT::Install-Suggests=false \
   build-essential \
   ca-certificates \
+  libffi-dev \
   python3-setuptools \
   python3.12-dev \
   nodejs \
