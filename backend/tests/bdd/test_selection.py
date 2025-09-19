@@ -4,6 +4,7 @@ from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
 
 from tests.bdd.config import Urls
+from tests.data import VALID_GSHEET_URL
 
 scenarios("../../features/selection.feature")
 
@@ -53,5 +54,16 @@ def _(page: Page):
 @then('I can specify the source of the respondents data in "manual gsheet setup"')
 def _(page: Page):
     """I can specify the source of the respondents data in "manual gsheet setup"."""
+    url_field = page.get_by_label("Google Spreadsheet URL")
+    expect(url_field).to_be_visible()
+    url_field.fill(VALID_GSHEET_URL)
     respondents_field = page.get_by_label("Selection Registrants Tab Name")
     expect(respondents_field).to_be_visible()
+    respondents_field.fill("All respondents")
+
+
+@then('I can save the options in "manual gsheet setup"')
+def _(page: Page, assembly_to_select):
+    """I can specify the source of the respondents data in "manual gsheet setup"."""
+    page.click('button[type="submit"]')
+    expect(page).to_have_url(Urls.for_assembly("view_assembly", assembly_to_select.id))
