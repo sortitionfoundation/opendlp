@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-18 15:00+0100\n"
+"POT-Creation-Date: 2025-09-19 10:48+0100\n"
 "PO-Revision-Date: 2025-09-16 09:18+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -226,15 +226,39 @@ msgstr "Rétegzett kiválasztás"
 #: src/opendlp/entrypoints/forms.py:246
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
-"columns to keep and address columns."
+"Address Columns and Columns To Keep."
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:251
 msgid "ID Column"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:254
-msgid "Column name containing unique identifiers for respondents"
+#: src/opendlp/entrypoints/forms.py:255
+msgid ""
+"Column name containing unique identifiers for respondents. Note will be "
+"overridden if the Team Configuration is not 'Custom'."
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:260
+msgid "Address Columns"
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:263
+msgid ""
+"Comma-separated list of column names used for checking same address "
+"(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
+"Team Configuration is not 'Custom'."
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:269
+msgid "Columns to Keep"
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:272
+msgid ""
+"Comma-separated list of column names to keep in output (e.g., first_name,"
+" last_name, email). Note will be overridden if the Team Configuration is "
+"not 'Custom'."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:46
@@ -263,79 +287,79 @@ msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/main.py:65
-#: src/opendlp/entrypoints/blueprints/main.py:157
-#: src/opendlp/entrypoints/blueprints/main.py:275
+#: src/opendlp/entrypoints/blueprints/main.py:159
+#: src/opendlp/entrypoints/blueprints/main.py:277
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
 #: src/opendlp/entrypoints/blueprints/main.py:70
-#: src/opendlp/entrypoints/blueprints/main.py:163
-#: src/opendlp/entrypoints/blueprints/main.py:281
+#: src/opendlp/entrypoints/blueprints/main.py:165
+#: src/opendlp/entrypoints/blueprints/main.py:283
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:115
+#: src/opendlp/entrypoints/blueprints/main.py:116
 msgid "Google Spreadsheet configuration created successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:132
+#: src/opendlp/entrypoints/blueprints/main.py:134
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:139
-#: src/opendlp/entrypoints/blueprints/main.py:189
+#: src/opendlp/entrypoints/blueprints/main.py:141
+#: src/opendlp/entrypoints/blueprints/main.py:191
 #, fuzzy
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:145
-#: src/opendlp/entrypoints/blueprints/main.py:224
-#: src/opendlp/entrypoints/blueprints/main.py:267
+#: src/opendlp/entrypoints/blueprints/main.py:147
+#: src/opendlp/entrypoints/blueprints/main.py:226
+#: src/opendlp/entrypoints/blueprints/main.py:269
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:150
+#: src/opendlp/entrypoints/blueprints/main.py:152
 #, fuzzy
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:179
+#: src/opendlp/entrypoints/blueprints/main.py:181
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:183
+#: src/opendlp/entrypoints/blueprints/main.py:185
 #, fuzzy
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázatok"
 
-#: src/opendlp/entrypoints/blueprints/main.py:193
+#: src/opendlp/entrypoints/blueprints/main.py:195
 #, fuzzy
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:216
+#: src/opendlp/entrypoints/blueprints/main.py:218
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:220
+#: src/opendlp/entrypoints/blueprints/main.py:222
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/main.py:227
+#: src/opendlp/entrypoints/blueprints/main.py:229
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:255
+#: src/opendlp/entrypoints/blueprints/main.py:257
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:261
+#: src/opendlp/entrypoints/blueprints/main.py:263
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:270
+#: src/opendlp/entrypoints/blueprints/main.py:272
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
@@ -582,9 +606,9 @@ msgstr ""
 "folyamat megkezdésére."
 
 #: templates/main/create_assembly.html:108
-#: templates/main/create_assembly_gsheet.html:224
+#: templates/main/create_assembly_gsheet.html:260
 #: templates/main/edit_assembly.html:111
-#: templates/main/edit_assembly_gsheet.html:224
+#: templates/main/edit_assembly_gsheet.html:260
 msgid "Cancel"
 msgstr "Megszakítás"
 
@@ -610,7 +634,7 @@ msgid ""
 "respondent data and selection results."
 msgstr ""
 
-#: templates/main/create_assembly_gsheet.html:222
+#: templates/main/create_assembly_gsheet.html:258
 #, fuzzy
 msgid "Save Configuration"
 msgstr "Rétegzett kiválasztás"
@@ -666,7 +690,7 @@ msgid "Update the details for this citizens' assembly."
 msgstr "Frissítse a közösségi gyűlés részleteit."
 
 #: templates/main/edit_assembly.html:109
-#: templates/main/edit_assembly_gsheet.html:222
+#: templates/main/edit_assembly_gsheet.html:258
 msgid "Save Changes"
 msgstr "Módosítások mentése"
 
@@ -687,19 +711,19 @@ msgstr "Google táblázatok"
 msgid "Update the Google Spreadsheet settings for this assembly."
 msgstr "Frissítse a közösségi gyűlés részleteit."
 
-#: templates/main/edit_assembly_gsheet.html:230
-#: templates/main/edit_assembly_gsheet.html:237
+#: templates/main/edit_assembly_gsheet.html:266
+#: templates/main/edit_assembly_gsheet.html:273
 #, fuzzy
 msgid "Remove Configuration"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/main/edit_assembly_gsheet.html:231
+#: templates/main/edit_assembly_gsheet.html:267
 msgid ""
 "If you no longer need this Google Spreadsheet configuration, you can "
 "remove it."
 msgstr ""
 
-#: templates/main/edit_assembly_gsheet.html:236
+#: templates/main/edit_assembly_gsheet.html:272
 msgid ""
 "Are you sure you want to remove this Google Spreadsheet configuration? "
 "This action cannot be undone."
@@ -946,4 +970,13 @@ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 #~ msgstr "Összekapcsolva"
 
 #~ msgid "Configure a Google Spreadsheet URL by editing the assembly."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Select the team configuration to use "
+#~ "for default settings for ID Column, "
+#~ "columns to keep and address columns."
+#~ msgstr ""
+
+#~ msgid "Column name containing unique identifiers for respondents"
 #~ msgstr ""
