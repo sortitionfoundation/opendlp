@@ -91,7 +91,7 @@ flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FL
 
 # run gunicorn locally
 gunicorn:
-  @uv run gunicorn --bind=0.0.0.0:8080 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
+  @uv run gunicorn --bind=0.0.0.0:8081 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
 
 # build CSS from SCSS
 build-css:
