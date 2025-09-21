@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come_up_on_port
+from tests.data import VALID_GSHEET_URL
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
 
@@ -127,6 +128,22 @@ def assembly_creator(test_database, admin_user):
         return assembly
 
     return _create_assembly
+
+
+@pytest.fixture
+def assembly_gsheet_creator(test_database, admin_user):
+    """Create assembly for testing"""
+
+    def _create_assembly_gsheet(title: str) -> tuple[Assembly, AssemblyGSheet]:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
+        gsheet_assembly = add_assembly_gsheet(
+            uow=uow, assembly_id=assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL, team="uk"
+        )
+        return assembly, gsheet_assembly
+
+    return _create_assembly_gsheet
 
 
 @pytest.fixture(scope="session")

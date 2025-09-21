@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Selection') }} - {{ assembly.title }} - OpenDLP{% endblock %}
+
+{% block content %}
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Assembly') }}: {{ assembly.title }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        {{ _('Selection') }}
+                    </li>
+                </ol>
+            </div>
+
+            <div class="main govuk-!-margin-top-6">
+                <h1 class="govuk-heading-l">{{ _('Selection') }}</h1>
+                <h2 class="govuk-heading-m">{{ assembly.title }}</h2>
+
+                <p class="govuk-body">{{ _('Run the democratic lottery selection for this assembly using Google Spreadsheet data.') }}</p>
+
+                {% if gsheet %}
+                <div class="govuk-!-margin-bottom-6">
+                    <h3 class="govuk-heading-s">{{ _('Google Spreadsheet Configuration') }}</h3>
+                    <dl class="govuk-summary-list">
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Spreadsheet URL') }}</dt>
+                            <dd class="govuk-summary-list__value">
+                                <a href="{{ gsheet.url }}" class="govuk-link" target="_blank" rel="noopener noreferrer">
+                                    {{ _('View Spreadsheet') }}
+                                </a>
+                            </dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Respondents Tab') }}</dt>
+                            <dd class="govuk-summary-list__value">{{ gsheet.select_registrants_tab }}</dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _('Categories Tab') }}</dt>
+                            <dd class="govuk-summary-list__value">{{ gsheet.select_targets_tab }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                {% endif %}
+
+                <div class="govuk-button-group govuk-!-margin-top-6">
+                    <a href="#" class="govuk-button">
+                        {{ _('Load Spreadsheet') }}
+                    </a>
+
+                    <a href="#" class="govuk-button govuk-button--secondary" disabled>
+                        {{ _('Run Selection') }}
+                    </a>
+
+                    <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Back to Assembly') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

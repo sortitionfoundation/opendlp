@@ -93,13 +93,10 @@
                     {% endif %}
 
                     {% if gsheet and gsheet.url %}
-                    disabled for now
-                    {#
-                    <a href="{{ url_for('main.gsheet_select', assembly_id=assembly.id) }}"
+                    <a href="{{ url_for('main.select_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Start Selection (Google Spreadsheet)') }}
                     </a>
-                    #}
 
                     {% else %}
                     <button class="govuk-button govuk-button--secondary" disabled>

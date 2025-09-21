@@ -23,6 +23,7 @@ class Urls:
         "view_assembly": "{base}/assemblies/{assembly_id}",
         "update_assembly": "{base}/assemblies/{assembly_id}/edit",
         "gsheet_configure": "{base}/assemblies/{assembly_id}/gsheet",
+        "gsheet_select": "{base}/assemblies/{assembly_id}/gsheet_select",
     }
 
     @classmethod

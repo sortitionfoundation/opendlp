@@ -196,6 +196,32 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
 
 
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET", "POST"])
+@login_required
+def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Run selection for an assembly using Google Spreadsheet data."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+        return render_template("main/gsheet_select.html", assembly=assembly, gsheet=gsheet), 200
+    except ValueError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} selection user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        return render_template("errors/500.html"), 500
+
+
 @main_bp.route("/assemblies/new", methods=["GET", "POST"])
 @login_required
 def create_assembly_page() -> ResponseReturnValue:
