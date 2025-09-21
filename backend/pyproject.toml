@@ -202,4 +202,5 @@ fail_under = 90
 [tool.deptry.per_rule_ignores]
 # these are not imported directly, but are used.
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
+# - gunicorn - web server for production
 DEP002 = ["alembic", "gunicorn"]
