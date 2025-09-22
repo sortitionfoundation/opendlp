@@ -12,6 +12,7 @@ from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
+    SqlAlchemySelectionRunRecordRepository,
     SqlAlchemyUserAssemblyRoleRepository,
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
@@ -19,6 +20,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    SelectionRunRecordRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
     UserRepository,
@@ -33,6 +35,7 @@ class AbstractUnitOfWork(abc.ABC):
     assembly_gsheets: AssemblyGSheetRepository
     user_invites: UserInviteRepository
     user_assembly_roles: UserAssemblyRoleRepository
+    selection_run_records: SelectionRunRecordRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -83,6 +86,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.assembly_gsheets = SqlAlchemyAssemblyGSheetRepository(self.session)
         self.user_invites = SqlAlchemyUserInviteRepository(self.session)
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
+        self.selection_run_records = SqlAlchemySelectionRunRecordRepository(self.session)
 
         return self
 

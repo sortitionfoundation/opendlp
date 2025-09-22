@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
@@ -600,3 +600,271 @@ class TestAssemblyGSheetORM:
         assert retrieved_assembly is not None
         assert hasattr(retrieved_assembly, "gsheet")
         assert retrieved_assembly.gsheet is None  # Should be None for optional one-to-one
+
+
+class TestSelectionRunRecordORM:
+    def test_save_and_retrieve_selection_run_record(self, postgres_session: Session):
+        """Test that SelectionRunRecord objects can be saved and retrieved."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()  # Get assembly ID
+
+        # Create SelectionRunRecord
+        task_id = uuid.uuid4()
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="running",
+            log_messages=["Started task", "Processing data", "Selection in progress"],
+            settings_used={"algorithm": "maximin", "target_count": 100, "seed": 42},
+            error_message="",
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve SelectionRunRecord
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        assert retrieved_record is not None
+        assert retrieved_record.assembly_id == assembly.id
+        assert retrieved_record.task_id == task_id
+        assert retrieved_record.status == "running"
+        assert retrieved_record.log_messages == ["Started task", "Processing data", "Selection in progress"]
+        assert retrieved_record.settings_used == {"algorithm": "maximin", "target_count": 100, "seed": 42}
+        assert retrieved_record.error_message == ""
+        assert isinstance(retrieved_record.created_at, datetime)
+        assert retrieved_record.created_at.tzinfo is not None
+        assert retrieved_record.completed_at is None
+
+    def test_selection_run_record_defaults(self, postgres_session: Session):
+        """Test that SelectionRunRecord default values work correctly."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord with minimal data (defaults should apply)
+        task_id = uuid.uuid4()
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="pending",
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and check defaults
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        assert retrieved_record.log_messages == []
+        assert retrieved_record.settings_used == {}
+        assert retrieved_record.error_message == ""
+        assert retrieved_record.completed_at is None
+
+    def test_selection_run_record_with_completion(self, postgres_session: Session):
+        """Test SelectionRunRecord with completion timestamp."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord
+        task_id = uuid.uuid4()
+        completed_time = datetime.now()
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="completed",
+            log_messages=["Task started", "Selection completed successfully"],
+            settings_used={"algorithm": "stratified", "target_count": 50},
+            completed_at=completed_time,
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and verify
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        assert retrieved_record.status == "completed"
+        assert retrieved_record.completed_at is not None
+        assert isinstance(retrieved_record.completed_at, datetime)
+
+    def test_selection_run_record_with_error(self, postgres_session: Session):
+        """Test SelectionRunRecord with error information."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord with error
+        task_id = uuid.uuid4()
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="failed",
+            log_messages=["Task started", "Error occurred during processing"],
+            settings_used={"algorithm": "maximin", "target_count": 200},
+            error_message="Google Sheets API connection failed",
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and verify
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        assert retrieved_record.status == "failed"
+        assert retrieved_record.error_message == "Google Sheets API connection failed"
+        assert "Error occurred during processing" in retrieved_record.log_messages
+
+    def test_selection_run_record_foreign_key_constraint(self, postgres_session: Session):
+        """Test that foreign key constraint works for assembly_id."""
+        # Try to create SelectionRunRecord without valid assembly
+        task_id = uuid.uuid4()
+        selection_record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),  # Non-existent assembly
+            task_id=task_id,
+            status="pending",
+        )
+
+        postgres_session.add(selection_record)
+
+        with pytest.raises(IntegrityError):  # Should raise foreign key constraint error
+            postgres_session.commit()
+
+    def test_cascade_delete_selection_run_records(self, postgres_session: Session):
+        """Test that deleting an assembly cascades to its SelectionRunRecords."""
+        # Create assembly
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create multiple SelectionRunRecords
+        record1 = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status="completed",
+        )
+        record2 = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status="running",
+        )
+
+        postgres_session.add(record1)
+        postgres_session.add(record2)
+        postgres_session.commit()
+
+        # Verify records exist
+        assert postgres_session.query(SelectionRunRecord).filter_by(assembly_id=assembly.id).count() == 2
+
+        # Delete assembly
+        postgres_session.delete(assembly)
+        postgres_session.commit()
+
+        # Verify SelectionRunRecords were cascade deleted
+        assert postgres_session.query(SelectionRunRecord).filter_by(assembly_id=assembly.id).count() == 0
+
+    def test_selection_run_record_task_id_primary_key(self, postgres_session: Session):
+        """Test that task_id serves as primary key and must be unique."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create first SelectionRunRecord
+        task_id = uuid.uuid4()
+        record1 = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="running",
+        )
+
+        postgres_session.add(record1)
+        postgres_session.commit()
+
+        # Try to create second SelectionRunRecord with same task_id
+        record2 = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,  # Same task_id
+            status="pending",
+        )
+
+        postgres_session.add(record2)
+
+        with pytest.raises(IntegrityError):  # Should raise primary key constraint error
+            postgres_session.commit()
+
+    def test_selection_run_record_json_fields_empty(self, postgres_session: Session):
+        """Test that JSON fields handle empty collections properly."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord with explicitly empty JSON fields
+        task_id = uuid.uuid4()
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status="pending",
+            log_messages=[],
+            settings_used={},
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and verify empty collections are preserved
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        assert retrieved_record.log_messages == []
+        assert retrieved_record.settings_used == {}
+        assert isinstance(retrieved_record.log_messages, list)
+        assert isinstance(retrieved_record.settings_used, dict)

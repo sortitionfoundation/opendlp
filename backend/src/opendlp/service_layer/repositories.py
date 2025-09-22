@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Iterable
 from typing import Any
 
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 
@@ -139,4 +139,28 @@ class AssemblyGSheetRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        raise NotImplementedError
+
+
+class SelectionRunRecordRepository(AbstractRepository):
+    """Repository interface for SelectionRunRecord domain objects."""
+
+    @abc.abstractmethod
+    def get_by_task_id(self, task_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get a SelectionRunRecord by its task ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> Iterable[SelectionRunRecord]:
+        """Get all SelectionRunRecords for a specific assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
+        """Get all currently running selection tasks."""
         raise NotImplementedError

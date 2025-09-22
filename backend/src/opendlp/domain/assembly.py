@@ -271,3 +271,26 @@ class AssemblyGSheet:
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
         detached_assembly_gsheet = AssemblyGSheet(**asdict(self))
         return detached_assembly_gsheet
+
+
+@dataclass
+class SelectionRunRecord:
+    """Record of a selection task execution for audit and progress tracking"""
+
+    assembly_id: uuid.UUID  # foreign key to Assembly
+    task_id: uuid.UUID  # unique identifier for this task run
+    status: str  # pending, running, completed, failed
+    log_messages: list[str] = field(default_factory=list)  # stored as JSON in DB
+    settings_used: dict[str, Any] = field(default_factory=dict)  # stored as JSON in DB
+    error_message: str = ""
+    created_at: datetime | None = None
+    completed_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.created_at is None:
+            self.created_at = datetime.now(UTC)
+
+    def create_detached_copy(self) -> "SelectionRunRecord":
+        """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
+        detached_run_record = SelectionRunRecord(**asdict(self))
+        return detached_run_record

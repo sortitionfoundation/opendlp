@@ -196,3 +196,19 @@ assembly_gsheets = Table(
     Column("columns_to_keep", JSON, nullable=False, default=list),
     Column("selection_algorithm", String(50), nullable=False, default="maximin"),
 )
+
+# Selection run records table
+selection_run_records = Table(
+    "selection_run_records",
+    metadata,
+    Column("task_id", CrossDatabaseUUID(), primary_key=True),
+    Column(
+        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
+    Column("status", String(50), nullable=False, index=True),
+    Column("log_messages", JSON, nullable=False, default=list),
+    Column("settings_used", JSON, nullable=False, default=dict),
+    Column("error_message", Text, nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
+    Column("completed_at", TZAwareDatetime(), nullable=True),
+)

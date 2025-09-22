@@ -11,13 +11,14 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    SelectionRunRecordRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
     UserRepository,
@@ -304,3 +305,50 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
         self.session.delete(item)
+
+
+class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunRecordRepository):
+    """SQLAlchemy implementation of SelectionRunRecordRepository."""
+
+    def add(self, item: SelectionRunRecord) -> None:
+        """Add a SelectionRunRecord to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get a SelectionRunRecord by its task ID (primary key)."""
+        return self.session.query(SelectionRunRecord).filter_by(task_id=item_id).first()
+
+    def list(self) -> Iterable[SelectionRunRecord]:
+        """List all SelectionRunRecords ordered by creation time."""
+        return self.session.query(SelectionRunRecord).order_by(orm.selection_run_records.c.created_at.desc()).all()
+
+    def get_by_task_id(self, task_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get a SelectionRunRecord by its task ID."""
+        return self.session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> Iterable[SelectionRunRecord]:
+        """Get all SelectionRunRecords for a specific assembly."""
+        return (
+            self.session.query(SelectionRunRecord)
+            .filter_by(assembly_id=assembly_id)
+            .order_by(orm.selection_run_records.c.created_at.desc())
+            .all()
+        )
+
+    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly."""
+        return (
+            self.session.query(SelectionRunRecord)
+            .filter_by(assembly_id=assembly_id)
+            .order_by(orm.selection_run_records.c.created_at.desc())
+            .first()
+        )
+
+    def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
+        """Get all currently running selection tasks."""
+        return (
+            self.session.query(SelectionRunRecord)
+            .filter_by(status="running")
+            .order_by(orm.selection_run_records.c.created_at.desc())
+            .all()
+        )

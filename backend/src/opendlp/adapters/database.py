@@ -92,6 +92,9 @@ def start_mappers() -> None:
             },
         )
 
+        # Map SelectionRunRecord domain object to selection_run_records table
+        orm.mapper_registry.map_imperatively(assembly.SelectionRunRecord, orm.selection_run_records)
+
         _mappers_started = True
 
     except Exception as e:  # pragma: no cover
