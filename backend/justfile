@@ -89,6 +89,10 @@ flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
 flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FLASK_ENV="testing_postgres":
   @uv run flask run --port=5002 --host=127.0.0.1 --debug
 
+# run a celery worker (for local dev)
+celery:
+  @uv run celery -A celery_app worker --loglevel=info
+
 # run gunicorn locally
 gunicorn:
   @uv run gunicorn --bind=0.0.0.0:8081 --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
