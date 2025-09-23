@@ -1,3 +1,7 @@
+# Note that any command in this file might be run by Claude Code
+# so they should all be safe. Unsafe commands will go in the justfile
+# in the git repo root. In particular deployment commands are put in the root.
+#
 # Note if the command starts with `@` then it will NOT be echoed to the terminal
 
 set dotenv-load
@@ -178,10 +182,6 @@ drop-local-docker-db:
 # drop the docker volume holding the postgres database for test
 drop-test-docker-db:
   @docker volume rm backend_sqla_opendlp_test_pgdata
-
-# update the deployment on opendlp-test server from git main branch
-deploy-opendlp-test:
-  @ssh opendlp-test just opendlp-update
 
 # run the editor with the environment available
 edit:
