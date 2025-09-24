@@ -324,3 +324,4 @@ vite.config.ts.timestamp-*
 
 # local notes - don't commit
 /backend/notes.md
+.playwright-mcp/
