@@ -15,7 +15,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="govuk-template__body govuk-frontend-supported">
+<body class="govuk-template__body govuk-frontend-supported" hx-boost=true>
     <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
 
     <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">{{ _('Skip to main content') }}</a>
@@ -151,6 +151,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof window.GOVUKFrontend !== 'undefined') {
