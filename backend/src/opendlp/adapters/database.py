@@ -56,12 +56,25 @@ def start_mappers() -> None:
             users.User,
             orm.users,
             properties={
-                # assembly_roles will be loaded separately to maintain domain independence
+                "assembly_roles": relationship(
+                    users.UserAssemblyRole,
+                    back_populates="user",
+                    cascade="all, delete-orphan",
+                ),
             },
         )
 
         # Map UserAssemblyRole domain object to user_assembly_roles table
-        orm.mapper_registry.map_imperatively(users.UserAssemblyRole, orm.user_assembly_roles)
+        orm.mapper_registry.map_imperatively(
+            users.UserAssemblyRole,
+            orm.user_assembly_roles,
+            properties={
+                "user": relationship(
+                    users.User,
+                    back_populates="assembly_roles",
+                ),
+            },
+        )
 
         # Map Assembly domain object to assemblies table
         orm.mapper_registry.map_imperatively(

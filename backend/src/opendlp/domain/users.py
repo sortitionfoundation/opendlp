@@ -120,6 +120,7 @@ class User:
             is_active=self.is_active,
             user_data_agreement_agreed_at=self.user_data_agreement_agreed_at,
         )
+        detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user
 
 
@@ -147,3 +148,12 @@ class UserAssemblyRole:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    def create_detached_copy(self) -> "UserAssemblyRole":
+        return UserAssemblyRole(
+            user_id=self.user_id,
+            assembly_id=self.assembly_id,
+            role=self.role,
+            role_id=self.id,
+            created_at=self.created_at,
+        )
