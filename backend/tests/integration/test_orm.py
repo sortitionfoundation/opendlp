@@ -622,6 +622,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="running",
+            task_type="load_gsheet",
             log_messages=["Started task", "Processing data", "Selection in progress"],
             settings_used={"algorithm": "maximin", "target_count": 100, "seed": 42},
             error_message="",
@@ -637,6 +638,7 @@ class TestSelectionRunRecordORM:
         assert retrieved_record.assembly_id == assembly.id
         assert retrieved_record.task_id == task_id
         assert retrieved_record.status == "running"
+        assert retrieved_record.task_type == "load_gsheet"
         assert retrieved_record.log_messages == ["Started task", "Processing data", "Selection in progress"]
         assert retrieved_record.settings_used == {"algorithm": "maximin", "target_count": 100, "seed": 42}
         assert retrieved_record.error_message == ""
@@ -663,6 +665,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="pending",
+            task_type="load_gsheet",
         )
 
         postgres_session.add(selection_record)
@@ -696,6 +699,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="completed",
+            task_type="load_gsheet",
             log_messages=["Task started", "Selection completed successfully"],
             settings_used={"algorithm": "stratified", "target_count": 50},
             completed_at=completed_time,
@@ -730,6 +734,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="failed",
+            task_type="load_gsheet",
             log_messages=["Task started", "Error occurred during processing"],
             settings_used={"algorithm": "maximin", "target_count": 200},
             error_message="Google Sheets API connection failed",
@@ -753,6 +758,7 @@ class TestSelectionRunRecordORM:
             assembly_id=uuid.uuid4(),  # Non-existent assembly
             task_id=task_id,
             status="pending",
+            task_type="load_gsheet",
         )
 
         postgres_session.add(selection_record)
@@ -778,11 +784,13 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=uuid.uuid4(),
             status="completed",
+            task_type="load_gsheet",
         )
         record2 = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=uuid.uuid4(),
             status="running",
+            task_type="load_gsheet",
         )
 
         postgres_session.add(record1)
@@ -818,6 +826,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="running",
+            task_type="load_gsheet",
         )
 
         postgres_session.add(record1)
@@ -828,6 +837,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,  # Same task_id
             status="pending",
+            task_type="load_gsheet",
         )
 
         postgres_session.add(record2)
@@ -854,6 +864,7 @@ class TestSelectionRunRecordORM:
             assembly_id=assembly.id,
             task_id=task_id,
             status="pending",
+            task_type="load_gsheet",
             log_messages=[],
             settings_used={},
         )
