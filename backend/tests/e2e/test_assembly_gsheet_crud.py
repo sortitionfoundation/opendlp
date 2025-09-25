@@ -87,6 +87,8 @@ def _get_csrf_token(client: FlaskClient, endpoint: str) -> str:
 
 
 class TestAssemblyGSheetCreateView:
+    from tests.e2e.helpers import get_csrf_token
+
     """Test AssemblyGSheet creation functionality."""
 
     def test_create_gsheet_get_form_no_existing(self, logged_in_admin, assembly_with_admin):
@@ -142,7 +144,7 @@ class TestAssemblyGSheetCreateView:
                 "columns_to_keep_string": "first_name, last_name, email, mobile_number",
                 "check_same_address": "y",
                 "generate_remaining_tab": "y",
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
@@ -168,7 +170,7 @@ class TestAssemblyGSheetCreateView:
                 "id_column": "nationbuilder_id",
                 "check_same_address_cols_string": "address1, postal_code",
                 "columns_to_keep_string": "name, email",
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
             },
         )
 
@@ -182,7 +184,7 @@ class TestAssemblyGSheetCreateView:
             f"/assemblies/{assembly_with_admin.id}/gsheet",
             data={
                 "url": "",  # Missing required URL
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
             },
         )
 
@@ -204,34 +206,36 @@ class TestAssemblyGSheetCreateView:
                 "columns_to_keep_string": "first_name, last_name, email, phone, address",
                 "check_same_address": True,
                 "generate_remaining_tab": False,
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
 
         # Should succeed
         assert response.status_code == 302
-        assert f"/assemblies/{assembly_with_admin.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("configuration created successfully" in msg for msg in flash_messages)
 
-    def test_create_gsheet_permission_denied_for_user(self, logged_in_user, assembly_with_admin):
+    def test_create_gsheet_permission_denied_for_user(self, logged_in_user, existing_assembly):
         """Test regular users cannot create gsheet configurations."""
-        response = logged_in_user.get(f"/assemblies/{assembly_with_admin.id}/gsheet")
+        response = logged_in_user.get(f"/assemblies/{existing_assembly.id}/gsheet")
         # Should redirect or show permission error
         assert response.status_code in [302, 403, 500]
 
-    def test_create_gsheet_redirects_when_not_logged_in(self, client, assembly_with_admin):
+    def test_create_gsheet_redirects_when_not_logged_in(self, client, existing_assembly):
         """Test create gsheet redirects to login when not authenticated."""
-        response = client.get(f"/assemblies/{assembly_with_admin.id}/gsheet")
+        response = client.get(f"/assemblies/{existing_assembly.id}/gsheet")
         assert response.status_code == 302
         assert "login" in response.location
 
 
 class TestAssemblyGSheetEditView:
+    from tests.e2e.helpers import get_csrf_token
+
     """Test AssemblyGSheet editing functionality."""
 
     def test_edit_gsheet_get_form_with_existing(self, logged_in_admin, assembly_with_gsheet):
@@ -260,7 +264,7 @@ class TestAssemblyGSheetEditView:
                 "select_targets_tab": "UpdatedCategories",
                 # "check_same_address": False - omit to set to False
                 "generate_remaining_tab": "y",  # "y" to set to True
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
@@ -312,7 +316,7 @@ class TestAssemblyGSheetEditView:
                 "columns_to_keep_string": "first_name, last_name, email, phone_number, city",
                 # "check_same_address": False - omit to set to False
                 "generate_remaining_tab": "y",  # "y" to set to True
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
@@ -345,7 +349,7 @@ class TestAssemblyGSheetEditView:
             f"/assemblies/{assembly.id}/gsheet",
             data={
                 "url": "",  # Empty URL should fail validation
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
         )
 
@@ -362,6 +366,8 @@ class TestAssemblyGSheetEditView:
 
 
 class TestAssemblyGSheetDeleteView:
+    from tests.e2e.helpers import get_csrf_token
+
     """Test AssemblyGSheet deletion functionality."""
 
     def test_delete_gsheet_success(self, logged_in_admin, assembly_with_gsheet):
@@ -370,7 +376,7 @@ class TestAssemblyGSheetDeleteView:
         response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
             },
             follow_redirects=False,
         )
@@ -389,7 +395,7 @@ class TestAssemblyGSheetDeleteView:
         response = logged_in_admin.post(
             f"/assemblies/{assembly_with_admin.id}/gsheet/delete",
             data={
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly_with_admin.id}/gsheet/delete"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet/delete"),
             },
             follow_redirects=False,
         )
@@ -409,7 +415,7 @@ class TestAssemblyGSheetDeleteView:
         response = logged_in_user.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": _get_csrf_token(logged_in_user, f"/assemblies/{assembly.id}/gsheet/delete"),
+                "csrf_token": get_csrf_token(logged_in_user, f"/assemblies/{assembly.id}/gsheet/delete"),
             },
         )
         # Should redirect or show permission error
@@ -424,6 +430,8 @@ class TestAssemblyGSheetDeleteView:
 
 
 class TestAssemblyGSheetWorkflowIntegration:
+    from tests.e2e.helpers import get_csrf_token
+
     """Test complete gsheet workflows end-to-end."""
 
     def test_complete_create_edit_delete_workflow(self, logged_in_admin, assembly_with_admin):
@@ -441,7 +449,7 @@ class TestAssemblyGSheetWorkflowIntegration:
                 "id_column": "workflow_id",
                 "check_same_address": True,
                 "generate_remaining_tab": False,
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
@@ -460,7 +468,7 @@ class TestAssemblyGSheetWorkflowIntegration:
                 "id_column": "updated_workflow_id",
                 "check_same_address": False,
                 "generate_remaining_tab": True,
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
             follow_redirects=False,
         )
@@ -472,7 +480,7 @@ class TestAssemblyGSheetWorkflowIntegration:
         delete_response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
             },
             follow_redirects=False,
         )
@@ -505,7 +513,7 @@ class TestAssemblyGSheetWorkflowIntegration:
                 "select_registrants_tab": "StateRespondents",
                 "select_targets_tab": "StateCategories",
                 "id_column": "state_id",
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
         )
 
@@ -521,7 +529,7 @@ class TestAssemblyGSheetWorkflowIntegration:
         logged_in_admin.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet/delete"),
             },
         )
 
@@ -551,7 +559,7 @@ class TestAssemblyGSheetWorkflowIntegration:
                 "select_registrants_tab": "BreadcrumbRespondents",
                 "select_targets_tab": "BreadcrumbCategories",
                 "id_column": "breadcrumb_id",
-                "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
             },
         )
 
@@ -563,6 +571,8 @@ class TestAssemblyGSheetWorkflowIntegration:
 
 
 class TestAssemblyGSheetPermissions:
+    from tests.e2e.helpers import get_csrf_token
+
     """Test gsheet permission handling."""
 
     def test_permissions_properly_enforced_for_regular_users(self, logged_in_user, assembly_with_admin):
@@ -578,7 +588,7 @@ class TestAssemblyGSheetPermissions:
             f"/assemblies/{assembly.id}/gsheet",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/unauthorized123456789/edit",
-                "csrf_token": _get_csrf_token(logged_in_user, f"/assemblies/{assembly.id}/gsheet"),
+                "csrf_token": get_csrf_token(logged_in_user, f"/assemblies/{assembly.id}/gsheet"),
             },
         )
         assert post_response.status_code in [302, 403, 500]
@@ -608,7 +618,7 @@ class TestAssemblyGSheetPermissions:
                     "select_registrants_tab": "Test",
                     "select_targets_tab": "Test",
                     "id_column": "test_id",
-                    "csrf_token": _get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+                    "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
                 },
             )
             # Should return form with validation error

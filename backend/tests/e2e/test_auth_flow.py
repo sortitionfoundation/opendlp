@@ -11,6 +11,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
+from tests.e2e.helpers import get_csrf_token
 
 
 @pytest.fixture
@@ -75,7 +76,7 @@ class TestAuthenticationFlow:
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
                 "accept_data_agreement": "y",
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
         )
@@ -100,7 +101,7 @@ class TestAuthenticationFlow:
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
                 "accept_data_agreement": "y",
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
         )
 
@@ -119,7 +120,7 @@ class TestAuthenticationFlow:
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
                 "accept_data_agreement": "y",
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
         )
 
@@ -134,7 +135,7 @@ class TestAuthenticationFlow:
                 "invite_code": valid_invite.code,
                 "first_name": "New",
                 # Missing required fields
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
         )
 
@@ -152,7 +153,7 @@ class TestAuthenticationFlow:
                 "password": "securepassword123",
                 "password_confirm": "differentpassword",
                 "accept_data_agreement": "y",
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
         )
 
@@ -172,7 +173,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
             follow_redirects=False,
         )
@@ -192,7 +193,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "wrongpassword",
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -206,7 +207,7 @@ class TestAuthenticationFlow:
             data={
                 "email": "nonexistent@example.com",
                 "password": "somepassword",
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -220,7 +221,7 @@ class TestAuthenticationFlow:
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
                 "remember_me": True,
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
             follow_redirects=False,
         )
@@ -241,7 +242,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -261,7 +262,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -283,7 +284,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
         response = client.get("/")
@@ -306,7 +307,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -322,7 +323,7 @@ class TestAuthenticationFlow:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -336,14 +337,6 @@ class TestAuthenticationFlow:
         response = client.get(f"/auth/register/{valid_invite.code}")
         assert response.status_code == 200
         assert valid_invite.code.encode() in response.data
-
-    def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
-        """Helper to extract CSRF token from form."""
-        _ = client.get(endpoint)
-        # This is a simplified approach - actual implementation would parse HTML
-        # and extract the CSRF token from the form
-        # TODO: actually implement this properly - and make it shared between classes
-        return "csrf_token_placeholder"  # Placeholder for now
 
 
 class TestAuthenticationEdgeCases:
@@ -360,7 +353,7 @@ class TestAuthenticationEdgeCases:
                 "email": regular_user.email,  # Already exists
                 "password": "securepassword123",
                 "password_confirm": "securepassword123",
-                "csrf_token": self._get_csrf_token(client, "/auth/register"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
         )
 
@@ -376,7 +369,7 @@ class TestAuthenticationEdgeCases:
                 data={
                     "email": regular_user.email,
                     "password": "wrongpassword",
-                    "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                    "csrf_token": get_csrf_token(client, "/auth/login"),
                 },
             )
 
@@ -397,10 +390,6 @@ class TestAuthenticationEdgeCases:
 
         # TODO: Should fail due to CSRF protection (actual behavior may vary)
         # There is no assert in this test right now
-
-    def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
-        """Helper to extract CSRF token from form."""
-        return "csrf_token_placeholder"  # Placeholder for now
 
 
 class TestCacheHeaders:
@@ -425,7 +414,7 @@ class TestCacheHeaders:
             data={
                 "email": regular_user.email,
                 "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": self._get_csrf_token(client, "/auth/login"),
+                "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
 
@@ -445,7 +434,3 @@ class TestCacheHeaders:
 
         # When redirected, no special cache headers should be present
         assert "Cache-Control" not in response.headers or "no-cache" not in response.headers.get("Cache-Control", "")
-
-    def _get_csrf_token(self, client: FlaskClient, endpoint: str) -> str:
-        """Helper to extract CSRF token from form."""
-        return "csrf_token_placeholder"  # Placeholder for now
