@@ -5,13 +5,14 @@ import uuid
 from collections.abc import Iterable
 from typing import Any
 
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
+    SelectionRunRecordRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
     UserRepository,
@@ -173,6 +174,38 @@ class FakeAssemblyGSheetRepository(FakeRepository, AssemblyGSheetRepository):
             self._items.remove(item)
 
 
+class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordRepository):
+    """Fake implementation of SelectionRunRecordRepository."""
+
+    def get(self, item_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get a SelectionRunRecord by its ID."""
+        # SelectionRunRecord doesn't have an id field, only task_id
+        return self.get_by_task_id(item_id)
+
+    def get_by_task_id(self, task_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get a SelectionRunRecord by its task ID."""
+        for item in self._items:
+            if item.task_id == task_id:
+                return item
+        return None
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> Iterable[SelectionRunRecord]:
+        """Get all SelectionRunRecords for a specific assembly."""
+        return [item for item in self._items if item.assembly_id == assembly_id]
+
+    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly."""
+        assembly_records = list(self.get_by_assembly_id(assembly_id))
+        if not assembly_records:
+            return None
+        # Sort by created_at, return the most recent
+        return max(assembly_records, key=lambda r: r.created_at or "")
+
+    def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
+        """Get all currently running selection tasks."""
+        return [item for item in self._items if item.status in ["pending", "running"]]
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -182,6 +215,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.assembly_gsheets = self.fake_assembly_gsheets = FakeAssemblyGSheetRepository()
         self.user_invites = self.fake_user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = self.fake_user_assembly_roles = FakeUserAssemblyRoleRepository()
+        self.selection_run_records = self.fake_selection_run_records = FakeSelectionRunRecordRepository()
         self.committed = False
 
     def __enter__(self) -> AbstractUnitOfWork:
@@ -201,4 +235,5 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_assembly_gsheets._items.clear()
         self.fake_user_invites._items.clear()
         self.fake_user_assembly_roles._items.clear()
+        self.fake_selection_run_records._items.clear()
         self.committed = False
