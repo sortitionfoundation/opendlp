@@ -7,7 +7,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
 
 from .exceptions import InsufficientPermissions
 
@@ -111,7 +111,9 @@ def require_global_role(required_role: GlobalRole) -> Callable[[Callable[..., An
             # Expect user as first argument after uow
             if len(args) >= 2:
                 user = args[1]  # Assuming uow is first, user is second
-                if isinstance(user, User) and not _has_minimum_global_role(user, required_role):
+                user_level = get_role_level(user.global_role)
+                required_level = get_role_level(required_role)
+                if isinstance(user, User) and user_level < required_level:
                     raise InsufficientPermissions(action=func.__name__, required_role=required_role.value)
             return func(*args, **kwargs)
 
@@ -166,21 +168,3 @@ def require_assembly_permission(
         return wrapper
 
     return decorator
-
-
-def _has_minimum_global_role(user: User, required_role: GlobalRole) -> bool:
-    """
-    Check if user has at least the required global role.
-
-    Role hierarchy: ADMIN > GLOBAL_ORGANISER > USER
-    """
-    role_hierarchy = {
-        GlobalRole.USER: 0,
-        GlobalRole.GLOBAL_ORGANISER: 1,
-        GlobalRole.ADMIN: 2,
-    }
-
-    user_level = role_hierarchy.get(user.global_role, 0)
-    required_level = role_hierarchy.get(required_role, 0)
-
-    return user_level >= required_level

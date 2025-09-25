@@ -13,6 +13,16 @@ class GlobalRole(Enum):
     USER = "user"
 
 
+def get_role_level(role: GlobalRole) -> int:
+    """Get numeric level for role comparison."""
+    role_levels = {
+        GlobalRole.USER: 1,
+        GlobalRole.GLOBAL_ORGANISER: 2,
+        GlobalRole.ADMIN: 3,
+    }
+    return role_levels.get(role, 0)
+
+
 class AssemblyRole(Enum):
     ASSEMBLY_MANAGER = "assembly-manager"
     CONFIRMATION_CALLER = "confirmation-caller"

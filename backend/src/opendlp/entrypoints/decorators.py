@@ -9,7 +9,8 @@ from typing import Any, TypeVar
 from flask import abort, current_app, flash, redirect, request, url_for
 from flask_login import current_user
 
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.bootstrap import bootstrap
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
 from opendlp.service_layer.permissions import (
     can_call_confirmations,
     can_manage_assembly,
@@ -17,7 +18,6 @@ from opendlp.service_layer.permissions import (
     has_global_admin,
     has_global_organiser,
 )
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import _
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -41,8 +41,8 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
                 return redirect(url_for("auth.login", next=request.url))
 
             # Check global role hierarchy: ADMIN > GLOBAL_ORGANISER > USER
-            user_role_level = _get_role_level(current_user.global_role)
-            required_role_level = _get_role_level(required_role)
+            user_role_level = get_role_level(current_user.global_role)
+            required_role_level = get_role_level(required_role)
 
             if user_role_level < required_role_level:
                 current_app.logger.warning(
@@ -98,7 +98,8 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
             try:
                 assembly_uuid = uuid.UUID(str(assembly_id))
 
-                with SqlAlchemyUnitOfWork() as uow:
+                uow = bootstrap()
+                with uow:
                     assembly = uow.assemblies.get(assembly_uuid)
                     if not assembly:
                         abort(404)
@@ -196,13 +197,3 @@ def require_assembly_manager(f: F) -> F:
 def require_confirmation_caller(f: F) -> F:
     """Decorator that requires confirmation caller role."""
     return require_assembly_role(AssemblyRole.CONFIRMATION_CALLER)(f)
-
-
-def _get_role_level(role: GlobalRole) -> int:
-    """Get numeric level for role comparison."""
-    role_levels = {
-        GlobalRole.USER: 1,
-        GlobalRole.GLOBAL_ORGANISER: 2,
-        GlobalRole.ADMIN: 3,
-    }
-    return role_levels.get(role, 0)
