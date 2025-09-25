@@ -3,60 +3,7 @@ ABOUTME: Tests complete Assembly creation, viewing, editing, and listing workflo
 
 from datetime import UTC, datetime, timedelta
 
-import pytest
-from flask.testing import FlaskClient
-
-from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
-
-@pytest.fixture
-def existing_assembly(postgres_session_factory, admin_user):
-    """Create an existing assembly for testing."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Existing Assembly",
-            created_by_user_id=admin_user.id,
-            question="What is the existing question?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-        )
-        return assembly.create_detached_copy()
-
-
-@pytest.fixture
-def logged_in_admin(client, admin_user):
-    """Helper to login as admin user."""
-    client.post(
-        "/auth/login",
-        data={
-            "email": admin_user.email,
-            "password": "adminpass123",  # pragma: allowlist secret
-            "csrf_token": _get_csrf_token(client, "/auth/login"),
-        },
-    )
-    return client
-
-
-@pytest.fixture
-def logged_in_user(client, regular_user):
-    """Helper to login as regular user."""
-    client.post(
-        "/auth/login",
-        data={
-            "email": regular_user.email,
-            "password": "userpass123",  # pragma: allowlist secret
-            "csrf_token": _get_csrf_token(client, "/auth/login"),
-        },
-    )
-    return client
-
-
-def _get_csrf_token(client: FlaskClient, endpoint: str) -> str:
-    """Helper to extract CSRF token from form."""
-    # response = client.get(endpoint)
-    # For now, we'll use a placeholder - in a real implementation this would parse HTML
-    return "csrf_token_placeholder"
+from tests.e2e.helpers import get_csrf_token
 
 
 class TestAssemblyListView:
