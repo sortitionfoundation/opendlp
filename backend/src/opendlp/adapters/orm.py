@@ -206,6 +206,8 @@ selection_run_records = Table(
         "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
     ),
     Column("status", String(50), nullable=False, index=True),
+    Column("task_type", String(50), nullable=False, index=True),
+    Column("celery_task_id", String(50), nullable=False, index=True),
     Column("log_messages", JSON, nullable=False, default=list),
     Column("settings_used", JSON, nullable=False, default=dict),
     Column("error_message", Text, nullable=False, default=""),

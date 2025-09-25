@@ -289,6 +289,8 @@ class SelectionRunRecord:
     assembly_id: uuid.UUID  # foreign key to Assembly
     task_id: uuid.UUID  # unique identifier for this task run
     status: str  # pending, running, completed, failed
+    task_type: str  # which task was submitted, so we know the type of returned arguments
+    celery_task_id: str = ""  # the ID of the task in celery
     log_messages: list[str] = field(default_factory=list)  # stored as JSON in DB
     settings_used: dict[str, Any] = field(default_factory=dict)  # stored as JSON in DB
     error_message: str = ""
