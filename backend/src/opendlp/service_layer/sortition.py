@@ -118,7 +118,7 @@ def start_gsheet_select_task(
 
 def get_selection_run_status(
     uow: AbstractUnitOfWork, task_id: uuid.UUID
-) -> tuple[SelectionRunRecord | None, AsyncResult | None, RunReport]:
+) -> tuple[SelectionRunRecord | None, list[str], RunReport]:
     """
     Get the status of a selection run task.
 
@@ -132,21 +132,27 @@ def get_selection_run_status(
     celery_result: AsyncResult | None = None
     run_record: SelectionRunRecord | None = uow.selection_run_records.get_by_task_id(task_id)
     run_report: RunReport = RunReport()
+    log_messages: list[str] = []
     if run_record:
         celery_result = app.app.AsyncResult(run_record.celery_task_id)
 
         # TODO: extract features and people from the result
         # might mean we need to have separate methods for load_gsheet and run_selection
-        if celery_result and celery_result.id and celery_result.successful():
-            final_result = celery_result.get()
-            assert final_result
-            if run_record.task_type == "load_gsheet":
-                _, _, _, run_report = final_result
-            elif run_record.task_type == "select_gsheet":
-                _, _, run_report = final_result
-            else:
-                raise Exception(f"Unknown task_type {run_record.task_type} found in run record {run_record.task_id}")
-    return run_record, celery_result, run_report
+        if celery_result and celery_result.id:
+            if celery_result.successful():
+                final_result = celery_result.get()
+                assert final_result
+                if run_record.task_type == "load_gsheet":
+                    _, _, _, run_report = final_result
+                elif run_record.task_type == "select_gsheet":
+                    _, _, run_report = final_result
+                else:
+                    raise Exception(
+                        f"Unknown task_type {run_record.task_type} found in run record {run_record.task_id}"
+                    )
+            elif celery_result.state == "PROGRESS":
+                log_messages = celery_result.info.get("all_messages", [])
+    return run_record, log_messages, run_report
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:

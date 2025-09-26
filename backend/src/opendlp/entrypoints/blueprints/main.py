@@ -235,7 +235,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-            run_record, celery_result, run_report = get_selection_run_status(uow, run_id)
+            run_record, celery_log_messages, run_report = get_selection_run_status(uow, run_id)
 
         # Validate that the run belongs to this assembly
         if run_record and run_record.assembly_id != assembly_id:
@@ -250,7 +250,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             assembly=assembly,
             gsheet=gsheet,
             run_record=run_record,
-            celery_result=celery_result,
+            celery_log_messages=celery_log_messages,
             run_report=run_report,
             run_id=run_id,
         ), 200

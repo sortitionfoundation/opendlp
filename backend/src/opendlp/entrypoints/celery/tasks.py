@@ -16,12 +16,28 @@ from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.bootstrap import bootstrap
-from opendlp.entrypoints.celery.app import CeleryContextHandler, app
+from opendlp.entrypoints.celery.app import app
 
 
-def _set_up_celery_logging(context: Task) -> None:  # type: ignore[no-any-unimported]
+class SelectionRunRecordHandler(logging.Handler):
+    """
+    A logger that sends the log messages through Celery to the AsyncResult
+    object.
+    """
+
+    def __init__(self, task_id: uuid.UUID) -> None:  # type: ignore[no-any-unimported]
+        super().__init__()
+        self.task_id = task_id
+        self.setFormatter(logging.Formatter(fmt="'%(message)s'"))
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        _append_run_log(self.task_id, [msg])
+
+
+def _set_up_celery_logging(task_id: uuid.UUID) -> None:  # type: ignore[no-any-unimported]
     # get log messages written back as we go
-    handler = CeleryContextHandler(context)
+    handler = SelectionRunRecordHandler(task_id)
     handler.setLevel(logging.DEBUG)
     override_logging_handlers([handler], [handler])
 
@@ -89,7 +105,7 @@ def _internal_load_gsheet(
         report.add_report(f_report)
         task_obj.update_state(
             state="PROGRESS",
-            meta={"features_status": f_report},
+            meta={"features_status": f_report.as_text()},
         )
         assert features is not None
 
@@ -106,11 +122,10 @@ def _internal_load_gsheet(
         )
 
         people, p_report = adapter.load_people(respondents_tab_name, settings, features)
-        # print(p_report.as_text())
         report.add_report(p_report)
         task_obj.update_state(
             state="PROGRESS",
-            meta={"people_status": f_report},
+            meta={"people_status": p_report.as_text()},
         )
         assert people is not None
 
@@ -238,7 +253,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
     respondents_tab_name: str,
     settings: settings.Settings,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
-    _set_up_celery_logging(self)
+    _set_up_celery_logging(task_id)
     return _internal_load_gsheet(self, task_id, adapter, feature_tab_name, respondents_tab_name, settings)
 
 
@@ -252,7 +267,7 @@ def run_select(  # type: ignore[no-any-unimported]
     number_people_wanted: int,
     settings: settings.Settings,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
-    _set_up_celery_logging(self)
+    _set_up_celery_logging(task_id)
     report = RunReport()
     success, features, people, load_report = _internal_load_gsheet(
         self, task_id, adapter, feature_tab_name, respondents_tab_name, settings
