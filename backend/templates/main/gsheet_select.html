@@ -162,6 +162,13 @@
                         {% endif %}
                     </dl>
 
+                    {% if run_record.completed_at %}
+                    <h4 class="govuk-heading-s">{{ _('Run Report') }}</h4>
+                    <div class="govuk-inset-text">
+                        <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
+                    </div>
+                    {% endif %}
+
                     {% if run_record.log_messages %}
                     <h4 class="govuk-heading-s">{{ _('Progress Messages') }}</h4>
                     <div class="govuk-inset-text">

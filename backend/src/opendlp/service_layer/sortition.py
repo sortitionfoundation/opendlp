@@ -4,6 +4,7 @@ ABOUTME: Provides high-level functions for starting and monitoring Celery-based 
 import uuid
 
 from celery.result import AsyncResult
+from sortition_algorithms import RunReport
 
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.entrypoints.celery import app, tasks
@@ -71,7 +72,7 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
 
 def get_selection_run_status(
     uow: AbstractUnitOfWork, task_id: uuid.UUID
-) -> tuple[SelectionRunRecord | None, AsyncResult | None]:
+) -> tuple[SelectionRunRecord | None, AsyncResult | None, RunReport]:
     """
     Get the status of a selection run task.
 
@@ -84,6 +85,7 @@ def get_selection_run_status(
     """
     celery_result: AsyncResult | None = None
     run_record: SelectionRunRecord | None = uow.selection_run_records.get_by_task_id(task_id)
+    run_report: RunReport = RunReport()
     if run_record:
         celery_result = app.app.AsyncResult(run_record.celery_task_id)
 
@@ -92,7 +94,7 @@ def get_selection_run_status(
     if celery_result and celery_result.id and celery_result.successful():
         final_result = celery_result.get()
         assert final_result
-        success, features, people, report = final_result
+        _, _, _, run_report = final_result
     """
     if run_record.status == "completed" and celery_result.successful():
         final_result = celery_result.get()
@@ -111,7 +113,7 @@ def get_selection_run_status(
             print(f"Error: {run_record.error_message}")
         return "failure"
     """
-    return run_record, celery_result
+    return run_record, celery_result, run_report
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
