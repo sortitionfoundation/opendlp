@@ -98,7 +98,13 @@ def _internal_load_gsheet(
     )
 
     try:
-        _append_run_log(task_id, [f"Loading targets from tab: {feature_tab_name}"])
+        _append_run_log(
+            task_id,
+            [
+                f"Loading spreadsheet with title: {adapter.spreadsheet.title}",
+                f"Loading targets from tab: {feature_tab_name}",
+            ],
+        )
 
         features, f_report = adapter.load_features(feature_tab_name)
         # print(f_report.as_text())
@@ -231,8 +237,10 @@ def _internal_write_selected(
     selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
 
     # Export to Google Sheets
-    adapter.output_selected_remaining(selected_table, remaining_table, settings)
-    # TODO: do something with dupes
+    dupes = adapter.output_selected_remaining(selected_table, remaining_table, settings)
+    if dupes:
+        # TODO: do something more with dupes? Maybe save to run record extra_info JSON???
+        _append_run_log(task_id, [f"Note that {len(dupes)} were found when writing the remaining tab."])
 
     _update_selection_record(
         task_id=task_id,
