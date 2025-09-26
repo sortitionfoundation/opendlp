@@ -15,7 +15,11 @@ from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_a
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
-from tests.conftest import wait_for_postgres_to_come_up, wait_for_webapp_to_come_up_on_port
+from tests.conftest import (
+    wait_for_celery_worker_to_come_up,
+    wait_for_postgres_to_come_up,
+    wait_for_webapp_to_come_up_on_port,
+)
 from tests.data import VALID_GSHEET_URL
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
@@ -71,6 +75,7 @@ def test_server(test_database):
     env = os.environ.copy()
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
+    env["REDIS_PORT"] = "63792"
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
 
     process = subprocess.Popen(  # noqa: S603
@@ -95,6 +100,48 @@ def test_server(test_database):
         process.kill()
         process.wait()
     print("Test server stopped")
+
+
+@pytest.fixture(scope="session")
+def test_celery_worker(test_database):
+    """Start celery worker in the background"""
+    # check if celery worker is already running
+    try:
+        wait_for_celery_worker_to_come_up()
+        print("Test celery worker already running, using existing instance")
+        yield
+        return
+    except Exception:
+        print("Starting test server...")
+
+    # Start server in background
+    backend_path = Path(__file__).parent.parent.parent
+    env = os.environ.copy()
+    env["FLASK_ENV"] = "testing_postgres"
+    env["DB_PORT"] = "54322"
+    env["REDIS_PORT"] = "63792"
+
+    process = subprocess.Popen(  # noqa: S603
+        ["uv", "run", "celery", "-A", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
+        cwd=backend_path,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    # wait for celery worker
+    wait_for_celery_worker_to_come_up()
+    print("Test celery worker started successfully")
+
+    yield
+
+    # Cleanup
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+    print("Test celery worker stopped")
 
 
 @pytest.fixture(scope="session")
@@ -156,7 +203,7 @@ def browser():
 
 
 @pytest.fixture(scope="session")
-def context(browser, test_server):
+def context(browser, test_server, test_celery_worker):
     """Browser context that waits for server to be ready"""
     context = browser.new_context()
     context.set_default_navigation_timeout(PLAYWRIGHT_TIMEOUT)

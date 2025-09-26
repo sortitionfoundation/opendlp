@@ -17,6 +17,7 @@ from tenacity import retry, stop_after_delay
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
+from opendlp.entrypoints.celery.app import app
 
 pytest_plugins = ["tests.bdd.shared.ui_shared"]
 
@@ -179,3 +180,15 @@ def wait_for_webapp_to_come_up_on_port(port: int = 5002):
 def wait_for_redis_to_come_up():
     r = redis.Redis(RedisCfg.from_env().to_url())
     return r.ping()
+
+
+@retry(stop=stop_after_delay(10))
+def wait_for_celery_worker_to_come_up():
+    """Check if Celery worker is ready to accept tasks."""
+    inspect = app.control.inspect()
+    active_nodes = inspect.ping()
+
+    if not active_nodes:
+        raise Exception("No active Celery workers found")
+
+    return True
