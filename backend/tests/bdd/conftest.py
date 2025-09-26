@@ -11,6 +11,7 @@ from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.celery.app import get_celery_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -63,7 +64,7 @@ def test_server(test_database):
     """Start Flask test server in background"""
     # Check if server is already running
     try:
-        wait_for_webapp_to_come_up_on_port(BDD_PORT)
+        wait_for_webapp_to_come_up_on_port(port=BDD_PORT, timeout=2)
         print("Test server already running, using existing instance")
         yield
         return
@@ -105,16 +106,18 @@ def test_server(test_database):
 @pytest.fixture(scope="session")
 def test_celery_worker(test_database):
     """Start celery worker in the background"""
+    # create celery app with correct configuration
+    celery_app = get_celery_app(redis_port=63792)
     # check if celery worker is already running
     try:
-        wait_for_celery_worker_to_come_up()
+        wait_for_celery_worker_to_come_up(celery_app, timeout=2)
         print("Test celery worker already running, using existing instance")
         yield
         return
     except Exception:
-        print("Starting test server...")
+        print("Starting test celery worker...")
 
-    # Start server in background
+    # Start celery worker in background
     backend_path = Path(__file__).parent.parent.parent
     env = os.environ.copy()
     env["FLASK_ENV"] = "testing_postgres"
@@ -129,7 +132,7 @@ def test_celery_worker(test_database):
         stderr=subprocess.PIPE,
     )
     # wait for celery worker
-    wait_for_celery_worker_to_come_up()
+    wait_for_celery_worker_to_come_up(celery_app)
     print("Test celery worker started successfully")
 
     yield

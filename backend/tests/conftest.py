@@ -13,11 +13,10 @@ import redis
 from click.testing import CliRunner
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from tenacity import retry, stop_after_delay
+from tenacity import Retrying, retry, stop_after_delay
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
-from opendlp.entrypoints.celery.app import app
 
 pytest_plugins = ["tests.bdd.shared.ui_shared"]
 
@@ -172,8 +171,11 @@ def wait_for_webapp_to_come_up():
 
 
 @retry(stop=stop_after_delay(10))
-def wait_for_webapp_to_come_up_on_port(port: int = 5002):
-    return urllib.request.urlopen(f"http://localhost:{port}").read()
+def wait_for_webapp_to_come_up_on_port(port: int = 5002, timeout: int = 10):
+    for attempt in Retrying(stop=stop_after_delay(timeout)):
+        with attempt:
+            return urllib.request.urlopen(f"http://localhost:{port}").read()
+    return None
 
 
 @retry(stop=stop_after_delay(10))
@@ -182,13 +184,15 @@ def wait_for_redis_to_come_up():
     return r.ping()
 
 
-@retry(stop=stop_after_delay(10))
-def wait_for_celery_worker_to_come_up():
+def wait_for_celery_worker_to_come_up(celery_app, timeout: int = 10) -> bool:
     """Check if Celery worker is ready to accept tasks."""
-    inspect = app.control.inspect()
-    active_nodes = inspect.ping()
+    for attempt in Retrying(stop=stop_after_delay(timeout)):
+        with attempt:
+            inspect = celery_app.control.inspect()
+            active_nodes = inspect.ping()
 
-    if not active_nodes:
-        raise Exception("No active Celery workers found")
+            if not active_nodes:
+                raise Exception("No active Celery workers found")
 
-    return True
+            return True
+    return False
