@@ -19,7 +19,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
-from opendlp.service_layer.sortition import get_selection_run_status, start_gsheet_load_task
+from opendlp.service_layer.sortition import get_selection_run_status, start_gsheet_load_task, start_gsheet_select_task
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
@@ -267,6 +267,37 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
     except Exception as e:
         current_app.logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets loading task for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            # TODO: set number_people_wanted properly
+            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, number_people_wanted=30)
+
+        return redirect(url_for("main.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet select for assembly {assembly_id}: {e}")
+        flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("main.select_assembly_gsheet", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet select {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet select for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the selection task"), "error")
+        return redirect(url_for("main.select_assembly_gsheet", assembly_id=assembly_id))
 
 
 @main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_load", methods=["POST"])

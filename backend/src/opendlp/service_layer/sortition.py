@@ -70,6 +70,52 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     return task_id
 
 
+@require_assembly_permission(can_manage_assembly)
+def start_gsheet_select_task(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, number_people_wanted: int
+) -> uuid.UUID:
+    # Get assembly and validate gsheet configuration exists
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise ValueError(f"Assembly {assembly_id} not found")
+
+    gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if not gsheet:
+        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+
+    # Create unique task ID
+    task_id = uuid.uuid4()
+
+    # Create SelectionRunRecord for tracking
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=task_id,
+        task_type="select_gsheet",
+        status="pending",
+        log_messages=["Task submitted for Google Sheets selection"],
+        settings_used=gsheet.dict_for_json(),
+    )
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    # Submit Celery task
+    # TODO: should this be behind another adapter? That comes from bootstrap?
+    # would be handy for unit tests
+    result = tasks.run_select.delay(
+        task_id=task_id,
+        adapter=gsheet.to_adapter(),
+        feature_tab_name=gsheet.select_targets_tab,
+        respondents_tab_name=gsheet.select_registrants_tab,
+        number_people_wanted=number_people_wanted,
+        settings=gsheet.to_settings(),
+    )
+    record.celery_task_id = str(result.id)
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    return task_id
+
+
 def get_selection_run_status(
     uow: AbstractUnitOfWork, task_id: uuid.UUID
 ) -> tuple[SelectionRunRecord | None, AsyncResult | None, RunReport]:
@@ -89,30 +135,17 @@ def get_selection_run_status(
     if run_record:
         celery_result = app.app.AsyncResult(run_record.celery_task_id)
 
-    # TODO: extract features and people from the result
-    # might mean we need to have separate methods for load_gsheet and run_selection
-    if celery_result and celery_result.id and celery_result.successful():
-        final_result = celery_result.get()
-        assert final_result
-        _, _, _, run_report = final_result
-    """
-    if run_record.status == "completed" and celery_result.successful():
-        final_result = celery_result.get()
-        success = final_result[0]
-        if success:
-            self.features, self.people, report = final_result[1:]
-            print("✓ Task completed successfully!")
-            print(f"Final log messages: {len(run_record.log_messages)} total")
-            return "success"
-        else:
-            print(f"✗ Task failed: {celery_result.info}")
-            return "failure"
-    else:
-        print(f"✗ Task failed with status: {run_record.status}")
-        if run_record.error_message:
-            print(f"Error: {run_record.error_message}")
-        return "failure"
-    """
+        # TODO: extract features and people from the result
+        # might mean we need to have separate methods for load_gsheet and run_selection
+        if celery_result and celery_result.id and celery_result.successful():
+            final_result = celery_result.get()
+            assert final_result
+            if run_record.task_type == "load_gsheet":
+                _, _, _, run_report = final_result
+            elif run_record.task_type == "select_gsheet":
+                _, _, run_report = final_result
+            else:
+                raise Exception(f"Unknown task_type {run_record.task_type} found in run record {run_record.task_id}")
     return run_record, celery_result, run_report
 
 

@@ -8,6 +8,7 @@ from sortition_algorithms import (
     adapters,
     people,
     run_stratification,
+    selected_remaining_tables,
     settings,
 )
 from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
@@ -63,18 +64,16 @@ def _append_run_log(task_id: uuid.UUID, log_messages: list[str]) -> None:
     _update_selection_record(task_id, status="running", log_messages=log_messages)
 
 
-@app.task(bind=True)
-def load_gsheet(  # type: ignore[no-any-unimported]
-    self: Task,
+def _internal_load_gsheet(
+    task_obj: Task,
     task_id: uuid.UUID,
     adapter: adapters.GSheetAdapter,
     feature_tab_name: str,
     respondents_tab_name: str,
     settings: settings.Settings,
+    final_task: bool = True,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
-    _set_up_celery_logging(self)
     report = RunReport()
-
     # Update SelectionRunRecord to running status
     _update_selection_record(
         task_id=task_id,
@@ -88,7 +87,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
         features, f_report = adapter.load_features(feature_tab_name)
         # print(f_report.as_text())
         report.add_report(f_report)
-        self.update_state(
+        task_obj.update_state(
             state="PROGRESS",
             meta={"features_status": f_report},
         )
@@ -109,7 +108,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
         people, p_report = adapter.load_people(respondents_tab_name, settings, features)
         # print(p_report.as_text())
         report.add_report(p_report)
-        self.update_state(
+        task_obj.update_state(
             state="PROGRESS",
             meta={"people_status": f_report},
         )
@@ -117,9 +116,9 @@ def load_gsheet(  # type: ignore[no-any-unimported]
 
         _update_selection_record(
             task_id=task_id,
-            status="completed",
+            status="completed" if final_task else "running",
             log_messages=[f"Loaded {people.count} people.", "Google Sheets load completed successfully."],
-            completed_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC) if final_task else None,
         )
 
         return True, features, people, report
@@ -143,32 +142,21 @@ def load_gsheet(  # type: ignore[no-any-unimported]
         return False, None, None, report
 
 
-@app.task(bind=True)
-def run_select(  # type: ignore[no-any-unimported]
-    self: Task,
+def _internal_run_select(
     task_id: uuid.UUID,
     features: FeatureCollection,
     people: people.People,
-    number_people_wanted: int,
     settings: settings.Settings,
+    number_people_wanted: int,
+    final_task: bool = True,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
-    success = False
-    selected_panels: list[frozenset[str]] = []
-    _set_up_celery_logging(self)
     report = RunReport()
-
     # Update SelectionRunRecord to running status
-    _update_selection_record(
-        task_id=task_id,
-        status="running",
-        log_message=f"Starting selection algorithm for {number_people_wanted} people",
-    )
+    _append_run_log(task_id, [f"Starting selection algorithm for {number_people_wanted} people"])
 
     try:
-        _update_selection_record(
-            task_id=task_id,
-            status="running",
-            log_message=f"Running stratified selection with {people.count} people and {len(features)} features",
+        _append_run_log(
+            task_id, [f"Running stratified selection with {people.count} people and {len(features)} features"]
         )
 
         success, selected_panels, report = run_stratification(
@@ -181,9 +169,9 @@ def run_select(  # type: ignore[no-any-unimported]
         if success:
             _update_selection_record(
                 task_id=task_id,
-                status="completed",
+                status="completed" if final_task else "running",
                 log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).",
-                completed_at=datetime.now(UTC),
+                completed_at=datetime.now(UTC) if final_task else None,
             )
         else:
             _update_selection_record(
@@ -193,6 +181,7 @@ def run_select(  # type: ignore[no-any-unimported]
                 error_message="Selection algorithm could not find panels meeting the specified criteria",
                 completed_at=datetime.now(UTC),
             )
+        return success, selected_panels, report
 
     except Exception as err:
         import traceback
@@ -210,7 +199,90 @@ def run_select(  # type: ignore[no-any-unimported]
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
         )
+        return False, [], report
 
-    # TODO: actually write back to the spreadsheet
-    # Should this be part of this task - or a third user triggered task?
+
+def _internal_write_selected(
+    task_id: uuid.UUID,
+    adapter: adapters.GSheetAdapter,
+    features: FeatureCollection,
+    people: people.People,
+    settings: settings.Settings,
+    selected_panels: list[frozenset[str]],
+) -> RunReport:
+    report = RunReport()
+    _append_run_log(task_id, ["About to write selected and remaining tabs"])
+    # Format results
+    selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
+
+    # Export to Google Sheets
+    adapter.output_selected_remaining(selected_table, remaining_table, settings)
+    # TODO: do something with dupes
+
+    _update_selection_record(
+        task_id=task_id,
+        status="completed",
+        log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
+        completed_at=datetime.now(UTC),
+    )
+
+    return report
+
+
+@app.task(bind=True)
+def load_gsheet(  # type: ignore[no-any-unimported]
+    self: Task,
+    task_id: uuid.UUID,
+    adapter: adapters.GSheetAdapter,
+    feature_tab_name: str,
+    respondents_tab_name: str,
+    settings: settings.Settings,
+) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+    _set_up_celery_logging(self)
+    return _internal_load_gsheet(self, task_id, adapter, feature_tab_name, respondents_tab_name, settings)
+
+
+@app.task(bind=True)
+def run_select(  # type: ignore[no-any-unimported]
+    self: Task,
+    task_id: uuid.UUID,
+    adapter: adapters.GSheetAdapter,
+    feature_tab_name: str,
+    respondents_tab_name: str,
+    number_people_wanted: int,
+    settings: settings.Settings,
+) -> tuple[bool, list[frozenset[str]], RunReport]:
+    _set_up_celery_logging(self)
+    report = RunReport()
+    success, features, people, load_report = _internal_load_gsheet(
+        self, task_id, adapter, feature_tab_name, respondents_tab_name, settings
+    )
+    report.add_report(load_report)
+    if not success:
+        return False, [], report
+    assert features is not None
+    assert people is not None
+
+    success, selected_panels, select_report = _internal_run_select(
+        task_id=task_id,
+        features=features,
+        people=people,
+        settings=settings,
+        number_people_wanted=number_people_wanted,
+    )
+    report.add_report(select_report)
+    if not success:
+        return False, [], report
+
+    # write back to the spreadsheet
+    write_report = _internal_write_selected(
+        task_id=task_id,
+        adapter=adapter,
+        features=features,
+        people=people,
+        settings=settings,
+        selected_panels=selected_panels,
+    )
+    report.add_report(write_report)
+
     return success, selected_panels, report
