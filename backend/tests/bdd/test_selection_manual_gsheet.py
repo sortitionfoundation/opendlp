@@ -104,7 +104,7 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
     expect(link).to_have_attribute("disabled", "")
 
     # Then click "load Spreadsheet"
-    link = logged_in_page.get_by_role("link", name="Load Spreadsheet")
+    link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
     expect(link).to_be_visible()
     link.click()
 
