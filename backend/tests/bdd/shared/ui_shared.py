@@ -3,6 +3,7 @@ from pytest_bdd import given, then, when
 from sqlalchemy.orm import sessionmaker
 
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.bdd.helpers import wait_for_page_with_text
 
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
@@ -101,8 +102,9 @@ def _(test_database: sessionmaker):
 
 
 @then("the user should be registered")
-def _(test_database: sessionmaker):
+def _(page: Page, test_database: sessionmaker):
     """the user should be registered."""
+    wait_for_page_with_text(page, "Your Assemblies")  # text from the dashboard page
     uow = SqlAlchemyUnitOfWork(test_database)
     with uow:
         user = uow.users.get_by_email(NEWUSER_EMAIL)

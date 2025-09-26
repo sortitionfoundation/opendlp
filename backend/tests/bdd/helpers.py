@@ -1,6 +1,18 @@
 from playwright.sync_api import Page, expect
 
 
+def wait_for_page_with_text(page: Page, text: str) -> None:
+    """
+    Sometimes we want to look in the database directly. But maybe the tests are fast and
+    the web server hasn't finished saving the object yet.  To keep the tests deterministic
+    we will wait for text to appear that is on the landing page after the web server
+    has saved any changes.
+    We ask playwright to click on the text, which requires the text to be visible.
+    Due to it being a click, we should choose text that doesn't do anything when clicked on.
+    """
+    page.get_by_text(text).click()
+
+
 def check_follow_link(page: Page, link_name: str, link_url: str) -> None:
     """
     This allows us to check links which open in a new tab - eg with `target="_blank"`

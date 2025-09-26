@@ -5,6 +5,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.bdd.helpers import wait_for_page_with_text
 
 from .config import Urls
 
@@ -134,6 +135,8 @@ def _(page: Page, assembly: Assembly):
 @then("the user should see the created assembly")
 def _(page: Page, test_database, assembly_title_for_lookup: str):
     """the user should see the created assembly."""
+    # Before looking in the database we need to wait for the pages to finish loading
+    wait_for_page_with_text(page, "Last Updated")
     # we don't have the whole assembly object, so we have to find it in the database
     uow = SqlAlchemyUnitOfWork(test_database)
     with uow:
