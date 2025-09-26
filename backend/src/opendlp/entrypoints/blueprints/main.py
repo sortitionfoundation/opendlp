@@ -8,6 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
     create_assembly,
@@ -18,6 +19,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.sortition import get_selection_run_status, start_gsheet_load_task
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
@@ -196,10 +198,11 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
 
 
-@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET", "POST"])
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
 @login_required
+@require_assembly_management
 def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Run selection for an assembly using Google Spreadsheet data."""
+    """Display Google Sheets selection page for an assembly."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
@@ -220,6 +223,80 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>", methods=["GET"])
+@login_required
+@require_assembly_management
+def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Display Google Sheets selection page with task status for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            run_record, celery_result = get_selection_run_status(uow, run_id)
+
+        # Validate that the run belongs to this assembly
+        if run_record and run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            flash(_("Invalid task ID for this assembly"), "error")
+            return redirect(url_for("main.select_assembly_gsheet", assembly_id=assembly_id))
+
+        return render_template(
+            "main/gsheet_select.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            run_record=run_record,
+            celery_result=celery_result,
+            run_id=run_id,
+        ), 200
+    except ValueError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} selection user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_load", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets loading task for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
+
+        flash(_("Google Sheets loading task started successfully"), "success")
+        return redirect(url_for("main.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
+        flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("main.select_assembly_gsheet", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet load {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet load for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the loading task"), "error")
+        return redirect(url_for("main.select_assembly_gsheet", assembly_id=assembly_id))
 
 
 @main_bp.route("/assemblies/new", methods=["GET", "POST"])

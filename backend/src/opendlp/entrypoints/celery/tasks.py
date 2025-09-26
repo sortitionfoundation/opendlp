@@ -6,12 +6,13 @@ from celery import Task
 from sortition_algorithms import (
     RunReport,
     adapters,
-    features,
     people,
     run_stratification,
     settings,
 )
+from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
+from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.bootstrap import bootstrap
 from opendlp.entrypoints.celery.app import CeleryContextHandler, app
@@ -28,10 +29,12 @@ def _update_selection_record(
     task_id: uuid.UUID,
     status: str,
     log_message: str = "",
+    log_messages: list[str] | None = None,
     error_message: str = "",
     completed_at: datetime | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
+    assert not (log_message and log_messages), "only use log_message or log_messages, not both"
     with bootstrap() as uow:
         # Get existing record (should always exist since created at submit time)
         record = uow.selection_run_records.get_by_task_id(task_id)
@@ -43,12 +46,21 @@ def _update_selection_record(
         record.status = status
         if log_message:
             record.log_messages.append(log_message)
+            flag_modified(record, "log_messages")
+        if log_messages:
+            record.log_messages.extend(log_messages)
+            flag_modified(record, "log_messages")
         if error_message:
             record.error_message = error_message
         if completed_at:
             record.completed_at = completed_at
 
         uow.commit()
+
+
+def _append_run_log(task_id: uuid.UUID, log_messages: list[str]) -> None:
+    """Add to the log while running"""
+    _update_selection_record(task_id, status="running", log_messages=log_messages)
 
 
 @app.task(bind=True)
@@ -59,7 +71,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
     feature_tab_name: str,
     respondents_tab_name: str,
     settings: settings.Settings,
-) -> tuple[bool, features.FeatureCollection | None, people.People | None, RunReport]:
+) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     _set_up_celery_logging(self)
     report = RunReport()
 
@@ -71,14 +83,10 @@ def load_gsheet(  # type: ignore[no-any-unimported]
     )
 
     try:
-        _update_selection_record(
-            task_id=task_id,
-            status="running",
-            log_message=f"Loading features from tab: {feature_tab_name}",
-        )
+        _append_run_log(task_id, [f"Loading targets from tab: {feature_tab_name}"])
 
         features, f_report = adapter.load_features(feature_tab_name)
-        print(f_report.as_text())
+        # print(f_report.as_text())
         report.add_report(f_report)
         self.update_state(
             state="PROGRESS",
@@ -86,14 +94,20 @@ def load_gsheet(  # type: ignore[no-any-unimported]
         )
         assert features is not None
 
-        _update_selection_record(
-            task_id=task_id,
-            status="running",
-            log_message=f"Features loaded successfully. Found {len(features)} features. Loading people from tab: {respondents_tab_name}",
+        num_features = len(features)
+        num_values = sum(len(v) for v in features.values())
+        min_select, max_select = minimum_selection(features), maximum_selection(features)
+        _append_run_log(
+            task_id,
+            [
+                f"Found {num_features} categories for targets with a total of {num_values} values.",
+                f"Minimum selection for targets is {min_select}, maximum is {max_select}.",
+                f"Loading people from tab: {respondents_tab_name}",
+            ],
         )
 
         people, p_report = adapter.load_people(respondents_tab_name, settings, features)
-        print(p_report.as_text())
+        # print(p_report.as_text())
         report.add_report(p_report)
         self.update_state(
             state="PROGRESS",
@@ -104,7 +118,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
         _update_selection_record(
             task_id=task_id,
             status="completed",
-            log_message=f"Google Sheets load completed successfully. Loaded {people.count} people.",
+            log_messages=[f"Loaded {people.count} people.", "Google Sheets load completed successfully."],
             completed_at=datetime.now(UTC),
         )
 
@@ -133,7 +147,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
 def run_select(  # type: ignore[no-any-unimported]
     self: Task,
     task_id: uuid.UUID,
-    features: features.FeatureCollection,
+    features: FeatureCollection,
     people: people.People,
     number_people_wanted: int,
     settings: settings.Settings,
