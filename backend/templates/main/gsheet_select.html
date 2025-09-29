@@ -172,10 +172,16 @@
                     </dl>
 
                     {% if run_record.completed_at %}
-                    <h4 class="govuk-heading-s">{{ _('Run Report') }}</h4>
-                    <div class="govuk-inset-text run-report">
-                        <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
-                    </div>
+                    <details class="govuk-details">
+                      <summary class="govuk-details__summary">
+                        <span class="govuk-details__summary-text"> {{ _('Full Run Report') }} </span>
+                      </summary>
+                      <div class="govuk-details__text">
+                        <div class="run-report">
+                            <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
+                        </div>
+                      </div>
+                    </details>
                     {% endif %}
 
                     {% if run_record.log_messages %}
