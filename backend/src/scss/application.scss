@@ -459,6 +459,56 @@ a:focus, .govuk-link:focus,
     border-top: 5px solid $purple-red;
 }
 
+// Run report table styling - applies GOV.UK table styling to external HTML
+.run-report {
+    table {
+        width: 100%;
+        border-spacing: 0;
+        border-collapse: collapse;
+        font-family: "GDS Transport", arial, sans-serif;
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.25;
+        color: $dark-grey;
+
+        thead {
+            th {
+                font-weight: bold;
+                text-align: left;
+                color: $dark-grey;
+                background-color: transparent;
+                border-bottom: 1px solid #b1b4b6;
+                padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
+                vertical-align: top;
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid #b1b4b6;
+            }
+
+            td, th {
+                text-align: left;
+                color: $dark-grey;
+                border-bottom: 1px solid #b1b4b6;
+                padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
+                vertical-align: top;
+            }
+
+            th {
+                font-weight: bold;
+            }
+        }
+
+        // Last row should not have bottom border
+        tbody tr:last-child td,
+        tbody tr:last-child th {
+            border-bottom: none;
+        }
+    }
+}
+
 // Ensure proper text contrast on all elements
 body {
     color: $dark-grey;
