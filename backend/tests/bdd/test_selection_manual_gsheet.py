@@ -85,7 +85,7 @@ def _(assembly_gsheet_creator):
     return assembly
 
 
-@when("I initialise selection")
+@when("I check the data")
 def _(logged_in_page: Page, assembly_to_select: Assembly):
     """I initialise selection."""
     # First navigate to the assembly view page
@@ -98,14 +98,33 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
     link.click()
     expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
 
-    # check the "run selection" link is disabled currently
-    link = logged_in_page.get_by_role("link", name="Run Selection")
+    # check the "run selection" link is enabled currently
+    link = logged_in_page.get_by_role("button", name="Run Selection")
     expect(link).to_be_visible()
-    expect(link).to_have_attribute("disabled", "")
 
     # Then click "load Spreadsheet"
     link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
     expect(link).to_be_visible()
+    link.click()
+
+
+@when("I start the selection")
+def _(logged_in_page: Page, assembly_to_select: Assembly):
+    """I start the selection."""
+    # First navigate to the assembly view page
+    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    logged_in_page.goto(view_url)
+
+    # Then check that the Start Selection link goes to the gsheet_select page
+    link = logged_in_page.get_by_role("link", name="Start Selection (Google Spreadsheet)")
+    expect(link).to_be_visible()
+    link.click()
+    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
+
+    # check the "run selection" link is enabled currently
+    link = logged_in_page.get_by_role("button", name="Run Selection")
+    expect(link).to_be_visible()
+    # and click it
     link.click()
 
 
@@ -115,9 +134,19 @@ def _(page: Page):
     expect(page.get_by_text("Number of features found: 4")).to_be_visible(timeout=30_000)
 
 
-@then("I can continue to run the selection")
+@then("I should see progress messages")
 def _(page: Page):
-    """I can continue to run the selection."""
-    link = page.get_by_role("link", name="Run Selection")
-    expect(link).to_be_visible()
-    expect(link).not_to_have_attribute("disabled", "")
+    """I should see progress messages."""
+    raise NotImplementedError
+
+
+@then("the results are reported")
+def _(page: Page):
+    """the results are reported."""
+    raise NotImplementedError
+
+
+@then("the task should go from pending to finished")
+def _(page: Page):
+    """the task should go from pending to finished."""
+    raise NotImplementedError

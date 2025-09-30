@@ -21,6 +21,14 @@ Note that there are multiple ways we will do this.
     Given the assembly is set up
     And people are registered
     And the selection options are set
-    When I initialise selection
+    When I check the data
     Then I am told the number of categories and category values
-    And I can continue to run the selection
+
+  Scenario: Do full selection
+    Given the assembly is set up
+    And people are registered
+    And the selection options are set
+    When I start the selection
+    Then I should see progress messages
+    And the task should go from pending to finished
+    And the results are reported
