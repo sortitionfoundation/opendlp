@@ -278,7 +278,7 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         with uow:
             # TODO: set number_people_wanted properly
-            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, number_people_wanted=30)
+            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id)
 
         return redirect(url_for("main.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 

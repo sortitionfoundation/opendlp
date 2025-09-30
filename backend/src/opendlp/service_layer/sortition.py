@@ -71,9 +71,7 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
 
 
 @require_assembly_permission(can_manage_assembly)
-def start_gsheet_select_task(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, number_people_wanted: int
-) -> uuid.UUID:
+def start_gsheet_select_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> uuid.UUID:
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
@@ -106,7 +104,7 @@ def start_gsheet_select_task(
         adapter=gsheet.to_adapter(),
         feature_tab_name=gsheet.select_targets_tab,
         respondents_tab_name=gsheet.select_registrants_tab,
-        number_people_wanted=number_people_wanted,
+        number_people_wanted=assembly.number_to_select,
         settings=gsheet.to_settings(),
     )
     record.celery_task_id = str(result.id)
