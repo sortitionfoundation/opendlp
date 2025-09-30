@@ -89,7 +89,7 @@
                     {% if gsheet %}
                     <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
-                        {{ _('Edit Google Spreadsheet') }}
+                        {{ _('Change Google Spreadsheet Configuration') }}
                     </a>
                     {% else %}
                     <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"

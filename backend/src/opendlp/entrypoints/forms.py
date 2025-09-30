@@ -200,28 +200,32 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     select_registrants_tab = StringField(
-        _l("Selection Registrants Tab Name"),
+        # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
+        _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing registrant data in the Google Spreadsheet - for initial Selection"),
+        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for initial Selection"),
         default="Respondents",
     )
 
     select_targets_tab = StringField(
-        _l("Selection Targets Tab Name"),
+        # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
+        _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing categories, category values and targets - for initial Selection"),
         default="Categories",
     )
 
     replace_registrants_tab = StringField(
-        _l("Replacement Registrants Tab Name"),
+        # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
+        _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing registrant data in the Google Spreadsheet - for Replacements"),
+        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for Replacements"),
         default="Remaining",
     )
 
     replace_targets_tab = StringField(
-        _l("Replacement Targets Tab Name"),
+        # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
+        _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing categories, category values and targets - for Replacements"),
         default="Replacement Categories",
