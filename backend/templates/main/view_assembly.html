@@ -44,6 +44,12 @@
                         <dd class="govuk-summary-list__value">{{ assembly.first_assembly_date.strftime('%d %B %Y') }}</dd>
                     </div>
                     {% endif %}
+                    {% if assembly.number_to_select %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _('Number to Select') }}</dt>
+                        <dd class="govuk-summary-list__value">{{ assembly.number_to_select }}</dd>
+                    </div>
+                    {% endif %}
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _('Last Updated') }}</dt>
                         <dd class="govuk-summary-list__value">{{ assembly.updated_at.strftime('%d %B %Y at %H:%M') }}</dd>

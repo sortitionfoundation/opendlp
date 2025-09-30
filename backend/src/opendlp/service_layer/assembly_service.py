@@ -20,6 +20,7 @@ def create_assembly(
     created_by_user_id: uuid.UUID,
     question: str = "",
     first_assembly_date: date | None = None,
+    number_to_select: int | None = None,
 ) -> Assembly:
     """
     Create a new assembly.
@@ -30,6 +31,7 @@ def create_assembly(
         created_by_user_id: ID of user creating the assembly
         question: Assembly question (optional, defaults to empty string)
         first_assembly_date: Date of first assembly meeting (optional)
+        number_to_select: Number of participants to select (optional)
 
     Returns:
         Created Assembly instance
@@ -52,6 +54,7 @@ def create_assembly(
             title=title,
             question=question,
             first_assembly_date=first_assembly_date,
+            number_to_select=number_to_select,
         )
 
         uow.assemblies.add(assembly)

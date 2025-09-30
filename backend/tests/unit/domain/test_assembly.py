@@ -35,6 +35,7 @@ class TestAssembly:
         assert assembly.title == "Minimal Assembly"
         assert assembly.question == ""
         assert assembly.first_assembly_date is None
+        assert assembly.number_to_select is None
         assert assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(assembly.id, uuid.UUID)
         assert isinstance(assembly.created_at, datetime)
@@ -140,6 +141,7 @@ class TestAssembly:
             title="Original Title",
             question="Original question?",
             first_assembly_date=future_date,
+            number_to_select=50,
         )
 
         original_updated_at = assembly.updated_at
@@ -153,11 +155,13 @@ class TestAssembly:
             title="Updated Title",
             question="Updated question?",
             first_assembly_date=new_future_date,
+            number_to_select=100,
         )
 
         assert assembly.title == "Updated Title"
         assert assembly.question == "Updated question?"
         assert assembly.first_assembly_date == new_future_date
+        assert assembly.number_to_select == 100
         assert assembly.updated_at > original_updated_at
 
     def test_update_details_partial(self):

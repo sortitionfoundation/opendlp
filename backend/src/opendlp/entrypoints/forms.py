@@ -8,6 +8,7 @@ from wtforms import (
     BooleanField,
     DateField,
     EmailField,
+    IntegerField,
     PasswordField,
     RadioField,
     StringField,
@@ -171,6 +172,12 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("First Assembly Date"),
         validators=[Optional()],
         description=_l("Optional - when the first assembly meeting will take place"),
+    )
+
+    number_to_select = IntegerField(
+        _l("Number to Select"),
+        validators=[Optional()],
+        description=_l("Optional - the number of participants to select for this assembly"),
     )
 
 

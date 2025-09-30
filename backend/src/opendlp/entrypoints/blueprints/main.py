@@ -347,6 +347,7 @@ def create_assembly_page() -> ResponseReturnValue:
                     created_by_user_id=current_user.id,
                     question=form.question.data or "",
                     first_assembly_date=form.first_assembly_date.data,
+                    number_to_select=form.number_to_select.data,
                 )
 
             flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
@@ -386,6 +387,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         title=form.title.data,
                         question=form.question.data or "",
                         first_assembly_date=form.first_assembly_date.data,
+                        number_to_select=form.number_to_select.data,
                     )
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")

@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, String, Table, Text, TypeDecorator
+from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, Integer, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
@@ -141,6 +141,7 @@ assemblies = Table(
     Column("title", String(255), nullable=False),
     Column("question", Text, nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
+    Column("number_to_select", Integer, nullable=True),
     Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
     Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

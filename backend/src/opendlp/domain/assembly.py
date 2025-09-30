@@ -21,6 +21,7 @@ class Assembly:
         title: str,
         question: str = "",
         first_assembly_date: date | None = None,
+        number_to_select: int | None = None,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
@@ -35,6 +36,7 @@ class Assembly:
         self.question = question.strip()
 
         self.first_assembly_date = first_assembly_date
+        self.number_to_select = number_to_select
         self.status = status
         self.gsheet = gsheet
         self.created_at = created_at or datetime.now(UTC)
@@ -55,6 +57,7 @@ class Assembly:
         title: str | None = None,
         question: str | None = None,
         first_assembly_date: date | None = None,
+        number_to_select: int | None = None,
     ) -> None:
         """Update assembly details."""
         if title is not None:
@@ -67,6 +70,9 @@ class Assembly:
 
         if first_assembly_date is not None:
             self.first_assembly_date = first_assembly_date
+
+        if number_to_select is not None:
+            self.number_to_select = number_to_select
 
         self.updated_at = datetime.now(UTC)
 
@@ -88,6 +94,7 @@ class Assembly:
             title=self.title,
             question=self.question,
             first_assembly_date=self.first_assembly_date,
+            number_to_select=self.number_to_select,
             assembly_id=self.id,
             status=self.status,
             gsheet=self.gsheet,
