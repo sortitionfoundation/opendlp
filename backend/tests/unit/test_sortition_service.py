@@ -132,7 +132,7 @@ class TestGetSelectionRunStatus:
         )
         uow.selection_run_records.add(record)
 
-        run_record, _ = sortition.get_selection_run_status(uow, task_id)
+        run_record, _, _ = sortition.get_selection_run_status(uow, task_id)
 
         assert run_record is not None
         assert run_record.task_id == task_id
@@ -145,7 +145,7 @@ class TestGetSelectionRunStatus:
         uow = FakeUnitOfWork()
 
         non_existent_id = uuid.uuid4()
-        result, _ = sortition.get_selection_run_status(uow, non_existent_id)
+        result, _, _ = sortition.get_selection_run_status(uow, non_existent_id)
 
         assert result is None
 
