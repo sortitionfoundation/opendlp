@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-19 10:48+0100\n"
+"POT-Creation-Date: 2025-09-30 16:47+0100\n"
 "PO-Revision-Date: 2025-09-16 09:18+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -20,241 +20,242 @@ msgstr ""
 
 #: src/opendlp/entrypoints/decorators.py:40
 #: src/opendlp/entrypoints/decorators.py:85
-#: src/opendlp/entrypoints/decorators.py:151
+#: src/opendlp/entrypoints/decorators.py:152
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
-#: src/opendlp/entrypoints/forms.py:33
+#: src/opendlp/entrypoints/forms.py:34
 msgid "Empty email address"
 msgstr "Email cím hiányzik"
 
-#: src/opendlp/entrypoints/forms.py:37
+#: src/opendlp/entrypoints/forms.py:38
 msgid "Invalid email address"
 msgstr "Érvénytelen email cím"
 
-#: src/opendlp/entrypoints/forms.py:45 src/opendlp/entrypoints/forms.py:79
-#: src/opendlp/entrypoints/forms.py:133
+#: src/opendlp/entrypoints/forms.py:46 src/opendlp/entrypoints/forms.py:80
+#: src/opendlp/entrypoints/forms.py:134
 msgid "Email address"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:49 src/opendlp/entrypoints/forms.py:85
+#: src/opendlp/entrypoints/forms.py:50 src/opendlp/entrypoints/forms.py:86
 msgid "Password"
 msgstr "Jelszó"
 
-#: src/opendlp/entrypoints/forms.py:52
+#: src/opendlp/entrypoints/forms.py:53
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:59
+#: src/opendlp/entrypoints/forms.py:60
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:61
+#: src/opendlp/entrypoints/forms.py:62
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:65
+#: src/opendlp/entrypoints/forms.py:66
 msgid "First Name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:67
+#: src/opendlp/entrypoints/forms.py:68
 msgid "Optional - your first name"
 msgstr "Keresztnév - nem kötelező"
 
-#: src/opendlp/entrypoints/forms.py:72
+#: src/opendlp/entrypoints/forms.py:73
 msgid "Last Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:74
+#: src/opendlp/entrypoints/forms.py:75
 msgid "Optional - your last name"
 msgstr "Vezetéknév - nem kötelező"
 
-#: src/opendlp/entrypoints/forms.py:89
+#: src/opendlp/entrypoints/forms.py:90
 msgid "Confirm Password"
 msgstr "Jelszó megerősítése"
 
-#: src/opendlp/entrypoints/forms.py:90 src/opendlp/entrypoints/forms.py:149
+#: src/opendlp/entrypoints/forms.py:91 src/opendlp/entrypoints/forms.py:150
 msgid "Passwords must match"
 msgstr "A jelszavaknak egyeznie kell"
 
-#: src/opendlp/entrypoints/forms.py:95
+#: src/opendlp/entrypoints/forms.py:96
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás elfogadása"
 
-#: src/opendlp/entrypoints/forms.py:96
+#: src/opendlp/entrypoints/forms.py:97
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat"
 
-#: src/opendlp/entrypoints/forms.py:97
+#: src/opendlp/entrypoints/forms.py:98
 msgid "I agree to the data agreement"
 msgstr "Elfogadom az adatkezelési megállapodást"
 
-#: src/opendlp/entrypoints/forms.py:108
+#: src/opendlp/entrypoints/forms.py:109
 msgid "This email address is already registered."
 msgstr "Ezen az emailcímen már van regisztráció."
 
-#: src/opendlp/entrypoints/forms.py:122
+#: src/opendlp/entrypoints/forms.py:123
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/forms.py:135
+#: src/opendlp/entrypoints/forms.py:136
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:144
+#: src/opendlp/entrypoints/forms.py:145
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:148
+#: src/opendlp/entrypoints/forms.py:149
 msgid "Confirm New Password"
 msgstr "Új jelszó megerősítése"
 
-#: src/opendlp/entrypoints/forms.py:158
+#: src/opendlp/entrypoints/forms.py:159
 msgid "Assembly Title"
 msgstr "Gyűlés címe"
 
-#: src/opendlp/entrypoints/forms.py:160
+#: src/opendlp/entrypoints/forms.py:161
 msgid "Enter the title for this assembly"
 msgstr "Adja meg a gyűlés címét"
 
-#: src/opendlp/entrypoints/forms.py:164 templates/main/view_assembly.html:25
+#: src/opendlp/entrypoints/forms.py:165 templates/main/view_assembly.html:25
 msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
 
-#: src/opendlp/entrypoints/forms.py:166
+#: src/opendlp/entrypoints/forms.py:167
 msgid "Optional - the key question this assembly will address"
 msgstr "Nem kötelező - a fő kérdés, amellyel ez a közgyűlés foglalkozni fog"
 
-#: src/opendlp/entrypoints/forms.py:171 templates/main/view_assembly.html:43
+#: src/opendlp/entrypoints/forms.py:172 templates/main/view_assembly.html:43
 msgid "First Assembly Date"
 msgstr "Első gyűés időpontja"
 
-#: src/opendlp/entrypoints/forms.py:173
+#: src/opendlp/entrypoints/forms.py:174
 msgid "Optional - when the first assembly meeting will take place"
 msgstr "Nem kötelező - az első közösségi gyűlés időpontja"
 
-#: src/opendlp/entrypoints/forms.py:189
+#: src/opendlp/entrypoints/forms.py:178 templates/main/view_assembly.html:49
+msgid "Number to Select"
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:180
+msgid "Optional - the number of participants to select for this assembly"
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:196
 #, fuzzy
 msgid "Google Spreadsheet URL"
 msgstr "Google táblázatok"
 
-#: src/opendlp/entrypoints/forms.py:191
+#: src/opendlp/entrypoints/forms.py:198
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:196
-msgid "Selection Registrants Tab Name"
+#: src/opendlp/entrypoints/forms.py:204 src/opendlp/entrypoints/forms.py:220
+msgid "Respondents Tab Name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:198
+#: src/opendlp/entrypoints/forms.py:206
 msgid ""
-"Name of the tab containing registrant data in the Google Spreadsheet - "
+"Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:203
-msgid "Selection Targets Tab Name"
-msgstr ""
+#: src/opendlp/entrypoints/forms.py:212 src/opendlp/entrypoints/forms.py:228
+#, fuzzy
+msgid "Targets Tab Name"
+msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:205
+#: src/opendlp/entrypoints/forms.py:214
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:210
-msgid "Replacement Registrants Tab Name"
-msgstr ""
-
-#: src/opendlp/entrypoints/forms.py:212
+#: src/opendlp/entrypoints/forms.py:222
 msgid ""
-"Name of the tab containing registrant data in the Google Spreadsheet - "
+"Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:217
-msgid "Replacement Targets Tab Name"
-msgstr ""
-
-#: src/opendlp/entrypoints/forms.py:219
+#: src/opendlp/entrypoints/forms.py:230
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:224
+#: src/opendlp/entrypoints/forms.py:235 templates/main/gsheet_select.html:70
 #, fuzzy
 msgid "Check Same Address"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:225
+#: src/opendlp/entrypoints/forms.py:236
 msgid "Enable checking for participants with the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:230
+#: src/opendlp/entrypoints/forms.py:241 templates/main/gsheet_select.html:74
 msgid "Generate Remaining Tab"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:231
+#: src/opendlp/entrypoints/forms.py:242
 msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:236
+#: src/opendlp/entrypoints/forms.py:247
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Rétegzett kiválasztás"
 
-#: src/opendlp/entrypoints/forms.py:238
+#: src/opendlp/entrypoints/forms.py:249
 msgid "UK Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:239
+#: src/opendlp/entrypoints/forms.py:250
 msgid "EU Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:240
+#: src/opendlp/entrypoints/forms.py:251
 msgid "Australia Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:241
+#: src/opendlp/entrypoints/forms.py:252
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Rétegzett kiválasztás"
 
-#: src/opendlp/entrypoints/forms.py:246
+#: src/opendlp/entrypoints/forms.py:257
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:251
+#: src/opendlp/entrypoints/forms.py:262 templates/main/gsheet_select.html:78
 msgid "ID Column"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:255
+#: src/opendlp/entrypoints/forms.py:266
 msgid ""
 "Column name containing unique identifiers for respondents. Note will be "
 "overridden if the Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:260
+#: src/opendlp/entrypoints/forms.py:271 templates/main/gsheet_select.html:82
 msgid "Address Columns"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:263
+#: src/opendlp/entrypoints/forms.py:274
 msgid ""
 "Comma-separated list of column names used for checking same address "
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:269
+#: src/opendlp/entrypoints/forms.py:280 templates/main/gsheet_select.html:86
 msgid "Columns to Keep"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:272
+#: src/opendlp/entrypoints/forms.py:283
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name,"
 " last_name, email). Note will be overridden if the Team Configuration is "
@@ -286,80 +287,115 @@ msgstr "A jelszó túl gyenge: %(error)s"
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/main.py:65
-#: src/opendlp/entrypoints/blueprints/main.py:159
-#: src/opendlp/entrypoints/blueprints/main.py:277
+#: src/opendlp/entrypoints/blueprints/main.py:67
+#: src/opendlp/entrypoints/blueprints/main.py:161
+#: src/opendlp/entrypoints/blueprints/main.py:215
+#: src/opendlp/entrypoints/blueprints/main.py:259
+#: src/opendlp/entrypoints/blueprints/main.py:413
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/main.py:70
-#: src/opendlp/entrypoints/blueprints/main.py:165
-#: src/opendlp/entrypoints/blueprints/main.py:283
+#: src/opendlp/entrypoints/blueprints/main.py:72
+#: src/opendlp/entrypoints/blueprints/main.py:167
+#: src/opendlp/entrypoints/blueprints/main.py:221
+#: src/opendlp/entrypoints/blueprints/main.py:265
+#: src/opendlp/entrypoints/blueprints/main.py:419
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:116
+#: src/opendlp/entrypoints/blueprints/main.py:118
 msgid "Google Spreadsheet configuration created successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:134
+#: src/opendlp/entrypoints/blueprints/main.py:136
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:141
-#: src/opendlp/entrypoints/blueprints/main.py:191
+#: src/opendlp/entrypoints/blueprints/main.py:143
+#: src/opendlp/entrypoints/blueprints/main.py:193
 #, fuzzy
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:147
-#: src/opendlp/entrypoints/blueprints/main.py:226
-#: src/opendlp/entrypoints/blueprints/main.py:269
+#: src/opendlp/entrypoints/blueprints/main.py:149
+#: src/opendlp/entrypoints/blueprints/main.py:361
+#: src/opendlp/entrypoints/blueprints/main.py:405
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:152
+#: src/opendlp/entrypoints/blueprints/main.py:154
 #, fuzzy
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:181
+#: src/opendlp/entrypoints/blueprints/main.py:183
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:185
+#: src/opendlp/entrypoints/blueprints/main.py:187
 #, fuzzy
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázatok"
 
-#: src/opendlp/entrypoints/blueprints/main.py:195
+#: src/opendlp/entrypoints/blueprints/main.py:197
 #, fuzzy
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:218
+#: src/opendlp/entrypoints/blueprints/main.py:245
+#, fuzzy
+msgid "Invalid task ID for this assembly"
+msgstr "Adja meg a gyűlés címét"
+
+#: src/opendlp/entrypoints/blueprints/main.py:287
+#, python-format
+msgid "Failed to start selection task: %(error)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/main.py:294
+#: src/opendlp/entrypoints/blueprints/main.py:324
+#, fuzzy
+msgid "You don't have permission to manage this assembly"
+msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
+
+#: src/opendlp/entrypoints/blueprints/main.py:299
+#, fuzzy
+msgid "An unexpected error occurred while starting the selection task"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/main.py:317
+#, python-format
+msgid "Failed to start loading task: %(error)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/main.py:329
+#, fuzzy
+msgid "An unexpected error occurred while starting the loading task"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/main.py:353
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:222
+#: src/opendlp/entrypoints/blueprints/main.py:357
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/main.py:229
+#: src/opendlp/entrypoints/blueprints/main.py:364
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:257
+#: src/opendlp/entrypoints/blueprints/main.py:393
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:263
+#: src/opendlp/entrypoints/blueprints/main.py:399
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:272
+#: src/opendlp/entrypoints/blueprints/main.py:408
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
@@ -438,13 +474,14 @@ msgstr "Menü"
 msgid "Close menu"
 msgstr "Menü bezárása"
 
-#: templates/base.html:41 templates/errors/404.html:24
-#: templates/errors/500.html:24 templates/main/create_assembly.html:12
+#: templates/base.html:41 templates/errors/403.html:24
+#: templates/errors/404.html:24 templates/errors/500.html:24
+#: templates/main/create_assembly.html:12
 #: templates/main/create_assembly_gsheet.html:12
 #: templates/main/dashboard.html:3 templates/main/dashboard.html:10
 #: templates/main/edit_assembly.html:12
 #: templates/main/edit_assembly_gsheet.html:12
-#: templates/main/view_assembly.html:12
+#: templates/main/gsheet_select.html:12 templates/main/view_assembly.html:12
 msgid "Dashboard"
 msgstr "Irányító pult"
 
@@ -462,8 +499,9 @@ msgstr "Menü"
 
 #: templates/auth/login.html:3 templates/auth/login.html:8
 #: templates/auth/login.html:50 templates/auth/register.html:138
-#: templates/base.html:67 templates/errors/404.html:28
-#: templates/errors/500.html:28 templates/main/index.html:18
+#: templates/base.html:67 templates/errors/403.html:28
+#: templates/errors/404.html:28 templates/errors/500.html:28
+#: templates/main/index.html:18
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
@@ -552,6 +590,31 @@ msgstr "Felhasználói Adatkezelési Megállapodás"
 msgid "Back to Registration"
 msgstr "Vissza a regisztrációhoz"
 
+#: templates/errors/403.html:3 templates/errors/403.html:13
+msgid "Access Denied"
+msgstr ""
+
+#: templates/errors/403.html:15
+msgid ""
+"You don't have permission to access this resource. This could be because\n"
+"                you need to sign in or you don't have the required role "
+"for this assembly."
+msgstr ""
+
+#: templates/errors/403.html:21 templates/errors/404.html:21
+#: templates/errors/500.html:21
+msgid "Go Home"
+msgstr "Menjen a főoldalra"
+
+#: templates/errors/403.html:34
+#, fuzzy
+msgid ""
+"If you believe this is an error, please contact your assembly "
+"administrator."
+msgstr ""
+"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer "
+"adminisztrátoroddal."
+
 #: templates/errors/404.html:3 templates/errors/404.html:13
 msgid "Page Not Found"
 msgstr "Az oldal nem elérhető"
@@ -564,10 +627,6 @@ msgid ""
 msgstr ""
 "Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
 "                törölték, vagy az URL, amit beírtál, hibás."
-
-#: templates/errors/404.html:21 templates/errors/500.html:21
-msgid "Go Home"
-msgstr "Menjen a főoldalra"
 
 #: templates/errors/500.html:3
 msgid "Server Error"
@@ -593,7 +652,7 @@ msgstr ""
 
 #: templates/main/create_assembly.html:3 templates/main/create_assembly.html:15
 #: templates/main/create_assembly.html:41
-#: templates/main/create_assembly.html:106 templates/main/dashboard.html:48
+#: templates/main/create_assembly.html:124 templates/main/dashboard.html:48
 msgid "Create Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
 
@@ -605,17 +664,17 @@ msgstr ""
 "Hozzon létre egy új  közösségi gyűlést a kiválasztási és mérlegelési "
 "folyamat megkezdésére."
 
-#: templates/main/create_assembly.html:108
-#: templates/main/create_assembly_gsheet.html:260
-#: templates/main/edit_assembly.html:111
-#: templates/main/edit_assembly_gsheet.html:260
+#: templates/main/create_assembly.html:126
+#: templates/main/create_assembly_gsheet.html:274
+#: templates/main/edit_assembly.html:129
+#: templates/main/edit_assembly_gsheet.html:274
 msgid "Cancel"
 msgstr "Megszakítás"
 
 #: templates/main/create_assembly_gsheet.html:3
 #: templates/main/create_assembly_gsheet.html:18
 #: templates/main/create_assembly_gsheet.html:44
-#: templates/main/view_assembly.html:91
+#: templates/main/view_assembly.html:97
 #, fuzzy
 msgid "Configure Google Spreadsheet"
 msgstr "Google táblázatok"
@@ -623,7 +682,7 @@ msgstr "Google táblázatok"
 #: templates/main/create_assembly_gsheet.html:15
 #: templates/main/edit_assembly.html:15
 #: templates/main/edit_assembly_gsheet.html:15
-#: templates/main/view_assembly.html:15
+#: templates/main/gsheet_select.html:15 templates/main/view_assembly.html:15
 #, fuzzy
 msgid "Assembly"
 msgstr "Közösségi gyűlések"
@@ -634,7 +693,19 @@ msgid ""
 "respondent data and selection results."
 msgstr ""
 
-#: templates/main/create_assembly_gsheet.html:258
+#: templates/main/create_assembly_gsheet.html:74
+#: templates/main/edit_assembly_gsheet.html:74
+#: templates/main/gsheet_select.html:49
+msgid "Initial/Test Selection"
+msgstr ""
+
+#: templates/main/create_assembly_gsheet.html:117
+#: templates/main/edit_assembly_gsheet.html:117
+#: templates/main/gsheet_select.html:50
+msgid "Replacement"
+msgstr ""
+
+#: templates/main/create_assembly_gsheet.html:272
 #, fuzzy
 msgid "Save Configuration"
 msgstr "Rétegzett kiválasztás"
@@ -677,7 +748,7 @@ msgid "As a %(role)s, you can create new assemblies."
 msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
 
 #: templates/main/edit_assembly.html:3 templates/main/edit_assembly.html:44
-#: templates/main/view_assembly.html:80
+#: templates/main/view_assembly.html:86
 msgid "Edit Assembly"
 msgstr "Közösségi gyűlés szerkesztése"
 
@@ -689,8 +760,8 @@ msgstr "Szerkesztés"
 msgid "Update the details for this citizens' assembly."
 msgstr "Frissítse a közösségi gyűlés részleteit."
 
-#: templates/main/edit_assembly.html:109
-#: templates/main/edit_assembly_gsheet.html:258
+#: templates/main/edit_assembly.html:127
+#: templates/main/edit_assembly_gsheet.html:272
 msgid "Save Changes"
 msgstr "Módosítások mentése"
 
@@ -701,7 +772,6 @@ msgid "Edit Google Spreadsheet Configuration"
 msgstr "Google táblázatok"
 
 #: templates/main/edit_assembly_gsheet.html:18
-#: templates/main/view_assembly.html:86
 #, fuzzy
 msgid "Edit Google Spreadsheet"
 msgstr "Google táblázatok"
@@ -711,22 +781,170 @@ msgstr "Google táblázatok"
 msgid "Update the Google Spreadsheet settings for this assembly."
 msgstr "Frissítse a közösségi gyűlés részleteit."
 
-#: templates/main/edit_assembly_gsheet.html:266
-#: templates/main/edit_assembly_gsheet.html:273
+#: templates/main/edit_assembly_gsheet.html:280
+#: templates/main/edit_assembly_gsheet.html:287
 #, fuzzy
 msgid "Remove Configuration"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/main/edit_assembly_gsheet.html:267
+#: templates/main/edit_assembly_gsheet.html:281
 msgid ""
 "If you no longer need this Google Spreadsheet configuration, you can "
 "remove it."
 msgstr ""
 
-#: templates/main/edit_assembly_gsheet.html:272
+#: templates/main/edit_assembly_gsheet.html:286
 msgid ""
 "Are you sure you want to remove this Google Spreadsheet configuration? "
 "This action cannot be undone."
+msgstr ""
+
+#: templates/main/gsheet_select.html:3 templates/main/gsheet_select.html:18
+#, fuzzy
+msgid "Selection"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/main/gsheet_select.html:24
+msgid "Selection for"
+msgstr ""
+
+#: templates/main/gsheet_select.html:26
+msgid ""
+"Run the democratic lottery selection for this assembly using Google "
+"Spreadsheet data."
+msgstr ""
+
+#: templates/main/gsheet_select.html:32 templates/main/view_assembly.html:61
+#, fuzzy
+msgid "Google Spreadsheet Configuration"
+msgstr "Google táblázatok"
+
+#: templates/main/gsheet_select.html:37 templates/main/view_assembly.html:64
+#, fuzzy
+msgid "Spreadsheet URL"
+msgstr "Google táblázatok"
+
+#: templates/main/gsheet_select.html:40 templates/main/view_assembly.html:67
+#, fuzzy
+msgid "View Spreadsheet"
+msgstr "Google táblázatok"
+
+#: templates/main/gsheet_select.html:48
+#, fuzzy
+msgid "Spreadsheet Tabs"
+msgstr "Google táblázatok"
+
+#: templates/main/gsheet_select.html:55 templates/main/view_assembly.html:72
+msgid "Respondents Tab"
+msgstr ""
+
+#: templates/main/gsheet_select.html:60 templates/main/view_assembly.html:76
+msgid "Categories Tab"
+msgstr ""
+
+#: templates/main/gsheet_select.html:67
+msgid "Additional Settings"
+msgstr ""
+
+#: templates/main/gsheet_select.html:92
+#, fuzzy
+msgid "Change Configuration"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/main/gsheet_select.html:101
+#, python-format
+msgid "Selection will be for <b>%(number_to_select)s people</b>."
+msgstr ""
+
+#: templates/main/gsheet_select.html:102
+msgid "Edit the number."
+msgstr ""
+
+#: templates/main/gsheet_select.html:110
+#, fuzzy
+msgid "Load Spreadsheet"
+msgstr "Google táblázatok"
+
+#: templates/main/gsheet_select.html:115 templates/main/gsheet_select.html:128
+msgid "Task in Progress..."
+msgstr ""
+
+#: templates/main/gsheet_select.html:123
+#, fuzzy
+msgid "Run Selection"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/main/gsheet_select.html:134
+#, fuzzy
+msgid "Back to Assembly"
+msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/main/gsheet_select.html:140
+#, fuzzy
+msgid "Task Status"
+msgstr "Állapot"
+
+#: templates/main/gsheet_select.html:144 templates/main/view_assembly.html:32
+msgid "Status"
+msgstr "Állapot"
+
+#: templates/main/gsheet_select.html:147
+msgid "Pending"
+msgstr ""
+
+#: templates/main/gsheet_select.html:149
+msgid "Running"
+msgstr ""
+
+#: templates/main/gsheet_select.html:151
+#, fuzzy
+msgid "Completed"
+msgstr "Létrehozva"
+
+#: templates/main/gsheet_select.html:153
+msgid "Failed"
+msgstr ""
+
+#: templates/main/gsheet_select.html:160
+msgid "Task ID"
+msgstr ""
+
+#: templates/main/gsheet_select.html:164
+#, fuzzy
+msgid "Started At"
+msgstr "Kezdés"
+
+#: templates/main/gsheet_select.html:169
+msgid "Completed At"
+msgstr ""
+
+#: templates/main/gsheet_select.html:173
+msgid "Categories"
+msgstr ""
+
+#: templates/main/gsheet_select.html:174
+msgid "xx"
+msgstr ""
+
+#: templates/main/gsheet_select.html:182
+msgid "Full Run Report"
+msgstr ""
+
+#: templates/main/gsheet_select.html:193
+msgid "Progress Messages"
+msgstr ""
+
+#: templates/main/gsheet_select.html:202
+msgid "Error Details"
+msgstr ""
+
+#: templates/main/gsheet_select.html:214
+msgid "Task in Progress"
+msgstr ""
+
+#: templates/main/gsheet_select.html:219
+#, python-format
+msgid "This page will refresh automatically. Current status: %(status)s"
 msgstr ""
 
 #: templates/main/index.html:3
@@ -809,52 +1027,30 @@ msgstr ""
 "demokratikus részvételt.\n"
 "                Ez egy projekt a"
 
-#: templates/main/view_assembly.html:32
-msgid "Status"
-msgstr "Állapot"
-
-#: templates/main/view_assembly.html:48
+#: templates/main/view_assembly.html:54
 msgid "Last Updated"
 msgstr "Utoljára módosítva"
 
-#: templates/main/view_assembly.html:55
+#: templates/main/view_assembly.html:92
 #, fuzzy
-msgid "Google Spreadsheet Configuration"
+msgid "Change Google Spreadsheet Configuration"
 msgstr "Google táblázatok"
 
-#: templates/main/view_assembly.html:58
-#, fuzzy
-msgid "Spreadsheet URL"
-msgstr "Google táblázatok"
-
-#: templates/main/view_assembly.html:61
-#, fuzzy
-msgid "View Spreadsheet"
-msgstr "Google táblázatok"
-
-#: templates/main/view_assembly.html:66
-msgid "Respondents Tab"
-msgstr ""
-
-#: templates/main/view_assembly.html:70
-msgid "Categories Tab"
-msgstr ""
-
-#: templates/main/view_assembly.html:106
+#: templates/main/view_assembly.html:104 templates/main/view_assembly.html:109
 msgid "Start Selection (Google Spreadsheet)"
 msgstr ""
 
-#: templates/main/view_assembly.html:109
+#: templates/main/view_assembly.html:112
 #, fuzzy
 msgid "To enable selection:"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/main/view_assembly.html:109
+#: templates/main/view_assembly.html:112
 #, fuzzy
 msgid "Configure Google Spreadsheet settings first."
 msgstr "Google táblázatok"
 
-#: templates/main/view_assembly.html:115
+#: templates/main/view_assembly.html:118
 #, fuzzy
 msgid "Back to Dashboard"
 msgstr "Irányító pult"
@@ -979,4 +1175,28 @@ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 #~ msgstr ""
 
 #~ msgid "Column name containing unique identifiers for respondents"
+#~ msgstr ""
+
+#~ msgid "Selection Registrants Tab Name"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Name of the tab containing registrant"
+#~ " data in the Google Spreadsheet - "
+#~ "for initial Selection"
+#~ msgstr ""
+
+#~ msgid "Selection Targets Tab Name"
+#~ msgstr ""
+
+#~ msgid "Replacement Registrants Tab Name"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Name of the tab containing registrant"
+#~ " data in the Google Spreadsheet - "
+#~ "for Replacements"
+#~ msgstr ""
+
+#~ msgid "Replacement Targets Tab Name"
 #~ msgstr ""
