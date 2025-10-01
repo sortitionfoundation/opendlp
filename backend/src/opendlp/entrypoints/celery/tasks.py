@@ -169,15 +169,18 @@ def _internal_run_select(
     people: people.People,
     settings: settings.Settings,
     number_people_wanted: int,
+    test_selection: bool = False,
     final_task: bool = True,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     report = RunReport()
     # Update SelectionRunRecord to running status
-    _append_run_log(task_id, [f"Starting selection algorithm for {number_people_wanted} people"])
+    log_suffix = ": TEST only, do not use for real selection" if test_selection else ""
+    _append_run_log(task_id, [f"Starting selection algorithm for {number_people_wanted} people{log_suffix}"])
 
     try:
         _append_run_log(
-            task_id, [f"Running stratified selection with {people.count} people and {len(features)} features"]
+            task_id,
+            [f"Running stratified selection with {people.count} people and {len(features)} features{log_suffix}"],
         )
 
         success, selected_panels, report = run_stratification(
@@ -185,13 +188,14 @@ def _internal_run_select(
             people=people,
             number_people_wanted=number_people_wanted,
             settings=settings,
+            test_selection=test_selection,
         )
 
         if success:
             _update_selection_record(
                 task_id=task_id,
                 status="completed" if final_task else "running",
-                log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).",
+                log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).{log_suffix}",
                 completed_at=datetime.now(UTC) if final_task else None,
             )
         else:
@@ -274,11 +278,12 @@ def run_select(
     respondents_tab_name: str,
     number_people_wanted: int,
     settings: settings.Settings,
+    test_selection: bool = False,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id)
     report = RunReport()
     success, features, people, load_report = _internal_load_gsheet(
-        self, task_id, adapter, feature_tab_name, respondents_tab_name, settings
+        self, task_id, adapter, feature_tab_name, respondents_tab_name, settings, final_task=False
     )
     report.add_report(load_report)
     if not success:
@@ -292,6 +297,8 @@ def run_select(
         people=people,
         settings=settings,
         number_people_wanted=number_people_wanted,
+        test_selection=test_selection,
+        final_task=False,
     )
     report.add_report(select_report)
     if not success:
