@@ -5,7 +5,7 @@ from celery import Celery, Task
 from opendlp import config
 
 
-def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:  # type: ignore[no-any-unimported]
+def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
     # Configure Celery (using Redis as both broker and result backend)
     redis_cfg = config.RedisCfg.from_env()
     if redis_host:
@@ -35,7 +35,7 @@ class CeleryContextHandler(logging.Handler):
     object.
     """
 
-    def __init__(self, context: Task) -> None:  # type: ignore[no-any-unimported]
+    def __init__(self, context: Task) -> None:
         super().__init__()
         self.context = context
         self.messages: list[str] = []

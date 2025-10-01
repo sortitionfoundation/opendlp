@@ -40,6 +40,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+  "celery-types>=0.23.0",
   "covdefaults>=2.3.0",
   "deptry>=0.23.1",
   "mypy>=1.17.1",

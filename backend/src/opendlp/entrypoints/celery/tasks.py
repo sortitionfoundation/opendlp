@@ -25,7 +25,7 @@ class SelectionRunRecordHandler(logging.Handler):
     object.
     """
 
-    def __init__(self, task_id: uuid.UUID) -> None:  # type: ignore[no-any-unimported]
+    def __init__(self, task_id: uuid.UUID) -> None:
         super().__init__()
         self.task_id = task_id
         self.setFormatter(logging.Formatter(fmt="'%(message)s'"))
@@ -35,7 +35,7 @@ class SelectionRunRecordHandler(logging.Handler):
         _append_run_log(self.task_id, [msg])
 
 
-def _set_up_celery_logging(task_id: uuid.UUID) -> None:  # type: ignore[no-any-unimported]
+def _set_up_celery_logging(task_id: uuid.UUID) -> None:
     # get log messages written back as we go
     handler = SelectionRunRecordHandler(task_id)
     handler.setLevel(logging.DEBUG)
@@ -253,7 +253,7 @@ def _internal_write_selected(
 
 
 @app.task(bind=True)
-def load_gsheet(  # type: ignore[no-any-unimported]
+def load_gsheet(
     self: Task,
     task_id: uuid.UUID,
     adapter: adapters.GSheetAdapter,
@@ -266,7 +266,7 @@ def load_gsheet(  # type: ignore[no-any-unimported]
 
 
 @app.task(bind=True)
-def run_select(  # type: ignore[no-any-unimported]
+def run_select(
     self: Task,
     task_id: uuid.UUID,
     adapter: adapters.GSheetAdapter,
