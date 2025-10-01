@@ -34,8 +34,8 @@ class TestAssemblyGSheetCreateView:
         assert b"Australia Team" in response.data
 
         # Tab names
-        assert b"Selection Registrants Tab Name" in response.data
-        assert b"Selection Targets Tab Name" in response.data
+        assert b"Respondents Tab Name" in response.data
+        assert b"Targets Tab Name" in response.data
 
         # ID column
         assert b"ID Column" in response.data

@@ -3,7 +3,7 @@ ABOUTME: Handles home page, dashboard, and assembly views with login requirement
 
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -274,11 +274,13 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
 @require_assembly_management
 def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets loading task for an assembly."""
+    # the form has a hidden parameter
+    test_selection = request.form.get("test_selection") == "1"
     try:
         uow = bootstrap.bootstrap()
         with uow:
             # TODO: set number_people_wanted properly
-            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id)
+            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_selection)
 
         return redirect(url_for("main.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 

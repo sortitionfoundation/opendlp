@@ -125,7 +125,54 @@ class TestSortitionRoutes:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
             assert len(records) == 1
             assert records[0].status == "pending"
+            assert records[0].task_type == "load_gsheet"
             assert "Task submitted for Google Sheets loading" in records[0].log_messages
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
+    def test_gsheet_select_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST request to start loading task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_select", data={"test_selection": "0"})
+
+        # Should redirect to status page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_select" in response.headers["Location"]
+
+        # Verify task was created in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].status == "pending"
+            assert records[0].task_type == "select_gsheet"
+            assert "Task submitted for Google Sheets selection" in records[0].log_messages
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
+    def test_gsheet_test_select_success(
+        self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test POST request to start loading task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_select", data={"test_selection": "1"})
+
+        # Should redirect to status page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_select" in response.headers["Location"]
+
+        # Verify task was created in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].status == "pending"
+            assert records[0].task_type == "test_select_gsheet"
+            assert "Task submitted for Google Sheets TEST selection" in records[0].log_messages
 
     def test_gsheet_load_requires_auth(self, client, assembly_with_gsheet):
         """Test POST request redirects when not authenticated."""

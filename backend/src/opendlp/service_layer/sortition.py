@@ -71,7 +71,9 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
 
 
 @require_assembly_permission(can_manage_assembly)
-def start_gsheet_select_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> uuid.UUID:
+def start_gsheet_select_task(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, test_selection: bool = False
+) -> uuid.UUID:
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
@@ -83,14 +85,20 @@ def start_gsheet_select_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assemb
 
     # Create unique task ID
     task_id = uuid.uuid4()
+    task_type = "test_select_gsheet" if test_selection else "select_gsheet"
+    log_msg = (
+        "Task submitted for Google Sheets TEST selection"
+        if test_selection
+        else "Task submitted for Google Sheets selection"
+    )
 
     # Create SelectionRunRecord for tracking
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
-        task_type="select_gsheet",
+        task_type=task_type,
         status="pending",
-        log_messages=["Task submitted for Google Sheets selection"],
+        log_messages=[log_msg],
         settings_used=gsheet.dict_for_json(),
     )
     uow.selection_run_records.add(record)
@@ -106,6 +114,7 @@ def start_gsheet_select_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assemb
         respondents_tab_name=gsheet.select_registrants_tab,
         number_people_wanted=assembly.number_to_select,
         settings=gsheet.to_settings(),
+        test_selection=test_selection,
     )
     record.celery_task_id = str(result.id)
     uow.selection_run_records.add(record)
