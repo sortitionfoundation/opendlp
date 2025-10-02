@@ -33,6 +33,19 @@ class AssemblyStatus(Enum):
     ARCHIVED = "archived"
 
 
+class SelectionRunStatus(Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class SelectionTaskType(Enum):
+    LOAD_GSHEET = "load_gsheet"
+    SELECT_GSHEET = "select_gsheet"
+    TEST_SELECT_GSHEET = "test_select_gsheet"
+
+
 def validate_email(email: str) -> None:
     """Basic email validation."""
     # we use the well-tested and maintained Django EmailValidator

@@ -16,6 +16,7 @@ from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.bootstrap import bootstrap
+from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 
 
@@ -44,7 +45,7 @@ def _set_up_celery_logging(task_id: uuid.UUID) -> None:
 
 def _update_selection_record(
     task_id: uuid.UUID,
-    status: str,
+    status: SelectionRunStatus,
     log_message: str = "",
     log_messages: list[str] | None = None,
     error_message: str = "",
@@ -77,7 +78,7 @@ def _update_selection_record(
 
 def _append_run_log(task_id: uuid.UUID, log_messages: list[str]) -> None:
     """Add to the log while running"""
-    _update_selection_record(task_id, status="running", log_messages=log_messages)
+    _update_selection_record(task_id, status=SelectionRunStatus.RUNNING, log_messages=log_messages)
 
 
 def _internal_load_gsheet(
@@ -93,7 +94,7 @@ def _internal_load_gsheet(
     # Update SelectionRunRecord to running status
     _update_selection_record(
         task_id=task_id,
-        status="running",
+        status=SelectionRunStatus.RUNNING,
         log_message="Starting Google Sheets load task",
     )
 
@@ -137,7 +138,7 @@ def _internal_load_gsheet(
 
         _update_selection_record(
             task_id=task_id,
-            status="completed" if final_task else "running",
+            status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
             log_messages=[f"Loaded {people.count} people.", "Google Sheets load completed successfully."],
             completed_at=datetime.now(UTC) if final_task else None,
         )
@@ -155,7 +156,7 @@ def _internal_load_gsheet(
 
         _update_selection_record(
             task_id=task_id,
-            status="failed",
+            status=SelectionRunStatus.FAILED,
             log_message=error_msg,
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
@@ -195,14 +196,14 @@ def _internal_run_select(
         if success:
             _update_selection_record(
                 task_id=task_id,
-                status="completed" if final_task else "running",
+                status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
                 log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).{log_suffix}",
                 completed_at=datetime.now(UTC) if final_task else None,
             )
         else:
             _update_selection_record(
                 task_id=task_id,
-                status="failed",
+                status=SelectionRunStatus.FAILED,
                 log_message="Selection algorithm failed to find suitable panels",
                 error_message="Selection algorithm could not find panels meeting the specified criteria",
                 completed_at=datetime.now(UTC),
@@ -221,7 +222,7 @@ def _internal_run_select(
 
         _update_selection_record(
             task_id=task_id,
-            status="failed",
+            status=SelectionRunStatus.FAILED,
             log_message=error_msg,
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
@@ -250,7 +251,7 @@ def _internal_write_selected(
 
     _update_selection_record(
         task_id=task_id,
-        status="completed",
+        status=SelectionRunStatus.COMPLETED,
         log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
         completed_at=datetime.now(UTC),
     )

@@ -13,7 +13,13 @@ from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 from sqlalchemy.sql.sqltypes import String as SQLString
 
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import (
+    AssemblyRole,
+    AssemblyStatus,
+    GlobalRole,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 
 
 def aware_utcnow() -> datetime:  # pragma: no cover
@@ -206,8 +212,8 @@ selection_run_records = Table(
     Column(
         "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
     ),
-    Column("status", String(50), nullable=False, index=True),
-    Column("task_type", String(50), nullable=False, index=True),
+    Column("status", EnumAsString(SelectionRunStatus, 50), nullable=False, index=True),
+    Column("task_type", EnumAsString(SelectionTaskType, 50), nullable=False, index=True),
     Column("celery_task_id", String(50), nullable=False, index=True),
     Column("log_messages", JSON, nullable=False, default=list),
     Column("settings_used", JSON, nullable=False, default=dict),

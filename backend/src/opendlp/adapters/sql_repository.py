@@ -14,7 +14,7 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, SelectionRunStatus
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
@@ -348,7 +348,7 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
         """Get all currently running selection tasks."""
         return (
             self.session.query(SelectionRunRecord)
-            .filter_by(status="running")
+            .filter(orm.selection_run_records.c.status == SelectionRunStatus.RUNNING.value)
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
         )

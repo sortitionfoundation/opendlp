@@ -12,7 +12,13 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import (
+    AssemblyRole,
+    AssemblyStatus,
+    GlobalRole,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from tests.data import VALID_GSHEET_URL
 
 
@@ -621,8 +627,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="running",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
             log_messages=["Started task", "Processing data", "Selection in progress"],
             settings_used={"algorithm": "maximin", "target_count": 100, "seed": 42},
             error_message="",
@@ -637,8 +643,8 @@ class TestSelectionRunRecordORM:
         assert retrieved_record is not None
         assert retrieved_record.assembly_id == assembly.id
         assert retrieved_record.task_id == task_id
-        assert retrieved_record.status == "running"
-        assert retrieved_record.task_type == "load_gsheet"
+        assert retrieved_record.status == SelectionRunStatus.RUNNING
+        assert retrieved_record.task_type == SelectionTaskType.LOAD_GSHEET
         assert retrieved_record.log_messages == ["Started task", "Processing data", "Selection in progress"]
         assert retrieved_record.settings_used == {"algorithm": "maximin", "target_count": 100, "seed": 42}
         assert retrieved_record.error_message == ""
@@ -664,8 +670,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="pending",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
 
         postgres_session.add(selection_record)
@@ -698,8 +704,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="completed",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.LOAD_GSHEET,
             log_messages=["Task started", "Selection completed successfully"],
             settings_used={"algorithm": "stratified", "target_count": 50},
             completed_at=completed_time,
@@ -711,7 +717,7 @@ class TestSelectionRunRecordORM:
         # Retrieve and verify
         retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
 
-        assert retrieved_record.status == "completed"
+        assert retrieved_record.status == SelectionRunStatus.COMPLETED
         assert retrieved_record.completed_at is not None
         assert isinstance(retrieved_record.completed_at, datetime)
 
@@ -733,8 +739,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="failed",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.FAILED,
+            task_type=SelectionTaskType.LOAD_GSHEET,
             log_messages=["Task started", "Error occurred during processing"],
             settings_used={"algorithm": "maximin", "target_count": 200},
             error_message="Google Sheets API connection failed",
@@ -746,7 +752,7 @@ class TestSelectionRunRecordORM:
         # Retrieve and verify
         retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
 
-        assert retrieved_record.status == "failed"
+        assert retrieved_record.status == SelectionRunStatus.FAILED
         assert retrieved_record.error_message == "Google Sheets API connection failed"
         assert "Error occurred during processing" in retrieved_record.log_messages
 
@@ -757,8 +763,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=uuid.uuid4(),  # Non-existent assembly
             task_id=task_id,
-            status="pending",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
 
         postgres_session.add(selection_record)
@@ -783,14 +789,14 @@ class TestSelectionRunRecordORM:
         record1 = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=uuid.uuid4(),
-            status="completed",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
         record2 = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=uuid.uuid4(),
-            status="running",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
 
         postgres_session.add(record1)
@@ -825,8 +831,8 @@ class TestSelectionRunRecordORM:
         record1 = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="running",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
 
         postgres_session.add(record1)
@@ -836,8 +842,8 @@ class TestSelectionRunRecordORM:
         record2 = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,  # Same task_id
-            status="pending",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
         )
 
         postgres_session.add(record2)
@@ -863,8 +869,8 @@ class TestSelectionRunRecordORM:
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
-            status="pending",
-            task_type="load_gsheet",
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.LOAD_GSHEET,
             log_messages=[],
             settings_used={},
         )

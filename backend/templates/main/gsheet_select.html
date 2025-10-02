@@ -103,7 +103,7 @@
                 </p>
 
                 <div class="govuk-button-group govuk-!-margin-top-6">
-                    {% if not run_record or run_record.status in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
                     <form action="{{ url_for('main.start_gsheet_load', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="govuk-button">
@@ -116,7 +116,7 @@
                     </button>
                     {% endif %}
 
-                    {% if not run_record or run_record.status in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
                     <form action="{{ url_for('main.start_gsheet_select', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="test_selection" value="0"/>
@@ -126,7 +126,7 @@
                     </form>
                     {% endif %}
 
-                    {% if not run_record or run_record.status in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
                     <form action="{{ url_for('main.start_gsheet_select', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="test_selection" value="1"/>
@@ -150,16 +150,16 @@
                         <div class="govuk-summary-list__row">
                             <dt class="govuk-summary-list__key">{{ _('Status') }}</dt>
                             <dd class="govuk-summary-list__value">
-                                {% if run_record.status == 'pending' %}
+                                {% if run_record.status.value == 'pending' %}
                                     <strong class="govuk-tag govuk-tag--blue">{{ _('Pending') }}</strong>
-                                {% elif run_record.status == 'running' %}
+                                {% elif run_record.status.value == 'running' %}
                                     <strong class="govuk-tag govuk-tag--yellow">{{ _('Running') }}</strong>
-                                {% elif run_record.status == 'completed' %}
+                                {% elif run_record.status.value == 'completed' %}
                                     <strong class="govuk-tag govuk-tag--green">{{ _('Completed') }}</strong>
-                                {% elif run_record.status == 'failed' %}
+                                {% elif run_record.status.value == 'failed' %}
                                     <strong class="govuk-tag govuk-tag--red">{{ _('Failed') }}</strong>
                                 {% else %}
-                                    <strong class="govuk-tag">{{ run_record.status|title }}</strong>
+                                    <strong class="govuk-tag">{{ run_record.status.value|title }}</strong>
                                 {% endif %}
                             </dd>
                         </div>
@@ -205,7 +205,7 @@
                     </div>
                     {% endif %}
 
-                    {% if run_record.error_message and run_record.status == 'failed' %}
+                    {% if run_record.error_message and run_record.status.value == 'failed' %}
                     <h4 class="govuk-heading-s">{{ _('Error Details') }}</h4>
                     <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
                         <div class="govuk-error-summary__body">
@@ -214,7 +214,7 @@
                     </div>
                     {% endif %}
 
-                    {% if run_record.status in ['pending', 'running'] %}
+                    {% if run_record.status.value in ['pending', 'running'] %}
                     <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
                         <div class="govuk-notification-banner__header">
                             <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
@@ -223,7 +223,7 @@
                         </div>
                         <div class="govuk-notification-banner__content">
                             <p class="govuk-notification-banner__heading">
-                                {{ _('This page will refresh automatically. Current status: %(status)s', status=run_record.status) }}
+                                {{ _('This page will refresh automatically. Current status: %(status)s', status=run_record.status.value) }}
                             </p>
                         </div>
                     </div>

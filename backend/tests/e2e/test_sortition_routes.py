@@ -9,7 +9,7 @@ import pytest
 
 from opendlp.domain.assembly import AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole
+from opendlp.domain.value_objects import AssemblyRole, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.data import VALID_GSHEET_URL
@@ -48,8 +48,8 @@ class TestSortitionRoutes:
             record = SelectionRunRecord(
                 assembly_id=assembly.id,
                 task_id=task_id,
-                status="running",
-                task_type="load_gsheet",
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.LOAD_GSHEET,
                 log_messages=["Task started", "Loading data"],
             )
             uow.selection_run_records.add(record)
@@ -93,8 +93,8 @@ class TestSortitionRoutes:
             record = SelectionRunRecord(
                 assembly_id=wrong_assembly_id,
                 task_id=task_id,
-                task_type="load_gsheet",
-                status="running",
+                task_type=SelectionTaskType.LOAD_GSHEET,
+                status=SelectionRunStatus.RUNNING,
             )
             uow.selection_run_records.add(record)
             uow.commit()
@@ -124,8 +124,8 @@ class TestSortitionRoutes:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
             assert len(records) == 1
-            assert records[0].status == "pending"
-            assert records[0].task_type == "load_gsheet"
+            assert records[0].status == SelectionRunStatus.PENDING
+            assert records[0].task_type == SelectionTaskType.LOAD_GSHEET
             assert "Task submitted for Google Sheets loading" in records[0].log_messages
 
     @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
@@ -146,8 +146,8 @@ class TestSortitionRoutes:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
             assert len(records) == 1
-            assert records[0].status == "pending"
-            assert records[0].task_type == "select_gsheet"
+            assert records[0].status == SelectionRunStatus.PENDING
+            assert records[0].task_type == SelectionTaskType.SELECT_GSHEET
             assert "Task submitted for Google Sheets selection" in records[0].log_messages
 
     @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
@@ -170,8 +170,8 @@ class TestSortitionRoutes:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
             assert len(records) == 1
-            assert records[0].status == "pending"
-            assert records[0].task_type == "test_select_gsheet"
+            assert records[0].status == SelectionRunStatus.PENDING
+            assert records[0].task_type == SelectionTaskType.TEST_SELECT_GSHEET
             assert "Task submitted for Google Sheets TEST selection" in records[0].log_messages
 
     def test_gsheet_load_requires_auth(self, client, assembly_with_gsheet):

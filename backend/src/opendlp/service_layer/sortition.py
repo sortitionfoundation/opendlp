@@ -7,6 +7,7 @@ from celery.result import AsyncResult
 from sortition_algorithms import RunReport
 
 from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -45,8 +46,8 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
-        task_type="load_gsheet",
-        status="pending",
+        task_type=SelectionTaskType.LOAD_GSHEET,
+        status=SelectionRunStatus.PENDING,
         log_messages=["Task submitted for Google Sheets loading"],
         settings_used=gsheet.dict_for_json(),
     )
@@ -85,7 +86,7 @@ def start_gsheet_select_task(
 
     # Create unique task ID
     task_id = uuid.uuid4()
-    task_type = "test_select_gsheet" if test_selection else "select_gsheet"
+    task_type = SelectionTaskType.TEST_SELECT_GSHEET if test_selection else SelectionTaskType.SELECT_GSHEET
     log_msg = (
         "Task submitted for Google Sheets TEST selection"
         if test_selection
@@ -97,7 +98,7 @@ def start_gsheet_select_task(
         assembly_id=assembly_id,
         task_id=task_id,
         task_type=task_type,
-        status="pending",
+        status=SelectionRunStatus.PENDING,
         log_messages=[log_msg],
         settings_used=gsheet.dict_for_json(),
     )
@@ -149,9 +150,9 @@ def get_selection_run_status(
             if celery_result.successful():
                 final_result = celery_result.get()
                 assert final_result
-                if run_record.task_type == "load_gsheet":
+                if run_record.task_type == SelectionTaskType.LOAD_GSHEET:
                     _, _, _, run_report = final_result
-                elif run_record.task_type in ("select_gsheet", "test_select_gsheet"):
+                elif run_record.task_type in (SelectionTaskType.SELECT_GSHEET, SelectionTaskType.TEST_SELECT_GSHEET):
                     _, _, run_report = final_result
                 else:
                     raise Exception(

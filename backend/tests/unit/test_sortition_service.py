@@ -8,7 +8,7 @@ import pytest
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole
+from opendlp.domain.value_objects import GlobalRole, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from tests.data import VALID_GSHEET_URL
@@ -54,7 +54,7 @@ class TestStartGsheetLoadTask:
         assert record is not None
         assert record.assembly_id == assembly.id
         assert record.task_id == task_id
-        assert record.status == "pending"
+        assert record.status == SelectionRunStatus.PENDING
         assert "Task submitted for Google Sheets loading" in record.log_messages
         assert "url" in record.settings_used
         assert record.settings_used["url"] == VALID_GSHEET_URL
@@ -126,8 +126,8 @@ class TestGetSelectionRunStatus:
         record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=task_id,
-            task_type="load_gsheet",
-            status="running",
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            status=SelectionRunStatus.RUNNING,
             log_messages=["Task started", "Loading data"],
         )
         uow.selection_run_records.add(record)
@@ -137,7 +137,7 @@ class TestGetSelectionRunStatus:
         assert run_record is not None
         assert run_record.task_id == task_id
         assert run_record.assembly_id == assembly_id
-        assert run_record.status == "running"
+        assert run_record.status == SelectionRunStatus.RUNNING
         assert len(run_record.log_messages) == 2
 
     def test_get_selection_run_status_not_found(self):
@@ -163,8 +163,8 @@ class TestGetLatestRunForAssembly:
         old_record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=uuid.uuid4(),
-            task_type="load_gsheet",
-            status="completed",
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            status=SelectionRunStatus.COMPLETED,
             log_messages=["Old task"],
         )
         # Manually set created_at to ensure ordering
@@ -174,8 +174,8 @@ class TestGetLatestRunForAssembly:
         new_record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=uuid.uuid4(),
-            task_type="load_gsheet",
-            status="running",
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            status=SelectionRunStatus.RUNNING,
             log_messages=["New task"],
         )
         uow.selection_run_records.add(new_record)
@@ -184,7 +184,7 @@ class TestGetLatestRunForAssembly:
 
         assert result is not None
         assert result.task_id == new_record.task_id
-        assert result.status == "running"
+        assert result.status == SelectionRunStatus.RUNNING
 
     def test_get_latest_run_for_assembly_not_found(self):
         """Test getting latest run when no runs exist."""
