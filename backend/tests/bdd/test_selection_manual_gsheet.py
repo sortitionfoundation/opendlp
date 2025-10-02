@@ -56,7 +56,8 @@ def _(page: Page):
 @then("I can specify the categories and targets")
 def _(page: Page):
     """I can specify the categories and targets in "manual gsheet setup"."""
-    categories_field = page.get_by_label("Selection Targets Tab Name")
+    # there are two fields named "Targets Tab Name" - so select the one in the first fieldset (group)
+    categories_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Targets Tab Name")
     expect(categories_field).to_be_visible()
 
 
@@ -66,7 +67,8 @@ def _(page: Page):
     url_field = page.get_by_label("Google Spreadsheet URL")
     expect(url_field).to_be_visible()
     url_field.fill(VALID_GSHEET_URL)
-    respondents_field = page.get_by_label("Selection Registrants Tab Name")
+    # there are two fields named "Respondents Tab Name" - so select the one in the first fieldset (group)
+    respondents_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Respondents Tab Name")
     expect(respondents_field).to_be_visible()
     respondents_field.fill("All respondents")
 

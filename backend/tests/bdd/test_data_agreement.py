@@ -19,4 +19,4 @@ def _(page: Page):
 @then("the user sees the data agreement text")
 def see_data_agreement_text(page: Page):
     expect(page).to_have_title("User Data Agreement - OpenDLP")
-    expect(page.locator(".main")).to_contain_text("You agree to let the Sortition Foundation hold")
+    expect(page.locator(".main")).to_contain_text("The legal basis for data processing by the Foundation")
