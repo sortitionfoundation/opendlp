@@ -3,4 +3,9 @@
 
 # update the deployment on opendlp-test server from git main branch
 deploy-opendlp-test:
-  @ssh opendlp-test just opendlp-update
+  #!/usr/bin/env bash
+  if [ "$CLAUDECODE" == "1" ]; then
+    echo "claude code is not allowed to deploy"
+    exit 1
+  fi
+  ssh opendlp-test just opendlp-update
