@@ -34,6 +34,9 @@ def create_app(config_name: str = "") -> Flask:
     # Initialize extensions
     init_extensions(app, flask_config)
 
+    # Register context processors
+    register_context_processors(app)
+
     # Register blueprints
     register_blueprints(app)
 
@@ -47,6 +50,13 @@ def create_app(config_name: str = "") -> Flask:
     configure_logging(app)
 
     return app
+
+
+def register_context_processors(app: Flask) -> None:
+    """Register template context processors."""
+    from .context_processors import static_versioning_context_processor
+
+    app.context_processor(static_versioning_context_processor)
 
 
 def register_blueprints(app: Flask) -> None:
