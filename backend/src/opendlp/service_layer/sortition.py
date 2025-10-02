@@ -151,7 +151,7 @@ def get_selection_run_status(
                 assert final_result
                 if run_record.task_type == "load_gsheet":
                     _, _, _, run_report = final_result
-                elif run_record.task_type == "select_gsheet":
+                elif run_record.task_type in ("select_gsheet", "test_select_gsheet"):
                     _, _, run_report = final_result
                 else:
                     raise Exception(
