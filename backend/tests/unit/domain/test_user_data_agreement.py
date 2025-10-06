@@ -26,8 +26,8 @@ class TestUserDataAgreement:
 
         assert isinstance(content, str)
         assert len(content) > 0
-        assert "Adatkezelési megállapodás" in content
-        assert "Sortírozási Alapítvány" in content
+        assert "Az adatkezelés alapelvei" in content
+        assert "Nincs szükség az Érintett hozzájárulására" in content
 
     def test_get_content_defaults_to_english(self):
         """Test that no language code defaults to English."""
