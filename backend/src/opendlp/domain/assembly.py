@@ -265,11 +265,15 @@ class AssemblyGSheet:
     def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource:
         if for_replacements:
             data_source = adapters.GSheetDataSource(
-                self.replace_registrants_tab, self.replace_targets_tab, config.get_google_auth_json_path()
+                feature_tab_name=self.replace_targets_tab,
+                people_tab_name=self.replace_registrants_tab,
+                auth_json_path=config.get_google_auth_json_path(),
             )
         else:
             data_source = adapters.GSheetDataSource(
-                self.select_registrants_tab, self.select_targets_tab, config.get_google_auth_json_path()
+                feature_tab_name=self.select_targets_tab,
+                people_tab_name=self.select_registrants_tab,
+                auth_json_path=config.get_google_auth_json_path(),
             )
         data_source.set_g_sheet_name(self.url)
         return data_source

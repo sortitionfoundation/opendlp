@@ -5,6 +5,7 @@ import uuid
 from unittest.mock import Mock, patch
 
 import pytest
+from sortition_algorithms import GSheetDataSource
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User
@@ -63,8 +64,9 @@ class TestStartGsheetLoadTask:
         mock_celery.assert_called_once()
         call_args = mock_celery.call_args
         assert call_args[1]["task_id"] == task_id
-        assert call_args[1]["feature_tab_name"] == gsheet.select_targets_tab
-        assert call_args[1]["respondents_tab_name"] == gsheet.select_registrants_tab
+        assert isinstance(call_args[1]["data_source"], GSheetDataSource)
+        assert call_args[1]["data_source"].feature_tab_name == gsheet.select_targets_tab
+        assert call_args[1]["data_source"].people_tab_name == gsheet.select_registrants_tab
 
         assert uow.committed
 
