@@ -152,7 +152,7 @@ For questions, remarks, requests, or exercising privacy rights, contact:
    Address: 32 Gilbert Close, Cambridge, United Kingdom
    Email: info@sortitionfoundation.org
 
-**Effective Date:** This privacy notice is valid from 1 September 2024 onward.
+**Effective Date:** This privacy notice is valid from 1 September 2025 onward.
 
 ---
 
@@ -162,52 +162,183 @@ By checking the box below, you confirm that you have read and understood this da
 
 *Last updated: October 2025*
 """,
-    "hu": """# Adatkezelési megállapodás
+    "hu": """# ADATVÉDELMI NYILATKOZAT
 
-## Általunk gyűjtött adatok
+A [https://opendlp.sortitionlab.org/](https://opendlp.sortitionlab.org/) webhelyet a Sortition Foundation és a Sortition Europe Nonprofit Kft. üzemelteti. Az Európai Parlament és a Tanács (EU) 2016/679 rendelet, valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény értelmében a Sortition Foundation és a Sortition Europe Nonprofit Kft. (adatkezelőként) az alábbi tájékoztatást nyújtja a következőkről:
 
-Ön hozzájárul ahhoz, hogy a Sortírozási Alapítvány (Sortition Foundation) az alábbi adatokat tárolja Önről:
+* a [https://opendlp.sortitionlab.org/](https://opendlp.sortitionlab.org/) weboldal (a továbbiakban: „Weboldal”) használata,
+* hírlevélre való feliratkozással,
+* rendezvényeken, workshopokon való részvétellel,
+* polgári gyűlésekre való regisztrációval és adatszolgáltatással kapcsolatos adatkezeléssel kapcsolatos tudnivalókról,
 
-- Az Ön e-mail címe
-- Az Ön neve (vezeték- és keresztnév)
-- Az időbélyeg, amikor elfogadta ezt az adatkezelési megállapodást
-- Az Ön szerepe bármely Polgári Gyűlésben, amelyben részt vesz
-- Az Ön Polgári Gyűlési tevékenységekben való részvételének rekordjai
+az alábbiak szerint:
 
-## Hogyan használjuk az Ön adatait
+## 1. Adatkezelők
 
-Az Ön adatait a következőkre használjuk:
+* **Sortition Foundation**
+  Székhely: 32 Gilbert Close, Cambridge, CB4 3HR, Egyesült Királyság
+  Adószám: GB344874864
 
-- Az Ön fiókjának és az OpenDLP platformhoz való hozzáférésének kezelése
-- Az Ön Polgári Gyűlési folyamatokban való részvételének lehetővé tétele
-- Kommunikáció Önnel a Polgári Gyűlési tevékenységekről
-- A kiválasztási folyamat integritásának és tisztességességének biztosítása
-- Adatvédelmi jogszabályok szerinti jogi kötelezettségeink teljesítése
+* **Sortition Europe Nonprofit Kft.**
+  Székhely: 1092 Budapest, Ráday utca 31. C. első épület, 1. emelet, 11. egység
+  Adószám: 32356465‑2‑43
 
-## Adatvédelem
+## 2. Az adatkezelés alapelvei
 
-Elkötelezettek vagyunk az Ön adatainak védelme mellett:
+1. Ha a Sortition Foundation és a Sortition Europe (a továbbiakban: Alapítvány) általi adatkezelés jogalapja az Érintett **önkéntes hozzájárulása**. Az Érintett jogosult a hozzájárulását bármikor visszavonni, amely azonban nem érinti a visszavonás előtti adatkezelés jogszerűségét. A hozzájárulás tényének igazolására vonatkozó adatokat az Alapítvány mindaddig megőrzi, amíg azt a hozzájárulás bizonyíthatósága vagy az Alapítvány más jogos érdeke szükségessé teszi.
+2. Az Érintett felelős az általa megadott személyes adatok valóságáért és pontosságáért. Az Alapítvány a közölt személyes adatok valódiságát nem ellenőrzi. Az Alapítvány nem felelős az Érintett által megadott téves vagy valótlan adatok kezeléséért, sem az Érintett által közölt téves vagy valótlan adatközlés folytán akár az Érintettet, akár harmadik személyt érő károkért.
 
-- Iparági szabványoknak megfelelő biztonsági intézkedéseket használunk az Ön információinak védelmére
-- Nem osztjuk meg személyes adatait harmadik felekkel az Ön kifejezett beleegyezése nélkül
-- Jogában áll hozzáférni személyes adataihoz, azokat kijavítani vagy törölni
-- Bármikor visszavonhatja beleegyezését
+## 3. Hozzájárulás megadása
 
-## Jogalap
+* Weboldal esetén a Weboldal használatával, a Weboldalon történő regisztrációval vagy a személyes adatok egyéb módon történő megadásával,
+* minden más esetben az Érintett általi egyéb igazolható módon (papíralapon, írásban, elektronikus levélben, kép- és/vagy hangfelvétellel stb.) történik.
 
-Az Ön adatait az alábbi jogalapokon dolgozzuk fel:
+Nincs szükség az Érintett hozzájárulására képmás és hangfelvétel elkészítéséhez és az elkészített felvétel felhasználásához tömegfelvétel és nyilvános közéleti szereplésről készült felvétel esetén. Az Érintett hozzájárulását megadottnak kell tekinteni az Érintett közszereplése során általa közölt vagy nyilvánosságra hozott adatok tekintetében. Nem minősül közügynek a közéleti szereplő magán- vagy családi életével kapcsolatos tevékenység, illetve adat. Ezért az ilyen jellegű személyes adatok kezelését az Alapítvány kizárólag az Érintett hozzájárulása alapján végzi.
+Az Érintett hozzájárulását megadottnak kell tekinteni az Érintett közszereplése során általa közölt vagy nyilvánosságra hozatalra általa átadott személyes adatok tekintetében.
 
-- **Jogos érdek**: Polgári Gyűlési tevékenységek lebonyolítása és a tisztességes demokratikus folyamatok biztosítása érdekében
-- **Beleegyezés**: Ahol kifejezett beleegyezését adta konkrét adatfeldolgozási tevékenységekhez
-- **Jogi kötelezettség**: Adatvédelmi és egyéb vonatkozó jogszabályok szerinti kötelezettségeink teljesítéséhez
+Az Alapítvány a rendelkezésére bocsátott személyes adatokat – eltérő jogszabályi rendelkezés hiányában – csak a jelen tájékoztatóban ismertetett célok érdekében, a cél megvalósulásához szükséges mértékben és ideig kezeli.
 
-## Kapcsolat
+## 4. Részletes adatkezelési szabályok
 
-Ha kérdései vannak az adatkezelésünkkel kapcsolatban, kérjük, lépjen kapcsolatba velünk a [privacy@sortitionfoundation.org](mailto:privacy@sortitionfoundation.org) címen.
+### 4.1 Érintettek köre
 
-Az alábbi mező bejelölésével megerősíti, hogy elolvasta és megértette ezt az adatkezelési megállapodást, és hozzájárul személyes adatainak a fent leírtak szerinti feldolgozásához.
+* A https://opendlp.sortitionlab.org/ Weboldalt használó természetes személyekre (a továbbiakban: Érintett vagy Felhasználó)
+* a hírlevélküldést igénybe vevőkre (minden természetes személy, aki az Adatkezelő híreiről, eseményeiről, rendezvényeiről rendszeresen értesülni kíván, ezért személyes adatainak megadásával a hírlevél szolgáltatásra feliratkozik). A jogos érdeken alapuló adatkezelés esetén érintettek lehetnek továbbá olyan személyek is, akiknek elérhetősége valamely szakmai relevanciával bíró, nyilvánosan elérhető weboldalon kapcsolattartás céljából megadásra került.
+* az Adatkezelő által szervezett események résztvevőire
+* az Adatkezelőnél panaszt tevőkre és az Adatkezelővel egyéb kommunikációt folytatókra
 
-*Utolsó frissítés: 2025. augusztus*
+### 4.2 Adatkezelés céljai
+
+* a Weboldal használatának biztosítása; online tartalomszolgáltatás;
+* a hírlevél küldésének elsődleges célja a tájékoztatás releváns szakmai tartalmakról, az Adatkezelő által szerkesztett hírekről, illetve az Adatkezelő egyéb tartalmairól, ezen túlmenően a címzett teljes körű általános, vagy személyre szabott tájékoztatása az Adatkezelő kiadványairól, az általa szervezett eseményekről, képzésekről, konferenciákról, hírekről. Ha az érintett tiltakozott az adatainak további felhasználása ellen, akkor a további adatkezelés célja az esetleges jövőbeni jogellenes adatkezelési műveletek megelőzése;
+* a Felhasználó külön hozzájárulása esetén a támogató aláírások és a nyilvánosságra hozható adatok rendszerezése, kezelése, nyilvánosságra hozása;
+* az Adatkezelő által szervezett eseményeken a részvétel lehetőségének biztosítása;
+* a panaszkezelés, amennyiben a Felhasználó panasszal fordul az Adatkezelőhöz;
+* egyéb, az Érintett által kezdeményezett kommunikáció, illetve érintetti kérelmek megválaszolása.
+
+### 4.3 A kezelt adatok köre:
+
+* Látogatás dátuma és időpontja, IP-cím és domain név, hozzáférési tartalom
+* Hírlevelekhez: név, e-mail, feliratkozási naplók
+* Panaszok, válaszok, egyéb kommunikációk
+* Rendszer által generált technikai adatok (pl. böngésző, eszköz, használati naplók)
+* Rendezvényekhez: személyes adatok és rendezvénnyel kapcsolatos információk, attitűdök, preferenciák
+* Kifejezett hozzájárulással: név, szervezet, beosztás, e-mail cím, telefonszám
+
+### 4.4 Az adatkezelés jogalapja
+
+* Az Adatkezelő a személyes adatot, az alábbi eseteket kivéve, a Felhasználó önkéntes, előzetes, megfelelő tájékoztatáson alapuló hozzájárulása alapján kezeli.
+* Az Adatkezelő a Honlapra történő belépéskor a Felhasználó IP címét a Szolgáltatás nyújtásához kapcsolódóan, Adatkezelő jogos érdekére tekintettel és a Szolgáltatás jogszerű biztosítása miatt (pl. jogellenes felhasználás illetve jogellenes tartalmak kiszűrése érdekében), a Felhasználó külön hozzájárulása nélkül rögzíti.
+* A hírlevélre történő feliratkozás önkéntes, előzetes hozzájáruláson alapul. Az Adatkezelő mindenkor biztosítja a tiltakozás (leiratkozás) lehetőségét, így amennyiben az Érintett akként nyilatkozik, hogy nem kíván hírleveleket kapni az Adatkezelőtől, úgy adatait az Adatkezelő törli és a kérelem kézhezvételét követően nem fogja ebből a célból felhasználni.
+* Panaszkezelés és egyéb kommunikáció esetén az adatkezelés jogalapja a panaszról felvett jegyzőkönyv esetén jogszabályi kötelezettség teljesítése, egyéb esetben az Adatkezelő jogos érdeke (jogos érdek megnevezése: panaszügyintézés jogszerű lefolytatása, esetleges jogviták esetén az adatkezelő jogszerű eljárásának bizonyítására való képesség)
+* A Felhasználó külön hozzájárulása esetén, közvetlen tájékoztatási célú megkeresés, rendezvényekkel, az Adatkezelő céljának támogatásával kapcsolatban: Az adatkezelés jogalapja az Érintett hozzájárulása.
+
+### 4.5 Adatfeldolgozók
+
+Adatfeldolgozók azok lehetnek, akikkel az Adatkezelő az Általános Adatvédelmi Rendelet (GDPR) 28. cikke szerinti adatfeldolgozói szerződést kötött (pl. informatikai szolgáltatást nyújtó partnerek). Adatfeldolgozó igénybevétele az Adatfeldolgozás fejezetben leírtak alapján történhet.
+Az adatfeldolgozók az Alapítvány által a GDPR 28. cikke szerinti szerződés alapján igénybe vett entitások (pl. IT szolgáltatók, hírlevél szolgáltatók). Ezek az entitások az Alapítvány nevében, kizárólag annak utasításai szerint kezelnek személyes adatokat.
+
+### 4.6 Adatkezelés időtartama
+
+* Az automatikusan rögzített IP címeket az Adatkezelő a rögzítésüket követően legfeljebb két hétig tárolja.
+* A panaszról felvett jegyzőkönyvet az adatkezelő jogszabályi kötelezettsége folytán 5 évig köteles megőrizni.
+* A Felhasználó által megadott személyes adatok kezelése mindaddig fennmarad, amíg a Felhasználó a Szolgáltatásról (hírlevélről) le nem iratkozik, vagy nem kéri a személyes adatok törlését.
+* A rendszer működése során automatikusan, technikailag rögzítésre kerülő adatok a generálódásuktól számítva a rendszer működésének biztosítása szempontjából indokolt időtartamig kerülnek tárolásra a rendszerben. Az Adatkezelő biztosítja, hogy ezen automatikusan rögzített adatok egyéb személyes adatokkal – a jogszabály által kötelezővé tett esetek kivételével – össze nem kapcsolhatók.
+* Az Adatkezelő az adatok pontosságát, aktualitását rendszeresen ellenőrzi. Amennyiben az Adatkezelő tudomást szerez arról, hogy valamely személy már nem tölti be azt a pozíciót, amelyre tekintettel az Adatkezelő támogatói adatbázisában szerepel, az Adatkezelő a személyes adatait törli a támogatói adatbázisból.
+
+## 5. Szerkesztői tartalmak
+
+* Érintettek: a Weboldal tartalmaiban szereplő személyek.
+* Adatkezelés célja: szakma és nyilvánosság tájékoztatása (ide tartozik pl. az Érintett által rendelkezésre bocsátott fénykép sajtótermékben vagy Weboldalon való közzététele, amennyiben ehhez az Érintett hozzájárult)
+* Kezelt adatok köre: szerkesztőségi tartalmak (pl. fényképfelvétel, nyilatkozat, interjú tartalma)
+* Adatkezelés jogalapja: hozzájárulás vagy jogos érdek (pl. közszereplő vagy nyilvános rendezvényen történő részvétel esetén). Jogos érdek megnevezése: véleménynyilvánítás szabadsága, nyilvánosság tájékoztatása
+* Adatfeldolgozó: a honlap tartalmáért felelős, a Weboldal szerkesztésével megbízott szakemberek. Az adatfeldolgozók az Érintettek azon személyes adataihoz férnek hozzá, amelyekhez a feladatuk teljesítése érdekében szükségük van. Az adatfeldolgozó általi adatkezelés időtartama az adatfeldolgozó és az Adatkezelő közötti elszámolásig tart.
+* Az adatkezelés időtartama: a sajtótermékekben megjelent tartalmakat Adatkezelő archiválja és csak abban az esetben törli, ha az Érintett valamely jogának gyakorlása eredményeként ez szükségesnek mutatkozik
+
+## 6. Adatfeldolgozás és Adattovábbítás
+
+* Adatfeldolgozónak minősül az a természetes vagy jogi személy vagy bármely egyéb szerv, amely az adatkezelő nevében személyes adatokat kezel. Az adatfeldolgozás az adatokkal kapcsolatos döntési jogosultságot nem jelent: az adatfeldolgozó az adatkezelő adatkezelési döntéseit hajtja végre.
+* Az Adatkezelő az egyes adatkezelésekkel összefüggő részletes tájékoztatás kapcsán ismertette az adatfeldolgozók személyét és feladataikat. Tekintettel arra, hogy jelen tájékoztatás nem alkalmas valamennyi adatfeldolgozó megnevezésére, ezért összefoglalóan ismertetjük az Adatkezelő által igénybe vett adatfeldolgozók által nyújtott szolgáltatásokat:
+  * a) tárhely üzemeltetés
+  * b) informatikai támogató jellegű szolgáltatás
+  * c) hírlevélküldő és tömeges e-mail küldő szolgáltatás
+* Egyedi esetekben (kampány, akció stb.) Adatkezelő igénybe vehet más adatfeldolgozó(ka)t is, amely(ek) személyéről az adott részvételi feltételekben ad tájékoztatást
+* Az adatfeldolgozó az adatkezelést érintő érdemi döntést nem hozhat, a tudomására jutott személyes adatokat kizárólag az Adatkezelő rendelkezései szerint dolgozhatja fel, saját céljára adatfeldolgozást nem végezhet, továbbá a személyes adatokat az Adatkezelő rendelkezései szerint köteles tárolni és megőrizni.
+* Partner szolgáltató: az Adatkezelő által a Weboldal üzemeltetéséhez kapcsolódóan – akár közvetlenül, akár közvetetten – igénybe vett harmadik fél szolgáltató partnerek, amelyek számára a szolgáltatásaik biztosítása érdekében személyes adatok továbbításra kerülnek vagy kerülhetnek, illetve akik az Adatkezelő részére személyes adatokat továbbíthatnak.
+
+**Adattovábbítás**
+
+* Adatkezelő jogosult és köteles minden olyan rendelkezésére álló és általa szabályszerűen tárolt személyes adatot az illetékes hatóságoknak továbbítani, amely továbbítására jogszabály vagy jogerős hatósági kötelezés kötelezi. Ilyen adattovábbítás, valamint az ebből származó következmények miatt az Adatkezelő nem tehető felelőssé.
+* Harmadik országban (nem EGT tagállamban) székhellyel rendelkező adatkezelő részére Adatkezelő nem továbbít személyes adatot. Személyes adatok **nem** kerülnek továbbításra harmadik országokban (az EGT-n kívül) lévő entitásoknak.
+
+## 7. Adatbiztonság
+
+* Adatkezelő az adatok biztonságáról a vonatkozó előírásoknak megfelelően gondoskodik.
+* Adatkezelő az adatbiztonságra vonatkozó intézkedések körében megteszi különösen azokat a technikai és szervezési intézkedéseket, és kialakítja azon eljárási szabályokat, amelyek biztosítják, hogy a kezelt adatok védettek legyenek a jogosulatlan hozzáféréssel, megváltoztatással, továbbítással, nyilvánosságra hozatallal, törléssel, megsemmisítéssel, véletlen megsemmisüléssel, vagy sérüléssel szemben, továbbá az alkalmazott technika megváltozásából fakadó hozzáférhetetlenné válás ellen.
+* Adatkezelő az adatok biztonságát szolgáló intézkedések meghatározásakor és alkalmazásakor tekintetbe veszi a technika mindenkori fejlettségét. Több lehetséges adatkezelési megoldás közül Adatkezelő azt választja, amely a személyes adatok magasabb szintű védelmét biztosítja, kivéve, ha az aránytalan nehézséget jelentene Adatkezelőnek. Adatkezelő ezen követelményeket az adatfeldolgozók irányában is érvényesíti.
+* Adatkezelő kötelezi magát arra, hogy minden olyan harmadik felet, akik részére az adatokat esetlegesen továbbítja vagy átadja, felhívja a fenti vállalások betartására. Az Adatkezelő általi jogszerű adattovábbítás esetén ugyanakkor Adatkezelő nem vállal felelősséget a címzett által okozott károkért.
+* Adatkezelő valamennyi munkatársa, munkaviszonya vagy más jogviszonya alapján köteles az adatkezelésre, valamint adatbiztonságra vonatkozó fenti elvek betartására.
+
+## 8. Az Érintett jogai
+
+* Az Érintett bármikor, a jelen tájékoztatóban megjelölt elérhetőségeken tájékoztatást kérhet az őt érintő adatkezelésről, kérelmezheti a rá vonatkozó adatok helyesbítését, törlését vagy kezelésének korlátozását, és tiltakozhat az ilyen személyes adatok kezelése ellen.
+* Az Adatkezelő indokolatlan késedelem nélkül, de mindenféleképpen a kérelem beérkezésétől számított egy hónapon belül tájékoztatja az Érintettet az alábbiak szerinti, kérelem nyomán hozott intézkedésekről. Ha a kérelem elektronikus úton érkezett, a tájékoztatás lehetőség szerint szintén elektronikus úton történik, kivéve, ha az Érintett azt másként kéri. Ha Adatkezelő úgy ítéli meg, hogy nem kell intézkedéseket tennie az Érintett kérelme nyomán, úgy késedelem nélkül, de legkésőbb a kérelem beérkezésétől számított egy hónapon belül tájékoztatja az Érintettet az intézkedés elmaradásának okairól, valamint arról, hogy panasztételi lehetőséggel élhet az adatvédelmi hatóságnál, továbbá bírósági jogorvoslati jogával is élhet.
+* A kérelmek teljesítése ingyenes.
+* Ha a kérelmet benyújtó Érintett kilétével kapcsolatban megalapozott kétség merül föl, további, a személyazonosságának megerősítéséhez szükséges információk nyújtása kérhető.
+* Az Érintett kérelmére Adatkezelő tájékoztatást ad arra vonatkozóan, hogy személyes adatainak kezelése folyamatban van-e, és ha igen, az Érintett jogosult arra, hogy az Adatkezelő által kezelt, rá vonatkozó személyes adatokhoz, illetve az adatkezelés céljára, az érintett adatok kategóriáira, azon címzettekre vagy címzettek kategóriáira, akikkel a személyes adatokat közölték vagy közölni fogják, az adatkezelés tervezett időtartamára vagy az időtartam meghatározásának szempontjaira, valamint az adatok forrására vonatkozó információkhoz hozzáférést kapjon.
+* Kérelemre Adatkezelő az adatkezelés tárgyát képező személyes adatok másolatát az Érintett rendelkezésére bocsátja. Ha az Érintett elektronikus úton nyújtotta be a kérelmet, az információkat széles körben használt elektronikus formátumban kell rendelkezésre bocsátani, kivéve, ha azt az Érintett másként kéri.
+* Az Érintett kérheti a pontatlan adatok helyesbítését, és joga van arra is, hogy kérje a hiányos adatai kiegészítését.
+* Az Érintett kérheti, hogy Adatkezelő a személyes adatokat törölje, ha
+* azokra már nincs szükség abból a célból, amelyre figyelemmel az adatkezelés történt;
+* ha az Érintett a hozzájárulását visszavonja, és az adatkezelésnek nincs más jogalapja;
+* annak az adatkezelés szabályai szerinti feltételei fennállnak (ld. fent);
+* az adatkezelés jogellenes;
+* azokat az Adatkezelőre vonatkozó jogi kötelezettség teljesítéséhez törölni kell.
+* Az Adatkezelő fenti kérelemre az adatokat törli, kivéve, ha a további adatkezelés
+* a véleménynyilvánítás szabadságához és a tájékozódáshoz való jog gyakorlása,
+* az azt előíró, az Adatkezelőre vonatkozó jogi kötelezettség teljesítése,
+* jogi igények előterjesztése, érvényesítése, illetve védelme céljából szükséges.
+* Az Érintett kérésére Adatkezelő korlátozza az adatkezelést, ha
+* az Érintett vitatja a személyes adatok pontosságát, ez esetben a korlátozás arra az időtartamra vonatkozik, amely lehetővé teszi az adatok pontosságának ellenőrzését,
+* bár az adatkezelés jogellenes, de az Érintett ellenzi a törlést, és e helyett a korlátozást kéri,
+* az Adatkezelőnek már nincs szüksége az adatok kezelésére, de az Érintett azt jogi igények előterjesztéséhez, érvényesítéséhez, illetve védelméhez igényli,
+* az Érintett az adatkezelés szabályai (ld. fent) szerint tiltakozott az adatkezelés ellen, amely esetben a korlátozás arra az időtartamra vonatkozik, amíg megállapításra nem kerül, hogy az adatkezelő jogos indokai elsőbbséget élveznek-e az Érintett jogos indokaival szemben.
+* Ha az adatkezelés az előzőek szerint korlátozás alá esik, az ilyen személyes adatok – a tárolás kivételével – csak az Érintett hozzájárulásával, vagy jogi igények előterjesztéséhez, érvényesítéséhez vagy védelméhez, vagy más személy jogainak védelme érdekében, vagy az Unió, illetve valamely tagállam fontos közérdekéből kezelhető. A korlátozás feloldásáról Adatkezelő az azt kérő Érintettet előzetesen tájékoztatja.
+* A helyesbítésről, a törlésről vagy korlátozásról Adatkezelő az Érintettet, továbbá mindazokat értesíti, akiknek korábban az adatot továbbította. Az értesítést Adatkezelő mellőzi, ha ez lehetetlen vagy nagy erőfeszítést igényel. Ha Adatkezelő nyilvánosságra hozta a személyes adatot, és azt törölni köteles, az elérhető technológia és a megvalósítás költségeinek figyelembevételével megteszi az ésszerűen elvárható lépéseket – ideértve a megfelelő technikai intézkedéseket – annak érdekében, hogy tájékoztassa az adatokat kezelő adatkezelőket, hogy az Érintett kérelmezte tőlük a szóban forgó személyes adatokra mutató linkek vagy e személyes adatok másolatának, illetve másodpéldányának törlését.
+* Az Érintett tiltakozhat személyes adatának kezelése ellen, ha az jogos érdek alapján történik; ebben az esetben az adatkezelés nem folytatható, kivéve, ha az Érintett érdekeivel, jogaival és szabadságaival szemben elsőbbséget élvező kényszerítő erejű jogos okok, vagy olyan okok indokolják, amelyek jogi igények előterjesztéséhez, érvényesítéséhez vagy védelméhez kapcsolódnak. Az adatkezelés szabályai (ld. fent) a tiltakozás esetére is irányadók.
+* Az adathordozhatóság joga alapján az Érintett egyrészt kérheti, hogy Adatkezelőtől, ha ez technikailag megoldható, tagolt, széles körben használt, géppel olvasható formátumban a kezelt személyes adatait megkapja és azt bármely adatkezelőnek ő maga továbbítsa, másrészt kérheti az adattovábbítás szabályai szerinti (ld. fent) adattovábbítást Adatkezelőtől.
+* Ha Adatkezelő az Érintett fentiek szerinti kérelmét nem teljesíti, legkésőbb a kérelem beérkezésétől számított egy hónapon belül tájékoztatja annak okáról.
+* Amennyiben az Érintett meglátása szerint a személyes adataival kapcsolatos jogai sérültek, kérjük, hogy panaszát jelezze Adatkezelő felé az adatvédelmi tájékoztatóban megadott elérhetőségek egyikén.
+
+Ha az Érintett úgy véli, hogy jogai sérültek, panaszt tehet a Nemzeti Adatvédelmi és Információszabadság Hatóságnál Magyarországon:
+
+**Nemzeti Adatvédelmi és Információszabadság Hatóság**
+Cím: 1055 Budapest, Falk Miksa utca 9‑11.
+Postacím: 1374 Budapest, Pf. 603.
+Telefon: +36‑1‑391‑1400
+Fax: +36‑1‑391‑1410
+E-mail: ugyfelszolgalat@naih.hu
+
+Az Érintett polgári pert is indíthat; az illetékes bíróság a lakóhelye szerinti bíróság.
+A bíróságok elérhetők: [https://birosag.hu/torvenyszekek](https://birosag.hu/torvenyszekek)
+
+Az Érintett panaszt tehet az Információs Biztosnál is, aki az **Egyesült Királyság hivatalos adatvédelmi szabályozója**. Elérhetőségei megtalálhatók a weboldalán: [www.ico.org.uk](http://www.ico.org.uk/).
+
+## 9. Az Adatvédelmi Nyilatkozat Módosításai
+Ez az adatvédelmi nyilatkozat a Weboldalon kerül közzétételre és frissítésre. Mindig a hatályos verzió érvényes, még akkor is, ha a regisztráció vagy adatszolgáltatás időpontjában egy korábbi verzió volt érvényben.
+
+## 10. Kapcsolati adatok
+Kérdésekkel, észrevételekkel, kérésekkel vagy az adatvédelmi jogok gyakorlásával kapcsolatban forduljon:
+
+* **Sortition Europe Nonprofit Kft.**
+  Cím: 1092 Budapest, Ráday utca 31. C. első épület, 1. emelet, 11. egység
+  E-mail: info@kozossegigyules.hu
+
+* **Sortition Foundation**
+  Cím: 32 Gilbert Close, Cambridge, Egyesült Királyság
+  E-mail: info@sortitionfoundation.org
+
+**Hatálybalépés dátuma:** Ez az adatvédelmi nyilatkozat 2025. szeptember 1-től érvényes.
 """,
 }
 
