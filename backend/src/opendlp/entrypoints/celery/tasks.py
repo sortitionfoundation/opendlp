@@ -240,29 +240,48 @@ def _internal_write_selected(
 ) -> RunReport:
     report = RunReport()
     _append_run_log(task_id, ["About to write selected and remaining tabs"])
-    # Format results
-    selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
+    try:
+        # Format results
+        selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
 
-    # Export to Google Sheets
-    dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
-    if dupes:
-        # TODO: do something more with dupes? Maybe save to run record extra_info JSON???
-        _append_run_log(
-            task_id,
-            [
-                f"In the remaining tab there are {len(dupes)} people who share the same address as "
-                f"someone else in the tab. They are highlighted in orange.",
-            ],
+        # Export to Google Sheets
+        dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
+        if dupes:
+            # TODO: do something more with dupes? Maybe save to run record extra_info JSON???
+            _append_run_log(
+                task_id,
+                [
+                    f"In the remaining tab there are {len(dupes)} people who share the same address as "
+                    f"someone else in the tab. They are highlighted in orange.",
+                ],
+            )
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
+            completed_at=datetime.now(UTC),
         )
 
-    _update_selection_record(
-        task_id=task_id,
-        status=SelectionRunStatus.COMPLETED,
-        log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
-        completed_at=datetime.now(UTC),
-    )
+        return report
+    except Exception as err:
+        import traceback
 
-    return report
+        error_msg = f"Writing results failed: {err}"
+        traceback_msg = traceback.format_exc()
+
+        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        report.add_line(error_msg, ReportLevel.IMPORTANT)
+        report.add_line(traceback_msg, ReportLevel.NORMAL)
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=f"{error_msg}\n{traceback_msg}",
+            completed_at=datetime.now(UTC),
+        )
+        return report
 
 
 @app.task(bind=True)
