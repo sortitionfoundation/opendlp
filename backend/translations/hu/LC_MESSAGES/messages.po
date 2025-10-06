@@ -7,17 +7,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-30 16:47+0100\n"
+"POT-Creation-Date: 2025-10-06 12:25+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
-"Language-Team: hu <LL@li.org>\n"
 "Language: hu\n"
+"Language-Team: hu <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.17.0\n"
-"X-Generator: Poedit 3.7\n"
 
 #: src/opendlp/entrypoints/decorators.py:40
 #: src/opendlp/entrypoints/decorators.py:85
@@ -84,7 +83,9 @@ msgstr "Adatkezelési megállapodás elfogadása"
 
 #: src/opendlp/entrypoints/forms.py:97
 msgid "You must accept the data agreement to register"
-msgstr "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési megállapodásunkat"
+msgstr ""
+"A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
+"megállapodásunkat"
 
 #: src/opendlp/entrypoints/forms.py:98
 msgid "I agree to the data agreement"
@@ -140,7 +141,9 @@ msgstr "Kiválasztandó emberek száma"
 
 #: src/opendlp/entrypoints/forms.py:180
 msgid "Optional - the number of participants to select for this assembly"
-msgstr "Választható - a résztvevők száma, akiket ki kell választani ehhez a gyűléshez"
+msgstr ""
+"Választható - a résztvevők száma, akiket ki kell választani ehhez a "
+"gyűléshez"
 
 #: src/opendlp/entrypoints/forms.py:196
 msgid "Google Spreadsheet URL"
@@ -148,31 +151,49 @@ msgstr "Google Táblázat teljes linkje"
 
 #: src/opendlp/entrypoints/forms.py:198
 msgid "Full URL of the Google Spreadsheet containing respondent data"
-msgstr "A regisztrált válaszadók adatait tartalmazó Google Táblázat teljes URL címe"
+msgstr ""
+"A regisztrált válaszadók adatait tartalmazó Google Táblázat teljes URL "
+"címe"
 
 #: src/opendlp/entrypoints/forms.py:204 src/opendlp/entrypoints/forms.py:220
 msgid "Respondents Tab Name"
 msgstr "Regisztrált válaszadók adatait tartalmazó lapfül neve"
 
 #: src/opendlp/entrypoints/forms.py:206
-msgid "Name of the tab containing respondents data in the Google Spreadsheet - for initial Selection"
-msgstr "A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a kezdeti kiválasztáshoz"
+msgid ""
+"Name of the tab containing respondents data in the Google Spreadsheet - "
+"for initial Selection"
+msgstr ""
+"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
+"kezdeti kiválasztáshoz"
 
 #: src/opendlp/entrypoints/forms.py:212 src/opendlp/entrypoints/forms.py:228
 msgid "Targets Tab Name"
 msgstr "Célszámok lapfül neve"
 
 #: src/opendlp/entrypoints/forms.py:214
-msgid "Name of the tab containing categories, category values and targets - for initial Selection"
-msgstr "A kategóriákat, kategóriaértékeket és célszámokat tartalmazó lapfül neve - a kezdeti kiválasztásnál"
+msgid ""
+"Name of the tab containing categories, category values and targets - for "
+"initial Selection"
+msgstr ""
+"A kategóriákat, kategóriaértékeket és célszámokat tartalmazó lapfül neve "
+"- a kezdeti kiválasztásnál"
 
 #: src/opendlp/entrypoints/forms.py:222
-msgid "Name of the tab containing respondents data in the Google Spreadsheet - for Replacements"
-msgstr "A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a kieső emberek pótlásához"
+msgid ""
+"Name of the tab containing respondents data in the Google Spreadsheet - "
+"for Replacements"
+msgstr ""
+"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
+"kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:230
-msgid "Name of the tab containing categories, category values and targets - for Replacements"
-msgstr "A kategóriákat, kategóriaértékeket és célokat tartalmazó lapfül neve - Kieső emberek pótlásához"
+msgid ""
+"Name of the tab containing categories, category values and targets - for "
+"Replacements"
+msgstr ""
+"A kategóriákat, kategóriaértékeket és célokat tartalmazó lapfül neve - "
+"Kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:235 templates/main/gsheet_select.html:70
 msgid "Check Same Address"
@@ -211,32 +232,52 @@ msgid "Custom configuration"
 msgstr "Egyedi beállítások"
 
 #: src/opendlp/entrypoints/forms.py:257
-msgid "Select the team configuration to use for default settings for ID Column, Address Columns and Columns To Keep."
-msgstr "Válassza ki az ID oszlop, a Cím oszlopok és a Megőrizendő oszlopok alapértelmezett beállításaihoz használni kívánt Csoport beállítást."
+msgid ""
+"Select the team configuration to use for default settings for ID Column, "
+"Address Columns and Columns To Keep."
+msgstr ""
+"Válassza ki az ID oszlop, a Cím oszlopok és a Megőrizendő oszlopok "
+"alapértelmezett beállításaihoz használni kívánt Csoport beállítást."
 
 #: src/opendlp/entrypoints/forms.py:262 templates/main/gsheet_select.html:78
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
 
 #: src/opendlp/entrypoints/forms.py:266
-msgid "Column name containing unique identifiers for respondents. Note will be overridden if the Team Configuration is not 'Custom'."
-msgstr "A válaszadók egyedi azonosítóit tartalmazó oszlopnév. Megjegyzés: felülírásra kerül, ha a Csapat beállítás nem 'Egyedi'."
+msgid ""
+"Column name containing unique identifiers for respondents. Note will be "
+"overridden if the Team Configuration is not 'Custom'."
+msgstr ""
+"A válaszadók egyedi azonosítóit tartalmazó oszlopnév. Megjegyzés: "
+"felülírásra kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:271 templates/main/gsheet_select.html:82
 msgid "Address Columns"
 msgstr "Cím oszlopok"
 
 #: src/opendlp/entrypoints/forms.py:274
-msgid "Comma-separated list of column names used for checking same address (e.g., primary_address1, zip_royal_mail). Note will be overridden if the Team Configuration is not 'Custom'."
-msgstr "Ugyanazon cím ellenőrzésére használt oszlopnevek vesszővel elválasztott listája (pl. primary_address1, zip_royal_mail). Megjegyzés: felülírásra kerül, ha a Csapat beállítás nem 'Egyedi'."
+msgid ""
+"Comma-separated list of column names used for checking same address "
+"(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
+"Team Configuration is not 'Custom'."
+msgstr ""
+"Ugyanazon cím ellenőrzésére használt oszlopnevek vesszővel elválasztott "
+"listája (pl. primary_address1, zip_royal_mail). Megjegyzés: felülírásra "
+"kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:280 templates/main/gsheet_select.html:86
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
 #: src/opendlp/entrypoints/forms.py:283
-msgid "Comma-separated list of column names to keep in output (e.g., first_name, last_name, email). Note will be overridden if the Team Configuration is not 'Custom'."
-msgstr "Az export fájlban megtartandó oszlopnevek vesszővel elválasztott listája (pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a Csapat beállítás nem 'Egyedi'."
+msgid ""
+"Comma-separated list of column names to keep in output (e.g., first_name,"
+" last_name, email). Note will be overridden if the Team Configuration is "
+"not 'Custom'."
+msgstr ""
+"Az export fájlban megtartandó oszlopnevek vesszővel elválasztott listája "
+"(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
+" Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:46
 msgid "Invalid email or password."
@@ -267,7 +308,7 @@ msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 #: src/opendlp/entrypoints/blueprints/main.py:161
 #: src/opendlp/entrypoints/blueprints/main.py:215
 #: src/opendlp/entrypoints/blueprints/main.py:259
-#: src/opendlp/entrypoints/blueprints/main.py:413
+#: src/opendlp/entrypoints/blueprints/main.py:415
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
@@ -275,7 +316,7 @@ msgstr "A gyűlés oldala  nem elérhető"
 #: src/opendlp/entrypoints/blueprints/main.py:167
 #: src/opendlp/entrypoints/blueprints/main.py:221
 #: src/opendlp/entrypoints/blueprints/main.py:265
-#: src/opendlp/entrypoints/blueprints/main.py:419
+#: src/opendlp/entrypoints/blueprints/main.py:421
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
@@ -290,11 +331,13 @@ msgstr "Google táblázat beállításai sikeresen frissítve"
 #: src/opendlp/entrypoints/blueprints/main.py:143
 #: src/opendlp/entrypoints/blueprints/main.py:193
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat megtekintéséhez"
+msgstr ""
+"Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
+"megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/main.py:149
-#: src/opendlp/entrypoints/blueprints/main.py:361
-#: src/opendlp/entrypoints/blueprints/main.py:405
+#: src/opendlp/entrypoints/blueprints/main.py:363
+#: src/opendlp/entrypoints/blueprints/main.py:407
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
@@ -318,52 +361,52 @@ msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:287
+#: src/opendlp/entrypoints/blueprints/main.py:289
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/main.py:294
-#: src/opendlp/entrypoints/blueprints/main.py:324
+#: src/opendlp/entrypoints/blueprints/main.py:296
+#: src/opendlp/entrypoints/blueprints/main.py:326
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:299
+#: src/opendlp/entrypoints/blueprints/main.py:301
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:317
+#: src/opendlp/entrypoints/blueprints/main.py:319
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/main.py:329
+#: src/opendlp/entrypoints/blueprints/main.py:331
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:353
+#: src/opendlp/entrypoints/blueprints/main.py:355
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:357
+#: src/opendlp/entrypoints/blueprints/main.py:359
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/main.py:364
+#: src/opendlp/entrypoints/blueprints/main.py:366
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:393
+#: src/opendlp/entrypoints/blueprints/main.py:395
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:399
+#: src/opendlp/entrypoints/blueprints/main.py:401
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:408
+#: src/opendlp/entrypoints/blueprints/main.py:410
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
@@ -401,8 +444,12 @@ msgstr "Érvénytelen meghívókód"
 
 #: src/opendlp/service_layer/exceptions.py:58
 #, python-format
-msgid "Insufficient permissions for action: %(action)s (requires role: %(required_role)s)"
-msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges szerepkör: %(required_role)s)"
+msgid ""
+"Insufficient permissions for action: %(action)s (requires role: "
+"%(required_role)s)"
+msgstr ""
+"Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
+"szerepkör: %(required_role)s)"
 
 #: src/opendlp/service_layer/exceptions.py:63
 #, python-format
@@ -484,13 +531,25 @@ msgstr "Sikerült"
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/base.html:144
-msgid "OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management."
-msgstr "Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére és a résztvevők véletlenszerű kiválasztására."
+#: templates/auth/user_data_agreement.html:3 templates/base.html:142
+msgid "User Data Agreement"
+msgstr "Felhasználói Adatkezelési Megállapodás"
+
+#: templates/base.html:149
+msgid ""
+"OpenDLP is an open source platform for Democratic Lottery and Citizens' "
+"Assembly management."
+msgstr ""
+"Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére "
+"és a résztvevők véletlenszerű kiválasztására."
 
 #: templates/auth/login.html:55
-msgid "Don't have an account? You need an <strong>invite code</strong> to register."
-msgstr "Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a bejelentkezéshez."
+msgid ""
+"Don't have an account? You need an <strong>invite code</strong> to "
+"register."
+msgstr ""
+"Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a "
+"bejelentkezéshez."
 
 #: templates/auth/login.html:56
 msgid "Register here"
@@ -505,8 +564,12 @@ msgid "Create an account"
 msgstr "Fiók létrehozása"
 
 #: templates/auth/register.html:11
-msgid "You need an invitation code to create an account. If you do not have one, please contact your administrator."
-msgstr "Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj kapcsolatba az adminisztrátorral."
+msgid ""
+"You need an invitation code to create an account. If you do not have one,"
+" please contact your administrator."
+msgstr ""
+"Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
+"kapcsolatba az adminisztrátorral."
 
 #: templates/auth/register.html:108
 msgid "Data Agreement"
@@ -514,7 +577,9 @@ msgstr "Adatkezelési Megállapodás"
 
 #: templates/auth/register.html:111
 msgid "Please read and accept our data agreement to proceed."
-msgstr "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési megállapodásunkat."
+msgstr ""
+"A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
+"megállapodásunkat."
 
 #: templates/auth/register.html:113
 msgid "View data agreement"
@@ -532,10 +597,6 @@ msgstr "Hozzon létre fiókot"
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
 
-#: templates/auth/user_data_agreement.html:3
-msgid "User Data Agreement"
-msgstr "Felhasználói Adatkezelési Megállapodás"
-
 #: templates/auth/user_data_agreement.html:14
 msgid "Back to Registration"
 msgstr "Vissza a regisztrációhoz"
@@ -545,10 +606,14 @@ msgid "Access Denied"
 msgstr "Hozzáférés megtagadva"
 
 #: templates/errors/403.html:15
-msgid "You don't have permission to access this resource. This could be because\n"
-"                you need to sign in or you don't have the required role for this assembly."
-msgstr "Nincs jogosultsága az erőforrás eléréséhez. Ennek oka lehet, hogy\n"
-"                be kell jelentkeznie, vagy nincs meg a szükséges jogosultsága ehhez a közösségi gyűléshez."
+msgid ""
+"You don't have permission to access this resource. This could be because\n"
+"                you need to sign in or you don't have the required role "
+"for this assembly."
+msgstr ""
+"Nincs jogosultsága az erőforrás eléréséhez. Ennek oka lehet, hogy\n"
+"                be kell jelentkeznie, vagy nincs meg a szükséges "
+"jogosultsága ehhez a közösségi gyűléshez."
 
 #: templates/errors/403.html:21 templates/errors/404.html:21
 #: templates/errors/500.html:21
@@ -556,17 +621,24 @@ msgid "Go Home"
 msgstr "Menjen a főoldalra"
 
 #: templates/errors/403.html:34
-msgid "If you believe this is an error, please contact your assembly administrator."
-msgstr "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a közösségi gyűlés adminisztrátorával."
+msgid ""
+"If you believe this is an error, please contact your assembly "
+"administrator."
+msgstr ""
+"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a közösségi gyűlés"
+" adminisztrátorával."
 
 #: templates/errors/404.html:3 templates/errors/404.html:13
 msgid "Page Not Found"
 msgstr "Az oldal nem elérhető"
 
 #: templates/errors/404.html:15
-msgid "Sorry, the page you're looking for doesn't exist. It may have been moved,\n"
+msgid ""
+"Sorry, the page you're looking for doesn't exist. It may have been moved,"
+"\n"
 "                deleted, or you may have entered an incorrect URL."
-msgstr "Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
+msgstr ""
+"Sajnos az oldal, amit keresel, már nem elérhető. Lehet hogy áthelyezték,\n"
 "                törölték, vagy az URL, amit beírtál, hibás."
 
 #: templates/errors/500.html:3
@@ -578,14 +650,18 @@ msgid "Internal Server Error"
 msgstr "Belső szerver hiba"
 
 #: templates/errors/500.html:15
-msgid "Something went wrong on our end. We're working to fix this issue.\n"
+msgid ""
+"Something went wrong on our end. We're working to fix this issue.\n"
 "                Please try again in a few moments."
-msgstr "Valami hiba van a mi oldalunkon. Dolgozunk a kijavításán.\n"
+msgstr ""
+"Valami hiba van a mi oldalunkon. Dolgozunk a kijavításán.\n"
 "                Próbáld újra néhány pillanat múlva."
 
 #: templates/errors/500.html:34
 msgid "If this problem persists, please contact your system administrator."
-msgstr "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer adminisztrátoroddal."
+msgstr ""
+"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer "
+"adminisztrátoroddal."
 
 #: templates/main/create_assembly.html:3 templates/main/create_assembly.html:15
 #: templates/main/create_assembly.html:41
@@ -594,8 +670,12 @@ msgid "Create Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
 
 #: templates/main/create_assembly.html:43
-msgid "Create a new citizens' assembly to begin the selection and deliberation process."
-msgstr "Hozzon létre egy új  közösségi gyűlést a kiválasztási és mérlegelési folyamat megkezdésére."
+msgid ""
+"Create a new citizens' assembly to begin the selection and deliberation "
+"process."
+msgstr ""
+"Hozzon létre egy új  közösségi gyűlést a kiválasztási és mérlegelési "
+"folyamat megkezdésére."
 
 #: templates/main/create_assembly.html:126
 #: templates/main/create_assembly_gsheet.html:274
@@ -619,8 +699,12 @@ msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
 #: templates/main/create_assembly_gsheet.html:46
-msgid "Set up Google Spreadsheet integration for this assembly to manage respondent data and selection results."
-msgstr "Állítsa be a Google Táblázat integrációt ehhez a gyűléshez a válaszadók adatainak és a kiválasztási eredményeknek a kezelésére."
+msgid ""
+"Set up Google Spreadsheet integration for this assembly to manage "
+"respondent data and selection results."
+msgstr ""
+"Állítsa be a Google Táblázat integrációt ehhez a gyűléshez a válaszadók "
+"adatainak és a kiválasztási eredményeknek a kezelésére."
 
 #: templates/main/create_assembly_gsheet.html:74
 #: templates/main/edit_assembly_gsheet.html:74
@@ -712,12 +796,20 @@ msgid "Remove Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
 #: templates/main/edit_assembly_gsheet.html:281
-msgid "If you no longer need this Google Spreadsheet configuration, you can remove it."
-msgstr "Ha már nincs szüksége ehhez a Google Táblázathoz tartozó beállításokra, eltávolíthatja azokat."
+msgid ""
+"If you no longer need this Google Spreadsheet configuration, you can "
+"remove it."
+msgstr ""
+"Ha már nincs szüksége ehhez a Google Táblázathoz tartozó beállításokra, "
+"eltávolíthatja azokat."
 
 #: templates/main/edit_assembly_gsheet.html:286
-msgid "Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone."
-msgstr "Biztos, hogy el akarja távolítani ehhez a Google Táblázathoz tartozó beállításokat? Ez a művelet nem vonható vissza."
+msgid ""
+"Are you sure you want to remove this Google Spreadsheet configuration? "
+"This action cannot be undone."
+msgstr ""
+"Biztos, hogy el akarja távolítani ehhez a Google Táblázathoz tartozó "
+"beállításokat? Ez a művelet nem vonható vissza."
 
 #: templates/main/gsheet_select.html:3 templates/main/gsheet_select.html:18
 msgid "Selection"
@@ -728,8 +820,12 @@ msgid "Selection for"
 msgstr "Kiválasztás ehhez:"
 
 #: templates/main/gsheet_select.html:26
-msgid "Run the democratic lottery selection for this assembly using Google Spreadsheet data."
-msgstr "Futtassa a demokratikus sorsolást ehhez a gyűléshez Google Táblázat adatainak felhasználásával."
+msgid ""
+"Run the democratic lottery selection for this assembly using Google "
+"Spreadsheet data."
+msgstr ""
+"Futtassa a demokratikus sorsolást ehhez a gyűléshez Google Táblázat "
+"adatainak felhasználásával."
 
 #: templates/main/gsheet_select.html:32 templates/main/view_assembly.html:61
 msgid "Google Spreadsheet Configuration"
@@ -776,80 +872,77 @@ msgstr "Módosítsa a számot."
 msgid "Load Spreadsheet"
 msgstr "Töltse be a Google táblázatot"
 
-#: templates/main/gsheet_select.html:115 templates/main/gsheet_select.html:128
+#: templates/main/gsheet_select.html:115
 msgid "Task in Progress..."
 msgstr "Feladat folyamatban"
 
-#: templates/main/gsheet_select.html:123
+#: templates/main/gsheet_select.html:124
 #, fuzzy
 msgid "Run Selection"
 msgstr "Rétegzett kiválasztás"
 
 #: templates/main/gsheet_select.html:134
+#, fuzzy
+msgid "Run Test Selection"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/main/gsheet_select.html:141
 msgid "Back to Assembly"
 msgstr "Vissza a közösségi gyűléshez"
 
-#: templates/main/gsheet_select.html:140
+#: templates/main/gsheet_select.html:147
 msgid "Task Status"
 msgstr "Feladat állapota"
 
-#: templates/main/gsheet_select.html:144 templates/main/view_assembly.html:32
+#: templates/main/gsheet_select.html:151 templates/main/view_assembly.html:32
 msgid "Status"
 msgstr "Állapot"
 
-#: templates/main/gsheet_select.html:147
+#: templates/main/gsheet_select.html:154
 msgid "Pending"
 msgstr "Függőben"
 
-#: templates/main/gsheet_select.html:149
+#: templates/main/gsheet_select.html:156
 msgid "Running"
 msgstr "Folyamatban"
 
-#: templates/main/gsheet_select.html:151
+#: templates/main/gsheet_select.html:158
 msgid "Completed"
 msgstr "Kész"
 
-#: templates/main/gsheet_select.html:153
+#: templates/main/gsheet_select.html:160
 msgid "Failed"
 msgstr "Sikertelen"
 
-#: templates/main/gsheet_select.html:160
+#: templates/main/gsheet_select.html:167
 msgid "Task ID"
 msgstr "Feladat azonosítója"
 
-#: templates/main/gsheet_select.html:164
+#: templates/main/gsheet_select.html:171
 msgid "Started At"
 msgstr "Elkezdve"
 
-#: templates/main/gsheet_select.html:169
+#: templates/main/gsheet_select.html:176
 msgid "Completed At"
 msgstr "Befejezve"
 
-#: templates/main/gsheet_select.html:173
-msgid "Categories"
-msgstr "Kategóriák"
-
-#: templates/main/gsheet_select.html:174
-msgid "xx"
-msgstr "xx"
-
-#: templates/main/gsheet_select.html:182
+#: templates/main/gsheet_select.html:185
 msgid "Full Run Report"
 msgstr "Teljesen lefuttatott riport"
 
-#: templates/main/gsheet_select.html:193
+#: templates/main/gsheet_select.html:196
 msgid "Progress Messages"
 msgstr "Jelentések a folyamatról"
 
-#: templates/main/gsheet_select.html:202
+#: templates/main/gsheet_select.html:205
 msgid "Error Details"
 msgstr "Hiba részletei"
 
-#: templates/main/gsheet_select.html:214
+#: templates/main/gsheet_select.html:217
 msgid "Task in Progress"
 msgstr "Feladat folyamatban"
 
-#: templates/main/gsheet_select.html:219
+#: templates/main/gsheet_select.html:222
 #, python-format
 msgid "This page will refresh automatically. Current status: %(status)s"
 msgstr "Ez az oldal automatikusan frissül. Jelenlegi állapota: %(status)s"
@@ -860,22 +953,34 @@ msgstr "Üdvözlünk"
 
 #: templates/main/index.html:12
 msgid "Open Democratic Lottery Platform for Citizens' Assemblies"
-msgstr "Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi gyűlések szervezéséhez"
+msgstr ""
+"Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi "
+"gyűlések szervezéséhez"
 
 #: templates/main/index.html:14
-msgid "OpenDLP supports democratic participation through stratified selection processes,\n"
-"                enabling fair and representative Citizens' Assemblies worldwide."
-msgstr "Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a részvételi demokráciát,\n"
-"                lehetővé téve az igazságos és reprezentatív polgári gyűléseket világszerte."
+msgid ""
+"OpenDLP supports democratic participation through stratified selection "
+"processes,\n"
+"                enabling fair and representative Citizens' Assemblies "
+"worldwide."
+msgstr ""
+"Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a "
+"részvételi demokráciát,\n"
+"                lehetővé téve az igazságos és reprezentatív polgári "
+"gyűléseket világszerte."
 
 #: templates/main/index.html:36
 msgid "Stratified Selection"
 msgstr "Rétegzett kiválasztás"
 
 #: templates/main/index.html:38
-msgid "Fair and representative selection algorithms ensure diverse participation\n"
+msgid ""
+"Fair and representative selection algorithms ensure diverse participation"
+"\n"
 "                across demographic groups."
-msgstr "A pártatlan és reprezentatív kiválasztási algoritmusok biztosítják a sokszínű részvételt \n"
+msgstr ""
+"A pártatlan és reprezentatív kiválasztási algoritmusok biztosítják a "
+"sokszínű részvételt \n"
 "                a demográfiai csoportok között."
 
 #: templates/main/index.html:46
@@ -883,9 +988,12 @@ msgid "Secure &amp; Transparent"
 msgstr "Biztonságos &amp; átlátható"
 
 #: templates/main/index.html:48
-msgid "Role-based access control and audit trails maintain security while\n"
+msgid ""
+"Role-based access control and audit trails maintain security while\n"
 "                ensuring transparency in the democratic process."
-msgstr "A szerepköralapú jogosultság-kiosztás és az auditnaplók garantálják a biztonságot, miközben\n"
+msgstr ""
+"A szerepköralapú jogosultság-kiosztás és az auditnaplók garantálják a "
+"biztonságot, miközben\n"
 "                 biztosítják a demokratikus folyamat átláthatóságát."
 
 #: templates/main/index.html:56
@@ -893,9 +1001,12 @@ msgid "Citizens' Assemblies"
 msgstr "Közösségi gyűlések"
 
 #: templates/main/index.html:58
-msgid "Purpose-built for managing Citizens' Assemblies from registration\n"
+msgid ""
+"Purpose-built for managing Citizens' Assemblies from registration\n"
 "                through to selection and coordination."
-msgstr "Kifejezetten a kjözösségi gyűlések lebonyolítására készült a regisztrációtól\n"
+msgstr ""
+"Kifejezetten a kjözösségi gyűlések lebonyolítására készült a "
+"regisztrációtól\n"
 "                 a kiválasztáson át a koordinációig."
 
 #: templates/main/index.html:71
@@ -907,9 +1018,13 @@ msgid "Contact your assembly organizer for an invitation code."
 msgstr "Meghívókódért lépj kapcsolatba a közösségi gyűlésed szervezőjével."
 
 #: templates/main/index.html:74
-msgid "OpenDLP is an open-source platform supporting democratic participation worldwide.\n"
+msgid ""
+"OpenDLP is an open-source platform supporting democratic participation "
+"worldwide.\n"
 "                It is a project of"
-msgstr "Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a demokratikus részvételt.\n"
+msgstr ""
+"Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a "
+"demokratikus részvételt.\n"
 "                Ez egy projekt a"
 
 #: templates/main/view_assembly.html:54
@@ -1081,3 +1196,9 @@ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 
 #~ msgid "Replacement Targets Tab Name"
 #~ msgstr ""
+
+#~ msgid "Categories"
+#~ msgstr "Kategóriák"
+
+#~ msgid "xx"
+#~ msgstr "xx"
