@@ -84,12 +84,12 @@ def _append_run_log(task_id: uuid.UUID, log_messages: list[str]) -> None:
 def _internal_load_gsheet(
     task_obj: Task,
     task_id: uuid.UUID,
-    adapter: adapters.GSheetAdapter,
-    feature_tab_name: str,
-    respondents_tab_name: str,
+    select_data: adapters.SelectionData,
     settings: settings.Settings,
     final_task: bool = True,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+    data_source = select_data.data_source
+    assert isinstance(data_source, adapters.GSheetDataSource)
     report = RunReport()
     # Update SelectionRunRecord to running status
     _update_selection_record(
@@ -102,12 +102,12 @@ def _internal_load_gsheet(
         _append_run_log(
             task_id,
             [
-                f"Loading spreadsheet with title: {adapter.spreadsheet.title}",
-                f"Loading targets from tab: {feature_tab_name}",
+                f"Loading spreadsheet with title: {data_source.spreadsheet.title}",
+                f"Loading targets from tab: {data_source.feature_tab_name}",
             ],
         )
 
-        features, f_report = adapter.load_features(feature_tab_name)
+        features, f_report = select_data.load_features()
         # print(f_report.as_text())
         report.add_report(f_report)
         task_obj.update_state(
@@ -124,11 +124,11 @@ def _internal_load_gsheet(
             [
                 f"Found {num_features} categories for targets with a total of {num_values} values.",
                 f"Minimum selection for targets is {min_select}, maximum is {max_select}.",
-                f"Loading people from tab: {respondents_tab_name}",
+                f"Loading people from tab: {data_source.people_tab_name}",
             ],
         )
 
-        people, p_report = adapter.load_people(respondents_tab_name, settings, features)
+        people, p_report = select_data.load_people(settings, features)
         report.add_report(p_report)
         task_obj.update_state(
             state="PROGRESS",
@@ -232,7 +232,7 @@ def _internal_run_select(
 
 def _internal_write_selected(
     task_id: uuid.UUID,
-    adapter: adapters.GSheetAdapter,
+    select_data: adapters.SelectionData,
     features: FeatureCollection,
     people: people.People,
     settings: settings.Settings,
@@ -244,10 +244,16 @@ def _internal_write_selected(
     selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
 
     # Export to Google Sheets
-    dupes = adapter.output_selected_remaining(selected_table, remaining_table, settings)
+    dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
     if dupes:
         # TODO: do something more with dupes? Maybe save to run record extra_info JSON???
-        _append_run_log(task_id, [f"Note that {len(dupes)} were found when writing the remaining tab."])
+        _append_run_log(
+            task_id,
+            [
+                f"In the remaining tab there are {len(dupes)} people who share the same address as "
+                f"someone else in the tab. They are highlighted in orange.",
+            ],
+        )
 
     _update_selection_record(
         task_id=task_id,
@@ -263,30 +269,39 @@ def _internal_write_selected(
 def load_gsheet(
     self: Task,
     task_id: uuid.UUID,
-    adapter: adapters.GSheetAdapter,
-    feature_tab_name: str,
-    respondents_tab_name: str,
+    data_source: adapters.GSheetDataSource,
     settings: settings.Settings,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id)
-    return _internal_load_gsheet(self, task_id, adapter, feature_tab_name, respondents_tab_name, settings)
+    select_data = adapters.SelectionData(data_source)
+    return _internal_load_gsheet(
+        task_obj=self,
+        task_id=task_id,
+        select_data=select_data,
+        settings=settings,
+        final_task=True,
+    )
 
 
 @app.task(bind=True)
 def run_select(
     self: Task,
     task_id: uuid.UUID,
-    adapter: adapters.GSheetAdapter,
-    feature_tab_name: str,
-    respondents_tab_name: str,
+    data_source: adapters.GSheetDataSource,
     number_people_wanted: int,
     settings: settings.Settings,
     test_selection: bool = False,
+    gen_rem_tab: bool = True,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id)
     report = RunReport()
+    select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
     success, features, people, load_report = _internal_load_gsheet(
-        self, task_id, adapter, feature_tab_name, respondents_tab_name, settings, final_task=False
+        task_obj=self,
+        task_id=task_id,
+        select_data=select_data,
+        settings=settings,
+        final_task=False,
     )
     report.add_report(load_report)
     if not success:
@@ -310,7 +325,7 @@ def run_select(
     # write back to the spreadsheet
     write_report = _internal_write_selected(
         task_id=task_id,
-        adapter=adapter,
+        select_data=select_data,
         features=features,
         people=people,
         settings=settings,

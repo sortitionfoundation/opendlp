@@ -262,13 +262,17 @@ class AssemblyGSheet:
             selection_algorithm=self.selection_algorithm,
         )
 
-    def to_adapter(self) -> adapters.GSheetAdapter:
-        adapter = adapters.GSheetAdapter(
-            auth_json_path=config.get_google_auth_json_path(),
-            gen_rem_tab=self.generate_remaining_tab,
-        )
-        adapter.set_g_sheet_name(self.url)
-        return adapter
+    def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource:
+        if for_replacements:
+            data_source = adapters.GSheetDataSource(
+                self.replace_registrants_tab, self.replace_targets_tab, config.get_google_auth_json_path()
+            )
+        else:
+            data_source = adapters.GSheetDataSource(
+                self.select_registrants_tab, self.select_targets_tab, config.get_google_auth_json_path()
+            )
+        data_source.set_g_sheet_name(self.url)
+        return data_source
 
     def registrants_tab(self, for_replacements: bool = False) -> str:
         return self.replace_registrants_tab if for_replacements else self.select_registrants_tab

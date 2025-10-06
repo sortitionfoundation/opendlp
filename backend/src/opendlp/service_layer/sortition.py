@@ -59,9 +59,7 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     # would be handy for unit tests
     result = tasks.load_gsheet.delay(
         task_id=task_id,
-        adapter=gsheet.to_adapter(),
-        feature_tab_name=gsheet.select_targets_tab,
-        respondents_tab_name=gsheet.select_registrants_tab,
+        data_source=gsheet.to_data_source(for_replacements=False),
         settings=gsheet.to_settings(),
     )
     record.celery_task_id = str(result.id)
@@ -110,12 +108,11 @@ def start_gsheet_select_task(
     # would be handy for unit tests
     result = tasks.run_select.delay(
         task_id=task_id,
-        adapter=gsheet.to_adapter(),
-        feature_tab_name=gsheet.select_targets_tab,
-        respondents_tab_name=gsheet.select_registrants_tab,
+        data_source=gsheet.to_data_source(for_replacements=False),
         number_people_wanted=assembly.number_to_select,
         settings=gsheet.to_settings(),
         test_selection=test_selection,
+        gen_rem_tab=gsheet.generate_remaining_tab,
     )
     record.celery_task_id = str(result.id)
     uow.selection_run_records.add(record)
