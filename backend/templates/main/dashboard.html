@@ -11,28 +11,6 @@
               <p class="govuk-body">{{ _('Welcome back') }}, {{ current_user.display_name }}!</p>
             </div>
 
-            <!-- User Role Info -->
-            <div class="govuk-grid-row govuk-!-margin-bottom-6">
-                <div class="govuk-grid-column-one-half">
-                    <div class="dwp-key-details-bar">
-                        <div class="dwp-key-details-bar__key-details">
-                          <dt class="govuk-heading-s govuk-!-margin-bottom-2">{{ _('Your Role') }}</dt>
-                            <dd class="dwp-key-details-bar__primary">
-                                <strong class="govuk-tag govuk-tag--blue">{{ current_user.global_role.value }}</strong>
-                            </dd>
-                        </div>
-                    </div>
-                </div>
-                <div class="govuk-grid-column-one-half">
-                    <div class="dwp-key-details-bar">
-                        <div class="dwp-key-details-bar__key-details">
-                          <dt class="govuk-heading-s govuk-!-margin-bottom-2">{{ _('Active Assemblies') }}</dt>
-                            <dd class="dwp-key-details-bar__primary">{{ assemblies|length }}</dd>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Assemblies Section -->
             <div class="govuk-grid-column-full">
                 <div class="govuk-!-margin-bottom-4">
