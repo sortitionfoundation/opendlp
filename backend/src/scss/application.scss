@@ -359,6 +359,11 @@ a:focus,
   }
 }
 
+// button group with mix of forms and <a ... class="govuk-button..."
+.govuk-button-group.govuk-button-group-mixed {
+  align-items: center;
+}
+
 // Assembly cards for dashboard - high specificity to override GOV.UK grid
 .govuk-width-container .assembly-cards-container.govuk-grid-row {
   display: flex !important;

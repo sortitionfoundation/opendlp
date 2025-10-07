@@ -102,7 +102,7 @@
                   <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}">{{ _('Edit the number.') }}</a>
                 </p>
 
-                <div class="govuk-button-group govuk-!-margin-top-6">
+                <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
                     <form action="{{ url_for('main.start_gsheet_load', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
