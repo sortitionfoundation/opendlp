@@ -366,38 +366,29 @@ a:focus,
 
 // Assembly cards for dashboard - high specificity to override GOV.UK grid
 .govuk-width-container .assembly-cards-container.govuk-grid-row {
-  display: flex !important;
-  flex-wrap: wrap;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-bottom: 1.5rem;
-  margin-left: -15px !important; // Restore negative margins for proper edge alignment
+  margin-left: -15px !important;
   margin-right: -15px !important;
+  padding: 0 15px !important;
 
   .govuk-grid-column-one-third {
-    // Use flex-basis instead of flex shorthand to prevent growing
-    flex: 0 0 calc(33.33% - 20px) !important;
-    max-width: calc(33.33% - 20px) !important;
-    min-width: 280px;
-    margin-bottom: 20px !important; // Add margin between rows
     width: auto !important;
     float: none !important;
-    padding: 0 15px !important; // Restore horizontal padding for proper spacing
+    padding: 0 !important;
+    margin: 0 !important;
     box-sizing: border-box !important;
   }
 
   // Responsive adjustments
   @media (max-width: 48.0625em) {
-    .govuk-grid-column-one-third {
-      flex: 0 0 100% !important;
-      max-width: 100% !important;
-    }
+    grid-template-columns: 1fr;
   }
 
   @media (min-width: 48.0625em) and (max-width: 64em) {
-    .govuk-grid-column-one-third {
-      flex: 0 0 calc(50% - 20px) !important;
-      max-width: calc(50% - 20px) !important;
-    }
+    grid-template-columns: repeat(2, 1fr);
   }
 
   // Clear float-based clearing
@@ -408,7 +399,8 @@ a:focus,
 
 // Clickable assembly card link wrapper
 .assembly-card-link {
-  display: block;
+  display: flex;
+  flex-direction: column;
   text-decoration: none;
   color: inherit;
   height: 100%;
@@ -452,7 +444,7 @@ a:focus,
   padding: 20px;
   background-color: $white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: calc(100% - 20px); // Account for the margin-bottom of the parent
+  height: 100%;
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease-in-out;
