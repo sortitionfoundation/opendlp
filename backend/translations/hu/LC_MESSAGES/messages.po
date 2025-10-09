@@ -478,7 +478,7 @@ msgid "Sortition Foundation Logo"
 msgstr "Sortition Foundation Logo"
 
 #: templates/base.html:33
-msgid "Menu<"
+msgid "Menu"
 msgstr "Menü"
 
 #: templates/base.html:36 templates/base.html:62
