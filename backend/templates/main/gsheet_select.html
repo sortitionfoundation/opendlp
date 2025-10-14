@@ -26,75 +26,7 @@
                 <p class="govuk-body">{{ _('Run the democratic lottery selection for this assembly using Google Spreadsheet data.') }}</p>
 
                 {% if gsheet %}
-                <div class="govuk-!-margin-bottom-6">
-                    <details class="govuk-details">
-                      <summary class="govuk-details__summary">
-                        <span class="govuk-details__summary-text"> {{ _('Google Spreadsheet Configuration') }} </span>
-                      </summary>
-                      <div class="govuk-details__text">
-                        <dl class="govuk-summary-list">
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">{{ _('Spreadsheet URL') }}</dt>
-                                <dd class="govuk-summary-list__value">
-                                    <a href="{{ gsheet.url }}" class="govuk-link" target="_blank" rel="noopener noreferrer">
-                                        {{ _('View Spreadsheet') }}
-                                    </a>
-                                </dd>
-                            </div>
-                        </dl>
-                        <table class="govuk-table">
-                          <thead class="govuk-table__head">
-                            <tr class="govuk-table__row">
-                              <th scope="col" class="govuk-table__header">{{ _('Spreadsheet Tabs')}}</th>
-                              <th scope="col" class="govuk-table__header">{{ _('Initial/Test Selection') }}</th>
-                              <th scope="col" class="govuk-table__header">{{ _('Replacement') }}</th>
-                            </tr>
-                          </thead>
-                          <tbody class="govuk-table__body">
-                            <tr class="govuk-table__row">
-                              <th scope="row" class="govuk-table__header">{{ _('Respondents Tab') }}</th>
-                              <td class="govuk-table__cell">{{ gsheet.select_registrants_tab }}</td>
-                              <td class="govuk-table__cell">{{ gsheet.replace_registrants_tab }}</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                              <th scope="row" class="govuk-table__header">{{ _('Categories Tab') }}</th>
-                              <td class="govuk-table__cell">{{ gsheet.select_targets_tab }}</td>
-                              <td class="govuk-table__cell">{{ gsheet.replace_targets_tab }}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <h4 class="govuk-heading-s govuk-!-margin-top-4">{{ _('Additional Settings') }}</h4>
-                        <dl class="govuk-summary-list">
-                          <div class="govuk-summary-list__row">
-                              <dt class="govuk-summary-list__key">{{ _('Check Same Address') }}</dt>
-                              <dd class="govuk-summary-list__value">{{ gsheet.check_same_address }}</dd>
-                          </div>
-                          <div class="govuk-summary-list__row">
-                              <dt class="govuk-summary-list__key">{{ _('Generate Remaining Tab') }}</dt>
-                              <dd class="govuk-summary-list__value">{{ gsheet.generate_remaining_tab }}</dd>
-                          </div>
-                          <div class="govuk-summary-list__row">
-                              <dt class="govuk-summary-list__key">{{ _('ID Column') }}</dt>
-                              <dd class="govuk-summary-list__value">{{ gsheet.id_column }}</dd>
-                          </div>
-                          <div class="govuk-summary-list__row">
-                              <dt class="govuk-summary-list__key">{{ _('Address Columns') }}</dt>
-                              <dd class="govuk-summary-list__value">{{ gsheet.check_same_address_cols_string }}</dd>
-                          </div>
-                          <div class="govuk-summary-list__row">
-                              <dt class="govuk-summary-list__key">{{ _('Columns to Keep') }}</dt>
-                              <dd class="govuk-summary-list__value">{{ gsheet.columns_to_keep_string }}</dd>
-                          </div>
-                        </dl>
-                        <div class="govuk-button-group govuk-!-margin-top-6">
-                        <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}" class="govuk-button govuk-button--secondary">
-                            {{ _('Change Configuration') }}
-                        </a>
-                        </div>
-                      </div>
-                    </details>
-                </div>
+                {% include "main/components/view_gsheet_config.html" %}
                 {% endif %}
 
                 <p class="govuk-body">
