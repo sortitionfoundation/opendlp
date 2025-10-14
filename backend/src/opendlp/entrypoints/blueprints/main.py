@@ -269,6 +269,55 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
         return render_template("errors/500.html"), 500
 
 
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/progress", methods=["GET"])
+@login_required
+@require_assembly_management
+def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return progress fragment for HTMX polling of Google Sheets selection task status."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            run_record, celery_log_messages, run_report = get_selection_run_status(uow, run_id)
+
+        # Check if run record exists
+        if not run_record:
+            current_app.logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            return "", 404
+
+        # Validate that the run belongs to this assembly
+        if run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            # Return empty response for HTMX to handle gracefully
+            return "", 404
+
+        return render_template(
+            "main/components/gsheet_select_progress.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            run_record=run_record,
+            celery_log_messages=celery_log_messages,
+            run_report=run_report,
+            run_id=run_id,
+        ), 200
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
+        )
+        return "", 404
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+        )
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        return "", 500
+
+
 @main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["POST"])
 @login_required
 @require_assembly_management
