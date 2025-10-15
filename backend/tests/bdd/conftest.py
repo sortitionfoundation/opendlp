@@ -1,5 +1,7 @@
 import os
+import shutil
 import subprocess
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -24,6 +26,9 @@ from tests.conftest import (
 from tests.data import VALID_GSHEET_URL
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
+
+BACKEND_PATH = Path(__file__).parent.parent.parent
+CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
 
 # The value is milliseconds - so 5000 is 5 seconds
 # The default is 30 seconds - which means if a page fails to load
@@ -59,8 +64,35 @@ def test_database():
     engine.dispose()
 
 
+def _reset_csv_files(csv_file_dir: Path) -> None:
+    for csv_path in CSV_FIXTURES_DIR.glob("*.csv"):
+        shutil.copy(csv_path, csv_file_dir)
+
+
 @pytest.fixture(scope="session")
-def test_server(test_database):
+def test_csv_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
+    """
+    Create a temporary directory with the original CSV files in
+    """
+    data_dir = tmp_path_factory.mktemp("selection_data")
+    _reset_csv_files(data_dir)
+    yield data_dir
+
+
+@pytest.fixture
+def reset_csv_data_dir(test_csv_data_dir: Path) -> Generator[Path, None, None]:
+    """
+    A per-test fixture which re-copies the CSV files in to reset
+    the state after a test - so that an individual test could put
+    different CSV files in that directory to test non-standard behaviour
+    and then subsequent tests have the expected files there.
+    """
+    yield test_csv_data_dir
+    _reset_csv_files(test_csv_data_dir)
+
+
+@pytest.fixture(scope="session")
+def test_server(test_database, test_csv_data_dir):
     """Start Flask test server in background"""
     # Check if server is already running
     try:
@@ -72,16 +104,18 @@ def test_server(test_database):
         print("Starting test server...")
 
     # Start server in background
-    backend_path = Path(__file__).parent.parent.parent
     env = os.environ.copy()
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
+    # Use CSV data source for testing instead of Google Sheets
+    env["USE_CSV_DATA_SOURCE"] = "true"
+    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
         ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
-        cwd=backend_path,
+        cwd=BACKEND_PATH,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -104,7 +138,7 @@ def test_server(test_database):
 
 
 @pytest.fixture(scope="session")
-def test_celery_worker(test_database):
+def test_celery_worker(test_database, test_csv_data_dir):
     """Start celery worker in the background"""
     # create celery app with correct configuration
     celery_app = get_celery_app(redis_port=63792)
@@ -118,15 +152,17 @@ def test_celery_worker(test_database):
         print("Starting test celery worker...")
 
     # Start celery worker in background
-    backend_path = Path(__file__).parent.parent.parent
     env = os.environ.copy()
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
+    # Use CSV data source for testing instead of Google Sheets
+    env["USE_CSV_DATA_SOURCE"] = "true"
+    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
         ["uv", "run", "celery", "-A", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
-        cwd=backend_path,
+        cwd=BACKEND_PATH,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -191,7 +227,23 @@ def assembly_gsheet_creator(test_database, admin_user):
         uow = SqlAlchemyUnitOfWork(session_factory)
         assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
         gsheet_assembly = add_assembly_gsheet(
-            uow=uow, assembly_id=assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL, team="uk"
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            url=VALID_GSHEET_URL,
+            team="custom",
+            id_column="nationbuilder_id",
+            check_same_address=True,
+            check_same_address_cols=["primary_address1", "primary_zip"],
+            columns_to_keep=[
+                "first_name",
+                "last_name",
+                "email",
+                "mobile_number",
+                "primary_address1",
+                "primary_address2",
+                "primary_city",
+            ],
         )
         return assembly, gsheet_assembly
 

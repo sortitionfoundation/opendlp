@@ -89,7 +89,7 @@ def _internal_load_gsheet(
     final_task: bool = True,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     data_source = select_data.data_source
-    assert isinstance(data_source, adapters.GSheetDataSource)
+    assert isinstance(data_source, adapters.AbstractDataSource)
     report = RunReport()
     # Update SelectionRunRecord to running status
     _update_selection_record(

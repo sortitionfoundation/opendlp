@@ -29,6 +29,6 @@ Note that there are multiple ways we will do this.
     And people are registered
     And the selection options are set
     When I start the selection
-    Then I should see progress messages
-    And the task should go from pending to finished
-    And the results are reported
+    Then I am told the number of categories and category values
+    And I am told selection is running
+    And I am told selection has completed

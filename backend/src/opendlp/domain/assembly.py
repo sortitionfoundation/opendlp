@@ -262,21 +262,25 @@ class AssemblyGSheet:
             selection_algorithm=self.selection_algorithm,
         )
 
-    def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource:
+    def to_data_source(self, *, for_replacements: bool = False) -> adapters.AbstractDataSource:
+        # import here to avoid circular import
+        from opendlp.bootstrap import update_data_source_from_assembly_gsheet
+
         if for_replacements:
-            data_source = adapters.GSheetDataSource(
+            gsheet_data_source = adapters.GSheetDataSource(
                 feature_tab_name=self.replace_targets_tab,
                 people_tab_name=self.replace_registrants_tab,
                 auth_json_path=config.get_google_auth_json_path(),
             )
         else:
-            data_source = adapters.GSheetDataSource(
+            gsheet_data_source = adapters.GSheetDataSource(
                 feature_tab_name=self.select_targets_tab,
                 people_tab_name=self.select_registrants_tab,
                 auth_json_path=config.get_google_auth_json_path(),
             )
-        data_source.set_g_sheet_name(self.url)
-        return data_source
+        gsheet_data_source.set_g_sheet_name(self.url)
+
+        return update_data_source_from_assembly_gsheet(gsheet_data_source)
 
     def registrants_tab(self, for_replacements: bool = False) -> str:
         return self.replace_registrants_tab if for_replacements else self.select_registrants_tab

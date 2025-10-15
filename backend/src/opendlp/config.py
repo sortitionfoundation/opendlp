@@ -277,3 +277,14 @@ def get_static_path() -> Path:
 
 def get_translations_path() -> Path:
     return _get_project_root() / "translations"
+
+
+def use_csv_data_source_for_testing() -> bool:
+    """Check if we should use CSV instead of Google Sheets (for testing)"""
+    return to_bool(os.environ.get("USE_CSV_DATA_SOURCE"), context_str="USE_CSV_DATA_SOURCE=")
+
+
+def get_test_csv_data_dir() -> Path:
+    """Get directory containing test CSV files (features.csv, candidates.csv)"""
+    default_dir = _get_project_root() / "tests" / "csv_fixtures" / "selection_data"
+    return Path(os.environ.get("TEST_CSV_DATA_DIR", str(default_dir)))
