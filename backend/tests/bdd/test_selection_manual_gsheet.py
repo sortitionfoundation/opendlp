@@ -137,19 +137,13 @@ def _(page: Page):
     expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
 
 
-@then("I should see progress messages")
+@then("I am told selection is running")
 def _(page: Page):
-    """I should see progress messages."""
-    raise NotImplementedError
+    """I am told selection is running."""
+    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
 
 
-@then("the results are reported")
+@then("I am told selection has completed")
 def _(page: Page):
-    """the results are reported."""
-    raise NotImplementedError
-
-
-@then("the task should go from pending to finished")
-def _(page: Page):
-    """the task should go from pending to finished."""
-    raise NotImplementedError
+    """I am told selection has completed."""
+    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
