@@ -163,7 +163,7 @@ def _internal_load_gsheet(
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
         report.add_line(error_msg)
-        report.add_line(traceback_msg)
+        report.add_lines(traceback_msg.split("\n"))
 
         _update_selection_record(
             task_id=task_id,
@@ -238,7 +238,7 @@ def _internal_run_select(
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_line(traceback_msg, ReportLevel.NORMAL)
+        report.add_lines(traceback_msg.split("\n"))
 
         _update_selection_record(
             task_id=task_id,
@@ -296,7 +296,7 @@ def _internal_write_selected(
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_line(traceback_msg, ReportLevel.NORMAL)
+        report.add_lines(traceback_msg.split("\n"))
 
         _update_selection_record(
             task_id=task_id,
