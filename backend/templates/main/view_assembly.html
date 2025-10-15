@@ -80,14 +80,22 @@
                     {% if gsheet and gsheet.url %}
                     <a href="{{ url_for('main.select_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
-                        {{ _('Start Selection') }}
+                        {{ _('Selection') }}
+                    </a>
+                    <!-- a href="{ { url_for('main.replace_assembly_gsheet', assembly_id=assembly.id) } }" -->
+                    <a href=""
+                       class="govuk-button govuk-button--secondary">
+                        {{ _('Replacements') }}
                     </a>
                     {% else %}
                     <button class="govuk-button govuk-button--secondary" disabled>
-                        {{ _('Start Selection') }}
+                        {{ _('Selection') }}
+                    </button>
+                    <button class="govuk-button govuk-button--secondary" disabled>
+                        {{ _('Replacements') }}
                     </button>
                     <p class="govuk-body govuk-!-margin-top-2">
-                        <strong>{{ _('To enable selection:') }}</strong> {{ _('Configure Google Spreadsheet settings first.') }}
+                        <strong>{{ _('To enable selection and replacement:') }}</strong> {{ _('Configure Google Spreadsheet settings first.') }}
                     </p>
                     {% endif %}
                 </div>
