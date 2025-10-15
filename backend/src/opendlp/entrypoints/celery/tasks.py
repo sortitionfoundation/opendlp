@@ -169,7 +169,7 @@ def _internal_load_gsheet(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
             log_message=error_msg,
-            error_message=f"{error_msg}\n{traceback_msg}",
+            error_message=error_msg,
             completed_at=datetime.now(UTC),
             session_factory=session_factory,
         )
@@ -244,7 +244,7 @@ def _internal_run_select(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
             log_message=error_msg,
-            error_message=f"{error_msg}\n{traceback_msg}",
+            error_message=error_msg,
             completed_at=datetime.now(UTC),
             session_factory=session_factory,
         )
@@ -302,7 +302,7 @@ def _internal_write_selected(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
             log_message=error_msg,
-            error_message=f"{error_msg}\n{traceback_msg}",
+            error_message=error_msg,
             completed_at=datetime.now(UTC),
             session_factory=session_factory,
         )
