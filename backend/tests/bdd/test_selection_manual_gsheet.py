@@ -95,8 +95,8 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
     view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
     logged_in_page.goto(view_url)
 
-    # Then check that the Start Selection link goes to the gsheet_select page
-    link = logged_in_page.get_by_role("link", name="Start Selection")
+    # Then check that the Selection link goes to the gsheet_select page
+    link = logged_in_page.get_by_role("link", name="Selection")
     expect(link).to_be_visible()
     link.click()
     expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
@@ -118,8 +118,8 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
     view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
     logged_in_page.goto(view_url)
 
-    # Then check that the Start Selection link goes to the gsheet_select page
-    link = logged_in_page.get_by_role("link", name="Start Selection")
+    # Then check that the Selection link goes to the gsheet_select page
+    link = logged_in_page.get_by_role("link", name="Selection")
     expect(link).to_be_visible()
     link.click()
     expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
