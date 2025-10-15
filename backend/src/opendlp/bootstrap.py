@@ -38,8 +38,8 @@ def bootstrap(
 
 
 def update_data_source_from_assembly_gsheet(
-    gsheet_data_source: adapters.AbstractDataSource,
-) -> adapters.AbstractDataSource:
+    gsheet_data_source: adapters.GSheetDataSource,
+) -> adapters.GSheetDataSource | CSVGSheetDataSource:
     """
     Override the datasource if environment variables indicate we are testing.
 

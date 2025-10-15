@@ -15,6 +15,7 @@ from sortition_algorithms.features import FeatureCollection, maximum_selection, 
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm.attributes import flag_modified
 
+from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
@@ -89,7 +90,7 @@ def _internal_load_gsheet(
     final_task: bool = True,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     data_source = select_data.data_source
-    assert isinstance(data_source, adapters.AbstractDataSource)
+    assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()
     # Update SelectionRunRecord to running status
     _update_selection_record(
@@ -288,7 +289,7 @@ def _internal_write_selected(
 def load_gsheet(
     self: Task,
     task_id: uuid.UUID,
-    data_source: adapters.GSheetDataSource,
+    data_source: adapters.GSheetDataSource | CSVGSheetDataSource,
     settings: settings.Settings,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id)
@@ -306,7 +307,7 @@ def load_gsheet(
 def run_select(
     self: Task,
     task_id: uuid.UUID,
-    data_source: adapters.GSheetDataSource,
+    data_source: adapters.GSheetDataSource | CSVGSheetDataSource,
     number_people_wanted: int,
     settings: settings.Settings,
     test_selection: bool = False,

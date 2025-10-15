@@ -9,6 +9,7 @@ from typing import Any, Literal, get_args
 from sortition_algorithms import adapters, settings
 
 from opendlp import config
+from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
 
@@ -262,7 +263,7 @@ class AssemblyGSheet:
             selection_algorithm=self.selection_algorithm,
         )
 
-    def to_data_source(self, *, for_replacements: bool = False) -> adapters.AbstractDataSource:
+    def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource | CSVGSheetDataSource:
         # import here to avoid circular import
         from opendlp.bootstrap import update_data_source_from_assembly_gsheet
 
