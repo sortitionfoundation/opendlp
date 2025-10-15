@@ -28,19 +28,20 @@ class SelectionRunRecordHandler(logging.Handler):
     object.
     """
 
-    def __init__(self, task_id: uuid.UUID) -> None:
+    def __init__(self, task_id: uuid.UUID, session_factory: sessionmaker | None = None) -> None:
         super().__init__()
         self.task_id = task_id
         self.setFormatter(logging.Formatter(fmt="'%(message)s'"))
+        self.session_factory = session_factory
 
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
-        _append_run_log(self.task_id, [msg])
+        _append_run_log(self.task_id, [msg], session_factory=self.session_factory)
 
 
-def _set_up_celery_logging(task_id: uuid.UUID) -> None:
+def _set_up_celery_logging(task_id: uuid.UUID, session_factory: sessionmaker | None = None) -> None:
     # get log messages written back as we go
-    handler = SelectionRunRecordHandler(task_id)
+    handler = SelectionRunRecordHandler(task_id, session_factory=session_factory)
     handler.setLevel(logging.DEBUG)
     override_logging_handlers([handler], [handler])
 
@@ -316,7 +317,7 @@ def load_gsheet(
     settings: settings.Settings,
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
-    _set_up_celery_logging(task_id)
+    _set_up_celery_logging(task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
         task_obj=self,
@@ -339,7 +340,7 @@ def run_select(
     gen_rem_tab: bool = True,
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
-    _set_up_celery_logging(task_id)
+    _set_up_celery_logging(task_id, session_factory=session_factory)
     report = RunReport()
     select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
     success, features, people, load_report = _internal_load_gsheet(
