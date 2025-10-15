@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from opendlp import config
 from opendlp.adapters import database
+from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.config import get_db_uri
 from opendlp.service_layer import unit_of_work
 
@@ -58,9 +59,10 @@ def update_data_source_from_assembly_gsheet(
     temp_output_dir = Path(tempfile.gettempdir()) / "opendlp_selection_output"
     temp_output_dir.mkdir(exist_ok=True)
 
-    return adapters.CSVFileDataSource(
+    csv_data_source = adapters.CSVFileDataSource(
         features_file=test_dir / "features.csv",
         people_file=test_dir / "candidates.csv",
         selected_file=temp_output_dir / "selected.csv",
         remaining_file=temp_output_dir / "remaining.csv",
     )
+    return CSVGSheetDataSource(csv_data_source=csv_data_source, gsheet_data_source=gsheet_data_source)

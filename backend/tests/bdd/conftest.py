@@ -227,7 +227,23 @@ def assembly_gsheet_creator(test_database, admin_user):
         uow = SqlAlchemyUnitOfWork(session_factory)
         assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
         gsheet_assembly = add_assembly_gsheet(
-            uow=uow, assembly_id=assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL, team="uk"
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            url=VALID_GSHEET_URL,
+            team="custom",
+            id_column="nationbuilder_id",
+            check_same_address=True,
+            check_same_address_cols=["primary_address1", "primary_zip"],
+            columns_to_keep=[
+                "first_name",
+                "last_name",
+                "email",
+                "mobile_number",
+                "primary_address1",
+                "primary_address2",
+                "primary_city",
+            ],
         )
         return assembly, gsheet_assembly
 

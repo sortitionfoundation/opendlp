@@ -1,8 +1,7 @@
 """Democratic Lottery part 2 feature tests."""
 
-import pytest
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, scenario, scenarios, then, when
+from pytest_bdd import given, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
 from tests.bdd.config import Urls
@@ -16,23 +15,6 @@ and eventually for when the data is all in the database.
 The idea is that the feature file describes the process at a high level. So we can have
 multiple implementations that use the exact same feature file.
 """
-
-# TODO: get these tests working:
-# these two tests need some refactoring so we don't actually need google sheets
-# available for the tests to work!
-
-
-@pytest.mark.skip
-@scenario("../../features/selection.feature", "Initialise selection")
-def _():
-    pass  # pragma: no cover
-
-
-@pytest.mark.skip
-@scenario("../../features/selection.feature", "Do full selection")
-def _():
-    pass  # pragma: no cover
-
 
 scenarios("../../features/selection.feature")
 
@@ -152,8 +134,7 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
 @then("I am told the number of categories and category values")
 def _(page: Page):
     """I am told the number of categories and category values."""
-    # comment this out so BDD tests are green for now
-    # expect(page.get_by_text("Number of features found: 4")).to_be_visible(timeout=30_000)
+    expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
 
 
 @then("I should see progress messages")
