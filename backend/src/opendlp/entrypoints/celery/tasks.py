@@ -13,6 +13,7 @@ from sortition_algorithms import (
 )
 from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
@@ -51,10 +52,11 @@ def _update_selection_record(
     log_messages: list[str] | None = None,
     error_message: str = "",
     completed_at: datetime | None = None,
+    session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
     assert not (log_message and log_messages), "only use log_message or log_messages, not both"
-    with bootstrap() as uow:
+    with bootstrap(session_factory=session_factory) as uow:
         # Get existing record (should always exist since created at submit time)
         record = uow.selection_run_records.get_by_task_id(task_id)
 
@@ -77,9 +79,11 @@ def _update_selection_record(
         uow.commit()
 
 
-def _append_run_log(task_id: uuid.UUID, log_messages: list[str]) -> None:
+def _append_run_log(task_id: uuid.UUID, log_messages: list[str], session_factory: sessionmaker | None = None) -> None:
     """Add to the log while running"""
-    _update_selection_record(task_id, status=SelectionRunStatus.RUNNING, log_messages=log_messages)
+    _update_selection_record(
+        task_id, status=SelectionRunStatus.RUNNING, log_messages=log_messages, session_factory=session_factory
+    )
 
 
 def _internal_load_gsheet(
@@ -88,6 +92,7 @@ def _internal_load_gsheet(
     select_data: adapters.SelectionData,
     settings: settings.Settings,
     final_task: bool = True,
+    session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
@@ -97,6 +102,7 @@ def _internal_load_gsheet(
         task_id=task_id,
         status=SelectionRunStatus.RUNNING,
         log_message="Starting Google Sheets load task",
+        session_factory=session_factory,
     )
 
     try:
@@ -106,6 +112,7 @@ def _internal_load_gsheet(
                 f"Loading spreadsheet with title: {data_source.spreadsheet.title}",
                 f"Loading targets from tab: {data_source.feature_tab_name}",
             ],
+            session_factory=session_factory,
         )
 
         features, f_report = select_data.load_features()
@@ -127,6 +134,7 @@ def _internal_load_gsheet(
                 f"Minimum selection for targets is {min_select}, maximum is {max_select}.",
                 f"Loading people from tab: {data_source.people_tab_name}",
             ],
+            session_factory=session_factory,
         )
 
         people, p_report = select_data.load_people(settings, features)
@@ -142,6 +150,7 @@ def _internal_load_gsheet(
             status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
             log_messages=[f"Loaded {people.count} people.", "Google Sheets load completed successfully."],
             completed_at=datetime.now(UTC) if final_task else None,
+            session_factory=session_factory,
         )
 
         return True, features, people, report
@@ -161,6 +170,7 @@ def _internal_load_gsheet(
             log_message=error_msg,
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
+            session_factory=session_factory,
         )
 
         return False, None, None, report
@@ -174,16 +184,22 @@ def _internal_run_select(
     number_people_wanted: int,
     test_selection: bool = False,
     final_task: bool = True,
+    session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     report = RunReport()
     # Update SelectionRunRecord to running status
     log_suffix = ": TEST only, do not use for real selection" if test_selection else ""
-    _append_run_log(task_id, [f"Starting selection algorithm for {number_people_wanted} people{log_suffix}"])
+    _append_run_log(
+        task_id,
+        [f"Starting selection algorithm for {number_people_wanted} people{log_suffix}"],
+        session_factory=session_factory,
+    )
 
     try:
         _append_run_log(
             task_id,
             [f"Running stratified selection with {people.count} people and {len(features)} features{log_suffix}"],
+            session_factory=session_factory,
         )
 
         success, selected_panels, report = run_stratification(
@@ -200,6 +216,7 @@ def _internal_run_select(
                 status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
                 log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).{log_suffix}",
                 completed_at=datetime.now(UTC) if final_task else None,
+                session_factory=session_factory,
             )
         else:
             _update_selection_record(
@@ -208,6 +225,7 @@ def _internal_run_select(
                 log_message="Selection algorithm failed to find suitable panels",
                 error_message="Selection algorithm could not find panels meeting the specified criteria",
                 completed_at=datetime.now(UTC),
+                session_factory=session_factory,
             )
         return success, selected_panels, report
 
@@ -227,6 +245,7 @@ def _internal_run_select(
             log_message=error_msg,
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
+            session_factory=session_factory,
         )
         return False, [], report
 
@@ -238,9 +257,10 @@ def _internal_write_selected(
     people: people.People,
     settings: settings.Settings,
     selected_panels: list[frozenset[str]],
+    session_factory: sessionmaker | None = None,
 ) -> RunReport:
     report = RunReport()
-    _append_run_log(task_id, ["About to write selected and remaining tabs"])
+    _append_run_log(task_id, ["About to write selected and remaining tabs"], session_factory=session_factory)
     try:
         # Format results
         selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
@@ -255,6 +275,7 @@ def _internal_write_selected(
                     f"In the remaining tab there are {len(dupes)} people who share the same address as "
                     f"someone else in the tab. They are highlighted in orange.",
                 ],
+                session_factory=session_factory,
             )
 
         _update_selection_record(
@@ -262,6 +283,7 @@ def _internal_write_selected(
             status=SelectionRunStatus.COMPLETED,
             log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
             completed_at=datetime.now(UTC),
+            session_factory=session_factory,
         )
 
         return report
@@ -281,6 +303,7 @@ def _internal_write_selected(
             log_message=error_msg,
             error_message=f"{error_msg}\n{traceback_msg}",
             completed_at=datetime.now(UTC),
+            session_factory=session_factory,
         )
         return report
 
@@ -291,6 +314,7 @@ def load_gsheet(
     task_id: uuid.UUID,
     data_source: adapters.GSheetDataSource | CSVGSheetDataSource,
     settings: settings.Settings,
+    session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id)
     select_data = adapters.SelectionData(data_source)
@@ -300,6 +324,7 @@ def load_gsheet(
         select_data=select_data,
         settings=settings,
         final_task=True,
+        session_factory=session_factory,
     )
 
 
@@ -312,6 +337,7 @@ def run_select(
     settings: settings.Settings,
     test_selection: bool = False,
     gen_rem_tab: bool = True,
+    session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id)
     report = RunReport()
@@ -322,6 +348,7 @@ def run_select(
         select_data=select_data,
         settings=settings,
         final_task=False,
+        session_factory=session_factory,
     )
     report.add_report(load_report)
     if not success:
@@ -337,6 +364,7 @@ def run_select(
         number_people_wanted=number_people_wanted,
         test_selection=test_selection,
         final_task=False,
+        session_factory=session_factory,
     )
     report.add_report(select_report)
     if not success:
@@ -350,6 +378,7 @@ def run_select(
         people=people,
         settings=settings,
         selected_panels=selected_panels,
+        session_factory=session_factory,
     )
     report.add_report(write_report)
 
