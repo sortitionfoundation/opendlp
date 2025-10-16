@@ -345,3 +345,7 @@ class SelectionRunRecord:
     @property
     def has_finished(self) -> bool:
         return self.status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED)
+
+    @property
+    def task_type_verbose(self) -> str:
+        return self.task_type.value.replace("_", " ").replace("gsheet", "Google Spreadsheet").capitalize()

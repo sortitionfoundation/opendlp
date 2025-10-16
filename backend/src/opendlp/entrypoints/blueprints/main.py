@@ -302,15 +302,23 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
             # Return empty response for HTMX to handle gracefully
             return "", 404
 
-        return render_template(
-            "main/components/gsheet_select_progress.html",
-            assembly=assembly,
-            gsheet=gsheet,
-            run_record=result.run_record,
-            celery_log_messages=result.log_messages,
-            run_report=result.run_report,
-            run_id=run_id,
-        ), 200
+        response = current_app.make_response((
+            render_template(
+                "main/components/gsheet_select_progress.html",
+                assembly=assembly,
+                gsheet=gsheet,
+                run_record=result.run_record,
+                celery_log_messages=result.log_messages,
+                run_report=result.run_report,
+                run_id=run_id,
+                progress_url=url_for("main.gsheet_select_progress", assembly_id=assembly_id, run_id=run_id),
+            ),
+            200,
+        ))
+        # if it has finished, force a full page refresh
+        if result.run_record.has_finished:
+            response.headers["HX-Refresh"] = "true"
+        return response
     except ValueError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
@@ -592,6 +600,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
                 celery_log_messages=result.log_messages,
                 run_report=result.run_report,
                 run_id=run_id,
+                progress_url=url_for("main.gsheet_replace_progress", assembly_id=assembly_id, run_id=run_id),
             ),
             200,
         ))

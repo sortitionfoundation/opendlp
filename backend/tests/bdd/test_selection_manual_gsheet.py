@@ -212,7 +212,7 @@ def _(page: Page):
     expect(number_input).to_be_visible()
     expect(number_input).to_be_enabled()
     # Set a number within the valid range (assuming minimum is displayed)
-    number_input.fill("10")
+    number_input.fill("22")
 
 
 @when("I start the replacements")
