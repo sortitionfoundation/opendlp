@@ -147,3 +147,79 @@ def _(page: Page):
 def _(page: Page):
     """I am told selection has completed."""
     expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
+
+
+@when("I initialise the replacements process")
+def _(logged_in_page: Page, assembly_to_select: Assembly):
+    """I initialise the replacements process."""
+    # First navigate to the assembly view page
+    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    logged_in_page.goto(view_url)
+
+    # Then check that the Replacements link goes to the gsheet_replace page
+    link = logged_in_page.get_by_role("link", name="Replacements")
+    expect(link).to_be_visible()
+    link.click()
+    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_replace", str(assembly_to_select.id)))
+
+    # Then click "Load Spreadsheet"
+    link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    expect(link).to_be_visible()
+    link.click()
+
+
+@then("I am asked for the number to select")
+def _(page: Page):
+    """I am asked for the number to select."""
+    # Wait for the replacement form to appear after load completes
+    expect(page.locator("#replacement-selection-form")).to_be_visible(timeout=30_000)
+    # Check that the number input field is visible and enabled
+    number_input = page.get_by_label("Number of people to select")
+    expect(number_input).to_be_visible()
+    expect(number_input).to_be_enabled()
+
+
+@given("the replacements process is initialised", target_fixture="assembly_to_select")
+def _(logged_in_page: Page, assembly_gsheet_creator):
+    """the replacements process is initialised."""
+    # Create assembly with gsheet configuration
+    assembly, _ = assembly_gsheet_creator("Assembly to select")
+
+    # Navigate to replacements page and load the spreadsheet
+    view_url = Urls.for_assembly("view_assembly", str(assembly.id))
+    logged_in_page.goto(view_url)
+
+    link = logged_in_page.get_by_role("link", name="Replacements")
+    expect(link).to_be_visible()
+    link.click()
+
+    # Click "Load Spreadsheet"
+    link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    expect(link).to_be_visible()
+    link.click()
+
+    # Wait for load to complete
+    expect(logged_in_page.locator("#replacement-selection-form")).to_be_visible(timeout=30_000)
+
+    return assembly
+
+
+@given("I have set the number to select")
+def _(page: Page):
+    """I have set the number to select."""
+    # Fill in the number to select field
+    number_input = page.get_by_label("Number of people to select")
+    expect(number_input).to_be_visible()
+    expect(number_input).to_be_enabled()
+    # Set a number within the valid range (assuming minimum is displayed)
+    number_input.fill("10")
+
+
+@when("I start the replacements")
+def _(page: Page):
+    """I start the replacements."""
+    # Click the "Run Replacements" button
+    button = page.get_by_role("button", name="Run Replacements")
+    expect(button).to_be_visible()
+    expect(button).to_be_enabled()
+    button.click()

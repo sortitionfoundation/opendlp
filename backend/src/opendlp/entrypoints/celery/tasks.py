@@ -31,7 +31,7 @@ class SelectionRunRecordHandler(logging.Handler):
     def __init__(self, task_id: uuid.UUID, session_factory: sessionmaker | None = None) -> None:
         super().__init__()
         self.task_id = task_id
-        self.setFormatter(logging.Formatter(fmt="'%(message)s'"))
+        self.setFormatter(logging.Formatter(fmt="%(message)s"))
         self.session_factory = session_factory
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -338,6 +338,7 @@ def run_select(
     settings: settings.Settings,
     test_selection: bool = False,
     gen_rem_tab: bool = True,
+    for_replacements: bool = False,
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)

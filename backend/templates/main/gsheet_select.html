@@ -35,7 +35,7 @@
                 </p>
 
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
-                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.has_finished %}
                     <form action="{{ url_for('main.start_gsheet_load', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="govuk-button">
@@ -48,7 +48,7 @@
                     </button>
                     {% endif %}
 
-                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.has_finished %}
                     <form action="{{ url_for('main.start_gsheet_select', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="test_selection" value="0"/>
@@ -58,7 +58,7 @@
                     </form>
                     {% endif %}
 
-                    {% if not run_record or run_record.status.value in ['completed', 'failed'] %}
+                    {% if not run_record or run_record.has_finished %}
                     <form action="{{ url_for('main.start_gsheet_select', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="test_selection" value="1"/>

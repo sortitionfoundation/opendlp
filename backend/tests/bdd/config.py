@@ -24,6 +24,7 @@ class Urls:
         "update_assembly": "{base}/assemblies/{assembly_id}/edit",
         "gsheet_configure": "{base}/assemblies/{assembly_id}/gsheet",
         "gsheet_select": "{base}/assemblies/{assembly_id}/gsheet_select",
+        "gsheet_replace": "{base}/assemblies/{assembly_id}/gsheet_replace",
     }
 
     @classmethod

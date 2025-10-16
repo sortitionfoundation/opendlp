@@ -82,8 +82,7 @@
                        class="govuk-button govuk-button--secondary">
                         {{ _('Selection') }}
                     </a>
-                    <!-- a href="{ { url_for('main.replace_assembly_gsheet', assembly_id=assembly.id) } }" -->
-                    <a href=""
+                    <a href="{{ url_for('main.replace_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Replacements') }}
                     </a>

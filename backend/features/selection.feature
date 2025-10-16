@@ -32,3 +32,20 @@ Note that there are multiple ways we will do this.
     Then I am told the number of categories and category values
     And I am told selection is running
     And I am told selection has completed
+
+  Scenario: Initialise replacement selection
+    Given the assembly is set up
+    And people are registered
+    And the selection options are set
+    When I initialise the replacements process
+    Then I am told the number of categories and category values
+    And I am asked for the number to select
+
+  Scenario: Do replacement selection
+    Given the assembly is set up
+    And people are registered
+    And the replacements process is initialised
+    And I have set the number to select
+    When I start the replacements
+    Then I am told selection is running
+    And I am told selection has completed

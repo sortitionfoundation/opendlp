@@ -325,3 +325,23 @@ class SelectionRunRecord:
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
         detached_run_record = SelectionRunRecord(**asdict(self))
         return detached_run_record
+
+    @property
+    def is_pending(self) -> bool:
+        return self.status == SelectionRunStatus.PENDING
+
+    @property
+    def is_running(self) -> bool:
+        return self.status == SelectionRunStatus.RUNNING
+
+    @property
+    def is_completed(self) -> bool:
+        return self.status == SelectionRunStatus.COMPLETED
+
+    @property
+    def is_failed(self) -> bool:
+        return self.status == SelectionRunStatus.FAILED
+
+    @property
+    def has_finished(self) -> bool:
+        return self.status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED)

@@ -6,6 +6,7 @@ import uuid
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
 from opendlp.entrypoints.decorators import require_assembly_management
@@ -19,7 +20,14 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
-from opendlp.service_layer.sortition import get_selection_run_status, start_gsheet_load_task, start_gsheet_select_task
+from opendlp.service_layer.sortition import (
+    LoadRunResult,
+    get_selection_run_status,
+    start_gsheet_load_task,
+    start_gsheet_replace_load_task,
+    start_gsheet_replace_task,
+    start_gsheet_select_task,
+)
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
@@ -235,10 +243,10 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-            run_record, celery_log_messages, run_report = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id)
 
         # Validate that the run belongs to this assembly
-        if run_record and run_record.assembly_id != assembly_id:
+        if result.run_record and result.run_record.assembly_id != assembly_id:
             current_app.logger.warning(
                 f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
             )
@@ -249,9 +257,9 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             "main/gsheet_select.html",
             assembly=assembly,
             gsheet=gsheet,
-            run_record=run_record,
-            celery_log_messages=celery_log_messages,
-            run_report=run_report,
+            run_record=result.run_record,
+            celery_log_messages=result.log_messages,
+            run_report=result.run_report,
             run_id=run_id,
         ), 200
     except ValueError as e:
@@ -279,15 +287,15 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-            run_record, celery_log_messages, run_report = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id)
 
         # Check if run record exists
-        if not run_record:
+        if not result.run_record:
             current_app.logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
             return "", 404
 
         # Validate that the run belongs to this assembly
-        if run_record.assembly_id != assembly_id:
+        if result.run_record.assembly_id != assembly_id:
             current_app.logger.warning(
                 f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
             )
@@ -298,9 +306,9 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
             "main/components/gsheet_select_progress.html",
             assembly=assembly,
             gsheet=gsheet,
-            run_record=run_record,
-            celery_log_messages=celery_log_messages,
-            run_report=run_report,
+            run_record=result.run_record,
+            celery_log_messages=result.log_messages,
+            run_report=result.run_report,
             run_id=run_id,
         ), 200
     except ValueError as e:
@@ -415,6 +423,277 @@ def create_assembly_page() -> ResponseReturnValue:
             flash(_("An error occurred while creating the assembly"), "error")
 
     return render_template("main/create_assembly.html", form=form), 200
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["GET"])
+@login_required
+@require_assembly_management
+def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Display Google Sheets replacement selection page for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+        return render_template("main/gsheet_replace.html", assembly=assembly, gsheet=gsheet), 200
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} replacement selection user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(
+            f"Replacement selection page error for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>", methods=["GET"])
+@login_required
+@require_assembly_management
+def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Display Google Sheets replacement selection page with task status for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            result = get_selection_run_status(uow, run_id)
+
+        # Validate that the run belongs to this assembly
+        if result.run_record and result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            flash(_("Invalid task ID for this assembly"), "error")
+            return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+        # Initialize query param variables
+        min_select: int | None = None
+        max_select: int | None = None
+        num_to_select: int | None = None
+
+        # Check if we already have min_select and max_select in query params
+        # Check if this is a completed load task with features - if so, redirect with min/max params
+        if (
+            "min_select" not in request.args
+            and isinstance(result, LoadRunResult)
+            and result.features is not None
+            and result.success
+        ):
+            # Calculate min and max selection bounds
+            min_select = minimum_selection(result.features)
+            max_select = maximum_selection(result.features)
+
+            # Redirect to same URL with query params
+            return redirect(
+                url_for(
+                    "main.replace_assembly_gsheet_with_run",
+                    assembly_id=assembly_id,
+                    run_id=run_id,
+                    min_select=min_select,
+                    max_select=max_select,
+                )
+            )
+
+        # Get query params for template (if we didn't redirect above)
+        min_select = request.args.get("min_select", type=int)
+        max_select = request.args.get("max_select", type=int)
+        num_to_select = request.args.get("num_to_select", type=int)
+
+        return render_template(
+            "main/gsheet_replace.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            run_record=result.run_record,
+            celery_log_messages=result.log_messages,
+            run_report=result.run_report,
+            run_id=run_id,
+            min_select=min_select,
+            max_select=max_select,
+            num_to_select=num_to_select,
+        ), 200
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} replacement selection user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(
+            f"Replacement selection page error for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/progress", methods=["GET"])
+@login_required
+@require_assembly_management
+def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return progress fragment for HTMX polling of Google Sheets replacement task status."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            result = get_selection_run_status(uow, run_id)
+
+        # Check if run record exists
+        if not result.run_record:
+            current_app.logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            return "", 404
+
+        # Validate that the run belongs to this assembly
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            # Return empty response for HTMX to handle gracefully
+            return "", 404
+
+        # If load task completed successfully, redirect to add query params with min/max
+        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+            # Calculate min and max selection bounds
+            min_select = minimum_selection(result.features)
+            max_select = maximum_selection(result.features)
+
+            # Return HX-Redirect header to trigger client-side redirect
+            redirect_url = url_for(
+                "main.replace_assembly_gsheet_with_run",
+                assembly_id=assembly_id,
+                run_id=run_id,
+                min_select=min_select,
+                max_select=max_select,
+            )
+            response = current_app.make_response("")
+            response.headers["HX-Redirect"] = redirect_url
+            return response
+
+        response = current_app.make_response((
+            render_template(
+                "main/components/gsheet_select_progress.html",
+                assembly=assembly,
+                gsheet=gsheet,
+                run_record=result.run_record,
+                celery_log_messages=result.log_messages,
+                run_report=result.run_report,
+                run_id=run_id,
+            ),
+            200,
+        ))
+        # if it has finished, force a full page refresh
+        if result.run_record.has_finished:
+            response.headers["HX-Refresh"] = "true"
+        return response
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
+        )
+        return "", 404
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+        )
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        return "", 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace_load", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets replacement data loading task for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
+
+        return redirect(url_for("main.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")
+        flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet replacement load {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet replacement load for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the loading task"), "error")
+        return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets replacement selection task for an assembly."""
+    try:
+        # Get and validate number_to_select from form
+        number_to_select_str = request.form.get("number_to_select")
+        if not number_to_select_str:
+            flash(_("Number of people to select is required"), "error")
+            return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+        try:
+            number_to_select = int(number_to_select_str)
+            if number_to_select <= 0:
+                flash(_("Number of people to select must be greater than zero"), "error")
+                return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+        except ValueError:
+            flash(_("Number of people to select must be a valid integer"), "error")
+            return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_replace_task(uow, current_user.id, assembly_id, number_to_select)
+
+        return redirect(
+            url_for(
+                "main.replace_assembly_gsheet_with_run",
+                assembly_id=assembly_id,
+                run_id=task_id,
+                num_to_select=number_to_select,
+            )
+        )
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet replacement for assembly {assembly_id}: {e}")
+        flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet replacement {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet replacement for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the replacement task"), "error")
+        return redirect(url_for("main.replace_assembly_gsheet", assembly_id=assembly_id))
 
 
 @main_bp.route("/assemblies/<uuid:assembly_id>/edit", methods=["GET", "POST"])

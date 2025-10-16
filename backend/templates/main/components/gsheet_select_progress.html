@@ -3,8 +3,9 @@
 {% if run_record %}
 <div id="progress-section"
      data-status="{{ run_record.status.value }}"
-     {% if run_record.status.value in ['pending', 'running'] %}
-     hx-get="{{ url_for('main.gsheet_select_progress', assembly_id=assembly.id, run_id=run_id) }}"
+     data-task-type="{{ run_record.task_type.value }}"
+     {% if not run_record.has_finished %}
+     hx-get="{{ progress_url if progress_url is defined else url_for('main.gsheet_select_progress', assembly_id=assembly.id, run_id=run_id) }}"
      hx-trigger="every 2s"
      hx-swap="outerHTML"
      {% endif %}>
@@ -14,13 +15,13 @@
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">{{ _('Status') }}</dt>
             <dd class="govuk-summary-list__value">
-                {% if run_record.status.value == 'pending' %}
+                {% if run_record.is_pending %}
                     <strong class="govuk-tag govuk-tag--blue">{{ _('Pending') }}</strong>
-                {% elif run_record.status.value == 'running' %}
+                {% elif run_record.is_running %}
                     <strong class="govuk-tag govuk-tag--yellow">{{ _('Running') }}</strong>
-                {% elif run_record.status.value == 'completed' %}
+                {% elif run_record.is_completed %}
                     <strong class="govuk-tag govuk-tag--green">{{ _('Completed') }}</strong>
-                {% elif run_record.status.value == 'failed' %}
+                {% elif run_record.is_failed %}
                     <strong class="govuk-tag govuk-tag--red">{{ _('Failed') }}</strong>
                 {% else %}
                     <strong class="govuk-tag">{{ run_record.status.value|title }}</strong>
@@ -65,7 +66,7 @@
     </div>
     {% endif %}
 
-    {% if run_record.error_message and run_record.status.value == 'failed' %}
+    {% if run_record.error_message and run_record.is_failed %}
     <h4 class="govuk-heading-s">{{ _('Error Details') }}</h4>
     <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
         <div class="govuk-error-summary__body">
@@ -74,7 +75,7 @@
     </div>
     {% endif %}
 
-    {% if run_record.status.value in ['pending', 'running'] %}
+    {% if run_record.is_running %}
     <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
         <div class="govuk-notification-banner__header">
             <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
@@ -87,7 +88,7 @@
             </p>
         </div>
     </div>
-    {% elif run_record.status.value == 'completed' %}
+    {% elif run_record.is_completed %}
     <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title">
         <div class="govuk-notification-banner__header">
             <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
