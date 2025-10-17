@@ -124,7 +124,7 @@ class TestFlaskProductionConfig:
 
     def test_production_config_with_secret_key(self, temp_env_vars):
         """Test that ProductionConfig works with proper SECRET_KEY."""
-        temp_env_vars(SECRET_KEY="production-secret-key")
+        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="console")
 
         config = FlaskProductionConfig()
 
@@ -169,7 +169,7 @@ class TestGetConfig:
 
     def test_get_config_production(self, temp_env_vars):
         """Test get_config returns ProductionConfig for production."""
-        temp_env_vars(FLASK_ENV="production", SECRET_KEY="production-secret")
+        temp_env_vars(FLASK_ENV="production", SECRET_KEY="production-secret", EMAIL_ADAPTER="console")
 
         config = get_config()
 

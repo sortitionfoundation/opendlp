@@ -91,6 +91,32 @@ class EmailCfg:
         return EmailCfg(host=host, port=port, http_port=http_port)
 
 
+@dataclass(slots=True, kw_only=True)
+class SMTPEmailCfg:
+    """SMTP email adapter configuration."""
+
+    host: str
+    port: int
+    username: str
+    password: str
+    use_tls: bool
+    from_email: str
+    from_name: str
+
+    @classmethod
+    def from_env(cls) -> "SMTPEmailCfg":
+        """Load SMTP configuration from environment variables."""
+        return SMTPEmailCfg(
+            host=os.environ.get("SMTP_HOST", ""),
+            port=int(os.environ.get("SMTP_PORT", "587")),
+            username=os.environ.get("SMTP_USERNAME", ""),
+            password=os.environ.get("SMTP_PASSWORD", ""),
+            use_tls=to_bool(os.environ.get("SMTP_USE_TLS", "true"), context_str="SMTP_USE_TLS="),
+            from_email=os.environ.get("SMTP_FROM_EMAIL", ""),
+            from_name=os.environ.get("SMTP_FROM_NAME", ""),
+        )
+
+
 def to_bool(value: str | None, context_str: str = "") -> bool:
     """
     Convert string to boolean. Valid options (after stripping whitespace and making lower-case)
@@ -133,6 +159,10 @@ class FlaskBaseConfig:
         # OAuth configuration
         self.OAUTH_GOOGLE_CLIENT_ID: str = os.environ.get("OAUTH_GOOGLE_CLIENT_ID", "")
         self.OAUTH_GOOGLE_CLIENT_SECRET: str = os.environ.get("OAUTH_GOOGLE_CLIENT_SECRET", "")
+
+        # Email configuration
+        # Valid values: "smtp", "console"
+        self.EMAIL_ADAPTER: str = os.environ.get("EMAIL_ADAPTER", "console")
 
         # Selection algorithm configuration
         # 600 is seconds - so 10 minutes
@@ -220,6 +250,10 @@ class FlaskProductionConfig(FlaskConfig):
         # Ensure production has proper secret key
         if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105
             raise InvalidConfig("SECRET_KEY must be set in production")
+
+        # Ensure production has email adapter configured
+        if not os.environ.get("EMAIL_ADAPTER"):
+            raise InvalidConfig("EMAIL_ADAPTER must be set in production")
 
 
 def get_config(config_name: str = "") -> FlaskBaseConfig:
