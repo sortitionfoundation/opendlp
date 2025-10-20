@@ -9,10 +9,17 @@
             <h1 class="govuk-heading-xl">{{ _('Invite Management') }}</h1>
 
             <!-- Create Invite Button -->
-            <div class="govuk-button-group govuk-!-margin-bottom-6">
+            <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
                 <a href="{{ url_for('admin.create_invite') }}" class="govuk-button" data-module="govuk-button">
                     {{ _('Create New Invite') }}
                 </a>
+                <form method="post" action="{{ url_for('admin.cleanup_invites') }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
+                            onclick="return confirm('{{ _('This will permanently delete all expired, unused invites. Are you sure?') }}');">
+                        {{ _('Clean Up Expired Invites') }}
+                    </button>
+                </form>
             </div>
 
             <!-- Statistics Cards -->

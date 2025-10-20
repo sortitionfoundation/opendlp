@@ -13,6 +13,7 @@ from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
 from opendlp.service_layer.exceptions import InvalidCredentials
 from opendlp.service_layer.invite_service import (
+    cleanup_expired_invites,
     generate_invite,
     get_invite_details,
     get_invite_statistics,
@@ -310,4 +311,29 @@ def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error revoking invite {invite_id} by admin {current_user.id}: {e}")
         flash(_("An error occurred while revoking the invite"), "error")
+        return redirect(url_for("admin.list_invites_page"))
+
+
+@admin_bp.route("/invites/cleanup", methods=["POST"])
+@login_required
+@require_admin
+def cleanup_invites() -> ResponseReturnValue:
+    """Clean up expired invites."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            count = cleanup_expired_invites(uow=uow)
+
+        if count == 0:
+            flash(_("No expired invites to clean up"), "info")
+        elif count == 1:
+            flash(_("Cleaned up 1 expired invite"), "success")
+        else:
+            flash(_("Cleaned up %(count)s expired invites", count=count), "success")
+
+        return redirect(url_for("admin.list_invites_page"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error cleaning up invites by admin {current_user.id}: {e}")
+        flash(_("An error occurred while cleaning up invites"), "error")
         return redirect(url_for("admin.list_invites_page"))
