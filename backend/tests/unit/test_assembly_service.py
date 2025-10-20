@@ -38,7 +38,7 @@ class TestCreateAssembly:
         assert assembly.question == "Test question?"
         assert assembly.first_assembly_date == future_date
         assert assembly.status == AssemblyStatus.ACTIVE
-        assert len(uow.assemblies.list()) == 1
+        assert len(uow.assemblies.all()) == 1
         assert uow.committed
 
     def test_create_assembly_success_global_organiser(self):
@@ -113,7 +113,7 @@ class TestCreateAssembly:
         assert assembly.question == ""
         assert assembly.first_assembly_date is None
         assert assembly.status == AssemblyStatus.ACTIVE
-        assert len(uow.assemblies.list()) == 1
+        assert len(uow.assemblies.all()) == 1
         assert uow.committed
 
 
@@ -384,7 +384,7 @@ class TestAssemblyGSheetOperations:
         assert assembly_gsheet.assembly_id == assembly.id
         assert assembly_gsheet.url == VALID_GSHEET_URL
         assert assembly_gsheet.id_column == "nationbuilder_id"  # UK default
-        assert len(uow.assembly_gsheets.list()) == 1
+        assert len(uow.assembly_gsheets.all()) == 1
         assert uow.committed
 
     def test_add_assembly_gsheet_with_overrides(self):
@@ -578,7 +578,7 @@ class TestAssemblyGSheetOperations:
             user_id=admin_user.id,
         )
 
-        assert len(uow.assembly_gsheets.list()) == 0
+        assert len(uow.assembly_gsheets.all()) == 0
         assert uow.committed
 
     def test_remove_assembly_gsheet_not_found(self):

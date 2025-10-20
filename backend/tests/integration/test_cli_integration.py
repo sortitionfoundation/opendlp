@@ -268,11 +268,11 @@ class TestCliDatabaseIntegration:
             assert regular_user.global_role == GlobalRole.USER
 
             # Check invites exist
-            invites = uow.user_invites.list()
+            invites = uow.user_invites.all()
             assert len(invites) >= 3  # At least the 3 we created
 
             # Check assembly exists
-            assemblies = uow.assemblies.list()
+            assemblies = uow.assemblies.all()
             assert len(assemblies) >= 1  # At least the sample assembly
 
     def test_seed_already_seeded_database(self, sqlite_session_factory, cli_with_session_factory):

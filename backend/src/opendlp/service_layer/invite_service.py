@@ -151,7 +151,7 @@ def list_invites(
             raise InsufficientPermissions(action="list invites", required_role="global-organiser or admin")
 
         if include_expired:
-            return list(uow.user_invites.list())
+            return list(uow.user_invites.all())
         else:
             return list(uow.user_invites.get_valid_invites())
 
@@ -209,7 +209,7 @@ def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
         Number of invites cleaned up
     """
     with uow:
-        invites = list(uow.user_invites.list())
+        invites = list(uow.user_invites.all())
         expired_count = 0
 
         now = datetime.now(UTC)
@@ -249,7 +249,7 @@ def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[s
         if not has_global_organiser(user):
             raise InsufficientPermissions(action="view invite statistics", required_role="global-organiser or admin")
 
-        invites = list(uow.user_invites.list())
+        invites = list(uow.user_invites.all())
         now = datetime.now(UTC)
 
         total_invites = len(invites)

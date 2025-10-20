@@ -32,7 +32,7 @@ class TestGenerateInvite:
         assert invite.code is not None
         assert len(invite.code) > 0
         assert invite.expires_at > datetime.now(UTC)
-        assert len(uow.user_invites.list()) == 1
+        assert len(uow.user_invites.all()) == 1
         assert uow.committed
 
     def test_generate_invite_success_global_organiser(self):
@@ -86,7 +86,7 @@ class TestGenerateBatchInvites:
         )
 
         assert len(invites) == 5
-        assert len(uow.user_invites.list()) == 5
+        assert len(uow.user_invites.all()) == 5
         # Check all codes are unique
         codes = {invite.code for invite in invites}
         assert len(codes) == 5
@@ -269,7 +269,7 @@ class TestCleanupExpiredInvites:
         assert uow.committed
 
         # Verify the expired unused invite was deleted
-        remaining_invites = list(uow.user_invites.list())
+        remaining_invites = list(uow.user_invites.all())
         assert len(remaining_invites) == 2
         assert expired_invite not in remaining_invites
 

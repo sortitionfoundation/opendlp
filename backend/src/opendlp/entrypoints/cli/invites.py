@@ -77,7 +77,7 @@ def list_invites_cmd(ctx: click.Context, include_expired: bool, include_used: bo
         uow = bootstrap.bootstrap(session_factory=session_factory)
         with uow:
             # For CLI usage, bypass service layer and list invites directly
-            all_invites = uow.user_invites.list()
+            all_invites = uow.user_invites.all()
 
             # Apply filters manually
             invites_list = []
@@ -193,7 +193,7 @@ def cleanup_expired(ctx: click.Context, confirm: bool) -> None:
 
         # First check what we'll clean up
         with uow:
-            all_invites = uow.user_invites.list()
+            all_invites = uow.user_invites.all()
             expired_invites = [i for i in all_invites if not i.is_valid() and not i.used_by]
 
         if not expired_invites:

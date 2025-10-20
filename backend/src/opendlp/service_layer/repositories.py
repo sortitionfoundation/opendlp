@@ -27,8 +27,8 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def list(self) -> Iterable[Any]:
-        """List all items in the repository."""
+    def all(self) -> Iterable[Any]:
+        """Get all items in the repository."""
         raise NotImplementedError
 
 

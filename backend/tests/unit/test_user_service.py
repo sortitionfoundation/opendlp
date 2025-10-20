@@ -46,7 +46,7 @@ class TestCreateUser:
         assert user.global_role == GlobalRole.USER
         assert user.password_hash is not None
         assert user.oauth_provider is None
-        assert len(uow.users.list()) == 1
+        assert len(uow.users.all()) == 1
         assert uow.committed
 
     def test_create_user_with_oauth_success(self):

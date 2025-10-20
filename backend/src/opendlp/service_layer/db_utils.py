@@ -50,7 +50,7 @@ def seed_database(
         # Check if data already exists
         admin_email = "admin@opendlp.example"
         admin_user_id = uuid.uuid4()
-        existing_users = uow.users.list()
+        existing_users = uow.users.all()
         if existing_users:
             raise UserAlreadyExists(admin_email)
 
