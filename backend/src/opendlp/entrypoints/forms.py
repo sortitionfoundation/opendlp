@@ -327,3 +327,33 @@ class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("Inactive users cannot log in to the system"),
         default=True,
     )
+
+
+class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for creating user invites (admin only)."""
+
+    global_role = RadioField(
+        _l("Role for New User"),
+        choices=[
+            ("user", _l("User - Basic access to assigned assemblies")),
+            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
+            ("admin", _l("Admin - Full system access including user management")),
+        ],
+        validators=[DataRequired()],
+        description=_l("The role that will be granted to the user who uses this invite"),
+        default="user",
+    )
+
+    email = EmailField(
+        _l("Email Address (Optional)"),
+        validators=[Optional(), DomainEmailValidator()],
+        description=_l("Optional - if provided, the invite will be emailed to this address"),
+        render_kw={"autocomplete": "email"},
+    )
+
+    expires_in_hours = IntegerField(
+        _l("Expires In (Hours)"),
+        validators=[Optional()],
+        description=_l("Optional - number of hours until the invite expires (default: 168 hours / 7 days)"),
+        default=168,
+    )

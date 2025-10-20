@@ -504,7 +504,7 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
         if not has_global_admin(admin_user):
             raise InvalidCredentials("Only admins can view user statistics")
 
-        all_users = list(uow.users.list())
+        all_users = list(uow.users.all())
 
         return {
             "total_users": len(all_users),

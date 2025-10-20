@@ -198,6 +198,44 @@ def revoke_invite(
         return revoked_invite
 
 
+def get_invite_details(
+    uow: AbstractUnitOfWork,
+    invite_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> UserInvite:
+    """
+    Get details of a specific invite.
+
+    Args:
+        uow: Unit of Work for database operations
+        invite_id: ID of invite to retrieve
+        user_id: ID of user requesting the details
+
+    Returns:
+        UserInvite instance
+
+    Raises:
+        ValueError: If invite or user not found
+        InsufficientPermissions: If user cannot view invite details
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        # Check permissions
+        if not has_global_organiser(user):
+            raise InsufficientPermissions(action="view invite details", required_role="global-organiser or admin")
+
+        invite = uow.user_invites.get(invite_id)
+        if not invite:
+            raise ValueError(f"Invite {invite_id} not found")
+
+        # Explicit typing to satisfy mypy
+        invite_details: UserInvite = invite.create_detached_copy()
+        return invite_details
+
+
 def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
     """
     Clean up expired invites from the database.
