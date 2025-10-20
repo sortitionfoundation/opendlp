@@ -409,6 +409,7 @@ def get_user_by_id(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: u
         if not user:
             raise ValueError(f"User {user_id} not found")
 
+        assert isinstance(user, User)
         return user.create_detached_copy()
 
 
@@ -453,6 +454,7 @@ def update_user(
         user = uow.users.get(user_id)
         if not user:
             raise ValueError(f"User {user_id} not found")
+        assert isinstance(user, User)
 
         # Prevent admin from changing their own role (avoid lockout)
         if user_id == admin_user_id and global_role is not None and global_role != user.global_role:
