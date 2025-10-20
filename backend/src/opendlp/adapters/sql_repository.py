@@ -43,8 +43,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         """Get a user by their ID."""
         return self.session.query(User).filter_by(id=item_id).first()
 
-    def list(self) -> Iterable[User]:
-        """List all users."""
+    def all(self) -> Iterable[User]:
+        """Get all users."""
         return self.session.query(User).all()
 
     def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
@@ -143,8 +143,8 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         """Get an assembly by its ID."""
         return self.session.query(Assembly).filter_by(id=item_id).first()
 
-    def list(self) -> Iterable[Assembly]:
-        """List all assemblies."""
+    def all(self) -> Iterable[Assembly]:
+        """Get all assemblies."""
         return self.session.query(Assembly).all()
 
     def get_active_assemblies(self) -> Iterable[Assembly]:
@@ -210,8 +210,8 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
         """Get an invite by its ID."""
         return self.session.query(UserInvite).filter_by(id=item_id).first()
 
-    def list(self) -> Iterable[UserInvite]:
-        """List all invites."""
+    def all(self) -> Iterable[UserInvite]:
+        """Get all invites."""
         return self.session.query(UserInvite).order_by(orm.user_invites.c.created_at.desc()).all()
 
     def get_by_code(self, code: str) -> UserInvite | None:
@@ -288,8 +288,8 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
         """Get a role by its ID."""
         return self.session.query(UserAssemblyRole).filter_by(id=role_id).first()
 
-    def list(self) -> Iterable[UserAssemblyRole]:
-        """List all invites."""
+    def all(self) -> Iterable[UserAssemblyRole]:
+        """Get all user assembly roles."""
         return self.session.query(UserAssemblyRole).order_by(orm.user_assembly_roles.c.created_at.desc()).all()
 
     def get_by_user_and_assembly(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> UserAssemblyRole | None:
@@ -334,8 +334,8 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
         """Get an AssemblyGSheet by its ID."""
         return self.session.query(AssemblyGSheet).filter_by(assembly_gsheet_id=item_id).first()
 
-    def list(self) -> Iterable[AssemblyGSheet]:
-        """List all AssemblyGSheets."""
+    def all(self) -> Iterable[AssemblyGSheet]:
+        """Get all AssemblyGSheets."""
         return self.session.query(AssemblyGSheet).all()
 
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyGSheet | None:
@@ -358,8 +358,8 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
         """Get a SelectionRunRecord by its task ID (primary key)."""
         return self.session.query(SelectionRunRecord).filter_by(task_id=item_id).first()
 
-    def list(self) -> Iterable[SelectionRunRecord]:
-        """List all SelectionRunRecords ordered by creation time."""
+    def all(self) -> Iterable[SelectionRunRecord]:
+        """Get all SelectionRunRecords ordered by creation time."""
         return self.session.query(SelectionRunRecord).order_by(orm.selection_run_records.c.created_at.desc()).all()
 
     def get_by_task_id(self, task_id: uuid.UUID) -> SelectionRunRecord | None:

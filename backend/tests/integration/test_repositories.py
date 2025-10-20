@@ -110,7 +110,7 @@ class TestUserRepository:
         user_repo.add(user2)
         postgres_session.commit()
 
-        users = list(user_repo.list())
+        users = list(user_repo.all())
         assert len(users) == 2
         emails = [u.email for u in users]
         assert "user1@example.com" in emails
@@ -484,7 +484,7 @@ class TestUserInviteRepository:
         postgres_session.commit()
 
         # Check that only valid invite remains
-        remaining_invites = list(invite_repo.list())
+        remaining_invites = list(invite_repo.all())
         assert len(remaining_invites) == 1
         assert remaining_invites[0].id == valid_invite.id
 

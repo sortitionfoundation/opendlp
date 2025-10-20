@@ -37,8 +37,8 @@ class FakeRepository(AbstractRepository):
                 return item
         return None
 
-    def list(self) -> Iterable[Any]:
-        """List all items in the repository."""
+    def all(self) -> Iterable[Any]:
+        """Get all items in the repository."""
         return list(self._items)
 
 
