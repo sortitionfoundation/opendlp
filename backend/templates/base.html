@@ -41,10 +41,15 @@
                                 {{ _('Dashboard') }}
                             </a>
                         </li>
-                        {% if current_user.global_role.value == 'admin' %}
+                        {% if current_user.global_role.value == 'admin' or current_user.global_role.value == 'global-organiser' %}
                         <li class="govuk-header__navigation-item">
                             <a class="govuk-header__link" href="{{ url_for('admin.list_users') }}">
-                                {{ _('Admin') }}
+                                {{ _('Users') }}
+                            </a>
+                        </li>
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('admin.list_invites_page') }}">
+                                {{ _('Invites') }}
                             </a>
                         </li>
                         {% endif %}

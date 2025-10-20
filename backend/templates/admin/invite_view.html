@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Invite Details') }} - {{ invite.code }} - OpenDLP{% endblock %}
+
+{% block content %}
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.list_invites_page') }}">{{ _('Invite Management') }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        {{ invite.code }}
+                    </li>
+                </ol>
+            </div>
+
+            <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Invite Details') }}</h1>
+
+            <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Invite Code') }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        <code id="invite-code">{{ invite.code }}</code>
+                        <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2" data-module="govuk-button" onclick="copyToClipboard('invite-code', '{{ _('Invite code copied!') }}')">
+                            {{ _('Copy Code') }}
+                        </button>
+                    </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Registration URL') }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        <code id="invite-url">{{ url_for('auth.register', _external=True) }}?invite={{ invite.code }}</code>
+                        <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2" data-module="govuk-button" onclick="copyToClipboard('invite-url', '{{ _('URL copied!') }}')">
+                            {{ _('Copy URL') }}
+                        </button>
+                    </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Role') }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if invite.global_role.value == 'admin' %}
+                            <strong class="govuk-tag govuk-tag--red">{{ _('Admin') }}</strong>
+                        {% elif invite.global_role.value == 'global-organiser' %}
+                            <strong class="govuk-tag govuk-tag--blue">{{ _('Global Organiser') }}</strong>
+                        {% else %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _('User') }}</strong>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Status') }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if invite.used_by %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _('Used') }}</strong>
+                        {% elif invite.is_valid() %}
+                            <strong class="govuk-tag govuk-tag--green">{{ _('Active') }}</strong>
+                        {% else %}
+                            <strong class="govuk-tag govuk-tag--red">{{ _('Expired') }}</strong>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Created At') }}</dt>
+                    <dd class="govuk-summary-list__value">{{ invite.created_at.strftime('%d %B %Y at %H:%M') }}</dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Expires At') }}</dt>
+                    <dd class="govuk-summary-list__value">{{ invite.expires_at.strftime('%d %B %Y at %H:%M') }}</dd>
+                </div>
+                {% if invite.used_by %}
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Used By') }}</dt>
+                    <dd class="govuk-summary-list__value">{{ invite.used_by }}</dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _('Used At') }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if invite.used_at %}
+                            {{ invite.used_at.strftime('%d %B %Y at %H:%M') }}
+                        {% else %}
+                            <span class="govuk-hint">{{ _('Unknown') }}</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                {% endif %}
+            </dl>
+
+            {% if invite.is_valid() and not invite.used_by %}
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _('Warning') }}</span>
+                    {{ _('This invite is still active. Revoking it will prevent it from being used for registration.') }}
+                </strong>
+            </div>
+            {% endif %}
+
+            <div class="govuk-button-group govuk-!-margin-top-6">
+                {% if invite.is_valid() and not invite.used_by %}
+                <form method="post" action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
+                            onclick="return confirm('{{ _('Are you sure you want to revoke this invite? This action cannot be undone.') }}');">
+                        {{ _('Revoke Invite') }}
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('admin.list_invites_page') }}" class="govuk-button govuk-button--secondary">
+                    {{ _('Back to Invite List') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId, successMessage) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent;
+
+    // Use the modern clipboard API if available
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert(successMessage);
+        }, function() {
+            fallbackCopyToClipboard(text, successMessage);
+        });
+    } else {
+        fallbackCopyToClipboard(text, successMessage);
+    }
+}
+
+function fallbackCopyToClipboard(text, successMessage) {
+    // Fallback for older browsers
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        alert(successMessage);
+    } catch (err) {
+        alert('{{ _('Failed to copy. Please copy manually.') }}');
+    }
+
+    document.body.removeChild(textArea);
+}
+</script>
+{% endblock %}

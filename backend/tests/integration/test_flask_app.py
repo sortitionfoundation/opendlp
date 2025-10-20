@@ -178,6 +178,40 @@ class TestAdminBlueprint:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
+    def test_admin_invites_list_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin invites list route requires authentication."""
+        response = client.get("/admin/invites")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_admin_create_invite_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin create invite route requires authentication."""
+        response = client.get("/admin/invites/create")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_admin_view_invite_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin view invite route requires authentication."""
+        import uuid
+
+        invite_id = uuid.uuid4()
+        response = client.get(f"/admin/invites/{invite_id}")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_admin_revoke_invite_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin revoke invite route requires authentication."""
+        import uuid
+
+        invite_id = uuid.uuid4()
+        response = client.post(f"/admin/invites/{invite_id}/revoke")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
 
 class TestErrorHandlers:
     """Test error handlers."""
