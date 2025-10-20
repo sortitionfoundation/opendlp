@@ -212,6 +212,13 @@ class TestAdminBlueprint:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
+    def test_admin_cleanup_invites_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin cleanup invites route requires authentication."""
+        response = client.post("/admin/invites/cleanup")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
 
 class TestErrorHandlers:
     """Test error handlers."""
