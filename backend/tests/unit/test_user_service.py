@@ -81,7 +81,11 @@ class TestCreateUser:
     def test_create_user_email_already_exists(self):
         """Test user creation fails when email exists."""
         uow = FakeUnitOfWork()
-        existing_user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        existing_user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(existing_user)
 
         with pytest.raises(UserAlreadyExists) as exc_info:
@@ -343,7 +347,11 @@ class TestFindOrCreateOAuthUser:
     def test_link_oauth_to_existing_email_user(self):
         """Test linking OAuth to existing email user."""
         uow = FakeUnitOfWork()
-        existing_user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        existing_user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(existing_user)
 
         user, created = user_service.find_or_create_oauth_user(
@@ -398,7 +406,11 @@ class TestGetUserAssemblies:
         """Test admin user can see all active assemblies."""
         uow = FakeUnitOfWork()
 
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(admin_user)
 
         # Add some assemblies
@@ -437,7 +449,11 @@ class TestAssignAssemblyRole:
         """Test successful role assignment."""
         uow = FakeUnitOfWork()
 
-        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         assembly = Assembly(
             title="Test Assembly",
             question="Test Question",
@@ -469,3 +485,386 @@ class TestAssignAssemblyRole:
                 assembly_id=uuid.uuid4(),
                 role=AssemblyRole.ASSEMBLY_MANAGER,
             )
+
+
+class TestListUsersPaginated:
+    """Test paginated user listing."""
+
+    def test_list_users_paginated_success(self):
+        """Test successful paginated user listing."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create regular users
+        for i in range(25):
+            user = User(
+                email=f"user{i}@example.com",
+                global_role=GlobalRole.USER,
+                first_name=f"First{i}",
+                last_name=f"Last{i}",
+                password_hash="hash",  # pragma: allowlist secret
+            )
+            uow.users.add(user)
+
+        # Get first page
+        users, total_count, total_pages = user_service.list_users_paginated(
+            uow=uow, admin_user_id=admin_user.id, page=1, per_page=10
+        )
+
+        assert len(users) == 10
+        assert total_count == 26  # 25 + admin
+        assert total_pages == 3  # ceil(26 / 10)
+
+    def test_list_users_paginated_with_filters(self):
+        """Test paginated listing with role and active filters."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create mix of users
+        uow.users.add(
+            User(
+                email="user1@example.com",
+                global_role=GlobalRole.USER,
+                is_active=True,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="user2@example.com",
+                global_role=GlobalRole.USER,
+                is_active=False,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="org1@example.com",
+                global_role=GlobalRole.GLOBAL_ORGANISER,
+                is_active=True,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+
+        # Filter by active users only
+        users, total_count, total_pages = user_service.list_users_paginated(
+            uow=uow, admin_user_id=admin_user.id, page=1, per_page=10, active_filter=True
+        )
+
+        assert total_count == 3  # admin, user1, org1
+        assert all(u.is_active for u in users)
+
+    def test_list_users_paginated_with_search(self):
+        """Test paginated listing with search term."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create users with searchable names
+        uow.users.add(
+            User(
+                email="user1@example.com",
+                global_role=GlobalRole.USER,
+                first_name="Alice",
+                last_name="Smith",
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="user2@example.com",
+                global_role=GlobalRole.USER,
+                first_name="Bob",
+                last_name="Jones",
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="user3@example.com",
+                global_role=GlobalRole.USER,
+                first_name="Alice",
+                last_name="Brown",
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+
+        # Search for "Alice"
+        users, total_count, total_pages = user_service.list_users_paginated(
+            uow=uow, admin_user_id=admin_user.id, page=1, per_page=10, search_term="Alice"
+        )
+
+        assert total_count == 2
+        assert all(u.first_name == "Alice" for u in users)
+
+    def test_list_users_paginated_non_admin(self):
+        """Test that non-admin users cannot list users."""
+        uow = FakeUnitOfWork()
+
+        # Create non-admin user
+        regular_user = User(
+            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(regular_user)
+
+        with pytest.raises(InvalidCredentials):
+            user_service.list_users_paginated(uow=uow, admin_user_id=regular_user.id, page=1, per_page=10)
+
+
+class TestGetUserById:
+    """Test getting user by ID."""
+
+    def test_get_user_by_id_success(self):
+        """Test successfully getting user by ID."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create target user
+        target_user = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            first_name="Target",
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(target_user)
+
+        # Get user by ID
+        user = user_service.get_user_by_id(uow=uow, user_id=target_user.id, admin_user_id=admin_user.id)
+
+        assert user.email == "target@example.com"
+        assert user.first_name == "Target"
+
+    def test_get_user_by_id_not_found(self):
+        """Test getting non-existent user."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        with pytest.raises(ValueError, match="not found"):
+            user_service.get_user_by_id(uow=uow, user_id=uuid.uuid4(), admin_user_id=admin_user.id)
+
+    def test_get_user_by_id_non_admin(self):
+        """Test that non-admin users cannot get user details."""
+        uow = FakeUnitOfWork()
+
+        # Create non-admin user
+        regular_user = User(
+            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(regular_user)
+
+        with pytest.raises(InvalidCredentials):
+            user_service.get_user_by_id(uow=uow, user_id=regular_user.id, admin_user_id=regular_user.id)
+
+
+class TestUpdateUser:
+    """Test user update functionality."""
+
+    def test_update_user_success(self):
+        """Test successfully updating user."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create target user
+        target_user = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            first_name="Old",
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(target_user)
+
+        # Update user
+        updated_user = user_service.update_user(
+            uow=uow,
+            user_id=target_user.id,
+            admin_user_id=admin_user.id,
+            first_name="New",
+            last_name="Name",
+            global_role=GlobalRole.GLOBAL_ORGANISER,
+            is_active=False,
+        )
+
+        assert updated_user.first_name == "New"
+        assert updated_user.last_name == "Name"
+        assert updated_user.global_role == GlobalRole.GLOBAL_ORGANISER
+        assert updated_user.is_active is False
+
+    def test_update_user_cannot_change_own_role(self):
+        """Test admin cannot change their own role."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Try to change own role
+        with pytest.raises(ValueError, match="Cannot change your own admin role"):
+            user_service.update_user(
+                uow=uow,
+                user_id=admin_user.id,
+                admin_user_id=admin_user.id,
+                global_role=GlobalRole.USER,
+            )
+
+    def test_update_user_cannot_deactivate_self(self):
+        """Test admin cannot deactivate their own account."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Try to deactivate self
+        with pytest.raises(ValueError, match="Cannot deactivate your own account"):
+            user_service.update_user(
+                uow=uow,
+                user_id=admin_user.id,
+                admin_user_id=admin_user.id,
+                is_active=False,
+            )
+
+    def test_update_user_non_admin(self):
+        """Test that non-admin users cannot update users."""
+        uow = FakeUnitOfWork()
+
+        # Create non-admin user
+        regular_user = User(
+            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )  # pragma: allowlist secret
+        target_user = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(regular_user)
+        uow.users.add(target_user)
+
+        with pytest.raises(InvalidCredentials):
+            user_service.update_user(
+                uow=uow,
+                user_id=target_user.id,
+                admin_user_id=regular_user.id,
+                first_name="Hacked",
+            )
+
+
+class TestGetUserStats:
+    """Test user statistics."""
+
+    def test_get_user_stats_success(self):
+        """Test successfully getting user statistics."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin_user)
+
+        # Create mix of users
+        uow.users.add(
+            User(
+                email="user1@example.com",
+                global_role=GlobalRole.USER,
+                is_active=True,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="user2@example.com",
+                global_role=GlobalRole.USER,
+                is_active=False,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="org1@example.com",
+                global_role=GlobalRole.GLOBAL_ORGANISER,
+                is_active=True,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+        uow.users.add(
+            User(
+                email="admin2@example.com",
+                global_role=GlobalRole.ADMIN,
+                is_active=True,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+        )
+
+        # Get stats
+        stats = user_service.get_user_stats(uow=uow, admin_user_id=admin_user.id)
+
+        assert stats["total_users"] == 5
+        assert stats["active_users"] == 4
+        assert stats["inactive_users"] == 1
+        assert stats["admin_users"] == 2
+        assert stats["organiser_users"] == 1
+        assert stats["regular_users"] == 2
+
+    def test_get_user_stats_non_admin(self):
+        """Test that non-admin users cannot get statistics."""
+        uow = FakeUnitOfWork()
+
+        # Create non-admin user
+        regular_user = User(
+            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(regular_user)
+
+        with pytest.raises(InvalidCredentials):
+            user_service.get_user_stats(uow=uow, admin_user_id=regular_user.id)

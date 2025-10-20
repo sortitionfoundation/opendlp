@@ -292,3 +292,38 @@ class CreateAssemblyGSheetForm(AssemblyGSheetForm):
 
 class EditAssemblyGSheetForm(AssemblyGSheetForm):
     """Form specifically for editing assembly Google Spreadsheet configuration."""
+
+
+class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for editing user details (admin only)."""
+
+    first_name = StringField(
+        _l("First Name"),
+        validators=[Length(max=100)],
+        description=_l("User's first name"),
+        render_kw={"autocomplete": "given-name"},
+    )
+
+    last_name = StringField(
+        _l("Last Name"),
+        validators=[Length(max=100)],
+        description=_l("User's last name"),
+        render_kw={"autocomplete": "family-name"},
+    )
+
+    global_role = RadioField(
+        _l("Global Role"),
+        choices=[
+            ("user", _l("User - Basic access to assigned assemblies")),
+            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
+            ("admin", _l("Admin - Full system access including user management")),
+        ],
+        validators=[DataRequired()],
+        description=_l("User's global role determines their permissions across the system"),
+    )
+
+    is_active = BooleanField(
+        _l("Active Account"),
+        description=_l("Inactive users cannot log in to the system"),
+        default=True,
+    )

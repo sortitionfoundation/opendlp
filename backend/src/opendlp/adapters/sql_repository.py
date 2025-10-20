@@ -57,6 +57,46 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
             user_query = user_query.filter(orm.users.c.active == active)
         return user_query.all()
 
+    def filter_paginated(
+        self,
+        role: str | None = None,
+        active: bool | None = None,
+        search: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[User], int]:
+        """List users filtered by criteria with pagination."""
+        # Build base query
+        user_query = self.session.query(User)
+
+        # Apply role filter
+        if role:
+            role_enum = GlobalRole(role.lower())
+            user_query = user_query.filter(orm.users.c.global_role == role_enum)
+
+        # Apply active filter
+        if active is not None:
+            user_query = user_query.filter(orm.users.c.is_active == active)
+
+        # Apply search filter (case-insensitive search across email, first_name, last_name)
+        if search:
+            search_term = f"%{search}%"
+            user_query = user_query.filter(
+                or_(
+                    orm.users.c.email.ilike(search_term),
+                    orm.users.c.first_name.ilike(search_term),
+                    orm.users.c.last_name.ilike(search_term),
+                )
+            )
+
+        # Get total count before pagination
+        total_count = user_query.count()
+
+        # Apply ordering and pagination
+        users = user_query.order_by(orm.users.c.created_at.desc()).limit(limit).offset(offset).all()
+
+        return list(users), total_count
+
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         return self.session.query(User).filter_by(email=email).first()
