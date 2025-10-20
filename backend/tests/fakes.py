@@ -54,6 +54,45 @@ class FakeUserRepository(FakeRepository, UserRepository):
             users = [user for user in users if user.active == active]
         return users
 
+    def filter_paginated(
+        self,
+        role: str | None = None,
+        active: bool | None = None,
+        search: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[User], int]:
+        """List users filtered by criteria with pagination."""
+        users = list(self._items)
+
+        # Apply role filter
+        if role:
+            users = [user for user in users if user.global_role.value == role.lower()]
+
+        # Apply active filter
+        if active is not None:
+            users = [user for user in users if user.is_active == active]
+
+        # Apply search filter (case-insensitive search across email, first_name, last_name)
+        if search:
+            search_lower = search.lower()
+            users = [
+                user
+                for user in users
+                if search_lower in user.email.lower()
+                or (user.first_name and search_lower in user.first_name.lower())
+                or (user.last_name and search_lower in user.last_name.lower())
+            ]
+
+        # Get total count before pagination
+        total_count = len(users)
+
+        # Apply ordering (by created_at desc) and pagination
+        users_sorted = sorted(users, key=lambda u: u.created_at, reverse=True)
+        paginated_users = users_sorted[offset : offset + limit]
+
+        return list(paginated_users), total_count
+
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         for user in self._items:

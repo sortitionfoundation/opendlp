@@ -28,6 +28,7 @@ class TestFlaskApp:
         blueprint_names = [bp.name for bp in app.blueprints.values()]
         assert "main" in blueprint_names
         assert "auth" in blueprint_names
+        assert "admin" in blueprint_names
 
     def test_main_routes_exist(self) -> None:
         """Test that main routes are accessible."""
@@ -139,6 +140,43 @@ class TestAuthBlueprint:
             },
         )
         assert response.status_code == 200  # Returns form with error
+
+
+class TestAdminBlueprint:
+    """Test admin blueprint routes."""
+
+    @pytest.fixture
+    def client(self) -> FlaskClient:
+        """Create test client."""
+        app = create_app("testing")
+        return app.test_client()
+
+    def test_admin_users_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin users list route requires authentication."""
+        response = client.get("/admin/users")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_admin_view_user_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin view user route requires authentication."""
+        import uuid
+
+        user_id = uuid.uuid4()
+        response = client.get(f"/admin/users/{user_id}")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_admin_edit_user_route_requires_login(self, client: FlaskClient) -> None:
+        """Test admin edit user route requires authentication."""
+        import uuid
+
+        user_id = uuid.uuid4()
+        response = client.get(f"/admin/users/{user_id}/edit")
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
 
 
 class TestErrorHandlers:

@@ -41,6 +41,29 @@ class UserRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def filter_paginated(
+        self,
+        role: str | None = None,
+        active: bool | None = None,
+        search: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[User], int]:
+        """List users filtered by criteria with pagination.
+
+        Args:
+            role: Filter by global role
+            active: Filter by active status
+            search: Search term for email, first_name, last_name (case-insensitive)
+            limit: Maximum number of results to return
+            offset: Number of results to skip
+
+        Returns:
+            Tuple of (users list, total count)
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_email(self, email: str) -> User | None:
         """Get a user by their email address."""
         raise NotImplementedError

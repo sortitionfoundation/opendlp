@@ -22,6 +22,7 @@ def create_user(
     oauth_id: str | None = None,
     invite_code: str | None = None,
     global_role: GlobalRole | None = None,
+    is_active: bool = True,
     accept_data_agreement: bool = False,
 ) -> User:
     """
@@ -83,6 +84,7 @@ def create_user(
             password_hash=password_hash,
             oauth_provider=oauth_provider,
             oauth_id=oauth_id,
+            is_active=is_active,
         )
 
         # Mark data agreement as accepted if provided
@@ -319,3 +321,194 @@ def find_or_create_oauth_user(
             accept_data_agreement=accept_data_agreement,
         )
         return user.create_detached_copy(), True
+
+
+def list_users_paginated(
+    uow: AbstractUnitOfWork,
+    admin_user_id: uuid.UUID,
+    page: int = 1,
+    per_page: int = 20,
+    role_filter: str | None = None,
+    active_filter: bool | None = None,
+    search_term: str | None = None,
+) -> tuple[list[User], int, int]:
+    """
+    List users with pagination and filtering (admin only).
+
+    Args:
+        uow: Unit of Work for database operations
+        admin_user_id: ID of admin user requesting the list
+        page: Page number (1-indexed)
+        per_page: Number of results per page
+        role_filter: Filter by global role
+        active_filter: Filter by active status
+        search_term: Search term for email/name
+
+    Returns:
+        Tuple of (users list, total count, total pages)
+
+    Raises:
+        ValueError: If admin user not found
+        InsufficientPermissions: If user is not admin
+    """
+    with uow:
+        admin_user = uow.users.get(admin_user_id)
+        if not admin_user:
+            raise ValueError(f"User {admin_user_id} not found")
+
+        from .permissions import has_global_admin
+
+        if not has_global_admin(admin_user):
+            raise InvalidCredentials("Only admins can list all users")
+
+        # Calculate offset
+        offset = (page - 1) * per_page
+
+        # Get paginated users
+        users, total_count = uow.users.filter_paginated(
+            role=role_filter,
+            active=active_filter,
+            search=search_term,
+            limit=per_page,
+            offset=offset,
+        )
+
+        # Calculate total pages
+        total_pages = (total_count + per_page - 1) // per_page
+
+        return [user.create_detached_copy() for user in users], total_count, total_pages
+
+
+def get_user_by_id(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
+    """
+    Get a user by ID (admin only).
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to fetch
+        admin_user_id: ID of admin user requesting the data
+
+    Returns:
+        User instance
+
+    Raises:
+        ValueError: If user not found
+        InsufficientPermissions: If requesting user is not admin
+    """
+    with uow:
+        admin_user = uow.users.get(admin_user_id)
+        if not admin_user:
+            raise ValueError(f"Admin user {admin_user_id} not found")
+
+        from .permissions import has_global_admin
+
+        if not has_global_admin(admin_user):
+            raise InvalidCredentials("Only admins can view user details")
+
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        return user.create_detached_copy()
+
+
+def update_user(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    admin_user_id: uuid.UUID,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    global_role: GlobalRole | None = None,
+    is_active: bool | None = None,
+) -> User:
+    """
+    Update user details (admin only).
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to update
+        admin_user_id: ID of admin performing the update
+        first_name: New first name
+        last_name: New last name
+        global_role: New global role
+        is_active: New active status
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        ValueError: If user not found or invalid update
+        InsufficientPermissions: If requesting user is not admin
+    """
+    with uow:
+        admin_user = uow.users.get(admin_user_id)
+        if not admin_user:
+            raise ValueError(f"Admin user {admin_user_id} not found")
+
+        from .permissions import has_global_admin
+
+        if not has_global_admin(admin_user):
+            raise InvalidCredentials("Only admins can update users")
+
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        # Prevent admin from changing their own role (avoid lockout)
+        if user_id == admin_user_id and global_role is not None and global_role != user.global_role:
+            raise ValueError("Cannot change your own admin role")
+
+        # Prevent admin from deactivating themselves
+        if user_id == admin_user_id and is_active is False:
+            raise ValueError("Cannot deactivate your own account")
+
+        # Apply updates
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if global_role is not None:
+            user.global_role = global_role
+        if is_active is not None:
+            user.is_active = is_active
+
+        detached_user = user.create_detached_copy()
+        uow.commit()
+        return detached_user
+
+
+def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[str, int]:
+    """
+    Get user statistics (admin only).
+
+    Args:
+        uow: Unit of Work for database operations
+        admin_user_id: ID of admin user requesting stats
+
+    Returns:
+        Dictionary with user statistics
+
+    Raises:
+        ValueError: If admin user not found
+        InsufficientPermissions: If requesting user is not admin
+    """
+    with uow:
+        admin_user = uow.users.get(admin_user_id)
+        if not admin_user:
+            raise ValueError(f"Admin user {admin_user_id} not found")
+
+        from .permissions import has_global_admin
+
+        if not has_global_admin(admin_user):
+            raise InvalidCredentials("Only admins can view user statistics")
+
+        all_users = list(uow.users.list())
+
+        return {
+            "total_users": len(all_users),
+            "active_users": len([u for u in all_users if u.is_active]),
+            "inactive_users": len([u for u in all_users if not u.is_active]),
+            "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
+            "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
+            "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
+        }

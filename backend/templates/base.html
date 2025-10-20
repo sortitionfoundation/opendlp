@@ -41,6 +41,13 @@
                                 {{ _('Dashboard') }}
                             </a>
                         </li>
+                        {% if current_user.global_role.value == 'admin' %}
+                        <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('admin.list_users') }}">
+                                {{ _('Admin') }}
+                            </a>
+                        </li>
+                        {% endif %}
                         <li class="govuk-header__navigation-item">
                             <a class="govuk-header__link" href="https://www.sortitionfoundation.org/lab" target="_blank">
                                 {{ _('Sortition Lab') }}
