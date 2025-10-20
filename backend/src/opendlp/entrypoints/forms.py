@@ -292,3 +292,68 @@ class CreateAssemblyGSheetForm(AssemblyGSheetForm):
 
 class EditAssemblyGSheetForm(AssemblyGSheetForm):
     """Form specifically for editing assembly Google Spreadsheet configuration."""
+
+
+class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for editing user details (admin only)."""
+
+    first_name = StringField(
+        _l("First Name"),
+        validators=[Length(max=100)],
+        description=_l("User's first name"),
+        render_kw={"autocomplete": "given-name"},
+    )
+
+    last_name = StringField(
+        _l("Last Name"),
+        validators=[Length(max=100)],
+        description=_l("User's last name"),
+        render_kw={"autocomplete": "family-name"},
+    )
+
+    global_role = RadioField(
+        _l("Global Role"),
+        choices=[
+            ("user", _l("User - Basic access to assigned assemblies")),
+            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
+            ("admin", _l("Admin - Full system access including user management")),
+        ],
+        validators=[DataRequired()],
+        description=_l("User's global role determines their permissions across the system"),
+    )
+
+    is_active = BooleanField(
+        _l("Active Account"),
+        description=_l("Inactive users cannot log in to the system"),
+        default=True,
+    )
+
+
+class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for creating user invites (admin only)."""
+
+    global_role = RadioField(
+        _l("Role for New User"),
+        choices=[
+            ("user", _l("User - Basic access to assigned assemblies")),
+            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
+            ("admin", _l("Admin - Full system access including user management")),
+        ],
+        validators=[DataRequired()],
+        description=_l("The role that will be granted to the user who uses this invite"),
+        default="user",
+    )
+
+    email = EmailField(
+        _l("Email Address (Optional)"),
+        validators=[Optional(), DomainEmailValidator()],
+        description=_l("Optional - if provided, the invite will be emailed to this address"),
+        render_kw={"autocomplete": "email"},
+    )
+
+    expires_in_hours = IntegerField(
+        _l("Expires In (Hours)"),
+        validators=[Optional()],
+        description=_l("Optional - number of hours until the invite expires (default: 168 hours / 7 days)"),
+        default=168,
+    )

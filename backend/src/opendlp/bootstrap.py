@@ -6,8 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 from opendlp import config
 from opendlp.adapters import database
+from opendlp.adapters.email import ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
-from opendlp.config import get_db_uri
+from opendlp.config import SMTPEmailCfg, get_config, get_db_uri
 from opendlp.service_layer import unit_of_work
 
 
@@ -66,3 +67,33 @@ def update_data_source_from_assembly_gsheet(
         remaining_file=temp_output_dir / "remaining.csv",
     )
     return CSVGSheetDataSource(csv_data_source=csv_data_source, gsheet_data_source=gsheet_data_source)
+
+
+def get_email_adapter() -> EmailAdapter:
+    """Get the configured email adapter based on application configuration.
+
+    Returns:
+        EmailAdapter instance (ConsoleEmailAdapter or SMTPEmailAdapter)
+
+    Raises:
+        ValueError: If email adapter type is unknown
+    """
+    app_config = get_config()
+    adapter_type = app_config.EMAIL_ADAPTER.lower().strip()
+
+    if adapter_type == "console":
+        return ConsoleEmailAdapter()
+
+    if adapter_type == "smtp":
+        smtp_config = SMTPEmailCfg.from_env()
+        return SMTPEmailAdapter(
+            host=smtp_config.host,
+            port=smtp_config.port,
+            username=smtp_config.username,
+            password=smtp_config.password,
+            use_tls=smtp_config.use_tls,
+            default_from_email=smtp_config.from_email,
+            default_from_name=smtp_config.from_name,
+        )
+
+    raise ValueError(f"Unknown email adapter type: '{adapter_type}'. Valid options are: 'console', 'smtp'")

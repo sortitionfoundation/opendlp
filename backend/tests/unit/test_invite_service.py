@@ -278,13 +278,110 @@ class TestCleanupExpiredInvites:
         assert valid_invite in remaining_invites
 
 
+class TestGetInviteDetails:
+    """Test invite details retrieval functionality."""
+
+    def test_get_invite_details_success(self):
+        """Test successful retrieval of invite details."""
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(admin_user)
+
+        invite = UserInvite(
+            code="DETAILS1",
+            global_role=GlobalRole.USER,
+            created_by=admin_user.id,
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        retrieved_invite = invite_service.get_invite_details(uow=uow, invite_id=invite.id, user_id=admin_user.id)
+
+        assert retrieved_invite.id == invite.id
+        assert retrieved_invite.code == "DETAILS1"
+        assert retrieved_invite.global_role == GlobalRole.USER
+
+    def test_get_invite_details_by_global_organiser(self):
+        """Test invite details retrieval by global organiser."""
+        uow = FakeUnitOfWork()
+        organiser_user = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.GLOBAL_ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser_user)
+
+        invite = UserInvite(
+            code="DETAILS2",
+            global_role=GlobalRole.USER,
+            created_by=organiser_user.id,
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        retrieved_invite = invite_service.get_invite_details(uow=uow, invite_id=invite.id, user_id=organiser_user.id)
+
+        assert retrieved_invite.code == "DETAILS2"
+
+    def test_get_invite_details_insufficient_permissions(self):
+        """Test invite details retrieval fails for regular user."""
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )  # pragma: allowlist secret
+        regular_user = User(
+            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(admin_user)
+        uow.users.add(regular_user)
+
+        invite = UserInvite(
+            code="DETAILS3",
+            global_role=GlobalRole.USER,
+            created_by=admin_user.id,
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        with pytest.raises(InsufficientPermissions):
+            invite_service.get_invite_details(uow=uow, invite_id=invite.id, user_id=regular_user.id)
+
+    def test_get_invite_details_invite_not_found(self):
+        """Test invite details retrieval fails when invite not found."""
+        uow = FakeUnitOfWork()
+        admin_user = User(
+            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )  # pragma: allowlist secret
+        uow.users.add(admin_user)
+
+        with pytest.raises(ValueError) as exc_info:
+            invite_service.get_invite_details(uow=uow, invite_id=uuid.uuid4(), user_id=admin_user.id)
+
+        assert "Invite" in str(exc_info.value)
+        assert "not found" in str(exc_info.value)
+
+    def test_get_invite_details_user_not_found(self):
+        """Test invite details retrieval fails when user not found."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(ValueError) as exc_info:
+            invite_service.get_invite_details(uow=uow, invite_id=uuid.uuid4(), user_id=uuid.uuid4())
+
+        assert "User" in str(exc_info.value)
+        assert "not found" in str(exc_info.value)
+
+
 class TestGetInviteStatistics:
     """Test invite statistics functionality."""
 
     def test_get_invite_statistics_success(self):
         """Test successful invite statistics retrieval."""
         uow = FakeUnitOfWork()
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        admin_user = User(
+            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
+        )  # pragma: allowlist secret
         uow.users.add(admin_user)
 
         # Add various invites
