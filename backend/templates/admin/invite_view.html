@@ -35,7 +35,7 @@
                 <div class="govuk-summary-list__row">
                     <dt class="govuk-summary-list__key">{{ _('Registration URL') }}</dt>
                     <dd class="govuk-summary-list__value">
-                        <code id="invite-url">{{ url_for('auth.register', _external=True) }}?invite={{ invite.code }}</code>
+                        <code id="invite-url">{{ url_for('auth.register', invite_code=invite.code, _external=True) }}</code>
                         <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2" data-module="govuk-button" onclick="copyToClipboard('invite-url', '{{ _('URL copied!') }}')">
                             {{ _('Copy URL') }}
                         </button>
