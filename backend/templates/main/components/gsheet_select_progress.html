@@ -100,7 +100,9 @@
     <h4 class="govuk-heading-s">{{ _('Error Details') }}</h4>
     <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
         <div class="govuk-error-summary__body">
-            <pre class="govuk-body-s">{{ run_record.error_message }}</pre>
+          <ul class="govuk-list govuk-error-summary__list">
+            <li>{{ run_record.error_message }}</li>
+          </ul>
         </div>
     </div>
     {% endif %}
