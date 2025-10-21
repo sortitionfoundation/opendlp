@@ -6,6 +6,7 @@ import logging
 from flask import Flask, Response, render_template
 from flask_login import current_user
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from opendlp import config
 from opendlp.entrypoints.extensions import init_extensions
@@ -30,6 +31,10 @@ def create_app(config_name: str = "") -> Flask:
     # Load configuration
     flask_config = config.get_config(config_name)
     app.config.from_object(flask_config)
+
+    # Apply ProxyFix middleware to trust reverse proxy headers (X-Forwarded-* headers from Caddy)
+    # Trust 1 layer of proxy (the reverse proxy in front of the app)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[method-assign]
 
     # Initialize extensions
     init_extensions(app, flask_config)

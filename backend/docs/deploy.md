@@ -1,5 +1,86 @@
 # Deployment Guide
 
+## Reverse Proxy Configuration
+
+OpenDLP is designed to run behind a reverse proxy (Caddy, Nginx, etc.) in production. The application uses the `ProxyFix` middleware to trust reverse proxy headers for correct URL generation, especially for generated links (like invite registration URLs).
+
+### How It Works
+
+When generating absolute URLs (for email links, etc.), Flask needs to know:
+1. The real domain name (e.g., `opendlp.sortitionlab.org`)
+2. The real protocol (e.g., `https`)
+
+The reverse proxy provides this information via HTTP headers:
+- `X-Forwarded-Host`: The original host requested by the client
+- `X-Forwarded-Proto`: The original protocol (http or https)
+- `X-Forwarded-For`: The client's real IP address
+
+### Caddy Configuration
+
+Caddy sends the required headers by default:
+
+```caddyfile
+opendlp.sortitionlab.org {
+    reverse_proxy localhost:8080 {
+        # Caddy automatically sets X-Forwarded-* headers
+        # You can also explicitly set them if needed:
+        header_up X-Forwarded-Host {http.request.host}
+        header_up X-Forwarded-Proto {http.request.scheme}
+    }
+}
+```
+
+With this configuration, Flask will automatically generate URLs like `https://opendlp.sortitionlab.org/auth/register/invite-code` instead of `http://localhost:8080/auth/register/invite-code`.
+
+### Nginx Configuration
+
+```nginx
+server {
+    server_name opendlp.sortitionlab.org;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+    }
+}
+```
+
+### Traefik Configuration
+
+```yaml
+http:
+  routers:
+    opendlp:
+      rule: "Host(`opendlp.sortitionlab.org`)"
+      service: opendlp
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    opendlp:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:8080"
+        # Traefik automatically handles X-Forwarded-* headers
+```
+
+### SERVER_NAME Configuration
+
+In unusual cases where reverse proxy headers are not available, you can set the `SERVER_NAME` environment variable:
+
+```bash
+# In .env or docker environment
+SERVER_NAME=opendlp.sortitionlab.org
+```
+
+**Important:** Setting `SERVER_NAME` without a reverse proxy may cause issues when accessing the app directly at `localhost:8080` for debugging. Only use this for special deployment scenarios.
+
 ## Subpath Deployment
 
 OpenDLP can be deployed under a subpath (e.g., `example.com/opendlp/`) rather than at the domain root.

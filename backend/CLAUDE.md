@@ -28,6 +28,13 @@ Key architectural principles:
 - Extensive use of JSON columns for flexible data storage
 - Use existing Flask extensions for security (flask-login, flask-session, etc.)
 
+## Project Structure
+
+**Note:** The repository has a monorepo structure. When running Claude from the `backend/` directory:
+- The git root and `.git/` directory are in the parent directory (`opendlp/`)
+- The `.secrets.baseline` file is also in the parent directory, not in `backend/`
+- Git operations and secret scanning use the parent directory context
+
 ## Development Commands
 
 ### Package Management
