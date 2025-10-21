@@ -32,20 +32,6 @@
             <dt class="govuk-summary-list__key">{{ _('Task Type') }}</dt>
             <dd class="govuk-summary-list__value">{{ run_record.task_type_verbose }}</dd>
         </div>
-        <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key">{{ _('Task ID') }}</dt>
-            <dd class="govuk-summary-list__value">{{ run_id }}</dd>
-        </div>
-        <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key">{{ _('Started At') }}</dt>
-            <dd class="govuk-summary-list__value">{{ run_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if run_record.created_at }}</dd>
-        </div>
-        {% if run_record.completed_at %}
-        <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key">{{ _('Completed At') }}</dt>
-            <dd class="govuk-summary-list__value">{{ run_record.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
-        </div>
-        {% endif %}
     </dl>
 
     {% if run_record.completed_at %}
@@ -56,6 +42,8 @@
       <div class="govuk-details__text">
         <div class="run-report">
             <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
+            <p class="govuk-body-s"> {{ _('Started At') }}: {{ run_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if run_record.created_at }}</p>
+            <p class="govuk-body-s"> {{ _('Completed At') }}: {{ run_record.completed_at.strftime('%Y-%m-%d %H:%M:%S') if run_record.completed_at }}</p>
         </div>
       </div>
     </details>
