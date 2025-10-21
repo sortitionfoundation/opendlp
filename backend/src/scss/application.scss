@@ -204,6 +204,11 @@ a:focus,
     0 4px $dark-grey;
 }
 
+// Button link styling - inherit font size from parent (buttons don't inherit by default)
+button.govuk-link {
+  font-size: inherit;
+}
+
 // Tag styling with custom colors
 .govuk-tag--green {
   background-color: $sap-green;
