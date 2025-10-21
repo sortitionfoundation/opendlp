@@ -174,7 +174,9 @@ class FlaskBaseConfig:
         self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")
         # Server name for URL generation (used when behind a reverse proxy)
         # Format: "domain.com" or "domain.com:port"
-        self.SERVER_NAME: str = os.environ.get("SERVER_NAME", "")
+        # If we use the empty string then we get no host, even though the logic seems
+        # to only check for truthiness
+        self.SERVER_NAME: str | None = os.environ.get("SERVER_NAME", None)
 
     def _get_supported_language_codes(self) -> list[str]:
         """Get list of supported language codes from environment or default."""
