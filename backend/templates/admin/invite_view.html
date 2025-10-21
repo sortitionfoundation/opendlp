@@ -101,7 +101,7 @@
             </div>
             {% endif %}
 
-            <div class="govuk-button-group govuk-!-margin-top-6">
+            <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                 {% if invite.is_valid() and not invite.used_by %}
                 <form method="post" action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}" style="display: inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
