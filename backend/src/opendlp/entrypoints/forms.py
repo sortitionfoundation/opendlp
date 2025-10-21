@@ -1,6 +1,8 @@
 """ABOUTME: Form definitions using Flask-WTF with CSRF protection
 ABOUTME: Uses GOV.UK Design System components for consistent government service design"""
 
+from collections.abc import Callable
+from enum import Enum
 from typing import Any
 
 from flask_wtf import FlaskForm
@@ -17,10 +19,24 @@ from wtforms import (
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
+from opendlp.domain.value_objects import GlobalRole, global_role_options
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
+
+
+def coerce_for_enum(enum: type[Enum]) -> Callable:
+    def coerce(name: str | Enum) -> Enum:
+        if isinstance(name, enum):
+            return name
+        try:
+            assert isinstance(name, str)
+            return enum[name]
+        except KeyError:
+            raise ValueError(name) from None
+
+    return coerce
 
 
 class DomainEmailValidator:
@@ -313,11 +329,8 @@ class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     global_role = RadioField(
         _l("Global Role"),
-        choices=[
-            ("user", _l("User - Basic access to assigned assemblies")),
-            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
-            ("admin", _l("Admin - Full system access including user management")),
-        ],
+        choices=[(k, v) for k, v in global_role_options.items()],
+        coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("User's global role determines their permissions across the system"),
     )
@@ -334,11 +347,8 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     global_role = RadioField(
         _l("Role for New User"),
-        choices=[
-            ("user", _l("User - Basic access to assigned assemblies")),
-            ("global-organiser", _l("Global Organiser - Can create and manage all assemblies")),
-            ("admin", _l("Admin - Full system access including user management")),
-        ],
+        choices=[(k, v) for k, v in global_role_options.items()],
+        coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("The role that will be granted to the user who uses this invite"),
         default="user",

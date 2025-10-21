@@ -8,7 +8,6 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
 from opendlp.service_layer.exceptions import InvalidCredentials
@@ -130,8 +129,8 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
 
         if form.validate_on_submit():
             try:
-                # Convert role string to GlobalRole enum
-                global_role = GlobalRole(form.global_role.data.lower()) if form.global_role.data else None
+                # Form coerce function already converts to GlobalRole enum
+                global_role = form.global_role.data
 
                 with uow:
                     updated_user = update_user(
@@ -213,8 +212,8 @@ def create_invite() -> ResponseReturnValue:
 
         if form.validate_on_submit():
             try:
-                # Convert role string to GlobalRole enum
-                global_role = GlobalRole(form.global_role.data.lower())
+                # Form coerce function already converts to GlobalRole enum
+                global_role = form.global_role.data
 
                 # Get expiry hours, use default if not provided
                 expires_in_hours = form.expires_in_hours.data or 168

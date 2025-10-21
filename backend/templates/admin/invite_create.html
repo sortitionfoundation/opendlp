@@ -69,7 +69,7 @@
                         <div class="govuk-radios" data-module="govuk-radios">
                             {% for value, label in form.global_role.choices %}
                             <div class="govuk-radios__item">
-                                <input class="govuk-radios__input" id="global_role_{{ loop.index }}" name="{{ form.global_role.name }}" type="radio" value="{{ value }}" {% if form.global_role.data == value %}checked{% endif %}>
+                                <input class="govuk-radios__input" id="global_role_{{ loop.index }}" name="{{ form.global_role.name }}" type="radio" value="{{ value }}" {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
                                 <label class="govuk-label govuk-radios__label" for="global_role_{{ loop.index }}">
                                     {{ label }}
                                 </label>

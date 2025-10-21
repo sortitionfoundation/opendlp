@@ -1,6 +1,8 @@
 """ABOUTME: End-to-end tests for admin user management features
 ABOUTME: Tests complete admin workflows for viewing, editing, and managing users"""
 
+import re
+
 import pytest
 from flask.testing import FlaskClient
 
@@ -227,6 +229,44 @@ class TestAdminUserEdit:
         assert response.status_code == 200
         assert b"Edit User" in response.data or b"edit" in response.data.lower()
 
+    def test_edit_user_form_preselects_current_role(
+        self, client: FlaskClient, admin_user: User, test_users: list[User]
+    ):
+        """Test that the edit form pre-selects the user's current role."""
+        login_as_admin(client, admin_user)
+
+        # Test with a regular user
+        user = test_users[0]  # Should be a USER role
+        assert user.global_role == GlobalRole.USER, f"Expected USER role but got {user.global_role}"
+
+        response = client.get(f"/admin/users/{user.id}/edit")
+        assert response.status_code == 200
+
+        # Check that the USER radio button is checked
+        data = response.data.decode()
+        # Look for: value="USER" checked (with any amount of whitespace)
+
+        user_radio = re.search(r'value="USER"[^>]*?checked', data)
+        assert user_radio is not None, "USER radio button should be checked but isn't"
+
+        # Ensure other radio buttons are not checked
+        admin_radio = re.search(r'value="ADMIN"[^>]*?checked', data)
+        assert admin_radio is None, "ADMIN radio button should not be checked"
+
+        # Test with a global organiser
+        organiser = test_users[6]  # The last one should be the organiser
+        assert organiser.global_role == GlobalRole.GLOBAL_ORGANISER, (
+            f"Expected GLOBAL_ORGANISER role but got {organiser.global_role}"
+        )
+
+        response = client.get(f"/admin/users/{organiser.id}/edit")
+        assert response.status_code == 200
+
+        data = response.data.decode()
+        # Look for the GLOBAL_ORGANISER radio button being checked
+        organiser_radio = re.search(r'value="GLOBAL_ORGANISER"[^>]*?checked', data)
+        assert organiser_radio is not None, "GLOBAL_ORGANISER radio button should be checked but isn't"
+
     def test_edit_user_page_not_accessible_to_regular_user(self, client: FlaskClient, regular_user: User):
         """Test that regular users cannot access edit user page."""
         client.post(
@@ -251,7 +291,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": "NewFirst",
                 "last_name": "NewLast",
-                "global_role": user.global_role.value,
+                "global_role": user.global_role.name,
                 "is_active": "y",
                 "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
             },
@@ -276,7 +316,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "global_role": "global-organiser",  # Change to organiser
+                "global_role": GlobalRole.GLOBAL_ORGANISER.name,
                 "is_active": "y",
                 "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
             },
@@ -295,7 +335,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "global_role": user.global_role.value,
+                "global_role": user.global_role.name,
                 # Not including is_active means checkbox is unchecked (deactivate)
                 "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
             },
@@ -313,7 +353,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": admin_user.first_name or "Admin",
                 "last_name": admin_user.last_name or "User",
-                "global_role": "user",  # Try to demote to regular user
+                "global_role": GlobalRole.USER.name,  # Try to demote to regular user
                 "is_active": "y",
                 "csrf_token": get_csrf_token(client, f"/admin/users/{admin_user.id}/edit"),
             },
@@ -334,7 +374,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": admin_user.first_name or "Admin",
                 "last_name": admin_user.last_name or "User",
-                "global_role": "admin",
+                "global_role": GlobalRole.ADMIN.name,
                 # Not including is_active checkbox (deactivate)
                 "csrf_token": get_csrf_token(client, f"/admin/users/{admin_user.id}/edit"),
             },

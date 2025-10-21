@@ -6,11 +6,21 @@ from enum import Enum
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 
+from opendlp.translations import lazy_gettext as _l
+
 
 class GlobalRole(Enum):
     ADMIN = "admin"
     GLOBAL_ORGANISER = "global-organiser"
     USER = "user"
+
+
+# for forms etc
+global_role_options = {
+    GlobalRole.USER.name: _l("User - Basic access to assigned assemblies"),
+    GlobalRole.GLOBAL_ORGANISER.name: _l("Global Organiser - Can create and manage all assemblies"),
+    GlobalRole.ADMIN.name: _l("Admin - Full system access including user management"),
+}
 
 
 def get_role_level(role: GlobalRole) -> int:
