@@ -220,6 +220,10 @@
             </div>
             {% endif %}
 
+            <div class="govuk-inset-text">
+              <p class="govuk-body">{{ _('To create a user,') }} <a href="{{ url_for('admin.create_invite') }}">{{ _('create/send them an invite code') }}.</a></p>
+            </div>
+
             <!-- Back Button -->
             <div class="govuk-button-group govuk-!-margin-top-6">
                 <a href="{{ url_for('admin.index') }}" class="govuk-button govuk-button--secondary">
