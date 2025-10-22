@@ -69,7 +69,7 @@
                 {% include "main/components/view_gsheet_config.html" %}
                 {% endif %}
 
-                <div class="govuk-button-group govuk-!-margin-top-6">
+                <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     {% if not gsheet %}
                     <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
@@ -82,10 +82,12 @@
                        class="govuk-button govuk-button--secondary">
                         {{ _('Selection') }}
                     </a>
-                    <a href="{{ url_for('main.replace_assembly_gsheet', assembly_id=assembly.id) }}"
-                       class="govuk-button govuk-button--secondary">
-                        {{ _('Replacements') }}
-                    </a>
+                    <form action="{{ url_for('main.start_gsheet_replace_load', assembly_id=assembly.id) }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="govuk-button govuk-button--secondary">
+                            {{ _('Replacements') }}
+                        </button>
+                    </form>
                     {% else %}
                     <button class="govuk-button govuk-button--secondary" disabled>
                         {{ _('Selection') }}
