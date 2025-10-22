@@ -396,7 +396,7 @@ class TestAdminNavigation:
 
         response = client.get("/dashboard")
         assert response.status_code == 200
-        assert b"Users" in response.data  # Admin link in navigation
+        assert b"Site Admin" in response.data  # Admin link in navigation
 
     def test_admin_menu_not_visible_to_regular_user(self, client: FlaskClient, regular_user: User):
         """Test that Admin menu is not visible to regular users."""

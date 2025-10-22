@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Site Administration') }} - OpenDLP{% endblock %}
+
+{% block content %}
+<div class="govuk-width-container">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <h1 class="govuk-heading-xl">{{ _('Site Administration') }}</h1>
+            <p class="govuk-body-l">{{ _('Manage users and invites for the OpenDLP platform.') }}</p>
+
+            <!-- Administration Sections -->
+            <div class="govuk-grid-row govuk-!-margin-bottom-6">
+                <div class="govuk-grid-column-one-half">
+                    <div class="admin-card">
+                        <h2 class="govuk-heading-m">
+                            <a href="{{ url_for('admin.list_users') }}" class="govuk-link">
+                                {{ _('User Management') }}
+                            </a>
+                        </h2>
+                        <p class="govuk-body">{{ _('View, edit, and manage user accounts and roles.') }}</p>
+                        <a href="{{ url_for('admin.list_users') }}" class="govuk-button">
+                            {{ _('Manage Users') }}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="govuk-grid-column-one-half">
+                    <div class="admin-card">
+                        <h2 class="govuk-heading-m">
+                            <a href="{{ url_for('admin.list_invites_page') }}" class="govuk-link">
+                                {{ _('Invite Management') }}
+                            </a>
+                        </h2>
+                        <p class="govuk-body">{{ _('Create, view, and manage invites for site users.') }}</p>
+                        <a href="{{ url_for('admin.list_invites_page') }}" class="govuk-button">
+                            {{ _('Manage Invites') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="govuk-button-group govuk-!-margin-top-6">
+                <a href="{{ url_for('main.dashboard') }}" class="govuk-button govuk-button--secondary">
+                    {{ _('Back to Dashboard') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

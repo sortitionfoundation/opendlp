@@ -25,6 +25,14 @@ from opendlp.translations import gettext as _
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
+@admin_bp.route("/")
+@login_required
+@require_admin
+def index() -> ResponseReturnValue:
+    """Site admin overview page with links to admin sections."""
+    return render_template("admin/index.html"), 200
+
+
 @admin_bp.route("/users")
 @login_required
 @require_admin

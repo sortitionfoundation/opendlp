@@ -532,6 +532,30 @@ button.govuk-link {
   }
 }
 
+// Admin card styling for site administration pages
+.admin-card {
+  border: 1px solid #b1b4b6;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: #f3f2f1;
+
+  h2 a {
+    color: $woad-blue;
+    text-decoration: none;
+
+    &:hover {
+      color: $purple-red;
+    }
+
+    &:focus {
+      background-color: $saffron-yellow;
+      box-shadow:
+        0 -2px $saffron-yellow,
+        0 4px $dark-grey;
+    }
+  }
+}
+
 // Ensure proper text contrast on all elements
 body {
   color: $dark-grey;

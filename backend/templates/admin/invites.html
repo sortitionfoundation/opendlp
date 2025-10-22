@@ -7,6 +7,7 @@
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <h1 class="govuk-heading-xl">{{ _('Invite Management') }}</h1>
+            <p class="govuk-body-m">{{ _('This is to manage invite codes for users of this site.') }}</p>
 
             <!-- Create Invite Button -->
             <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
@@ -126,8 +127,8 @@
 
             <!-- Back Button -->
             <div class="govuk-button-group govuk-!-margin-top-6">
-                <a href="{{ url_for('main.dashboard') }}" class="govuk-button govuk-button--secondary">
-                    {{ _('Back to Dashboard') }}
+                <a href="{{ url_for('admin.index') }}" class="govuk-button govuk-button--secondary">
+                    {{ _('Back to Site Admin') }}
                 </a>
             </div>
         </div>
