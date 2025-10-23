@@ -249,6 +249,8 @@ class FlaskProductionConfig(FlaskConfig):
     def __init__(self) -> None:
         super().__init__()
         self.FLASK_ENV = "production"
+        # always override the DEBUG option in production
+        self.DEBUG = False
         # TODO: consider this for all production?
         # self.LOG_TO_STDOUT = True
 
