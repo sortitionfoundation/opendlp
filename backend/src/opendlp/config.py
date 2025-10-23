@@ -111,7 +111,7 @@ class SMTPEmailCfg:
             port=int(os.environ.get("SMTP_PORT", "587")),
             username=os.environ.get("SMTP_USERNAME", ""),
             password=os.environ.get("SMTP_PASSWORD", ""),
-            use_tls=to_bool(os.environ.get("SMTP_USE_TLS", "true"), context_str="SMTP_USE_TLS="),
+            use_tls=bool_environ_get("SMTP_USE_TLS", True),
             from_email=os.environ.get("SMTP_FROM_EMAIL", ""),
             from_name=os.environ.get("SMTP_FROM_NAME", ""),
         )
@@ -137,6 +137,12 @@ def to_bool(value: str | None, context_str: str = "") -> bool:
     )
 
 
+def bool_environ_get(env_key: str, default: bool = False) -> bool:
+    """Get environment variable and convert to bool. Default is false if not found."""
+    default_str = "true" if default else "false"
+    return to_bool(os.environ.get(env_key, default_str), context_str=f"{env_key}=")
+
+
 class FlaskBaseConfig:
     """Base configuration class that loads from environment variables."""
 
@@ -148,7 +154,7 @@ class FlaskBaseConfig:
         self.SQLALCHEMY_DATABASE_URI = get_db_uri()
         self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
-        self.DEBUG: bool = to_bool(os.environ.get("DEBUG", "False"), context_str="DEBUG=")
+        self.DEBUG: bool = bool_environ_get("DEBUG")
 
         # Babel/i18n configuration
         self.LANGUAGES = self._get_supported_language_codes()
@@ -322,7 +328,7 @@ def get_translations_path() -> Path:
 
 def use_csv_data_source_for_testing() -> bool:
     """Check if we should use CSV instead of Google Sheets (for testing)"""
-    return to_bool(os.environ.get("USE_CSV_DATA_SOURCE"), context_str="USE_CSV_DATA_SOURCE=")
+    return bool_environ_get("USE_CSV_DATA_SOURCE")
 
 
 def get_test_csv_data_dir() -> Path:

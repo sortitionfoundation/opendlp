@@ -1,14 +1,12 @@
 """ABOUTME: Database connection setup and imperative mapping for OpenDLP
 ABOUTME: Configures SQLAlchemy sessions and maps domain objects to tables"""
 
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import clear_mappers as sqla_clear_mappers
 from sqlalchemy.orm import relationship, sessionmaker
 
 from opendlp.adapters import orm
-from opendlp.config import get_db_uri, to_bool
+from opendlp.config import bool_environ_get, get_db_uri
 from opendlp.domain import assembly, user_invites, users
 
 
@@ -21,7 +19,7 @@ class DatabaseError(Exception):
 def create_session_factory(database_url: str = "", echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""
     database_url = database_url or get_db_uri()
-    echo = to_bool(os.environ.get("DB_ECHO")) or echo
+    echo = bool_environ_get("DB_ECHO") or echo
     extra_args: dict[str, int | bool] = {}
     if database_url.startswith("postgresql://"):
         extra_args = {
