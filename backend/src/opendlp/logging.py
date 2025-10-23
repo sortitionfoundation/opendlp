@@ -1,17 +1,19 @@
 import logging.config
 import os
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 import structlog
 
-if TYPE_CHECKING:
-    from datetime import timedelta
-
-    import gunicorn.config
-    import gunicorn.http
-    import gunicorn.http.wsgi
-
 from opendlp import config
+
+if TYPE_CHECKING:
+    try:
+        import gunicorn.config
+        import gunicorn.http
+        import gunicorn.http.wsgi
+    except ImportError:
+        pass
 
 timestamper = structlog.processors.TimeStamper(fmt="iso")
 pre_chain = [
@@ -101,7 +103,7 @@ class GunicornLogger:
     Modified from http://stevetarver.github.io/2017/05/10/python-falcon-logging.html
     """
 
-    def __init__(self, cfg: gunicorn.config.Config) -> None:
+    def __init__(self, cfg: "gunicorn.config.Config") -> None:
         log_level = config.get_log_level()
         self._error_logger = structlog.get_logger("gunicorn.error")
         self._error_logger.setLevel(log_level)
@@ -132,8 +134,8 @@ class GunicornLogger:
 
     def access(
         self,
-        resp: gunicorn.http.wsgi.Response,
-        req: gunicorn.http.Request,
+        resp: "gunicorn.http.wsgi.Response",
+        req: "gunicorn.http.Request",
         environ: dict[str, object],
         request_time: timedelta,
     ) -> None:

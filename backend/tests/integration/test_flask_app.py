@@ -252,8 +252,11 @@ class TestConfiguration:
 
         # Save current env and set to development for this test
         original_env = os.environ.get("FLASK_ENV")
+        original_debug = os.environ.get("DEBUG")
         try:
             os.environ["FLASK_ENV"] = "development"
+            if original_debug is not None:  # pragma: no cover
+                del os.environ["DEBUG"]
             app = create_app("development")
             assert app.config.get("DEBUG") is False  # Unless explicitly set
             assert app.config["FLASK_ENV"] == "development"
@@ -263,6 +266,8 @@ class TestConfiguration:
                 os.environ["FLASK_ENV"] = original_env
             elif "FLASK_ENV" in os.environ:  # pragma: no cover
                 del os.environ["FLASK_ENV"]
+            if original_debug is not None:  # pragma: no cover
+                os.environ["DEBUG"] = original_debug
 
     def test_testing_config(self) -> None:
         """Test testing configuration."""
