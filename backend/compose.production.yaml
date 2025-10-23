@@ -19,6 +19,7 @@ services:
     command:
       - --bind=0.0.0.0:8080
       - --log-level=info
+      - --logger-class=opendlp.logging.GunicornLogger
       - "opendlp.entrypoints.flask_app:create_app()"
     networks:
       - opendlp_prod_net

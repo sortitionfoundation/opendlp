@@ -1,8 +1,10 @@
 import logging
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from celery import Task
+from celery.signals import setup_logging
 from sortition_algorithms import (
     RunReport,
     adapters,
@@ -16,10 +18,17 @@ from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
+import opendlp.logging
+from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
+
+
+@setup_logging.connect
+def config_loggers(*args: Any, **kwargs: Any) -> None:
+    opendlp.logging.logging_setup(config.get_log_level())
 
 
 class SelectionRunRecordHandler(logging.Handler):

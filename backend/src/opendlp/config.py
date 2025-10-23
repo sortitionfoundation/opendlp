@@ -1,6 +1,8 @@
 """ABOUTME: Configuration management for OpenDLP Flask application
 ABOUTME: Loads environment variables and provides configuration objects for different environments"""
 
+import logging
+import logging.config
 import os
 import tempfile
 from dataclasses import dataclass
@@ -15,6 +17,25 @@ load_dotenv()
 
 class InvalidConfig(Exception):
     """Error for when the config is not valid"""
+
+
+def is_production() -> bool:
+    flask_env = os.environ.get("FLASK_ENV", "development")
+    return flask_env == "production"
+
+
+def is_development() -> bool:
+    flask_env = os.environ.get("FLASK_ENV", "development")
+    return flask_env == "development"
+
+
+def get_log_level() -> int:
+    log_level_str = os.environ.get("LOG_LEVEL", "INFO")
+    return logging.getLevelNamesMapping().get(log_level_str, logging.INFO)
+
+
+def should_log_all_requests() -> bool:
+    return is_production() and bool_environ_get("LOG_ALL_REQUESTS")
 
 
 SQLITE_DB_URI = "sqlite:///:memory:"

@@ -1,13 +1,12 @@
 """ABOUTME: Flask application factory with configuration, blueprints, and error handling
 ABOUTME: Creates and configures Flask app instance with all necessary extensions and routes"""
 
-import logging
-
 from flask import Flask, Response, render_template
 from flask_login import current_user
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import opendlp.logging
 from opendlp import config
 from opendlp.entrypoints.extensions import init_extensions
 
@@ -22,6 +21,8 @@ def create_app(config_name: str = "") -> Flask:
     Returns:
         Configured Flask application instance
     """
+    opendlp.logging.logging_setup(config.get_log_level())
+
     app = Flask(
         __name__,
         template_folder=str(config.get_templates_path()),
@@ -51,8 +52,7 @@ def create_app(config_name: str = "") -> Flask:
     # Register after request handlers
     register_after_request_handlers(app)
 
-    # Configure logging
-    configure_logging(app)
+    app.logger.info("OpenDLP application startup")
 
     return app
 
@@ -114,17 +114,3 @@ def register_after_request_handlers(app: Flask) -> None:
             response.headers["Expires"] = "0"
 
         return response
-
-
-def configure_logging(app: Flask) -> None:
-    """Configure application logging."""
-    if not app.debug and not app.testing:
-        # Production logging setup
-        if app.config.get("LOG_TO_STDOUT"):
-            stream_handler = logging.StreamHandler()
-            # TODO: get log level from config
-            stream_handler.setLevel(logging.INFO)
-            app.logger.addHandler(stream_handler)
-
-        app.logger.setLevel(logging.INFO)
-        app.logger.info("OpenDLP application startup")
