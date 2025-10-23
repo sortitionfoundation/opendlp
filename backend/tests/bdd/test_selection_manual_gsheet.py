@@ -1,5 +1,7 @@
 """Democratic Lottery part 2 feature tests."""
 
+import re
+
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
 
@@ -157,10 +159,11 @@ def _(logged_in_page: Page, assembly_to_select: Assembly):
     logged_in_page.goto(view_url)
 
     # Then check that the Replacements link goes to the gsheet_replace page
-    link = logged_in_page.get_by_role("link", name="Replacements")
+    link = logged_in_page.get_by_role("button", name="Replacements")
     expect(link).to_be_visible()
     link.click()
-    expect(logged_in_page).to_have_url(Urls.for_assembly("gsheet_replace", str(assembly_to_select.id)))
+    running_replace_url_re = re.compile(Urls.for_assembly("gsheet_replace", str(assembly_to_select.id)) + "/[-0-9a-f]+")
+    expect(logged_in_page).to_have_url(running_replace_url_re)
 
     # Then click "Load Spreadsheet"
     link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
@@ -189,14 +192,11 @@ def _(logged_in_page: Page, assembly_gsheet_creator):
     view_url = Urls.for_assembly("view_assembly", str(assembly.id))
     logged_in_page.goto(view_url)
 
-    link = logged_in_page.get_by_role("link", name="Replacements")
+    link = logged_in_page.get_by_role("button", name="Replacements")
     expect(link).to_be_visible()
     link.click()
 
-    # Click "Load Spreadsheet"
-    link = logged_in_page.get_by_role("button", name="Load Spreadsheet")
-    expect(link).to_be_visible()
-    link.click()
+    # Load Spreadsheet automatically starts
 
     # Wait for load to complete
     expect(logged_in_page.locator("#replacement-selection-form")).to_be_visible(timeout=30_000)
