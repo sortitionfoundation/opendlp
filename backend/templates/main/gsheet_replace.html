@@ -74,7 +74,7 @@
                     <h2 class="govuk-heading-m">{{ _('Configure Replacement Selection') }}</h2>
 
                     {% if not run_record or run_record.task_type.value != 'select_replacement_gsheet' or run_record.has_finished %}
-                    <form action="{{ url_for('main.start_gsheet_replace', assembly_id=assembly.id) }}" method="post" id="replace-form">
+                    <form action="{{ url_for('main.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}" method="post" id="replace-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                         <div class="govuk-form-group">

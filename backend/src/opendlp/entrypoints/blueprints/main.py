@@ -659,6 +659,9 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets replacement selection task for an assembly."""
     try:
+        min_select = request.args.get("min_select", type=int) or 0
+        max_select = request.args.get("max_select", type=int) or 0
+
         # Get and validate number_to_select from form
         number_to_select_str = request.form.get("number_to_select")
         if not number_to_select_str:
@@ -684,6 +687,8 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 run_id=task_id,
                 num_to_select=number_to_select,
+                min_select=min_select,
+                max_select=max_select,
             )
         )
 
