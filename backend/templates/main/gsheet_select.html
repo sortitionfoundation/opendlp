@@ -39,7 +39,11 @@
                     <form action="{{ url_for('main.start_gsheet_load', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="govuk-button">
+                          {% if not run_record %}
                             {{ _('Load Spreadsheet') }}
+                          {% else %}
+                            {{ _('Reload Spreadsheet') }}
+                          {% endif %}
                         </button>
                     </form>
                     {% else %}
