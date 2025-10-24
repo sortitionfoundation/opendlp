@@ -7,7 +7,15 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
-from .exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, ServiceLayerError, UserAlreadyExists
+from .exceptions import (
+    InsufficientPermissions,
+    InvalidCredentials,
+    InvalidInvite,
+    PasswordTooWeak,
+    ServiceLayerError,
+    UserAlreadyExists,
+)
+from .permissions import can_manage_assembly, has_global_admin
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -356,8 +364,6 @@ def list_users_paginated(
         if not admin_user:
             raise ValueError(f"User {admin_user_id} not found")
 
-        from .permissions import has_global_admin
-
         if not has_global_admin(admin_user):
             raise InvalidCredentials("Only admins can list all users")
 
@@ -399,8 +405,6 @@ def get_user_by_id(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: u
         admin_user = uow.users.get(admin_user_id)
         if not admin_user:
             raise ValueError(f"Admin user {admin_user_id} not found")
-
-        from .permissions import has_global_admin
 
         if not has_global_admin(admin_user):
             raise InvalidCredentials("Only admins can view user details")
@@ -445,8 +449,6 @@ def update_user(
         admin_user = uow.users.get(admin_user_id)
         if not admin_user:
             raise ValueError(f"Admin user {admin_user_id} not found")
-
-        from .permissions import has_global_admin
 
         if not has_global_admin(admin_user):
             raise InvalidCredentials("Only admins can update users")
@@ -499,8 +501,6 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
         if not admin_user:
             raise ValueError(f"Admin user {admin_user_id} not found")
 
-        from .permissions import has_global_admin
-
         if not has_global_admin(admin_user):
             raise InvalidCredentials("Only admins can view user statistics")
 
@@ -514,3 +514,140 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
             "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
             "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
         }
+
+
+def grant_user_assembly_role(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    role: AssemblyRole,
+    current_user: User,
+) -> UserAssemblyRole:
+    """
+    Grant or update a user's role on an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to grant role to
+        assembly_id: ID of assembly
+        role: Role to assign
+        current_user: User performing the action (must have permission)
+
+    Returns:
+        Created or updated UserAssemblyRole instance
+
+    Raises:
+        InsufficientPermissions: If current_user lacks permission to grant roles
+        ValueError: If user or assembly not found
+    """
+    with uow:
+        # Check permissions: must be admin or global organiser or assembly manager
+        if not has_global_admin(current_user):
+            # Load the assembly to check if user can manage it
+            assembly = uow.assemblies.get(assembly_id)
+            if not assembly:
+                raise ValueError(f"Assembly {assembly_id} not found")
+
+            if not can_manage_assembly(current_user, assembly):
+                raise InsufficientPermissions(
+                    action="grant_user_assembly_role",
+                    required_role="admin, global-organiser, or assembly manager",
+                )
+
+        # Validate target user exists
+        target_user = uow.users.get(user_id)
+        if not target_user:
+            raise ValueError(f"User {user_id} not found")
+
+        # Validate assembly exists
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Check if role already exists
+        existing_role = next(
+            (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
+            None,
+        )
+
+        if existing_role:
+            # Update existing role
+            assert isinstance(existing_role, UserAssemblyRole)
+            existing_role.role = role
+            assembly_role = existing_role
+        else:
+            # Create new role
+            assembly_role = UserAssemblyRole(
+                user_id=user_id,
+                assembly_id=assembly_id,
+                role=role,
+            )
+            uow.user_assembly_roles.add(assembly_role)
+            target_user.assembly_roles.append(assembly_role)
+
+        uow.commit()
+        return assembly_role
+
+
+def revoke_user_assembly_role(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    current_user: User,
+) -> UserAssemblyRole:
+    """
+    Revoke a user's role on an assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to revoke role from
+        assembly_id: ID of assembly
+        current_user: User performing the action (must have permission)
+
+    Returns:
+        The revoked UserAssemblyRole instance
+
+    Raises:
+        InsufficientPermissions: If current_user lacks permission to revoke roles
+        ValueError: If user, assembly, or role not found
+    """
+    with uow:
+        # Check permissions: must be admin or global organiser or assembly manager
+        if not has_global_admin(current_user):
+            # Load the assembly to check if user can manage it
+            assembly = uow.assemblies.get(assembly_id)
+            if not assembly:
+                raise ValueError(f"Assembly {assembly_id} not found")
+
+            if not can_manage_assembly(current_user, assembly):
+                raise InsufficientPermissions(
+                    action="revoke_user_assembly_role",
+                    required_role="admin, global-organiser, or assembly manager",
+                )
+
+        # Validate target user exists
+        target_user = uow.users.get(user_id)
+        if not target_user:
+            raise ValueError(f"User {user_id} not found")
+
+        # Validate assembly exists
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise ValueError(f"Assembly {assembly_id} not found")
+
+        # Find the role to revoke
+        existing_role = next(
+            (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
+            None,
+        )
+
+        if not existing_role:
+            raise ValueError(f"User {user_id} has no role on assembly {assembly_id}")
+        assert isinstance(existing_role, UserAssemblyRole)
+
+        # Remove the role
+        target_user.assembly_roles.remove(existing_role)
+        uow.user_assembly_roles.remove_role(user_id, assembly_id)
+
+        uow.commit()
+        return existing_role
