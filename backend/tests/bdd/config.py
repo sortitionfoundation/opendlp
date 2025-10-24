@@ -18,6 +18,9 @@ class Urls:
     user_data_agreement = f"{base}/auth/user-data-agreement"
     view_assembly_list = f"{base}/dashboard"
     create_assembly = f"{base}/assemblies/new"
+    admin = f"{base}/admin"
+    admin_users = f"{base}/admin/users"
+    admin_invites = f"{base}/admin/invites"
 
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
