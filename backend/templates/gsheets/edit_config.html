@@ -280,7 +280,7 @@
                 <h2 class="govuk-heading-m">{{ _('Remove Configuration') }}</h2>
                 <p class="govuk-body">{{ _('If you no longer need this Google Spreadsheet configuration, you can remove it.') }}</p>
 
-                <form method="post" action="{{ url_for('main.delete_assembly_gsheet', assembly_id=assembly.id) }}" class="govuk-!-margin-top-4">
+                <form method="post" action="{{ url_for('gsheets.delete_assembly_gsheet', assembly_id=assembly.id) }}" class="govuk-!-margin-top-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
                             onclick="return confirm('{{ _('Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.') }}');">

@@ -5,7 +5,7 @@
      data-status="{{ run_record.status.value }}"
      data-task-type="{{ run_record.task_type.value }}"
      {% if not run_record.has_finished %}
-     hx-get="{{ progress_url if progress_url is defined else url_for('main.gsheet_select_progress', assembly_id=assembly.id, run_id=run_id) }}"
+     hx-get="{{ progress_url if progress_url is defined else url_for('gsheets.gsheet_select_progress', assembly_id=assembly.id, run_id=run_id) }}"
      hx-trigger="every 2s"
      hx-swap="outerHTML"
      {% endif %}>

@@ -71,18 +71,18 @@
 
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     {% if not gsheet %}
-                    <a href="{{ url_for('main.manage_assembly_gsheet', assembly_id=assembly.id) }}"
+                    <a href="{{ url_for('gsheets.manage_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Configure Google Spreadsheet') }}
                     </a>
                     {% endif %}
 
                     {% if gsheet and gsheet.url %}
-                    <a href="{{ url_for('main.select_assembly_gsheet', assembly_id=assembly.id) }}"
+                    <a href="{{ url_for('gsheets.select_assembly_gsheet', assembly_id=assembly.id) }}"
                        class="govuk-button govuk-button--secondary">
                         {{ _('Selection') }}
                     </a>
-                    <form action="{{ url_for('main.start_gsheet_replace_load', assembly_id=assembly.id) }}" method="post">
+                    <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="govuk-button govuk-button--secondary">
                             {{ _('Replacements') }}

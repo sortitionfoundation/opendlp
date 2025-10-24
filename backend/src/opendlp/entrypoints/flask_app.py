@@ -68,10 +68,12 @@ def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
     from .blueprints.admin import admin_bp
     from .blueprints.auth import auth_bp
+    from .blueprints.gsheets import gsheets_bp
     from .blueprints.main import main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(gsheets_bp)
     app.register_blueprint(admin_bp)
 
 
