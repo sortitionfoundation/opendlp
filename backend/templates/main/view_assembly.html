@@ -122,7 +122,7 @@
                         <tr class="govuk-table__row">
                             <td class="govuk-table__cell">{{ user.display_name }}</td>
                             <td class="govuk-table__cell">{{ user.email }}</td>
-                            <td class="govuk-table__cell">{{ role.value }}</td>
+                            <td class="govuk-table__cell">{{ role.role.value }}</td>
                             {% if can_manage %}
                             <td class="govuk-table__cell">
                                 <form method="post" action="{{ url_for('main.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}" style="display: inline;">
