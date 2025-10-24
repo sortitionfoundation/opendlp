@@ -560,3 +560,47 @@ button.govuk-link {
 body {
   color: $dark-grey;
 }
+
+// User search results styling
+.search-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #b1b4b6;
+  border-top: none;
+}
+
+.search-result-item {
+  display: block;
+  width: 100%;
+  padding: 12px 15px;
+  text-align: left;
+  border: none;
+  border-top: 1px solid #b1b4b6;
+  background-color: $white;
+  color: $dark-grey;
+  cursor: pointer;
+  font-family: "GDS Transport", arial, sans-serif;
+  font-size: 1rem;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+
+  &:focus {
+    background-color: $saffron-yellow;
+    outline: 3px solid $saffron-yellow;
+    outline-offset: -3px;
+    box-shadow: none;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: $dark-grey;
+  }
+
+  .govuk-body-s {
+    color: #626a6e;
+  }
+}

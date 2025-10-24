@@ -59,8 +59,13 @@ def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     admin_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
     # Open the "Add User to Assembly" details section
     admin_logged_in_page.get_by_text("Add User to Assembly").locator("visible=true").click()
-    # Select the normal user from the dropdown
-    admin_logged_in_page.locator("#user_id").select_option(str(normal_user.id))
+    # Search for the normal user by email using the HTMX search input
+    search_input = admin_logged_in_page.locator("#user_search")
+    search_input.type(normal_user.email)
+    # Wait for search results to appear
+    admin_logged_in_page.wait_for_selector(".search-result-item")
+    # Click on the matching user result
+    admin_logged_in_page.get_by_role("button", name=re.compile(normal_user.email)).first.click()
     # Select the default role (Confirmation Caller)
     admin_logged_in_page.get_by_label("Confirmation Caller - Can call confirmations for selected participants").check()
     # Submit the form

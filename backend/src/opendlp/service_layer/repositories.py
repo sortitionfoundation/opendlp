@@ -79,6 +79,19 @@ class UserRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
+        """Search users not in assembly by email (prioritized) and display_name.
+
+        Args:
+            assembly_id: The assembly to exclude users from
+            search_term: The search term to match against email and display_name (case-insensitive)
+
+        Returns:
+            List of matching users who do NOT have any role in the assembly, ordered by relevance
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_oauth_credentials(self, provider: str, oauth_id: str) -> User | None:
         """Get a user by their OAuth provider and ID."""
         raise NotImplementedError

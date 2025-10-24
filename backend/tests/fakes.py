@@ -113,6 +113,51 @@ class FakeUserRepository(FakeRepository, UserRepository):
         users_with_roles = {user.id for user in self.get_users_for_assembly(assembly_id)}
         return [user for user in self._items if user.id not in users_with_roles]
 
+    def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
+        """Search users not in assembly by email (prioritized) and name fields.
+
+        Supports space-separated search fragments. All fragments must match
+        (AND logic between fragments, OR logic within a fragment's field matches).
+        Example: "gm to" matches "tom.jones@gmail.com" (gm matches email, to matches name).
+        """
+        # Return empty list if search term is empty
+        if not search_term:
+            return []
+
+        # Get users not in assembly
+        users = self.get_users_not_in_assembly(assembly_id)
+
+        # Split search term into fragments (space-separated)
+        search_fragments = search_term.strip().split()
+
+        # Filter: all fragments must match (AND logic between fragments)
+        matching_users = []
+        for user in users:
+            all_fragments_match = True
+            for fragment in search_fragments:
+                fragment_lower = fragment.lower()
+                # Fragment can match email, first_name, or last_name (OR logic within fragment)
+                fragment_matches = (
+                    fragment_lower in user.email.lower()
+                    or (user.first_name and fragment_lower in user.first_name.lower())
+                    or (user.last_name and fragment_lower in user.last_name.lower())
+                )
+                if not fragment_matches:
+                    all_fragments_match = False
+                    break
+
+            if all_fragments_match:
+                matching_users.append(user)
+
+        # Sort: email matches on first fragment first, then by email alphabetically
+        first_fragment_lower = search_fragments[0].lower()
+        email_matches = [u for u in matching_users if first_fragment_lower in u.email.lower()]
+        name_only_matches = [u for u in matching_users if u not in email_matches]
+        email_matches.sort(key=lambda u: u.email)
+        name_only_matches.sort(key=lambda u: u.email)
+
+        return email_matches + name_only_matches
+
     def get_by_oauth_credentials(self, provider: str, oauth_id: str) -> User | None:
         """Get a user by their OAuth provider and ID."""
         for user in self._items:

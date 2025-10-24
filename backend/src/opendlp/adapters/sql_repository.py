@@ -123,6 +123,49 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
 
         return self.session.query(User).filter(~orm.users.c.id.in_(user_ids_with_roles)).all()
 
+    def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
+        """Search users not in assembly by email (prioritized) and name fields.
+
+        Supports space-separated search fragments. All fragments must match
+        (AND logic between fragments, OR logic within a fragment's field matches).
+        Example: "gm to" matches "tom.jones@gmail.com" (gm matches email, to matches name).
+        """
+        # Return empty list if search term is empty
+        if not search_term:
+            return []
+
+        # Query for users who do NOT have roles in this assembly
+        user_ids_with_roles = select(orm.user_assembly_roles.c.user_id).where(
+            orm.user_assembly_roles.c.assembly_id == assembly_id
+        )
+
+        # Split search term into fragments (space-separated)
+        search_fragments = search_term.strip().split()
+
+        # Build query with user base filter
+        query = self.session.query(User).filter(~orm.users.c.id.in_(user_ids_with_roles))
+
+        # Each fragment must match (AND logic between fragments)
+        for fragment in search_fragments:
+            search_pattern = f"%{fragment}%"
+            # Fragment can match email, first_name, or last_name (OR logic within fragment)
+            query = query.filter(
+                or_(
+                    orm.users.c.email.ilike(search_pattern),
+                    orm.users.c.first_name.ilike(search_pattern),
+                    orm.users.c.last_name.ilike(search_pattern),
+                )
+            )
+
+        # Order by email match on first fragment (prioritized), then by email alphabetically
+        first_fragment_pattern = f"%{search_fragments[0]}%"
+        results = query.order_by(
+            orm.users.c.email.ilike(first_fragment_pattern).desc(),
+            orm.users.c.email,
+        ).all()
+
+        return results
+
     def get_active_users(self) -> Iterable[User]:
         """Get all active users."""
         return self.session.query(User).filter_by(is_active=True).all()

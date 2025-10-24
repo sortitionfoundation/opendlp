@@ -3,7 +3,7 @@ ABOUTME: Handles home page, dashboard, and assembly views with login requirement
 
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -306,3 +306,42 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         )
         flash(_("An error occurred while removing the user from the assembly"), "error")
         return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/search-users")
+@login_required
+def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Search for users not yet added to the assembly.
+
+    HTMX endpoint that returns HTML fragment with matching users.
+    The search term is sent as 'user_search' form parameter from HTMX.
+    """
+    try:
+        # HTMX sends the input value as a form parameter with the input's name
+        search_term = request.args.get("user_search", "").strip()
+
+        uow = bootstrap.bootstrap()
+        with uow:
+            # Verify assembly exists and user can manage it
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+            if not can_manage_assembly(current_user, assembly):
+                raise InsufficientPermissions(
+                    action="search_users_for_assembly",
+                    required_role="admin, global-organiser, or assembly manager",
+                )
+
+            # Search for matching users not in assembly
+            matching_users = uow.users.search_users_not_in_assembly(assembly_id, search_term) if search_term else []
+
+        return render_template(
+            "main/search_user_results.html",
+            users=matching_users,
+            search_term=search_term,
+        ), 200
+
+    except InsufficientPermissions:
+        return render_template("main/search_user_results.html", users=[], search_term=""), 403
+    except Exception as e:
+        current_app.logger.error(f"Error searching users for assembly {assembly_id}: {e}")
+        return render_template("main/search_user_results.html", users=[], search_term=""), 500

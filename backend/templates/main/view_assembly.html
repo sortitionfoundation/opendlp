@@ -153,18 +153,24 @@
                             {{ add_user_form.hidden_tag() }}
 
                             <div class="govuk-form-group">
-                                <label class="govuk-label" for="user_id">
+                                <label class="govuk-label" for="user_search">
                                     {{ add_user_form.user_id.label }}
                                 </label>
                                 {% if add_user_form.user_id.description %}
                                 <div class="govuk-hint">{{ add_user_form.user_id.description }}</div>
                                 {% endif %}
-                                <select class="govuk-select" id="user_id" name="user_id">
-                                    <option value="">{{ _('Select a user...') }}</option>
-                                    {% for user in available_users %}
-                                    <option value="{{ user.id }}">{{ user.display_name }} ({{ user.email }})</option>
-                                    {% endfor %}
-                                </select>
+                                <input
+                                    type="text"
+                                    class="govuk-input"
+                                    id="user_search"
+                                    name="user_search"
+                                    placeholder="{{ _('Type to search by email or name...') }}"
+                                    hx-get="{{ url_for('main.search_users', assembly_id=assembly.id) }}"
+                                    hx-trigger="keyup changed delay:300ms"
+                                    hx-target="#user-results"
+                                >
+                                <input type="hidden" id="user_id" name="user_id" value="">
+                                <div id="user-results" class="govuk-!-margin-top-2"></div>
                                 {% if add_user_form.user_id.errors %}
                                 <div class="govuk-error-message">
                                     {% for error in add_user_form.user_id.errors %}
@@ -220,4 +226,38 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle user selection from search results
+    const resultsContainer = document.getElementById('user-results');
+    const userIdField = document.getElementById('user_id');
+    const searchInput = document.getElementById('user_search');
+
+    resultsContainer.addEventListener('click', function(e) {
+        const button = e.target.closest('.search-result-item');
+        if (button) {
+            const userId = button.getAttribute('data-user-id');
+            const userEmail = button.getAttribute('data-user-email');
+            const userName = button.getAttribute('data-user-name');
+
+            // Store the selected user ID
+            userIdField.value = userId;
+
+            // Update the search input to show both email and name for confirmation
+            searchInput.value = userEmail + ' - ' + userName;
+
+            // Clear the results
+            resultsContainer.innerHTML = '';
+        }
+    });
+
+    // Allow clearing selection by clearing the input
+    searchInput.addEventListener('change', function() {
+        if (this.value === '') {
+            userIdField.value = '';
+        }
+    });
+});
+</script>
 {% endblock %}
