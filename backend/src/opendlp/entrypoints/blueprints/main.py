@@ -17,7 +17,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.permissions import can_manage_assembly
-from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role
+from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
 
 from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
@@ -252,4 +252,57 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             f"Unexpected error adding user to assembly {assembly_id} for user {current_user.id}: {e}"
         )
         flash(_("An error occurred while adding the user to the assembly"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
+@login_required
+def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
+    """Remove a user from an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            # Verify assembly exists and user can manage it
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+            if not can_manage_assembly(current_user, assembly):
+                raise InsufficientPermissions(
+                    action="remove_user_from_assembly",
+                    required_role="admin, global-organiser, or assembly manager",
+                )
+
+            # Call service layer to remove user from assembly
+            revoke_user_assembly_role(
+                uow=uow,
+                user_id=user_id,
+                assembly_id=assembly_id,
+                current_user=current_user,
+            )
+
+            target_user = uow.users.get(user_id)
+            if target_user:
+                flash(
+                    _("%(user)s removed from assembly", user=target_user.display_name),
+                    "success",
+                )
+            else:
+                flash(_("User removed from assembly successfully"), "success")
+
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+
+    except ValueError as e:
+        current_app.logger.error(f"Error removing user from assembly {assembly_id}: {e}")
+        flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to remove user from assembly {assembly_id} for user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to remove users from this assembly"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(
+            f"Unexpected error removing user from assembly {assembly_id} for user {current_user.id}: {e}"
+        )
+        flash(_("An error occurred while removing the user from the assembly"), "error")
         return redirect(url_for("main.view_assembly", assembly_id=assembly_id))

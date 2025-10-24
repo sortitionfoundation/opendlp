@@ -14,3 +14,10 @@ Feature: Manage Users
     And the non-admin user cannot see the assembly
     When the admin adds them to the assembly
     Then the non-admin user can see the assembly
+
+  Scenario: Remove user from assembly
+    Given there is a non-admin user
+    And there is an assembly created
+    And the non-admin user is a manager for the assembly
+    When the admin removes them from the assembly
+    Then the non-admin user cannot see the assembly

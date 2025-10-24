@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
-from opendlp.domain.value_objects import GlobalRole
+from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.entrypoints.celery.app import get_celery_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from opendlp.service_layer.user_service import create_user
+from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
 from tests.conftest import (
     wait_for_celery_worker_to_come_up,
     wait_for_postgres_to_come_up,
@@ -239,6 +240,23 @@ def assembly_creator(test_database, admin_user):
 
 
 @pytest.fixture
+def assembly_user_role_creator(test_database, admin_user):
+    """Create assembly user roles for testing"""
+
+    def _create_assembly_user_role(
+        assembly: Assembly, user: User, assembly_role: AssemblyRole = AssemblyRole.ASSEMBLY_MANAGER
+    ) -> UserAssemblyRole:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        role = grant_user_assembly_role(
+            uow=uow, user_id=user.id, assembly_id=assembly.id, role=assembly_role, current_user=admin_user
+        )
+        return role
+
+    return _create_assembly_user_role
+
+
+@pytest.fixture
 def assembly_gsheet_creator(test_database, admin_user):
     """Create assembly for testing"""
 
@@ -353,13 +371,13 @@ def normal_logged_in_page(page: Page, normal_user):
     return page
 
 
-def delete_all_except_admin_user(session: Session) -> None:
+def delete_all_except_standard_users(session: Session) -> None:
     # Clean up test data (keep admin user)
     session.execute(orm.user_invites.delete())
     session.execute(orm.assemblies.delete())
     session.execute(orm.user_assembly_roles.delete())
     # Keep admin user, clean others
-    session.execute(orm.users.delete().where(orm.users.c.email != ADMIN_EMAIL))
+    session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
     session.commit()
 
 
@@ -373,7 +391,7 @@ def clean_database(test_database):
         yield
     finally:
         # Clean up test data (keep admin user)
-        delete_all_except_admin_user(session)
+        delete_all_except_standard_users(session)
         session.close()
 
 

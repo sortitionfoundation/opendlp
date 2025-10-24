@@ -1,7 +1,8 @@
 import re
+from collections.abc import Callable
 
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, scenarios, then, when
+from pytest_bdd import given, scenarios, step, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
@@ -39,9 +40,16 @@ def _(normal_user: User):
     assert normal_user.global_role == GlobalRole.USER
 
 
-@given("the non-admin user cannot see the assembly")
+@given("the non-admin user is a manager for the assembly")
+def _(normal_user: User, assembly: Assembly, assembly_user_role_creator: Callable):
+    """the non-admin user is a manager for the assembly."""
+    assembly_user_role_creator(assembly=assembly, user=normal_user)
+
+
+@step("the non-admin user cannot see the assembly")
 def _(normal_logged_in_page: Page, assembly: Assembly):
     """the non-admin user cannot see the assembly."""
+    normal_logged_in_page.goto(Urls.dashboard)
     expect(normal_logged_in_page.locator("main")).not_to_contain_text(assembly.title)
 
 
@@ -59,6 +67,21 @@ def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     admin_logged_in_page.get_by_role("button", name="Add User to Assembly").click()
     # Wait for the success message
     expect(admin_logged_in_page.locator(".govuk-notification-banner")).to_contain_text("added to assembly")
+
+
+@when("the admin removes them from the assembly")
+def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
+    """the admin removes them from the assembly."""
+    admin_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
+    # Find the remove button for the normal user in the team members table
+    # TODO: consider matching by user if we ever have more than one
+    remove_button = admin_logged_in_page.get_by_role("button", name="Remove").first
+    # Set up the dialog handler BEFORE clicking to catch the confirmation dialog
+    admin_logged_in_page.on("dialog", lambda dialog: dialog.accept())
+    # Click the remove button (it will show a confirmation dialog which we'll accept)
+    remove_button.click()
+    # Wait for the success message
+    expect(admin_logged_in_page.locator(".govuk-notification-banner")).to_contain_text("removed from assembly")
 
 
 @then("the non-admin user can see the assembly")

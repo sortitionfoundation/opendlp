@@ -112,6 +112,9 @@
                             <th scope="col" class="govuk-table__header">{{ _('User') }}</th>
                             <th scope="col" class="govuk-table__header">{{ _('Email') }}</th>
                             <th scope="col" class="govuk-table__header">{{ _('Role') }}</th>
+                            {% if can_manage %}
+                            <th scope="col" class="govuk-table__header">{{ _('Actions') }}</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody class="govuk-table__body">
@@ -120,6 +123,16 @@
                             <td class="govuk-table__cell">{{ user.display_name }}</td>
                             <td class="govuk-table__cell">{{ user.email }}</td>
                             <td class="govuk-table__cell">{{ role.value }}</td>
+                            {% if can_manage %}
+                            <td class="govuk-table__cell">
+                                <form method="post" action="{{ url_for('main.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="govuk-button govuk-button--warning" onclick="return confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}')">
+                                        {{ _('Remove') }}
+                                    </button>
+                                </form>
+                            </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
