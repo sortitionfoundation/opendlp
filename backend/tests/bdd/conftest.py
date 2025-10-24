@@ -320,7 +320,7 @@ def _is_admin_signed_in(page: Page) -> bool:
     - assumes that we are on a signed in page already
     """
     admin_link = page.get_by_role("link", name="Site Admin")
-    return admin_link is not None
+    return admin_link.is_visible()
 
 
 @pytest.fixture

@@ -1,21 +1,13 @@
 import re
 
-import pytest
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, scenario, scenarios, then, when
+from pytest_bdd import given, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 
 from .config import Urls
-
-
-@pytest.mark.skip
-@scenario("../../features/admin-users.feature", "Add user to assembly")
-def test_add_user_to_assembly():
-    pass
-
 
 # consider splitting up if these features grow many more tests
 scenarios("../../features/admin-users.feature")
@@ -57,11 +49,22 @@ def _(normal_logged_in_page: Page, assembly: Assembly):
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     """the admin adds them to the assembly."""
     admin_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
-    # admin_logged_in_page.get_by_text("Add user to assembly").click()
-    # TODO: find the normal_user, add them to the project
+    # Open the "Add User to Assembly" details section
+    admin_logged_in_page.get_by_text("Add User to Assembly").locator("visible=true").click()
+    # Select the normal user from the dropdown
+    admin_logged_in_page.locator("#user_id").select_option(str(normal_user.id))
+    # Select the default role (Confirmation Caller)
+    admin_logged_in_page.get_by_label("Confirmation Caller - Can call confirmations for selected participants").check()
+    # Submit the form
+    admin_logged_in_page.get_by_role("button", name="Add User to Assembly").click()
+    # Wait for the success message
+    expect(admin_logged_in_page.locator(".govuk-notification-banner")).to_contain_text("added to assembly")
 
 
 @then("the non-admin user can see the assembly")
 def _(normal_logged_in_page: Page, assembly: Assembly):
     """the non-admin user can see the assembly."""
+    # Refresh the page to see the updated assembly list (user was just added)
+    # and as we just switched users, we'll be back at the dashboard page
+    normal_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
     expect(normal_logged_in_page.locator("main")).to_contain_text(assembly.title)

@@ -103,6 +103,100 @@
 
                 <hr class="govuk-section-break govuk-section-break--visible">
 
+                <h3 class="govuk-heading-m">{{ _('Team Members') }}</h3>
+
+                {% if assembly_users %}
+                <table class="govuk-table">
+                    <thead class="govuk-table__head">
+                        <tr class="govuk-table__row">
+                            <th scope="col" class="govuk-table__header">{{ _('User') }}</th>
+                            <th scope="col" class="govuk-table__header">{{ _('Email') }}</th>
+                            <th scope="col" class="govuk-table__header">{{ _('Role') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                        {% for user, role in assembly_users %}
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell">{{ user.display_name }}</td>
+                            <td class="govuk-table__cell">{{ user.email }}</td>
+                            <td class="govuk-table__cell">{{ role.value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="govuk-body">{{ _('No team members have been added to this assembly yet. Admin users can still manage this assembly.') }}</p>
+                {% endif %}
+
+                {% if can_manage %}
+                <details class="govuk-details govuk-!-margin-top-6">
+                    <summary class="govuk-details__summary">
+                        <span class="govuk-details__summary-text">
+                            {{ _('Add User to Assembly') }}
+                        </span>
+                    </summary>
+                    <div class="govuk-details__text">
+                        <form method="post" action="{{ url_for('main.add_user_to_assembly', assembly_id=assembly.id) }}">
+                            {{ add_user_form.hidden_tag() }}
+
+                            <div class="govuk-form-group">
+                                <label class="govuk-label" for="user_id">
+                                    {{ add_user_form.user_id.label }}
+                                </label>
+                                {% if add_user_form.user_id.description %}
+                                <div class="govuk-hint">{{ add_user_form.user_id.description }}</div>
+                                {% endif %}
+                                <select class="govuk-select" id="user_id" name="user_id">
+                                    <option value="">{{ _('Select a user...') }}</option>
+                                    {% for user in available_users %}
+                                    <option value="{{ user.id }}">{{ user.display_name }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                                {% if add_user_form.user_id.errors %}
+                                <div class="govuk-error-message">
+                                    {% for error in add_user_form.user_id.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <fieldset class="govuk-fieldset govuk-!-margin-top-4">
+                                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                                    {{ add_user_form.role.label }}
+                                </legend>
+                                {% if add_user_form.role.description %}
+                                <div class="govuk-hint">{{ add_user_form.role.description }}</div>
+                                {% endif %}
+                                <div class="govuk-radios" data-module="govuk-radios">
+                                    {% for value, label in add_user_form.role.choices %}
+                                    <div class="govuk-radios__item">
+                                      <input class="govuk-radios__input" id="role_{{ loop.index }}" name="{{ add_user_form.role.name }}" type="radio" value="{{ value }}" {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}>
+                                      <label class="govuk-label govuk-radios__label" for="role_{{ loop.index }}">
+                                          {{ label }}
+                                      </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if add_user_form.role.errors %}
+                                <div class="govuk-error-message">
+                                    {% for error in add_user_form.role.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </fieldset>
+
+                            <button type="submit" class="govuk-button govuk-!-margin-top-4">
+                                {{ _('Add User to Assembly') }}
+                            </button>
+                        </form>
+                    </div>
+                </details>
+                {% endif %}
+
+                <hr class="govuk-section-break govuk-section-break--visible">
+
                 <div class="govuk-button-group govuk-!-margin-top-6">
                     <a href="{{ url_for('main.dashboard') }}"
                        class="govuk-button govuk-button--secondary">

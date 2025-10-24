@@ -19,7 +19,7 @@ from wtforms import (
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
-from opendlp.domain.value_objects import GlobalRole, global_role_options
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
 from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import gettext as _
@@ -366,4 +366,23 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[Optional()],
         description=_l("Optional - number of hours until the invite expires (default: 168 hours / 7 days)"),
         default=168,
+    )
+
+
+class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for adding a user to an assembly with a specific role."""
+
+    user_id = StringField(
+        _l("User Email"),
+        validators=[DataRequired()],
+        description=_l("Select a user to add to this assembly"),
+    )
+
+    role = RadioField(
+        _l("Assembly Role"),
+        choices=[(k, v) for k, v in assembly_role_options.items()],
+        coerce=coerce_for_enum(AssemblyRole),
+        validators=[DataRequired()],
+        description=_l("Select the role this user will have on the assembly"),
+        default=AssemblyRole.CONFIRMATION_CALLER.name,
     )

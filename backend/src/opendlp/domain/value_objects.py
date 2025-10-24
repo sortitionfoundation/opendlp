@@ -38,6 +38,13 @@ class AssemblyRole(Enum):
     CONFIRMATION_CALLER = "confirmation-caller"
 
 
+# for forms etc
+assembly_role_options = {
+    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager - Can manage the assembly and add other users"),
+    AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller - Can call confirmations for selected participants"),
+}
+
+
 class AssemblyStatus(Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"

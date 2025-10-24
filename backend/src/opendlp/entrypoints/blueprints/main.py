@@ -8,6 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_gsheet,
@@ -15,10 +16,11 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions
-from opendlp.service_layer.user_service import get_user_assemblies
+from opendlp.service_layer.permissions import can_manage_assembly
+from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role
 from opendlp.translations import gettext as _
 
-from ..forms import CreateAssemblyForm, EditAssemblyForm
+from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
 
 main_bp = Blueprint("main", __name__)
 
@@ -56,7 +58,34 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("main/view_assembly.html", assembly=assembly, gsheet=gsheet), 200
+            # Get assembly users and their roles
+            assembly_users = []
+            for role_record in uow.user_assembly_roles.get_roles_for_assembly(assembly_id):
+                user = uow.users.get(role_record.user_id)
+                if user:
+                    assembly_users.append((user, role_record.role))
+
+            # Get all users not already assigned to this assembly (for add form)
+            all_users = list(uow.users.all())
+            assigned_user_ids = {
+                role_record.user_id for role_record in uow.user_assembly_roles.get_roles_for_assembly(assembly_id)
+            }
+            available_users = [u for u in all_users if u.id not in assigned_user_ids]
+
+            # Check if current user can manage this assembly
+            can_manage = can_manage_assembly(current_user, assembly)
+
+        add_user_form = AddUserToAssemblyForm()
+
+        return render_template(
+            "main/view_assembly.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            assembly_users=assembly_users,
+            available_users=available_users,
+            can_manage=can_manage,
+            add_user_form=add_user_form,
+        ), 200
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
@@ -68,6 +97,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
     except Exception as e:
         current_app.logger.error(f"View assembly error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("stacktrace")
         return render_template("errors/500.html"), 500
 
 
@@ -162,3 +192,72 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Edit assembly page error for assembly {assembly_id} user {current_user.id}: {e}")
         return render_template("errors/500.html"), 500
+
+
+@main_bp.route("/assemblies/<uuid:assembly_id>/members", methods=["POST"])
+@login_required
+def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Add a user to an assembly with a specific role."""
+    form = AddUserToAssemblyForm()
+
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            # Verify assembly exists and user can manage it
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+            if not can_manage_assembly(current_user, assembly):
+                raise InsufficientPermissions(
+                    action="add_user_to_assembly",
+                    required_role="admin, global-organiser, or assembly manager",
+                )
+
+            if form.validate_on_submit():
+                user_id = uuid.UUID(form.user_id.data)
+
+                # Role is already an AssemblyRole enum from form coercion
+                role = form.role.data
+                assert isinstance(role, AssemblyRole)
+
+                # Call service layer to add user to assembly
+                grant_user_assembly_role(
+                    uow=uow,
+                    user_id=user_id,
+                    assembly_id=assembly_id,
+                    role=role,
+                    current_user=current_user,
+                )
+
+                target_user = uow.users.get(user_id)
+                if target_user:
+                    flash(
+                        _(
+                            "%(user)s added to assembly with role %(role)s",
+                            user=target_user.display_name,
+                            role=role.value,
+                        ),
+                        "success",
+                    )
+                else:
+                    flash(_("User added to assembly successfully"), "success")
+            else:
+                flash(_("Please check the form and try again"), "error")
+
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+
+    except ValueError as e:
+        current_app.logger.error(f"Invalid user ID for assembly {assembly_id}: {e}")
+        flash(_("Invalid user selection"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to add user to assembly {assembly_id} for user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to add users to this assembly"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(
+            f"Unexpected error adding user to assembly {assembly_id} for user {current_user.id}: {e}"
+        )
+        flash(_("An error occurred while adding the user to the assembly"), "error")
+        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
