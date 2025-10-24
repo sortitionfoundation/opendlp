@@ -74,6 +74,11 @@ class UserRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_users_not_in_assembly(self, assembly_id: uuid.UUID) -> Iterable[User]:
+        """Get all users who do NOT have any role in the given assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_oauth_credentials(self, provider: str, oauth_id: str) -> User | None:
         """Get a user by their OAuth provider and ID."""
         raise NotImplementedError
@@ -143,6 +148,15 @@ class UserAssemblyRoleRepository(AbstractRepository):
     @abc.abstractmethod
     def get_roles_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all user roles for an assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_users_with_roles_for_assembly(self, assembly_id: uuid.UUID) -> list[tuple[User, UserAssemblyRole]]:
+        """Get all users with their roles for a specific assembly.
+
+        Returns a list of tuples containing (User, UserAssemblyRole) for all users with roles in the assembly.
+        This should be implemented with a single SQL join query for efficiency.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

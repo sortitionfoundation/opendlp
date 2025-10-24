@@ -114,6 +114,15 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
 
         return self.session.query(User).filter(orm.users.c.id.in_(user_ids_subquery)).all()
 
+    def get_users_not_in_assembly(self, assembly_id: uuid.UUID) -> Iterable[User]:
+        """Get all users who do NOT have any role in the given assembly."""
+        # Query for users who do NOT have roles in this assembly
+        user_ids_with_roles = select(orm.user_assembly_roles.c.user_id).where(
+            orm.user_assembly_roles.c.assembly_id == assembly_id
+        )
+
+        return self.session.query(User).filter(~orm.users.c.id.in_(user_ids_with_roles)).all()
+
     def get_active_users(self) -> Iterable[User]:
         """Get all active users."""
         return self.session.query(User).filter_by(is_active=True).all()
@@ -313,6 +322,19 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
             .order_by(orm.user_assembly_roles.c.created_at.desc())
             .all()
         )
+
+    def get_users_with_roles_for_assembly(self, assembly_id: uuid.UUID) -> list[tuple[User, UserAssemblyRole]]:
+        """Get all users with their roles for a specific assembly."""
+        # Join users with their roles for this assembly
+        rows = (
+            self.session.query(User, UserAssemblyRole)
+            .join(UserAssemblyRole, orm.users.c.id == orm.user_assembly_roles.c.user_id)
+            .filter(orm.user_assembly_roles.c.assembly_id == assembly_id)
+            .order_by(orm.user_assembly_roles.c.created_at.desc())
+            .all()
+        )
+        # Convert Row objects to plain tuples for type compatibility
+        return [(user, role) for user, role in rows]
 
     def remove_role(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
         """Remove a user's role from an assembly. Returns True if role was found and removed."""

@@ -58,19 +58,11 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-            # Get assembly users and their roles
-            assembly_users = []
-            for role_record in uow.user_assembly_roles.get_roles_for_assembly(assembly_id):
-                user = uow.users.get(role_record.user_id)
-                if user:
-                    assembly_users.append((user, role_record.role))
+            # Get assembly users with their roles (efficient database query)
+            assembly_users = uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
 
             # Get all users not already assigned to this assembly (for add form)
-            all_users = list(uow.users.all())
-            assigned_user_ids = {
-                role_record.user_id for role_record in uow.user_assembly_roles.get_roles_for_assembly(assembly_id)
-            }
-            available_users = [u for u in all_users if u.id not in assigned_user_ids]
+            available_users = list(uow.users.get_users_not_in_assembly(assembly_id))
 
             # Check if current user can manage this assembly
             can_manage = can_manage_assembly(current_user, assembly)

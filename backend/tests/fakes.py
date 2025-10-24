@@ -108,6 +108,11 @@ class FakeUserRepository(FakeRepository, UserRepository):
                 users_with_roles.append(user)
         return users_with_roles
 
+    def get_users_not_in_assembly(self, assembly_id: uuid.UUID) -> Iterable[User]:
+        """Get all users who do NOT have any role in the given assembly."""
+        users_with_roles = {user.id for user in self.get_users_for_assembly(assembly_id)}
+        return [user for user in self._items if user.id not in users_with_roles]
+
     def get_by_oauth_credentials(self, provider: str, oauth_id: str) -> User | None:
         """Get a user by their OAuth provider and ID."""
         for user in self._items:
@@ -180,6 +185,25 @@ class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository)
     def get_roles_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all roles for an assembly."""
         return [role for role in self._items if role.assembly_id == assembly_id]
+
+    def get_users_with_roles_for_assembly(self, assembly_id: uuid.UUID) -> list[tuple[User, UserAssemblyRole]]:
+        """Get all users with their roles for a specific assembly.
+
+        Note: This is a simplified implementation for testing.
+        In production, this would be a single SQL join query.
+        We need to access users from the UoW to pair them with roles.
+        """
+        # This method needs access to the users repository
+        # For the fake implementation, we'll store a reference to the UoW
+        # This will be set by the FakeUnitOfWork
+        results = []
+        roles = self.get_roles_for_assembly(assembly_id)
+        if hasattr(self, "_uow"):
+            for role in roles:
+                user = self._uow.users.get(role.user_id)
+                if user:
+                    results.append((user, role))
+        return results
 
     def remove_role(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
         """Remove a user's role from an assembly. Returns True if role was found and removed."""
@@ -255,6 +279,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.user_invites = self.fake_user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = self.fake_user_assembly_roles = FakeUserAssemblyRoleRepository()
         self.selection_run_records = self.fake_selection_run_records = FakeSelectionRunRecordRepository()
+        # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
+        self.user_assembly_roles._uow = self
         self.committed = False
 
     def __enter__(self) -> AbstractUnitOfWork:
