@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, then, when
 from sqlalchemy.orm import sessionmaker
@@ -23,9 +25,16 @@ def _(logged_out_page: Page):
 
 
 @given("the user is signed in")
-def _(logged_in_page: Page):
+def _(admin_logged_in_page: Page):
     """the user is signed in."""
-    logged_in_page.goto(Urls.dashboard)
+    admin_logged_in_page.goto(Urls.dashboard)
+
+
+@given("there is an assembly created", target_fixture="assembly")
+def _(assembly_creator: Callable):
+    """there is an assembly created."""
+    assembly = assembly_creator("To be or not to be?")
+    return assembly
 
 
 @when("the user uses valid credentials")

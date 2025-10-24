@@ -25,7 +25,7 @@ from tests.conftest import (
 )
 from tests.data import VALID_GSHEET_URL
 
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, Urls
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, Urls
 
 BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
@@ -203,6 +203,26 @@ def admin_user(test_database):
     return admin
 
 
+@pytest.fixture(scope="session")
+def normal_user(test_database):
+    """Create admin user for testing"""
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+
+    # Create admin user
+    user = create_user(
+        uow=uow,
+        email=NORMAL_EMAIL,
+        password=NORMAL_PASSWORD,
+        first_name="Test",
+        last_name="Normal",
+        global_role=GlobalRole.USER,
+        accept_data_agreement=True,
+    )
+
+    return user
+
+
 @pytest.fixture
 def assembly_creator(test_database, admin_user):
     """Create assembly for testing"""
@@ -284,18 +304,52 @@ def logged_out_page(page: Page):
     return page
 
 
+def _login(page: Page, email: str, password: str) -> None:
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', email)
+    page.fill('input[name="password"]', password)
+    page.click('button[type="submit"]')
+    page.wait_for_url(Urls.dashboard)
+
+
+def _is_admin_signed_in(page: Page) -> bool:
+    """
+    Check if the user signed in is an admin
+
+    - check for site admin link
+    - assumes that we are on a signed in page already
+    """
+    admin_link = page.get_by_role("link", name="Site Admin")
+    return admin_link is not None
+
+
 @pytest.fixture
-def logged_in_page(page: Page, admin_user):
+def admin_logged_in_page(page: Page, admin_user):
     """Page with admin user logged in"""
     # we might already be logged in - try
     page.goto(Urls.dashboard)
     page.wait_for_load_state()
-    if page.url != Urls.dashboard:
-        page.goto(Urls.login)
-        page.fill('input[name="email"]', admin_user.email)
-        page.fill('input[name="password"]', ADMIN_PASSWORD)
-        page.click('button[type="submit"]')
-        page.wait_for_url(Urls.dashboard)
+    if page.url == Urls.dashboard:
+        if not _is_admin_signed_in(page):
+            page.context.clear_cookies()
+            _login(page, admin_user.email, ADMIN_PASSWORD)
+    else:
+        _login(page, admin_user.email, ADMIN_PASSWORD)
+    return page
+
+
+@pytest.fixture
+def normal_logged_in_page(page: Page, normal_user):
+    """Page with admin user logged in"""
+    # we might already be logged in - try
+    page.goto(Urls.dashboard)
+    page.wait_for_load_state()
+    if page.url == Urls.dashboard:
+        if _is_admin_signed_in(page):
+            page.context.clear_cookies()
+            _login(page, normal_user.email, NORMAL_PASSWORD)
+    else:
+        _login(page, normal_user.email, NORMAL_PASSWORD)
     return page
 
 

@@ -3,6 +3,8 @@ import typing
 BDD_PORT = 5002  # Test server on 5002 to avoid conflict with dev server
 ADMIN_EMAIL = "admin@opendlp.example"
 ADMIN_PASSWORD = "admin8d2wpass"
+NORMAL_EMAIL = "normal@opendlp.example"
+NORMAL_PASSWORD = "normal8d2wpass"  # pragma: allowlist secret
 FRESH_PASSWORD = "sortition2x8w"
 
 

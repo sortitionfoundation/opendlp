@@ -21,13 +21,6 @@ scenarios(
 # included from conftest via `pytest_plugins`
 
 
-@given("there is an assembly created", target_fixture="assembly")
-def _(assembly_creator: Callable):
-    """there is an assembly created."""
-    assembly = assembly_creator("To be or not to be?")
-    return assembly
-
-
 @given(parsers.parse("there are {num_assemblies:d} assemblies in the system"), target_fixture="assembly_list")
 def _(num_assemblies: int, assembly_creator: Callable):
     """there are num assemblies in the system."""
@@ -35,29 +28,29 @@ def _(num_assemblies: int, assembly_creator: Callable):
 
 
 @given("the user starts editing the assembly")
-def _(logged_in_page: Page, assembly: Assembly):
+def _(admin_logged_in_page: Page, assembly: Assembly):
     """the user starts editing the assembly."""
     url = Urls.for_assembly("update_assembly", str(assembly.id))
-    logged_in_page.goto(url)
+    admin_logged_in_page.goto(url)
 
 
 @given("the user is creating an assembly")
-def _(logged_in_page: Page):
+def _(admin_logged_in_page: Page):
     """the user is creating an assembly."""
-    logged_in_page.goto(Urls.create_assembly)
+    admin_logged_in_page.goto(Urls.create_assembly)
 
 
 @when("the user sees the assembly")
-def _(logged_in_page: Page, assembly: Assembly):
+def _(admin_logged_in_page: Page, assembly: Assembly):
     """the user sees the assembly."""
     url = Urls.for_assembly("view_assembly", str(assembly.id))
-    logged_in_page.goto(url)
+    admin_logged_in_page.goto(url)
 
 
 @when("the user sees the list of assemblies")
-def _(logged_in_page: Page):
+def _(admin_logged_in_page: Page):
     """the user sees the list of assemblies."""
-    logged_in_page.goto(Urls.view_assembly_list)
+    admin_logged_in_page.goto(Urls.view_assembly_list)
 
 
 @when(
