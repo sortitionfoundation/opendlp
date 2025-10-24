@@ -22,7 +22,7 @@ from opendlp.service_layer.invite_service import (
 from opendlp.service_layer.user_service import get_user_by_id, get_user_stats, list_users_paginated, update_user
 from opendlp.translations import gettext as _
 
-admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+admin_bp = Blueprint("admin", __name__)
 
 
 @admin_bp.route("/")
