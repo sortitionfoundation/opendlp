@@ -386,3 +386,43 @@ class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("Select the role this user will have on the assembly"),
         default=AssemblyRole.CONFIRMATION_CALLER.name,
     )
+
+
+class EditOwnProfileForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for users to edit their own profile."""
+
+    first_name = StringField(
+        _l("First Name"),
+        validators=[Length(max=100)],
+        description=_l("Your first name"),
+        render_kw={"autocomplete": "given-name"},
+    )
+
+    last_name = StringField(
+        _l("Last Name"),
+        validators=[Length(max=100)],
+        description=_l("Your last name"),
+        render_kw={"autocomplete": "family-name"},
+    )
+
+
+class ChangeOwnPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for users to change their own password."""
+
+    current_password = PasswordField(
+        _l("Current Password"),
+        validators=[DataRequired()],
+        render_kw={"autocomplete": "current-password"},
+    )
+
+    new_password = PasswordField(
+        _l("New Password"),
+        validators=[DataRequired(), Length(min=8)],
+        render_kw={"autocomplete": "new-password"},
+    )
+
+    new_password_confirm = PasswordField(
+        _l("Confirm New Password"),
+        validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
+        render_kw={"autocomplete": "new-password"},
+    )

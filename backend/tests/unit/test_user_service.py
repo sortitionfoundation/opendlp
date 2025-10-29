@@ -868,3 +868,111 @@ class TestGetUserStats:
 
         with pytest.raises(InvalidCredentials):
             user_service.get_user_stats(uow=uow, admin_user_id=regular_user.id)
+
+
+class TestUpdateOwnProfile:
+    """Test user updating their own profile."""
+
+    def test_update_own_profile_success(self):
+        """Test successfully updating own profile."""
+        uow = FakeUnitOfWork()
+
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(user)
+
+        updated_user = user_service.update_own_profile(uow=uow, user_id=user.id, first_name="Updated", last_name="Name")
+
+        assert updated_user.first_name == "Updated"
+        assert updated_user.last_name == "Name"
+        assert uow.committed
+
+    def test_update_own_profile_partial_update(self):
+        """Test updating only some fields."""
+        uow = FakeUnitOfWork()
+
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",
+            first_name="Original",
+            last_name="Name",
+        )
+        uow.users.add(user)
+
+        updated_user = user_service.update_own_profile(uow=uow, user_id=user.id, first_name="NewFirst")
+
+        assert updated_user.first_name == "NewFirst"
+        assert updated_user.last_name == "Name"
+
+    def test_update_own_profile_user_not_found(self):
+        """Test error when user not found."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(ValueError, match=r"User .* not found"):
+            user_service.update_own_profile(uow=uow, user_id=uuid.uuid4(), first_name="Test")
+
+
+class TestChangeOwnPassword:
+    """Test user changing their own password."""
+
+    def test_change_own_password_success(self):
+        """Test successfully changing password."""
+        uow = FakeUnitOfWork()
+
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
+        uow.users.add(user)
+
+        user_service.change_own_password(
+            uow=uow, user_id=user.id, current_password="OldPass123", new_password="NewPass456!"
+        )
+
+        assert uow.committed
+        # Verify the password was actually changed
+        stored_user = uow.users.get(user.id)
+        assert stored_user is not None
+        assert stored_user.password_hash != hash_password("OldPass123")
+
+    def test_change_own_password_wrong_current_password(self):
+        """Test that wrong current password is rejected."""
+        uow = FakeUnitOfWork()
+
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
+        uow.users.add(user)
+
+        with pytest.raises(InvalidCredentials, match="Current password is incorrect"):
+            user_service.change_own_password(
+                uow=uow, user_id=user.id, current_password="WrongPassword", new_password="NewPass456!"
+            )
+
+    def test_change_own_password_weak_new_password(self):
+        """Test that weak new password is rejected."""
+        uow = FakeUnitOfWork()
+
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
+        uow.users.add(user)
+
+        with pytest.raises(PasswordTooWeak):
+            user_service.change_own_password(
+                uow=uow, user_id=user.id, current_password="OldPass123", new_password="weak"
+            )
+
+    def test_change_own_password_user_not_found(self):
+        """Test error when user not found."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(ValueError, match=r"User .* not found"):
+            user_service.change_own_password(
+                uow=uow, user_id=uuid.uuid4(), current_password="test", new_password="NewPass456!"
+            )
+
+    def test_change_own_password_no_password_hash(self):
+        """Test error when user has no password (OAuth user)."""
+        uow = FakeUnitOfWork()
+
+        user = User(email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="123")
+        uow.users.add(user)
+
+        with pytest.raises(InvalidCredentials):
+            user_service.change_own_password(
+                uow=uow, user_id=user.id, current_password="test", new_password="NewPass456!"
+            )

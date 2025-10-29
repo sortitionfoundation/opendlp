@@ -54,8 +54,13 @@
                             </a>
                         </li>
                         <li class="govuk-header__navigation-item">
+                            <a class="govuk-header__link" href="{{ url_for('profile.view') }}">
+                                {{ _('My Account') }}
+                            </a>
+                        </li>
+                        <li class="govuk-header__navigation-item">
                             <a class="govuk-header__link" href="{{ url_for('auth.logout') }}">
-                                {{ _('Sign out') }} ({{ current_user.display_name }})
+                                {{ _('Sign out') }}
                             </a>
                         </li>
                     </ul>

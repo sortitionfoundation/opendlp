@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('My Account') }} - OpenDLP{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <h1 class="govuk-heading-xl">{{ _('My Account') }}</h1>
+
+        <h2 class="govuk-heading-m">{{ _('Profile Information') }}</h2>
+
+        <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _('Email address') }}</dt>
+                <dd class="govuk-summary-list__value">{{ current_user.email }}</dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _('First Name') }}</dt>
+                <dd class="govuk-summary-list__value">{{ current_user.first_name if current_user.first_name else _('Not set') }}</dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _('Last Name') }}</dt>
+                <dd class="govuk-summary-list__value">{{ current_user.last_name if current_user.last_name else _('Not set') }}</dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _('Role') }}</dt>
+                <dd class="govuk-summary-list__value">
+                    <strong class="govuk-tag govuk-tag--blue">{{ current_user.global_role.value }}</strong>
+                </dd>
+            </div>
+            {% if current_user.oauth_provider %}
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _('Sign in method') }}</dt>
+                <dd class="govuk-summary-list__value">{{ current_user.oauth_provider }}</dd>
+            </div>
+            {% endif %}
+        </dl>
+
+        <div class="govuk-button-group">
+            <a href="{{ url_for('profile.edit') }}" class="govuk-button govuk-button--secondary" data-module="govuk-button">
+                {{ _('Edit profile') }}
+            </a>
+            {% if not current_user.oauth_provider %}
+            <a href="{{ url_for('profile.change_password') }}" class="govuk-button govuk-button--secondary" data-module="govuk-button">
+                {{ _('Change password') }}
+            </a>
+            {% endif %}
+        </div>
+
+        <p class="govuk-body govuk-!-margin-top-6">
+            <a href="{{ url_for('main.dashboard') }}" class="govuk-link">{{ _('Back to dashboard') }}</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

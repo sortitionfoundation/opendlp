@@ -651,3 +651,82 @@ def revoke_user_assembly_role(
 
         uow.commit()
         return existing_role
+
+
+def update_own_profile(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    first_name: str | None = None,
+    last_name: str | None = None,
+) -> User:
+    """
+    Update a user's own profile information.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user updating their profile
+        first_name: New first name (optional)
+        last_name: New last name (optional)
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        ValueError: If user not found
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+        assert isinstance(user, User)
+
+        # Apply updates
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+
+        detached_user = user.create_detached_copy()
+        uow.commit()
+        return detached_user
+
+
+def change_own_password(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    current_password: str,
+    new_password: str,
+) -> None:
+    """
+    Change a user's password (requires current password).
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user changing their password
+        current_password: User's current password for verification
+        new_password: New password to set
+
+    Raises:
+        ValueError: If user not found
+        InvalidCredentials: If current password is incorrect
+        PasswordTooWeak: If new password doesn't meet requirements
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+        assert isinstance(user, User)
+
+        # Verify current password
+        if not user.password_hash or not verify_password(current_password, user.password_hash):
+            raise InvalidCredentials("Current password is incorrect")
+
+        # Validate new password strength
+        temp_user = TempUser(email=user.email, first_name=user.first_name, last_name=user.last_name)
+        is_valid, error_msg = validate_password_strength(new_password, temp_user)
+        if not is_valid:
+            raise PasswordTooWeak(error_msg)
+
+        # Update password
+        user.password_hash = hash_password(new_password)
+        uow.commit()
