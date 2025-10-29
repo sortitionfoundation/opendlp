@@ -225,39 +225,4 @@
             </div>
         </div>
     </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle user selection from search results
-    const resultsContainer = document.getElementById('user-results');
-    const userIdField = document.getElementById('user_id');
-    const searchInput = document.getElementById('user_search');
-
-    resultsContainer.addEventListener('click', function(e) {
-        const button = e.target.closest('.search-result-item');
-        if (button) {
-            const userId = button.getAttribute('data-user-id');
-            const userEmail = button.getAttribute('data-user-email');
-            const userName = button.getAttribute('data-user-name');
-
-            // Store the selected user ID
-            userIdField.value = userId;
-
-            // Update the search input to show both email and name for confirmation
-            searchInput.value = userEmail + ' - ' + userName;
-
-            // Clear the results
-            resultsContainer.innerHTML = '';
-        }
-    });
-
-    // Allow clearing selection by clearing the input
-    searchInput.addEventListener('change', function() {
-        if (this.value === '') {
-            userIdField.value = '';
-        }
-    });
-});
-</script>
-{% endblock %}
+</div>{% endblock %}

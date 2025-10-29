@@ -2,13 +2,32 @@
 <ul class="search-results-list govuk-list">
     {% for user in users %}
     <li>
-        <button type="button" class="search-result-item" data-user-id="{{ user.id }}" data-user-email="{{ user.email }}" data-user-name="{{ user.display_name }}">
+        <button
+            type="button"
+            class="search-result-item"
+            data-user-id="{{ user.id }}"
+            data-user-email="{{ user.email }}"
+            data-user-name="{{ user.display_name }}"
+        >
             <strong>{{ user.email }}</strong><br>
             <span class="govuk-body-s">{{ user.display_name }}</span>
         </button>
     </li>
     {% endfor %}
 </ul>
+<script>
+document.querySelectorAll('.search-result-item').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const userId = this.getAttribute('data-user-id');
+        const userEmail = this.getAttribute('data-user-email');
+        const userName = this.getAttribute('data-user-name');
+        document.getElementById('user_id').value = userId;
+        document.getElementById('user_search').value = userEmail + ' - ' + userName;
+        document.getElementById('user-results').innerHTML = '';
+    });
+});
+</script>
 {% elif search_term %}
 <p class="govuk-body-s">{{ _('No users match your search') }}</p>
 {% endif %}
