@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-30 15:18+0000\n"
+"POT-Creation-Date: 2025-10-30 15:20+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -427,7 +427,7 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 #: src/opendlp/entrypoints/blueprints/admin.py:155
 #, fuzzy, python-format
 msgid "User '%(email)s' updated successfully"
-msgstr "A '%(title)s' gyűlés sikeresen frissült"
+msgstr "A '%(email)s' gyűlés sikeresen frissült"
 
 #: src/opendlp/entrypoints/blueprints/admin.py:165
 #: src/opendlp/entrypoints/blueprints/admin.py:257
