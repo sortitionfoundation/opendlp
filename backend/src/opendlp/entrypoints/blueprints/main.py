@@ -196,9 +196,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         with uow:
             # Verify assembly exists and user can manage it
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            if not has_global_admin(current_user, assembly):
+            if not has_global_admin(current_user):
                 raise InsufficientPermissions(
                     action="add_user_to_assembly",
                     required_role="admin, global-organiser, or assembly manager",
@@ -263,9 +261,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         uow = bootstrap.bootstrap()
         with uow:
             # Verify assembly exists and user can manage it
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            if not has_global_admin(current_user, assembly):
+            if not has_global_admin(current_user):
                 raise InsufficientPermissions(
                     action="remove_user_from_assembly",
                     required_role="admin, global-organiser, or assembly manager",
@@ -323,9 +319,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         with uow:
             # Verify assembly exists and user can manage it
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            if not has_global_admin(current_user, assembly):
+            if not has_global_admin(current_user):
                 raise InsufficientPermissions(
                     action="search_users_for_assembly",
                     required_role="admin, global-organiser, or assembly manager",
