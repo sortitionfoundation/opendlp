@@ -15,592 +15,592 @@ $govuk-assets-path: "/static/";
 .uc-claimant-header,
 .uc-agent-header,
 .dwp-header {
-  background-color: $white;
+    background-color: $white;
 }
 
 .govuk-header__container,
 .uc-claimant-header__container,
 .uc-agent-header__container {
-  border-bottom: 4px solid $burnt-orange;
+    border-bottom: 4px solid $burnt-orange;
 }
 
 .govuk-template {
-  background-color: $burnt-orange;
+    background-color: $burnt-orange;
 }
 
 // Logo styling for Sortition Foundation SVG logo
 .govuk-header__logo img {
-  height: 40px;
-  width: auto;
+    height: 40px;
+    width: auto;
 }
 
 // Typography
 
 .govuk-heading-xl {
-  font-size: 2em;
-  color: $dark-grey;
+    font-size: 2em;
+    color: $dark-grey;
 }
 
 .govuk-heading-l,
 .govuk-heading-m,
 .govuk-heading-s,
 .govuk-frontend-supported .govuk-accordion__section-button {
-  color: $dark-grey;
+    color: $dark-grey;
 }
 
 // Navigation
 
 .govuk-service-navigation {
-  background-color: $white;
+    background-color: $white;
 }
 
 .govuk-service-navigation__link:not(:hover):not(:focus) {
-  color: $dark-grey;
+    color: $dark-grey;
 }
 
 .govuk-service-navigation__item--active {
-  border-bottom-color: $purple-red;
+    border-bottom-color: $purple-red;
 }
 
 // Header navigation
 .govuk-header__navigation-list .govuk-header__link {
-  color: $dark-grey !important;
-
-  &:hover,
-  &:focus {
-    color: $purple-red !important;
-  }
-
-  &:visited {
     color: $dark-grey !important;
-  }
+
+    &:hover,
+    &:focus {
+        color: $purple-red !important;
+    }
+
+    &:visited {
+        color: $dark-grey !important;
+    }
 }
 
 // Hide mobile navigation elements by default on desktop
 .govuk-header__menu-button {
-  display: none;
-  color: $dark-grey !important;
+    display: none;
+    color: $dark-grey !important;
 
-  &:hover,
-  &:focus {
-    color: $purple-red !important;
-  }
+    &:hover,
+    &:focus {
+        color: $purple-red !important;
+    }
 }
 
 .govuk-header__navigation-close {
-  display: none;
+    display: none;
 }
 
 // Show mobile menu elements on smaller screens
 @media (max-width: 48.0625em) {
-  .govuk-header__menu-button {
-    display: block;
-  }
-
-  // Let gov.uk JS handle the navigation visibility
-  .govuk-header__navigation {
-    display: none;
-
-    // Show when JS removes hidden attribute (Firefox approach)
-    &:not([hidden]) {
-      display: block;
+    .govuk-header__menu-button {
+        display: block;
     }
 
-    // Show when JS adds js-visible class (Chrome approach)
-    &.js-visible {
-      display: block;
-    }
+    // Let gov.uk JS handle the navigation visibility
+    .govuk-header__navigation {
+        display: none;
 
-    // Show when JS adds the open class (alternative approach)
-    &.govuk-header__navigation--open {
-      display: block;
+        // Show when JS removes hidden attribute (Firefox approach)
+        &:not([hidden]) {
+            display: block;
+        }
+
+        // Show when JS adds js-visible class (Chrome approach)
+        &.js-visible {
+            display: block;
+        }
+
+        // Show when JS adds the open class (alternative approach)
+        &.govuk-header__navigation--open {
+            display: block;
+        }
     }
-  }
 }
 
 // Assembly Dashboard
 
 .dwp-key-details-bar {
-  background-color: $purple-red;
-  margin-left: 1em;
-  padding: 15px;
+    background-color: $purple-red;
+    margin-left: 1em;
+    padding: 15px;
 
-  // Ensure all text is readable on dark background
-  color: $white;
+    // Ensure all text is readable on dark background
+    color: $white;
 
-  .govuk-heading-s {
-    color: $white !important;
-    margin-bottom: 5px;
-  }
+    .govuk-heading-s {
+        color: $white !important;
+        margin-bottom: 5px;
+    }
 
-  dt.govuk-heading-s {
-    color: $buttermilk !important;
-    font-weight: normal;
-  }
+    dt.govuk-heading-s {
+        color: $buttermilk !important;
+        font-weight: normal;
+    }
 }
 
 .dwp-key-details-bar__key-details .dwp-key-details-bar__primary {
-  font-size: 2em;
-  font-weight: 600;
-  color: $white !important;
+    font-size: 2em;
+    font-weight: 600;
+    color: $white !important;
 }
 
 strong.govuk-tag.dwp-key-details-bar__status--dwp-default {
-  color: white;
-  background: $sap-green;
-  padding: 0.5em 1em;
-  font-weight: bold;
+    color: white;
+    background: $sap-green;
+    padding: 0.5em 1em;
+    font-weight: bold;
 }
 
 #assembly-status-summary {
-  padding-top: 1em;
-  padding-left: 2em;
-  margin-bottom: 3em;
+    padding-top: 1em;
+    padding-left: 2em;
+    margin-bottom: 3em;
 }
 
 .govuk-summary-list {
-  font-size: 1em;
+    font-size: 1em;
 }
 
 // Assembly Tasklist
 
 .govuk-grid-column-full {
-  border-top: 5px solid $purple-red;
-  padding-top: 2em;
+    border-top: 5px solid $purple-red;
+    padding-top: 2em;
 }
 
 .govuk-task-list__status.section-status {
-  display: block;
-  position: relative;
-  top: 1.5em;
-  margin-bottom: -1.5em;
+    display: block;
+    position: relative;
+    top: 1.5em;
+    margin-bottom: -1.5em;
 }
 
 .govuk-task-list__status.section-status > .govuk-tag {
-  padding: 0.5em 1em;
-  font-weight: bold;
+    padding: 0.5em 1em;
+    font-weight: bold;
 }
 
 // Focus styles
 .govuk-frontend-supported .govuk-accordion__show-all:focus,
 .govuk-frontend-supported
-  .govuk-accordion__section-button:focus
-  .govuk-accordion__section-heading-text-focus,
+.govuk-accordion__section-button:focus
+.govuk-accordion__section-heading-text-focus,
 .govuk-frontend-supported
-  .govuk-accordion__section-button:focus
-  .govuk-accordion__section-summary-focus,
+.govuk-accordion__section-button:focus
+.govuk-accordion__section-summary-focus,
 .govuk-frontend-supported
-  .govuk-accordion__section-button:focus
-  .govuk-accordion__section-toggle-focus,
+.govuk-accordion__section-button:focus
+.govuk-accordion__section-toggle-focus,
 .uc-section-card__link:focus,
 .uc-action-card__link:focus,
 .dwp-side-navigation__link:focus,
 a:focus,
 .govuk-link:focus,
 .dwp-timeline__link:focus {
-  background-color: $saffron-yellow;
-  box-shadow:
+    background-color: $saffron-yellow;
+    box-shadow:
     0 -2px $saffron-yellow,
     0 4px $dark-grey;
 }
 
 // Button link styling - inherit font size from parent (buttons don't inherit by default)
 button.govuk-link {
-  font-size: inherit;
+    font-size: inherit;
 }
 
 // Tag styling with custom colors
 .govuk-tag--green {
-  background-color: $sap-green;
-  color: $white;
+    background-color: $sap-green;
+    color: $white;
 }
 
 .govuk-tag--blue {
-  background-color: $woad-blue;
-  color: $white;
+    background-color: $woad-blue;
+    color: $white;
 }
 
 .govuk-tag--red {
-  background-color: $scarlet-red;
-  color: $white;
+    background-color: $scarlet-red;
+    color: $white;
 }
 
 // Assembly progress monitor
 #assembly-progress-monitor {
-  padding-left: 3em;
-  padding-top: 1em;
+    padding-left: 3em;
+    padding-top: 1em;
 }
 
 // Assembly Timeline
 #assembly-timeline {
-  padding-left: 3em;
+    padding-left: 3em;
 }
 
 .dwp-timeline__items {
-  border-left: 3px solid $burnt-orange;
+    border-left: 3px solid $burnt-orange;
 }
 
 .dwp-timeline__item {
-  position: relative;
-  top: -8px;
-  margin: 20px 0;
+    position: relative;
+    top: -8px;
+    margin: 20px 0;
 }
 
 .dwp-timeline__datetime {
-  color: $burnt-orange;
-  font-weight: bold;
+    color: $burnt-orange;
+    font-weight: bold;
 }
 
 .dwp-timeline__heading {
-  font-size: 1.2em;
-  color: $dark-grey;
-  font-weight: 600;
+    font-size: 1.2em;
+    color: $dark-grey;
+    font-weight: 600;
 }
 
 .dwp-timeline__by-line {
-  color: $dark-grey;
-  font-weight: lighter;
-  font-size: 0.9em;
-  line-height: 0.5em;
+    color: $dark-grey;
+    font-weight: lighter;
+    font-size: 0.9em;
+    line-height: 0.5em;
 }
 
 .dwp-timeline__link {
-  color: $woad-blue;
-  font-size: 1em;
-  line-height: 1em;
+    color: $woad-blue;
+    font-size: 1em;
+    line-height: 1em;
 }
 
 .dwp-timeline__item::before,
 .dwp-timeline__item:last-of-type::after {
-  border-top: 3px solid $burnt-orange;
+    border-top: 3px solid $burnt-orange;
 }
 
 // Cards and panels - adapting Bootstrap cards to govuk styling
 .card {
-  border: 1px solid #b1b4b6;
-  border-radius: 0;
+    border: 1px solid #b1b4b6;
+    border-radius: 0;
 
-  .card-header {
-    background-color: #f3f2f1;
-    border-bottom: 1px solid #b1b4b6;
-    font-weight: bold;
-    color: $dark-grey;
-  }
+    .card-header {
+        background-color: #f3f2f1;
+        border-bottom: 1px solid #b1b4b6;
+        font-weight: bold;
+        color: $dark-grey;
+    }
 
-  .card-body {
-    color: $dark-grey;
-  }
+    .card-body {
+        color: $dark-grey;
+    }
 }
 
 // Hero section styling
 .hero-section {
-  background-color: $burnt-orange;
-  color: $white;
+    background-color: $burnt-orange;
+    color: $white;
 
-  .btn-light {
-    background-color: $white;
-    color: $dark-grey;
-    border: none;
+    .btn-light {
+        background-color: $white;
+        color: $dark-grey;
+        border: none;
 
-    &:hover {
-      background-color: $buttermilk;
-      color: $dark-grey;
+        &:hover {
+            background-color: $buttermilk;
+            color: $dark-grey;
+        }
     }
-  }
 }
 
 // Custom button styling
 .btn-sortition {
-  background-color: $purple-red;
-  color: $white;
-  border: none;
-
-  &:hover {
-    background-color: $blood-red;
+    background-color: $purple-red;
     color: $white;
-  }
+    border: none;
+
+    &:hover {
+        background-color: $blood-red;
+        color: $white;
+    }
 }
 
 .govuk-button--white {
-  background-color: $white !important;
-  color: $dark-grey !important;
-  border: 2px solid $dark-grey !important;
-
-  &:hover {
-    background-color: $buttermilk !important;
+    background-color: $white !important;
     color: $dark-grey !important;
-    border-color: $purple-red !important;
-  }
+    border: 2px solid $dark-grey !important;
 
-  &:focus {
-    background-color: $saffron-yellow !important;
-    color: $dark-grey !important;
-    border-color: $dark-grey !important;
-    box-shadow:
-      0 -2px $saffron-yellow,
-      0 4px $dark-grey !important;
-  }
+    &:hover {
+        background-color: $buttermilk !important;
+        color: $dark-grey !important;
+        border-color: $purple-red !important;
+    }
 
-  .govuk-button__start-icon {
-    fill: $dark-grey !important;
-  }
+    &:focus {
+        background-color: $saffron-yellow !important;
+        color: $dark-grey !important;
+        border-color: $dark-grey !important;
+        box-shadow:
+        0 -2px $saffron-yellow,
+        0 4px $dark-grey !important;
+    }
+
+    .govuk-button__start-icon {
+        fill: $dark-grey !important;
+    }
 }
 
 // Feature cards for front page
 .feature-card {
-  border: 1px solid #b1b4b6;
-  padding: 20px;
-  background-color: $white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 100%;
+    border: 1px solid #b1b4b6;
+    padding: 20px;
+    background-color: $white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 100%;
 
-  &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border-color: $woad-blue;
-  }
+    &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-color: $woad-blue;
+    }
 
-  .govuk-heading-m {
-    color: $purple-red;
-  }
+    .govuk-heading-m {
+        color: $purple-red;
+    }
 }
 
 // button group with mix of forms and <a ... class="govuk-button..."
 .govuk-button-group.govuk-button-group-mixed {
-  align-items: center;
+    align-items: center;
 }
 
 // Assembly cards for dashboard - high specificity to override GOV.UK grid
 .govuk-width-container .assembly-cards-container.govuk-grid-row {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 1.5rem;
-  margin-left: -15px !important;
-  margin-right: -15px !important;
-  padding: 0 15px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 1.5rem;
+    margin-left: -15px !important;
+    margin-right: -15px !important;
+    padding: 0 15px !important;
 
-  .govuk-grid-column-one-third {
-    width: auto !important;
-    float: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-  }
+    .govuk-grid-column-one-third {
+        width: auto !important;
+        float: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
 
-  // Responsive adjustments
-  @media (max-width: 48.0625em) {
-    grid-template-columns: 1fr;
-  }
+    // Responsive adjustments
+    @media (max-width: 48.0625em) {
+        grid-template-columns: 1fr;
+    }
 
-  @media (min-width: 48.0625em) and (max-width: 64em) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    @media (min-width: 48.0625em) and (max-width: 64em) {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
-  // Clear float-based clearing
-  &::after {
-    display: none !important;
-  }
+    // Clear float-based clearing
+    &::after {
+        display: none !important;
+    }
 }
 
 // Clickable assembly card link wrapper
 .assembly-card-link {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: inherit;
-  height: 100%;
-  border-radius: 0; // Ensure no border-radius interferes
-
-  &:hover {
+    display: flex;
+    flex-direction: column;
     text-decoration: none;
     color: inherit;
-  }
+    height: 100%;
+    border-radius: 0; // Ensure no border-radius interferes
 
-  &:focus {
-    outline: 3px solid $saffron-yellow;
-    outline-offset: 0;
-    text-decoration: none;
-  }
+    &:hover {
+        text-decoration: none;
+        color: inherit;
+    }
 
-  &:visited {
-    color: inherit;
-    text-decoration: none;
-  }
+    &:focus {
+        outline: 3px solid $saffron-yellow;
+        outline-offset: 0;
+        text-decoration: none;
+    }
 
-  // Override GOV.UK link styles for all child elements
-  * {
-    text-decoration: none;
-  }
+    &:visited {
+        color: inherit;
+        text-decoration: none;
+    }
 
-  // Ensure headings and text maintain their colors
-  .govuk-heading-m,
-  .govuk-body,
-  .govuk-body-s,
-  .govuk-summary-list__key,
-  .govuk-summary-list__value {
-    color: inherit;
-    text-decoration: none;
-  }
+    // Override GOV.UK link styles for all child elements
+    * {
+        text-decoration: none;
+    }
+
+    // Ensure headings and text maintain their colors
+    .govuk-heading-m,
+    .govuk-body,
+    .govuk-body-s,
+    .govuk-summary-list__key,
+    .govuk-summary-list__value {
+        color: inherit;
+        text-decoration: none;
+    }
 }
 
 .assembly-card {
-  border: 1px solid #b1b4b6;
-  border-left: 5px solid $burnt-orange;
-  padding: 20px;
-  background-color: $white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s ease-in-out;
-  border-radius: 0; // Ensure no border-radius interferes
+    border: 1px solid #b1b4b6;
+    border-left: 5px solid $burnt-orange;
+    padding: 20px;
+    background-color: $white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease-in-out;
+    border-radius: 0; // Ensure no border-radius interferes
 
-  .assembly-card-link:hover & {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border-left-color: $purple-red;
-    border: 1px solid #b1b4b6; // Maintain border on hover
-    transform: translateY(-2px);
-    cursor: pointer;
-  }
+    .assembly-card-link:hover & {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-left-color: $purple-red;
+        border: 1px solid #b1b4b6; // Maintain border on hover
+        transform: translateY(-2px);
+        cursor: pointer;
+    }
 
-  .govuk-heading-m {
-    color: $purple-red;
-    margin-bottom: 10px;
-  }
+    .govuk-heading-m {
+        color: $purple-red;
+        margin-bottom: 10px;
+    }
 
-  .govuk-summary-list {
-    border-top: 1px solid #f3f2f1;
-    margin-top: 15px;
-    padding-top: 10px;
-    flex-grow: 1;
-  }
+    .govuk-summary-list {
+        border-top: 1px solid #f3f2f1;
+        margin-top: 15px;
+        padding-top: 10px;
+        flex-grow: 1;
+    }
 }
 
 // Footer styling to match header
 .govuk-footer {
-  border-top: 5px solid $purple-red;
+    border-top: 5px solid $purple-red;
 }
 
 // Run report table styling - applies GOV.UK table styling to external HTML
 .run-report {
-  table {
-    width: 100%;
-    border-spacing: 0;
-    border-collapse: collapse;
-    font-family: "GDS Transport", arial, sans-serif;
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 1.25;
-    color: $dark-grey;
-
-    thead {
-      th {
-        font-weight: bold;
-        text-align: left;
+    table {
+        width: 100%;
+        border-spacing: 0;
+        border-collapse: collapse;
+        font-family: "GDS Transport", arial, sans-serif;
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.25;
         color: $dark-grey;
-        background-color: transparent;
-        border-bottom: 1px solid #b1b4b6;
-        padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
-        vertical-align: top;
-      }
+
+        thead {
+            th {
+                font-weight: bold;
+                text-align: left;
+                color: $dark-grey;
+                background-color: transparent;
+                border-bottom: 1px solid #b1b4b6;
+                padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
+                vertical-align: top;
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid #b1b4b6;
+            }
+
+            td,
+            th {
+                text-align: left;
+                color: $dark-grey;
+                border-bottom: 1px solid #b1b4b6;
+                padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
+                vertical-align: top;
+            }
+
+            th {
+                font-weight: bold;
+            }
+        }
+
+        // Last row should not have bottom border
+        tbody tr:last-child td,
+        tbody tr:last-child th {
+            border-bottom: none;
+        }
     }
-
-    tbody {
-      tr {
-        border-bottom: 1px solid #b1b4b6;
-      }
-
-      td,
-      th {
-        text-align: left;
-        color: $dark-grey;
-        border-bottom: 1px solid #b1b4b6;
-        padding: govuk-spacing(2) govuk-spacing(6) govuk-spacing(2) 0;
-        vertical-align: top;
-      }
-
-      th {
-        font-weight: bold;
-      }
-    }
-
-    // Last row should not have bottom border
-    tbody tr:last-child td,
-    tbody tr:last-child th {
-      border-bottom: none;
-    }
-  }
 }
 
 // Admin card styling for site administration pages
 .admin-card {
-  border: 1px solid #b1b4b6;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  background-color: #f3f2f1;
+    border: 1px solid #b1b4b6;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: #f3f2f1;
 
-  h2 a {
-    color: $woad-blue;
-    text-decoration: none;
+    h2 a {
+        color: $woad-blue;
+        text-decoration: none;
 
-    &:hover {
-      color: $purple-red;
+        &:hover {
+            color: $purple-red;
+        }
+
+        &:focus {
+            background-color: $saffron-yellow;
+            box-shadow:
+            0 -2px $saffron-yellow,
+            0 4px $dark-grey;
+        }
     }
-
-    &:focus {
-      background-color: $saffron-yellow;
-      box-shadow:
-        0 -2px $saffron-yellow,
-        0 4px $dark-grey;
-    }
-  }
 }
 
 // Ensure proper text contrast on all elements
 body {
-  color: $dark-grey;
+    color: $dark-grey;
 }
 
 // User search results styling
 .search-results-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  border: 1px solid #b1b4b6;
-  border-top: none;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #b1b4b6;
+    border-top: none;
 }
 
 .search-result-item {
-  display: block;
-  width: 100%;
-  padding: 12px 15px;
-  text-align: left;
-  border: none;
-  border-top: 1px solid #b1b4b6;
-  background-color: $white;
-  color: $dark-grey;
-  cursor: pointer;
-  font-family: "GDS Transport", arial, sans-serif;
-  font-size: 1rem;
-
-  &:hover {
-    background-color: #f3f2f1;
-  }
-
-  &:focus {
-    background-color: $saffron-yellow;
-    outline: 3px solid $saffron-yellow;
-    outline-offset: -3px;
-    box-shadow: none;
-  }
-
-  strong {
     display: block;
-    margin-bottom: 4px;
+    width: 100%;
+    padding: 12px 15px;
+    text-align: left;
+    border: none;
+    border-top: 1px solid #b1b4b6;
+    background-color: $white;
     color: $dark-grey;
-  }
+    cursor: pointer;
+    font-family: "GDS Transport", arial, sans-serif;
+    font-size: 1rem;
 
-  .govuk-body-s {
-    color: #626a6e;
-  }
+    &:hover {
+        background-color: #f3f2f1;
+    }
+
+    &:focus {
+        background-color: $saffron-yellow;
+        outline: 3px solid $saffron-yellow;
+        outline-offset: -3px;
+        box-shadow: none;
+    }
+
+    strong {
+        display: block;
+        margin-bottom: 4px;
+        color: $dark-grey;
+    }
+
+    .govuk-body-s {
+        color: #626a6e;
+    }
 }

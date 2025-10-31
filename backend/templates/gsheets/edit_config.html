@@ -3,293 +3,293 @@
 {% block title %}{{ _('Edit Google Spreadsheet Configuration') }} - {{ assembly.title }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-            <div class="govuk-breadcrumbs">
-                <ol class="govuk-breadcrumbs__list">
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Assembly') }}: {{ assembly.title }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        {{ _('Edit Google Spreadsheet') }}
-                    </li>
-                </ol>
-            </div>
-
-            {% if form.errors %}
-            <div class="govuk-error-summary" data-module="govuk-error-summary">
-                <div role="alert">
-                    <h2 class="govuk-error-summary__title">
-                        {{ _('There is a problem') }}
-                    </h2>
-                    <div class="govuk-error-summary__body">
-                        <ul class="govuk-list govuk-error-summary__list">
-                            {% for field_name, errors in form.errors.items() %}
-                                {% for error in errors %}
-                                <li>
-                                    <a href="#{{ form[field_name].id }}">{{ error }}</a>
-                                </li>
-                                {% endfor %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Edit Google Spreadsheet Configuration') }}</h1>
-
-            <p class="govuk-body">{{ _('Update the Google Spreadsheet settings for this assembly.') }}</p>
-
-            <form method="post" novalidate x-data="{ selectedTeam: '{{ form.team.data or 'other' }}' }">
-                {{ form.hidden_tag() }}
-
-                <div class="govuk-form-group {% if form.url.errors %}govuk-form-group--error{% endif %}">
-                    <h1 class="govuk-label-wrapper">
-                        <label class="govuk-label govuk-label--m" for="{{ form.url.id }}">
-                            {{ form.url.label.text }}
-                        </label>
-                    </h1>
-                    {% if form.url.description %}
-                    <div class="govuk-hint">
-                        {{ form.url.description }}
-                    </div>
-                    {% endif %}
-                    {% if form.url.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.url.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.url(class="govuk-input" + (" govuk-input--error" if form.url.errors else "")) }}
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-two-thirds">
+                <div class="govuk-breadcrumbs">
+                    <ol class="govuk-breadcrumbs__list">
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Assembly') }}: {{ assembly.title }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            {{ _('Edit Google Spreadsheet') }}
+                        </li>
+                    </ol>
                 </div>
 
-                <fieldset class="govuk-fieldset">
-                  <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-                    <h3 class="govuk-fieldset__heading">
-                      {{ _('Initial/Test Selection') }}
-                    </h3>
-                  </legend>
-                  <div class="govuk-form-group {% if form.select_registrants_tab.errors %}govuk-form-group--error{% endif %}">
-                      <label class="govuk-label govuk-label--s" for="{{ form.select_registrants_tab.id }}">
-                          {{ form.select_registrants_tab.label.text }}
-                      </label>
-                      {% if form.select_registrants_tab.description %}
-                      <div class="govuk-hint">
-                          {{ form.select_registrants_tab.description }}
-                      </div>
-                      {% endif %}
-                      {% if form.select_registrants_tab.errors %}
-                      <p class="govuk-error-message">
-                          <span class="govuk-visually-hidden">Error:</span>
-                          {{ form.select_registrants_tab.errors[0] }}
-                      </p>
-                      {% endif %}
-                      {{ form.select_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.select_registrants_tab.errors else "")) }}
-                  </div>
-
-                  <div class="govuk-form-group {% if form.select_targets_tab.errors %}govuk-form-group--error{% endif %}">
-                      <label class="govuk-label govuk-label--s" for="{{ form.select_targets_tab.id }}">
-                          {{ form.select_targets_tab.label.text }}
-                      </label>
-                      {% if form.select_targets_tab.description %}
-                      <div class="govuk-hint">
-                          {{ form.select_targets_tab.description }}
-                      </div>
-                      {% endif %}
-                      {% if form.select_targets_tab.errors %}
-                      <p class="govuk-error-message">
-                          <span class="govuk-visually-hidden">Error:</span>
-                          {{ form.select_targets_tab.errors[0] }}
-                      </p>
-                      {% endif %}
-                      {{ form.select_targets_tab(class="govuk-input" + (" govuk-input--error" if form.select_targets_tab.errors else "")) }}
-                  </div>
-                </fieldset>
-
-                <fieldset class="govuk-fieldset">
-                  <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-                    <h3 class="govuk-fieldset__heading">
-                      {{ _('Replacement') }}
-                    </h3>
-                  </legend>
-                  <div class="govuk-form-group {% if form.replace_registrants_tab.errors %}govuk-form-group--error{% endif %}">
-                      <label class="govuk-label govuk-label--s" for="{{ form.replace_registrants_tab.id }}">
-                          {{ form.replace_registrants_tab.label.text }}
-                      </label>
-                      {% if form.replace_registrants_tab.description %}
-                      <div class="govuk-hint">
-                          {{ form.replace_registrants_tab.description }}
-                      </div>
-                      {% endif %}
-                      {% if form.replace_registrants_tab.errors %}
-                      <p class="govuk-error-message">
-                          <span class="govuk-visually-hidden">Error:</span>
-                          {{ form.replace_registrants_tab.errors[0] }}
-                      </p>
-                      {% endif %}
-                      {{ form.replace_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.replace_registrants_tab.errors else "")) }}
-                  </div>
-
-                  <div class="govuk-form-group {% if form.replace_targets_tab.errors %}govuk-form-group--error{% endif %}">
-                      <label class="govuk-label govuk-label--s" for="{{ form.replace_targets_tab.id }}">
-                          {{ form.replace_targets_tab.label.text }}
-                      </label>
-                      {% if form.replace_targets_tab.description %}
-                      <div class="govuk-hint">
-                          {{ form.replace_targets_tab.description }}
-                      </div>
-                      {% endif %}
-                      {% if form.replace_targets_tab.errors %}
-                      <p class="govuk-error-message">
-                          <span class="govuk-visually-hidden">Error:</span>
-                          {{ form.replace_targets_tab.errors[0] }}
-                      </p>
-                      {% endif %}
-                      {{ form.replace_targets_tab(class="govuk-input" + (" govuk-input--error" if form.replace_targets_tab.errors else "")) }}
-                  </div>
-                </fieldset>
-
-                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                    <div class="govuk-checkboxes__item">
-                        {{ form.check_same_address(class="govuk-checkboxes__input") }}
-                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.check_same_address.id }}">
-                            {{ form.check_same_address.label.text }}
-                        </label>
-                        {% if form.check_same_address.description %}
-                        <div class="govuk-hint govuk-checkboxes__hint">
-                            {{ form.check_same_address.description }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                    <div class="govuk-checkboxes__item">
-                        {{ form.generate_remaining_tab(class="govuk-checkboxes__input") }}
-                        <label class="govuk-label govuk-checkboxes__label" for="{{ form.generate_remaining_tab.id }}">
-                            {{ form.generate_remaining_tab.label.text }}
-                        </label>
-                        {% if form.generate_remaining_tab.description %}
-                        <div class="govuk-hint govuk-checkboxes__hint">
-                            {{ form.generate_remaining_tab.description }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="govuk-form-group {% if form.team.errors %}govuk-form-group--error{% endif %}">
-                    <fieldset class="govuk-fieldset">
-                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
-                            <h2 class="govuk-fieldset__heading">
-                                {{ form.team.label.text }}
+                {% if form.errors %}
+                    <div class="govuk-error-summary" data-module="govuk-error-summary">
+                        <div role="alert">
+                            <h2 class="govuk-error-summary__title">
+                                {{ _('There is a problem') }}
                             </h2>
-                        </legend>
-                        {% if form.team.description %}
-                        <div class="govuk-hint">
-                            {{ form.team.description }}
-                        </div>
-                        {% endif %}
-                        {% if form.team.errors %}
-                        <p class="govuk-error-message">
-                            <span class="govuk-visually-hidden">Error:</span>
-                            {{ form.team.errors[0] }}
-                        </p>
-                        {% endif %}
-                        <div class="govuk-radios" data-module="govuk-radios">
-                            {% for value, label in form.team.choices %}
-                            <div class="govuk-radios__item">
-                                <input class="govuk-radios__input" id="{{ form.team.id }}-{{ value }}" name="{{ form.team.name }}" type="radio" value="{{ value }}" x-model="selectedTeam" {% if form.team.data == value %}checked{% endif %}>
-                                <label class="govuk-label govuk-radios__label" for="{{ form.team.id }}-{{ value }}">
-                                    {{ label }}
-                                </label>
+                            <div class="govuk-error-summary__body">
+                                <ul class="govuk-list govuk-error-summary__list">
+                                    {% for field_name, errors in form.errors.items() %}
+                                        {% for error in errors %}
+                                            <li>
+                                                <a href="#{{ form[field_name].id }}">{{ error }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
                             </div>
-                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Edit Google Spreadsheet Configuration') }}</h1>
+
+                <p class="govuk-body">{{ _('Update the Google Spreadsheet settings for this assembly.') }}</p>
+
+                <form method="post" novalidate x-data="{ selectedTeam: '{{ form.team.data or 'other' }}' }">
+                    {{ form.hidden_tag() }}
+
+                    <div class="govuk-form-group {% if form.url.errors %}govuk-form-group--error{% endif %}">
+                        <h1 class="govuk-label-wrapper">
+                            <label class="govuk-label govuk-label--m" for="{{ form.url.id }}">
+                                {{ form.url.label.text }}
+                            </label>
+                        </h1>
+                        {% if form.url.description %}
+                            <div class="govuk-hint">
+                                {{ form.url.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.url.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.url.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.url(class="govuk-input" + (" govuk-input--error" if form.url.errors else "")) }}
+                    </div>
+
+                    <fieldset class="govuk-fieldset">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                            <h3 class="govuk-fieldset__heading">
+                                {{ _('Initial/Test Selection') }}
+                            </h3>
+                        </legend>
+                        <div class="govuk-form-group {% if form.select_registrants_tab.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label govuk-label--s" for="{{ form.select_registrants_tab.id }}">
+                                {{ form.select_registrants_tab.label.text }}
+                            </label>
+                            {% if form.select_registrants_tab.description %}
+                                <div class="govuk-hint">
+                                    {{ form.select_registrants_tab.description }}
+                                </div>
+                            {% endif %}
+                            {% if form.select_registrants_tab.errors %}
+                                <p class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    {{ form.select_registrants_tab.errors[0] }}
+                                </p>
+                            {% endif %}
+                            {{ form.select_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.select_registrants_tab.errors else "")) }}
+                        </div>
+
+                        <div class="govuk-form-group {% if form.select_targets_tab.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label govuk-label--s" for="{{ form.select_targets_tab.id }}">
+                                {{ form.select_targets_tab.label.text }}
+                            </label>
+                            {% if form.select_targets_tab.description %}
+                                <div class="govuk-hint">
+                                    {{ form.select_targets_tab.description }}
+                                </div>
+                            {% endif %}
+                            {% if form.select_targets_tab.errors %}
+                                <p class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    {{ form.select_targets_tab.errors[0] }}
+                                </p>
+                            {% endif %}
+                            {{ form.select_targets_tab(class="govuk-input" + (" govuk-input--error" if form.select_targets_tab.errors else "")) }}
                         </div>
                     </fieldset>
-                </div>
 
-                <div class="govuk-form-group {% if form.id_column.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
-                    <label class="govuk-label govuk-label--s" for="{{ form.id_column.id }}">
-                        {{ form.id_column.label.text }}
-                    </label>
-                    {% if form.id_column.description %}
-                    <div class="govuk-hint">
-                        {{ form.id_column.description }}
+                    <fieldset class="govuk-fieldset">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                            <h3 class="govuk-fieldset__heading">
+                                {{ _('Replacement') }}
+                            </h3>
+                        </legend>
+                        <div class="govuk-form-group {% if form.replace_registrants_tab.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label govuk-label--s" for="{{ form.replace_registrants_tab.id }}">
+                                {{ form.replace_registrants_tab.label.text }}
+                            </label>
+                            {% if form.replace_registrants_tab.description %}
+                                <div class="govuk-hint">
+                                    {{ form.replace_registrants_tab.description }}
+                                </div>
+                            {% endif %}
+                            {% if form.replace_registrants_tab.errors %}
+                                <p class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    {{ form.replace_registrants_tab.errors[0] }}
+                                </p>
+                            {% endif %}
+                            {{ form.replace_registrants_tab(class="govuk-input" + (" govuk-input--error" if form.replace_registrants_tab.errors else "")) }}
+                        </div>
+
+                        <div class="govuk-form-group {% if form.replace_targets_tab.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label govuk-label--s" for="{{ form.replace_targets_tab.id }}">
+                                {{ form.replace_targets_tab.label.text }}
+                            </label>
+                            {% if form.replace_targets_tab.description %}
+                                <div class="govuk-hint">
+                                    {{ form.replace_targets_tab.description }}
+                                </div>
+                            {% endif %}
+                            {% if form.replace_targets_tab.errors %}
+                                <p class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    {{ form.replace_targets_tab.errors[0] }}
+                                </p>
+                            {% endif %}
+                            {{ form.replace_targets_tab(class="govuk-input" + (" govuk-input--error" if form.replace_targets_tab.errors else "")) }}
+                        </div>
+                    </fieldset>
+
+                    <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                        <div class="govuk-checkboxes__item">
+                            {{ form.check_same_address(class="govuk-checkboxes__input") }}
+                            <label class="govuk-label govuk-checkboxes__label" for="{{ form.check_same_address.id }}">
+                                {{ form.check_same_address.label.text }}
+                            </label>
+                            {% if form.check_same_address.description %}
+                                <div class="govuk-hint govuk-checkboxes__hint">
+                                    {{ form.check_same_address.description }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
-                    {% if form.id_column.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.id_column.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.id_column(class="govuk-input" + (" govuk-input--error" if form.id_column.errors else "")) }}
-                </div>
 
-                <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
-                    <label class="govuk-label govuk-label--s" for="{{ form.check_same_address_cols_string.id }}">
-                        {{ form.check_same_address_cols_string.label.text }}
-                    </label>
-                    {% if form.check_same_address_cols_string.description %}
-                    <div class="govuk-hint">
-                        {{ form.check_same_address_cols_string.description }}
+                    <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                        <div class="govuk-checkboxes__item">
+                            {{ form.generate_remaining_tab(class="govuk-checkboxes__input") }}
+                            <label class="govuk-label govuk-checkboxes__label" for="{{ form.generate_remaining_tab.id }}">
+                                {{ form.generate_remaining_tab.label.text }}
+                            </label>
+                            {% if form.generate_remaining_tab.description %}
+                                <div class="govuk-hint govuk-checkboxes__hint">
+                                    {{ form.generate_remaining_tab.description }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
-                    {% if form.check_same_address_cols_string.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.check_same_address_cols_string.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.check_same_address_cols_string(class="govuk-input" + (" govuk-input--error" if form.check_same_address_cols_string.errors else "")) }}
-                </div>
 
-                <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
-                    <label class="govuk-label govuk-label--s" for="{{ form.columns_to_keep_string.id }}">
-                        {{ form.columns_to_keep_string.label.text }}
-                    </label>
-                    {% if form.columns_to_keep_string.description %}
-                    <div class="govuk-hint">
-                        {{ form.columns_to_keep_string.description }}
+                    <div class="govuk-form-group {% if form.team.errors %}govuk-form-group--error{% endif %}">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+                                <h2 class="govuk-fieldset__heading">
+                                    {{ form.team.label.text }}
+                                </h2>
+                            </legend>
+                            {% if form.team.description %}
+                                <div class="govuk-hint">
+                                    {{ form.team.description }}
+                                </div>
+                            {% endif %}
+                            {% if form.team.errors %}
+                                <p class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    {{ form.team.errors[0] }}
+                                </p>
+                            {% endif %}
+                            <div class="govuk-radios" data-module="govuk-radios">
+                                {% for value, label in form.team.choices %}
+                                    <div class="govuk-radios__item">
+                                        <input class="govuk-radios__input" id="{{ form.team.id }}-{{ value }}" name="{{ form.team.name }}" type="radio" value="{{ value }}" x-model="selectedTeam" {% if form.team.data == value %}checked{% endif %}>
+                                        <label class="govuk-label govuk-radios__label" for="{{ form.team.id }}-{{ value }}">
+                                            {{ label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
                     </div>
-                    {% endif %}
-                    {% if form.columns_to_keep_string.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.columns_to_keep_string.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.columns_to_keep_string(class="govuk-input" + (" govuk-input--error" if form.columns_to_keep_string.errors else "")) }}
-                </div>
 
-                <div class="govuk-button-group govuk-!-margin-top-6">
-                    <button type="submit" class="govuk-button" data-module="govuk-button">
-                        {{ _('Save Changes') }}
-                    </button>
-                    <a class="govuk-link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Cancel') }}</a>
-                </div>
-            </form>
+                    <div class="govuk-form-group {% if form.id_column.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
+                        <label class="govuk-label govuk-label--s" for="{{ form.id_column.id }}">
+                            {{ form.id_column.label.text }}
+                        </label>
+                        {% if form.id_column.description %}
+                            <div class="govuk-hint">
+                                {{ form.id_column.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.id_column.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.id_column.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.id_column(class="govuk-input" + (" govuk-input--error" if form.id_column.errors else "")) }}
+                    </div>
 
-            {% if gsheet %}
-            <div class="govuk-!-margin-top-9">
-                <h2 class="govuk-heading-m">{{ _('Remove Configuration') }}</h2>
-                <p class="govuk-body">{{ _('If you no longer need this Google Spreadsheet configuration, you can remove it.') }}</p>
+                    <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
+                        <label class="govuk-label govuk-label--s" for="{{ form.check_same_address_cols_string.id }}">
+                            {{ form.check_same_address_cols_string.label.text }}
+                        </label>
+                        {% if form.check_same_address_cols_string.description %}
+                            <div class="govuk-hint">
+                                {{ form.check_same_address_cols_string.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.check_same_address_cols_string.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.check_same_address_cols_string.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.check_same_address_cols_string(class="govuk-input" + (" govuk-input--error" if form.check_same_address_cols_string.errors else "")) }}
+                    </div>
 
-                <form method="post" action="{{ url_for('gsheets.delete_assembly_gsheet', assembly_id=assembly.id) }}" class="govuk-!-margin-top-4">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
-                            onclick="return confirm('{{ _('Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.') }}');">
-                        {{ _('Remove Configuration') }}
-                    </button>
+                    <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}" x-show="selectedTeam === 'other'">
+                        <label class="govuk-label govuk-label--s" for="{{ form.columns_to_keep_string.id }}">
+                            {{ form.columns_to_keep_string.label.text }}
+                        </label>
+                        {% if form.columns_to_keep_string.description %}
+                            <div class="govuk-hint">
+                                {{ form.columns_to_keep_string.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.columns_to_keep_string.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.columns_to_keep_string.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.columns_to_keep_string(class="govuk-input" + (" govuk-input--error" if form.columns_to_keep_string.errors else "")) }}
+                    </div>
+
+                    <div class="govuk-button-group govuk-!-margin-top-6">
+                        <button type="submit" class="govuk-button" data-module="govuk-button">
+                            {{ _('Save Changes') }}
+                        </button>
+                        <a class="govuk-link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Cancel') }}</a>
+                    </div>
                 </form>
+
+                {% if gsheet %}
+                    <div class="govuk-!-margin-top-9">
+                        <h2 class="govuk-heading-m">{{ _('Remove Configuration') }}</h2>
+                        <p class="govuk-body">{{ _('If you no longer need this Google Spreadsheet configuration, you can remove it.') }}</p>
+
+                        <form method="post" action="{{ url_for('gsheets.delete_assembly_gsheet', assembly_id=assembly.id) }}" class="govuk-!-margin-top-4">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
+                                onclick="return confirm('{{ _('Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.') }}');">
+                                {{ _('Remove Configuration') }}
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
-</div>
 {% endblock %}

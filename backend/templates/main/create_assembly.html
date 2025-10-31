@@ -3,130 +3,130 @@
 {% block title %}{{ _('Create Assembly') }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-            <div class="govuk-breadcrumbs">
-                <ol class="govuk-breadcrumbs__list">
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        {{ _('Create Assembly') }}
-                    </li>
-                </ol>
-            </div>
-
-            {% if form.errors %}
-            <div class="govuk-error-summary" data-module="govuk-error-summary">
-                <div role="alert">
-                    <h2 class="govuk-error-summary__title">
-                        {{ _('There is a problem') }}
-                    </h2>
-                    <div class="govuk-error-summary__body">
-                        <ul class="govuk-list govuk-error-summary__list">
-                            {% for field_name, errors in form.errors.items() %}
-                                {% for error in errors %}
-                                <li>
-                                    <a href="#{{ form[field_name].id }}">{{ error }}</a>
-                                </li>
-                                {% endfor %}
-                            {% endfor %}
-                        </ul>
-                    </div>
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-two-thirds">
+                <div class="govuk-breadcrumbs">
+                    <ol class="govuk-breadcrumbs__list">
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            {{ _('Create Assembly') }}
+                        </li>
+                    </ol>
                 </div>
-            </div>
-            {% endif %}
 
-            <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Create Assembly') }}</h1>
+                {% if form.errors %}
+                    <div class="govuk-error-summary" data-module="govuk-error-summary">
+                        <div role="alert">
+                            <h2 class="govuk-error-summary__title">
+                                {{ _('There is a problem') }}
+                            </h2>
+                            <div class="govuk-error-summary__body">
+                                <ul class="govuk-list govuk-error-summary__list">
+                                    {% for field_name, errors in form.errors.items() %}
+                                        {% for error in errors %}
+                                            <li>
+                                                <a href="#{{ form[field_name].id }}">{{ error }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
 
-            <p class="govuk-body">{{ _('Create a new citizens\' assembly to begin the democratic lottery process.') }}</p>
+                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Create Assembly') }}</h1>
 
-            <form method="post" novalidate>
-                {{ form.hidden_tag() }}
+                <p class="govuk-body">{{ _('Create a new citizens\' assembly to begin the democratic lottery process.') }}</p>
 
-                <div class="govuk-form-group {% if form.title.errors %}govuk-form-group--error{% endif %}">
-                    <h1 class="govuk-label-wrapper">
-                        <label class="govuk-label govuk-label--m" for="{{ form.title.id }}">
-                            {{ form.title.label.text }}
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="govuk-form-group {% if form.title.errors %}govuk-form-group--error{% endif %}">
+                        <h1 class="govuk-label-wrapper">
+                            <label class="govuk-label govuk-label--m" for="{{ form.title.id }}">
+                                {{ form.title.label.text }}
+                            </label>
+                        </h1>
+                        {% if form.title.description %}
+                            <div class="govuk-hint">
+                                {{ form.title.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.title.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.title.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.title(class="govuk-input" + (" govuk-input--error" if form.title.errors else "")) }}
+                    </div>
+
+                    <div class="govuk-form-group {% if form.question.errors %}govuk-form-group--error{% endif %}">
+                        <label class="govuk-label govuk-label--s" for="{{ form.question.id }}">
+                            {{ form.question.label.text }}
                         </label>
-                    </h1>
-                    {% if form.title.description %}
-                    <div class="govuk-hint">
-                        {{ form.title.description }}
+                        {% if form.question.description %}
+                            <div class="govuk-hint">
+                                {{ form.question.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.question.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.question.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.question(class="govuk-textarea" + (" govuk-textarea--error" if form.question.errors else "")) }}
                     </div>
-                    {% endif %}
-                    {% if form.title.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.title.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.title(class="govuk-input" + (" govuk-input--error" if form.title.errors else "")) }}
-                </div>
 
-                <div class="govuk-form-group {% if form.question.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.question.id }}">
-                        {{ form.question.label.text }}
-                    </label>
-                    {% if form.question.description %}
-                    <div class="govuk-hint">
-                        {{ form.question.description }}
+                    <div class="govuk-form-group {% if form.first_assembly_date.errors %}govuk-form-group--error{% endif %}">
+                        <label class="govuk-label govuk-label--s" for="{{ form.first_assembly_date.id }}">
+                            {{ form.first_assembly_date.label.text }}
+                        </label>
+                        {% if form.first_assembly_date.description %}
+                            <div class="govuk-hint">
+                                {{ form.first_assembly_date.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.first_assembly_date.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.first_assembly_date.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.first_assembly_date(class="govuk-input govuk-date-input__input govuk-input--width-10" + (" govuk-input--error" if form.first_assembly_date.errors else "")) }}
                     </div>
-                    {% endif %}
-                    {% if form.question.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.question.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.question(class="govuk-textarea" + (" govuk-textarea--error" if form.question.errors else "")) }}
-                </div>
 
-                <div class="govuk-form-group {% if form.first_assembly_date.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.first_assembly_date.id }}">
-                        {{ form.first_assembly_date.label.text }}
-                    </label>
-                    {% if form.first_assembly_date.description %}
-                    <div class="govuk-hint">
-                        {{ form.first_assembly_date.description }}
+                    <div class="govuk-form-group {% if form.number_to_select.errors %}govuk-form-group--error{% endif %}">
+                        <label class="govuk-label govuk-label--s" for="{{ form.number_to_select.id }}">
+                            {{ form.number_to_select.label.text }}
+                        </label>
+                        {% if form.number_to_select.description %}
+                            <div class="govuk-hint">
+                                {{ form.number_to_select.description }}
+                            </div>
+                        {% endif %}
+                        {% if form.number_to_select.errors %}
+                            <p class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                {{ form.number_to_select.errors[0] }}
+                            </p>
+                        {% endif %}
+                        {{ form.number_to_select(class="govuk-input govuk-input--width-5" + (" govuk-input--error" if form.number_to_select.errors else "")) }}
                     </div>
-                    {% endif %}
-                    {% if form.first_assembly_date.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.first_assembly_date.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.first_assembly_date(class="govuk-input govuk-date-input__input govuk-input--width-10" + (" govuk-input--error" if form.first_assembly_date.errors else "")) }}
-                </div>
 
-                <div class="govuk-form-group {% if form.number_to_select.errors %}govuk-form-group--error{% endif %}">
-                    <label class="govuk-label govuk-label--s" for="{{ form.number_to_select.id }}">
-                        {{ form.number_to_select.label.text }}
-                    </label>
-                    {% if form.number_to_select.description %}
-                    <div class="govuk-hint">
-                        {{ form.number_to_select.description }}
+                    <div class="govuk-button-group">
+                        <button type="submit" class="govuk-button" data-module="govuk-button">
+                            {{ _('Create Assembly') }}
+                        </button>
+                        <a class="govuk-link" href="{{ url_for('main.dashboard') }}">{{ _('Cancel') }}</a>
                     </div>
-                    {% endif %}
-                    {% if form.number_to_select.errors %}
-                    <p class="govuk-error-message">
-                        <span class="govuk-visually-hidden">Error:</span>
-                        {{ form.number_to_select.errors[0] }}
-                    </p>
-                    {% endif %}
-                    {{ form.number_to_select(class="govuk-input govuk-input--width-5" + (" govuk-input--error" if form.number_to_select.errors else "")) }}
-                </div>
-
-                <div class="govuk-button-group">
-                    <button type="submit" class="govuk-button" data-module="govuk-button">
-                        {{ _('Create Assembly') }}
-                    </button>
-                    <a class="govuk-link" href="{{ url_for('main.dashboard') }}">{{ _('Cancel') }}</a>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

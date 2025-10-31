@@ -3,52 +3,52 @@
 {% block title %}{{ _('Edit Profile') }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
-        <h1 class="govuk-heading-xl">{{ _('Edit Profile') }}</h1>
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _('Edit Profile') }}</h1>
 
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
 
-            <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
-                {{ form.first_name.label(class="govuk-label govuk-label--m") }}
-                {% if form.first_name.description %}
-                    <div id="first-name-hint" class="govuk-hint">{{ form.first_name.description }}</div>
-                {% endif %}
-                {% if form.first_name.errors %}
-                    {% for error in form.first_name.errors %}
-                        <p id="first-name-error" class="govuk-error-message">
-                            <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
-                        </p>
-                    {% endfor %}
-                {% endif %}
-                {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else ""),
-                                  aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
-            </div>
+                <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
+                    {{ form.first_name.label(class="govuk-label govuk-label--m") }}
+                    {% if form.first_name.description %}
+                        <div id="first-name-hint" class="govuk-hint">{{ form.first_name.description }}</div>
+                    {% endif %}
+                    {% if form.first_name.errors %}
+                        {% for error in form.first_name.errors %}
+                            <p id="first-name-error" class="govuk-error-message">
+                                <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                    {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else ""),
+                    aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
+                </div>
 
-            <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
-                {{ form.last_name.label(class="govuk-label govuk-label--m") }}
-                {% if form.last_name.description %}
-                    <div id="last-name-hint" class="govuk-hint">{{ form.last_name.description }}</div>
-                {% endif %}
-                {% if form.last_name.errors %}
-                    {% for error in form.last_name.errors %}
-                        <p id="last-name-error" class="govuk-error-message">
-                            <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
-                        </p>
-                    {% endfor %}
-                {% endif %}
-                {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else ""),
-                                 aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
-            </div>
+                <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
+                    {{ form.last_name.label(class="govuk-label govuk-label--m") }}
+                    {% if form.last_name.description %}
+                        <div id="last-name-hint" class="govuk-hint">{{ form.last_name.description }}</div>
+                    {% endif %}
+                    {% if form.last_name.errors %}
+                        {% for error in form.last_name.errors %}
+                            <p id="last-name-error" class="govuk-error-message">
+                                <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                    {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else ""),
+                    aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
+                </div>
 
-            <div class="govuk-button-group">
-                <button type="submit" class="govuk-button" data-module="govuk-button">
-                    {{ _('Save changes') }}
-                </button>
-                <a href="{{ url_for('profile.view') }}" class="govuk-link">{{ _('Cancel') }}</a>
-            </div>
-        </form>
+                <div class="govuk-button-group">
+                    <button type="submit" class="govuk-button" data-module="govuk-button">
+                        {{ _('Save changes') }}
+                    </button>
+                    <a href="{{ url_for('profile.view') }}" class="govuk-link">{{ _('Cancel') }}</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}

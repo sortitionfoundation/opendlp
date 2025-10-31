@@ -3,112 +3,112 @@
 {% block title %}{{ _('Replacements') }} - {{ assembly.title }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-            <div class="govuk-breadcrumbs">
-                <ol class="govuk-breadcrumbs__list">
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Assembly') }}: {{ assembly.title }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        {{ _('Replacements') }}
-                    </li>
-                </ol>
-            </div>
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-breadcrumbs">
+                    <ol class="govuk-breadcrumbs__list">
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Assembly') }}: {{ assembly.title }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            {{ _('Replacements') }}
+                        </li>
+                    </ol>
+                </div>
 
-            <div class="main govuk-!-margin-top-6">
-                <h1 class="govuk-heading-l">{{ _('Replacements for') }} {{ assembly.title }}</h1>
+                <div class="main govuk-!-margin-top-6">
+                    <h1 class="govuk-heading-l">{{ _('Replacements for') }} {{ assembly.title }}</h1>
 
-                <p class="govuk-body">{{ _('Run the replacement selection for this assembly using Google Spreadsheet data.') }}</p>
+                    <p class="govuk-body">{{ _('Run the replacement selection for this assembly using Google Spreadsheet data.') }}</p>
 
-                {% if gsheet %}
-                {% include "gsheets/components/view_config.html" %}
-                {% endif %}
-
-                <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
-                    {% if not run_record or run_record.has_finished %}
-                    <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}" method="post">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="govuk-button">
-                          {% if not run_record %}
-                            {{ _('Load Spreadsheet') }}
-                          {% else %}
-                            {{ _('Reload Spreadsheet') }}
-                          {% endif %}
-                        </button>
-                    </form>
-                    {% else %}
-                    <button class="govuk-button" disabled>
-                        {{ _('Task in Progress...') }}
-                    </button>
+                    {% if gsheet %}
+                        {% include "gsheets/components/view_config.html" %}
                     {% endif %}
 
-                    <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-                       class="govuk-button govuk-button--secondary">
-                        {{ _('Back to Assembly') }}
-                    </a>
-                </div>
+                    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
+                        {% if not run_record or run_record.has_finished %}
+                            <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="govuk-button">
+                                    {% if not run_record %}
+                                        {{ _('Load Spreadsheet') }}
+                                    {% else %}
+                                        {{ _('Reload Spreadsheet') }}
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% else %}
+                            <button class="govuk-button" disabled>
+                                {{ _('Task in Progress...') }}
+                            </button>
+                        {% endif %}
 
-                {% if num_to_select %}
-                <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
-                    <div class="govuk-notification-banner__header">
-                        <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-                            {{ _('Selection Configuration') }}
-                        </h2>
+                        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
+                            class="govuk-button govuk-button--secondary">
+                            {{ _('Back to Assembly') }}
+                        </a>
                     </div>
-                    <div class="govuk-notification-banner__content">
-                        <p class="govuk-notification-banner__heading">
-                            {{ _('Selecting %(num)s replacements', num=num_to_select) }}
-                        </p>
-                    </div>
-                </div>
-                {% endif %}
 
-                {# Number to select form - shown when min_select and max_select are present #}
-                {% if min_select and max_select %}
-                <div id="replacement-selection-form" class="govuk-!-margin-top-6">
-                    <h2 class="govuk-heading-m">{{ _('Configure Replacement Selection') }}</h2>
-
-                    {% if not run_record or run_record.task_type.value != 'select_replacement_gsheet' or run_record.has_finished %}
-                    <form action="{{ url_for('gsheets.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}" method="post" id="replace-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-                        <div class="govuk-form-group">
-                            <label class="govuk-label govuk-label--s" for="number_to_select">
-                                {{ _('Number of people to select') }}
-                            </label>
-                            <div id="number-hint" class="govuk-hint">
-                                {{ _('Enter a number between %(min)s and %(max)s', min=min_select, max=max_select) }}
+                    {% if num_to_select %}
+                        <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
+                            <div class="govuk-notification-banner__header">
+                                <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+                                    {{ _('Selection Configuration') }}
+                                </h2>
                             </div>
-                            <input class="govuk-input govuk-input--width-10"
-                                   id="number_to_select"
-                                   name="number_to_select"
-                                   type="number"
-                                   min="{{ min_select }}"
-                                   max="{{ max_select }}"
-                                   value="{{ min_select }}"
-                                   required>
+                            <div class="govuk-notification-banner__content">
+                                <p class="govuk-notification-banner__heading">
+                                    {{ _('Selecting %(num)s replacements', num=num_to_select) }}
+                                </p>
+                            </div>
                         </div>
-
-                        <button type="submit" class="govuk-button" id="run-replacements-btn">
-                            {{ _('Run Replacements') }}
-                        </button>
-                    </form>
                     {% endif %}
-                </div>
-                {% endif %}
 
-                <div class="govuk-!-margin-top-6 govuk-!-margin-bottom-6">
-                    {% set progress_url = url_for('gsheets.gsheet_replace_progress', assembly_id=assembly.id, run_id=run_id) if run_id else '' %}
-                    {% include "gsheets/components/progress.html" %}
-                </div>
+                    {# Number to select form - shown when min_select and max_select are present #}
+                    {% if min_select and max_select %}
+                        <div id="replacement-selection-form" class="govuk-!-margin-top-6">
+                            <h2 class="govuk-heading-m">{{ _('Configure Replacement Selection') }}</h2>
 
+                            {% if not run_record or run_record.task_type.value != 'select_replacement_gsheet' or run_record.has_finished %}
+                                <form action="{{ url_for('gsheets.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}" method="post" id="replace-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-label--s" for="number_to_select">
+                                            {{ _('Number of people to select') }}
+                                        </label>
+                                        <div id="number-hint" class="govuk-hint">
+                                            {{ _('Enter a number between %(min)s and %(max)s', min=min_select, max=max_select) }}
+                                        </div>
+                                        <input class="govuk-input govuk-input--width-10"
+                                            id="number_to_select"
+                                            name="number_to_select"
+                                            type="number"
+                                            min="{{ min_select }}"
+                                            max="{{ max_select }}"
+                                            value="{{ min_select }}"
+                                            required>
+                                    </div>
+
+                                    <button type="submit" class="govuk-button" id="run-replacements-btn">
+                                        {{ _('Run Replacements') }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="govuk-!-margin-top-6 govuk-!-margin-bottom-6">
+                        {% set progress_url = url_for('gsheets.gsheet_replace_progress', assembly_id=assembly.id, run_id=run_id) if run_id else '' %}
+                        {% include "gsheets/components/progress.html" %}
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

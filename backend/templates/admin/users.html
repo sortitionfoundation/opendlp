@@ -3,234 +3,234 @@
 {% block title %}{{ _('User Management') }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-            <div class="govuk-breadcrumbs">
-                <ol class="govuk-breadcrumbs__list">
-                    <li class="govuk-breadcrumbs__list-item">
-                        <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _('Site Admin') }}</a>
-                    </li>
-                    <li class="govuk-breadcrumbs__list-item">
-                        {{ _('User Management') }}
-                    </li>
-                </ol>
-            </div>
-            <h1 class="govuk-heading-xl">{{ _('User Management') }}</h1>
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-breadcrumbs">
+                    <ol class="govuk-breadcrumbs__list">
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _('Site Admin') }}</a>
+                        </li>
+                        <li class="govuk-breadcrumbs__list-item">
+                            {{ _('User Management') }}
+                        </li>
+                    </ol>
+                </div>
+                <h1 class="govuk-heading-xl">{{ _('User Management') }}</h1>
 
-            <!-- Statistics Cards -->
-            <div class="govuk-grid-row govuk-!-margin-bottom-6">
-                <div class="govuk-grid-column-one-quarter">
-                    <div class="stat-card">
-                        <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Total Users') }}</p>
-                        <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.total_users }}</p>
-                    </div>
-                </div>
-                <div class="govuk-grid-column-one-quarter">
-                    <div class="stat-card">
-                        <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Active Users') }}</p>
-                        <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.active_users }}</p>
-                    </div>
-                </div>
-                <div class="govuk-grid-column-one-quarter">
-                    <div class="stat-card">
-                        <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Admins') }}</p>
-                        <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.admin_users }}</p>
-                    </div>
-                </div>
-                <div class="govuk-grid-column-one-quarter">
-                    <div class="stat-card">
-                        <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Organisers') }}</p>
-                        <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.organiser_users }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Search and Filter Form -->
-            <div class="govuk-!-margin-bottom-6">
-                <form method="get" action="{{ url_for('admin.list_users') }}">
-                    <div class="govuk-grid-row">
-                        <div class="govuk-grid-column-one-half">
-                            <div class="govuk-form-group">
-                                <label class="govuk-label govuk-label--s" for="search">
-                                    {{ _('Search by name or email') }}
-                                </label>
-                                <input
-                                    class="govuk-input"
-                                    id="search"
-                                    name="search"
-                                    type="text"
-                                    value="{{ search_term or '' }}"
-                                    placeholder="{{ _('Enter name or email...') }}"
-                                >
-                            </div>
-                        </div>
-                        <div class="govuk-grid-column-one-quarter">
-                            <div class="govuk-form-group">
-                                <label class="govuk-label govuk-label--s" for="role">
-                                    {{ _('Filter by role') }}
-                                </label>
-                                <select class="govuk-select" id="role" name="role">
-                                    <option value="">{{ _('All roles') }}</option>
-                                    <option value="user" {% if role_filter == 'user' %}selected{% endif %}>{{ _('User') }}</option>
-                                    <option value="global-organiser" {% if role_filter == 'global-organiser' %}selected{% endif %}>{{ _('Global Organiser') }}</option>
-                                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>{{ _('Admin') }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="govuk-grid-column-one-quarter">
-                            <div class="govuk-form-group">
-                                <label class="govuk-label govuk-label--s" for="active">
-                                    {{ _('Filter by status') }}
-                                </label>
-                                <select class="govuk-select" id="active" name="active">
-                                    <option value="">{{ _('All statuses') }}</option>
-                                    <option value="true" {% if active_filter == 'true' %}selected{% endif %}>{{ _('Active') }}</option>
-                                    <option value="false" {% if active_filter == 'false' %}selected{% endif %}>{{ _('Inactive') }}</option>
-                                </select>
-                            </div>
+                <!-- Statistics Cards -->
+                <div class="govuk-grid-row govuk-!-margin-bottom-6">
+                    <div class="govuk-grid-column-one-quarter">
+                        <div class="stat-card">
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Total Users') }}</p>
+                            <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.total_users }}</p>
                         </div>
                     </div>
-                    <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">
-                            {{ _('Apply Filters') }}
-                        </button>
-                        <a class="govuk-link" href="{{ url_for('admin.list_users') }}">{{ _('Clear') }}</a>
+                    <div class="govuk-grid-column-one-quarter">
+                        <div class="stat-card">
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Active Users') }}</p>
+                            <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.active_users }}</p>
+                        </div>
                     </div>
-                </form>
-            </div>
+                    <div class="govuk-grid-column-one-quarter">
+                        <div class="stat-card">
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Admins') }}</p>
+                            <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.admin_users }}</p>
+                        </div>
+                    </div>
+                    <div class="govuk-grid-column-one-quarter">
+                        <div class="stat-card">
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Organisers') }}</p>
+                            <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.organiser_users }}</p>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Results Summary -->
-            <p class="govuk-body">
-                {{ _('Showing %(start)s to %(end)s of %(total)s users',
+                <!-- Search and Filter Form -->
+                <div class="govuk-!-margin-bottom-6">
+                    <form method="get" action="{{ url_for('admin.list_users') }}">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-one-half">
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label govuk-label--s" for="search">
+                                        {{ _('Search by name or email') }}
+                                    </label>
+                                    <input
+                                        class="govuk-input"
+                                        id="search"
+                                        name="search"
+                                        type="text"
+                                        value="{{ search_term or '' }}"
+                                        placeholder="{{ _('Enter name or email...') }}"
+                                    >
+                                </div>
+                            </div>
+                            <div class="govuk-grid-column-one-quarter">
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label govuk-label--s" for="role">
+                                        {{ _('Filter by role') }}
+                                    </label>
+                                    <select class="govuk-select" id="role" name="role">
+                                        <option value="">{{ _('All roles') }}</option>
+                                        <option value="user" {% if role_filter == 'user' %}selected{% endif %}>{{ _('User') }}</option>
+                                        <option value="global-organiser" {% if role_filter == 'global-organiser' %}selected{% endif %}>{{ _('Global Organiser') }}</option>
+                                        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>{{ _('Admin') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="govuk-grid-column-one-quarter">
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label govuk-label--s" for="active">
+                                        {{ _('Filter by status') }}
+                                    </label>
+                                    <select class="govuk-select" id="active" name="active">
+                                        <option value="">{{ _('All statuses') }}</option>
+                                        <option value="true" {% if active_filter == 'true' %}selected{% endif %}>{{ _('Active') }}</option>
+                                        <option value="false" {% if active_filter == 'false' %}selected{% endif %}>{{ _('Inactive') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="govuk-button-group">
+                            <button type="submit" class="govuk-button" data-module="govuk-button">
+                                {{ _('Apply Filters') }}
+                            </button>
+                            <a class="govuk-link" href="{{ url_for('admin.list_users') }}">{{ _('Clear') }}</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Results Summary -->
+                <p class="govuk-body">
+                    {{ _('Showing %(start)s to %(end)s of %(total)s users',
                     start=(page - 1) * per_page + 1,
                     end=((page - 1) * per_page + users|length),
                     total=total_count) }}
-            </p>
+                </p>
 
-            <!-- Users Table -->
-            {% if users %}
-            <table class="govuk-table">
-                <thead class="govuk-table__head">
-                    <tr class="govuk-table__row">
-                        <th scope="col" class="govuk-table__header">{{ _('Name') }}</th>
-                        <th scope="col" class="govuk-table__header">{{ _('Email') }}</th>
-                        <th scope="col" class="govuk-table__header">{{ _('Role') }}</th>
-                        <th scope="col" class="govuk-table__header">{{ _('Status') }}</th>
-                        <th scope="col" class="govuk-table__header">{{ _('Created') }}</th>
-                        <th scope="col" class="govuk-table__header">{{ _('Actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="govuk-table__body">
-                    {% for user in users %}
-                    <tr class="govuk-table__row">
-                        <td class="govuk-table__cell">
-                            {% if user.display_name %}
-                                {{ user.display_name }}
-                            {% else %}
-                                <span class="govuk-hint">{{ _('Not provided') }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="govuk-table__cell">{{ user.email }}</td>
-                        <td class="govuk-table__cell">
-                            {% if user.global_role.value == 'admin' %}
-                                <strong class="govuk-tag govuk-tag--red">{{ _('Admin') }}</strong>
-                            {% elif user.global_role.value == 'global-organiser' %}
-                                <strong class="govuk-tag govuk-tag--blue">{{ _('Global Organiser') }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _('User') }}</strong>
-                            {% endif %}
-                        </td>
-                        <td class="govuk-table__cell">
-                            {% if user.is_active %}
-                                <strong class="govuk-tag govuk-tag--green">{{ _('Active') }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _('Inactive') }}</strong>
-                            {% endif %}
-                        </td>
-                        <td class="govuk-table__cell">
-                            {{ user.created_at.strftime('%d %b %Y') }}
-                        </td>
-                        <td class="govuk-table__cell">
-                            <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="govuk-link">
-                                {{ _('View') }}
-                            </a>
-                            |
-                            <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="govuk-link">
-                                {{ _('Edit') }}
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <!-- Users Table -->
+                {% if users %}
+                    <table class="govuk-table">
+                        <thead class="govuk-table__head">
+                            <tr class="govuk-table__row">
+                                <th scope="col" class="govuk-table__header">{{ _('Name') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _('Email') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _('Role') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _('Status') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _('Created') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                            {% for user in users %}
+                                <tr class="govuk-table__row">
+                                    <td class="govuk-table__cell">
+                                        {% if user.display_name %}
+                                            {{ user.display_name }}
+                                        {% else %}
+                                            <span class="govuk-hint">{{ _('Not provided') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="govuk-table__cell">{{ user.email }}</td>
+                                    <td class="govuk-table__cell">
+                                        {% if user.global_role.value == 'admin' %}
+                                            <strong class="govuk-tag govuk-tag--red">{{ _('Admin') }}</strong>
+                                        {% elif user.global_role.value == 'global-organiser' %}
+                                            <strong class="govuk-tag govuk-tag--blue">{{ _('Global Organiser') }}</strong>
+                                        {% else %}
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _('User') }}</strong>
+                                        {% endif %}
+                                    </td>
+                                    <td class="govuk-table__cell">
+                                        {% if user.is_active %}
+                                            <strong class="govuk-tag govuk-tag--green">{{ _('Active') }}</strong>
+                                        {% else %}
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _('Inactive') }}</strong>
+                                        {% endif %}
+                                    </td>
+                                    <td class="govuk-table__cell">
+                                        {{ user.created_at.strftime('%d %b %Y') }}
+                                    </td>
+                                    <td class="govuk-table__cell">
+                                        <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="govuk-link">
+                                            {{ _('View') }}
+                                        </a>
+                                        |
+                                        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="govuk-link">
+                                            {{ _('Edit') }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
 
-            <!-- Pagination -->
-            {% if total_pages > 1 %}
-            <nav class="govuk-pagination" role="navigation" aria-label="Pagination">
-                {% if page > 1 %}
-                <div class="govuk-pagination__prev">
-                    <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=page-1, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" rel="prev">
-                        <svg class="govuk-pagination__icon govuk-pagination__icon--prev" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
-                            <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
-                        </svg>
-                        <span class="govuk-pagination__link-title">{{ _('Previous') }}</span>
-                    </a>
-                </div>
+                    <!-- Pagination -->
+                    {% if total_pages > 1 %}
+                        <nav class="govuk-pagination" role="navigation" aria-label="Pagination">
+                            {% if page > 1 %}
+                                <div class="govuk-pagination__prev">
+                                    <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=page-1, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" rel="prev">
+                                        <svg class="govuk-pagination__icon govuk-pagination__icon--prev" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                            <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
+                                        </svg>
+                                        <span class="govuk-pagination__link-title">{{ _('Previous') }}</span>
+                                    </a>
+                                </div>
+                            {% endif %}
+
+                            <ul class="govuk-pagination__list">
+                                {% for p in range(1, total_pages + 1) %}
+                                    {% if p == page %}
+                                        <li class="govuk-pagination__item govuk-pagination__item--current">
+                                            <a class="govuk-link govuk-pagination__link" href="#" aria-label="Page {{ p }}" aria-current="page">
+                                                {{ p }}
+                                            </a>
+                                        </li>
+                                    {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
+                                        <li class="govuk-pagination__item">
+                                            <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=p, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" aria-label="Page {{ p }}">
+                                                {{ p }}
+                                            </a>
+                                        </li>
+                                    {% elif (p == page - 3) or (p == page + 3) %}
+                                        <li class="govuk-pagination__item govuk-pagination__item--ellipses">
+                                            &ctdot;
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+
+                            {% if page < total_pages %}
+                                <div class="govuk-pagination__next">
+                                    <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=page+1, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" rel="next">
+                                        <span class="govuk-pagination__link-title">{{ _('Next') }}</span>
+                                        <svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                            <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </nav>
+                    {% endif %}
+
+                {% else %}
+                    <div class="govuk-inset-text">
+                        <p class="govuk-body">{{ _('No users found matching your criteria.') }}</p>
+                    </div>
                 {% endif %}
 
-                <ul class="govuk-pagination__list">
-                    {% for p in range(1, total_pages + 1) %}
-                        {% if p == page %}
-                        <li class="govuk-pagination__item govuk-pagination__item--current">
-                            <a class="govuk-link govuk-pagination__link" href="#" aria-label="Page {{ p }}" aria-current="page">
-                                {{ p }}
-                            </a>
-                        </li>
-                        {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
-                        <li class="govuk-pagination__item">
-                            <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=p, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" aria-label="Page {{ p }}">
-                                {{ p }}
-                            </a>
-                        </li>
-                        {% elif (p == page - 3) or (p == page + 3) %}
-                        <li class="govuk-pagination__item govuk-pagination__item--ellipses">
-                            &ctdot;
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
+                <div class="govuk-inset-text">
+                    <p class="govuk-body">{{ _('To create a user,') }} <a href="{{ url_for('admin.create_invite') }}">{{ _('create/send them an invite code') }}.</a></p>
+                </div>
 
-                {% if page < total_pages %}
-                <div class="govuk-pagination__next">
-                    <a class="govuk-link govuk-pagination__link" href="{{ url_for('admin.list_users', page=page+1, per_page=per_page, role=role_filter, active=active_filter, search=search_term) }}" rel="next">
-                        <span class="govuk-pagination__link-title">{{ _('Next') }}</span>
-                        <svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
-                            <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
-                        </svg>
+                <!-- Back Button -->
+                <div class="govuk-button-group govuk-!-margin-top-6">
+                    <a href="{{ url_for('admin.index') }}" class="govuk-button govuk-button--secondary">
+                        {{ _('Back to Site Admin') }}
                     </a>
                 </div>
-                {% endif %}
-            </nav>
-            {% endif %}
-
-            {% else %}
-            <div class="govuk-inset-text">
-                <p class="govuk-body">{{ _('No users found matching your criteria.') }}</p>
-            </div>
-            {% endif %}
-
-            <div class="govuk-inset-text">
-              <p class="govuk-body">{{ _('To create a user,') }} <a href="{{ url_for('admin.create_invite') }}">{{ _('create/send them an invite code') }}.</a></p>
-            </div>
-
-            <!-- Back Button -->
-            <div class="govuk-button-group govuk-!-margin-top-6">
-                <a href="{{ url_for('admin.index') }}" class="govuk-button govuk-button--secondary">
-                    {{ _('Back to Site Admin') }}
-                </a>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -3,19 +3,19 @@
 {% block title %}{{ _('User Data Agreement') }} - OpenDLP{% endblock %}
 
 {% block content %}
-<div class="govuk-width-container">
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-            <div class="main">
-                {{ agreement_content|safe }}
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="main">
+                    {{ agreement_content|safe }}
 
-                <div class="govuk-!-margin-top-6">
-                    <a href="{{ url_for('auth.register') }}" class="govuk-button govuk-button--secondary">
-                        {{ _('Back to Registration') }}
-                    </a>
+                    <div class="govuk-!-margin-top-6">
+                        <a href="{{ url_for('auth.register') }}" class="govuk-button govuk-button--secondary">
+                            {{ _('Back to Registration') }}
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
