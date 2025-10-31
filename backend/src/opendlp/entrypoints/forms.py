@@ -18,6 +18,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
+from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
 from opendlp.domain.value_objects import validate_email as domain_validate_email
@@ -53,6 +54,27 @@ class DomainEmailValidator:
         except ValueError as error:
             message = self.message or _("Invalid email address")
             raise ValidationError(message) from error
+
+
+class EmailDoesNotExistValidator:
+    """WTForms validator that checks the email address is not already associated with a user."""
+
+    def __init__(self, message: str = "") -> None:
+        self.message = message or _l("This email address is already registered.")
+
+    def __call__(self, form: Any, field: Any) -> None:
+        existing_user: User | None = None
+        if not field.data:
+            return
+        try:
+            with SqlAlchemyUnitOfWork() as uow:
+                existing_user = uow.users.get_by_email(field.data)
+        except Exception:  # noqa: S110
+            # If we can't check (e.g., database error), allow form to continue
+            # The service layer will handle this case properly
+            pass
+        if existing_user:
+            raise ValidationError(str(self.message))
 
 
 class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -94,7 +116,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     email = EmailField(
         _l("Email address"),
-        validators=[DataRequired(), DomainEmailValidator(), Length(max=255)],
+        validators=[DataRequired(), DomainEmailValidator(), EmailDoesNotExistValidator(), Length(max=255)],
         render_kw={"autocomplete": "email"},
     )
 
@@ -113,20 +135,6 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired(message=_l("You must accept the data agreement to register"))],
         description=_l("I agree to the data agreement"),
     )
-
-    def validate_email(self, email: EmailField) -> None:
-        """Validate that email is not already registered."""
-        if not email.data:
-            return
-        try:
-            with SqlAlchemyUnitOfWork() as uow:
-                existing_user = uow.users.get_by_email(email.data)
-                if existing_user:
-                    raise ValidationError(_("This email address is already registered."))
-        except Exception:  # noqa: S110
-            # If we can't check (e.g., database error), allow form to continue
-            # The service layer will handle this case properly
-            pass
 
     def validate_invite_code(self, invite_code: StringField) -> None:
         """Validate that invite code exists and is valid."""
@@ -356,7 +364,7 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     email = EmailField(
         _l("Email Address (Optional)"),
-        validators=[Optional(), DomainEmailValidator()],
+        validators=[Optional(), DomainEmailValidator(), EmailDoesNotExistValidator()],
         description=_l("Optional - if provided, the invite will be emailed to this address"),
         render_kw={"autocomplete": "email"},
     )
