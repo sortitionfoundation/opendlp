@@ -82,8 +82,8 @@
                 <div class="govuk-summary-list__row">
                     <dt class="govuk-summary-list__key">{{ _('Data Agreement') }}</dt>
                     <dd class="govuk-summary-list__value">
-                        {% if user.data_agreement_agreed_at %}
-                            {{ _('Agreed on') }} {{ user.data_agreement_agreed_at.strftime('%d %B %Y at %H:%M') }}
+                        {% if user.user_data_agreement_agreed_at %}
+                            {{ _('Agreed on') }} {{ user.user_data_agreement_agreed_at.strftime('%d %B %Y at %H:%M') }}
                         {% else %}
                             <span class="govuk-hint">{{ _('Not agreed') }}</span>
                         {% endif %}
