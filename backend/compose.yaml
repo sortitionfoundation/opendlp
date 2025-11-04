@@ -62,5 +62,8 @@ services:
   redis:
     image: redis:alpine
 
+networks:
+  opendlp_prod_net:
+
 volumes:
   sqla_opendlp_pgdata:
