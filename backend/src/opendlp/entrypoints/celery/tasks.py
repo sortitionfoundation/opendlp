@@ -8,6 +8,7 @@ from celery.signals import setup_logging
 from sortition_algorithms import (
     RunReport,
     adapters,
+    errors,
     people,
     run_stratification,
     selected_remaining_tables,
@@ -229,11 +230,18 @@ def _internal_run_select(
                 session_factory=session_factory,
             )
         else:
+            if report.last_error():
+                if isinstance(report.last_error(), errors.SortitionBaseError):
+                    error_message = report.last_error().to_html()
+                else:
+                    error_message = str(report.last_error())
+            else:
+                error_message = "Selection algorithm could not find panels meeting the specified criteria"
             _update_selection_record(
                 task_id=task_id,
                 status=SelectionRunStatus.FAILED,
                 log_message="Selection algorithm failed to find suitable panels",
-                error_message="Selection algorithm could not find panels meeting the specified criteria",
+                error_message=error_message,
                 completed_at=datetime.now(UTC),
                 session_factory=session_factory,
             )

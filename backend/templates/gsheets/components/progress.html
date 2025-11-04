@@ -89,7 +89,7 @@
             <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
                 <div class="govuk-error-summary__body">
                     <ul class="govuk-list govuk-error-summary__list">
-                        <li>{{ run_record.error_message }}</li>
+                        <li>{{ run_record.error_message | safe }}</li>
                     </ul>
                 </div>
             </div>
