@@ -143,6 +143,7 @@ stop-docker:
 
 # rebuild docker image
 build-docker:
+	@git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
 	@docker compose build
 
 # start docker and detach - note NO WATCH
