@@ -480,6 +480,9 @@ button.govuk-link {
 .govuk-footer {
     border-top: 5px solid $purple-red;
 }
+.govuk-footer .govuk-secondary-text-colour {
+    color: $dark-grey;
+}
 
 // Run report table styling - applies GOV.UK table styling to external HTML
 .run-report {

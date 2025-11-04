@@ -324,4 +324,9 @@ vite.config.ts.timestamp-*
 
 # local notes - don't commit
 /backend/notes.md
+
+# playwright MCP directory
 .playwright-mcp/
+
+# generated version
+generated_version.txt

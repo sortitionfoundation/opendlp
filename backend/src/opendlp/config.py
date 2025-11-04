@@ -347,6 +347,14 @@ def get_translations_path() -> Path:
     return _get_project_root() / "translations"
 
 
+def get_opendlp_version_path() -> Path:
+    return _get_project_root() / "generated_version.txt"
+
+
+def get_git_dir_path() -> Path:
+    return (_get_project_root() / ".." / ".git").resolve()
+
+
 def use_csv_data_source_for_testing() -> bool:
     """Check if we should use CSV instead of Google Sheets (for testing)"""
     return bool_environ_get("USE_CSV_DATA_SOURCE")
