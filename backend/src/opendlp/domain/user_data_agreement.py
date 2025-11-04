@@ -17,7 +17,7 @@ as follows:
 ## 1. Data Controllers
 
 * **Sortition Foundation**
-   Registered office: 32 Gilbert Close, Cambridge, CB4 3HR, United Kingdom
+   Registered office: Unit 3 Wellbrook Court, Girton, Cambridge, CB3 0NA, United Kingdom
    Tax number: GB344874864
 
 * **Sortition Europe Nonprofit Ltd.**
@@ -149,7 +149,7 @@ For questions, remarks, requests, or exercising privacy rights, contact:
    Email: info@kozossegigyules.hu
 
 * **Sortition Foundation**
-   Address: 32 Gilbert Close, Cambridge, United Kingdom
+   Address: Unit 3 Wellbrook Court, Girton, Cambridge, CB3 0NA, United Kingdom
    Email: info@sortitionfoundation.org
 
 **Effective Date:** This privacy notice is valid from 1 September 2025 onward.
@@ -176,7 +176,7 @@ az alábbiak szerint:
 ## 1. Adatkezelők
 
 * **Sortition Foundation**
-  Székhely: 32 Gilbert Close, Cambridge, CB4 3HR, Egyesült Királyság
+  Székhely: Unit 3 Wellbrook Court, Girton, Cambridge, CB3 0NA, Egyesült Királyság
   Adószám: GB344874864
 
 * **Sortition Europe Nonprofit Kft.**
@@ -335,7 +335,7 @@ Kérdésekkel, észrevételekkel, kérésekkel vagy az adatvédelmi jogok gyakor
   E-mail: info@kozossegigyules.hu
 
 * **Sortition Foundation**
-  Cím: 32 Gilbert Close, Cambridge, Egyesült Királyság
+  Cím: Unit 3 Wellbrook Court, Girton, Cambridge, CB3 0NA, Egyesült Királyság
   E-mail: info@sortitionfoundation.org
 
 **Hatálybalépés dátuma:** Ez az adatvédelmi nyilatkozat 2025. szeptember 1-től érvényes.
