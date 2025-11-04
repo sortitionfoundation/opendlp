@@ -230,11 +230,9 @@ def _internal_run_select(
                 session_factory=session_factory,
             )
         else:
-            if report.last_error():
-                if isinstance(report.last_error(), errors.SortitionBaseError):
-                    error_message = report.last_error().to_html()
-                else:
-                    error_message = str(report.last_error())
+            error = report.last_error()
+            if error:
+                error_message = error.to_html() if isinstance(error, errors.SortitionBaseError) else str(error)
             else:
                 error_message = "Selection algorithm could not find panels meeting the specified criteria"
             _update_selection_record(
