@@ -96,7 +96,7 @@ def logging_setup(log_level: int = logging.INFO) -> None:
         requests_log.propagate = True
 
 
-class GunicornLogger:
+class GunicornLogger:  # pragma: no cover
     """
     Modified from: https://gist.github.com/airhorns/c2d34b2c823541fc0b32e5c853aab7e7
     A stripped down version of https://github.com/benoitc/gunicorn/blob/master/gunicorn/glogging.py to provide structlog logging in gunicorn
