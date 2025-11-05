@@ -14,9 +14,11 @@ from click.testing import CliRunner
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from tenacity import Retrying, retry, stop_after_delay
+from werkzeug.security import generate_password_hash
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
+from opendlp.service_layer import security
 
 pytest_plugins = ["tests.bdd.shared.ui_shared"]
 
@@ -196,3 +198,15 @@ def wait_for_celery_worker_to_come_up(celery_app, timeout: int = 10) -> bool:
 
             return True
     return False
+
+
+@pytest.fixture(autouse=True)
+def patch_password_hashing(monkeypatch):
+    """Proper password hashing is slow - let's do a much quicker password hashing in tests"""
+
+    def mock_generate(password):
+        # this means we only use 1 iteration of sha256, rather than the default
+        # 1 million. Should make things faster
+        return generate_password_hash(password, method="pbkdf2:sha256:1")
+
+    monkeypatch.setattr(security, "generate_password_hash", mock_generate)
