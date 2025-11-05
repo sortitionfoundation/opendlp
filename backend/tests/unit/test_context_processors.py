@@ -27,7 +27,7 @@ class TestGetCssHash:
         expected_hash = hashlib.sha256(css_content.encode()).hexdigest()[:8]
 
         # Mock get_static_path to return our tmp_path
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             result = get_css_hash()
 
         assert result == expected_hash
@@ -47,7 +47,7 @@ class TestGetCssHash:
 
         # Write initial content
         css_file.write_text("body { color: red; }")
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             hash1 = get_css_hash()
 
         # Clear the cache to force recalculation
@@ -55,7 +55,7 @@ class TestGetCssHash:
 
         # Write different content
         css_file.write_text("body { color: blue; }")
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             hash2 = get_css_hash()
 
         assert hash1 != hash2
@@ -69,7 +69,7 @@ class TestGetCssHash:
         get_css_hash.cache_clear()
 
         # tmp_path is empty, no application.css file
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             result = get_css_hash()
 
         assert result == ""
@@ -87,7 +87,7 @@ class TestGetCssHash:
         css_file = css_dir / "application.css"
         css_file.write_text("body { color: red; }")
 
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             # First call
             hash1 = get_css_hash()
             # Second call - should be cached
@@ -128,7 +128,7 @@ class TestStaticVersioningContextProcessor:
 
         # Clear cache and mock the path
         get_css_hash.cache_clear()
-        with patch("opendlp.entrypoints.context_processors.get_static_path", return_value=tmp_path):
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             context = static_versioning_context_processor()
 
         assert context["css_hash"] == expected_hash
