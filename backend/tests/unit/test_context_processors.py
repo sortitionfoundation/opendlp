@@ -5,17 +5,28 @@ import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
-from opendlp.entrypoints.context_processors import get_css_hash, static_versioning_context_processor
+import pytest
+
+from opendlp.entrypoints.context_processors import (
+    get_css_hash,
+    get_opendlp_version,
+    static_versioning_context_processor,
+)
 
 
 class TestGetCssHash:
     """Test the get_css_hash function."""
 
-    def test_get_css_hash_returns_short_hash(self, tmp_path: Path):
-        """Test that get_css_hash returns a short hash of the file contents."""
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
         # Clear cache to ensure clean state
         get_css_hash.cache_clear()
+        yield
+        # Cleanup
+        get_css_hash.cache_clear()
 
+    def test_get_css_hash_returns_short_hash(self, tmp_path: Path):
+        """Test that get_css_hash returns a short hash of the file contents."""
         # Create a temporary CSS file in css subdirectory
         css_dir = tmp_path / "css"
         css_dir.mkdir()
@@ -33,14 +44,8 @@ class TestGetCssHash:
         assert result == expected_hash
         assert len(result) == 8
 
-        # Cleanup
-        get_css_hash.cache_clear()
-
     def test_get_css_hash_changes_when_content_changes(self, tmp_path: Path):
         """Test that the hash changes when file content changes."""
-        # Clear cache to ensure clean state
-        get_css_hash.cache_clear()
-
         css_dir = tmp_path / "css"
         css_dir.mkdir()
         css_file = css_dir / "application.css"
@@ -60,28 +65,16 @@ class TestGetCssHash:
 
         assert hash1 != hash2
 
-        # Cleanup
-        get_css_hash.cache_clear()
-
     def test_get_css_hash_returns_empty_string_when_file_missing(self, tmp_path: Path):
         """Test that get_css_hash returns empty string when CSS file doesn't exist."""
-        # Clear cache to ensure we're not using cached results
-        get_css_hash.cache_clear()
-
         # tmp_path is empty, no application.css file
         with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
             result = get_css_hash()
 
         assert result == ""
 
-        # Cleanup
-        get_css_hash.cache_clear()
-
     def test_get_css_hash_is_cached(self, tmp_path: Path):
         """Test that get_css_hash uses functools.cache and returns cached value."""
-        # Clear cache to ensure clean state
-        get_css_hash.cache_clear()
-
         css_dir = tmp_path / "css"
         css_dir.mkdir()
         css_file = css_dir / "application.css"
@@ -98,9 +91,6 @@ class TestGetCssHash:
         # Verify function has cache_clear method (indicating it's decorated with cache)
         assert hasattr(get_css_hash, "cache_clear")
         assert hasattr(get_css_hash, "cache_info")
-
-        # Clear cache for other tests
-        get_css_hash.cache_clear()
 
 
 class TestStaticVersioningContextProcessor:
@@ -135,3 +125,85 @@ class TestStaticVersioningContextProcessor:
 
         # Cleanup
         get_css_hash.cache_clear()
+
+
+class TestGetOpendlpVersion:
+    """Test the get_opendlp_version context processor"""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        # Clear cache to ensure clean state
+        get_opendlp_version.cache_clear()
+        yield
+        # Cleanup
+        get_opendlp_version.cache_clear()
+
+    def test_get_opendlp_version_with_version_file(self, tmp_path):
+        expected_version = "2000-01-02 1a2b3c4d"
+        version_file = tmp_path / "generated_version.txt"
+        version_file.write_text(f"{expected_version}\n")
+
+        with patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file):
+            assert get_opendlp_version() == expected_version
+
+    def test_get_opendlp_version_with_empty_version_file_no_git_dir(self, tmp_path):
+        version_file = tmp_path / "generated_version.txt"
+        version_file.write_text("\n")
+
+        with (
+            patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file),
+            patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=tmp_path),
+        ):
+            assert get_opendlp_version() == "UNKNOWN"
+
+    def test_get_opendlp_version_with_head_version_file_no_git_dir(self, tmp_path):
+        version_file = tmp_path / "generated_version.txt"
+        version_file.write_text("HEAD\n")
+
+        with (
+            patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file),
+            patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=tmp_path),
+        ):
+            assert get_opendlp_version() == "UNKNOWN"
+
+    def test_get_opendlp_version_with_no_version_file_no_git_dir(self, tmp_path):
+        version_file = tmp_path / "generated_version.txt"
+
+        with (
+            patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file),
+            patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=tmp_path),
+        ):
+            assert get_opendlp_version() == "UNKNOWN"
+
+    def test_get_opendlp_version_with_no_version_file_git_dir(self, tmp_path, fake_process):
+        expected_version = "2000-01-02 1a2b3c4d"
+        version_file = tmp_path / "generated_version.txt"
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+
+        fake_process.register(
+            ["git", "show", "--no-patch", "--format=%cd %h", "--date=format:%Y-%m-%d", "HEAD"],
+            stdout=f"{expected_version}\n",
+        )
+
+        with (
+            patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file),
+            patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=git_dir),
+        ):
+            assert get_opendlp_version() == expected_version
+
+    def test_get_opendlp_version_with_no_version_file_failed_git_cmd(self, tmp_path, fake_process):
+        version_file = tmp_path / "generated_version.txt"
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+
+        fake_process.register(
+            ["git", "show", "--no-patch", "--format=%cd %h", "--date=format:%Y-%m-%d", "HEAD"],
+            returncode=1,
+        )
+
+        with (
+            patch("opendlp.entrypoints.context_processors.config.get_opendlp_version_path", return_value=version_file),
+            patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=git_dir),
+        ):
+            assert get_opendlp_version() == "UNKNOWN"

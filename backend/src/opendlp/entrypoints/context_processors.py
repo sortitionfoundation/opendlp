@@ -60,7 +60,7 @@ def get_opendlp_version() -> str:
             text=True,
         )
         if result.returncode == 0:
-            return result.stdout
+            return result.stdout.strip()
 
     return "UNKNOWN"
 
