@@ -14,16 +14,6 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 
 
 @pytest.fixture
-def admin_user():
-    """Create an admin user."""
-    return User(
-        email="admin@example.com",
-        global_role=GlobalRole.ADMIN,
-        password_hash="hash123",  # pragma: allowlist secret
-    )
-
-
-@pytest.fixture
 def user_repo(postgres_session: Session):
     """Create a UserRepository using PostgreSQL."""
     return SqlAlchemyUserRepository(postgres_session)

@@ -361,9 +361,8 @@ class TestAdminUserEdit:
         )
 
         # Should show error (could be 200 with error message or redirect)
-        assert response.status_code in [200, 302]
-        if response.status_code == 200:
-            assert b"Cannot change your own" in response.data or b"error" in response.data.lower()
+        assert response.status_code == 200
+        assert b"Cannot change your own" in response.data or b"error" in response.data.lower()
 
     def test_admin_cannot_deactivate_self(self, client: FlaskClient, admin_user: User):
         """Test that admin cannot deactivate their own account."""
@@ -382,9 +381,8 @@ class TestAdminUserEdit:
         )
 
         # Should show error
-        assert response.status_code in [200, 302]
-        if response.status_code == 200:
-            assert b"Cannot deactivate your own" in response.data or b"error" in response.data.lower()
+        assert response.status_code == 200
+        assert b"Cannot deactivate your own" in response.data or b"error" in response.data.lower()
 
 
 class TestAdminNavigation:
