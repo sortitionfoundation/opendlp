@@ -1,7 +1,10 @@
 """ABOUTME: Flask application factory with configuration, blueprints, and error handling
 ABOUTME: Creates and configures Flask app instance with all necessary extensions and routes"""
 
-from flask import Flask, Response, render_template
+import uuid
+
+import structlog
+from flask import Flask, Response, render_template, request
 from flask_login import current_user
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -49,7 +52,8 @@ def create_app(config_name: str = "") -> Flask:
     # Register error handlers
     register_error_handlers(app)
 
-    # Register after request handlers
+    # Register before/after request handlers
+    register_before_request_handlers(app)
     register_after_request_handlers(app)
 
     app.logger.info("OpenDLP application startup")
@@ -97,6 +101,27 @@ def register_error_handlers(app: Flask) -> None:
     def forbidden(error: HTTPException) -> tuple[str, int]:
         """Handle 403 Forbidden errors."""
         return render_template("errors/403.html"), 403
+
+
+def register_before_request_handlers(app: Flask) -> None:
+    """Register before request handlers."""
+
+    @app.before_request
+    def add_context_for_structlog() -> None:
+        """
+        Add items to structlog for this request:
+        - the request path
+        - a UUID for this request - so we can find all log messages for a request easily
+        - the origin of the request
+
+        Idea from https://www.structlog.org/en/25.5.0/contextvars.html#example-flask-and-thread-local-data
+        """
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(
+            view=request.path,
+            request_id=str(uuid.uuid4()),
+            peer=request.access_route[0],
+        )
 
 
 def register_after_request_handlers(app: Flask) -> None:
