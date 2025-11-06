@@ -1,15 +1,21 @@
 """ABOUTME: Password reset service layer for managing password recovery
 ABOUTME: Handles reset token creation, validation, rate limiting, and password updates"""
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
+from flask import render_template, url_for
+
+from opendlp.adapters.email import EmailAdapter
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.users import User
 
 from .exceptions import InvalidResetToken, PasswordTooWeak, RateLimitExceeded
 from .security import TempUser, hash_password, validate_password_strength
 from .unit_of_work import AbstractUnitOfWork
+
+logger = logging.getLogger(__name__)
 
 # Configuration constants
 DEFAULT_TOKEN_EXPIRY_HOURS = 1
@@ -267,3 +273,61 @@ def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
         count = uow.password_reset_tokens.delete_old_tokens(before)
         uow.commit()
         return count
+
+
+def send_password_reset_email(
+    email_adapter: EmailAdapter,
+    user: User,
+    reset_token: str,
+    expires_in_hours: int = DEFAULT_TOKEN_EXPIRY_HOURS,
+) -> bool:
+    """
+    Send password reset email to user.
+
+    Args:
+        email_adapter: Email adapter for sending emails
+        user: User to send email to
+        reset_token: Password reset token string
+        expires_in_hours: Hours until token expires (for email message)
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    try:
+        # Generate reset URL
+        # Using _external=True to get full URL with domain
+        reset_url = url_for(
+            "auth.reset_password",
+            token=reset_token,
+            _external=True,
+        )
+
+        # Prepare template context
+        context = {
+            "user_name": user.display_name if user.first_name or user.last_name else None,
+            "reset_url": reset_url,
+            "expiry_hours": expires_in_hours,
+        }
+
+        # Render email templates
+        text_body = render_template("emails/password_reset.txt", **context)
+        html_body = render_template("emails/password_reset.html", **context)
+
+        # Send email
+        success = email_adapter.send_email(
+            to=[user.email],
+            subject="Reset Your OpenDLP Password",
+            text_body=text_body,
+            html_body=html_body,
+        )
+
+        if success:
+            logger.info(f"Password reset email sent to {user.email}")
+        else:
+            logger.error(f"Failed to send password reset email to {user.email}")
+
+        return success
+
+    except Exception as e:
+        logger.error(f"Error sending password reset email to {user.email}: {e}")
+        return False
