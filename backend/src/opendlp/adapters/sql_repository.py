@@ -12,12 +12,14 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, SelectionRunStatus
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    PasswordResetTokenRepository,
     SelectionRunRecordRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
@@ -457,3 +459,93 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
         )
+
+
+class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordResetTokenRepository):
+    """SQLAlchemy implementation of PasswordResetTokenRepository."""
+
+    def add(self, item: PasswordResetToken) -> None:
+        """Add a token to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> PasswordResetToken | None:
+        """Get a token by its ID."""
+        return self.session.query(PasswordResetToken).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[PasswordResetToken]:
+        """Get all tokens."""
+        return self.session.query(PasswordResetToken).order_by(orm.password_reset_tokens.c.created_at.desc()).all()
+
+    def get_by_token(self, token: str) -> PasswordResetToken | None:
+        """Get a password reset token by its token string."""
+        return self.session.query(PasswordResetToken).filter_by(token=token).first()
+
+    def get_active_tokens_for_user(self, user_id: uuid.UUID) -> Iterable[PasswordResetToken]:
+        """Get all active (not expired and not used) tokens for a user."""
+        now = datetime.now(UTC)
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    orm.password_reset_tokens.c.user_id == user_id,
+                    orm.password_reset_tokens.c.used_at.is_(None),
+                    orm.password_reset_tokens.c.expires_at > now,
+                )
+            )
+            .order_by(orm.password_reset_tokens.c.created_at.desc())
+            .all()
+        )
+
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
+        """Count password reset requests for a user since a given datetime."""
+        return (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    orm.password_reset_tokens.c.user_id == user_id,
+                    orm.password_reset_tokens.c.created_at >= since,
+                )
+            )
+            .count()
+        )
+
+    def delete_old_tokens(self, before: datetime) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        tokens_to_delete = (
+            self.session.query(PasswordResetToken)
+            .filter(orm.password_reset_tokens.c.created_at < before)
+            .all()
+        )
+
+        count = len(tokens_to_delete)
+        for token in tokens_to_delete:
+            self.session.delete(token)
+
+        return count
+
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
+        now = datetime.now(UTC)
+        active_tokens = (
+            self.session.query(PasswordResetToken)
+            .filter(
+                and_(
+                    orm.password_reset_tokens.c.user_id == user_id,
+                    orm.password_reset_tokens.c.used_at.is_(None),
+                    orm.password_reset_tokens.c.expires_at > now,
+                )
+            )
+            .all()
+        )
+
+        count = 0
+        for token in active_tokens:
+            if token.is_valid():  # Double-check validity
+                token.use()
+                count += 1
+
+        return count
+
+    def delete(self, item: PasswordResetToken) -> None:
+        """Delete a token from the repository."""
+        self.session.delete(item)
