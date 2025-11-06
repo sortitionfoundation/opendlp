@@ -8,9 +8,23 @@ from flask_babel import get_locale
 from flask_login import current_user, login_required, login_user, logout_user
 
 from opendlp import bootstrap
+from opendlp.bootstrap import get_email_adapter
 from opendlp.domain.user_data_agreement import get_user_data_agreement_content
-from opendlp.entrypoints.forms import LoginForm, RegistrationForm
-from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
+from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
+from opendlp.service_layer.exceptions import (
+    InvalidCredentials,
+    InvalidInvite,
+    InvalidResetToken,
+    PasswordTooWeak,
+    RateLimitExceeded,
+    UserAlreadyExists,
+)
+from opendlp.service_layer.password_reset_service import (
+    request_password_reset,
+    reset_password_with_token,
+    send_password_reset_email,
+    validate_reset_token,
+)
 from opendlp.service_layer.security import password_validators_help_text_html
 from opendlp.service_layer.user_service import authenticate_user, create_user
 from opendlp.translations import gettext as _
@@ -125,3 +139,92 @@ def user_data_agreement() -> ResponseReturnValue:
         html_content = markdown.markdown(markdown_content)
 
     return render_template("auth/user_data_agreement.html", agreement_content=html_content)
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password() -> ResponseReturnValue:
+    """Request password reset page."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    form = PasswordResetRequestForm()
+
+    if form.validate_on_submit():
+        try:
+            assert form.email.data is not None
+            uow = bootstrap.bootstrap()
+
+            # Request password reset (creates token if valid user)
+            success = request_password_reset(uow, form.email.data)
+
+            if success:
+                # Get the token and user to send email
+                with uow:
+                    user = uow.users.get_by_email(form.email.data)
+                    if user and user.is_active and not user.oauth_provider:
+                        # Get the most recent token for this user
+                        tokens = uow.password_reset_tokens.get_active_tokens_for_user(user.id)
+                        tokens_list = list(tokens)
+                        if tokens_list:
+                            # Send the email
+                            email_adapter = get_email_adapter()
+                            send_password_reset_email(
+                                email_adapter=email_adapter,
+                                user=user,
+                                reset_token=tokens_list[0].token,
+                            )
+
+            # Always show success message (anti-enumeration)
+            flash(
+                _("If an account exists with this email, a password reset link has been sent."),
+                "info",
+            )
+            return redirect(url_for("auth.login"))
+
+        except RateLimitExceeded as e:
+            flash(str(e), "error")
+        except Exception as e:
+            current_app.logger.error(f"Password reset request error: {e}")
+            flash(_("An error occurred. Please try again."), "error")
+
+    return render_template("auth/forgot_password.html", form=form)
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token: str) -> ResponseReturnValue:
+    """Reset password page with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    form = PasswordResetForm()
+
+    # Validate token on GET request
+    if request.method == "GET":
+        try:
+            uow = bootstrap.bootstrap()
+            validate_reset_token(uow, token)
+        except InvalidResetToken as e:
+            flash(str(e), "error")
+            return redirect(url_for("auth.forgot_password"))
+
+    if form.validate_on_submit():
+        try:
+            assert form.password.data is not None
+            uow = bootstrap.bootstrap()
+
+            # Reset the password
+            user = reset_password_with_token(uow, token, form.password.data)
+
+            flash(_("Your password has been reset successfully. You can now log in."), "success")
+            return redirect(url_for("auth.login"))
+
+        except InvalidResetToken as e:
+            flash(str(e), "error")
+            return redirect(url_for("auth.forgot_password"))
+        except PasswordTooWeak as e:
+            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
+        except Exception as e:
+            current_app.logger.error(f"Password reset error: {e}")
+            flash(_("An error occurred. Please try again."), "error")
+
+    return render_template("auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html())
