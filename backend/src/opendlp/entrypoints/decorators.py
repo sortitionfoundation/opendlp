@@ -58,12 +58,12 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
     return decorator
 
 
-def require_admin(f: F) -> F:
+def require_admin[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires admin role."""
     return require_global_role(GlobalRole.ADMIN)(f)
 
 
-def require_global_organiser(f: F) -> F:
+def require_global_organiser[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires global organiser role or higher."""
     return require_global_role(GlobalRole.GLOBAL_ORGANISER)(f)
 
@@ -120,17 +120,17 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
     return decorator
 
 
-def require_assembly_view(f: F) -> F:
+def require_assembly_view[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires assembly view permission."""
     return require_assembly_permission(can_view_assembly)(f)
 
 
-def require_assembly_management(f: F) -> F:
+def require_assembly_management[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires assembly management permission."""
     return require_assembly_permission(can_manage_assembly)(f)
 
 
-def require_confirmation_calling(f: F) -> F:
+def require_confirmation_calling[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires confirmation calling permission."""
     return require_assembly_permission(can_call_confirmations)(f)
 
@@ -189,11 +189,11 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
     return decorator
 
 
-def require_assembly_manager(f: F) -> F:
+def require_assembly_manager[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires assembly manager role."""
     return require_assembly_role(AssemblyRole.ASSEMBLY_MANAGER)(f)
 
 
-def require_confirmation_caller(f: F) -> F:
+def require_confirmation_caller[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires confirmation caller role."""
     return require_assembly_role(AssemblyRole.CONFIRMATION_CALLER)(f)

@@ -1,6 +1,5 @@
 """Integration tests for password reset flow."""
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -21,7 +20,7 @@ def test_user(session_factory):
         user = User(
             email="testuser@example.com",
             global_role=GlobalRole.USER,
-            password_hash="old_password_hash",
+            password_hash="old_password_hash",  # pragma: allowlist secret
             first_name="Test",
             last_name="User",
         )
@@ -57,14 +56,16 @@ def test_full_password_reset_flow(session_factory, test_user):
 
     from unittest.mock import patch
 
-    with patch("opendlp.service_layer.password_reset_service.hash_password") as mock_hash:
-        with patch("opendlp.service_layer.password_reset_service.validate_password_strength") as mock_validate:
-            mock_hash.return_value = new_password_hash
-            mock_validate.return_value = (True, "")
+    with (
+        patch("opendlp.service_layer.password_reset_service.hash_password") as mock_hash,
+        patch("opendlp.service_layer.password_reset_service.validate_password_strength") as mock_validate,
+    ):
+        mock_hash.return_value = new_password_hash
+        mock_validate.return_value = (True, "")
 
-            user = password_reset_service.reset_password_with_token(uow, token.token, "NewSecurePassword123!")
+        user = password_reset_service.reset_password_with_token(uow, token.token, "NewSecurePassword123!")
 
-            assert user.id == test_user
+        assert user.id == test_user
 
     # Step 5: Verify password was changed
     with uow:
@@ -82,7 +83,7 @@ def test_rate_limiting(session_factory, test_user):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Make 3 requests (hitting the limit)
-    for i in range(3):
+    for _i in range(3):
         password_reset_service.request_password_reset(uow, "testuser@example.com")
 
     # 4th request should fail
@@ -177,7 +178,7 @@ def test_inactive_user_cannot_reset_password(session_factory):
         inactive_user = User(
             email="inactive@example.com",
             global_role=GlobalRole.USER,
-            password_hash="password_hash",
+            password_hash="password_hash",  # pragma: allowlist secret
             is_active=False,
         )
         uow.users.add(inactive_user)
@@ -241,12 +242,14 @@ def test_invalidate_other_tokens_on_reset(session_factory, test_user):
     # Reset password with token1
     from unittest.mock import patch
 
-    with patch("opendlp.service_layer.password_reset_service.hash_password") as mock_hash:
-        with patch("opendlp.service_layer.password_reset_service.validate_password_strength") as mock_validate:
-            mock_hash.return_value = "new_hash"
-            mock_validate.return_value = (True, "")
+    with (
+        patch("opendlp.service_layer.password_reset_service.hash_password") as mock_hash,
+        patch("opendlp.service_layer.password_reset_service.validate_password_strength") as mock_validate,
+    ):
+        mock_hash.return_value = "new_hash"
+        mock_validate.return_value = (True, "")
 
-            password_reset_service.reset_password_with_token(uow, "token1", "NewPassword123!")
+        password_reset_service.reset_password_with_token(uow, "token1", "NewPassword123!")
 
     # Verify all tokens are now used
     with uow:

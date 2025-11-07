@@ -184,7 +184,7 @@ class TestLoadGSheetTask:
         # Call the actual Celery task (bind=True automatically injects self)
         # Mock update_state since we're not going through Celery's async infrastructure
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, report = load_gsheet(
+            success, features, people, _report = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -250,7 +250,7 @@ class TestLoadGSheetTask:
 
         # Attempt to load data
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, report = load_gsheet(
+            success, features, people, _report = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -295,7 +295,7 @@ class TestRunSelectTask:
 
         # Run the full selection task
         with patch.object(run_select, "update_state"):
-            success, selected_panels, report = run_select(
+            success, selected_panels, _report = run_select(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 number_people_wanted=22,
@@ -348,7 +348,7 @@ class TestRunSelectTask:
 
         # Run selection in test mode
         with patch.object(run_select, "update_state"):
-            success, selected_panels, report = run_select(
+            success, selected_panels, _report = run_select(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 number_people_wanted=22,

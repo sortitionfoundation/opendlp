@@ -215,6 +215,7 @@ def reset_password_with_token(
 
         detached_user = user.create_detached_copy()
         uow.commit()
+        assert isinstance(detached_user, User)
 
         return detached_user
 

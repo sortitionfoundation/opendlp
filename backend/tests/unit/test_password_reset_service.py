@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -43,10 +43,7 @@ class FakePasswordResetTokenRepository:
         return count
 
     def delete_old_tokens(self, before):
-        to_delete = [
-            token_id for token_id, token in self._tokens.items()
-            if token.created_at < before
-        ]
+        to_delete = [token_id for token_id, token in self._tokens.items() if token.created_at < before]
         for token_id in to_delete:
             del self._tokens[token_id]
         return len(to_delete)
@@ -106,7 +103,7 @@ def active_user(uow):
     user = User(
         email="test@example.com",
         global_role=GlobalRole.USER,
-        password_hash="hashed_password",
+        password_hash="hashed_password",  # pragma: allowlist secret
         first_name="Test",
         last_name="User",
     )
@@ -133,7 +130,7 @@ def inactive_user(uow):
     user = User(
         email="inactive@example.com",
         global_role=GlobalRole.USER,
-        password_hash="hashed_password",
+        password_hash="hashed_password",  # pragma: allowlist secret
         is_active=False,
     )
     uow.users.add(user)
@@ -306,9 +303,7 @@ class TestResetPasswordWithToken:
 
     @patch("opendlp.service_layer.password_reset_service.validate_password_strength")
     @patch("opendlp.service_layer.password_reset_service.hash_password")
-    def test_resets_password_with_valid_token(
-        self, mock_hash, mock_validate, uow, active_user
-    ):
+    def test_resets_password_with_valid_token(self, mock_hash, mock_validate, uow, active_user):
         """Should reset password with valid token."""
         mock_validate.return_value = (True, "")
         mock_hash.return_value = "new_hashed_password"
@@ -316,12 +311,10 @@ class TestResetPasswordWithToken:
         token = PasswordResetToken(user_id=active_user.id, token="valid-token")
         uow.password_reset_tokens.add(token)
 
-        result = password_reset_service.reset_password_with_token(
-            uow, "valid-token", "NewPassword123!"
-        )
+        result = password_reset_service.reset_password_with_token(uow, "valid-token", "NewPassword123!")
 
         assert result.id == active_user.id
-        assert active_user.password_hash == "new_hashed_password"
+        assert active_user.password_hash == "new_hashed_password"  # pragma: allowlist secret
         assert token.is_used()
         assert uow.committed
 
@@ -334,9 +327,7 @@ class TestResetPasswordWithToken:
         uow.password_reset_tokens.add(token)
 
         with pytest.raises(PasswordTooWeak, match="Password too weak"):
-            password_reset_service.reset_password_with_token(
-                uow, "valid-token", "weak"
-            )
+            password_reset_service.reset_password_with_token(uow, "valid-token", "weak")
 
         # Token should not be marked as used
         assert not token.is_used()
@@ -364,9 +355,7 @@ class TestResetPasswordWithToken:
     def test_rejects_invalid_token(self, uow):
         """Should reject invalid token."""
         with pytest.raises(InvalidResetToken, match="Token not found"):
-            password_reset_service.reset_password_with_token(
-                uow, "invalid-token", "NewPassword123!"
-            )
+            password_reset_service.reset_password_with_token(uow, "invalid-token", "NewPassword123!")
 
 
 class TestInvalidateUserTokens:

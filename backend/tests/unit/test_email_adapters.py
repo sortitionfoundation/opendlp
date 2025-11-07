@@ -189,7 +189,7 @@ class TestSMTPEmailAdapter:
             assert result is True
             # Verify sendmail was called with correct recipient list
             call_args = mock_server.sendmail.call_args
-            from_addr, to_addrs, _ = call_args[0]
+            _from_addr, to_addrs, _ = call_args[0]
             assert to_addrs == ["user1@example.com", "user2@example.com"]
 
     def test_send_email_with_custom_from_address(self) -> None:

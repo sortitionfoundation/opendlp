@@ -213,7 +213,7 @@ def reset_password(token: str) -> ResponseReturnValue:
             uow = bootstrap.bootstrap()
 
             # Reset the password
-            user = reset_password_with_token(uow, token, form.password.data)
+            reset_password_with_token(uow, token, form.password.data)
 
             flash(_("Your password has been reset successfully. You can now log in."), "success")
             return redirect(url_for("auth.login"))
@@ -227,4 +227,6 @@ def reset_password(token: str) -> ResponseReturnValue:
             current_app.logger.error(f"Password reset error: {e}")
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html())
+    return render_template(
+        "auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
+    )

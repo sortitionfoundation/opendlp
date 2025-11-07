@@ -512,9 +512,7 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
     def delete_old_tokens(self, before: datetime) -> int:
         """Delete tokens created before a given datetime. Returns count deleted."""
         tokens_to_delete = (
-            self.session.query(PasswordResetToken)
-            .filter(orm.password_reset_tokens.c.created_at < before)
-            .all()
+            self.session.query(PasswordResetToken).filter(orm.password_reset_tokens.c.created_at < before).all()
         )
 
         count = len(tokens_to_delete)

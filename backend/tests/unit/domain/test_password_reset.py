@@ -56,7 +56,7 @@ class TestPasswordResetToken:
         user_id = uuid.uuid4()
         before = datetime.now(UTC)
         token = PasswordResetToken(user_id=user_id)
-        after = datetime.now(UTC)
+        datetime.now(UTC)
 
         expected_expiry = before + timedelta(hours=1)
         # Allow 1 second variance for test execution time
