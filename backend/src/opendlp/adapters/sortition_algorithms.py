@@ -22,6 +22,8 @@ class CSVGSheetDataSource(AbstractDataSource):
         self.csv_data_source = csv_data_source
         self.gsheet_data_source = gsheet_data_source
         self.spreadsheet = FakeSpreadsheet("spreadsheet title")
+        # For testing delete_old_output_tabs functionality
+        self._simulated_old_tabs: list[str] = []
 
     @contextmanager
     def read_feature_data(
@@ -53,3 +55,27 @@ class CSVGSheetDataSource(AbstractDataSource):
     @property
     def people_tab_name(self) -> str:
         return self.gsheet_data_source.people_tab_name
+
+    def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
+        """
+        Simulate deleting old output tabs for testing.
+
+        In test mode, this tracks simulated tabs and optionally clears them.
+
+        Args:
+            dry_run: If True, return list of tabs without deleting. If False, delete and return list.
+
+        Returns:
+            List of tab names that were (or would be) deleted.
+        """
+        tabs_to_delete = self._simulated_old_tabs.copy()
+
+        if not dry_run:
+            # Actually "delete" the tabs by clearing the list
+            self._simulated_old_tabs.clear()
+
+        return tabs_to_delete
+
+    def add_simulated_old_tab(self, tab_name: str) -> None:
+        """Add a simulated old tab for testing purposes."""
+        self._simulated_old_tabs.append(tab_name)

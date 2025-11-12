@@ -144,3 +144,60 @@ class TestCSVGSheetDataSource:
         with patch.object(csv_data_source, "highlight_dupes") as mock_highlight:
             adapter.highlight_dupes(dupes)
             mock_highlight.assert_called_once_with(dupes)
+
+    def test_delete_old_output_tabs_dry_run(self, adapter):
+        """Test that delete_old_output_tabs with dry_run=True returns tabs without deleting."""
+        # Add simulated old tabs
+        adapter.add_simulated_old_tab("Original Selected - output - 2024-01-01")
+        adapter.add_simulated_old_tab("Remaining - output - 2024-01-01")
+        adapter.add_simulated_old_tab("Original Selected - output - 2024-01-02")
+
+        # Call with dry_run=True
+        result = adapter.delete_old_output_tabs(dry_run=True)
+
+        # Should return all tabs
+        assert len(result) == 3
+        assert "Original Selected - output - 2024-01-01" in result
+        assert "Remaining - output - 2024-01-01" in result
+        assert "Original Selected - output - 2024-01-02" in result
+
+        # But tabs should still be there (not deleted)
+        assert len(adapter._simulated_old_tabs) == 3
+
+    def test_delete_old_output_tabs_with_delete(self, adapter):
+        """Test that delete_old_output_tabs with dry_run=False deletes tabs."""
+        # Add simulated old tabs
+        adapter.add_simulated_old_tab("Original Selected - output - 2024-01-01")
+        adapter.add_simulated_old_tab("Remaining - output - 2024-01-01")
+
+        # Call with dry_run=False
+        result = adapter.delete_old_output_tabs(dry_run=False)
+
+        # Should return all tabs
+        assert len(result) == 2
+        assert "Original Selected - output - 2024-01-01" in result
+        assert "Remaining - output - 2024-01-01" in result
+
+        # Tabs should be deleted (list cleared)
+        assert len(adapter._simulated_old_tabs) == 0
+
+    def test_delete_old_output_tabs_empty_list(self, adapter):
+        """Test that delete_old_output_tabs handles empty list correctly."""
+        # Don't add any tabs
+        result = adapter.delete_old_output_tabs(dry_run=False)
+
+        # Should return empty list
+        assert result == []
+        assert len(adapter._simulated_old_tabs) == 0
+
+    def test_add_simulated_old_tab(self, adapter):
+        """Test that add_simulated_old_tab adds tabs correctly."""
+        assert len(adapter._simulated_old_tabs) == 0
+
+        adapter.add_simulated_old_tab("Test Tab 1")
+        assert len(adapter._simulated_old_tabs) == 1
+        assert adapter._simulated_old_tabs[0] == "Test Tab 1"
+
+        adapter.add_simulated_old_tab("Test Tab 2")
+        assert len(adapter._simulated_old_tabs) == 2
+        assert adapter._simulated_old_tabs[1] == "Test Tab 2"
