@@ -18,9 +18,10 @@
                         >
                             {{ _('View Spreadsheet') }}
                         </a>
-                        <br />
-                        {{ _('Ensure it is shared with:') }} {{ google_service_account_email
-                        }}
+                        {% if google_service_account_email != "UNKNOWN" %}
+                            <br />
+                            {{ _('Ensure it is shared with:') }} {{ google_service_account_email
+                            }} {% endif %}
                     </dd>
                 </div>
             </dl>

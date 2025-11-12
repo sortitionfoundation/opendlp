@@ -57,8 +57,10 @@
                         {% if form.url.description %}
                             <div class="govuk-hint">
                                 {{ form.url.description }}
-                                <br />
-                                {{ _('Ensure it is shared with:') }} {{ google_service_account_email }}
+                                {% if google_service_account_email != "UNKNOWN" %}
+                                    <br />
+                                    {{ _('Ensure it is shared with:') }} {{ google_service_account_email }}
+                                {% endif %}
                             </div>
                         {% endif %}
                         {% if form.url.errors %}
