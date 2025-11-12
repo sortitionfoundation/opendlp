@@ -63,6 +63,7 @@ class SelectionTaskType(Enum):
     TEST_SELECT_GSHEET = "test_select_gsheet"
     LOAD_REPLACEMENT_GSHEET = "load_replacement_gsheet"
     SELECT_REPLACEMENT_GSHEET = "select_replacement_gsheet"
+    DELETE_OLD_TABS = "delete_old_tabs"
 
 
 def validate_email(email: str) -> None:
