@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}{{ user.email }} - {{ _('User Details') }} - OpenDLP{% endblock %}
-
+{% block title %}{{ user.email }} - {{ _("User Details") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-width-container">
         <div class="govuk-grid-row">
@@ -9,99 +7,97 @@
                 <div class="govuk-breadcrumbs">
                     <ol class="govuk-breadcrumbs__list">
                         <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _('Site Admin') }}</a>
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.list_users') }}">{{ _('User Management') }}</a>
+                            <a class="govuk-breadcrumbs__link"
+                                href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
                         </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            {{ user.email }}
-                        </li>
+                        <li class="govuk-breadcrumbs__list-item">{{ user.email }}</li>
                     </ol>
                 </div>
-
-                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('User Details') }}</h1>
-
+                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _("User Details") }}</h1>
                 <dl class="govuk-summary-list">
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Email') }}</dt>
-                        <dd class="govuk-summary-list__value">{{ user.email }}</dd>
+                        <dt class="govuk-summary-list__key">{{ _("Email") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {{ user.email }}
+                        </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('First Name') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("First Name") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.first_name %}
                                 {{ user.first_name }}
                             {% else %}
-                                <span class="govuk-hint">{{ _('Not provided') }}</span>
+                                <span class="govuk-hint">{{ _("Not provided") }}</span>
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Last Name') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("Last Name") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.last_name %}
                                 {{ user.last_name }}
                             {% else %}
-                                <span class="govuk-hint">{{ _('Not provided') }}</span>
+                                <span class="govuk-hint">{{ _("Not provided") }}</span>
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Global Role') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("Global Role") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.global_role.value == 'admin' %}
-                                <strong class="govuk-tag govuk-tag--red">{{ _('Admin') }}</strong>
+                                <strong class="govuk-tag govuk-tag--red">{{ _("Admin") }}</strong>
                             {% elif user.global_role.value == 'global-organiser' %}
-                                <strong class="govuk-tag govuk-tag--blue">{{ _('Global Organiser') }}</strong>
+                                <strong class="govuk-tag govuk-tag--blue">{{ _("Global Organiser") }}</strong>
                             {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _('User') }}</strong>
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("User") }}</strong>
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Account Status') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("Account Status") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.is_active %}
-                                <strong class="govuk-tag govuk-tag--green">{{ _('Active') }}</strong>
+                                <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                             {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _('Inactive') }}</strong>
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Inactive") }}</strong>
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Authentication Method') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("Authentication Method") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.oauth_provider %}
-                                {{ _('OAuth') }} ({{ user.oauth_provider }})
+                                {{ _("OAuth") }} ({{ user.oauth_provider }})
                             {% else %}
-                                {{ _('Password') }}
+                                {{ _("Password") }}
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Data Agreement') }}</dt>
+                        <dt class="govuk-summary-list__key">{{ _("Data Agreement") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.user_data_agreement_agreed_at %}
-                                {{ _('Agreed on') }} {{ user.user_data_agreement_agreed_at.strftime('%d %B %Y at %H:%M') }}
+                                {{ _("Agreed on") }} {{ user.user_data_agreement_agreed_at.strftime("%d %B %Y at %H:%M") }}
                             {% else %}
-                                <span class="govuk-hint">{{ _('Not agreed') }}</span>
+                                <span class="govuk-hint">{{ _("Not agreed") }}</span>
                             {% endif %}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _('Account Created') }}</dt>
-                        <dd class="govuk-summary-list__value">{{ user.created_at.strftime('%d %B %Y at %H:%M') }}</dd>
+                        <dt class="govuk-summary-list__key">{{ _("Account Created") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {{ user.created_at.strftime("%d %B %Y at %H:%M") }}
+                        </dd>
                     </div>
                 </dl>
-
                 <div class="govuk-button-group govuk-!-margin-top-6">
-                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="govuk-button">
-                        {{ _('Edit User') }}
-                    </a>
-                    <a href="{{ url_for('admin.list_users') }}" class="govuk-button govuk-button--secondary">
-                        {{ _('Back to User List') }}
-                    </a>
+                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
+                        class="govuk-button">{{ _("Edit User") }}</a>
+                    <a href="{{ url_for('admin.list_users') }}"
+                        class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
                 </div>
             </div>
         </div>

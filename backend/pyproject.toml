@@ -211,3 +211,6 @@ fail_under = 90
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
 # - gunicorn - web server for production
 DEP002 = ["alembic", "gunicorn"]
+
+[tool.djlint]
+profile = "jinja"

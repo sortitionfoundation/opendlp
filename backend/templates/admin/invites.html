@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}{{ _('Invite Management') }} - OpenDLP{% endblock %}
-
+{% block title %}{{ _("Invite Management") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-width-container">
         <div class="govuk-grid-row">
@@ -9,74 +7,70 @@
                 <div class="govuk-breadcrumbs">
                     <ol class="govuk-breadcrumbs__list">
                         <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _('Site Admin') }}</a>
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                         </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            {{ _('Invite Management') }}
-                        </li>
+                        <li class="govuk-breadcrumbs__list-item">{{ _("Invite Management") }}</li>
                     </ol>
                 </div>
-                <h1 class="govuk-heading-xl">{{ _('Invite Management') }}</h1>
-                <p class="govuk-body-m">{{ _('This is to manage invite codes for users of this site.') }}</p>
-
+                <h1 class="govuk-heading-xl">{{ _("Invite Management") }}</h1>
+                <p class="govuk-body-m">{{ _("This is to manage invite codes for users of this site.") }}</p>
                 <!-- Create Invite Button -->
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
-                    <a href="{{ url_for('admin.create_invite') }}" class="govuk-button" data-module="govuk-button">
-                        {{ _('Create New Invite') }}
-                    </a>
-                    <form method="post" action="{{ url_for('admin.cleanup_invites') }}" style="display: inline;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button"
-                            onclick="return confirm('{{ _('This will permanently delete all expired, unused invites. Are you sure?') }}');">
-                            {{ _('Clean Up Expired Invites') }}
+                    <a href="{{ url_for('admin.create_invite') }}"
+                        class="govuk-button"
+                        data-module="govuk-button">{{ _("Create New Invite") }}</a>
+                    <form method="post"
+                        action="{{ url_for('admin.cleanup_invites') }}"
+                        style="display: inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit"
+                            class="govuk-button govuk-button--warning"
+                            data-module="govuk-button"
+                            onclick="return confirm('{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}');">
+                            {{ _("Clean Up Expired Invites") }}
                         </button>
                     </form>
                 </div>
-
                 <!-- Statistics Cards -->
                 <div class="govuk-grid-row govuk-!-margin-bottom-6">
                     <div class="govuk-grid-column-one-quarter">
                         <div class="stat-card">
-                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Total Invites') }}</p>
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Total Invites") }}</p>
                             <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.total_invites|int }}</p>
                         </div>
                     </div>
                     <div class="govuk-grid-column-one-quarter">
                         <div class="stat-card">
-                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Active Invites') }}</p>
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Active Invites") }}</p>
                             <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.active_invites|int }}</p>
                         </div>
                     </div>
                     <div class="govuk-grid-column-one-quarter">
                         <div class="stat-card">
-                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Used Invites') }}</p>
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Used Invites") }}</p>
                             <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.used_invites|int }}</p>
                         </div>
                     </div>
                     <div class="govuk-grid-column-one-quarter">
                         <div class="stat-card">
-                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _('Conversion Rate') }}</p>
+                            <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Conversion Rate") }}</p>
                             <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.conversion_rate }}%</p>
                         </div>
                     </div>
                 </div>
-
                 <!-- Results Summary -->
-                <p class="govuk-body">
-                    {{ _('Showing %(count)s invites (including expired)', count=invites|length) }}
-                </p>
-
+                <p class="govuk-body">{{ _('Showing %(count)s invites (including expired)', count=invites|length) }}</p>
                 <!-- Invites Table -->
                 {% if invites %}
                     <table class="govuk-table">
                         <thead class="govuk-table__head">
                             <tr class="govuk-table__row">
-                                <th scope="col" class="govuk-table__header">{{ _('Code') }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _('Role') }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _('Status') }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _('Created') }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _('Expires') }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _('Actions') }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Code") }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Role") }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Status") }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Created") }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Expires") }}</th>
+                                <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
                             </tr>
                         </thead>
                         <tbody class="govuk-table__body">
@@ -87,39 +81,43 @@
                                     </td>
                                     <td class="govuk-table__cell">
                                         {% if invite.global_role.value == 'admin' %}
-                                            <strong class="govuk-tag govuk-tag--red">{{ _('Admin') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--red">{{ _("Admin") }}</strong>
                                         {% elif invite.global_role.value == 'global-organiser' %}
-                                            <strong class="govuk-tag govuk-tag--blue">{{ _('Global Organiser') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--blue">{{ _("Global Organiser") }}</strong>
                                         {% else %}
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _('User') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _("User") }}</strong>
                                         {% endif %}
                                     </td>
                                     <td class="govuk-table__cell">
                                         {% if invite.used_by %}
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _('Used') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Used") }}</strong>
                                         {% elif invite.is_valid() %}
-                                            <strong class="govuk-tag govuk-tag--green">{{ _('Active') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                                         {% else %}
-                                            <strong class="govuk-tag govuk-tag--red">{{ _('Expired') }}</strong>
+                                            <strong class="govuk-tag govuk-tag--red">{{ _("Expired") }}</strong>
                                         {% endif %}
                                     </td>
+                                    <td class="govuk-table__cell">{{ invite.created_at.strftime("%d %b %Y") }}</td>
+                                    <td class="govuk-table__cell">{{ invite.expires_at.strftime("%d %b %Y") }}</td>
                                     <td class="govuk-table__cell">
-                                        {{ invite.created_at.strftime('%d %b %Y') }}
-                                    </td>
-                                    <td class="govuk-table__cell">
-                                        {{ invite.expires_at.strftime('%d %b %Y') }}
-                                    </td>
-                                    <td class="govuk-table__cell">
-                                        <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}" class="govuk-link">
-                                            {{ _('View') }}
-                                        </a>
+                                        <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}"
+                                            class="govuk-link">{{ _("View") }}</a>
                                         {% if invite.is_valid() and not invite.used_by %}
                                             |
-                                            <form method="post" action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}" style="display: inline;">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                <button type="submit" class="govuk-link" style="background: none; border: none; padding: 0; cursor: pointer; color: #1d70b8; text-decoration: underline;"
-                                                    onclick="return confirm('{{ _('Are you sure you want to revoke this invite?') }}');">
-                                                    {{ _('Revoke') }}
+                                            <form method="post"
+                                                action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
+                                                style="display: inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <button type="submit"
+                                                    class="govuk-link"
+                                                    style="background: none;
+                                                        border: none;
+                                                        padding: 0;
+                                                        cursor: pointer;
+                                                        color: #1d70b8;
+                                                        text-decoration: underline"
+                                                    onclick="return confirm('{{ _("Are you sure you want to revoke this invite?") }}');">
+                                                    {{ _("Revoke") }}
                                                 </button>
                                             </form>
                                         {% endif %}
@@ -128,18 +126,15 @@
                             {% endfor %}
                         </tbody>
                     </table>
-
                 {% else %}
                     <div class="govuk-inset-text">
-                        <p class="govuk-body">{{ _('No invites found. Create one to get started.') }}</p>
+                        <p class="govuk-body">{{ _("No invites found. Create one to get started.") }}</p>
                     </div>
                 {% endif %}
-
                 <!-- Back Button -->
                 <div class="govuk-button-group govuk-!-margin-top-6">
-                    <a href="{{ url_for('admin.index') }}" class="govuk-button govuk-button--secondary">
-                        {{ _('Back to Site Admin') }}
-                    </a>
+                    <a href="{{ url_for('admin.index') }}"
+                        class="govuk-button govuk-button--secondary">{{ _("Back to Site Admin") }}</a>
                 </div>
             </div>
         </div>

@@ -2,14 +2,13 @@
     <ul class="search-results-list govuk-list">
         {% for user in users %}
             <li>
-                <button
-                    type="button"
+                <button type="button"
                     class="search-result-item"
                     data-user-id="{{ user.id }}"
                     data-user-email="{{ user.email }}"
-                    data-user-name="{{ user.display_name }}"
-                >
-                    <strong>{{ user.email }}</strong><br>
+                    data-user-name="{{ user.display_name }}">
+                    <strong>{{ user.email }}</strong>
+                    <br>
                     <span class="govuk-body-s">{{ user.display_name }}</span>
                 </button>
             </li>
@@ -29,5 +28,5 @@
         });
     </script>
 {% elif search_term %}
-    <p class="govuk-body-s">{{ _('No users match your search') }}</p>
+    <p class="govuk-body-s">{{ _("No users match your search") }}</p>
 {% endif %}
