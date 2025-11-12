@@ -10,6 +10,7 @@ import pytest
 from opendlp.entrypoints.context_processors import (
     get_css_hash,
     get_opendlp_version,
+    get_service_account_email,
     static_versioning_context_processor,
 )
 
@@ -207,3 +208,61 @@ class TestGetOpendlpVersion:
             patch("opendlp.entrypoints.context_processors.config.get_git_dir_path", return_value=git_dir),
         ):
             assert get_opendlp_version() == "UNKNOWN"
+
+
+class TestGetServiceAccountEmail:
+    """tests for get_service_account_email()"""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        # Clear cache to ensure clean state
+        get_service_account_email.cache_clear()
+        yield
+        # Cleanup
+        get_service_account_email.cache_clear()
+
+    def test_get_service_account_email_with_no_auth_file(self, tmp_path):
+        private_dir = tmp_path / "private"
+        auth_file = private_dir / "auth.json"
+        private_dir.mkdir()
+
+        with patch("opendlp.entrypoints.context_processors.config.get_google_auth_json_path", return_value=auth_file):
+            email = get_service_account_email()
+
+        assert email == "UNKNOWN"
+
+    @pytest.mark.parametrize(
+        "contents",
+        [
+            "",
+            "not a json file.]",
+            '{"json": "but no matching key"}',
+        ],
+    )
+    def test_get_service_account_email_with_invalid_auth_file(self, tmp_path, contents):
+        private_dir = tmp_path / "private"
+        auth_file = private_dir / "auth.json"
+        private_dir.mkdir()
+        auth_file.write_text(contents)
+
+        with patch("opendlp.entrypoints.context_processors.config.get_google_auth_json_path", return_value=auth_file):
+            email = get_service_account_email()
+
+        assert email == "UNKNOWN"
+
+    def test_get_service_account_email_with_valid_auth_file(self, tmp_path):
+        private_dir = tmp_path / "private"
+        auth_file = private_dir / "auth.json"
+        private_dir.mkdir()
+        auth_file.write_text("""
+        {
+        "key1": "value1",
+        "key2": "value2",
+        "client_email": "test@test.iam.gserviceaccount.com"
+        }
+        """)
+
+        with patch("opendlp.entrypoints.context_processors.config.get_google_auth_json_path", return_value=auth_file):
+            email = get_service_account_email()
+
+        assert email == "test@test.iam.gserviceaccount.com"
