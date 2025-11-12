@@ -802,3 +802,208 @@ class TestSortitionRoutesWithAssemblyRole:
         # Should succeed and redirect to status page
         assert response.status_code == 302
         assert f"/assemblies/{assembly_id}/gsheet_select" in response.headers["Location"]
+
+
+class TestManageTabsRoutes:
+    """End-to-end tests for tab management routes."""
+
+    def test_manage_tabs_get_success(self, logged_in_admin, assembly_with_gsheet):
+        """Test GET request to manage tabs page succeeds for admin."""
+        assembly, _ = assembly_with_gsheet
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs")
+
+        assert response.status_code == 200
+        assert b"Manage Generated Tabs" in response.data or b"manage" in response.data.lower()
+        assert b"List Old Tabs" in response.data
+
+    def test_manage_tabs_get_requires_auth(self, client, assembly_with_gsheet):
+        """Test GET request to manage tabs page redirects when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        response = client.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_manage_tabs_get_requires_management_permission(self, logged_in_user, assembly_with_gsheet):
+        """Test GET request to manage tabs page fails for user without management permission."""
+        assembly, _ = assembly_with_gsheet
+        response = logged_in_user.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs")
+
+        # Should get 403 Forbidden
+        assert response.status_code == 403
+
+    @patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay")
+    def test_list_tabs_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST request to start listing task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_list_tabs")
+
+        # Should redirect to status page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_manage_tabs" in response.headers["Location"]
+
+        # Verify task was created in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].status == SelectionRunStatus.PENDING
+            assert records[0].task_type == SelectionTaskType.DELETE_OLD_TABS
+            assert "Task submitted for listing old output tabs" in records[0].log_messages
+
+    @patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay")
+    def test_delete_tabs_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST request to start deletion task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_delete_tabs")
+
+        # Should redirect to status page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_manage_tabs" in response.headers["Location"]
+
+        # Verify task was created in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].status == SelectionRunStatus.PENDING
+            assert records[0].task_type == SelectionTaskType.DELETE_OLD_TABS
+            assert "Task submitted for deleting old output tabs" in records[0].log_messages
+
+    def test_list_tabs_requires_auth(self, client, assembly_with_gsheet):
+        """Test POST request to list tabs redirects when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        response = client.post(f"/assemblies/{assembly.id}/gsheet_list_tabs")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_list_tabs_requires_management_permission(self, logged_in_user, assembly_with_gsheet):
+        """Test POST request to list tabs fails for user without management permission."""
+        assembly, _ = assembly_with_gsheet
+        response = logged_in_user.post(f"/assemblies/{assembly.id}/gsheet_list_tabs")
+
+        # Should get 403 Forbidden
+        assert response.status_code == 403
+
+    def test_delete_tabs_requires_auth(self, client, assembly_with_gsheet):
+        """Test POST request to delete tabs redirects when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        response = client.post(f"/assemblies/{assembly.id}/gsheet_delete_tabs")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_delete_tabs_requires_management_permission(self, logged_in_user, assembly_with_gsheet):
+        """Test POST request to delete tabs fails for user without management permission."""
+        assembly, _ = assembly_with_gsheet
+        response = logged_in_user.post(f"/assemblies/{assembly.id}/gsheet_delete_tabs")
+
+        # Should get 403 Forbidden
+        assert response.status_code == 403
+
+    def test_manage_tabs_with_run_shows_status(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test GET request with run_id shows task status."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a tab management run record
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                log_messages=["Task started", "Found 3 old output tab(s) that can be deleted"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}")
+
+        assert response.status_code == 200
+        assert b"Task Status" in response.data or b"status" in response.data.lower()
+        assert b"Completed" in response.data
+        assert b"Found 3 old output tab(s)" in response.data
+
+    def test_progress_endpoint_returns_fragment_for_running_task(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test progress endpoint returns HTML fragment with HTMX attributes for running tab management task."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a running tab management task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                log_messages=["Task started", "Listing old tabs"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}/progress")
+
+        assert response.status_code == 200
+        assert b"Task Status" in response.data or b"status" in response.data.lower()
+        assert b"Running" in response.data
+        assert b"Task started" in response.data
+        # Should contain HTMX polling attributes
+        assert b"hx-get" in response.data
+        assert b"hx-trigger" in response.data
+        assert b"every 2s" in response.data
+
+    def test_progress_endpoint_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
+        """Test progress endpoint redirects when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = client.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}/progress")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_progress_endpoint_requires_management_permission(
+        self, logged_in_user, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test progress endpoint requires assembly management permission."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_user.get(f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}/progress")
+
+        # Should get 403 Forbidden
+        assert response.status_code == 403
