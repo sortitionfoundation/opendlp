@@ -96,13 +96,13 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     )
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
-                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except InsufficientPermissions as e:
                 current_app.logger.warning(
                     f"Insufficient permissions to {action} gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
                 )
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
-                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except ValueError as e:
                 current_app.logger.error(
                     f"Gsheet {action} validation error for assembly {assembly_id} user {current_user.id}: {e}"
@@ -142,21 +142,21 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
 
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except ValueError as e:
         current_app.logger.warning(f"Assembly or gsheet not found for deletion by user {current_user.id}: {e}")
         flash(_("Google Spreadsheet configuration not found"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(
             f"Insufficient permissions to delete gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
         )
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(f"Gsheet deletion error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
 
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])

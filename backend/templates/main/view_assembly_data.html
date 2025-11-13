@@ -1,0 +1,40 @@
+{% extends "main/view_assembly_base.html" %}
+{% block assembly_content %}
+    <h2 class="govuk-heading-m">{{ _("Google Spreadsheet") }}</h2>
+
+    {# Action Buttons at Top #}
+    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
+        {% if not gsheet %}
+            <a href="{{ url_for('gsheets.manage_assembly_gsheet', assembly_id=assembly.id) }}"
+                class="govuk-button govuk-button--secondary">{{ _("Configure Google Spreadsheet") }}</a>
+        {% endif %}
+        {% if gsheet and gsheet.url %}
+            <a href="{{ url_for('gsheets.select_assembly_gsheet', assembly_id=assembly.id) }}"
+                class="govuk-button govuk-button--secondary">{{ _("Selection") }}</a>
+            <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}"
+                method="post"
+                style="display: inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Replacements") }}</button>
+            </form>
+            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
+        {% else %}
+            <button class="govuk-button govuk-button--secondary" disabled>{{ _("Selection") }}</button>
+            <button class="govuk-button govuk-button--secondary" disabled>{{ _("Replacements") }}</button>
+            <button class="govuk-button govuk-button--secondary" disabled>{{ _("Manage Generated Tabs") }}</button>
+        {% endif %}
+    </div>
+
+    {# Status Message if not configured #}
+    {% if not gsheet or not gsheet.url %}
+        <p class="govuk-body govuk-!-margin-bottom-6">
+            <strong>{{ _("To enable selection and replacement:") }}</strong> {{ _("Configure Google Spreadsheet settings first.") }}
+        </p>
+    {% endif %}
+
+    {# Google Spreadsheet Configuration Details #}
+    {% if gsheet %}
+        {% include "gsheets/components/view_config.html" %}
+    {% endif %}
+{% endblock %}

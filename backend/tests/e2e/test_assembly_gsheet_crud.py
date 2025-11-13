@@ -67,9 +67,9 @@ class TestAssemblyGSheetCreateView:
             follow_redirects=False,
         )
 
-        # Should redirect to view assembly page
+        # Should redirect to view assembly data page
         assert response.status_code == 302
-        assert f"/assemblies/{existing_assembly.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}/data" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -131,7 +131,7 @@ class TestAssemblyGSheetCreateView:
 
         # Should succeed
         assert response.status_code == 302
-        assert f"/assemblies/{existing_assembly.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}/data" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -185,9 +185,9 @@ class TestAssemblyGSheetEditView:
             follow_redirects=False,
         )
 
-        # Should redirect to view assembly page
+        # Should redirect to view assembly data page
         assert response.status_code == 302
-        assert f"/assemblies/{assembly.id}" in response.location
+        assert f"/assemblies/{assembly.id}/data" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -237,9 +237,9 @@ class TestAssemblyGSheetEditView:
             follow_redirects=False,
         )
 
-        # Should redirect to view assembly page
+        # Should redirect to view assembly data page
         assert response.status_code == 302
-        assert f"/assemblies/{assembly.id}" in response.location
+        assert f"/assemblies/{assembly.id}/data" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
