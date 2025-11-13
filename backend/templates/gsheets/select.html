@@ -64,6 +64,11 @@
                         <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
                             class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
                     </div>
+                    <p class="govuk-body govuk-!-margin-top-4">
+                        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}" class="govuk-link">
+                            {{ _("Manage Generated Tabs") }}
+                        </a>
+                    </p>
                     <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
                 </div>
             </div>

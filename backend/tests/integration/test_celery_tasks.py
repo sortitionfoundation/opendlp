@@ -14,7 +14,7 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, run_select
+from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, manage_old_tabs, run_select
 
 
 @pytest.fixture
@@ -367,3 +367,149 @@ class TestRunSelectTask:
             updated_record = uow.selection_run_records.get_by_task_id(task_id)
             assert updated_record is not None
             assert any("TEST only" in msg for msg in updated_record.log_messages)
+
+
+class TestManageOldTabsTask:
+    """Test the manage_old_tabs Celery task."""
+
+    def test_manage_old_tabs_list_success(self, postgres_session_factory, csv_gsheet_data_source):
+        """Test listing old tabs with dry_run=True."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Add simulated old tabs
+        csv_gsheet_data_source.add_simulated_old_tab("Original Selected - output - 2024-01-01")
+        csv_gsheet_data_source.add_simulated_old_tab("Remaining - output - 2024-01-01")
+        csv_gsheet_data_source.add_simulated_old_tab("Original Selected - output - 2024-01-02")
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                status=SelectionRunStatus.PENDING,
+                log_messages=[],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Call the task with dry_run=True
+        with patch.object(manage_old_tabs, "update_state"):
+            success, tab_names, report = manage_old_tabs(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                dry_run=True,
+                session_factory=postgres_session_factory,
+            )
+
+        # Verify success
+        assert success is True
+        assert len(tab_names) == 3
+        assert "Original Selected - output - 2024-01-01" in tab_names
+        assert "Remaining - output - 2024-01-01" in tab_names
+        assert "Original Selected - output - 2024-01-02" in tab_names
+
+        # Verify tabs were NOT deleted (dry run)
+        assert len(csv_gsheet_data_source._simulated_old_tabs) == 3
+
+        # Verify record was updated
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.COMPLETED
+            assert any("Found 3 old output tab(s)" in msg for msg in updated_record.log_messages)
+
+    def test_manage_old_tabs_delete_success(self, postgres_session_factory, csv_gsheet_data_source):
+        """Test deleting old tabs with dry_run=False."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Add simulated old tabs
+        csv_gsheet_data_source.add_simulated_old_tab("Original Selected - output - 2024-01-01")
+        csv_gsheet_data_source.add_simulated_old_tab("Remaining - output - 2024-01-01")
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                status=SelectionRunStatus.PENDING,
+                log_messages=[],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Call the task with dry_run=False
+        with patch.object(manage_old_tabs, "update_state"):
+            success, tab_names, report = manage_old_tabs(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                dry_run=False,
+                session_factory=postgres_session_factory,
+            )
+
+        # Verify success
+        assert success is True
+        assert len(tab_names) == 2
+        assert "Original Selected - output - 2024-01-01" in tab_names
+        assert "Remaining - output - 2024-01-01" in tab_names
+
+        # Verify tabs WERE deleted
+        assert len(csv_gsheet_data_source._simulated_old_tabs) == 0
+
+        # Verify record was updated
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.COMPLETED
+            assert any("Successfully deleted 2 old output tab(s)" in msg for msg in updated_record.log_messages)
+
+    def test_manage_old_tabs_empty_list(self, postgres_session_factory, csv_gsheet_data_source):
+        """Test managing old tabs when there are none."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Don't add any simulated tabs
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                status=SelectionRunStatus.PENDING,
+                log_messages=[],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Call the task
+        with patch.object(manage_old_tabs, "update_state"):
+            success, tab_names, report = manage_old_tabs(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                dry_run=False,
+                session_factory=postgres_session_factory,
+            )
+
+        # Verify success with empty list
+        assert success is True
+        assert len(tab_names) == 0
+
+        # Verify record was updated
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.COMPLETED
+            assert any("No old output tabs found" in msg for msg in updated_record.log_messages)

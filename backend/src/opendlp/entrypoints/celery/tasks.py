@@ -430,3 +430,98 @@ def run_select(
     report.add_report(write_report)
 
     return success, selected_panels, report
+
+
+@app.task(bind=True)
+def manage_old_tabs(
+    self: Task,
+    task_id: uuid.UUID,
+    data_source: adapters.GSheetDataSource | CSVGSheetDataSource,
+    dry_run: bool = True,
+    session_factory: sessionmaker | None = None,
+) -> tuple[bool, list[str], RunReport]:
+    """
+    Manage (list or delete) old output tabs in the spreadsheet.
+
+    Args:
+        self: Celery task instance (auto-injected when bind=True)
+        task_id: UUID of the task for tracking
+        data_source: Data source with access to spreadsheet
+        dry_run: If True, list tabs without deleting. If False, delete them.
+        session_factory: Optional session factory for database operations
+
+    Returns:
+        Tuple of (success: bool, tab_names: list[str], report: RunReport)
+    """
+    _set_up_celery_logging(task_id, session_factory=session_factory)
+    report = RunReport()
+
+    # Update SelectionRunRecord to running status
+    action = "listing" if dry_run else "deleting"
+    _update_selection_record(
+        task_id=task_id,
+        status=SelectionRunStatus.RUNNING,
+        log_message=f"Starting task to {action} old output tabs",
+        session_factory=session_factory,
+    )
+
+    try:
+        # Call delete_old_output_tabs method
+        tab_names = data_source.delete_old_output_tabs(dry_run=dry_run)
+
+        # Log what was found/deleted
+        if len(tab_names) == 0:
+            log_message = "No old output tabs found"
+        elif dry_run:
+            log_message = f"Found {len(tab_names)} old output tab(s) that can be deleted"
+        else:
+            log_message = f"Successfully deleted {len(tab_names)} old output tab(s)"
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            log_message=log_message,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+
+        return True, tab_names, report
+
+    except PermissionError:
+        # the PermissionError raised by gspread has no text, so appears to be blank, leading to
+        # no hint to the user as to what happened, so we deal with it differently here.
+        service_account_email = get_service_account_email()
+        error_msg = (
+            f"Failed to load gsheet due to permissions issues. "
+            f"Check the spreadsheet is shared with {service_account_email}"
+        )
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+
+        return False, [], report
+
+    except Exception as err:
+        import traceback
+
+        error_msg = f"Failed to {action} old tabs: {err}"
+        traceback_msg = traceback.format_exc()
+
+        report.add_line(error_msg)
+        report.add_lines(traceback_msg.split("\n"))
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+
+        return False, [], report

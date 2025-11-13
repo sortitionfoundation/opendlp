@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
@@ -20,8 +21,11 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.sortition import (
     LoadRunResult,
+    TabManagementResult,
+    get_manage_old_tabs_status,
     get_selection_run_status,
     start_gsheet_load_task,
+    start_gsheet_manage_tabs_task,
     start_gsheet_replace_load_task,
     start_gsheet_replace_task,
     start_gsheet_select_task,
@@ -621,3 +625,217 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error starting gsheet replacement for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
         return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs", methods=["GET"])
+@login_required
+@require_assembly_management
+def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Display Google Sheets tab management page for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+        return render_template(
+            "gsheets/manage_tabs.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            manage_status=ManageOldTabsStatus(ManageOldTabsState.FRESH),
+        ), 200
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}"
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} tab management user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Tab management page error for assembly {assembly_id} user {current_user.id}: {e}")
+        return render_template("errors/500.html"), 500
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>", methods=["GET"])
+@login_required
+@require_assembly_management
+def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Display Google Sheets tab management page with task status for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            result = get_selection_run_status(uow, run_id)
+
+        # Validate that the run belongs to this assembly
+        if result.run_record and result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            flash(_("Invalid task ID for this assembly"), "error")
+            return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+        # Extract tab_names if available
+        tab_names = []
+        if isinstance(result, TabManagementResult) and result.tab_names:
+            tab_names = result.tab_names
+
+        return render_template(
+            "gsheets/manage_tabs.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            manage_status=get_manage_old_tabs_status(result),
+            run_record=result.run_record,
+            celery_log_messages=result.log_messages,
+            run_report=result.run_report,
+            run_id=run_id,
+            tab_names=tab_names,
+        ), 200
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}"
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} tab management user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Tab management page error for assembly {assembly_id} user {current_user.id}: {e}")
+        return render_template("errors/500.html"), 500
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/progress", methods=["GET"])
+@login_required
+@require_assembly_management
+def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return progress fragment for HTMX polling of Google Sheets tab management task status."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            result = get_selection_run_status(uow, run_id)
+
+        # Check if run record exists
+        if not result.run_record:
+            current_app.logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            return "", 404
+
+        # Validate that the run belongs to this assembly
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            # Return empty response for HTMX to handle gracefully
+            return "", 404
+
+        # Extract tab_names if available
+        tab_names = []
+        if isinstance(result, TabManagementResult) and result.tab_names:
+            tab_names = result.tab_names
+
+        response = current_app.make_response((
+            render_template(
+                "gsheets/components/progress.html",
+                assembly=assembly,
+                gsheet=gsheet,
+                run_record=result.run_record,
+                celery_log_messages=result.log_messages,
+                run_report=result.run_report,
+                run_id=run_id,
+                tab_names=tab_names,
+                progress_url=url_for("gsheets.gsheet_manage_tabs_progress", assembly_id=assembly_id, run_id=run_id),
+            ),
+            200,
+        ))
+        # if it has finished, force a full page refresh
+        if result.run_record.has_finished:
+            response.headers["HX-Refresh"] = "true"
+        return response
+    except ValueError as e:
+        current_app.logger.warning(
+            f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
+        )
+        return "", 404
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+        )
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        return "", 500
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_list_tabs", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets tab listing task for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
+
+        return redirect(
+            url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet list tabs for assembly {assembly_id}: {e}")
+        flash(_("Failed to start listing task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet list tabs {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet list tabs for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the listing task"), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_delete_tabs", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a Google Sheets tab deletion task for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
+
+        return redirect(
+            url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
+
+    except ValueError as e:
+        current_app.logger.warning(f"Failed to start gsheet delete tabs for assembly {assembly_id}: {e}")
+        flash(_("Failed to start deletion task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting gsheet delete tabs {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting gsheet delete tabs for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the deletion task"), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
