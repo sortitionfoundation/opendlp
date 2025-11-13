@@ -57,12 +57,47 @@ class SelectionRunStatus(Enum):
     FAILED = "failed"
 
 
+class ManageOldTabsState(Enum):
+    FRESH = "fresh"
+    ERROR = "error"
+    LIST_RUNNING = "list_running"
+    LIST_COMPLETED = "list_completed"
+    DELETE_RUNNING = "delete_running"
+    DELETE_COMPLETED = "delete_completed"
+
+
+class ManageOldTabsStatus:
+    def __init__(self, state: ManageOldTabsState = ManageOldTabsState.FRESH) -> None:
+        self.state = state
+
+    @property
+    def is_fresh(self) -> bool:
+        return self.state == ManageOldTabsState.FRESH
+
+    @property
+    def is_running(self) -> bool:
+        return self.state in (ManageOldTabsState.LIST_RUNNING, ManageOldTabsState.DELETE_RUNNING)
+
+    @property
+    def is_completed(self) -> bool:
+        return self.state in (ManageOldTabsState.LIST_COMPLETED, ManageOldTabsState.DELETE_COMPLETED)
+
+    @property
+    def is_error(self) -> bool:
+        return self.state == ManageOldTabsState.ERROR
+
+    @property
+    def is_list_completed(self) -> bool:
+        return self.state == ManageOldTabsState.LIST_COMPLETED
+
+
 class SelectionTaskType(Enum):
     LOAD_GSHEET = "load_gsheet"
     SELECT_GSHEET = "select_gsheet"
     TEST_SELECT_GSHEET = "test_select_gsheet"
     LOAD_REPLACEMENT_GSHEET = "load_replacement_gsheet"
     SELECT_REPLACEMENT_GSHEET = "select_replacement_gsheet"
+    LIST_OLD_TABS = "list_old_tabs"
     DELETE_OLD_TABS = "delete_old_tabs"
 
 

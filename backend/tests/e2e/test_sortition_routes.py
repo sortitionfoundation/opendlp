@@ -851,7 +851,7 @@ class TestManageTabsRoutes:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
             assert len(records) == 1
             assert records[0].status == SelectionRunStatus.PENDING
-            assert records[0].task_type == SelectionTaskType.DELETE_OLD_TABS
+            assert records[0].task_type == SelectionTaskType.LIST_OLD_TABS
             assert "Task submitted for listing old output tabs" in records[0].log_messages
 
     @patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay")

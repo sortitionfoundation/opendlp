@@ -5,11 +5,11 @@ import uuid
 from unittest.mock import Mock, patch
 
 import pytest
-from sortition_algorithms import GSheetDataSource
+from sortition_algorithms import GSheetDataSource, RunReport
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from tests.data import VALID_GSHEET_URL
@@ -151,6 +151,57 @@ class TestGetSelectionRunStatus:
         result = sortition.get_selection_run_status(uow, non_existent_id)
 
         assert result.run_record is None
+
+
+class TestGetManageOldTabsStatus:
+    def get_run_result(self, task_is_list: bool, success: bool | None) -> sortition.RunResult:
+        if success is None:
+            status = SelectionRunStatus.RUNNING
+        elif success is True:
+            status = SelectionRunStatus.COMPLETED
+        else:
+            status = SelectionRunStatus.FAILED
+        return sortition.RunResult(
+            run_record=SelectionRunRecord(
+                assembly_id=uuid.uuid4(),
+                task_id=uuid.uuid4(),
+                task_type=SelectionTaskType.LIST_OLD_TABS if task_is_list else SelectionTaskType.DELETE_OLD_TABS,
+                status=status,
+                log_messages=[],
+            ),
+            run_report=RunReport(),
+            log_messages=[],
+            success=success,
+        )
+
+    def test_get_manage_old_tabs_status_for_error(self):
+        run_result = self.get_run_result(task_is_list=True, success=False)
+        status = sortition.get_manage_old_tabs_status(run_result)
+        assert status.is_error
+
+    def test_get_manage_old_tabs_status_for_list_running(self):
+        run_result = self.get_run_result(task_is_list=True, success=None)
+        status = sortition.get_manage_old_tabs_status(run_result)
+        assert status.is_running
+        assert status.state == ManageOldTabsState.LIST_RUNNING
+
+    def test_get_manage_old_tabs_status_for_list_completed(self):
+        run_result = self.get_run_result(task_is_list=True, success=True)
+        status = sortition.get_manage_old_tabs_status(run_result)
+        assert status.is_completed
+        assert status.is_list_completed
+
+    def test_get_manage_old_tabs_status_for_delete_running(self):
+        run_result = self.get_run_result(task_is_list=False, success=None)
+        status = sortition.get_manage_old_tabs_status(run_result)
+        assert status.is_running
+        assert status.state == ManageOldTabsState.DELETE_RUNNING
+
+    def test_get_manage_old_tabs_status_for_delete_completed(self):
+        run_result = self.get_run_result(task_is_list=False, success=True)
+        status = sortition.get_manage_old_tabs_status(run_result)
+        assert status.is_completed
+        assert not status.is_list_completed
 
 
 class TestGetLatestRunForAssembly:

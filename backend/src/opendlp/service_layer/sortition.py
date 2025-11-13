@@ -10,7 +10,7 @@ from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -273,10 +273,11 @@ def start_gsheet_manage_tabs_task(
 
     # Create SelectionRunRecord for tracking
     action = "listing" if dry_run else "deleting"
+    task_type = SelectionTaskType.LIST_OLD_TABS if dry_run else SelectionTaskType.DELETE_OLD_TABS
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
-        task_type=SelectionTaskType.DELETE_OLD_TABS,
+        task_type=task_type,
         status=SelectionRunStatus.PENDING,
         log_messages=[f"Task submitted for {action} old output tabs"],
         settings_used=gsheet.dict_for_json(),
@@ -378,7 +379,10 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
                         selected_ids=selected_ids,
                     )
                     result = select_result
-                elif run_record.task_type == SelectionTaskType.DELETE_OLD_TABS:
+                elif run_record.task_type in (
+                    SelectionTaskType.DELETE_OLD_TABS,
+                    SelectionTaskType.LIST_OLD_TABS,
+                ):
                     success, tab_names, run_report = final_result
                     tab_result = TabManagementResult(
                         run_record=run_record,
@@ -396,6 +400,28 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
             elif celery_result.id and celery_result.state == "PROGRESS":
                 result.log_messages = celery_result.info.get("all_messages", [])
     return result
+
+
+def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
+    """
+    Get the ManageOldTabsStatus value, based on the run result.
+
+    This is used in the template to work out what to show to the user.
+    """
+    assert result.run_record is not None
+    if result.run_record.is_failed:
+        return ManageOldTabsStatus(ManageOldTabsState.ERROR)
+    elif result.run_record.task_type == SelectionTaskType.LIST_OLD_TABS:
+        if result.run_record.has_finished:
+            return ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED)
+        else:
+            return ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING)
+    else:
+        assert result.run_record.task_type == SelectionTaskType.DELETE_OLD_TABS
+        if result.run_record.has_finished:
+            return ManageOldTabsStatus(ManageOldTabsState.DELETE_COMPLETED)
+        else:
+            return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:

@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
@@ -21,6 +22,7 @@ from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
+    get_manage_old_tabs_status,
     get_selection_run_status,
     start_gsheet_load_task,
     start_gsheet_manage_tabs_task,
@@ -636,7 +638,12 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("gsheets/manage_tabs.html", assembly=assembly, gsheet=gsheet), 200
+        return render_template(
+            "gsheets/manage_tabs.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            manage_status=ManageOldTabsStatus(ManageOldTabsState.FRESH),
+        ), 200
     except ValueError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}"
@@ -683,6 +690,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             "gsheets/manage_tabs.html",
             assembly=assembly,
             gsheet=gsheet,
+            manage_status=get_manage_old_tabs_status(result),
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
