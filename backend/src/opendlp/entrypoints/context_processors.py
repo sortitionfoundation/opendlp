@@ -1,7 +1,9 @@
 """ABOUTME: Flask context processors for adding variables to template context
 ABOUTME: Provides functions that inject common variables into all templates"""
 
+import contextlib
 import hashlib
+import json
 import subprocess
 from functools import cache
 
@@ -65,6 +67,23 @@ def get_opendlp_version() -> str:
     return "UNKNOWN"
 
 
+@cache
+def get_service_account_email() -> str:
+    """
+    Find the email address for the service account used for google spreadsheet access
+    """
+    auth_json_file = config.get_google_auth_json_path()
+    if not auth_json_file.is_file():
+        return "UNKNOWN"
+    # we need this to not fail, so we just swallow all exceptions
+    with contextlib.suppress(Exception), open(auth_json_file) as file:
+        credentials = json.load(file)
+        client_email = credentials["client_email"]
+        assert isinstance(client_email, str)
+        return client_email
+    return "UNKNOWN"
+
+
 def static_versioning_context_processor() -> dict[str, str]:
     """
     Flask context processor that adds static file version hashes to template context.
@@ -75,4 +94,5 @@ def static_versioning_context_processor() -> dict[str, str]:
     return {
         "css_hash": get_css_hash(),
         "opendlp_version": get_opendlp_version(),
+        "google_service_account_email": get_service_account_email(),
     }

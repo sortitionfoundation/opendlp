@@ -25,6 +25,7 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
+from opendlp.entrypoints.context_processors import get_service_account_email
 
 
 @setup_logging.connect
@@ -165,6 +166,35 @@ def _internal_load_gsheet(
         )
 
         return True, features, people, report
+    except errors.SortitionBaseError as error:
+        report.add_line(str(error))
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=str(error),
+            error_message=error.to_html(),
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, report
+
+    except PermissionError:
+        # the PermissionError raised by gspread has no text, so appears to be blank, leading to
+        # no hint to the user as to what happened, so we deal with it differently here.
+        service_account_email = get_service_account_email()
+        error_msg = (
+            f"Failed to load gsheet due to permissions issues. "
+            f"Check the spreadsheet is shared with {service_account_email}"
+        )
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, report
     except Exception as err:
         import traceback
 

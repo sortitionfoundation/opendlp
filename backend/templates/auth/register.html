@@ -1,19 +1,14 @@
 {% extends "base.html" %}
-
-{% block title %}{{ _('Register') }} - OpenDLP{% endblock %}
-
+{% block title %}{{ _("Register") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-            <h1 class="govuk-heading-xl">{{ _('Create an account') }}</h1>
-
+            <h1 class="govuk-heading-xl">{{ _("Create an account") }}</h1>
             <div class="govuk-inset-text">
-                {{ _('You need an invitation code to create an account. If you do not have one, please contact your administrator.') }}
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact your administrator.") }}
             </div>
-
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
-
                 <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
                     {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
                     {% if form.invite_code.description %}
@@ -26,10 +21,9 @@
                             </p>
                         {% endfor %}
                     {% endif %}
-                    {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else ""),
+                    {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else "") ,
                     aria_describedby=("invite-hint" if form.invite_code.description else "") + (" invite-error" if form.invite_code.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
                     {{ form.first_name.label(class="govuk-label govuk-label--m") }}
                     {% if form.first_name.description %}
@@ -43,10 +37,9 @@
                         {% endfor %}
                         {{ password_help }}
                     {% endif %}
-                    {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else ""),
+                    {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else "") ,
                     aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
                     {{ form.last_name.label(class="govuk-label govuk-label--m") }}
                     {% if form.last_name.description %}
@@ -59,10 +52,9 @@
                             </p>
                         {% endfor %}
                     {% endif %}
-                    {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else ""),
+                    {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else "") ,
                     aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.email.errors %} govuk-form-group--error{% endif %}">
                     {{ form.email.label(class="govuk-label govuk-label--m") }}
                     {% if form.email.errors %}
@@ -72,10 +64,9 @@
                             </p>
                         {% endfor %}
                     {% endif %}
-                    {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else ""),
+                    {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") ,
                     aria_describedby=("email-error" if form.email.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.password.errors %} govuk-form-group--error{% endif %}">
                     {{ form.password.label(class="govuk-label govuk-label--m") }}
                     {% if form.password.errors %}
@@ -85,10 +76,9 @@
                             </p>
                         {% endfor %}
                     {% endif %}
-                    {{ form.password(class="govuk-input" + (" govuk-input--error" if form.password.errors else ""),
+                    {{ form.password(class="govuk-input" + (" govuk-input--error" if form.password.errors else "") ,
                     aria_describedby=("password-error" if form.password.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.password_confirm.errors %} govuk-form-group--error{% endif %}">
                     {{ form.password_confirm.label(class="govuk-label govuk-label--m") }}
                     {% if form.password_confirm.errors %}
@@ -98,25 +88,24 @@
                             </p>
                         {% endfor %}
                     {% endif %}
-                    {{ form.password_confirm(class="govuk-input" + (" govuk-input--error" if form.password_confirm.errors else ""),
+                    {{ form.password_confirm(class="govuk-input" + (" govuk-input--error" if form.password_confirm.errors else "") ,
                     aria_describedby=("password-confirm-error" if form.password_confirm.errors else "")) }}
                 </div>
-
                 <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
-                    <fieldset class="govuk-fieldset" aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
-                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                            {{ _('Data Agreement') }}
-                        </legend>
+                    <fieldset class="govuk-fieldset"
+                        aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ _("Data Agreement") }}</legend>
                         <div id="data-agreement-hint" class="govuk-hint">
-                            {{ _('Please read and accept our data agreement to proceed.') }}
-                            <a href="{{ url_for('auth.user_data_agreement') }}" class="govuk-link" target="_blank" rel="noopener noreferrer">
-                                {{ _('View data agreement') }}
-                            </a>
+                            {{ _("Please read and accept our data agreement to proceed.") }}
+                            <a href="{{ url_for('auth.user_data_agreement') }}"
+                                class="govuk-link"
+                                target="_blank"
+                                rel="noopener noreferrer">{{ _("View data agreement") }}</a>
                         </div>
                         {% if form.accept_data_agreement.errors %}
                             {% for error in form.accept_data_agreement.errors %}
                                 <p id="data-agreement-error" class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">{{ _('Error') }}:</span> {{ error }}
+                                    <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
                                 </p>
                             {% endfor %}
                         {% endif %}
@@ -128,14 +117,10 @@
                         </div>
                     </fieldset>
                 </div>
-
-                <button type="submit" class="govuk-button" data-module="govuk-button">
-                    {{ _('Create account') }}
-                </button>
+                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create account") }}</button>
             </form>
-
             <p class="govuk-body">
-                {{ _('Already have an account?') }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _('Sign in') }}</a>
+                {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>
             </p>
         </div>
     </div>

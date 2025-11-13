@@ -2,87 +2,93 @@
 <html lang="en" class="govuk-template">
     <head>
         <meta charset="utf-8">
-        <title>{% block title %}OpenDLP - {{ _('Open Democratic Lottery Platform') }}{% endblock %}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>
+            {% block title %}OpenDLP - {{ _("Open Democratic Lottery Platform") }}{% endblock %}
+        </title>
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#0b0c0c">
-
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-        <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/static/img/favicon.ico" type="image/x-icon">
-
+        <link rel="shortcut icon"
+            sizes="16x16 32x32 48x48"
+            href="/static/img/favicon.ico"
+            type="image/x-icon">
         <!-- OpenDLP with GOV.UK Frontend CSS -->
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css', v=css_hash) }}">
+        <link rel="stylesheet"
+            href="{{ url_for('static', filename='css/application.css', v=css_hash) }}">
         {% block extra_css %}{% endblock %}
     </head>
-
     <body class="govuk-template__body govuk-frontend-supported">
         <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
-
-        <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">{{ _('Skip to main content') }}</a>
-
+        <a href="#main-content"
+            class="govuk-skip-link"
+            data-module="govuk-skip-link">{{ _("Skip to main content") }}</a>
         <header class="govuk-header" role="banner" data-module="govuk-header">
             <div class="govuk-header__container govuk-width-container">
                 <div class="govuk-header__logo">
-                    <a href="{{ url_for('main.index') }}" class="govuk-header__link govuk-header__link--homepage">
-                        <img alt="{{ _('Sortition Foundation Logo') }}" src="{{ url_for('static', filename='img/logosortition.svg') }}">
+                    <a href="{{ url_for('main.index') }}"
+                        class="govuk-header__link govuk-header__link--homepage">
+                        <img alt="{{ _('Sortition Foundation Logo') }}"
+                            src="{{ url_for('static', filename='img/logosortition.svg') }}">
                     </a>
                 </div>
-
                 {% if current_user.is_authenticated %}
                     <div class="govuk-header__content">
-                        <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">{{ _('Menu') }}</a>
+                        <a href="#navigation"
+                            class="govuk-header__menu-button govuk-js-header-toggle"
+                            aria-controls="navigation"
+                            aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
                         <nav class="govuk-header__navigation" id="navigation">
-                            <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
-                                <span class="govuk-visually-hidden">{{ _('Close menu') }}</span>
+                            <button type="button"
+                                class="govuk-header__navigation-close govuk-js-header-toggle"
+                                aria-controls="navigation"
+                                aria-label="Close navigation menu">
+                                <span class="govuk-visually-hidden">{{ _("Close menu") }}</span>
                             </button>
                             <ul class="govuk-header__navigation-list">
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">
-                                        {{ _('Dashboard') }}
-                                    </a>
+                                    <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
                                 </li>
                                 {% if current_user.global_role.value == 'admin' or current_user.global_role.value == 'global-organiser' %}
                                     <li class="govuk-header__navigation-item">
-                                        <a class="govuk-header__link" href="{{ url_for('admin.index') }}">
-                                            {{ _('Site Admin') }}
-                                        </a>
+                                        <a class="govuk-header__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                                     </li>
                                 {% endif %}
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="https://www.sortitionfoundation.org/lab" target="_blank">
-                                        {{ _('Sortition Lab') }}
-                                    </a>
+                                    <a class="govuk-header__link"
+                                        href="https://www.sortitionfoundation.org/lab"
+                                        target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('profile.view') }}">
-                                        {{ _('My Account') }}
-                                    </a>
+                                    <a class="govuk-header__link" href="{{ url_for('profile.view') }}">{{ _("My Account") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('auth.logout') }}">
-                                        {{ _('Sign out') }}
-                                    </a>
+                                    <a class="govuk-header__link" href="{{ url_for('auth.logout') }}">{{ _("Sign out") }}</a>
                                 </li>
                             </ul>
                         </nav>
                     </div>
                 {% else %}
                     <div class="govuk-header__content">
-                        <a href="#navigation" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide navigation menu">{{ _('Menu') }}</a>
+                        <a href="#navigation"
+                            class="govuk-header__menu-button govuk-js-header-toggle"
+                            aria-controls="navigation"
+                            aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
                         <nav class="govuk-header__navigation" id="navigation">
-                            <button type="button" class="govuk-header__navigation-close govuk-js-header-toggle" aria-controls="navigation" aria-label="Close navigation menu">
-                                <span class="govuk-visually-hidden">{{ _('Close menu') }}</span>
+                            <button type="button"
+                                class="govuk-header__navigation-close govuk-js-header-toggle"
+                                aria-controls="navigation"
+                                aria-label="Close navigation menu">
+                                <span class="govuk-visually-hidden">{{ _("Close menu") }}</span>
                             </button>
                             <ul class="govuk-header__navigation-list">
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('auth.login') }}">
-                                        {{ _('Sign in') }}
-                                    </a>
+                                    <a class="govuk-header__link" href="{{ url_for('auth.login') }}">{{ _("Sign in") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="https://www.sortitionfoundation.org/lab" target="_blank">
-                                        {{ _('Sortition Lab') }}
-                                    </a>
+                                    <a class="govuk-header__link"
+                                        href="https://www.sortitionfoundation.org/lab"
+                                        target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                             </ul>
                         </nav>
@@ -90,34 +96,29 @@
                 {% endif %}
             </div>
         </header>
-
         <div class="govuk-width-container">
             {% if get_flashed_messages() %}
                 {% for category, message in get_flashed_messages(with_categories=true) %}
                     {% if category == 'error' %}
                         <div class="govuk-error-summary" data-module="govuk-error-summary">
                             <div role="alert">
-                                <h2 class="govuk-error-summary__title">
-                                    {{ _('There is a problem') }}
-                                </h2>
-                                <div class="govuk-error-summary__body">
-                                    {{ message }}
-                                </div>
+                                <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
+                                <div class="govuk-error-summary__body">{{ message }}</div>
                             </div>
                         </div>
                     {% else %}
-                        <div
-                            {% if category == 'success' %}
-                                class="govuk-notification-banner govuk-notification-banner--success"
-                            {% else %}
-                                class="govuk-notification-banner"
-                            {% endif %}
+                        <div {% if category == 'success' %} class="govuk-notification-banner govuk-notification-banner--success" {% else %} class="govuk-notification-banner" {% endif %}
                             role="alert"
                             aria-labelledby="govuk-notification-banner-title"
                             data-module="govuk-notification-banner">
                             <div class="govuk-notification-banner__header">
-                                <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-                                    {% if category == 'success' %} {{ _('Success') }} {% else %} {{ _('Important') }} {% endif %}
+                                <h2 class="govuk-notification-banner__title"
+                                    id="govuk-notification-banner-title">
+                                    {% if category == 'success' %}
+                                        {{ _("Success") }}
+                                    {% else %}
+                                        {{ _("Important") }}
+                                    {% endif %}
                                 </h2>
                             </div>
                             <div class="govuk-notification-banner__content">
@@ -127,12 +128,10 @@
                     {% endif %}
                 {% endfor %}
             {% endif %}
-
             <main class="govuk-main-wrapper" id="main-content" role="main">
                 {% block content %}{% endblock %}
             </main>
         </div>
-
         <footer class="govuk-footer" role="contentinfo">
             <div class="govuk-width-container">
                 <div class="govuk-footer__meta">
@@ -140,25 +139,23 @@
                         <h2 class="govuk-visually-hidden">Support links</h2>
                         <ul class="govuk-footer__inline-list">
                             <li class="govuk-footer__inline-list-item">
-                                <a class="govuk-footer__link" href="https://github.com/sortition-foundation/opendlp" target="_blank">
-                                    GitHub
-                                </a>
+                                <a class="govuk-footer__link"
+                                    href="https://github.com/sortition-foundation/opendlp"
+                                    target="_blank">GitHub</a>
                             </li>
                             <li class="govuk-footer__inline-list-item">
-                                <a class="govuk-footer__link" href="https://www.sortitionfoundation.org" target="_blank">
-                                    Sortition Foundation
-                                </a>
+                                <a class="govuk-footer__link"
+                                    href="https://www.sortitionfoundation.org"
+                                    target="_blank">Sortition Foundation</a>
                             </li>
                             <li class="govuk-footer__inline-list-item">
-                                <a class="govuk-footer__link" href="{{ url_for('auth.user_data_agreement') }}">
-                                    {{ _('User Data Agreement') }}
-                                </a>
+                                <a class="govuk-footer__link"
+                                    href="{{ url_for('auth.user_data_agreement') }}">{{ _("User Data Agreement") }}</a>
                             </li>
                             <li class="govuk-footer__inline-list-item govuk-secondary-text-colour">
-                                {{ _('OpenDLP Version') }} {{ opendlp_version }}
+                                {{ _("OpenDLP Version") }} {{ opendlp_version }}
                             </li>
                         </ul>
-
                         <div class="govuk-footer__meta-custom">
                             <p class="govuk-body-s">
                                 {{ _("OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management.") }}
@@ -168,10 +165,12 @@
                 </div>
             </div>
         </footer>
-
         <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
+        <script defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+            integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+            crossorigin="anonymous"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 if (typeof window.GOVUKFrontend !== 'undefined') {

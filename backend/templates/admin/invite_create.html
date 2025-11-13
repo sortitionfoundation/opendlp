@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}{{ _('Create Invite') }} - OpenDLP{% endblock %}
-
+{% block title %}{{ _("Create Invite") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-width-container">
         <div class="govuk-grid-row">
@@ -9,23 +7,19 @@
                 <div class="govuk-breadcrumbs">
                     <ol class="govuk-breadcrumbs__list">
                         <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _('Site Admin') }}</a>
+                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.list_invites_page') }}">{{ _('Invite Management') }}</a>
+                            <a class="govuk-breadcrumbs__link"
+                                href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
                         </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            {{ _('Create Invite') }}
-                        </li>
+                        <li class="govuk-breadcrumbs__list-item">{{ _("Create Invite") }}</li>
                     </ol>
                 </div>
-
                 {% if form.errors %}
                     <div class="govuk-error-summary" data-module="govuk-error-summary">
                         <div role="alert">
-                            <h2 class="govuk-error-summary__title">
-                                {{ _('There is a problem') }}
-                            </h2>
+                            <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
                             <div class="govuk-error-summary__body">
                                 <ul class="govuk-list govuk-error-summary__list">
                                     {% for field_name, errors in form.errors.items() %}
@@ -40,26 +34,16 @@
                         </div>
                     </div>
                 {% endif %}
-
-                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _('Create New Invite') }}</h1>
-
-                <p class="govuk-body">{{ _('Generate a new invite code for user registration') }}</p>
-
+                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _("Create New Invite") }}</h1>
+                <p class="govuk-body">{{ _("Generate a new invite code for user registration") }}</p>
                 <form method="post" novalidate>
                     {{ form.hidden_tag() }}
-
                     <div class="govuk-form-group {% if form.global_role.errors %}govuk-form-group--error{% endif %}">
                         <fieldset class="govuk-fieldset">
                             <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                                <h1 class="govuk-fieldset__heading">
-                                    {{ form.global_role.label.text }}
-                                </h1>
+                                <h1 class="govuk-fieldset__heading">{{ form.global_role.label.text }}</h1>
                             </legend>
-                            {% if form.global_role.description %}
-                                <div class="govuk-hint">
-                                    {{ form.global_role.description }}
-                                </div>
-                            {% endif %}
+                            {% if form.global_role.description %}<div class="govuk-hint">{{ form.global_role.description }}</div>{% endif %}
                             {% if form.global_role.errors %}
                                 <p class="govuk-error-message">
                                     <span class="govuk-visually-hidden">Error:</span>
@@ -69,42 +53,35 @@
                             <div class="govuk-radios" data-module="govuk-radios">
                                 {% for value, label in form.global_role.choices %}
                                     <div class="govuk-radios__item">
-                                        <input class="govuk-radios__input" id="global_role_{{ loop.index }}" name="{{ form.global_role.name }}" type="radio" value="{{ value }}" {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
-                                        <label class="govuk-label govuk-radios__label" for="global_role_{{ loop.index }}">
-                                            {{ label }}
-                                        </label>
+                                        <input class="govuk-radios__input"
+                                            id="global_role_{{ loop.index }}"
+                                            name="{{ form.global_role.name }}"
+                                            type="radio"
+                                            value="{{ value }}"
+                                            {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
+                                        <label class="govuk-label govuk-radios__label"
+                                            for="global_role_{{ loop.index }}">{{ label }}</label>
                                     </div>
                                 {% endfor %}
                             </div>
                         </fieldset>
                     </div>
-
                     <div class="govuk-form-group {% if form.email.errors %}govuk-form-group--error{% endif %}">
-                        <label class="govuk-label govuk-label--m" for="{{ form.email.id }}">
-                            {{ form.email.label.text }}
-                        </label>
-                        {% if form.email.description %}
-                            <div class="govuk-hint">
-                                {{ form.email.description }}
-                            </div>
-                        {% endif %}
+                        <label class="govuk-label govuk-label--m" for="{{ form.email.id }}">{{ form.email.label.text }}</label>
+                        {% if form.email.description %}<div class="govuk-hint">{{ form.email.description }}</div>{% endif %}
                         {% if form.email.errors %}
                             <p class="govuk-error-message">
                                 <span class="govuk-visually-hidden">Error:</span>
                                 {{ form.email.errors[0] }}
                             </p>
                         {% endif %}
-                        {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else ""), type="email") }}
+                        {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") , type="email") }}
                     </div>
-
                     <div class="govuk-form-group {% if form.expires_in_hours.errors %}govuk-form-group--error{% endif %}">
-                        <label class="govuk-label govuk-label--m" for="{{ form.expires_in_hours.id }}">
-                            {{ form.expires_in_hours.label.text }}
-                        </label>
+                        <label class="govuk-label govuk-label--m"
+                            for="{{ form.expires_in_hours.id }}">{{ form.expires_in_hours.label.text }}</label>
                         {% if form.expires_in_hours.description %}
-                            <div class="govuk-hint">
-                                {{ form.expires_in_hours.description }}
-                            </div>
+                            <div class="govuk-hint">{{ form.expires_in_hours.description }}</div>
                         {% endif %}
                         {% if form.expires_in_hours.errors %}
                             <p class="govuk-error-message">
@@ -112,20 +89,16 @@
                                 {{ form.expires_in_hours.errors[0] }}
                             </p>
                         {% endif %}
-                        {{ form.expires_in_hours(class="govuk-input govuk-input--width-5" + (" govuk-input--error" if form.expires_in_hours.errors else "")) }}
+                        {{ form.expires_in_hours(class="govuk-input govuk-input--width-5" + (" govuk-input--error" if form.expires_in_hours.errors else "") ) }}
                     </div>
-
                     <div class="govuk-inset-text">
                         <p class="govuk-body-s">
-                            <strong>{{ _('Note:') }}</strong> {{ _('Email sending is not yet implemented. After creating the invite, you will need to share the invite code and registration URL manually.') }}
+                            <strong>{{ _("Note:") }}</strong> {{ _("Email sending is not yet implemented. After creating the invite, you will need to share the invite code and registration URL manually.") }}
                         </p>
                     </div>
-
                     <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">
-                            {{ _('Create Invite') }}
-                        </button>
-                        <a class="govuk-link" href="{{ url_for('admin.list_invites_page') }}">{{ _('Cancel') }}</a>
+                        <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Invite") }}</button>
+                        <a class="govuk-link" href="{{ url_for('admin.list_invites_page') }}">{{ _("Cancel") }}</a>
                     </div>
                 </form>
             </div>

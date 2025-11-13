@@ -21,7 +21,7 @@ dependencies = [
   "markupsafe>=3.0.2",
   "python-dotenv>=1.1.1",
   "redis>=6.4.0",
-  "sortition-algorithms>=0.10.9",
+  "sortition-algorithms<=0.10.11",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.43",
   "structlog>=25.4.0",
   "werkzeug>=3.1.3",
@@ -211,3 +211,6 @@ fail_under = 90
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
 # - gunicorn - web server for production
 DEP002 = ["alembic", "gunicorn"]
+
+[tool.djlint]
+profile = "jinja"
