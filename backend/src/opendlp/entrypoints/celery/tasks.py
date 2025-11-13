@@ -143,8 +143,16 @@ def _internal_load_gsheet(
         _append_run_log(
             task_id,
             [
-                _("Found %(num_features)s categories for targets with a total of %(num_values)s values.", num_features=num_features, num_values=num_values),
-                _("Minimum selection for targets is %(min_select)s, maximum is %(max_select)s.", min_select=min_select, max_select=max_select),
+                _(
+                    "Found %(num_features)s categories for targets with a total of %(num_values)s values.",
+                    num_features=num_features,
+                    num_values=num_values,
+                ),
+                _(
+                    "Minimum selection for targets is %(min_select)s, maximum is %(max_select)s.",
+                    min_select=min_select,
+                    max_select=max_select,
+                ),
                 _("Loading people from tab: %(tab_name)s", tab_name=data_source.people_tab_name),
             ],
             session_factory=session_factory,
@@ -161,7 +169,10 @@ def _internal_load_gsheet(
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
-            log_messages=[_("Loaded %(count)s people.", count=people.count), _("Google Sheets load completed successfully.")],
+            log_messages=[
+                _("Loaded %(count)s people.", count=people.count),
+                _("Google Sheets load completed successfully."),
+            ],
             completed_at=datetime.now(UTC) if final_task else None,
             session_factory=session_factory,
         )
@@ -184,9 +195,8 @@ def _internal_load_gsheet(
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
         error_msg = _(
-            "Failed to load gsheet due to permissions issues. "
-            "Check the spreadsheet is shared with %(email)s",
-            email=service_account_email
+            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            email=service_account_email,
         )
         _update_selection_record(
             task_id=task_id,
@@ -234,14 +244,27 @@ def _internal_run_select(
     log_suffix = _(": TEST only, do not use for real selection") if test_selection else ""
     _append_run_log(
         task_id,
-        [_("Starting selection algorithm for %(number)s people%(suffix)s", number=number_people_wanted, suffix=log_suffix)],
+        [
+            _(
+                "Starting selection algorithm for %(number)s people%(suffix)s",
+                number=number_people_wanted,
+                suffix=log_suffix,
+            )
+        ],
         session_factory=session_factory,
     )
 
     try:
         _append_run_log(
             task_id,
-            [_("Running stratified selection with %(people_count)s people and %(features_count)s features%(suffix)s", people_count=people.count, features_count=len(features), suffix=log_suffix)],
+            [
+                _(
+                    "Running stratified selection with %(people_count)s people and %(features_count)s features%(suffix)s",
+                    people_count=people.count,
+                    features_count=len(features),
+                    suffix=log_suffix,
+                )
+            ],
             session_factory=session_factory,
         )
 
@@ -257,7 +280,11 @@ def _internal_run_select(
             _update_selection_record(
                 task_id=task_id,
                 status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
-                log_message=_("Selection completed successfully. Selected %(count)s panel(s).%(suffix)s", count=len(selected_panels), suffix=log_suffix),
+                log_message=_(
+                    "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s",
+                    count=len(selected_panels),
+                    suffix=log_suffix,
+                ),
                 completed_at=datetime.now(UTC) if final_task else None,
                 session_factory=session_factory,
             )
@@ -311,7 +338,7 @@ def _internal_write_selected(
     _append_run_log(task_id, [_("About to write selected and remaining tabs")], session_factory=session_factory)
     try:
         # Format results
-        selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
+        selected_table, remaining_table, _o = selected_remaining_tables(people, selected_panels[0], features, settings)
 
         # Export to Google Sheets
         dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
@@ -320,8 +347,11 @@ def _internal_write_selected(
             _append_run_log(
                 task_id,
                 [
-                    _("In the remaining tab there are %(count)s people who share the same address as "
-                      "someone else in the tab. They are highlighted in orange.", count=len(dupes)),
+                    _(
+                        "In the remaining tab there are %(count)s people who share the same address as "
+                        "someone else in the tab. They are highlighted in orange.",
+                        count=len(dupes),
+                    ),
                 ],
                 session_factory=session_factory,
             )
@@ -329,7 +359,11 @@ def _internal_write_selected(
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.COMPLETED,
-            log_message=_("Successfully written %(selected_count)s selected and %(remaining_count)s remaining to spreadsheet.", selected_count=len(selected_table) - 1, remaining_count=len(remaining_table) - 1),
+            log_message=_(
+                "Successfully written %(selected_count)s selected and %(remaining_count)s remaining to spreadsheet.",
+                selected_count=len(selected_table) - 1,
+                remaining_count=len(remaining_table) - 1,
+            ),
             completed_at=datetime.now(UTC),
             session_factory=session_factory,
         )
@@ -494,9 +528,8 @@ def manage_old_tabs(
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
         error_msg = _(
-            "Failed to load gsheet due to permissions issues. "
-            "Check the spreadsheet is shared with %(email)s",
-            email=service_account_email
+            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            email=service_account_email,
         )
         _update_selection_record(
             task_id=task_id,
