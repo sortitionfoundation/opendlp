@@ -561,7 +561,7 @@ class TestListUsersPaginated:
         )
 
         # Filter by active users only
-        users, total_count, total_pages = user_service.list_users_paginated(
+        users, total_count, _total_pages = user_service.list_users_paginated(
             uow=uow, admin_user_id=admin_user.id, page=1, per_page=10, active_filter=True
         )
 
@@ -610,7 +610,7 @@ class TestListUsersPaginated:
         )
 
         # Search for "Alice"
-        users, total_count, total_pages = user_service.list_users_paginated(
+        users, total_count, _total_pages = user_service.list_users_paginated(
             uow=uow, admin_user_id=admin_user.id, page=1, per_page=10, search_term="Alice"
         )
 
