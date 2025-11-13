@@ -2,7 +2,7 @@
 ABOUTME: Provides high-level functions for starting and monitoring Celery-based selection workflows"""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from celery.result import AsyncResult
 from sortition_algorithms import RunReport
@@ -318,12 +318,7 @@ class SelectionRunResult(RunResult):
 
 @dataclass
 class TabManagementResult(RunResult):
-    tab_names: list[str] = None
-
-
-    def __post_init__(self) -> None:
-        if self.tab_names is None:
-            self.tab_names = []
+    tab_names: list[str] = field(default_factory=list)
 
 
 def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> RunResult:

@@ -908,9 +908,7 @@ class TestManageTabsRoutes:
         # Should get 403 Forbidden
         assert response.status_code == 403
 
-    def test_manage_tabs_with_run_shows_status(
-        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
-    ):
+    def test_manage_tabs_with_run_shows_status(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """Test GET request with run_id shows task status."""
         assembly, _ = assembly_with_gsheet
         task_id = uuid.uuid4()
