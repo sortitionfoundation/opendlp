@@ -14,7 +14,7 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, run_select
+from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, manage_old_tabs, run_select
 
 
 @pytest.fixture
@@ -397,9 +397,6 @@ class TestManageOldTabsTask:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        # Import the new task
-        from opendlp.entrypoints.celery.tasks import manage_old_tabs
-
         # Call the task with dry_run=True
         with patch.object(manage_old_tabs, "update_state"):
             success, tab_names, report = manage_old_tabs(
@@ -450,9 +447,6 @@ class TestManageOldTabsTask:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        # Import the new task
-        from opendlp.entrypoints.celery.tasks import manage_old_tabs
-
         # Call the task with dry_run=False
         with patch.object(manage_old_tabs, "update_state"):
             success, tab_names, report = manage_old_tabs(
@@ -499,9 +493,6 @@ class TestManageOldTabsTask:
             )
             uow.selection_run_records.add(record)
             uow.commit()
-
-        # Import the new task
-        from opendlp.entrypoints.celery.tasks import manage_old_tabs
 
         # Call the task
         with patch.object(manage_old_tabs, "update_state"):

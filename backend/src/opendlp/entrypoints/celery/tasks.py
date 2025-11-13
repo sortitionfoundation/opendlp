@@ -487,6 +487,25 @@ def manage_old_tabs(
 
         return True, tab_names, report
 
+    except PermissionError:
+        # the PermissionError raised by gspread has no text, so appears to be blank, leading to
+        # no hint to the user as to what happened, so we deal with it differently here.
+        service_account_email = get_service_account_email()
+        error_msg = (
+            f"Failed to load gsheet due to permissions issues. "
+            f"Check the spreadsheet is shared with {service_account_email}"
+        )
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+
+        return False, [], report
+
     except Exception as err:
         import traceback
 
