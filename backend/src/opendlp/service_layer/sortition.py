@@ -2,7 +2,7 @@
 ABOUTME: Provides high-level functions for starting and monitoring Celery-based selection workflows"""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from celery.result import AsyncResult
 from sortition_algorithms import RunReport
@@ -10,7 +10,7 @@ from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -239,6 +239,65 @@ def start_gsheet_replace_task(
     return task_id
 
 
+@require_assembly_permission(can_manage_assembly)
+def start_gsheet_manage_tabs_task(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, dry_run: bool = True
+) -> uuid.UUID:
+    """
+    Start a Google Sheets tab management task for an assembly.
+
+    Args:
+        uow: Unit of work for database operations
+        user_id: ID of user requesting the task (checked for permissions)
+        assembly_id: ID of assembly to manage tabs for
+        dry_run: If True, list tabs without deleting. If False, delete them.
+
+    Returns:
+        task_id: UUID of the created task for tracking
+
+    Raises:
+        ValueError: If assembly or gsheet configuration not found
+        InsufficientPermissions: If user cannot manage the assembly
+    """
+    # Get assembly and validate gsheet configuration exists
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise ValueError(f"Assembly {assembly_id} not found")
+
+    gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if not gsheet:
+        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+
+    # Create unique task ID
+    task_id = uuid.uuid4()
+
+    # Create SelectionRunRecord for tracking
+    action = "listing" if dry_run else "deleting"
+    task_type = SelectionTaskType.LIST_OLD_TABS if dry_run else SelectionTaskType.DELETE_OLD_TABS
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=task_id,
+        task_type=task_type,
+        status=SelectionRunStatus.PENDING,
+        log_messages=[f"Task submitted for {action} old output tabs"],
+        settings_used=gsheet.dict_for_json(),
+    )
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    # Submit Celery task
+    result = tasks.manage_old_tabs.delay(
+        task_id=task_id,
+        data_source=gsheet.to_data_source(for_replacements=False),
+        dry_run=dry_run,
+    )
+    record.celery_task_id = str(result.id)
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    return task_id
+
+
 @dataclass
 class RunResult:
     run_record: SelectionRunRecord | None
@@ -256,6 +315,11 @@ class LoadRunResult(RunResult):
 @dataclass
 class SelectionRunResult(RunResult):
     selected_ids: list[frozenset[str]]
+
+
+@dataclass
+class TabManagementResult(RunResult):
+    tab_names: list[str] = field(default_factory=list)
 
 
 def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> RunResult:
@@ -315,6 +379,19 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
                         selected_ids=selected_ids,
                     )
                     result = select_result
+                elif run_record.task_type in (
+                    SelectionTaskType.DELETE_OLD_TABS,
+                    SelectionTaskType.LIST_OLD_TABS,
+                ):
+                    success, tab_names, run_report = final_result
+                    tab_result = TabManagementResult(
+                        run_record=run_record,
+                        run_report=run_report,
+                        log_messages=[],
+                        success=success,
+                        tab_names=tab_names,
+                    )
+                    result = tab_result
                 else:  # pragma: no cover
                     raise Exception(
                         f"Unexpected task_type {run_record.task_type} found in "
@@ -323,6 +400,28 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
             elif celery_result.id and celery_result.state == "PROGRESS":
                 result.log_messages = celery_result.info.get("all_messages", [])
     return result
+
+
+def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
+    """
+    Get the ManageOldTabsStatus value, based on the run result.
+
+    This is used in the template to work out what to show to the user.
+    """
+    assert result.run_record is not None
+    if result.run_record.is_failed:
+        return ManageOldTabsStatus(ManageOldTabsState.ERROR)
+    elif result.run_record.task_type == SelectionTaskType.LIST_OLD_TABS:
+        if result.run_record.has_finished:
+            return ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED)
+        else:
+            return ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING)
+    else:
+        assert result.run_record.task_type == SelectionTaskType.DELETE_OLD_TABS
+        if result.run_record.has_finished:
+            return ManageOldTabsStatus(ManageOldTabsState.DELETE_COMPLETED)
+        else:
+            return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:

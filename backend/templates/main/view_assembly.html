@@ -78,9 +78,12 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Replacements") }}</button>
                             </form>
+                            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
                         {% else %}
                             <button class="govuk-button govuk-button--secondary" disabled>{{ _("Selection") }}</button>
                             <button class="govuk-button govuk-button--secondary" disabled>{{ _("Replacements") }}</button>
+                            <button class="govuk-button govuk-button--secondary" disabled>{{ _("Manage Generated Tabs") }}</button>
                             <p class="govuk-body govuk-!-margin-top-2">
                                 <strong>{{ _("To enable selection and replacement:") }}</strong> {{ _("Configure Google Spreadsheet settings first.") }}
                             </p>
