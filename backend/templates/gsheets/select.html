@@ -12,12 +12,11 @@
     <p class="govuk-body">
         {{ _("Run the democratic lottery selection for this assembly using Google Spreadsheet data.") }}
     </p>
-    {% if gsheet %}
-        {% include "gsheets/components/view_config_collapsed.html" %}
-    {% endif %}
     <p class="govuk-body">
         {{ _('Selection will be for <b>%(number_to_select)s people</b>.', number_to_select=assembly.number_to_select) }}
-        <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}">{{ _("Edit the number.") }}</a>
+        {% if not run_record or run_record.has_finished %}
+            <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}">{{ _("Edit the number.") }}</a>
+        {% endif %}
     </p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
@@ -32,31 +31,37 @@
                     {% endif %}
                 </button>
             </form>
-        {% else %}
-            <button class="govuk-button" disabled>{{ _("Task in Progress...") }}</button>
-        {% endif %}
-        {% if not run_record or run_record.has_finished %}
             <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
                 method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="test_selection" value="0" />
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Selection") }}</button>
             </form>
-        {% endif %}
-        {% if not run_record or run_record.has_finished %}
             <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
                 method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="test_selection" value="1" />
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Test Selection") }}</button>
             </form>
+            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
+        {% else %}
+            <button class="govuk-button" disabled>
+                {% if run_record.task_type.value == "load_gsheet" %}
+                    {{ _("Loading Google Spreadsheet") }}
+                {% elif run_record.task_type.value == "select_gsheet" %}
+                    {{ _("Running Selection with Google Spreadsheet") }}
+                {% elif run_record.task_type.value == "test_select_gsheet" %}
+                    {{ _("Running Test Selection with Google Spreadsheet") }}
+                {% else %}
+                    {{ _("Task in Progress...") }}
+                {% endif %}
+            </button>
         {% endif %}
-        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-            class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
     </div>
-    <p class="govuk-body govuk-!-margin-top-4">
-        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
-            class="govuk-link">{{ _("Manage Generated Tabs") }}</a>
-    </p>
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    {% if gsheet %}
+        {% include "gsheets/components/view_config_collapsed.html" %}
+    {% endif %}
     <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
 {% endblock %}

@@ -5,31 +5,6 @@
         data-status="{{ run_record.status.value }}"
         data-task-type="{{ run_record.task_type.value }}"
         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('gsheets.gsheet_select_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 2s" hx-swap="outerHTML" {% endif %}>
-        <h3 class="govuk-heading-s">{{ _("Task Status") }}</h3>
-        <dl class="govuk-summary-list">
-            <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">{{ _("Status") }}</dt>
-                <dd class="govuk-summary-list__value">
-                    {% if run_record.is_pending %}
-                        <strong class="govuk-tag govuk-tag--blue">{{ _("Pending") }}</strong>
-                    {% elif run_record.is_running %}
-                        <strong class="govuk-tag govuk-tag--yellow">{{ _("Running") }}</strong>
-                    {% elif run_record.is_completed %}
-                        <strong class="govuk-tag govuk-tag--green">{{ _("Completed") }}</strong>
-                    {% elif run_record.is_failed %}
-                        <strong class="govuk-tag govuk-tag--red">{{ _("Failed") }}</strong>
-                    {% else %}
-                        <strong class="govuk-tag">{{ run_record.status.value|title }}</strong>
-                    {% endif %}
-                </dd>
-            </div>
-            <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">{{ _("Task Type") }}</dt>
-                <dd class="govuk-summary-list__value">
-                    {{ run_record.task_type_verbose }}
-                </dd>
-            </div>
-        </dl>
         {% if run_record.completed_at %}
             <details class="govuk-details">
                 <summary class="govuk-details__summary">
@@ -37,6 +12,9 @@
                 </summary>
                 <div class="govuk-details__text">
                     <div class="run-report">
+                        {% if run_record.log_messages %}
+                            {% for message in run_record.log_messages %}<p class="govuk-body-s">{{ message }}</p>{% endfor %}
+                        {% endif %}
                         <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
                         <p class="govuk-body-s">
                             {{ _("Started At") }}: {{ run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.created_at }}
@@ -48,7 +26,7 @@
                 </div>
             </details>
         {% endif %}
-        {% if run_record.log_messages %}
+        {% if run_record.is_running and run_record.log_messages %}
             <h4 class="govuk-heading-s">{{ _("Progress Messages") }}</h4>
             <div class="govuk-inset-text">
                 {% for message in run_record.log_messages %}<p class="govuk-body-s">{{ message }}</p>{% endfor %}
@@ -78,7 +56,15 @@
                 </div>
                 <div class="govuk-notification-banner__content">
                     <p class="govuk-body">
-                        {{ _('See the Full Run Report (above the Progress Messages) for more. Or go to <a href="%(sheet_url)s" target="_blank">the spreadsheet</a> and view the new tabs.', sheet_url=gsheet.url) }}
+                        {% if run_record.task_type.value == "select_replacement_gsheet" and num_to_select %}
+                            {{ _('Succesfully selected %(num)s replacements.', num=num_to_select) }}
+                            <br />
+                        {% endif %}
+                        {% if run_record.task_type.value == "select_gsheet" or run_record.task_type.value == "test_select_gsheet" %}
+                            {{ _('Succesfully selected %(num)s participants.', num=assembly.number_to_select) }}
+                            <br />
+                        {% endif %}
+                        {{ _('See the Full Run Report (above the Progress Messages) for more. Or go to <a href="%(sheet_url)s" target="_blank">the spreadsheet</a> and view the current tabs.', sheet_url=gsheet.url) }}
                     </p>
                 </div>
             </div>

@@ -12,38 +12,6 @@
     <p class="govuk-body">
         {{ _("When you run test selections or multiple selections, the Google Spreadsheet accumulates old output tabs. Use this page to list and delete them.") }}
     </p>
-    {% if gsheet %}
-        {% include "gsheets/components/view_config_collapsed.html" %}
-    {% endif %}
-    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
-        {% if manage_status.is_fresh or manage_status.is_completed %}
-            <form action="{{ url_for('gsheets.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
-                method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="govuk-button">
-                    {% if not run_record %}
-                        {{ _("List Old Tabs") }}
-                    {% else %}
-                        {{ _("Refresh List") }}
-                    {% endif %}
-                </button>
-            </form>
-        {% else %}
-            <button class="govuk-button" disabled>{{ _("Task in Progress...") }}</button>
-        {% endif %}
-        {% if tab_names and manage_status.is_list_completed %}
-            {% if tab_names|length > 0 %}
-                <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
-                    method="post"
-                    onsubmit="return confirm('{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" class="govuk-button govuk-button--warning">{{ _("Delete These Tabs") }}</button>
-                </form>
-            {% endif %}
-        {% endif %}
-        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-            class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
-    </div>
     {% if manage_status.is_completed %}
         <div class="govuk-!-margin-top-6">
             {% if manage_status.is_list_completed %}
@@ -62,6 +30,43 @@
                 {% for tab_name in tab_names %}<li>{{ tab_name }}</li>{% endfor %}
             </ul>
         </div>
+    {% endif %}
+    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
+        {% if manage_status.is_fresh or manage_status.is_completed %}
+            <form action="{{ url_for('gsheets.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
+                method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="govuk-button">
+                    {% if not run_record %}
+                        {{ _("List Old Tabs") }}
+                    {% else %}
+                        {{ _("Refresh List") }}
+                    {% endif %}
+                </button>
+            </form>
+        {% else %}
+            <button class="govuk-button" disabled>
+                {% if run_record.task_type.value == "list_old_tabs" %}
+                    {{ _("Loading tab list") }}
+                {% else %}
+                    {{ _("Deleting old tabs") }}
+                {% endif %}
+            </button>
+        {% endif %}
+        {% if tab_names and manage_status.is_list_completed %}
+            {% if tab_names|length > 0 %}
+                <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
+                    method="post"
+                    onsubmit="return confirm('{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="govuk-button govuk-button--warning">{{ _("Delete These Tabs") }}</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    {% if gsheet %}
+        {% include "gsheets/components/view_config_collapsed.html" %}
     {% endif %}
     <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
 {% endblock %}
