@@ -10,7 +10,7 @@
                             <a class="govuk-breadcrumbs__link"
                                 href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
                         </li>
-                        {% if current_tab == 'details' %}
+                        {% if current_tab == 'details' and current_page == 'view_assembly' %}
                             <li class="govuk-breadcrumbs__list-item">{{ _("Assembly") }}: {{ assembly.title }}</li>
                         {% else %}
                             <li class="govuk-breadcrumbs__list-item">
@@ -18,11 +18,8 @@
                                     href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Assembly") }}: {{ assembly.title }}</a>
                             </li>
                         {% endif %}
-                        {% if current_tab == 'data' %}
-                            <li class="govuk-breadcrumbs__list-item">{{ _("Data & Selection") }}</li>
-                        {% elif current_tab == 'members' %}
-                            <li class="govuk-breadcrumbs__list-item">{{ _("Team Members") }}</li>
-                        {% endif %}
+                        {# Page-specific breadcrumbs #}
+                        {% block assembly_breadcrumbs %}{% endblock %}
                     </ol>
                 </div>
                 <div class="main govuk-!-margin-top-6">

@@ -114,7 +114,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
-        return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet), 200
+        return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet, current_tab="data"), 200
     except ValueError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for gsheet management by user {current_user.id}: {e}"
@@ -170,7 +170,7 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("gsheets/select.html", assembly=assembly, gsheet=gsheet), 200
+        return render_template("gsheets/select.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
@@ -210,6 +210,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             "gsheets/select.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
@@ -361,7 +362,7 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("gsheets/replace.html", assembly=assembly, gsheet=gsheet), 200
+        return render_template("gsheets/replace.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
     except ValueError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
@@ -438,6 +439,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             "gsheets/replace.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
@@ -642,6 +644,7 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "gsheets/manage_tabs.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             manage_status=ManageOldTabsStatus(ManageOldTabsState.FRESH),
         ), 200
     except ValueError as e:
@@ -690,6 +693,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             "gsheets/manage_tabs.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             manage_status=get_manage_old_tabs_status(result),
             run_record=result.run_record,
             celery_log_messages=result.log_messages,

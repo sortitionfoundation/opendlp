@@ -61,6 +61,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "main/view_assembly_details.html",
             assembly=assembly,
             current_tab="details",
+            current_page="view_assembly",
         ), 200
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -227,7 +228,12 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 current_app.logger.error(f"Edit assembly error for assembly {assembly_id} user {current_user.id}: {e}")
                 flash(_("An error occurred while updating the assembly"), "error")
 
-        return render_template("main/edit_assembly.html", form=form, assembly=assembly), 200
+        return render_template(
+            "main/edit_assembly.html",
+            form=form,
+            assembly=assembly,
+            current_tab="details",
+        ), 200
     except ValueError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
