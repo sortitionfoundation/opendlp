@@ -23,7 +23,7 @@
                         {{ _("When you run test selections or multiple selections, the Google Spreadsheet accumulates old output tabs. Use this page to list and delete them.") }}
                     </p>
                     {% if gsheet %}
-                        {% include "gsheets/components/view_config.html" %}
+                        {% include "gsheets/components/view_config_collapsed.html" %}
                     {% endif %}
                     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                         {% if manage_status.is_fresh or manage_status.is_completed %}

@@ -21,7 +21,7 @@
                     <h1 class="govuk-heading-l">{{ _("Replacements for") }} {{ assembly.title }}</h1>
                     <p class="govuk-body">{{ _("Run the replacement selection for this assembly using Google Spreadsheet data.") }}</p>
                     {% if gsheet %}
-                        {% include "gsheets/components/view_config.html" %}
+                        {% include "gsheets/components/view_config_collapsed.html" %}
                     {% endif %}
                     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                         {% if not run_record or run_record.has_finished %}
@@ -43,9 +43,8 @@
                             class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
                     </div>
                     <p class="govuk-body govuk-!-margin-top-4">
-                        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}" class="govuk-link">
-                            {{ _("Manage Generated Tabs") }}
-                        </a>
+                        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                            class="govuk-link">{{ _("Manage Generated Tabs") }}</a>
                     </p>
                     {% if num_to_select %}
                         <div class="govuk-notification-banner"

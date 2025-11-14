@@ -1,7 +1,6 @@
 {% extends "main/view_assembly_base.html" %}
 {% block assembly_content %}
     <h2 class="govuk-heading-m">{{ _("Google Spreadsheet") }}</h2>
-
     {# Action Buttons at Top #}
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
         {% if not gsheet %}
@@ -25,16 +24,14 @@
             <button class="govuk-button govuk-button--secondary" disabled>{{ _("Manage Generated Tabs") }}</button>
         {% endif %}
     </div>
-
     {# Status Message if not configured #}
     {% if not gsheet or not gsheet.url %}
         <p class="govuk-body govuk-!-margin-bottom-6">
             <strong>{{ _("To enable selection and replacement:") }}</strong> {{ _("Configure Google Spreadsheet settings first.") }}
         </p>
     {% endif %}
-
     {# Google Spreadsheet Configuration Details #}
     {% if gsheet %}
-        {% include "gsheets/components/view_config.html" %}
+        <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/view_config.html" %}</div>
     {% endif %}
 {% endblock %}

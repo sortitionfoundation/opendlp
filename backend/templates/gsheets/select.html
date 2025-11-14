@@ -23,7 +23,7 @@
                         {{ _("Run the democratic lottery selection for this assembly using Google Spreadsheet data.") }}
                     </p>
                     {% if gsheet %}
-                        {% include "gsheets/components/view_config.html" %}
+                        {% include "gsheets/components/view_config_collapsed.html" %}
                     {% endif %}
                     <p class="govuk-body">
                         {{ _('Selection will be for <b>%(number_to_select)s people</b>.', number_to_select=assembly.number_to_select) }}
@@ -65,9 +65,8 @@
                             class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
                     </div>
                     <p class="govuk-body govuk-!-margin-top-4">
-                        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}" class="govuk-link">
-                            {{ _("Manage Generated Tabs") }}
-                        </a>
+                        <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                            class="govuk-link">{{ _("Manage Generated Tabs") }}</a>
                     </p>
                     <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
                 </div>
