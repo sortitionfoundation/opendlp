@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ assembly.title }} - Assembly - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-width-container">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-breadcrumbs">
+                    <ol class="govuk-breadcrumbs__list">
+                        <li class="govuk-breadcrumbs__list-item">
+                            <a class="govuk-breadcrumbs__link"
+                                href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
+                        </li>
+                        {% if current_tab == 'details' and current_page == 'view_assembly' %}
+                            <li class="govuk-breadcrumbs__list-item">{{ _("Assembly") }}: {{ assembly.title }}</li>
+                        {% else %}
+                            <li class="govuk-breadcrumbs__list-item">
+                                <a class="govuk-breadcrumbs__link"
+                                    href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Assembly") }}: {{ assembly.title }}</a>
+                            </li>
+                        {% endif %}
+                        {# Page-specific breadcrumbs #}
+                        {% block assembly_breadcrumbs %}{% endblock %}
+                    </ol>
+                </div>
+                <div class="main govuk-!-margin-top-6">
+                    <h1 class="govuk-heading-l">{{ assembly.title }}</h1>
+                    {# Service Navigation for Assembly Sections #}
+                    <nav class="govuk-service-navigation govuk-!-margin-bottom-6"
+                        aria-label="{{ _('Assembly sections') }}">
+                        <ul class="govuk-service-navigation__list">
+                            <li class="govuk-service-navigation__item {% if current_tab == 'details' %}govuk-service-navigation__item--active{% endif %}">
+                                <a class="govuk-service-navigation__link"
+                                    href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">
+                                    {{ _("Details") }}
+                                </a>
+                            </li>
+                            <li class="govuk-service-navigation__item {% if current_tab == 'data' %}govuk-service-navigation__item--active{% endif %}">
+                                <a class="govuk-service-navigation__link"
+                                    href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
+                                    {{ _("Data & Selection") }}
+                                </a>
+                            </li>
+                            <li class="govuk-service-navigation__item {% if current_tab == 'members' %}govuk-service-navigation__item--active{% endif %}">
+                                <a class="govuk-service-navigation__link"
+                                    href="{{ url_for('main.view_assembly_members', assembly_id=assembly.id) }}">
+                                    {{ _("Team Members") }}
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {# Page-specific content #}
+                    {% block assembly_content %}{% endblock %}
+                    {# Footer with Back to Dashboard button #}
+                    <hr class="govuk-section-break govuk-section-break--visible govuk-!-margin-top-6">
+                    <div class="govuk-button-group govuk-!-margin-top-6">
+                        <a href="{{ url_for('main.dashboard') }}"
+                            class="govuk-button govuk-button--secondary">{{ _("Back to Dashboard") }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

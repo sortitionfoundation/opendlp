@@ -85,13 +85,13 @@ class TestAddUserToAssembly:
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/assemblies/{existing_assembly.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}/members" in response.location
 
         # Reload user from database to get updated assembly_roles
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -115,7 +115,7 @@ class TestAddUserToAssembly:
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -139,7 +139,7 @@ class TestAddUserToAssembly:
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.ASSEMBLY_MANAGER.name,
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=False,
         )
@@ -180,7 +180,7 @@ class TestAddUserToAssembly:
             data={
                 "user_id": str(other_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -210,7 +210,7 @@ class TestAddUserToAssembly:
             data={
                 "user_id": fake_user_id,
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -265,13 +265,13 @@ class TestRemoveUserFromAssembly:
         response = client.post(
             f"/assemblies/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/assemblies/{existing_assembly.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}/members" in response.location
 
         # Reload user from database to verify removal
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -303,7 +303,7 @@ class TestRemoveUserFromAssembly:
         response = client.post(
             f"/assemblies/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -342,14 +342,14 @@ class TestRemoveUserFromAssembly:
         response = client.post(
             f"/assemblies/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
 
         # Should be forbidden and redirect
         assert response.status_code == 200
-        assert response.request.path == f"/assemblies/{existing_assembly.id}"
+        assert response.request.path == f"/assemblies/{existing_assembly.id}/members"
         assert "You don&#39;t have permission to remove users from this assembly" in response.data.decode()
 
     def test_remove_user_from_assembly_with_invalid_user_id(
@@ -363,7 +363,7 @@ class TestRemoveUserFromAssembly:
         response = client.post(
             f"/assemblies/{existing_assembly.id}/members/{fake_user_id}/remove",
             data={
-                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}"),
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -405,7 +405,7 @@ class TestRemoveUserFromAssembly:
 
         # Should fail due to missing CSRF token
         assert response.status_code == 302
-        assert f"/assemblies/{existing_assembly.id}" in response.location
+        assert f"/assemblies/{existing_assembly.id}/members" in response.location
 
 
 class TestSearchUsers:

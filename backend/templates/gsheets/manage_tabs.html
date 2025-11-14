@@ -1,81 +1,67 @@
-{% extends "base.html" %}
+{% extends "main/view_assembly_base.html" %}
 {% block title %}{{ _("Manage Generated Tabs") }} - {{ assembly.title }} - OpenDLP{% endblock %}
-{% block content %}
-    <div class="govuk-width-container">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <div class="govuk-breadcrumbs">
-                    <ol class="govuk-breadcrumbs__list">
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Assembly") }}: {{ assembly.title }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">{{ _("Manage Generated Tabs") }}</li>
-                    </ol>
-                </div>
-                <div class="main govuk-!-margin-top-6">
-                    <h1 class="govuk-heading-l">{{ _("Manage Generated Tabs for") }} {{ assembly.title }}</h1>
-                    <p class="govuk-body">
-                        {{ _("When you run test selections or multiple selections, the Google Spreadsheet accumulates old output tabs. Use this page to list and delete them.") }}
-                    </p>
-                    {% if gsheet %}
-                        {% include "gsheets/components/view_config.html" %}
+{% block assembly_breadcrumbs %}
+    <li class="govuk-breadcrumbs__list-item">
+        <a class="govuk-breadcrumbs__link"
+            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
+    </li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("Manage Generated Tabs") }}</li>
+{% endblock %}
+{% block assembly_content %}
+    <h2 class="govuk-heading-m">{{ _("Manage Generated Tabs") }}</h2>
+    <p class="govuk-body">
+        {{ _("When you run test selections or multiple selections, the Google Spreadsheet accumulates old output tabs. Use this page to list and delete them.") }}
+    </p>
+    {% if gsheet %}
+        {% include "gsheets/components/view_config_collapsed.html" %}
+    {% endif %}
+    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
+        {% if manage_status.is_fresh or manage_status.is_completed %}
+            <form action="{{ url_for('gsheets.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
+                method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="govuk-button">
+                    {% if not run_record %}
+                        {{ _("List Old Tabs") }}
+                    {% else %}
+                        {{ _("Refresh List") }}
                     {% endif %}
-                    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
-                        {% if manage_status.is_fresh or manage_status.is_completed %}
-                            <form action="{{ url_for('gsheets.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
-                                method="post">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="govuk-button">
-                                    {% if not run_record %}
-                                        {{ _("List Old Tabs") }}
-                                    {% else %}
-                                        {{ _("Refresh List") }}
-                                    {% endif %}
-                                </button>
-                            </form>
-                        {% else %}
-                            <button class="govuk-button" disabled>{{ _("Task in Progress...") }}</button>
-                        {% endif %}
-                        {% if tab_names and manage_status.is_list_completed %}
-                            {% if tab_names|length > 0 %}
-                                <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
-                                    method="post"
-                                    onsubmit="return confirm('{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="govuk-button govuk-button--warning">{{ _("Delete These Tabs") }}</button>
-                                </form>
-                            {% endif %}
-                        {% endif %}
-                        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-                            class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
-                    </div>
-                    {% if manage_status.is_completed %}
-                        <div class="govuk-!-margin-top-6">
-                            {% if manage_status.is_list_completed %}
-                                {% if tab_names|length > 0 %}
-                                    <h2 class="govuk-heading-m">{{ _("Old Output Tabs Found") }}</h2>
-                                    <p class="govuk-body">{{ _("The following %(count)s tab(s) can be deleted:", count=tab_names|length) }}</p>
-                                {% else %}
-                                    <h2 class="govuk-heading-m">{{ _("No Old Output Tabs Found") }}</h2>
-                                    <p class="govuk-body">{{ _("There are no old output tabs that can be deleted.") }}</p>
-                                {% endif %}
-                            {% else %}
-                                <h2 class="govuk-heading-m">{{ _("Old Output Tabs Deleted") }}</h2>
-                                <p class="govuk-body">{{ _("The following %(count)s tab(s) have been deleted:", count=tab_names|length) }}</p>
-                            {% endif %}
-                            <ul class="govuk-list govuk-list--bullet">
-                                {% for tab_name in tab_names %}<li>{{ tab_name }}</li>{% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
-                </div>
-            </div>
-        </div>
+                </button>
+            </form>
+        {% else %}
+            <button class="govuk-button" disabled>{{ _("Task in Progress...") }}</button>
+        {% endif %}
+        {% if tab_names and manage_status.is_list_completed %}
+            {% if tab_names|length > 0 %}
+                <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
+                    method="post"
+                    onsubmit="return confirm('{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="govuk-button govuk-button--warning">{{ _("Delete These Tabs") }}</button>
+                </form>
+            {% endif %}
+        {% endif %}
+        <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
+            class="govuk-button govuk-button--secondary">{{ _("Back to Assembly") }}</a>
     </div>
+    {% if manage_status.is_completed %}
+        <div class="govuk-!-margin-top-6">
+            {% if manage_status.is_list_completed %}
+                {% if tab_names|length > 0 %}
+                    <h2 class="govuk-heading-m">{{ _("Old Output Tabs Found") }}</h2>
+                    <p class="govuk-body">{{ _("The following %(count)s tab(s) can be deleted:", count=tab_names|length) }}</p>
+                {% else %}
+                    <h2 class="govuk-heading-m">{{ _("No Old Output Tabs Found") }}</h2>
+                    <p class="govuk-body">{{ _("There are no old output tabs that can be deleted.") }}</p>
+                {% endif %}
+            {% else %}
+                <h2 class="govuk-heading-m">{{ _("Old Output Tabs Deleted") }}</h2>
+                <p class="govuk-body">{{ _("The following %(count)s tab(s) have been deleted:", count=tab_names|length) }}</p>
+            {% endif %}
+            <ul class="govuk-list govuk-list--bullet">
+                {% for tab_name in tab_names %}<li>{{ tab_name }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/progress.html" %}</div>
 {% endblock %}
