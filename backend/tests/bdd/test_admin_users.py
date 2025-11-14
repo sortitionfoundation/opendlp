@@ -56,7 +56,7 @@ def _(normal_logged_in_page: Page, assembly: Assembly):
 @when("the admin adds them to the assembly")
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     """the admin adds them to the assembly."""
-    admin_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
+    admin_logged_in_page.goto(Urls.for_assembly("view_assembly_members", str(assembly.id)))
     # Open the "Add User to Assembly" details section
     admin_logged_in_page.get_by_text("Add User to Assembly").locator("visible=true").click()
     # Search for the normal user by email using the HTMX search input
@@ -77,7 +77,7 @@ def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
 @when("the admin removes them from the assembly")
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     """the admin removes them from the assembly."""
-    admin_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
+    admin_logged_in_page.goto(Urls.for_assembly("view_assembly_members", str(assembly.id)))
     # Find the remove button for the normal user in the team members table
     # TODO: consider matching by user if we ever have more than one
     remove_button = admin_logged_in_page.get_by_role("button", name="Remove").first
