@@ -57,8 +57,6 @@ def _(normal_logged_in_page: Page, assembly: Assembly):
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     """the admin adds them to the assembly."""
     admin_logged_in_page.goto(Urls.for_assembly("view_assembly_members", str(assembly.id)))
-    # Open the "Add User to Assembly" details section
-    admin_logged_in_page.get_by_text("Add User to Assembly").locator("visible=true").click()
     # Search for the normal user by email using the HTMX search input
     search_input = admin_logged_in_page.locator("#user_search")
     search_input.type(normal_user.email)
