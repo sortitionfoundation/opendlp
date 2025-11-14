@@ -98,6 +98,7 @@
         </header>
         <div class="govuk-width-container">
             {% if get_flashed_messages() %}
+                <p class="govuk-body govuk-!-margin-bottom-0">&nbsp;</p>
                 {% for category, message in get_flashed_messages(with_categories=true) %}
                     {% if category == 'error' %}
                         <div class="govuk-error-summary" data-module="govuk-error-summary">
