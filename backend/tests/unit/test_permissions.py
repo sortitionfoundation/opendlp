@@ -9,7 +9,7 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions, UserNotFoundError
 from opendlp.service_layer.permissions import (
     can_call_confirmations,
     can_manage_assembly,
@@ -390,7 +390,7 @@ class TestRequireAssemblyPermissionDecorator:
             return f"success with {data}"  # pragma: no cover
 
         # Should fail with user not found
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(UserNotFoundError) as exc_info:
             test_function(uow, uuid.uuid4(), assembly.id, "test_data")
         assert "User" in str(exc_info.value) and "not found" in str(exc_info.value)
 
@@ -405,7 +405,7 @@ class TestRequireAssemblyPermissionDecorator:
             return f"success with {data}"  # pragma: no cover
 
         # Should fail with assembly not found
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(AssemblyNotFoundError) as exc_info:
             test_function(uow, admin_user.id, uuid.uuid4(), "test_data")
         assert "Assembly" in str(exc_info.value) and "not found" in str(exc_info.value)
 

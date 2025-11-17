@@ -10,7 +10,7 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import invite_service
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import InsufficientPermissions, InviteNotFoundError, UserNotFoundError
 from tests.fakes import FakeUnitOfWork
 
 
@@ -66,7 +66,7 @@ class TestGenerateInvite:
         """Test invite generation fails when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(UserNotFoundError) as exc_info:
             invite_service.generate_invite(uow=uow, created_by_user_id=uuid.uuid4(), global_role=GlobalRole.USER)
 
         assert "not found" in str(exc_info.value)
@@ -215,7 +215,7 @@ class TestRevokeInvite:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InviteNotFoundError) as exc_info:
             invite_service.revoke_invite(uow=uow, invite_id=uuid.uuid4(), user_id=admin_user.id)
 
         assert "Invite" in str(exc_info.value)
@@ -356,7 +356,7 @@ class TestGetInviteDetails:
         )  # pragma: allowlist secret
         uow.users.add(admin_user)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InviteNotFoundError) as exc_info:
             invite_service.get_invite_details(uow=uow, invite_id=uuid.uuid4(), user_id=admin_user.id)
 
         assert "Invite" in str(exc_info.value)
@@ -366,7 +366,7 @@ class TestGetInviteDetails:
         """Test invite details retrieval fails when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(UserNotFoundError) as exc_info:
             invite_service.get_invite_details(uow=uow, invite_id=uuid.uuid4(), user_id=uuid.uuid4())
 
         assert "User" in str(exc_info.value)

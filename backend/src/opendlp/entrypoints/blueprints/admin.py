@@ -10,7 +10,11 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
-from opendlp.service_layer.exceptions import InvalidCredentials
+from opendlp.service_layer.exceptions import (
+    InsufficientPermissions,
+    InviteNotFoundError,
+    UserNotFoundError,
+)
 from opendlp.service_layer.invite_service import (
     cleanup_expired_invites,
     generate_invite,
@@ -87,7 +91,7 @@ def list_users() -> ResponseReturnValue:
             stats=stats,
         ), 200
 
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized access to user list by user {current_user.id}: {e}")
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
@@ -109,11 +113,11 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
 
         return render_template("admin/user_view.html", user=user), 200
 
-    except ValueError as e:
+    except UserNotFoundError as e:
         current_app.logger.warning(f"User {user_id} not found for admin {current_user.id}: {e}")
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized access to user view by user {current_user.id}: {e}")
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
@@ -157,24 +161,28 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 return redirect(url_for("admin.view_user", user_id=user_id))
 
-            except ValueError as e:
-                current_app.logger.warning(f"Validation error updating user {user_id} by admin {current_user.id}: {e}")
-                flash(str(e), "error")
-            except InvalidCredentials as e:
+            except UserNotFoundError as e:
+                current_app.logger.warning(f"User {user_id} not found for edit by admin {current_user.id}: {e}")
+                flash(_("User not found"), "error")
+                return redirect(url_for("admin.list_users"))
+            except InsufficientPermissions as e:
                 current_app.logger.warning(f"Unauthorized user update attempt by user {current_user.id}: {e}")
                 flash(_("You don't have permission to perform this action"), "error")
                 return redirect(url_for("admin.view_user", user_id=user_id))
+            except ValueError as e:
+                current_app.logger.warning(f"Validation error updating user {user_id} by admin {current_user.id}: {e}")
+                flash(str(e), "error")
             except Exception as e:
                 current_app.logger.error(f"Error updating user {user_id} by admin {current_user.id}: {e}")
                 flash(_("An error occurred while updating the user"), "error")
 
         return render_template("admin/user_edit.html", form=form, user=user), 200
 
-    except ValueError as e:
+    except UserNotFoundError as e:
         current_app.logger.warning(f"User {user_id} not found for edit by admin {current_user.id}: {e}")
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized access to user edit by user {current_user.id}: {e}")
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
@@ -200,7 +208,7 @@ def list_invites_page() -> ResponseReturnValue:
 
         return render_template("admin/invites.html", invites=invites, stats=stats), 200
 
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized access to invite list by user {current_user.id}: {e}")
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
@@ -249,10 +257,10 @@ def create_invite() -> ResponseReturnValue:
 
                 return redirect(url_for("admin.view_invite", invite_id=invite.id))
 
-            except ValueError as e:
-                current_app.logger.warning(f"Validation error creating invite by admin {current_user.id}: {e}")
-                flash(str(e), "error")
-            except InvalidCredentials as e:
+            except UserNotFoundError as e:
+                current_app.logger.warning(f"User not found while creating invite by admin {current_user.id}: {e}")
+                flash(_("An error occurred while creating the invite"), "error")
+            except InsufficientPermissions as e:
                 current_app.logger.warning(f"Unauthorized invite creation attempt by user {current_user.id}: {e}")
                 flash(_("You don't have permission to perform this action"), "error")
                 return redirect(url_for("admin.list_invites_page"))
@@ -280,11 +288,11 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
 
         return render_template("admin/invite_view.html", invite=invite), 200
 
-    except ValueError as e:
+    except InviteNotFoundError as e:
         current_app.logger.warning(f"Invite {invite_id} not found for admin {current_user.id}: {e}")
         flash(_("Invite not found"), "error")
         return redirect(url_for("admin.list_invites_page"))
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized access to invite view by user {current_user.id}: {e}")
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
@@ -307,11 +315,11 @@ def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Invite '%(code)s' has been revoked", code=invite.code), "success")
         return redirect(url_for("admin.list_invites_page"))
 
-    except ValueError as e:
+    except InviteNotFoundError as e:
         current_app.logger.warning(f"Invite {invite_id} not found for revocation by admin {current_user.id}: {e}")
         flash(_("Invite not found"), "error")
         return redirect(url_for("admin.list_invites_page"))
-    except InvalidCredentials as e:
+    except InsufficientPermissions as e:
         current_app.logger.warning(f"Unauthorized invite revocation attempt by user {current_user.id}: {e}")
         flash(_("You don't have permission to perform this action"), "error")
         return redirect(url_for("main.dashboard"))

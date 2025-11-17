@@ -11,7 +11,14 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer import user_service
-from opendlp.service_layer.exceptions import InvalidCredentials, InvalidInvite, PasswordTooWeak, UserAlreadyExists
+from opendlp.service_layer.exceptions import (
+    InsufficientPermissions,
+    InvalidCredentials,
+    InvalidInvite,
+    PasswordTooWeak,
+    UserAlreadyExists,
+    UserNotFoundError,
+)
 from opendlp.service_layer.security import hash_password
 from tests.fakes import FakeUnitOfWork
 
@@ -438,7 +445,7 @@ class TestGetUserAssemblies:
         """Test error when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match=r"User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.get_user_assemblies(uow=uow, user_id=uuid.uuid4())
 
 
@@ -478,7 +485,7 @@ class TestAssignAssemblyRole:
         """Test role assignment fails when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match=r"User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.assign_assembly_role(
                 uow=uow,
                 user_id=uuid.uuid4(),
@@ -627,7 +634,7 @@ class TestListUsersPaginated:
         )  # pragma: allowlist secret
         uow.users.add(regular_user)
 
-        with pytest.raises(InvalidCredentials):
+        with pytest.raises(InsufficientPermissions):
             user_service.list_users_paginated(uow=uow, admin_user_id=regular_user.id, page=1, per_page=10)
 
 
@@ -673,7 +680,7 @@ class TestGetUserById:
         )
         uow.users.add(admin_user)
 
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(UserNotFoundError, match="not found"):
             user_service.get_user_by_id(uow=uow, user_id=uuid.uuid4(), admin_user_id=admin_user.id)
 
     def test_get_user_by_id_non_admin(self):
@@ -686,7 +693,7 @@ class TestGetUserById:
         )  # pragma: allowlist secret
         uow.users.add(regular_user)
 
-        with pytest.raises(InvalidCredentials):
+        with pytest.raises(InsufficientPermissions):
             user_service.get_user_by_id(uow=uow, user_id=regular_user.id, admin_user_id=regular_user.id)
 
 
@@ -788,7 +795,7 @@ class TestUpdateUser:
         uow.users.add(regular_user)
         uow.users.add(target_user)
 
-        with pytest.raises(InvalidCredentials):
+        with pytest.raises(InsufficientPermissions):
             user_service.update_user(
                 uow=uow,
                 user_id=target_user.id,
@@ -866,7 +873,7 @@ class TestGetUserStats:
         )  # pragma: allowlist secret
         uow.users.add(regular_user)
 
-        with pytest.raises(InvalidCredentials):
+        with pytest.raises(InsufficientPermissions):
             user_service.get_user_stats(uow=uow, admin_user_id=regular_user.id)
 
 
@@ -908,7 +915,7 @@ class TestUpdateOwnProfile:
         """Test error when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match=r"User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.update_own_profile(uow=uow, user_id=uuid.uuid4(), first_name="Test")
 
 
@@ -960,7 +967,7 @@ class TestChangeOwnPassword:
         """Test error when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError, match=r"User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.change_own_password(
                 uow=uow, user_id=uuid.uuid4(), current_password="test", new_password="NewPass456!"
             )

@@ -12,6 +12,7 @@ from sortition_algorithms.people import People
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, GoogleSheetConfigNotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -30,17 +31,18 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
         task_id: UUID of the created task for tracking
 
     Raises:
-        ValueError: If assembly or gsheet configuration not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise ValueError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
-        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+        raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -79,11 +81,11 @@ def start_gsheet_select_task(
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise ValueError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
-        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+        raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -138,17 +140,18 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
         task_id: UUID of the created task for tracking
 
     Raises:
-        ValueError: If assembly or gsheet configuration not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise ValueError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
-        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+        raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -195,17 +198,18 @@ def start_gsheet_replace_task(
         task_id: UUID of the created task for tracking
 
     Raises:
-        ValueError: If assembly or gsheet configuration not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise ValueError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
-        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+        raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -256,17 +260,18 @@ def start_gsheet_manage_tabs_task(
         task_id: UUID of the created task for tracking
 
     Raises:
-        ValueError: If assembly or gsheet configuration not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise ValueError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
-        raise ValueError(f"No Google Sheets configuration found for assembly {assembly_id}")
+        raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     # Create unique task ID
     task_id = uuid.uuid4()

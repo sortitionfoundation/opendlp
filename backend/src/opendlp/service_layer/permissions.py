@@ -9,7 +9,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
 
-from .exceptions import InsufficientPermissions
+from .exceptions import AssemblyNotFoundError, InsufficientPermissions, UserNotFoundError
 
 
 def can_manage_assembly(user: User, assembly: Assembly) -> bool:
@@ -151,11 +151,11 @@ def require_assembly_permission(
                 # Get user and assembly from repositories
                 user = uow.users.get(user_id)
                 if not user:
-                    raise ValueError(f"User {user_id} not found")
+                    raise UserNotFoundError(f"User {user_id} not found")
 
                 assembly = uow.assemblies.get(assembly_id)
                 if not assembly:
-                    raise ValueError(f"Assembly {assembly_id} not found")
+                    raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
                 # Check permission using the provided function
                 if not permission_func(user, assembly):

@@ -10,7 +10,12 @@ from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import assembly_service
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    GoogleSheetConfigNotFoundError,
+    InsufficientPermissions,
+    UserNotFoundError,
+)
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeUnitOfWork
 
@@ -86,7 +91,7 @@ class TestCreateAssembly:
         uow = FakeUnitOfWork()
         future_date = date.today() + timedelta(days=30)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(UserNotFoundError) as exc_info:
             assembly_service.create_assembly(
                 uow=uow,
                 title="Test Assembly",
@@ -200,7 +205,7 @@ class TestUpdateAssembly:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(AssemblyNotFoundError) as exc_info:
             assembly_service.update_assembly(
                 uow=uow, assembly_id=uuid.uuid4(), user_id=admin_user.id, title="Updated Title"
             )
@@ -350,7 +355,7 @@ class TestGetUserAccessibleAssemblies:
         """Test error when user not found."""
         uow = FakeUnitOfWork()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(UserNotFoundError) as exc_info:
             assembly_service.get_user_accessible_assemblies(uow=uow, user_id=uuid.uuid4())
 
         assert "not found" in str(exc_info.value)
@@ -544,7 +549,7 @@ class TestAssemblyGSheetOperations:
         )
         uow.assemblies.add(assembly)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(GoogleSheetConfigNotFoundError) as exc_info:
             assembly_service.update_assembly_gsheet(
                 uow=uow,
                 assembly_id=assembly.id,
@@ -595,7 +600,7 @@ class TestAssemblyGSheetOperations:
         )
         uow.assemblies.add(assembly)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(GoogleSheetConfigNotFoundError) as exc_info:
             assembly_service.remove_assembly_gsheet(
                 uow=uow,
                 assembly_id=assembly.id,

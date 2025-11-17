@@ -15,7 +15,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     update_assembly,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
@@ -63,7 +63,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_tab="details",
             current_page="view_assembly",
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -94,7 +94,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             current_tab="data",
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -137,7 +137,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             add_user_form=add_user_form,
             current_tab="members",
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -177,9 +177,9 @@ def create_assembly_page() -> ResponseReturnValue:
             current_app.logger.warning(f"Insufficient permissions to create assembly for user {current_user.id}: {e}")
             flash(_("You don't have permission to create assemblies"), "error")
             return redirect(url_for("main.dashboard"))
-        except ValueError as e:
-            current_app.logger.error(f"Create assembly validation error for user {current_user.id}: {e}")
-            flash(_("Please check your input and try again"), "error")
+        except NotFoundError as e:
+            current_app.logger.error(f"User not found during assembly creation for user {current_user.id}: {e}")
+            flash(_("An error occurred while creating the assembly"), "error")
         except Exception as e:
             current_app.logger.error(f"Create assembly error for user {current_user.id}: {e}")
             flash(_("An error occurred while creating the assembly"), "error")
@@ -219,11 +219,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 flash(_("You don't have permission to edit this assembly"), "error")
                 return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
-            except ValueError as e:
+            except NotFoundError as e:
                 current_app.logger.error(
-                    f"Edit assembly validation error for assembly {assembly_id} user {current_user.id}: {e}"
+                    f"Assembly or user not found while editing assembly {assembly_id} user {current_user.id}: {e}"
                 )
-                flash(_("Please check your input and try again"), "error")
+                flash(_("An error occurred while updating the assembly"), "error")
             except Exception as e:
                 current_app.logger.error(f"Edit assembly error for assembly {assembly_id} user {current_user.id}: {e}")
                 flash(_("An error occurred while updating the assembly"), "error")
@@ -234,7 +234,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=assembly,
             current_tab="details",
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -298,7 +298,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.error(f"Invalid user ID for assembly {assembly_id}: {e}")
         flash(_("Invalid user selection"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
@@ -349,7 +349,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.error(f"Error removing user from assembly {assembly_id}: {e}")
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))

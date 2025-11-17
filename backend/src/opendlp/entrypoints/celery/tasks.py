@@ -26,6 +26,7 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
 
 
@@ -74,7 +75,7 @@ def _update_selection_record(
         record = uow.selection_run_records.get_by_task_id(task_id)
 
         if record is None:
-            raise ValueError(f"SelectionRunRecord with task_id {task_id} not found")
+            raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
 
         # Update existing record
         record.status = status

@@ -15,6 +15,7 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, manage_old_tabs, run_select
+from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 
 
 @pytest.fixture
@@ -147,10 +148,12 @@ class TestUpdateSelectionRecord:
             assert updated_record.completed_at is not None
 
     def test_update_record_not_found_raises_error(self, postgres_session_factory):
-        """Test that updating non-existent record raises ValueError."""
+        """Test that updating non-existent record raises SelectionRunRecordNotFoundError."""
         non_existent_task_id = uuid.uuid4()
 
-        with pytest.raises(ValueError, match=f"SelectionRunRecord with task_id {non_existent_task_id} not found"):
+        with pytest.raises(
+            SelectionRunRecordNotFoundError, match=f"SelectionRunRecord with task_id {non_existent_task_id} not found"
+        ):
             _update_selection_record(
                 task_id=non_existent_task_id,
                 status=SelectionRunStatus.RUNNING,

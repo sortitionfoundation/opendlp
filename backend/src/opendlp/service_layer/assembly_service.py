@@ -8,7 +8,12 @@ from typing import Any, cast
 from opendlp.domain.assembly import VALID_TEAMS, Assembly, AssemblyGSheet, Teams
 from opendlp.domain.value_objects import AssemblyStatus
 
-from .exceptions import InsufficientPermissions
+from .exceptions import (
+    AssemblyNotFoundError,
+    GoogleSheetConfigNotFoundError,
+    InsufficientPermissions,
+    UserNotFoundError,
+)
 from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import get_user_assemblies
@@ -38,12 +43,12 @@ def create_assembly(
 
     Raises:
         InsufficientPermissions: If user cannot create assemblies
-        ValueError: If user not found or invalid data
+        UserNotFoundError: If user not found or invalid data
     """
     with uow:
         user = uow.users.get(created_by_user_id)
         if not user:
-            raise ValueError(f"User {created_by_user_id} not found")
+            raise UserNotFoundError(f"User {created_by_user_id} not found")
 
         # Check permissions - only global organisers and admins can create assemblies
         if not has_global_organiser(user):
@@ -81,17 +86,17 @@ def update_assembly(
         Updated Assembly instance
 
     Raises:
-        ValueError: If assembly or user not found
+        UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot manage this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_manage_assembly(user, assembly):
@@ -127,17 +132,17 @@ def get_assembly_with_permissions(
         Assembly instance
 
     Raises:
-        ValueError: If assembly or user not found
+        NotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot view this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_view_assembly(user, assembly):
@@ -165,17 +170,17 @@ def archive_assembly(
         Archived Assembly instance
 
     Raises:
-        ValueError: If assembly or user not found
+        NotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot manage this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_manage_assembly(user, assembly):
@@ -207,12 +212,12 @@ def get_user_accessible_assemblies(
         List of assemblies user can access
 
     Raises:
-        ValueError: If user not found
+        UserNotFoundError: If user not found
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         # Use existing user_service function for consistency
 
@@ -242,17 +247,19 @@ def add_assembly_gsheet(
         Created AssemblyGSheet instance
 
     Raises:
-        ValueError: If assembly or user not found, or if assembly already has a gsheet
+        UserNotFoundError: If user not found
+        AssemblyNotFoundError: If assembly not found
         InsufficientPermissions: If user cannot manage this assembly
+        ValueError: If assembly already has a gsheet
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_manage_assembly(user, assembly):
@@ -297,17 +304,19 @@ def update_assembly_gsheet(
         Updated AssemblyGSheet instance
 
     Raises:
-        ValueError: If assembly, user, or gsheet not found
+        UserNotFoundError: If user not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet not found
         InsufficientPermissions: If user cannot manage this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_manage_assembly(user, assembly):
@@ -318,7 +327,9 @@ def update_assembly_gsheet(
         # Get the existing gsheet
         assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
         if not assembly_gsheet:
-            raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
+            raise GoogleSheetConfigNotFoundError(
+                f"Assembly {assembly_id} does not have a Google Spreadsheet configuration"
+            )
 
         # Apply updates
         assembly_gsheet.update_values(**AssemblyGSheet.convert_str_kwargs(**updates))
@@ -342,17 +353,19 @@ def remove_assembly_gsheet(
         user_id: ID of user performing the operation
 
     Raises:
-        ValueError: If assembly, user, or gsheet not found
+        UserNotFoundError: If user not found
+        AssemblyNotFoundError: If assembly not found
+        GoogleSheetConfigNotFoundError: If gsheet not found
         InsufficientPermissions: If user cannot manage this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_manage_assembly(user, assembly):
@@ -363,7 +376,9 @@ def remove_assembly_gsheet(
         # Get the existing gsheet
         assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
         if not assembly_gsheet:
-            raise ValueError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
+            raise GoogleSheetConfigNotFoundError(
+                f"Assembly {assembly_id} does not have a Google Spreadsheet configuration"
+            )
 
         uow.assembly_gsheets.delete(assembly_gsheet)
         uow.commit()
@@ -386,17 +401,18 @@ def get_assembly_gsheet(
         AssemblyGSheet instance or None if not found
 
     Raises:
-        ValueError: If assembly or user not found
+        UserNotFoundError: If user not found
+        AssemblyNotFoundError: If assembly not found
         InsufficientPermissions: If user cannot view this assembly
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
-            raise ValueError(f"Assembly {assembly_id} not found")
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
         # Check permissions
         if not can_view_assembly(user, assembly):
