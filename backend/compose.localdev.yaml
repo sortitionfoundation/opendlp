@@ -1,3 +1,5 @@
+name: opendlp_localdev
+
 services:
   postgres_local:
     image: docker.io/postgres:16
