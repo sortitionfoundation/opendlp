@@ -31,7 +31,7 @@ def _():
 @given("the assembly is set up", target_fixture="assembly_to_select")
 def _(assembly_creator):
     """the assembly is set up for "manual gsheet setup"."""
-    assembly = assembly_creator("Assembly to select")
+    assembly = assembly_creator("Assembly to select", number_to_select=22)
     return assembly
 
 
@@ -137,19 +137,14 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
 @then("I am told the number of categories and category values")
 def _(page: Page):
     """I am told the number of categories and category values."""
+    page.get_by_text("Full Run Report", exact=True).click()
     expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
-
-
-@then("I am told selection is running")
-def _(page: Page):
-    """I am told selection is running."""
-    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
 
 
 @then("I am told selection has completed")
 def _(page: Page):
     """I am told selection has completed."""
-    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
+    expect(page.get_by_text("Successfully selected")).to_be_visible(timeout=10_000)
 
 
 @when("I initialise the replacements process")

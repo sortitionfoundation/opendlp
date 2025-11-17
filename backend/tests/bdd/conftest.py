@@ -263,7 +263,7 @@ def assembly_gsheet_creator(test_database, admin_user):
     def _create_assembly_gsheet(title: str) -> tuple[Assembly, AssemblyGSheet]:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, number_to_select=22)
         gsheet_assembly = add_assembly_gsheet(
             uow=uow,
             assembly_id=assembly.id,

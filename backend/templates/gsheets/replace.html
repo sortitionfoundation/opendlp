@@ -30,7 +30,7 @@
                 {% if run_record.task_type.value == "load_replacement_gsheet" %}
                     {{ _("Loading Google Spreadsheet") }}
                 {% elif run_record.task_type.value == "select_replacement_gsheet" %}
-                    {{ _("Selecting %(num) Replacements with Google Spreadsheet", num=num_to_select) }}
+                    {{ _("Selecting %(num)s Replacements with Google Spreadsheet", num=num_to_select) }}
                 {% else %}
                     {{ _("Task in Progress...") }}
                 {% endif %}
