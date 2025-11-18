@@ -72,6 +72,10 @@ class InsufficientPermissions(ServiceLayerError):
         self.required_role = required_role
 
 
+class InvalidSelection(ServiceLayerError):
+    """Error for when we can't do selection because something is invalid"""
+
+
 class NotFoundError(ServiceLayerError):
     """General error to indicate something cannot be found in a repository"""
 

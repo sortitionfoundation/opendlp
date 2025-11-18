@@ -104,6 +104,36 @@ class TestSortitionRoutes:
         # Should redirect due to validation error
         assert response.status_code == 404
 
+    def test_select_assembly_gsheet_with_none_to_select(self, admin_user, logged_in_admin, postgres_session_factory):
+        """Test POST request with run_id for assembly with zero to select."""
+        # Create assembly and task for different assembly
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="None Assembly",
+                created_by_user_id=admin_user.id,
+                question="What should we configure?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+                number_to_select=None,
+            )
+            assembly_id = assembly.id
+            uow.flush()
+
+            gsheet = AssemblyGSheet(
+                assembly_id=assembly.id,
+                url=VALID_GSHEET_URL,
+                check_same_address_cols=["address1", "postcode"],
+                columns_to_keep=["first_name", "last_name", "age"],
+            )
+            uow.assembly_gsheets.add(gsheet)
+            uow.commit()
+
+        # Try to access task from different assembly
+        response = logged_in_admin.post(f"/assemblies/{assembly_id}/gsheet_select")
+
+        # Should redirect due to validation error
+        assert response.status_code == 302
+
     @patch("opendlp.service_layer.sortition.tasks.load_gsheet.delay")
     def test_gsheet_load_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """Test POST request to start loading task succeeds."""

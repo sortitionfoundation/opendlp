@@ -18,7 +18,7 @@ from opendlp.service_layer.assembly_service import (
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
+from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
@@ -303,6 +303,10 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid Selection attempted with gsheet select for assembly {assembly_id}: {e}")
+        flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet select for assembly {assembly_id}: {e}")
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")

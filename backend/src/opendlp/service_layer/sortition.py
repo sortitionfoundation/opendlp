@@ -12,9 +12,10 @@ from sortition_algorithms.people import People
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
-from opendlp.service_layer.exceptions import AssemblyNotFoundError, GoogleSheetConfigNotFoundError
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, GoogleSheetConfigNotFoundError, InvalidSelection
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.translations import gettext as _
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -82,6 +83,9 @@ def start_gsheet_select_task(
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if assembly.number_to_select is None or assembly.number_to_select < -1:
+        raise InvalidSelection(_("The assembly needs to have a number to select before we can do selection"))
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
