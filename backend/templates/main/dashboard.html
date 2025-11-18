@@ -1,23 +1,29 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Dashboard") }} - OpenDLP{% endblock %}
 {% block content %}
-    <div class="govuk-!-margin-bottom-4">
-        <h1 class="govuk-heading-xl">{{ _("Dashboard") }}</h1>
-        <p class="govuk-body">{{ _("Welcome back") }}, {{ current_user.display_name }}!</p>
+    <div class="govuk-grid-row">
+        <div class="govuk-!-margin-bottom-4">
+            <div class="govuk-grid-column-two-thirds">
+                <h1 class="govuk-heading-xl">{{ _("Dashboard") }}</h1>
+                <p class="govuk-body">{{ _("Welcome back") }}, {{ current_user.display_name }}!</p>
+            </div>
+        </div>
     </div>
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     <!-- Assemblies Section -->
-    <div class="govuk-!-margin-bottom-4">
-        <div class="govuk-grid-column-two-thirds">
-            <h2 class="govuk-heading-l">{{ _("Your Assemblies") }}</h2>
-        </div>
-        <div class="govuk-grid-column-one-third">
-            <div class="govuk-!-text-align-right">
-                {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
-                    <a href="{{ url_for('main.create_assembly_page') }}"
-                        class="govuk-button"
-                        data-module="govuk-button">{{ _("Create Assembly") }}</a>
-                {% endif %}
+    <div class="govuk-grid-row">
+        <div class="govuk-!-margin-bottom-4">
+            <div class="govuk-grid-column-two-thirds">
+                <h2 class="govuk-heading-l">{{ _("Your Assemblies") }}</h2>
+            </div>
+            <div class="govuk-grid-column-one-third">
+                <div class="govuk-!-text-align-right">
+                    {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
+                        <a href="{{ url_for('main.create_assembly_page') }}"
+                            class="govuk-button"
+                            data-module="govuk-button">{{ _("Create Assembly") }}</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
