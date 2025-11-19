@@ -120,6 +120,26 @@ class CrossDatabaseUUID(TypeDecorator):
             return uuid.UUID(str(value))
 
 
+def _get_run_report_converter() -> cattrs.Converter:
+    """Create a cattrs converter configured for RunReport serialization."""
+    from contextlib import suppress
+
+    converter = cattrs.Converter()
+
+    # Register a structure hook for the union type str | int | float
+    # This handles the problematic type used in RunTable.data
+    def structure_union_value(obj: Any, cl: Any) -> Any:
+        """Structure union of str | int | float - just return the value as-is."""
+        return obj
+
+    # Try to register for both Union syntax variations
+    with suppress(TypeError, AttributeError):
+        union_type: Any = str | int | float
+        converter.register_structure_hook(union_type, structure_union_value)
+
+    return converter
+
+
 class RunReportJSON(TypeDecorator):
     """Custom type for storing RunReport objects as JSON using cattrs."""
 
@@ -144,12 +164,22 @@ class RunReportJSON(TypeDecorator):
             return None
 
         if isinstance(value, str):
-            # Parse JSON string and structure back to RunReport
-            unstructured = json.loads(value)
-            return cattrs.structure(unstructured, RunReport)
+            try:
+                # Parse JSON string and structure back to RunReport
+                unstructured = json.loads(value)
+                converter = _get_run_report_converter()
+                return converter.structure(unstructured, RunReport)
+            except Exception:
+                # If deserialization fails, just return None
+                # The JSON is still stored in the database, but we can't reconstruct the RunReport
+                return None
         else:
-            # Already a dict (shouldn't happen with JSON type, but handle it)
-            return cattrs.structure(value, RunReport)
+            try:
+                # Already a dict (shouldn't happen with JSON type, but handle it)
+                converter = _get_run_report_converter()
+                return converter.structure(value, RunReport)
+            except Exception:
+                return None
 
 
 # Create a registry for imperative mapping

@@ -66,6 +66,7 @@ def _update_selection_record(
     log_messages: list[str] | None = None,
     error_message: str = "",
     completed_at: datetime | None = None,
+    run_report: RunReport | None = None,
     session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
@@ -89,6 +90,9 @@ def _update_selection_record(
             record.error_message = error_message
         if completed_at:
             record.completed_at = completed_at
+        if run_report is not None:
+            record.run_report = run_report
+            flag_modified(record, "run_report")
 
         uow.commit()
 
@@ -175,6 +179,7 @@ def _internal_load_gsheet(
                 _("Google Sheets load completed successfully."),
             ],
             completed_at=datetime.now(UTC) if final_task else None,
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -187,6 +192,7 @@ def _internal_load_gsheet(
             log_message=str(error),
             error_message=error.to_html(),
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, None, None, report
@@ -205,6 +211,7 @@ def _internal_load_gsheet(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, None, None, report
@@ -224,6 +231,7 @@ def _internal_load_gsheet(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -287,6 +295,7 @@ def _internal_run_select(
                     suffix=log_suffix,
                 ),
                 completed_at=datetime.now(UTC) if final_task else None,
+                run_report=report,
                 session_factory=session_factory,
             )
         else:
@@ -301,6 +310,7 @@ def _internal_run_select(
                 log_message=_("Selection algorithm failed to find suitable panels"),
                 error_message=error_message,
                 completed_at=datetime.now(UTC),
+                run_report=report,
                 session_factory=session_factory,
             )
         return success, selected_panels, report
@@ -321,6 +331,7 @@ def _internal_run_select(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, [], report
@@ -366,6 +377,7 @@ def _internal_write_selected(
                 remaining_count=len(remaining_table) - 1,
             ),
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -386,6 +398,7 @@ def _internal_write_selected(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return report
