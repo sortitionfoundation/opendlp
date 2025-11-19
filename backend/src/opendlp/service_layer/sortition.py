@@ -411,7 +411,7 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
                         f"Unexpected task_type {run_record.task_type} found in "
                         f"run record {run_record.task_id} for select task"
                     )
-            elif celery_result.id and celery_result.state == "PROGRESS":
+            elif celery_result.id and celery_result.state == "STARTED":
                 result.log_messages = celery_result.info.get("all_messages", [])
     return result
 
