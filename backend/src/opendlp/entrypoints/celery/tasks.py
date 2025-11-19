@@ -67,6 +67,7 @@ def _update_selection_record(
     error_message: str = "",
     completed_at: datetime | None = None,
     run_report: RunReport | None = None,
+    selected_ids: list[list[str]] | None = None,
     session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
@@ -93,6 +94,9 @@ def _update_selection_record(
         if run_report is not None:
             record.run_report = run_report
             flag_modified(record, "run_report")
+        if selected_ids is not None:
+            record.selected_ids = selected_ids
+            flag_modified(record, "selected_ids")
 
         uow.commit()
 
@@ -286,6 +290,8 @@ def _internal_run_select(
         )
 
         if success:
+            # Convert frozensets to lists for JSON serialization
+            selected_ids = [list(panel) for panel in selected_panels]
             _update_selection_record(
                 task_id=task_id,
                 status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
@@ -296,6 +302,7 @@ def _internal_run_select(
                 ),
                 completed_at=datetime.now(UTC) if final_task else None,
                 run_report=report,
+                selected_ids=selected_ids,
                 session_factory=session_factory,
             )
         else:
