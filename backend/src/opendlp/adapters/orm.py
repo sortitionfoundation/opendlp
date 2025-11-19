@@ -1,11 +1,14 @@
 """ABOUTME: SQLAlchemy table definitions and imperative mapping for OpenDLP
 ABOUTME: Defines database schema with proper relationships, indexes, and JSON columns"""
 
+import json
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
+import cattrs
+from sortition_algorithms.utils import RunReport
 from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, Integer, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
@@ -117,6 +120,38 @@ class CrossDatabaseUUID(TypeDecorator):
             return uuid.UUID(str(value))
 
 
+class RunReportJSON(TypeDecorator):
+    """Custom type for storing RunReport objects as JSON using cattrs."""
+
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> str | None:
+        """Convert RunReport object to JSON string for storage."""
+        if value is None:
+            return None
+
+        if isinstance(value, RunReport):
+            # Unstructure the RunReport to a dict and convert to JSON string
+            unstructured = cattrs.unstructure(value)
+            return json.dumps(unstructured)
+        else:
+            raise TypeError(f"Expected RunReport or None, got {type(value)}")
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> RunReport | None:
+        """Convert JSON string back to RunReport object."""
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+            # Parse JSON string and structure back to RunReport
+            unstructured = json.loads(value)
+            return cattrs.structure(unstructured, RunReport)
+        else:
+            # Already a dict (shouldn't happen with JSON type, but handle it)
+            return cattrs.structure(value, RunReport)
+
+
 # Create a registry for imperative mapping
 mapper_registry = registry()
 metadata = mapper_registry.metadata
@@ -220,4 +255,9 @@ selection_run_records = Table(
     Column("error_message", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("completed_at", TZAwareDatetime(), nullable=True),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True),
+    Column("comment", Text, nullable=False, default=""),
+    Column("status_stages", JSON, nullable=True),
+    Column("selected_ids", JSON, nullable=True),
+    Column("run_report", RunReportJSON(), nullable=True),
 )

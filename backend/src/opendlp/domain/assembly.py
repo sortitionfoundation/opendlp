@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Literal, get_args
 
 from sortition_algorithms import adapters, settings
+from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
@@ -316,6 +317,11 @@ class SelectionRunRecord:
     error_message: str = ""
     created_at: datetime | None = None
     completed_at: datetime | None = None
+    user_id: uuid.UUID | None = None  # foreign key to User - who started the run
+    comment: str = ""  # comment when starting the selection (max 512 chars)
+    status_stages: list[dict[str, str]] | None = None  # JSON: list of stage dicts with "name" and "status" keys
+    selected_ids: list[list[str]] | None = None  # JSON: list of panels, each panel is list of IDs
+    run_report: RunReport | None = None  # serialized RunReport for persistence
 
     def __post_init__(self) -> None:
         if self.created_at is None:
