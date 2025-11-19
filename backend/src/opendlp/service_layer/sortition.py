@@ -56,6 +56,7 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
         status=SelectionRunStatus.PENDING,
         log_messages=["Task submitted for Google Sheets loading"],
         settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
     uow.selection_run_records.add(record)
     uow.commit()
@@ -108,6 +109,7 @@ def start_gsheet_select_task(
         status=SelectionRunStatus.PENDING,
         log_messages=[log_msg],
         settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
     uow.selection_run_records.add(record)
     uow.commit()
@@ -168,6 +170,7 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
         status=SelectionRunStatus.PENDING,
         log_messages=["Task submitted for Google Sheets replacement data loading"],
         settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
     uow.selection_run_records.add(record)
     uow.commit()
@@ -226,6 +229,7 @@ def start_gsheet_replace_task(
         status=SelectionRunStatus.PENDING,
         log_messages=[f"Task submitted for Google Sheets replacement selection of {number_to_select} people"],
         settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
     uow.selection_run_records.add(record)
     uow.commit()
@@ -290,6 +294,7 @@ def start_gsheet_manage_tabs_task(
         status=SelectionRunStatus.PENDING,
         log_messages=[f"Task submitted for {action} old output tabs"],
         settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
     uow.selection_run_records.add(record)
     uow.commit()
