@@ -12,23 +12,23 @@
     <p class="govuk-body">{{ _("Run the replacement selection for this assembly using Google Spreadsheet data.") }}</p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
+            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
             <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}"
                 method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="govuk-button">
+                <button type="submit" class="govuk-button govuk-button--secondary">
                     {% if not run_record %}
-                        {{ _("Load Spreadsheet") }}
+                        {{ _("Check Spreadsheet") }}
                     {% else %}
-                        {{ _("Reload Spreadsheet") }}
+                        {{ _("Re-check Spreadsheet") }}
                     {% endif %}
                 </button>
             </form>
-            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
-                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
         {% else %}
             <button class="govuk-button" disabled>
                 {% if run_record.task_type.value == "load_replacement_gsheet" %}
-                    {{ _("Loading Google Spreadsheet") }}
+                    {{ _("Checking Google Spreadsheet") }}
                 {% elif run_record.task_type.value == "select_replacement_gsheet" %}
                     {{ _("Selecting %(num)s Replacements with Google Spreadsheet", num=num_to_select) }}
                 {% else %}

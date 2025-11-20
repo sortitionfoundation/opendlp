@@ -20,22 +20,11 @@
     </p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
-            <form action="{{ url_for('gsheets.start_gsheet_load', assembly_id=assembly.id) }}"
-                method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="govuk-button">
-                    {% if not run_record %}
-                        {{ _("Load Spreadsheet") }}
-                    {% else %}
-                        {{ _("Reload Spreadsheet") }}
-                    {% endif %}
-                </button>
-            </form>
             <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
                 method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="test_selection" value="0" />
-                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Selection") }}</button>
+                <button type="submit" class="govuk-button">{{ _("Run Selection") }}</button>
             </form>
             <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
                 method="post">
@@ -43,12 +32,23 @@
                 <input type="hidden" name="test_selection" value="1" />
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Test Selection") }}</button>
             </form>
+            <form action="{{ url_for('gsheets.start_gsheet_load', assembly_id=assembly.id) }}"
+                method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="govuk-button govuk-button--secondary">
+                    {% if not run_record %}
+                        {{ _("Check Spreadsheet") }}
+                    {% else %}
+                        {{ _("Re-check Spreadsheet") }}
+                    {% endif %}
+                </button>
+            </form>
             <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
                 class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
         {% else %}
             <button class="govuk-button" disabled>
                 {% if run_record.task_type.value == "load_gsheet" %}
-                    {{ _("Loading Google Spreadsheet") }}
+                    {{ _("Checking Google Spreadsheet") }}
                 {% elif run_record.task_type.value == "select_gsheet" %}
                     {{ _("Running Selection with Google Spreadsheet") }}
                 {% elif run_record.task_type.value == "test_select_gsheet" %}

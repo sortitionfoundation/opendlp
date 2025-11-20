@@ -27,7 +27,7 @@ class TestSortitionRoutes:
 
         assert response.status_code == 200
         assert b"Google Spreadsheet Configuration" in response.data
-        assert b"Load Spreadsheet" in response.data
+        assert b"Check Spreadsheet" in response.data
 
     def test_select_assembly_gsheet_get_requires_auth(self, client, assembly_with_gsheet):
         """Test GET request redirects when not authenticated."""
@@ -455,7 +455,7 @@ class TestReplacementRoutes:
 
         assert response.status_code == 200
         assert b"Replacements for" in response.data
-        assert b"Load Spreadsheet" in response.data
+        assert b"Check Spreadsheet" in response.data
 
     def test_replace_assembly_gsheet_get_requires_auth(self, client, assembly_with_gsheet):
         """Test GET request to replacement page redirects when not authenticated."""

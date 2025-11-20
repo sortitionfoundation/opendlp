@@ -109,7 +109,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     expect(link).to_be_visible()
 
     # Then click "load Spreadsheet"
-    link = admin_logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    link = admin_logged_in_page.get_by_role("button", name="Check Spreadsheet")
     expect(link).to_be_visible()
     link.click()
 
@@ -162,7 +162,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     expect(admin_logged_in_page).to_have_url(running_replace_url_re)
 
     # Then click "Load Spreadsheet"
-    link = admin_logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    link = admin_logged_in_page.get_by_role("button", name="Check Spreadsheet")
     expect(link).to_be_visible()
     link.click()
 
