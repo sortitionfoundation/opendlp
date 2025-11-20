@@ -16,7 +16,7 @@ from wtforms import (
     StringField,
     TextAreaField,
 )
-from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
+from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
 
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
@@ -74,6 +74,17 @@ class EmailDoesNotExistValidator:
             # The service layer will handle this case properly
             pass
         if existing_user:
+            raise ValidationError(str(self.message))
+
+
+class NonNegativeValidator:
+    """WTForms validator that ensures a number field is not negative."""
+
+    def __init__(self, message: str | None = None) -> None:
+        self.message = message or _l("Number cannot be negative")
+
+    def __call__(self, form: Any, field: Any) -> None:
+        if field.data is not None and field.data < 0:
             raise ValidationError(str(self.message))
 
 
@@ -200,8 +211,9 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     number_to_select = IntegerField(
         _l("Number to Select"),
-        validators=[Optional()],
-        description=_l("Optional - the number of participants to select for this assembly"),
+        validators=[InputRequired(), NonNegativeValidator()],
+        description=_l("The number of participants to select for this assembly"),
+        default=0,
     )
 
 

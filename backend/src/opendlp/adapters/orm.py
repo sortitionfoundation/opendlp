@@ -212,7 +212,7 @@ assemblies = Table(
     Column("title", String(255), nullable=False),
     Column("question", Text, nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
-    Column("number_to_select", Integer, nullable=True),
+    Column("number_to_select", Integer, nullable=False, default=0),
     Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
     Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

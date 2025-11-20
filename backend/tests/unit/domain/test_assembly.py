@@ -35,7 +35,7 @@ class TestAssembly:
         assert assembly.title == "Minimal Assembly"
         assert assembly.question == ""
         assert assembly.first_assembly_date is None
-        assert assembly.number_to_select is None
+        assert assembly.number_to_select == 0
         assert assembly.status == AssemblyStatus.ACTIVE
         assert isinstance(assembly.id, uuid.UUID)
         assert isinstance(assembly.created_at, datetime)
@@ -201,6 +201,10 @@ class TestAssembly:
         # Empty question should be allowed now
         assembly.update_details(question="")
         assert assembly.question == ""
+
+        # Negative number_to_select should fail
+        with pytest.raises(ValueError, match="Number to select cannot be negative"):
+            assembly.update_details(number_to_select=-1)
 
     def test_assembly_equality_and_hash(self):
         assembly_id = uuid.uuid4()

@@ -25,7 +25,7 @@ def create_assembly(
     created_by_user_id: uuid.UUID,
     question: str = "",
     first_assembly_date: date | None = None,
-    number_to_select: int | None = None,
+    number_to_select: int = 0,
 ) -> Assembly:
     """
     Create a new assembly.

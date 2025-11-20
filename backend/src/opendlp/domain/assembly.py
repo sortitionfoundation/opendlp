@@ -23,7 +23,7 @@ class Assembly:
         title: str,
         question: str = "",
         first_assembly_date: date | None = None,
-        number_to_select: int | None = None,
+        number_to_select: int = 0,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
@@ -74,6 +74,8 @@ class Assembly:
             self.first_assembly_date = first_assembly_date
 
         if number_to_select is not None:
+            if number_to_select < 0:
+                raise ValueError("Number to select cannot be negative")
             self.number_to_select = number_to_select
 
         self.updated_at = datetime.now(UTC)

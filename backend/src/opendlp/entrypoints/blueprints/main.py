@@ -161,14 +161,14 @@ def create_assembly_page() -> ResponseReturnValue:
         try:
             uow = bootstrap.bootstrap()
             with uow:
-                # ignoring warning for title - it will not be None due to form validation
+                # ignoring warning for title and number_to_select - they will not be None due to form validation
                 assembly = create_assembly(
                     uow=uow,
                     title=form.title.data,  # type: ignore[arg-type]
                     created_by_user_id=current_user.id,
                     question=form.question.data or "",
                     first_assembly_date=form.first_assembly_date.data,
-                    number_to_select=form.number_to_select.data,
+                    number_to_select=form.number_to_select.data,  # type: ignore[arg-type]
                 )
 
             flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
