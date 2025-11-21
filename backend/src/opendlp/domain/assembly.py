@@ -323,7 +323,7 @@ class SelectionRunRecord:
     comment: str = ""  # comment when starting the selection (max 512 chars)
     status_stages: list[dict[str, str]] | None = None  # JSON: list of stage dicts with "name" and "status" keys
     selected_ids: list[list[str]] | None = None  # JSON: list of panels, each panel is list of IDs
-    run_report: RunReport | None = None  # serialized RunReport for persistence
+    run_report: RunReport = field(default_factory=RunReport)  # serialized RunReport for persistence
 
     def __post_init__(self) -> None:
         if self.created_at is None:
@@ -357,3 +357,11 @@ class SelectionRunRecord:
     @property
     def task_type_verbose(self) -> str:
         return self.task_type.value.replace("_", " ").replace("gsheet", "Google Spreadsheet").capitalize()
+
+    def add_report(self, report: RunReport) -> None:
+        """
+        Add the new report to our existing report.
+
+        We always have an empty report to add new reports to.
+        """
+        self.run_report.add_report(report)

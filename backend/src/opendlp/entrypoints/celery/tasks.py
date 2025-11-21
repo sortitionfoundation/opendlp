@@ -92,7 +92,7 @@ def _update_selection_record(
         if completed_at:
             record.completed_at = completed_at
         if run_report is not None:
-            record.run_report = run_report
+            record.add_report(run_report)
             flag_modified(record, "run_report")
         if selected_ids is not None:
             record.selected_ids = selected_ids

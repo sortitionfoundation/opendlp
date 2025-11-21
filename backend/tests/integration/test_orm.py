@@ -5,6 +5,7 @@ import uuid
 from datetime import date, datetime, timedelta
 
 import pytest
+from sortition_algorithms import RunReport
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -633,6 +634,7 @@ class TestSelectionRunRecordORM:
             settings_used={"algorithm": "maximin", "target_count": 100, "seed": 42},
             error_message="",
         )
+        assert selection_record.run_report == RunReport()
 
         postgres_session.add(selection_record)
         postgres_session.commit()
@@ -651,6 +653,7 @@ class TestSelectionRunRecordORM:
         assert isinstance(retrieved_record.created_at, datetime)
         assert retrieved_record.created_at.tzinfo is not None
         assert retrieved_record.completed_at is None
+        assert retrieved_record.run_report == RunReport()
 
     def test_selection_run_record_defaults(self, postgres_session: Session):
         """Test that SelectionRunRecord default values work correctly."""
@@ -684,6 +687,7 @@ class TestSelectionRunRecordORM:
         assert retrieved_record.settings_used == {}
         assert retrieved_record.error_message == ""
         assert retrieved_record.completed_at is None
+        assert retrieved_record.run_report == RunReport()
 
     def test_selection_run_record_with_completion(self, postgres_session: Session):
         """Test SelectionRunRecord with completion timestamp."""
@@ -720,6 +724,45 @@ class TestSelectionRunRecordORM:
         assert retrieved_record.status == SelectionRunStatus.COMPLETED
         assert retrieved_record.completed_at is not None
         assert isinstance(retrieved_record.completed_at, datetime)
+
+    def test_selection_run_record_with_run_report_with_details(self, postgres_session: Session):
+        """Test SelectionRunRecord with completion timestamp."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord
+        task_id = uuid.uuid4()
+        completed_time = datetime.now()
+        run_report = RunReport()
+        run_report.add_line("Some line of text")
+        run_report.add_table(["key", "val"], [["key1", 10], ["key2", 20.5], ["key3", "thirty"]])
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            log_messages=["Task started", "Selection completed successfully"],
+            settings_used={"algorithm": "stratified", "target_count": 50},
+            completed_at=completed_time,
+            run_report=run_report,
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and verify
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        retrieved_run_report_text = retrieved_record.run_report.as_text()
+        assert "Some line of text" in retrieved_run_report_text
 
     def test_selection_run_record_with_error(self, postgres_session: Session):
         """Test SelectionRunRecord with error information."""

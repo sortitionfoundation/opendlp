@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-import cattrs
 from sortition_algorithms.utils import RunReport
 from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, Integer, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
@@ -120,26 +119,6 @@ class CrossDatabaseUUID(TypeDecorator):
             return uuid.UUID(str(value))
 
 
-def _get_run_report_converter() -> cattrs.Converter:
-    """Create a cattrs converter configured for RunReport serialization."""
-    from contextlib import suppress
-
-    converter = cattrs.Converter()
-
-    # Register a structure hook for the union type str | int | float
-    # This handles the problematic type used in RunTable.data
-    def structure_union_value(obj: Any, cl: Any) -> Any:
-        """Structure union of str | int | float - just return the value as-is."""
-        return obj
-
-    # Try to register for both Union syntax variations
-    with suppress(TypeError, AttributeError):
-        union_type: Any = str | int | float
-        converter.register_structure_hook(union_type, structure_union_value)
-
-    return converter
-
-
 class RunReportJSON(TypeDecorator):
     """Custom type for storing RunReport objects as JSON using cattrs."""
 
@@ -153,7 +132,7 @@ class RunReportJSON(TypeDecorator):
 
         if isinstance(value, RunReport):
             # Unstructure the RunReport to a dict and convert to JSON string
-            unstructured = cattrs.unstructure(value)
+            unstructured = value.serialize()
             return json.dumps(unstructured)
         else:
             raise TypeError(f"Expected RunReport or None, got {type(value)}")
@@ -167,19 +146,17 @@ class RunReportJSON(TypeDecorator):
             try:
                 # Parse JSON string and structure back to RunReport
                 unstructured = json.loads(value)
-                converter = _get_run_report_converter()
-                return converter.structure(unstructured, RunReport)
+                return RunReport.deserialize(unstructured)
             except Exception:
-                # If deserialization fails, just return None
+                # If deserialization fails, just return empty RunReport
                 # The JSON is still stored in the database, but we can't reconstruct the RunReport
-                return None
+                return RunReport()
         else:
             try:
                 # Already a dict (shouldn't happen with JSON type, but handle it)
-                converter = _get_run_report_converter()
-                return converter.structure(value, RunReport)
+                return RunReport.deserialize(value)
             except Exception:
-                return None
+                return RunReport()
 
 
 # Create a registry for imperative mapping
