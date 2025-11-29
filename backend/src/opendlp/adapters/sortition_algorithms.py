@@ -1,8 +1,8 @@
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-from sortition_algorithms import AbstractDataSource, CSVFileDataSource, GSheetDataSource, RunReport
+from sortition_algorithms import AbstractDataSource, CSVFileDataSource, GSheetDataSource, RunReport, errors
 
 
 @dataclass
@@ -79,3 +79,13 @@ class CSVGSheetDataSource(AbstractDataSource):
     def add_simulated_old_tab(self, tab_name: str) -> None:
         """Add a simulated old tab for testing purposes."""
         self._simulated_old_tabs.append(tab_name)
+
+    def customise_features_parse_error(
+        self, error: errors.ParseTableMultiError, headers: Sequence[str]
+    ) -> errors.SelectionMultilineError:
+        return error
+
+    def customise_people_parse_error(
+        self, error: errors.ParseTableMultiError, headers: Sequence[str]
+    ) -> errors.SelectionMultilineError:
+        return error

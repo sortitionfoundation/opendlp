@@ -4,10 +4,12 @@ ABOUTME: Defines business logic exceptions with proper error messages and codes"
 from opendlp.translations import gettext as _
 
 
-class ServiceLayerError(Exception):
-    """Base exception for all service layer errors."""
+class OpenDLPError(Exception):
+    """Base exception for all our custom errors."""
 
-    pass
+
+class ServiceLayerError(OpenDLPError):
+    """Base exception for all service layer errors."""
 
 
 class PasswordTooWeak(ServiceLayerError):
@@ -99,3 +101,31 @@ class RateLimitExceeded(ServiceLayerError):
         super().__init__(message)
         self.operation = operation
         self.retry_after_seconds = retry_after_seconds
+
+
+class InvalidSelection(ServiceLayerError):
+    """Error for when we can't do selection because something is invalid"""
+
+
+class NotFoundError(ServiceLayerError):
+    """General error to indicate something cannot be found in a repository"""
+
+
+class UserNotFoundError(NotFoundError):
+    """A user could not be found in the database"""
+
+
+class AssemblyNotFoundError(NotFoundError):
+    """An assembly could not be found in the database"""
+
+
+class InviteNotFoundError(NotFoundError):
+    """A user invite could not be found in the database"""
+
+
+class GoogleSheetConfigNotFoundError(NotFoundError):
+    """A Google Sheets configuration could not be found in the database"""
+
+
+class SelectionRunRecordNotFoundError(NotFoundError):
+    """A selection run record could not be found in the database"""

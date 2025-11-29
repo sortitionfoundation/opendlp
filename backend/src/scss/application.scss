@@ -37,7 +37,6 @@ $govuk-assets-path: "/static/";
 // Typography
 
 .govuk-heading-xl {
-    font-size: 2em;
     color: $dark-grey;
 }
 
@@ -156,10 +155,6 @@ strong.govuk-tag.dwp-key-details-bar__status--dwp-default {
     padding-top: 1em;
     padding-left: 2em;
     margin-bottom: 3em;
-}
-
-.govuk-summary-list {
-    font-size: 1em;
 }
 
 // Assembly Tasklist

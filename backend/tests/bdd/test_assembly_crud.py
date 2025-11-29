@@ -116,7 +116,7 @@ def _(page: Page, assembly_question: str):
 def _(page: Page, assembly_title: str):
     """the user should see the assembly title "{assembly_title}"."""
     expect(page).to_have_title(f"{assembly_title} - Assembly - OpenDLP")
-    expect(page.locator(".main h2")).to_contain_text(assembly_title)
+    expect(page.locator(".main h1")).to_contain_text(assembly_title)
 
 
 @then("the user should see the edited assembly")

@@ -27,7 +27,7 @@ class TestSortitionRoutes:
 
         assert response.status_code == 200
         assert b"Google Spreadsheet Configuration" in response.data
-        assert b"Load Spreadsheet" in response.data
+        assert b"Check Spreadsheet" in response.data
 
     def test_select_assembly_gsheet_get_requires_auth(self, client, assembly_with_gsheet):
         """Test GET request redirects when not authenticated."""
@@ -58,9 +58,7 @@ class TestSortitionRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select/{task_id}")
 
         assert response.status_code == 200
-        assert b"Task Status" in response.data
-        assert b"Running" in response.data
-        assert b"Task started" in response.data
+        assert b"Current status: running" in response.data
         assert b"Loading data" in response.data
 
     def test_select_assembly_gsheet_with_run_validates_assembly(
@@ -105,6 +103,36 @@ class TestSortitionRoutes:
 
         # Should redirect due to validation error
         assert response.status_code == 404
+
+    def test_select_assembly_gsheet_with_none_to_select(self, admin_user, logged_in_admin, postgres_session_factory):
+        """Test POST request with run_id for assembly with zero to select."""
+        # Create assembly and task for different assembly
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="None Assembly",
+                created_by_user_id=admin_user.id,
+                question="What should we configure?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+                number_to_select=None,
+            )
+            assembly_id = assembly.id
+            uow.flush()
+
+            gsheet = AssemblyGSheet(
+                assembly_id=assembly.id,
+                url=VALID_GSHEET_URL,
+                check_same_address_cols=["address1", "postcode"],
+                columns_to_keep=["first_name", "last_name", "age"],
+            )
+            uow.assembly_gsheets.add(gsheet)
+            uow.commit()
+
+        # Try to access task from different assembly
+        response = logged_in_admin.post(f"/assemblies/{assembly_id}/gsheet_select")
+
+        # Should redirect due to validation error
+        assert response.status_code == 302
 
     @patch("opendlp.service_layer.sortition.tasks.load_gsheet.delay")
     def test_gsheet_load_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
@@ -241,8 +269,7 @@ class TestSortitionRoutes:
 
         assert response.status_code == 200
         # Should contain the progress section
-        assert b"Task Status" in response.data
-        assert b"Running" in response.data
+        assert b"Current status: running" in response.data
         assert b"Task started" in response.data
         assert b"Processing data" in response.data
         # Should contain HTMX polling attributes
@@ -273,7 +300,7 @@ class TestSortitionRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select/{task_id}/progress")
 
         assert response.status_code == 200
-        assert b"Pending" in response.data
+        assert b"Current status: pending" in response.data
         # Should contain HTMX polling attributes
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data
@@ -332,7 +359,6 @@ class TestSortitionRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select/{task_id}/progress")
 
         assert response.status_code == 200
-        assert b"Failed" in response.data
         assert b"Error Details" in response.data
         assert b"Something went wrong" in response.data
         # Should NOT contain HTMX polling attributes (task is done)
@@ -429,7 +455,7 @@ class TestReplacementRoutes:
 
         assert response.status_code == 200
         assert b"Replacements for" in response.data
-        assert b"Load Spreadsheet" in response.data
+        assert b"Check Spreadsheet" in response.data
 
     def test_replace_assembly_gsheet_get_requires_auth(self, client, assembly_with_gsheet):
         """Test GET request to replacement page redirects when not authenticated."""
@@ -461,8 +487,7 @@ class TestReplacementRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_replace/{task_id}")
 
         assert response.status_code == 200
-        assert b"Task Status" in response.data
-        assert b"Running" in response.data
+        assert b"Current status: running" in response.data
         assert b"Task started" in response.data
         assert b"Loading replacement data" in response.data
 
@@ -651,8 +676,7 @@ class TestReplacementRoutes:
 
         assert response.status_code == 200
         # Should contain the progress section
-        assert b"Task Status" in response.data
-        assert b"Running" in response.data
+        assert b"Current status: running" in response.data
         assert b"Task started" in response.data
         assert b"Processing replacement data" in response.data
         # Should contain HTMX polling attributes
@@ -955,8 +979,8 @@ class TestManageTabsRoutes:
 
         assert response.status_code == 200
         assert b"Task Status" in response.data or b"status" in response.data.lower()
-        assert b"Running" in response.data
-        assert b"Task started" in response.data
+        assert b"Task in Progress" in response.data
+        assert b"Listing old tabs" in response.data
         # Should contain HTMX polling attributes
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data

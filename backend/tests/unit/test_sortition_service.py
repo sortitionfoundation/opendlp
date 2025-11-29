@@ -11,7 +11,11 @@ from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    GoogleSheetConfigNotFoundError,
+    InsufficientPermissions,
+)
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeUnitOfWork
 
@@ -78,7 +82,7 @@ class TestStartGsheetLoadTask:
 
         non_existent_id = uuid.uuid4()
 
-        with pytest.raises(ValueError, match=f"Assembly {non_existent_id} not found"):
+        with pytest.raises(AssemblyNotFoundError, match=f"Assembly {non_existent_id} not found"):
             sortition.start_gsheet_load_task(uow, admin_user.id, non_existent_id)
 
     def test_start_gsheet_load_task_no_gsheet_config(self):
@@ -91,7 +95,9 @@ class TestStartGsheetLoadTask:
         uow.assemblies.add(assembly)
         # No gsheet configuration added
 
-        with pytest.raises(ValueError, match=f"No Google Sheets configuration found for assembly {assembly.id}"):
+        with pytest.raises(
+            GoogleSheetConfigNotFoundError, match=f"No Google Sheets configuration found for assembly {assembly.id}"
+        ):
             sortition.start_gsheet_load_task(uow, admin_user.id, assembly.id)
 
     def test_start_gsheet_load_task_insufficient_permissions(self):

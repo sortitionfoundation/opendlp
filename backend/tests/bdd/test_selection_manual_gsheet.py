@@ -31,7 +31,7 @@ def _():
 @given("the assembly is set up", target_fixture="assembly_to_select")
 def _(assembly_creator):
     """the assembly is set up for "manual gsheet setup"."""
-    assembly = assembly_creator("Assembly to select")
+    assembly = assembly_creator("Assembly to select", number_to_select=22)
     return assembly
 
 
@@ -39,7 +39,7 @@ def _(assembly_creator):
 def _(admin_logged_in_page: Page, assembly_to_select):
     """I open the Assembly with "manual gsheet setup"."""
     # First navigate to the assembly view page
-    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    view_url = Urls.for_assembly("view_assembly_data", str(assembly_to_select.id))
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Start Selection link goes to the gsheet_select page
@@ -80,7 +80,7 @@ def _(page: Page):
 def _(page: Page, assembly_to_select):
     """I can specify the source of the respondents data in "manual gsheet setup"."""
     page.click('button[type="submit"]')
-    expect(page).to_have_url(Urls.for_assembly("view_assembly", assembly_to_select.id))
+    expect(page).to_have_url(Urls.for_assembly("view_assembly_data", assembly_to_select.id))
 
 
 @given("the selection options are set", target_fixture="assembly_to_select")
@@ -94,11 +94,12 @@ def _(assembly_gsheet_creator):
 def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     """I initialise selection."""
     # First navigate to the assembly view page
-    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    view_url = Urls.for_assembly("view_assembly_data", str(assembly_to_select.id))
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Selection link goes to the gsheet_select page
-    link = admin_logged_in_page.get_by_role("link", name="Selection")
+    # We use `exact=True` because otherwise we might select the "Data & Selection" link in the nav above
+    link = admin_logged_in_page.get_by_role("link", name="Selection", exact=True)
     expect(link).to_be_visible()
     link.click()
     expect(admin_logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
@@ -108,7 +109,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     expect(link).to_be_visible()
 
     # Then click "load Spreadsheet"
-    link = admin_logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    link = admin_logged_in_page.get_by_role("button", name="Check Spreadsheet")
     expect(link).to_be_visible()
     link.click()
 
@@ -117,11 +118,11 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
 def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     """I start the selection."""
     # First navigate to the assembly view page
-    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    view_url = Urls.for_assembly("view_assembly_data", str(assembly_to_select.id))
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Selection link goes to the gsheet_select page
-    link = admin_logged_in_page.get_by_role("link", name="Selection")
+    link = admin_logged_in_page.get_by_role("link", name="Selection", exact=True)
     expect(link).to_be_visible()
     link.click()
     expect(admin_logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
@@ -136,26 +137,21 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
 @then("I am told the number of categories and category values")
 def _(page: Page):
     """I am told the number of categories and category values."""
+    page.get_by_text("Full Run Report", exact=True).click()
     expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
-
-
-@then("I am told selection is running")
-def _(page: Page):
-    """I am told selection is running."""
-    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
 
 
 @then("I am told selection has completed")
 def _(page: Page):
     """I am told selection has completed."""
-    expect(page.get_by_text("Running stratified selection with")).to_be_visible(timeout=10_000)
+    expect(page.get_by_text("Successfully selected")).to_be_visible(timeout=10_000)
 
 
 @when("I initialise the replacements process")
 def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     """I initialise the replacements process."""
     # First navigate to the assembly view page
-    view_url = Urls.for_assembly("view_assembly", str(assembly_to_select.id))
+    view_url = Urls.for_assembly("view_assembly_data", str(assembly_to_select.id))
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Replacements link goes to the gsheet_replace page
@@ -166,7 +162,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     expect(admin_logged_in_page).to_have_url(running_replace_url_re)
 
     # Then click "Load Spreadsheet"
-    link = admin_logged_in_page.get_by_role("button", name="Load Spreadsheet")
+    link = admin_logged_in_page.get_by_role("button", name="Check Spreadsheet")
     expect(link).to_be_visible()
     link.click()
 
@@ -189,7 +185,7 @@ def _(admin_logged_in_page: Page, assembly_gsheet_creator):
     assembly, _ = assembly_gsheet_creator("Assembly to select")
 
     # Navigate to replacements page and load the spreadsheet
-    view_url = Urls.for_assembly("view_assembly", str(assembly.id))
+    view_url = Urls.for_assembly("view_assembly_data", str(assembly.id))
     admin_logged_in_page.goto(view_url)
 
     link = admin_logged_in_page.get_by_role("button", name="Replacements")

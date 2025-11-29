@@ -1,3 +1,5 @@
+name: opendlp_test
+
 services:
   postgres_test:
     image: docker.io/postgres:16

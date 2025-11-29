@@ -18,7 +18,7 @@ from opendlp.service_layer.assembly_service import (
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
@@ -96,14 +96,14 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     )
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
-                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except InsufficientPermissions as e:
                 current_app.logger.warning(
                     f"Insufficient permissions to {action} gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
                 )
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
-                return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
-            except ValueError as e:
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+            except NotFoundError as e:
                 current_app.logger.error(
                     f"Gsheet {action} validation error for assembly {assembly_id} user {current_user.id}: {e}"
                 )
@@ -114,8 +114,8 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
-        return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet), 200
-    except ValueError as e:
+        return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet, current_tab="data"), 200
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for gsheet management by user {current_user.id}: {e}"
         )
@@ -142,21 +142,21 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
 
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
-    except ValueError as e:
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly or gsheet not found for deletion by user {current_user.id}: {e}")
         flash(_("Google Spreadsheet configuration not found"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(
             f"Insufficient permissions to delete gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
         )
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(f"Gsheet deletion error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
-        return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
 
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
@@ -170,8 +170,8 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("gsheets/select.html", assembly=assembly, gsheet=gsheet), 200
-    except ValueError as e:
+        return render_template("gsheets/select.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -210,12 +210,13 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             "gsheets/select.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
             run_id=run_id,
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
@@ -272,7 +273,7 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         if result.run_record.has_finished:
             response.headers["HX-Refresh"] = "true"
         return response
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
         )
@@ -302,7 +303,11 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 
-    except ValueError as e:
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid Selection attempted with gsheet select for assembly {assembly_id}: {e}")
+        flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet select for assembly {assembly_id}: {e}")
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
@@ -332,7 +337,7 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
@@ -361,8 +366,8 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        return render_template("gsheets/replace.html", assembly=assembly, gsheet=gsheet), 200
-    except ValueError as e:
+        return render_template("gsheets/replace.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
         )
@@ -438,6 +443,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             "gsheets/replace.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
@@ -446,7 +452,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             max_select=max_select,
             num_to_select=num_to_select,
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
         )
@@ -525,7 +531,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
         if result.run_record.has_finished:
             response.headers["HX-Refresh"] = "true"
         return response
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
         )
@@ -552,7 +558,7 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
@@ -609,7 +615,7 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         )
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement for assembly {assembly_id}: {e}")
         flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
@@ -642,9 +648,10 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "gsheets/manage_tabs.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             manage_status=ManageOldTabsStatus(ManageOldTabsState.FRESH),
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}"
         )
@@ -690,6 +697,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             "gsheets/manage_tabs.html",
             assembly=assembly,
             gsheet=gsheet,
+            current_tab="data",
             manage_status=get_manage_old_tabs_status(result),
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
@@ -697,7 +705,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             run_id=run_id,
             tab_names=tab_names,
         ), 200
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}"
         )
@@ -762,7 +770,7 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
         if result.run_record.has_finished:
             response.headers["HX-Refresh"] = "true"
         return response
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
         )
@@ -791,7 +799,7 @@ def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
         )
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet list tabs for assembly {assembly_id}: {e}")
         flash(_("Failed to start listing task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
@@ -823,7 +831,7 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
         )
 
-    except ValueError as e:
+    except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet delete tabs for assembly {assembly_id}: {e}")
         flash(_("Failed to start deletion task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))

@@ -23,6 +23,8 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
     app.conf.task_serializer = "pickle"
     app.conf.result_serializer = "pickle"
     app.conf.accept_content = ["application/json", "application/x-python-serialize"]
+    # track when tasks are started
+    app.conf.task_track_started = True
     return app
 
 

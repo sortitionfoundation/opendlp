@@ -46,9 +46,6 @@ def edit() -> ResponseReturnValue:
             flash(_("Profile updated successfully"), "success")
             return redirect(url_for("profile.view"))
 
-        except ValueError as e:
-            current_app.logger.error(f"Profile update error for user {current_user.id}: {e}")
-            flash(_("An error occurred while updating your profile"), "error")
         except Exception as e:
             current_app.logger.error(f"Unexpected profile update error for user {current_user.id}: {e}")
             flash(_("An error occurred while updating your profile"), "error")
@@ -92,9 +89,6 @@ def change_password() -> ResponseReturnValue:
             flash(_("Current password is incorrect"), "error")
         except PasswordTooWeak as e:
             flash(_("New password is too weak: %(error)s", error=str(e)), "error")
-        except ValueError as e:
-            current_app.logger.error(f"Password change error for user {current_user.id}: {e}")
-            flash(_("An error occurred while changing your password"), "error")
         except Exception as e:
             current_app.logger.error(f"Unexpected password change error for user {current_user.id}: {e}")
             flash(_("An error occurred while changing your password"), "error")

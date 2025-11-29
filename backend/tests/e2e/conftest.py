@@ -110,6 +110,7 @@ def assembly_with_gsheet(postgres_session_factory, admin_user):
             created_by_user_id=admin_user.id,
             question="What should we configure?",
             first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            number_to_select=22,
         )
         detached_assembly = assembly.create_detached_copy()
 

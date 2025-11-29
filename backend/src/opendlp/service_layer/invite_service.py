@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from opendlp.domain.user_invites import UserInvite, generate_invite_code
 from opendlp.domain.value_objects import GlobalRole
 
-from .exceptions import InsufficientPermissions
+from .exceptions import InsufficientPermissions, InviteNotFoundError, UserNotFoundError
 from .permissions import has_global_organiser
 from .unit_of_work import AbstractUnitOfWork
 
@@ -31,13 +31,13 @@ def generate_invite(
         Created UserInvite instance
 
     Raises:
-        ValueError: If user not found
+        UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot create invites
     """
     with uow:
         user = uow.users.get(created_by_user_id)
         if not user:
-            raise ValueError(f"User {created_by_user_id} not found")
+            raise UserNotFoundError(f"User {created_by_user_id} not found")
 
         # Check permissions - only global organisers and admins can create invites
         if not has_global_organiser(user):
@@ -83,7 +83,8 @@ def generate_batch_invites(
         List of created UserInvite instances
 
     Raises:
-        ValueError: If user not found or count invalid
+        UserNotFoundError: If user not found
+        ValueError: If count invalid
         InsufficientPermissions: If user cannot create invites
     """
     if count <= 0 or count > 100:  # Reasonable limit
@@ -92,7 +93,7 @@ def generate_batch_invites(
     with uow:
         user = uow.users.get(created_by_user_id)
         if not user:
-            raise ValueError(f"User {created_by_user_id} not found")
+            raise UserNotFoundError(f"User {created_by_user_id} not found")
 
         # Check permissions
         if not has_global_organiser(user):
@@ -138,13 +139,13 @@ def list_invites(
         List of UserInvite instances
 
     Raises:
-        ValueError: If user not found
+        UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot view invites
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         # Check permissions
         if not has_global_organiser(user):
@@ -173,17 +174,18 @@ def revoke_invite(
         Revoked UserInvite instance
 
     Raises:
-        ValueError: If invite or user not found
+        UserNotFoundError: If user not found
+        InviteNotFoundError: If invite not found
         InsufficientPermissions: If user cannot revoke invites
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         invite = uow.user_invites.get(invite_id)
         if not invite:
-            raise ValueError(f"Invite {invite_id} not found")
+            raise InviteNotFoundError(f"Invite {invite_id} not found")
 
         # Check permissions
         if not has_global_organiser(user):
@@ -215,13 +217,14 @@ def get_invite_details(
         UserInvite instance
 
     Raises:
-        ValueError: If invite or user not found
+        UserNotFoundError: If user not found
+        InviteNotFoundError: If invite not found
         InsufficientPermissions: If user cannot view invite details
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         # Check permissions
         if not has_global_organiser(user):
@@ -229,7 +232,7 @@ def get_invite_details(
 
         invite = uow.user_invites.get(invite_id)
         if not invite:
-            raise ValueError(f"Invite {invite_id} not found")
+            raise InviteNotFoundError(f"Invite {invite_id} not found")
 
         # Explicit typing to satisfy mypy
         invite_details: UserInvite = invite.create_detached_copy()
@@ -275,13 +278,13 @@ def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[s
         Dictionary with invite statistics
 
     Raises:
-        ValueError: If user not found
+        UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot view statistics
     """
     with uow:
         user = uow.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise UserNotFoundError(f"User {user_id} not found")
 
         # Check permissions
         if not has_global_organiser(user):

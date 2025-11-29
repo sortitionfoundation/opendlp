@@ -27,6 +27,8 @@ from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.service_layer import password_reset_service
+from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
+from opendlp.translations import gettext as _
 
 
 @setup_logging.connect
@@ -65,6 +67,8 @@ def _update_selection_record(
     log_messages: list[str] | None = None,
     error_message: str = "",
     completed_at: datetime | None = None,
+    run_report: RunReport | None = None,
+    selected_ids: list[list[str]] | None = None,
     session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
@@ -74,7 +78,7 @@ def _update_selection_record(
         record = uow.selection_run_records.get_by_task_id(task_id)
 
         if record is None:
-            raise ValueError(f"SelectionRunRecord with task_id {task_id} not found")
+            raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
 
         # Update existing record
         record.status = status
@@ -88,6 +92,12 @@ def _update_selection_record(
             record.error_message = error_message
         if completed_at:
             record.completed_at = completed_at
+        if run_report is not None:
+            record.add_report(run_report)
+            flag_modified(record, "run_report")
+        if selected_ids is not None:
+            record.selected_ids = selected_ids
+            flag_modified(record, "selected_ids")
 
         uow.commit()
 
@@ -114,7 +124,7 @@ def _internal_load_gsheet(
     _update_selection_record(
         task_id=task_id,
         status=SelectionRunStatus.RUNNING,
-        log_message="Starting Google Sheets load task",
+        log_message=_("Starting Google Sheets load task"),
         session_factory=session_factory,
     )
 
@@ -122,8 +132,8 @@ def _internal_load_gsheet(
         _append_run_log(
             task_id,
             [
-                f"Loading spreadsheet with title: {data_source.spreadsheet.title}",
-                f"Loading targets from tab: {data_source.feature_tab_name}",
+                _("Loading spreadsheet with title: %(title)s", title=data_source.spreadsheet.title),
+                _("Loading targets from tab: %(tab_name)s", tab_name=data_source.feature_tab_name),
             ],
             session_factory=session_factory,
         )
@@ -143,9 +153,17 @@ def _internal_load_gsheet(
         _append_run_log(
             task_id,
             [
-                f"Found {num_features} categories for targets with a total of {num_values} values.",
-                f"Minimum selection for targets is {min_select}, maximum is {max_select}.",
-                f"Loading people from tab: {data_source.people_tab_name}",
+                _(
+                    "Found %(num_features)s categories for targets with a total of %(num_values)s values.",
+                    num_features=num_features,
+                    num_values=num_values,
+                ),
+                _(
+                    "Minimum selection for targets is %(min_select)s, maximum is %(max_select)s.",
+                    min_select=min_select,
+                    max_select=max_select,
+                ),
+                _("Loading people from tab: %(tab_name)s", tab_name=data_source.people_tab_name),
             ],
             session_factory=session_factory,
         )
@@ -161,8 +179,12 @@ def _internal_load_gsheet(
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
-            log_messages=[f"Loaded {people.count} people.", "Google Sheets load completed successfully."],
+            log_messages=[
+                _("Loaded %(count)s people.", count=people.count),
+                _("Google Sheets load completed successfully."),
+            ],
             completed_at=datetime.now(UTC) if final_task else None,
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -175,6 +197,7 @@ def _internal_load_gsheet(
             log_message=str(error),
             error_message=error.to_html(),
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, None, None, report
@@ -183,9 +206,9 @@ def _internal_load_gsheet(
         # the PermissionError raised by gspread has no text, so appears to be blank, leading to
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
-        error_msg = (
-            f"Failed to load gsheet due to permissions issues. "
-            f"Check the spreadsheet is shared with {service_account_email}"
+        error_msg = _(
+            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            email=service_account_email,
         )
         _update_selection_record(
             task_id=task_id,
@@ -193,13 +216,14 @@ def _internal_load_gsheet(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, None, None, report
     except Exception as err:
         import traceback
 
-        error_msg = f"Failed to load gsheet: {err}"
+        error_msg = _("Failed to load gsheet: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
@@ -212,6 +236,7 @@ def _internal_load_gsheet(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -230,17 +255,30 @@ def _internal_run_select(
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     report = RunReport()
     # Update SelectionRunRecord to running status
-    log_suffix = ": TEST only, do not use for real selection" if test_selection else ""
+    log_suffix = _(": TEST only, do not use for real selection") if test_selection else ""
     _append_run_log(
         task_id,
-        [f"Starting selection algorithm for {number_people_wanted} people{log_suffix}"],
+        [
+            _(
+                "Starting selection algorithm for %(number)s people%(suffix)s",
+                number=number_people_wanted,
+                suffix=log_suffix,
+            )
+        ],
         session_factory=session_factory,
     )
 
     try:
         _append_run_log(
             task_id,
-            [f"Running stratified selection with {people.count} people and {len(features)} features{log_suffix}"],
+            [
+                _(
+                    "Running stratified selection with %(people_count)s people and %(features_count)s features%(suffix)s",
+                    people_count=people.count,
+                    features_count=len(features),
+                    suffix=log_suffix,
+                )
+            ],
             session_factory=session_factory,
         )
 
@@ -253,11 +291,19 @@ def _internal_run_select(
         )
 
         if success:
+            # Convert frozensets to lists for JSON serialization
+            selected_ids = [list(panel) for panel in selected_panels]
             _update_selection_record(
                 task_id=task_id,
                 status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
-                log_message=f"Selection completed successfully. Selected {len(selected_panels)} panel(s).{log_suffix}",
+                log_message=_(
+                    "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s",
+                    count=len(selected_panels),
+                    suffix=log_suffix,
+                ),
                 completed_at=datetime.now(UTC) if final_task else None,
+                run_report=report,
+                selected_ids=selected_ids,
                 session_factory=session_factory,
             )
         else:
@@ -265,13 +311,14 @@ def _internal_run_select(
             if error:
                 error_message = error.to_html() if isinstance(error, errors.SortitionBaseError) else str(error)
             else:
-                error_message = "Selection algorithm could not find panels meeting the specified criteria"
+                error_message = _("Selection algorithm could not find panels meeting the specified criteria")
             _update_selection_record(
                 task_id=task_id,
                 status=SelectionRunStatus.FAILED,
-                log_message="Selection algorithm failed to find suitable panels",
+                log_message=_("Selection algorithm failed to find suitable panels"),
                 error_message=error_message,
                 completed_at=datetime.now(UTC),
+                run_report=report,
                 session_factory=session_factory,
             )
         return success, selected_panels, report
@@ -279,7 +326,7 @@ def _internal_run_select(
     except Exception as err:
         import traceback
 
-        error_msg = f"Selection task failed: {err}"
+        error_msg = _("Selection task failed: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
@@ -292,6 +339,7 @@ def _internal_run_select(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return False, [], report
@@ -307,10 +355,10 @@ def _internal_write_selected(
     session_factory: sessionmaker | None = None,
 ) -> RunReport:
     report = RunReport()
-    _append_run_log(task_id, ["About to write selected and remaining tabs"], session_factory=session_factory)
+    _append_run_log(task_id, [_("About to write selected and remaining tabs")], session_factory=session_factory)
     try:
         # Format results
-        selected_table, remaining_table, _ = selected_remaining_tables(people, selected_panels[0], features, settings)
+        selected_table, remaining_table, _o = selected_remaining_tables(people, selected_panels[0], features, settings)
 
         # Export to Google Sheets
         dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
@@ -319,8 +367,11 @@ def _internal_write_selected(
             _append_run_log(
                 task_id,
                 [
-                    f"In the remaining tab there are {len(dupes)} people who share the same address as "
-                    f"someone else in the tab. They are highlighted in orange.",
+                    _(
+                        "In the remaining tab there are %(count)s people who share the same address as "
+                        "someone else in the tab. They are highlighted in orange.",
+                        count=len(dupes),
+                    ),
                 ],
                 session_factory=session_factory,
             )
@@ -328,8 +379,13 @@ def _internal_write_selected(
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.COMPLETED,
-            log_message=f"Successfully written {len(selected_table) - 1} selected and {len(remaining_table) - 1} remaining to spreadsheet.",
+            log_message=_(
+                "Successfully written %(selected_count)s selected and %(remaining_count)s remaining to spreadsheet.",
+                selected_count=len(selected_table) - 1,
+                remaining_count=len(remaining_table) - 1,
+            ),
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
 
@@ -337,7 +393,7 @@ def _internal_write_selected(
     except Exception as err:
         import traceback
 
-        error_msg = f"Writing results failed: {err}"
+        error_msg = _("Writing results failed: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
@@ -350,6 +406,7 @@ def _internal_write_selected(
             log_message=error_msg,
             error_message=error_msg,
             completed_at=datetime.now(UTC),
+            run_report=report,
             session_factory=session_factory,
         )
         return report
@@ -478,11 +535,11 @@ def manage_old_tabs(
     report = RunReport()
 
     # Update SelectionRunRecord to running status
-    action = "listing" if dry_run else "deleting"
+    action = _("listing") if dry_run else _("deleting")
     _update_selection_record(
         task_id=task_id,
         status=SelectionRunStatus.RUNNING,
-        log_message=f"Starting task to {action} old output tabs",
+        log_message=_("Starting task to %(action)s old output tabs", action=action),
         session_factory=session_factory,
     )
 
@@ -492,11 +549,11 @@ def manage_old_tabs(
 
         # Log what was found/deleted
         if len(tab_names) == 0:
-            log_message = "No old output tabs found"
+            log_message = _("No old output tabs found")
         elif dry_run:
-            log_message = f"Found {len(tab_names)} old output tab(s) that can be deleted"
+            log_message = _("Found %(count)s old output tab(s) that can be deleted", count=len(tab_names))
         else:
-            log_message = f"Successfully deleted {len(tab_names)} old output tab(s)"
+            log_message = _("Successfully deleted %(count)s old output tab(s)", count=len(tab_names))
 
         _update_selection_record(
             task_id=task_id,
@@ -512,9 +569,9 @@ def manage_old_tabs(
         # the PermissionError raised by gspread has no text, so appears to be blank, leading to
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
-        error_msg = (
-            f"Failed to load gsheet due to permissions issues. "
-            f"Check the spreadsheet is shared with {service_account_email}"
+        error_msg = _(
+            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            email=service_account_email,
         )
         _update_selection_record(
             task_id=task_id,
@@ -530,7 +587,7 @@ def manage_old_tabs(
     except Exception as err:
         import traceback
 
-        error_msg = f"Failed to {action} old tabs: {err}"
+        error_msg = _("Failed to %(action)s old tabs: %(error)s", action=action, error=str(err))
         traceback_msg = traceback.format_exc()
 
         report.add_line(error_msg)

@@ -33,7 +33,7 @@ def _(admin_logged_in_page: Page):
 @given("there is an assembly created", target_fixture="assembly")
 def _(assembly_creator: Callable):
     """there is an assembly created."""
-    assembly = assembly_creator("To be or not to be?")
+    assembly = assembly_creator("To be or not to be?", number_to_select=22)
     return assembly
 
 

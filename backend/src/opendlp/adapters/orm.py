@@ -1,11 +1,13 @@
 """ABOUTME: SQLAlchemy table definitions and imperative mapping for OpenDLP
 ABOUTME: Defines database schema with proper relationships, indexes, and JSON columns"""
 
+import json
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
+from sortition_algorithms.utils import RunReport
 from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, Integer, String, Table, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
@@ -117,6 +119,46 @@ class CrossDatabaseUUID(TypeDecorator):
             return uuid.UUID(str(value))
 
 
+class RunReportJSON(TypeDecorator):
+    """Custom type for storing RunReport objects as JSON using cattrs."""
+
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> str | None:
+        """Convert RunReport object to JSON string for storage."""
+        if value is None:
+            return None
+
+        if isinstance(value, RunReport):
+            # Unstructure the RunReport to a dict and convert to JSON string
+            unstructured = value.serialize()
+            return json.dumps(unstructured)
+        else:
+            raise TypeError(f"Expected RunReport or None, got {type(value)}")
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> RunReport | None:
+        """Convert JSON string back to RunReport object."""
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+            try:
+                # Parse JSON string and structure back to RunReport
+                unstructured = json.loads(value)
+                return RunReport.deserialize(unstructured)
+            except Exception:
+                # If deserialization fails, just return empty RunReport
+                # The JSON is still stored in the database, but we can't reconstruct the RunReport
+                return RunReport()
+        else:
+            try:
+                # Already a dict (shouldn't happen with JSON type, but handle it)
+                return RunReport.deserialize(value)
+            except Exception:
+                return RunReport()
+
+
 # Create a registry for imperative mapping
 mapper_registry = registry()
 metadata = mapper_registry.metadata
@@ -147,7 +189,7 @@ assemblies = Table(
     Column("title", String(255), nullable=False),
     Column("question", Text, nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
-    Column("number_to_select", Integer, nullable=True),
+    Column("number_to_select", Integer, nullable=False, default=0),
     Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
     Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -232,4 +274,9 @@ selection_run_records = Table(
     Column("error_message", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("completed_at", TZAwareDatetime(), nullable=True),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True),
+    Column("comment", Text, nullable=False, default=""),
+    Column("status_stages", JSON, nullable=True),
+    Column("selected_ids", JSON, nullable=True),
+    Column("run_report", RunReportJSON(), nullable=True),
 )

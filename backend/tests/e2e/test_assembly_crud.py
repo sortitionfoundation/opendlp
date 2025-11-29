@@ -65,6 +65,7 @@ class TestAssemblyCreateView:
                 "title": "New Test Assembly",
                 "question": "What should we discuss in this assembly?",
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
+                "number_to_select": "50",
                 "csrf_token": get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
             follow_redirects=False,
@@ -85,6 +86,7 @@ class TestAssemblyCreateView:
             "/assemblies/new",
             data={
                 "title": "Minimal Assembly",
+                "number_to_select": "0",
                 "csrf_token": get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
             follow_redirects=False,
@@ -196,6 +198,7 @@ class TestAssemblyEditView:
                 "title": updated_title,
                 "question": updated_question,
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
+                "number_to_select": "100",
                 "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/edit"),
             },
             follow_redirects=False,
@@ -257,6 +260,7 @@ class TestAssemblyWorkflowIntegration:
                 "title": "Workflow Test Assembly",
                 "question": "What should we test?",
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
+                "number_to_select": "30",
                 "csrf_token": get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
             follow_redirects=False,
@@ -280,6 +284,7 @@ class TestAssemblyWorkflowIntegration:
                 "title": "Updated Workflow Test Assembly",
                 "question": "What should we test after update?",
                 "first_assembly_date": updated_date.strftime("%Y-%m-%d"),
+                "number_to_select": "40",
                 "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly_id}/edit"),
             },
             follow_redirects=False,
@@ -302,6 +307,7 @@ class TestAssemblyWorkflowIntegration:
             data={
                 "title": "List Test Assembly",
                 "question": "Will this appear in the list?",
+                "number_to_select": "25",
                 "csrf_token": get_csrf_token(logged_in_admin, "/assemblies/new"),
             },
         )

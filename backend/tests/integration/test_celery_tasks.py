@@ -15,6 +15,7 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, manage_old_tabs, run_select
+from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 
 
 @pytest.fixture
@@ -147,15 +148,56 @@ class TestUpdateSelectionRecord:
             assert updated_record.completed_at is not None
 
     def test_update_record_not_found_raises_error(self, postgres_session_factory):
-        """Test that updating non-existent record raises ValueError."""
+        """Test that updating non-existent record raises SelectionRunRecordNotFoundError."""
         non_existent_task_id = uuid.uuid4()
 
-        with pytest.raises(ValueError, match=f"SelectionRunRecord with task_id {non_existent_task_id} not found"):
+        with pytest.raises(
+            SelectionRunRecordNotFoundError, match=f"SelectionRunRecord with task_id {non_existent_task_id} not found"
+        ):
             _update_selection_record(
                 task_id=non_existent_task_id,
                 status=SelectionRunStatus.RUNNING,
                 session_factory=postgres_session_factory,
             )
+
+    def test_update_record_with_selected_ids(self, postgres_session_factory):
+        """Test updating a record with selected_ids."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.PENDING,
+                log_messages=[],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Update with selected_ids
+        selected_ids = [["id1", "id2", "id3"], ["id4", "id5", "id6"]]
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            selected_ids=selected_ids,
+            session_factory=postgres_session_factory,
+        )
+
+        # Verify update
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.COMPLETED
+            assert updated_record.selected_ids == selected_ids
+            assert len(updated_record.selected_ids) == 2
+            assert updated_record.selected_ids[0] == ["id1", "id2", "id3"]
+            assert updated_record.selected_ids[1] == ["id4", "id5", "id6"]
 
 
 class TestLoadGSheetTask:
@@ -367,6 +409,57 @@ class TestRunSelectTask:
             updated_record = uow.selection_run_records.get_by_task_id(task_id)
             assert updated_record is not None
             assert any("TEST only" in msg for msg in updated_record.log_messages)
+
+    def test_run_select_saves_selected_ids(
+        self, postgres_session_factory, csv_gsheet_data_source, test_settings, csv_files
+    ):
+        """Test that selected_ids are properly saved when selection succeeds."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.PENDING,
+                log_messages=[],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Run the full selection task
+        with patch.object(run_select, "update_state"):
+            success, selected_panels, report = run_select(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                number_people_wanted=22,
+                settings=test_settings,
+                test_selection=False,
+                gen_rem_tab=True,
+                session_factory=postgres_session_factory,
+            )
+
+        # Verify success
+        assert success is True
+        assert len(selected_panels) > 0
+        assert len(selected_panels[0]) == 22
+
+        # Verify selected_ids were saved to the record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.selected_ids is not None
+            assert len(updated_record.selected_ids) == len(selected_panels)
+            # Verify conversion from frozenset to list
+            assert isinstance(updated_record.selected_ids[0], list)
+            # Verify the content matches
+            expected_selected_ids = [list(panel) for panel in selected_panels]
+            assert updated_record.selected_ids == expected_selected_ids
 
 
 class TestManageOldTabsTask:

@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Literal, get_args
 
 from sortition_algorithms import adapters, settings
+from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
@@ -22,7 +23,7 @@ class Assembly:
         title: str,
         question: str = "",
         first_assembly_date: date | None = None,
-        number_to_select: int | None = None,
+        number_to_select: int = 0,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
@@ -73,6 +74,8 @@ class Assembly:
             self.first_assembly_date = first_assembly_date
 
         if number_to_select is not None:
+            if number_to_select < 0:
+                raise ValueError("Number to select cannot be negative")
             self.number_to_select = number_to_select
 
         self.updated_at = datetime.now(UTC)
@@ -316,6 +319,11 @@ class SelectionRunRecord:
     error_message: str = ""
     created_at: datetime | None = None
     completed_at: datetime | None = None
+    user_id: uuid.UUID | None = None  # foreign key to User - who started the run
+    comment: str = ""  # comment when starting the selection (max 512 chars)
+    status_stages: list[dict[str, str]] | None = None  # JSON: list of stage dicts with "name" and "status" keys
+    selected_ids: list[list[str]] | None = None  # JSON: list of panels, each panel is list of IDs
+    run_report: RunReport = field(default_factory=RunReport)  # serialized RunReport for persistence
 
     def __post_init__(self) -> None:
         if self.created_at is None:
@@ -349,3 +357,11 @@ class SelectionRunRecord:
     @property
     def task_type_verbose(self) -> str:
         return self.task_type.value.replace("_", " ").replace("gsheet", "Google Spreadsheet").capitalize()
+
+    def add_report(self, report: RunReport) -> None:
+        """
+        Add the new report to our existing report.
+
+        We always have an empty report to add new reports to.
+        """
+        self.run_report.add_report(report)

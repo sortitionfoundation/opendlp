@@ -7,6 +7,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
   "alembic>=1.16.4",
   "cachelib>=0.13.0",
+  "cattrs>=25.3.0",
   "celery>=5.5.3",
   "click>=8.2.1",
   "django>=5.2.5",
@@ -21,7 +22,7 @@ dependencies = [
   "markupsafe>=3.0.2",
   "python-dotenv>=1.1.1",
   "redis>=6.4.0",
-  "sortition-algorithms<=0.10.11",
+  "sortition-algorithms==0.10.15",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.43",
   "structlog>=25.4.0",
   "werkzeug>=3.1.3",

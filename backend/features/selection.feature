@@ -30,7 +30,6 @@ Note that there are multiple ways we will do this.
     And the selection options are set
     When I start the selection
     Then I am told the number of categories and category values
-    And I am told selection is running
     And I am told selection has completed
 
   Scenario: Initialise replacement selection
@@ -47,5 +46,4 @@ Note that there are multiple ways we will do this.
     And the replacements process is initialised
     And I have set the number to select
     When I start the replacements
-    Then I am told selection is running
-    And I am told selection has completed
+    Then I am told selection has completed

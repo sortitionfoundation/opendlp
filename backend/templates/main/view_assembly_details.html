@@ -1,0 +1,50 @@
+{% extends "main/view_assembly_base.html" %}
+{% block assembly_content %}
+    {# Assembly Question Section #}
+    {% if assembly.question %}
+        <div class="govuk-!-margin-bottom-6">
+            <h2 class="govuk-heading-m">{{ _("Assembly Question") }}</h2>
+            <p class="govuk-body">{{ assembly.question }}</p>
+        </div>
+    {% endif %}
+    {# Assembly Details Summary List #}
+    <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Status") }}</dt>
+            <dd class="govuk-summary-list__value">
+                <strong class="govuk-tag govuk-tag--green">{{ assembly.status.value }}</strong>
+            </dd>
+        </div>
+        {% if assembly.first_assembly_date %}
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">{{ _("First Assembly Date") }}</dt>
+                <dd class="govuk-summary-list__value">
+                    {{ assembly.first_assembly_date.strftime("%d %B %Y") }}
+                </dd>
+            </div>
+        {% endif %}
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Number to Select") }}</dt>
+            <dd class="govuk-summary-list__value">
+                {{ assembly.number_to_select }}
+            </dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Created") }}</dt>
+            <dd class="govuk-summary-list__value">
+                {{ assembly.created_at.strftime("%d %B %Y") }}
+            </dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Last Updated") }}</dt>
+            <dd class="govuk-summary-list__value">
+                {{ assembly.updated_at.strftime("%d %B %Y at %H:%M") }}
+            </dd>
+        </div>
+    </dl>
+    {# Edit Assembly Button #}
+    <div class="govuk-button-group govuk-!-margin-top-6">
+        <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}"
+            class="govuk-button">{{ _("Edit Assembly") }}</a>
+    </div>
+{% endblock %}
