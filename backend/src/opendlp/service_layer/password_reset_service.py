@@ -105,17 +105,6 @@ def check_rate_limit(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> None:
             retry_after_seconds=retry_after_seconds,
         )
 
-    # Also check for cooldown period (minimum time between requests)
-    cooldown_since = datetime.now(UTC) - timedelta(minutes=COOLDOWN_MINUTES)
-    recent_cooldown_count = uow.password_reset_tokens.count_recent_requests(user_id, cooldown_since)
-
-    if recent_cooldown_count > 0:
-        retry_after_seconds = COOLDOWN_MINUTES * 60
-        raise RateLimitExceeded(
-            operation="password reset",
-            retry_after_seconds=retry_after_seconds,
-        )
-
 
 def validate_reset_token(uow: AbstractUnitOfWork, token_string: str) -> PasswordResetToken:
     """
