@@ -655,3 +655,113 @@ class TestManageOldTabsTask:
             assert updated_record is not None
             assert updated_record.status == SelectionRunStatus.COMPLETED
             assert any("No old output tabs found" in msg for msg in updated_record.log_messages)
+
+
+class TestOnTaskFailure:
+    """Test the _on_task_failure callback."""
+
+    def test_on_task_failure_marks_record_as_failed(self, postgres_session_factory):
+        """Test that failure callback updates the SelectionRunRecord to FAILED status."""
+        from opendlp.entrypoints.celery.tasks import _on_task_failure
+
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        celery_task_id = "celery-task-123"
+
+        # Create initial RUNNING record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.RUNNING,
+                celery_task_id=celery_task_id,
+                log_messages=["Task started"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Simulate task failure by calling the callback
+        test_exception = Exception("Test exception: Out of memory")
+        _on_task_failure(
+            self=None,  # Task instance (we don't need it for this test)
+            exc=test_exception,
+            task_id=celery_task_id,
+            args=(),
+            kwargs={"task_id": task_id, "session_factory": postgres_session_factory},
+            einfo=None,
+        )
+
+        # Verify record was marked as FAILED
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.FAILED
+            assert "Task failed with exception" in updated_record.error_message
+            assert "contact the administrators" in updated_record.error_message
+            assert updated_record.completed_at is not None
+            assert any("ERROR" in msg for msg in updated_record.log_messages)
+
+    def test_on_task_failure_handles_completed_task(self, postgres_session_factory):
+        """Test that failure callback doesn't modify already completed tasks."""
+        from opendlp.entrypoints.celery.tasks import _on_task_failure
+
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        celery_task_id = "celery-task-456"
+
+        # Create initial COMPLETED record (task finished before callback ran)
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.COMPLETED,
+                celery_task_id=celery_task_id,
+                log_messages=["Task completed successfully"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Simulate task failure callback (shouldn't change anything)
+        test_exception = Exception("Test exception")
+        _on_task_failure(
+            self=None,
+            exc=test_exception,
+            task_id=celery_task_id,
+            args=(),
+            kwargs={"task_id": task_id, "session_factory": postgres_session_factory},
+            einfo=None,
+        )
+
+        # Verify record is still COMPLETED
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.COMPLETED
+            # Error message should still be empty
+            assert updated_record.error_message == ""
+
+    def test_on_task_failure_with_missing_task_id_in_kwargs(self, postgres_session_factory):
+        """Test that failure callback handles missing task_id gracefully."""
+        from opendlp.entrypoints.celery.tasks import _on_task_failure
+
+        celery_task_id = "celery-task-789"
+
+        # Call callback with no task_id in kwargs (should log error but not crash)
+        test_exception = Exception("Test exception")
+        # This should not raise an exception
+        _on_task_failure(
+            self=None,
+            exc=test_exception,
+            task_id=celery_task_id,
+            args=(),
+            kwargs={"session_factory": postgres_session_factory},  # No task_id!
+            einfo=None,
+        )

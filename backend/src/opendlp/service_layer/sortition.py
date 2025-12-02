@@ -478,7 +478,7 @@ def _extract_exception_info(celery_result: AsyncResult) -> str:
         if celery_result.info and isinstance(celery_result.info, Exception):
             return str(celery_result.info)
         elif celery_result.info and isinstance(celery_result.info, dict):
-            return celery_result.info.get("exc_message", "No exception message")
+            return str(celery_result.info.get("exc_message", "No exception message"))
         else:
             return "No exception info available"
     except Exception:

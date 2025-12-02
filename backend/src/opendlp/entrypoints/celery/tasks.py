@@ -59,6 +59,56 @@ def _set_up_celery_logging(task_id: uuid.UUID, session_factory: sessionmaker | N
     override_logging_handlers([handler], [handler])
 
 
+def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tuple, kwargs: dict, einfo: Any) -> None:
+    """
+    Callback executed when a Celery task fails.
+
+    Note: This only fires if the worker process is alive when the exception occurs.
+    Hard crashes (SIGKILL, OOM) won't trigger this callback.
+
+    Args:
+        self: Task instance (can be None in tests)
+        exc: The exception that caused the failure
+        task_id: Celery task ID (not our task_id UUID)
+        args: Task positional arguments
+        kwargs: Task keyword arguments
+        einfo: Exception info object
+    """
+    # Extract our task_id from kwargs (the SelectionRunRecord task_id)
+    our_task_id = kwargs.get("task_id")
+    if not our_task_id:
+        logging.error(f"Task {task_id} failed but no task_id in kwargs")
+        return
+
+    session_factory = kwargs.get("session_factory")
+
+    # Format error details
+    error_msg = f"Task failed with exception: {type(exc).__name__}"
+    technical_msg = f"{type(exc).__name__}: {exc}"
+    if einfo:
+        technical_msg += f"\n{einfo}"
+
+    logging.error(
+        f"Celery task failure callback: our_task_id={our_task_id}, celery_task_id={task_id}, exception={technical_msg}"
+    )
+
+    # Update the database record
+    try:
+        with bootstrap(session_factory=session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(our_task_id)
+            if record and not record.has_finished:
+                record.status = SelectionRunStatus.FAILED
+                record.error_message = f"{error_msg}. " + _(
+                    "Please contact the administrators if this problem persists."
+                )
+                record.log_messages.append(f"ERROR: {error_msg}")
+                record.completed_at = datetime.now(UTC)
+                flag_modified(record, "log_messages")
+                uow.commit()
+    except Exception as update_exc:
+        logging.error(f"Failed to update task record in failure callback: {update_exc}")
+
+
 def _update_selection_record(
     task_id: uuid.UUID,
     status: SelectionRunStatus,
@@ -411,7 +461,7 @@ def _internal_write_selected(
         return report
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def load_gsheet(
     self: Task,
     task_id: uuid.UUID,
@@ -431,7 +481,7 @@ def load_gsheet(
     )
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def run_select(
     self: Task,
     task_id: uuid.UUID,
@@ -489,7 +539,7 @@ def run_select(
     return success, selected_panels, report
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def manage_old_tabs(
     self: Task,
     task_id: uuid.UUID,
