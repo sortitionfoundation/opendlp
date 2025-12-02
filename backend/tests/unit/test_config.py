@@ -12,6 +12,7 @@ from opendlp.config import (
     FlaskTestSQLiteConfig,
     InvalidConfig,
     get_config,
+    get_task_timeout_hours,
     to_bool,
 )
 
@@ -185,3 +186,37 @@ class TestGetConfig:
         assert not isinstance(config, FlaskTestSQLiteConfig)
         assert not isinstance(config, FlaskTestPostgresConfig)
         assert not isinstance(config, FlaskProductionConfig)
+
+
+class TestGetTaskTimeoutHours:
+    """Test the get_task_timeout_hours function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        """Test that function returns 24 (default) when TASK_TIMEOUT_HOURS is not set."""
+        clear_env_vars("TASK_TIMEOUT_HOURS")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        """Test that function returns 24 (default) when TASK_TIMEOUT_HOURS is empty."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_valid_positive_integer(self, temp_env_vars):
+        """Test that function returns the value when set to a valid positive integer."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="6")
+        assert get_task_timeout_hours() == 6
+
+    def test_returns_default_for_invalid_value(self, temp_env_vars):
+        """Test that function returns default and logs warning for invalid value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="not-a-number")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_for_zero(self, temp_env_vars):
+        """Test that function returns default for zero value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="0")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_for_negative(self, temp_env_vars):
+        """Test that function returns default for negative value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="-5")
+        assert get_task_timeout_hours() == 24
