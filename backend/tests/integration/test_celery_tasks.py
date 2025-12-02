@@ -8,7 +8,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from sortition_algorithms import CSVFileDataSource, GSheetDataSource, settings
+from requests.structures import CaseInsensitiveDict
+from sortition_algorithms import CSVFileDataSource, GSheetDataSource, RunReport, settings
+from sortition_algorithms.errors import InfeasibleQuotasError, SelectionMultilineError
+from sortition_algorithms.features import FeatureValueMinMax
 
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
@@ -146,6 +149,52 @@ class TestUpdateSelectionRecord:
             assert updated_record.status == SelectionRunStatus.FAILED
             assert updated_record.error_message == "Something went wrong"
             assert updated_record.completed_at is not None
+
+    def test_update_record_with_infeasible_quotas_error(self, postgres_session_factory):
+        """Test updating a record with InfeasibleQuotasError - this has caused particular issues."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Create initial record
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.LOAD_GSHEET,
+                status=SelectionRunStatus.RUNNING,
+                log_messages=["Started"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Update with error in RunReport
+        run_report = RunReport()
+        features = CaseInsensitiveDict()
+        features["feat1"] = CaseInsensitiveDict()
+        features["feat1"]["value1"] = FeatureValueMinMax(min=2, max=4)
+        quota_msgs = ["quota 1 problem", "quota 2 problem"]
+        iq_error = InfeasibleQuotasError(features=features, output=quota_msgs)
+        iq_error.args = (features, ["something", *quota_msgs])
+        run_report.add_error(iq_error)
+        run_report.add_error(SelectionMultilineError(["problemo 1", "problemo 2"]))
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            error_message="Something went wrong",
+            run_report=run_report,
+            session_factory=postgres_session_factory,
+        )
+
+        # Verify update
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated_record = uow.selection_run_records.get_by_task_id(task_id)
+            assert updated_record is not None
+            assert updated_record.status == SelectionRunStatus.FAILED
+            assert "quota 1 problem" in updated_record.run_report.as_text()
+            assert "problemo 2" in updated_record.run_report.as_text()
 
     def test_update_record_not_found_raises_error(self, postgres_session_factory):
         """Test that updating non-existent record raises SelectionRunRecordNotFoundError."""

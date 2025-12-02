@@ -5,7 +5,10 @@ import uuid
 from datetime import date, datetime, timedelta
 
 import pytest
+from requests.structures import CaseInsensitiveDict
 from sortition_algorithms import RunReport
+from sortition_algorithms.errors import InfeasibleQuotasError, SelectionMultilineError
+from sortition_algorithms.features import FeatureValueMinMax
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -763,6 +766,50 @@ class TestSelectionRunRecordORM:
 
         retrieved_run_report_text = retrieved_record.run_report.as_text()
         assert "Some line of text" in retrieved_run_report_text
+
+    def test_selection_run_record_with_run_report_with_errors(self, postgres_session: Session):
+        """Test SelectionRunRecord with RunReport with errors in it."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionRunRecord
+        task_id = uuid.uuid4()
+        run_report = RunReport()
+        features = CaseInsensitiveDict()
+        features["feat1"] = CaseInsensitiveDict()
+        features["feat1"]["value1"] = FeatureValueMinMax(min=2, max=4)
+        quota_msgs = ["quota 1 problem", "quota 2 problem"]
+        iq_error = InfeasibleQuotasError(features=features, output=quota_msgs)
+        iq_error.args = (features, ["something", *quota_msgs])
+        run_report.add_error(iq_error)
+        run_report.add_error(SelectionMultilineError(["problemo 1", "problemo 2"]))
+        selection_record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            log_messages=["Task started", "Selection hit an error"],
+            settings_used={"algorithm": "stratified", "target_count": 50},
+            run_report=run_report,
+        )
+
+        postgres_session.add(selection_record)
+        postgres_session.commit()
+
+        # Retrieve and verify
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+
+        retrieved_run_report_text = retrieved_record.run_report.as_text()
+        assert "quota 1 problem" in retrieved_run_report_text
+        assert "problemo 2" in retrieved_run_report_text
 
     def test_selection_run_record_with_error(self, postgres_session: Session):
         """Test SelectionRunRecord with error information."""
