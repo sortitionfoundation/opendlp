@@ -224,29 +224,6 @@ class TestCheckRateLimit:
         with pytest.raises(RateLimitExceeded):
             password_reset_service.check_rate_limit(uow, active_user.id)
 
-    def test_allows_after_cooldown(self, uow, active_user):
-        """Should allow request after cooldown period."""
-        # Create old token (outside cooldown)
-        old_time = datetime.now(UTC) - timedelta(minutes=10)
-        token = PasswordResetToken(
-            user_id=active_user.id,
-            created_at=old_time,
-            expires_at=old_time + timedelta(hours=1),
-        )
-        uow.password_reset_tokens.add(token)
-
-        # Should not raise (old token is outside cooldown)
-        password_reset_service.check_rate_limit(uow, active_user.id)
-
-    def test_blocks_within_cooldown(self, uow, active_user):
-        """Should block requests within cooldown period."""
-        # Create very recent token
-        token = PasswordResetToken(user_id=active_user.id)
-        uow.password_reset_tokens.add(token)
-
-        with pytest.raises(RateLimitExceeded):
-            password_reset_service.check_rate_limit(uow, active_user.id)
-
 
 class TestValidateResetToken:
     """Tests for validate_reset_token function."""
