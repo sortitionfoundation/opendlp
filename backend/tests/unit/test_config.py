@@ -63,7 +63,6 @@ class TestFlaskConfigClass:
         assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54321/opendlp"
         assert config.SECRET_KEY == "dev-secret-key-change-in-production"
         assert config.FLASK_ENV == "development"
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
         assert config.OAUTH_GOOGLE_CLIENT_ID == ""
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == ""
@@ -76,7 +75,6 @@ class TestFlaskConfigClass:
             DB_PORT="5432",
             SECRET_KEY="test-secret",
             FLASK_ENV="production",
-            SELECTION_TIMEOUT="300",
             INVITE_EXPIRY_HOURS="72",
             OAUTH_GOOGLE_CLIENT_ID="test-client-id",
             OAUTH_GOOGLE_CLIENT_SECRET="test-client-secret",
@@ -87,7 +85,6 @@ class TestFlaskConfigClass:
         assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:db-secret@db.server.net:5432/opendlp"
         assert config.SECRET_KEY == "test-secret"
         assert config.FLASK_ENV == "production"
-        assert config.SELECTION_TIMEOUT == 300
         assert config.INVITE_EXPIRY_HOURS == 72
         assert config.OAUTH_GOOGLE_CLIENT_ID == "test-client-id"
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == "test-client-secret"
@@ -104,7 +101,6 @@ class TestFlaskTestConfig:
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
 
     def test_test_postgres_config_overrides(self, clear_env_vars):
@@ -116,7 +112,6 @@ class TestFlaskTestConfig:
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
 
 

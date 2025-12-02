@@ -214,8 +214,6 @@ class FlaskBaseConfig:
         self.EMAIL_ADAPTER: str = os.environ.get("EMAIL_ADAPTER", "console")
 
         # Selection algorithm configuration
-        # 600 is seconds - so 10 minutes
-        self.SELECTION_TIMEOUT: int = int(os.environ.get("SELECTION_TIMEOUT", "600"))
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
 

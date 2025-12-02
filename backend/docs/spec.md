@@ -385,7 +385,7 @@ opendlp health-check
 - `SECRET_KEY`: Flask secret key
 - `OAUTH_GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth client secret
-- `SELECTION_TIMEOUT`: Background task timeout (default: 600 seconds)
+- `TASK_TIMEOUT_HOURS`: Background task timeout (default: 24 hours)
 - `INVITE_EXPIRY_HOURS`: Invite expiration (default: 168 hours)
 - `REDIS_xyz`: as required
 - others as required

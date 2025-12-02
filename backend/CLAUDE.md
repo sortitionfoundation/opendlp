@@ -31,6 +31,7 @@ Key architectural principles:
 ## Project Structure
 
 **Note:** The repository has a monorepo structure. When running Claude from the `backend/` directory:
+
 - The git root and `.git/` directory are in the parent directory (`opendlp/`)
 - The `.secrets.baseline` file is also in the parent directory, not in `backend/`
 - Git operations and secret scanning use the parent directory context
@@ -113,7 +114,7 @@ Configuration is managed through `src/opendlp/config.py` which loads from enviro
 - `FLASK_ENV`: development/testing/production (default: development)
 - `DEBUG`: true/false (default: false)
 - `OAUTH_GOOGLE_CLIENT_ID`/`OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth
-- `SELECTION_TIMEOUT`: Background task timeout in seconds (default: 600)
+- `TASK_TIMEOUT_HOURS`: Background task timeout in hours (default: 24)
 - `INVITE_EXPIRY_HOURS`: Invite expiration (default: 168)
 
 ### Configuration Classes
