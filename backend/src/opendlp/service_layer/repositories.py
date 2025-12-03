@@ -214,3 +214,8 @@ class SelectionRunRecordRepository(AbstractRepository):
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_all_unfinished(self) -> list[SelectionRunRecord]:
+        """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        raise NotImplementedError

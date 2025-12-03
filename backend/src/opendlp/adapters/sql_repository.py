@@ -457,3 +457,17 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
         )
+
+    def get_all_unfinished(self) -> list[SelectionRunRecord]:
+        """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        return (
+            self.session.query(SelectionRunRecord)
+            .filter(
+                orm.selection_run_records.c.status.in_([
+                    SelectionRunStatus.PENDING.value,
+                    SelectionRunStatus.RUNNING.value,
+                ])
+            )
+            .order_by(orm.selection_run_records.c.created_at.desc())
+            .all()
+        )
