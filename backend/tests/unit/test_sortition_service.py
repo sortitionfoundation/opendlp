@@ -550,3 +550,49 @@ class TestCheckAndUpdateTaskHealth:
 
         # Should not raise an exception
         sortition.check_and_update_task_health(uow, non_existent_id)
+
+    def test_handles_missing_celery_task_id_gracefully(self):
+        """Test that function handles gracefully when celery_task_id is None or empty."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record without celery_task_id (None)
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id=None,  # Missing Celery task ID
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not raise an exception (no AsyncResult call)
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should still be RUNNING (can't check health without celery_task_id)
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING
+
+    def test_handles_empty_celery_task_id_gracefully(self):
+        """Test that function handles gracefully when celery_task_id is empty string."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record with empty celery_task_id
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="",  # Empty Celery task ID
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not raise an exception (no AsyncResult call)
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should still be RUNNING (can't check health without celery_task_id)
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING

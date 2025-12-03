@@ -526,6 +526,33 @@ def _mark_task_as_failed(
     uow.commit()
 
 
+def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -> tuple[AsyncResult | None, str]:
+    # Check if celery_task_id is valid before querying Celery
+    if not run_record.celery_task_id:
+        # Task was created without a Celery task ID (shouldn't happen in production)
+        # This can happen in tests or if task creation failed
+        logger.warning(
+            "Task has no Celery task ID, cannot check health",
+            run_id=task_id,
+            db_status=run_record.status.value,
+        )
+        return None, ""  # Can't check Celery without a task ID
+
+    # Query Celery for task state
+    try:
+        celery_result = app.app.AsyncResult(run_record.celery_task_id)
+        return celery_result, celery_result.state
+    except (ValueError, Exception) as exc:
+        # Handle invalid celery_task_id or other Celery errors
+        logger.error(
+            "Error querying Celery for task state",
+            run_id=task_id,
+            celery_id=run_record.celery_task_id,
+            error=str(exc),
+        )
+        return None, ""  # Can't determine health if Celery query fails
+
+
 def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, timeout_hours: int | None = None) -> None:
     """
     Check if a task is still alive and update its status if it has died.
@@ -561,9 +588,9 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
             )
             return
 
-    # Query Celery for task state
-    celery_result = app.app.AsyncResult(run_record.celery_task_id)
-    celery_state = celery_result.state
+    celery_result, celery_state = _get_celery_task_state(run_record, task_id)
+    if not celery_result:
+        return
 
     # Log current state for debugging
     logger.debug(
