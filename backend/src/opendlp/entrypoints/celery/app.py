@@ -18,6 +18,7 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
         broker=redis_cfg.to_url(),
         backend=redis_cfg.to_url(),
     )
+    app.conf.timezone = "UTC"
     # use pickle across the board, so we can use rich objects, not just JSON
     app.conf.event_serializer = "pickle"  # this event_serializer is optional.
     app.conf.task_serializer = "pickle"
@@ -25,6 +26,15 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
     app.conf.accept_content = ["application/json", "application/x-python-serialize"]
     # track when tasks are started
     app.conf.task_track_started = True
+
+    # Configure periodic tasks (Celery Beat schedule)
+    app.conf.beat_schedule = {
+        "cleanup-orphaned-tasks": {
+            "task": "opendlp.entrypoints.celery.tasks.cleanup_orphaned_tasks",
+            "schedule": 300.0,  # Run every 5 minutes (300 seconds)
+        },
+    }
+
     return app
 
 

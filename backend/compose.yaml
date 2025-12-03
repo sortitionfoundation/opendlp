@@ -29,6 +29,8 @@ services:
             - __pycache__/
         - action: rebuild
           path: uv.lock
+    networks:
+      - opendlp_dev_net
 
   app_celery:
     build:
@@ -42,14 +44,33 @@ services:
       - PYTHONUNBUFFERED=1
     # define DB_PASSWORD in the .env file
     env_file: .env
-    entrypoint:
-      - /app/bin/celery
+    entrypoint: /app/bin/celery
+    command:
       - --app=opendlp.entrypoints.celery.tasks
       - worker
       - --loglevel=info
     networks:
-      - opendlp_prod_net
-    restart: always
+      - opendlp_dev_net
+
+  app_celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DB_HOST=postgres
+      - PYTHONUNBUFFERED=1
+    # define DB_PASSWORD in the .env file
+    env_file: .env
+    entrypoint: /app/bin/celery
+    command:
+      - --app=opendlp.entrypoints.celery.tasks
+      - beat
+      - --loglevel=info
+    networks:
+      - opendlp_dev_net
 
   postgres:
     image: postgres:16
@@ -58,12 +79,16 @@ services:
       - POSTGRES_PASSWORD=abc123
     volumes:
       - sqla_opendlp_pgdata:/var/lib/postgresql/data
+    networks:
+      - opendlp_dev_net
 
   redis:
     image: redis:alpine
+    networks:
+      - opendlp_dev_net
 
 networks:
-  opendlp_prod_net:
+  opendlp_dev_net:
 
 volumes:
   sqla_opendlp_pgdata:
