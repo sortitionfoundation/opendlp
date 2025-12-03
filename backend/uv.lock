@@ -874,7 +874,7 @@ requires-dist = [
     { name = "markupsafe", specifier = ">=3.0.2" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "redis", specifier = ">=6.4.0" },
-    { name = "sortition-algorithms", specifier = "==0.10.16" },
+    { name = "sortition-algorithms", specifier = "==0.10.17" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.43" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "werkzeug", specifier = ">=3.1.3" },
@@ -1374,7 +1374,7 @@ wheels = [
 
 [[package]]
 name = "sortition-algorithms"
-version = "0.10.16"
+version = "0.10.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1387,9 +1387,9 @@ dependencies = [
     { name = "requests" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/ab/b4c2ea52a948bd47bff7b9b3a617e0216ecbefb51964050159d9ff4926af/sortition_algorithms-0.10.16.tar.gz", hash = "sha256:fac1fdac6be220fbf28f4a7e6179b6ec821d3e95ea5e9261b3de7242c84d5aa3", size = 169839, upload-time = "2025-12-02T14:41:46.806Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/44/de8980de04405c999bf37819eefae9db6c81cd9a3d070b11a3850f3262de/sortition_algorithms-0.10.17.tar.gz", hash = "sha256:071a57435f87a2f987458c7d97567dd608e71cafdff9b138b894efad255506af", size = 171055, upload-time = "2025-12-03T14:30:15.121Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/dd/f8578c6f5a3d22c4e676cef556cb5260cfbda367039f5980e89315631681/sortition_algorithms-0.10.16-py3-none-any.whl", hash = "sha256:4d71b8b0a5c04c06ba2d8542c949828dbb71aeb63d056c71eb3bdc0aa36ca572", size = 68801, upload-time = "2025-12-02T14:41:45.633Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/e4/1f9cd153e8e58be2ce6a23c2686c25731bfcd3f80cf49e1be59e104f2aa4/sortition_algorithms-0.10.17-py3-none-any.whl", hash = "sha256:e27999a2b8ce3e2ef7f02d1dfa8f3fef4f749d5c8c98fea29d8b862a969f12c8", size = 68909, upload-time = "2025-12-03T14:30:13.949Z" },
 ]
 
 [[package]]
