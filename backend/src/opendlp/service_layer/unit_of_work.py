@@ -12,6 +12,7 @@ from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
+    SqlAlchemyPasswordResetTokenRepository,
     SqlAlchemySelectionRunRecordRepository,
     SqlAlchemyUserAssemblyRoleRepository,
     SqlAlchemyUserInviteRepository,
@@ -20,6 +21,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    PasswordResetTokenRepository,
     SelectionRunRecordRepository,
     UserAssemblyRoleRepository,
     UserInviteRepository,
@@ -36,6 +38,7 @@ class AbstractUnitOfWork(abc.ABC):
     user_invites: UserInviteRepository
     user_assembly_roles: UserAssemblyRoleRepository
     selection_run_records: SelectionRunRecordRepository
+    password_reset_tokens: PasswordResetTokenRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -87,6 +90,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.user_invites = SqlAlchemyUserInviteRepository(self.session)
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
         self.selection_run_records = SqlAlchemySelectionRunRecordRepository(self.session)
+        self.password_reset_tokens = SqlAlchemyPasswordResetTokenRepository(self.session)
 
         return self
 

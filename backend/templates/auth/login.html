@@ -39,6 +39,9 @@
                 </div>
                 <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Sign in") }}</button>
             </form>
+            <p class="govuk-body">
+                <a href="{{ url_for('auth.forgot_password') }}" class="govuk-link">{{ _("Forgot your password?") }}</a>
+            </p>
             <div class="govuk-inset-text">
                 {{ _("Don't have an account? You need an <strong>invite code</strong> to register.") }}
                 <a href="{{ url_for('auth.register') }}" class="govuk-link">{{ _("Register here") }}</a>

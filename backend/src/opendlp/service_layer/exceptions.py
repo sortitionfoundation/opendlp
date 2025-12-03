@@ -72,6 +72,37 @@ class InsufficientPermissions(ServiceLayerError):
         self.required_role = required_role
 
 
+class InvalidResetToken(ServiceLayerError):
+    """Raised when a password reset token is invalid, expired, or already used."""
+
+    def __init__(self, reason: str = "") -> None:
+        if reason:
+            message = _("Invalid password reset token: %(reason)s", reason=reason)
+        else:
+            message = _("Invalid password reset token")
+        super().__init__(message)
+        self.reason = reason
+
+
+class RateLimitExceeded(ServiceLayerError):
+    """Raised when a user has exceeded rate limits for an operation."""
+
+    def __init__(self, operation: str = "", retry_after_seconds: int = 0) -> None:
+        if operation and retry_after_seconds:
+            message = _(
+                "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s seconds",
+                operation=operation,
+                seconds=retry_after_seconds,
+            )
+        elif operation:
+            message = _("Rate limit exceeded for %(operation)s", operation=operation)
+        else:
+            message = _("Rate limit exceeded. Please try again later")
+        super().__init__(message)
+        self.operation = operation
+        self.retry_after_seconds = retry_after_seconds
+
+
 class InvalidSelection(ServiceLayerError):
     """Error for when we can't do selection because something is invalid"""
 
