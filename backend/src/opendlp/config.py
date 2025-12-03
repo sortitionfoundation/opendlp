@@ -164,6 +164,28 @@ def bool_environ_get(env_key: str, default: bool = False) -> bool:
     return to_bool(os.environ.get(env_key, default_str), context_str=f"{env_key}=")
 
 
+def get_task_timeout_hours() -> int:
+    """
+    Get task timeout in hours from environment.
+    Returns 24 (hours) as default if not set or invalid.
+
+    Environment variable: TASK_TIMEOUT_HOURS
+    """
+    timeout_str = os.environ.get("TASK_TIMEOUT_HOURS", "")
+    if not timeout_str:
+        return 24
+
+    try:
+        timeout = int(timeout_str)
+        if timeout <= 0:
+            logging.warning(f"TASK_TIMEOUT_HOURS must be positive, got '{timeout_str}'. Using default 24 hours.")
+            return 24
+        return timeout
+    except ValueError:
+        logging.warning(f"Invalid TASK_TIMEOUT_HOURS value '{timeout_str}'. Using default 24 hours.")
+        return 24
+
+
 class FlaskBaseConfig:
     """Base configuration class that loads from environment variables."""
 
@@ -192,8 +214,6 @@ class FlaskBaseConfig:
         self.EMAIL_ADAPTER: str = os.environ.get("EMAIL_ADAPTER", "console")
 
         # Selection algorithm configuration
-        # 600 is seconds - so 10 minutes
-        self.SELECTION_TIMEOUT: int = int(os.environ.get("SELECTION_TIMEOUT", "600"))
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
 

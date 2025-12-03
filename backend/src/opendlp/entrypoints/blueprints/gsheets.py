@@ -22,6 +22,7 @@ from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSel
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
+    check_and_update_task_health,
     get_manage_old_tabs_status,
     get_selection_run_status,
     start_gsheet_load_task,
@@ -241,6 +242,10 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health before getting status
+            check_and_update_task_health(uow, run_id)
+
             result = get_selection_run_status(uow, run_id)
 
         # Check if run record exists
@@ -481,6 +486,10 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health before getting status
+            check_and_update_task_health(uow, run_id)
+
             result = get_selection_run_status(uow, run_id)
 
         # Check if run record exists
@@ -732,6 +741,10 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health before getting status
+            check_and_update_task_health(uow, run_id)
+
             result = get_selection_run_status(uow, run_id)
 
         # Check if run record exists

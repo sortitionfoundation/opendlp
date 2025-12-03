@@ -48,6 +48,29 @@ services:
       - opendlp_prod_net
     restart: always
 
+  app_celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DB_HOST=postgres
+      - PYTHONUNBUFFERED=1
+    # define DB_PASSWORD in the .env file
+    env_file:
+      - .env
+      - .env.prod
+    entrypoint: /app/bin/celery
+    command:
+      - --app=opendlp.entrypoints.celery.tasks
+      - beat
+      - --loglevel=info
+    networks:
+      - opendlp_prod_net
+    restart: always
+
   postgres:
     image: postgres:16
     environment:

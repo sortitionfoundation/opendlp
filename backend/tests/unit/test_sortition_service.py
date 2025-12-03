@@ -2,6 +2,7 @@
 ABOUTME: Tests Google Sheets loading task management and selection run monitoring with fake repositories"""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -254,3 +255,344 @@ class TestGetLatestRunForAssembly:
         result = sortition.get_latest_run_for_assembly(uow, non_existent_assembly_id)
 
         assert result is None
+
+
+class TestCheckAndUpdateTaskHealth:
+    """Test checking and updating task health status."""
+
+    def test_ignores_completed_tasks(self):
+        """Test that completed tasks are not checked or modified."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.COMPLETED,
+            celery_task_id="celery-123",
+            log_messages=["Task completed"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not check Celery or modify the record
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be unchanged
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.COMPLETED
+        assert len(updated_record.log_messages) == 1
+
+    def test_ignores_failed_tasks(self):
+        """Test that failed tasks are not checked or modified."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.FAILED,
+            celery_task_id="celery-123",
+            log_messages=["Task failed"],
+            error_message="Original error",
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not check Celery or modify the record
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be unchanged
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert updated_record.error_message == "Original error"
+
+    def test_marks_running_task_as_failed_when_celery_says_failure(self):
+        """Test that RUNNING task is marked FAILED when Celery reports FAILURE state."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-123",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return FAILURE state
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "FAILURE"
+            mock_result.info = Exception("Task crashed")
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be marked as FAILED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "stopped unexpectedly" in updated_record.error_message
+        assert "contact the administrators" in updated_record.error_message
+        assert updated_record.completed_at is not None
+        assert any("ERROR" in msg for msg in updated_record.log_messages)
+
+    def test_marks_running_task_as_failed_when_celery_says_revoked(self):
+        """Test that RUNNING task is marked FAILED when Celery reports REVOKED state."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-456",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return REVOKED state
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "REVOKED"
+            mock_result.info = None
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be marked as FAILED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "stopped unexpectedly" in updated_record.error_message
+
+    def test_marks_running_task_as_failed_when_celery_forgot_it(self):
+        """Test that RUNNING task is marked FAILED when Celery has no record (state=PENDING)."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-789",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return PENDING (which means Celery forgot about it)
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "PENDING"
+            mock_result.info = None
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be marked as FAILED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "stopped unexpectedly" in updated_record.error_message
+
+    def test_leaves_running_task_alone_when_celery_says_started(self):
+        """Test that RUNNING task is left alone when Celery reports STARTED state."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-active",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return STARTED state (task is running fine)
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "STARTED"
+            mock_result.info = {}
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be unchanged
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING
+        assert len(updated_record.log_messages) == 1
+
+    def test_leaves_running_task_alone_when_celery_says_success(self):
+        """Test that RUNNING task is left alone when Celery reports SUCCESS state."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-done",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return SUCCESS state
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "SUCCESS"
+            mock_result.info = {}
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be unchanged - let normal polling handle SUCCESS
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING
+        assert len(updated_record.log_messages) == 1
+
+    def test_marks_pending_task_as_failed_when_celery_says_failure(self):
+        """Test that PENDING task is marked FAILED when Celery reports FAILURE state."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.PENDING,
+            celery_task_id="celery-pending-failed",
+            log_messages=["Task submitted"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return FAILURE state
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "FAILURE"
+            mock_result.info = Exception("Failed to start")
+            mock_async_result.return_value = mock_result
+
+            sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should be marked as FAILED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "failed to start" in updated_record.error_message.lower()
+
+    def test_marks_task_as_failed_when_timeout_exceeded(self):
+        """Test that task is marked FAILED when it exceeds the timeout."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record with old created_at (25 hours ago)
+        old_time = datetime.now(UTC) - timedelta(hours=25)
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-timeout",
+            log_messages=["Task started"],
+        )
+        record.created_at = old_time
+        uow.selection_run_records.add(record)
+
+        # Check with 24 hour timeout - should fail
+        sortition.check_and_update_task_health(uow, task_id, timeout_hours=24)
+
+        # Record should be marked as FAILED due to timeout
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "timeout" in updated_record.error_message.lower()
+
+    def test_does_not_fail_task_within_timeout(self):
+        """Test that task is not marked failed when within timeout period."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record with recent created_at (1 hour ago)
+        recent_time = datetime.now(UTC) - timedelta(hours=1)
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-recent",
+            log_messages=["Task started"],
+        )
+        record.created_at = recent_time
+        uow.selection_run_records.add(record)
+
+        # Mock Celery to return STARTED (running normally)
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.state = "STARTED"
+            mock_result.info = {}
+            mock_async_result.return_value = mock_result
+
+            # Check with 24 hour timeout - should not fail
+            sortition.check_and_update_task_health(uow, task_id, timeout_hours=24)
+
+        # Record should still be RUNNING
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING
+
+    def test_does_nothing_when_task_not_found(self):
+        """Test that function handles gracefully when task doesn't exist."""
+        uow = FakeUnitOfWork()
+
+        non_existent_id = uuid.uuid4()
+
+        # Should not raise an exception
+        sortition.check_and_update_task_health(uow, non_existent_id)
+
+    def test_handles_missing_celery_task_id_gracefully(self):
+        """Test that function handles gracefully when celery_task_id is None or empty."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record without celery_task_id (None)
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id=None,  # Missing Celery task ID
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not raise an exception (no AsyncResult call)
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should still be RUNNING (can't check health without celery_task_id)
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING
+
+    def test_handles_empty_celery_task_id_gracefully(self):
+        """Test that function handles gracefully when celery_task_id is empty string."""
+        uow = FakeUnitOfWork()
+
+        task_id = uuid.uuid4()
+        # Create record with empty celery_task_id
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="",  # Empty Celery task ID
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Should not raise an exception (no AsyncResult call)
+        sortition.check_and_update_task_health(uow, task_id)
+
+        # Record should still be RUNNING (can't check health without celery_task_id)
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.RUNNING

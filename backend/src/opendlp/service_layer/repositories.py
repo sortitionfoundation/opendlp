@@ -216,6 +216,11 @@ class SelectionRunRecordRepository(AbstractRepository):
         """Get all currently running selection tasks."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_all_unfinished(self) -> list[SelectionRunRecord]:
+        """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        raise NotImplementedError
+
 
 class PasswordResetTokenRepository(AbstractRepository):
     """Repository interface for PasswordResetToken domain objects."""

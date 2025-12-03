@@ -313,6 +313,10 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         """Get all currently running selection tasks."""
         return [item for item in self._items if item.status in ["pending", "running"]]
 
+    def get_all_unfinished(self) -> list[SelectionRunRecord]:
+        """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        return [item for item in self._items if item.is_pending or item.is_running]
+
 
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""

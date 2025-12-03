@@ -60,6 +60,56 @@ def _set_up_celery_logging(task_id: uuid.UUID, session_factory: sessionmaker | N
     override_logging_handlers([handler], [handler])
 
 
+def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tuple, kwargs: dict, einfo: Any) -> None:
+    """
+    Callback executed when a Celery task fails.
+
+    Note: This only fires if the worker process is alive when the exception occurs.
+    Hard crashes (SIGKILL, OOM) won't trigger this callback.
+
+    Args:
+        self: Task instance (can be None in tests)
+        exc: The exception that caused the failure
+        task_id: Celery task ID (not our task_id UUID)
+        args: Task positional arguments
+        kwargs: Task keyword arguments
+        einfo: Exception info object
+    """
+    # Extract our task_id from kwargs (the SelectionRunRecord task_id)
+    our_task_id = kwargs.get("task_id")
+    if not our_task_id:
+        logging.error(f"Task {task_id} failed but no task_id in kwargs")
+        return
+
+    session_factory = kwargs.get("session_factory")
+
+    # Format error details
+    error_msg = f"Task failed with exception: {type(exc).__name__}"
+    technical_msg = f"{type(exc).__name__}: {exc}"
+    if einfo:
+        technical_msg += f"\n{einfo}"
+
+    logging.error(
+        f"Celery task failure callback: our_task_id={our_task_id}, celery_task_id={task_id}, exception={technical_msg}"
+    )
+
+    # Update the database record
+    try:
+        with bootstrap(session_factory=session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(our_task_id)
+            if record and not record.has_finished:
+                record.status = SelectionRunStatus.FAILED
+                record.error_message = f"{error_msg}. " + _(
+                    "Please contact the administrators if this problem persists."
+                )
+                record.log_messages.append(f"ERROR: {error_msg}")
+                record.completed_at = datetime.now(UTC)
+                flag_modified(record, "log_messages")
+                uow.commit()
+    except Exception as update_exc:
+        logging.error(f"Failed to update task record in failure callback: {update_exc}")
+
+
 def _update_selection_record(
     task_id: uuid.UUID,
     status: SelectionRunStatus,
@@ -412,7 +462,7 @@ def _internal_write_selected(
         return report
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def load_gsheet(
     self: Task,
     task_id: uuid.UUID,
@@ -432,7 +482,7 @@ def load_gsheet(
     )
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def run_select(
     self: Task,
     task_id: uuid.UUID,
@@ -510,7 +560,7 @@ def cleanup_old_password_reset_tokens(days_old: int = 30) -> int:
     return count
 
 
-@app.task(bind=True)
+@app.task(bind=True, on_failure=_on_task_failure)
 def manage_old_tabs(
     self: Task,
     task_id: uuid.UUID,
@@ -603,3 +653,71 @@ def manage_old_tabs(
         )
 
         return False, [], report
+
+
+@app.task
+def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[str, int]:
+    """
+    Periodic task to find and mark orphaned selection tasks as FAILED.
+
+    Scans all PENDING and RUNNING tasks and checks their health status
+    against Celery. Marks tasks as FAILED if they have died, timed out,
+    or were forgotten by Celery.
+
+    This is a safety net that runs periodically (e.g., every 5 minutes)
+    to catch tasks that died hard (SIGKILL, OOM) and didn't trigger
+    the failure callback.
+
+    Returns:
+        Dict with counts: {'checked': int, 'marked_failed': int, 'errors': int}
+    """
+    # Import here to avoid circular import (sortition.py imports from tasks.py)
+    from opendlp.service_layer.sortition import check_and_update_task_health
+
+    checked = 0
+    marked_failed = 0
+    errors = 0
+
+    logging.info("Starting cleanup_orphaned_tasks periodic job")
+
+    try:
+        with bootstrap(session_factory=session_factory) as uow:
+            # Get all unfinished tasks (PENDING or RUNNING)
+            unfinished_tasks = uow.selection_run_records.get_all_unfinished()
+            logging.info(f"Found {len(unfinished_tasks)} unfinished task(s) to check")
+
+            for record in unfinished_tasks:
+                try:
+                    # Record status before health check
+                    status_before = record.status
+
+                    # Check and update task health (will mark as FAILED if needed)
+                    check_and_update_task_health(uow, record.task_id)
+                    checked += 1
+
+                    # Reload record to see if it was updated
+                    uow.commit()  # Commit any changes made by check_and_update_task_health
+                    updated_record = uow.selection_run_records.get_by_task_id(record.task_id)
+
+                    # If status changed to FAILED, increment counter
+                    if updated_record and status_before != updated_record.status and updated_record.is_failed:
+                        marked_failed += 1
+                        logging.info(
+                            f"Marked orphaned task as FAILED: task_id={record.task_id}, "
+                            f"celery_task_id={record.celery_task_id}"
+                        )
+
+                except Exception as exc:
+                    errors += 1
+                    logging.error(
+                        f"Error checking task health for task_id={record.task_id}: {exc}",
+                        exc_info=True,
+                    )
+
+    except Exception as exc:
+        errors += 1
+        logging.error(f"Error in cleanup_orphaned_tasks: {exc}", exc_info=True)
+
+    result = {"checked": checked, "marked_failed": marked_failed, "errors": errors}
+    logging.info(f"Cleanup completed: {result}")
+    return result

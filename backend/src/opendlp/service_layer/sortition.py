@@ -1,14 +1,19 @@
 """ABOUTME: Sortition service for managing selection tasks and background job coordination
 ABOUTME: Provides high-level functions for starting and monitoring Celery-based selection workflows"""
 
+import contextlib
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
+import structlog
 from celery.result import AsyncResult
 from sortition_algorithms import RunReport
 from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
+from sqlalchemy.orm.attributes import flag_modified
 
+from opendlp import config
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
@@ -16,6 +21,8 @@ from opendlp.service_layer.exceptions import AssemblyNotFoundError, GoogleSheetC
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
+
+logger = structlog.get_logger(__name__)
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -400,7 +407,7 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
         celery_result = app.app.AsyncResult(run_record.celery_task_id)
 
         # We will always get a result object back here, even if celery has no
-        # record of the task id. (By default, celery will forget the results adapter
+        # record of the task id. (By default, celery will forget the results after
         # 24 hours, so this is quite possible if looking at an old run.) So we:
         # - first check if it is successful - which means it was successful, and the result
         #   is still tracked by celery. Then we can get the results of the function that
@@ -463,3 +470,173 @@ def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID)
         Most recent SelectionRunRecord for the assembly, or None if no runs exist
     """
     return uow.selection_run_records.get_latest_for_assembly(assembly_id)
+
+
+def _extract_exception_info(celery_result: AsyncResult) -> str:
+    """Extract exception information from a failed Celery result."""
+    try:
+        if celery_result.info and isinstance(celery_result.info, Exception):
+            return str(celery_result.info)
+        elif celery_result.info and isinstance(celery_result.info, dict):
+            return str(celery_result.info.get("exc_message", "No exception message"))
+        else:
+            return "No exception info available"
+    except Exception:
+        return "Could not extract exception info"
+
+
+def _mark_task_as_failed(
+    uow: AbstractUnitOfWork,
+    run_record: SelectionRunRecord,
+    error_msg: str,
+    technical_msg: str,
+    celery_state: str,
+) -> None:
+    """
+    Update a SelectionRunRecord to FAILED status with error details.
+
+    Args:
+        uow: Unit of work for database operations
+        run_record: The record to update
+        error_msg: User-friendly error message
+        technical_msg: Technical details for logs
+        celery_state: The Celery state that triggered this failure
+    """
+    # Log technical details
+    logger.warning(
+        "Marking task as failed:",
+        run_id=run_record.task_id,
+        celery_id=run_record.celery_task_id,
+        celery_state=celery_state,
+        details=technical_msg,
+    )
+
+    # Update record with user-friendly message
+    run_record.status = SelectionRunStatus.FAILED
+    run_record.error_message = error_msg + " " + _("Please contact the administrators if this problem persists.")
+    run_record.log_messages.append(f"ERROR: {error_msg}")
+    run_record.completed_at = datetime.now(UTC)
+
+    # flag_modified only works for SQLAlchemy-managed instances
+    # In unit tests with plain Python objects, this will fail, so we catch it
+    with contextlib.suppress(AttributeError):
+        flag_modified(run_record, "log_messages")
+
+    uow.selection_run_records.add(run_record)
+    uow.commit()
+
+
+def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -> tuple[AsyncResult | None, str]:
+    # Check if celery_task_id is valid before querying Celery
+    if not run_record.celery_task_id:
+        # Task was created without a Celery task ID (shouldn't happen in production)
+        # This can happen in tests or if task creation failed
+        logger.warning(
+            "Task has no Celery task ID, cannot check health",
+            run_id=task_id,
+            db_status=run_record.status.value,
+        )
+        return None, ""  # Can't check Celery without a task ID
+
+    # Query Celery for task state
+    try:
+        celery_result = app.app.AsyncResult(run_record.celery_task_id)
+        return celery_result, celery_result.state
+    except (ValueError, Exception) as exc:
+        # Handle invalid celery_task_id or other Celery errors
+        logger.error(
+            "Error querying Celery for task state",
+            run_id=task_id,
+            celery_id=run_record.celery_task_id,
+            error=str(exc),
+        )
+        return None, ""  # Can't determine health if Celery query fails
+
+
+def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, timeout_hours: int | None = None) -> None:
+    """
+    Check if a task is still alive and update its status if it has died.
+
+    Only checks tasks in PENDING or RUNNING state.
+    Handles multiple failure scenarios:
+    - Task is PENDING but Celery says it FAILED/REVOKED/REJECTED
+    - Task is RUNNING but Celery has no record (>24hrs old, died)
+    - Task is RUNNING but Celery says FAILURE/REVOKED/REJECTED
+    - Task exceeded timeout (if configured)
+
+    Args:
+        uow: Unit of work for database operations
+        task_id: UUID of the task (SelectionRunRecord.task_id)
+        timeout_hours: Optional timeout in hours (overrides env config)
+    """
+    run_record = uow.selection_run_records.get_by_task_id(task_id)
+
+    if not run_record or run_record.has_finished:
+        return  # Nothing to check
+
+    # Check timeout first
+    timeout_hrs = timeout_hours if timeout_hours is not None else config.get_task_timeout_hours()
+    if timeout_hrs and run_record.created_at:
+        elapsed = datetime.now(UTC) - run_record.created_at
+        if elapsed.total_seconds() > timeout_hrs * 3600:
+            _mark_task_as_failed(
+                uow,
+                run_record,
+                error_msg=_("Task exceeded timeout"),
+                technical_msg=f"Task timed out after {timeout_hrs} hours",
+                celery_state="TIMEOUT",
+            )
+            return
+
+    celery_result, celery_state = _get_celery_task_state(run_record, task_id)
+    if not celery_result:
+        return
+
+    # Log current state for debugging
+    logger.debug(
+        "Task health check",
+        run_id=task_id,
+        celery_id=run_record.celery_task_id,
+        celery_state=celery_state,
+        db_status=run_record.status.value,
+    )
+
+    # Decision matrix based on DB status and Celery state
+    if run_record.is_pending:
+        if celery_state in ("FAILURE", "REVOKED", "REJECTED"):
+            # Task failed before it even started running
+            exc_info = _extract_exception_info(celery_result)
+            _mark_task_as_failed(
+                uow,
+                run_record,
+                error_msg=_("Task failed to start"),
+                technical_msg=f"Celery state: {celery_state}, Exception: {exc_info}",
+                celery_state=celery_state,
+            )
+
+    elif run_record.is_running:
+        if celery_state in ("FAILURE", "REVOKED", "REJECTED"):
+            # Task crashed or was killed
+            exc_info = _extract_exception_info(celery_result)
+            _mark_task_as_failed(
+                uow,
+                run_record,
+                error_msg=_("Task stopped unexpectedly"),
+                technical_msg=f"Celery state: {celery_state}, Exception: {exc_info}",
+                celery_state=celery_state,
+            )
+
+        elif celery_state == "PENDING" and run_record.celery_task_id:
+            # Celery has forgotten the task (likely >24hrs) but DB says RUNNING
+            # This means the worker died without updating status
+            _mark_task_as_failed(
+                uow,
+                run_record,
+                error_msg=_("Task stopped unexpectedly"),
+                technical_msg=(
+                    "Task shows RUNNING in database but Celery has no record. Worker likely crashed or was killed."
+                ),
+                celery_state="UNKNOWN",
+            )
+
+        # SUCCESS and STARTED states are fine, let normal polling handle them

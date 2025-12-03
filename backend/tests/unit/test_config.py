@@ -12,6 +12,7 @@ from opendlp.config import (
     FlaskTestSQLiteConfig,
     InvalidConfig,
     get_config,
+    get_task_timeout_hours,
     to_bool,
 )
 
@@ -62,7 +63,6 @@ class TestFlaskConfigClass:
         assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54321/opendlp"
         assert config.SECRET_KEY == "dev-secret-key-change-in-production"
         assert config.FLASK_ENV == "development"
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
         assert config.OAUTH_GOOGLE_CLIENT_ID == ""
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == ""
@@ -75,7 +75,6 @@ class TestFlaskConfigClass:
             DB_PORT="5432",
             SECRET_KEY="test-secret",
             FLASK_ENV="production",
-            SELECTION_TIMEOUT="300",
             INVITE_EXPIRY_HOURS="72",
             OAUTH_GOOGLE_CLIENT_ID="test-client-id",
             OAUTH_GOOGLE_CLIENT_SECRET="test-client-secret",
@@ -86,7 +85,6 @@ class TestFlaskConfigClass:
         assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:db-secret@db.server.net:5432/opendlp"
         assert config.SECRET_KEY == "test-secret"
         assert config.FLASK_ENV == "production"
-        assert config.SELECTION_TIMEOUT == 300
         assert config.INVITE_EXPIRY_HOURS == 72
         assert config.OAUTH_GOOGLE_CLIENT_ID == "test-client-id"
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == "test-client-secret"
@@ -103,7 +101,6 @@ class TestFlaskTestConfig:
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
 
     def test_test_postgres_config_overrides(self, clear_env_vars):
@@ -115,7 +112,6 @@ class TestFlaskTestConfig:
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
-        assert config.SELECTION_TIMEOUT == 600
         assert config.INVITE_EXPIRY_HOURS == 168
 
 
@@ -185,3 +181,37 @@ class TestGetConfig:
         assert not isinstance(config, FlaskTestSQLiteConfig)
         assert not isinstance(config, FlaskTestPostgresConfig)
         assert not isinstance(config, FlaskProductionConfig)
+
+
+class TestGetTaskTimeoutHours:
+    """Test the get_task_timeout_hours function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        """Test that function returns 24 (default) when TASK_TIMEOUT_HOURS is not set."""
+        clear_env_vars("TASK_TIMEOUT_HOURS")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        """Test that function returns 24 (default) when TASK_TIMEOUT_HOURS is empty."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_valid_positive_integer(self, temp_env_vars):
+        """Test that function returns the value when set to a valid positive integer."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="6")
+        assert get_task_timeout_hours() == 6
+
+    def test_returns_default_for_invalid_value(self, temp_env_vars):
+        """Test that function returns default and logs warning for invalid value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="not-a-number")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_for_zero(self, temp_env_vars):
+        """Test that function returns default for zero value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="0")
+        assert get_task_timeout_hours() == 24
+
+    def test_returns_default_for_negative(self, temp_env_vars):
+        """Test that function returns default for negative value."""
+        temp_env_vars(TASK_TIMEOUT_HOURS="-5")
+        assert get_task_timeout_hours() == 24
