@@ -17,7 +17,13 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-from opendlp.entrypoints.celery.tasks import _update_selection_record, load_gsheet, manage_old_tabs, run_select
+from opendlp.entrypoints.celery.tasks import (
+    _update_selection_record,
+    cleanup_orphaned_tasks,
+    load_gsheet,
+    manage_old_tabs,
+    run_select,
+)
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 
 
@@ -765,3 +771,105 @@ class TestOnTaskFailure:
             kwargs={"session_factory": postgres_session_factory},  # No task_id!
             einfo=None,
         )
+
+
+class TestCleanupOrphanedTasks:
+    """Test the cleanup_orphaned_tasks periodic task."""
+
+    def test_cleanup_finds_and_fixes_orphaned_running_tasks(self, postgres_session_factory):
+        """Test that cleanup finds RUNNING tasks with no Celery record and marks them FAILED."""
+        task1_id = uuid.uuid4()
+        task2_id = uuid.uuid4()
+        task3_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+
+        # Create three tasks:
+        # 1. RUNNING task with "dead" Celery task (will be marked FAILED)
+        # 2. COMPLETED task (should be ignored)
+        # 3. RUNNING task with active Celery task (should be left alone)
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Test Assembly")
+            uow.assemblies.add(assembly)
+
+            # Task 1: RUNNING but Celery doesn't know about it
+            record1 = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task1_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.RUNNING,
+                celery_task_id="dead-celery-task-123",
+                log_messages=["Task started"],
+            )
+            uow.selection_run_records.add(record1)
+
+            # Task 2: Already COMPLETED
+            record2 = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task2_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.COMPLETED,
+                celery_task_id="completed-task-456",
+                log_messages=["Task completed"],
+            )
+            uow.selection_run_records.add(record2)
+
+            # Task 3: RUNNING with active Celery task
+            record3 = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task3_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.RUNNING,
+                celery_task_id="active-task-789",
+                log_messages=["Task started"],
+            )
+            uow.selection_run_records.add(record3)
+            uow.commit()
+
+        # Mock Celery AsyncResult to simulate dead task
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+
+            def mock_result_factory(celery_task_id):
+                mock_result = Mock()
+                if celery_task_id == "dead-celery-task-123":
+                    mock_result.state = "PENDING"  # Celery forgot about it
+                elif celery_task_id == "active-task-789":
+                    mock_result.state = "STARTED"  # Still running
+                else:
+                    mock_result.state = "SUCCESS"  # Completed
+                return mock_result
+
+            mock_async_result.side_effect = mock_result_factory
+
+            # Run the cleanup task
+            result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+
+        # Verify results
+        assert result["checked"] == 2  # Two unfinished tasks checked
+        assert result["marked_failed"] == 1  # One marked as failed
+        assert result["errors"] == 0
+
+        # Verify task 1 was marked as FAILED
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            updated1 = uow.selection_run_records.get_by_task_id(task1_id)
+            assert updated1.status == SelectionRunStatus.FAILED
+            assert "stopped unexpectedly" in updated1.error_message
+
+            # Verify task 2 is still COMPLETED
+            updated2 = uow.selection_run_records.get_by_task_id(task2_id)
+            assert updated2.status == SelectionRunStatus.COMPLETED
+
+            # Verify task 3 is still RUNNING
+            updated3 = uow.selection_run_records.get_by_task_id(task3_id)
+            assert updated3.status == SelectionRunStatus.RUNNING
+
+    def test_cleanup_handles_no_unfinished_tasks(self, postgres_session_factory):
+        """Test that cleanup handles case with no unfinished tasks gracefully."""
+        # No tasks created
+
+        # Run the cleanup task
+        result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+
+        # Verify results
+        assert result["checked"] == 0
+        assert result["marked_failed"] == 0
+        assert result["errors"] == 0

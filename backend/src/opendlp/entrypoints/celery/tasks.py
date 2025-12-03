@@ -632,3 +632,71 @@ def manage_old_tabs(
         )
 
         return False, [], report
+
+
+@app.task
+def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[str, int]:
+    """
+    Periodic task to find and mark orphaned selection tasks as FAILED.
+
+    Scans all PENDING and RUNNING tasks and checks their health status
+    against Celery. Marks tasks as FAILED if they have died, timed out,
+    or were forgotten by Celery.
+
+    This is a safety net that runs periodically (e.g., every 5 minutes)
+    to catch tasks that died hard (SIGKILL, OOM) and didn't trigger
+    the failure callback.
+
+    Returns:
+        Dict with counts: {'checked': int, 'marked_failed': int, 'errors': int}
+    """
+    # Import here to avoid circular import (sortition.py imports from tasks.py)
+    from opendlp.service_layer.sortition import check_and_update_task_health
+
+    checked = 0
+    marked_failed = 0
+    errors = 0
+
+    logging.info("Starting cleanup_orphaned_tasks periodic job")
+
+    try:
+        with bootstrap(session_factory=session_factory) as uow:
+            # Get all unfinished tasks (PENDING or RUNNING)
+            unfinished_tasks = uow.selection_run_records.get_all_unfinished()
+            logging.info(f"Found {len(unfinished_tasks)} unfinished task(s) to check")
+
+            for record in unfinished_tasks:
+                try:
+                    # Record status before health check
+                    status_before = record.status
+
+                    # Check and update task health (will mark as FAILED if needed)
+                    check_and_update_task_health(uow, record.task_id)
+                    checked += 1
+
+                    # Reload record to see if it was updated
+                    uow.commit()  # Commit any changes made by check_and_update_task_health
+                    updated_record = uow.selection_run_records.get_by_task_id(record.task_id)
+
+                    # If status changed to FAILED, increment counter
+                    if updated_record and status_before != updated_record.status and updated_record.is_failed:
+                        marked_failed += 1
+                        logging.info(
+                            f"Marked orphaned task as FAILED: task_id={record.task_id}, "
+                            f"celery_task_id={record.celery_task_id}"
+                        )
+
+                except Exception as exc:
+                    errors += 1
+                    logging.error(
+                        f"Error checking task health for task_id={record.task_id}: {exc}",
+                        exc_info=True,
+                    )
+
+    except Exception as exc:
+        errors += 1
+        logging.error(f"Error in cleanup_orphaned_tasks: {exc}", exc_info=True)
+
+    result = {"checked": checked, "marked_failed": marked_failed, "errors": errors}
+    logging.info(f"Cleanup completed: {result}")
+    return result
