@@ -121,6 +121,7 @@ STOPSIGNAL SIGINT
 
 # Note how the runtime dependencies differ from build-time ones.
 # Notably, there is no uv either!
+# curl is added to allow the healthcheck to run
 RUN <<EOT
 apt-get update -qy
 apt-get install -qyy \
@@ -129,7 +130,8 @@ apt-get install -qyy \
   python3.12 \
   libpython3.12 \
   libpcre3 \
-  libxml2
+  libxml2 \
+  curl
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

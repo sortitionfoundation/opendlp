@@ -3,9 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # set these two in the override
+    # mem_limit: 1g
+    # mem_reservation: 512m
+    oom_score_adj: -500 # Medium protection
+    restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
       - PYTHONUNBUFFERED=1
@@ -23,15 +30,26 @@ services:
       - "opendlp.entrypoints.flask_app:create_app()"
     networks:
       - opendlp_prod_net
-    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   app_celery:
     build:
       context: .
       dockerfile: Dockerfile
+    # set these two in the override
+    # mem_limit: 10g # Room for 2 workers @ 3.5GB + overhead
+    # mem_reservation: 5g
+    oom_score_adj: 500 # POSITIVE = kill first during pressure
+    restart: on-failure:10 # Restart on OOM, but limit attempts
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
       - PYTHONUNBUFFERED=1
@@ -40,21 +58,41 @@ services:
       - .env
       - .env.prod
     entrypoint: /app/bin/celery
+    # might want to override some args
     command:
       - --app=opendlp.entrypoints.celery.tasks
       - worker
       - --loglevel=info
+      - --concurrency=2
+      - --max-memory-per-child=5000000
+      - --max-tasks-per-child=50
+      - --prefetch-multiplier=1
     networks:
       - opendlp_prod_net
-    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A opendlp.entrypoints.celery.tasks inspect ping -d celery@$HOSTNAME",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   app_celery_beat:
     build:
       context: .
       dockerfile: Dockerfile
+    # set these two in the override
+    # mem_limit: 256m
+    # mem_reservation: 128m
+    oom_score_adj: -200 # Mild protection
+    restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
       - PYTHONUNBUFFERED=1
@@ -69,10 +107,14 @@ services:
       - --loglevel=info
     networks:
       - opendlp_prod_net
-    restart: always
 
   postgres:
     image: postgres:16
+    # set these two in the override
+    # mem_limit: 2g
+    # mem_reservation: 1g
+    oom_score_adj: -900 # Highest protection - almost never killed
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=opendlp
     # define POSTGRES_PASSWORD in the .env file
@@ -83,13 +125,30 @@ services:
       - sqla_opendlp_prod_pgdata:/var/lib/postgresql/data
     networks:
       - opendlp_prod_net
-    restart: always
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
+    # set these two in the override
+    # mem_limit: 512m
+    # mem_reservation: 256m
+    oom_score_adj: -800 # High protection
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --maxmemory=450mb
+      - --maxmemory-policy=allkeys-lru
     networks:
       - opendlp_prod_net
-    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   opendlp_prod_net:
