@@ -72,8 +72,12 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "celery -A opendlp.entrypoints.celery.tasks inspect ping -d celery@$HOSTNAME",
+          "CMD",
+          "celery",
+          "-A",
+          "opendlp.entrypoints.celery.tasks",
+          "inspect",
+          "ping",
         ]
       interval: 30s
       timeout: 10s
@@ -140,8 +144,10 @@ services:
     restart: unless-stopped
     command:
       - redis-server
-      - --maxmemory=450mb
-      - --maxmemory-policy=allkeys-lru
+      - --maxmemory
+      - 450mb
+      - --maxmemory-policy
+      - allkeys-lru
     networks:
       - opendlp_prod_net
     healthcheck:
