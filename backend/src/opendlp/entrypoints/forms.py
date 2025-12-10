@@ -267,6 +267,13 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         default="Replacement Categories",
     )
 
+    already_selected_tab = StringField(
+        _l("Already Selected Tab Name"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        description=_l("Name of the tab containing already selected people (used for Replacements)"),
+        default="Selected",
+    )
+
     check_same_address = BooleanField(
         _l("Check Same Address"),
         description=_l("Enable checking for participants with the same address"),

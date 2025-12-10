@@ -178,6 +178,7 @@ class AssemblyGSheet:
     select_targets_tab: str = "Categories"
     replace_registrants_tab: str = "Remaining"
     replace_targets_tab: str = "Replacement Categories"
+    already_selected_tab: str = "Selected"
     generate_remaining_tab: bool = True
     id_column: str = "nationbuilder_id"
     check_same_address: bool = True
@@ -271,9 +272,11 @@ class AssemblyGSheet:
         from opendlp.bootstrap import update_data_source_from_assembly_gsheet
 
         if for_replacements:
+            # already selected only makes sense for replacements
             gsheet_data_source = adapters.GSheetDataSource(
                 feature_tab_name=self.replace_targets_tab,
                 people_tab_name=self.replace_registrants_tab,
+                already_selected_tab_name=self.already_selected_tab,
                 auth_json_path=config.get_google_auth_json_path(),
             )
         else:

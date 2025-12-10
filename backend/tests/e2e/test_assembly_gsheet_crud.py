@@ -36,6 +36,7 @@ class TestAssemblyGSheetCreateView:
         # Tab names
         assert b"Respondents Tab Name" in response.data
         assert b"Targets Tab Name" in response.data
+        assert b"Already Selected Tab Name" in response.data
 
         # ID column
         assert b"ID Column" in response.data

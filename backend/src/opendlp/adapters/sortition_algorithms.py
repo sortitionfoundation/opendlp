@@ -63,6 +63,10 @@ class CSVGSheetDataSource(AbstractDataSource):
     def people_tab_name(self) -> str:
         return self.gsheet_data_source.people_tab_name
 
+    @property
+    def already_selected_tab_name(self) -> str:
+        return self.gsheet_data_source.already_selected_tab_name
+
     def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
         """
         Simulate deleting old output tabs for testing.

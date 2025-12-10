@@ -33,6 +33,13 @@
             <td class="govuk-table__cell">{{ gsheet.select_targets_tab }}</td>
             <td class="govuk-table__cell">{{ gsheet.replace_targets_tab }}</td>
         </tr>
+        <tr class="govuk-table__row">
+            <th scope="row" class="govuk-table__header">{{ _("Selected Tab") }}</th>
+            <td class="govuk-table__cell">
+                <em>{{ _("Not used") }}</em>
+            </td>
+            <td class="govuk-table__cell">{{ gsheet.already_selected_tab or _("Not set") }}</td>
+        </tr>
     </tbody>
 </table>
 <h4 class="govuk-heading-s govuk-!-margin-top-4">{{ _("Additional Settings") }}</h4>

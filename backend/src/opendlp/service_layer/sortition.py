@@ -350,7 +350,7 @@ def _process_celery_final_result(celery_result: AsyncResult, run_record: Selecti
         SelectionTaskType.LOAD_GSHEET,
         SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
     ):
-        success, features, people, run_report = final_result
+        success, features, people, _, run_report = final_result
         return LoadRunResult(
             run_record=run_record,
             run_report=run_report,

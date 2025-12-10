@@ -238,6 +238,7 @@ assembly_gsheets = Table(
     Column("select_targets_tab", String(100), nullable=False, default="Categories"),
     Column("replace_registrants_tab", String(100), nullable=False, default="Remaining"),
     Column("replace_targets_tab", String(100), nullable=False, default="Replacement Categories"),
+    Column("already_selected_tab", String(100), nullable=False, default="Selected"),
     Column("generate_remaining_tab", Boolean, nullable=False, default=True),
     Column("id_column", String(100), nullable=False, default="nationbuilder_id"),
     Column("check_same_address", Boolean, nullable=False, default=True),
