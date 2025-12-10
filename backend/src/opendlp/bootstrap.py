@@ -63,6 +63,7 @@ def update_data_source_from_assembly_gsheet(
     csv_data_source = adapters.CSVFileDataSource(
         features_file=test_dir / "features.csv",
         people_file=test_dir / "candidates.csv",
+        already_selected_file=test_dir / "already_selected.csv",
         selected_file=temp_output_dir / "selected.csv",
         remaining_file=temp_output_dir / "remaining.csv",
     )
