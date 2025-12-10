@@ -47,3 +47,12 @@ repos:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
         exclude: package.lock.json,migrations/versions/.*\.py
+
+  # look for typos
+  - repo: https://github.com/crate-ci/typos
+    rev: "v1.40.0"
+    hooks:
+      - id: typos
+        # no `-w` disable the auto fix, always review the output
+        # tell it where the config is
+        args: ["-c", "backend/pyproject.toml"]

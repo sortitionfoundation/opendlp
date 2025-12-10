@@ -220,3 +220,15 @@ DEP002 = ["alembic", "gunicorn"]
 
 [tool.djlint]
 profile = "jinja"
+
+[tool.typos.files]
+extend-exclude = [
+  # this is somewhere I dump stuff for LLM to read
+  "thirdparty",
+]
+
+[tool.typos.default.extend-words]
+# used for 'strat select' - short for stratification
+strat = "strat"
+# this is the one Hungarian word found in user_data_agreement.py
+Parlament = "Parlament"
