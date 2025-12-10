@@ -2,6 +2,14 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 
+[options]
+exclude-newer = "2025-12-03T13:08:02.287319975Z"
+exclude-newer-span = "P1W"
+
+[options.exclude-newer-package]
+uv = { timestamp = "2025-12-10T13:08:02.288251274Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2025-12-10T13:08:02.287832002Z", span = "PT0S" }
+
 [[package]]
 name = "alembic"
 version = "1.17.2"
