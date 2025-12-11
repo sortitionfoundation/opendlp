@@ -99,7 +99,7 @@ class ConsoleEmailAdapter(EmailAdapter):
         to_addrs = [self._format_address(addr) for addr in to]
 
         # Truncate text body for logging
-        text_preview = text_body[:200] + ("..." if len(text_body) > 200 else "")
+        text_preview = text_body[:400] + ("..." if len(text_body) > 400 else "")
         has_html = "Yes" if html_body else "No"
 
         logger.info(
