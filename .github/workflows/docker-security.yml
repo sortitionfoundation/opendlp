@@ -22,6 +22,7 @@ jobs:
 
       - name: Create generated_version.txt
         run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+        working-directory: ./backend
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
