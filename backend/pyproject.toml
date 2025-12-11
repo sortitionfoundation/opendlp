@@ -63,7 +63,12 @@ dev = [
 # this provides a "cooldown" to avoid supply chain issues - requires uv>=0.9.17
 # background: https://blog.yossarian.net/2025/11/21/We-should-all-be-using-dependency-cooldowns
 exclude-newer = "1 week"
-exclude-newer-package = { sortition-algorithms = "0 days", uv = "0 days" }
+# exclude-newer-package = { sortition-algorithms = "0 days", uv = "0 days" }
+
+[tool.uv.exclude-newer-package]
+sortition-algorithms = "0 days"
+urllib3 = "0 days"
+uv = "0 days"
 
 [tool.mypy]
 files = ["src"]
