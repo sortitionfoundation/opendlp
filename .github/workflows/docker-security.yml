@@ -20,6 +20,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Create generated_version.txt
+        run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
