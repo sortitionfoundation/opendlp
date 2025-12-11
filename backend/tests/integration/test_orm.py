@@ -369,6 +369,7 @@ class TestAssemblyGSheetORM:
             select_targets_tab="Targets",
             replace_registrants_tab="Remaining",
             replace_targets_tab="Replacement Targets",
+            already_selected_tab="Already Selected",
             generate_remaining_tab=True,
             id_column="custom_id",
             check_same_address=False,
@@ -390,6 +391,7 @@ class TestAssemblyGSheetORM:
         assert retrieved_gsheet.select_targets_tab == "Targets"
         assert retrieved_gsheet.replace_registrants_tab == "Remaining"
         assert retrieved_gsheet.replace_targets_tab == "Replacement Targets"
+        assert retrieved_gsheet.already_selected_tab == "Already Selected"
         assert retrieved_gsheet.generate_remaining_tab is True
         assert retrieved_gsheet.id_column == "custom_id"
         assert retrieved_gsheet.check_same_address is False
@@ -427,6 +429,7 @@ class TestAssemblyGSheetORM:
         assert retrieved_gsheet.select_targets_tab == "Categories"
         assert retrieved_gsheet.replace_registrants_tab == "Remaining"
         assert retrieved_gsheet.replace_targets_tab == "Replacement Categories"
+        assert retrieved_gsheet.already_selected_tab == "Selected"
         assert retrieved_gsheet.generate_remaining_tab is True
         assert retrieved_gsheet.id_column == "nationbuilder_id"
         assert retrieved_gsheet.check_same_address is True

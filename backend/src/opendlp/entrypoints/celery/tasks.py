@@ -166,7 +166,7 @@ def _internal_load_gsheet(
     settings: settings.Settings,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
-) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()
@@ -225,12 +225,45 @@ def _internal_load_gsheet(
             meta={"people_status": p_report.as_text()},
         )
         assert people is not None
+        _append_run_log(
+            task_id,
+            [
+                _("Loaded %(count)s people.", count=people.count),
+            ],
+            session_factory=session_factory,
+        )
+
+        if data_source.already_selected_tab_name:
+            _append_run_log(
+                task_id,
+                [
+                    _(
+                        "Loading already selected from tab: %(tab_name)s",
+                        tab_name=data_source.already_selected_tab_name,
+                    ),
+                ],
+                session_factory=session_factory,
+            )
+        # always do this, as it gives a safe default
+        already_selected, a_s_report = select_data.load_already_selected(settings, features)
+        if data_source.already_selected_tab_name:
+            report.add_report(a_s_report)
+            task_obj.update_state(
+                state="progress",
+                meta={"already_selected_status": a_s_report.as_text()},
+            )
+            _append_run_log(
+                task_id,
+                [
+                    _("Loaded %(count)s already selected people.", count=already_selected.count),
+                ],
+                session_factory=session_factory,
+            )
 
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
             log_messages=[
-                _("Loaded %(count)s people.", count=people.count),
                 _("Google Sheets load completed successfully."),
             ],
             completed_at=datetime.now(UTC) if final_task else None,
@@ -238,7 +271,7 @@ def _internal_load_gsheet(
             session_factory=session_factory,
         )
 
-        return True, features, people, report
+        return True, features, people, already_selected, report
     except errors.SortitionBaseError as error:
         report.add_line(str(error))
         _update_selection_record(
@@ -250,7 +283,7 @@ def _internal_load_gsheet(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
 
     except PermissionError:
         # the PermissionError raised by gspread has no text, so appears to be blank, leading to
@@ -269,7 +302,7 @@ def _internal_load_gsheet(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
     except Exception as err:
         import traceback
 
@@ -290,7 +323,7 @@ def _internal_load_gsheet(
             session_factory=session_factory,
         )
 
-        return False, None, None, report
+        return False, None, None, None, report
 
 
 def _internal_run_select(
@@ -300,6 +333,7 @@ def _internal_run_select(
     settings: settings.Settings,
     number_people_wanted: int,
     test_selection: bool = False,
+    already_selected: people.People | None = None,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
@@ -338,6 +372,7 @@ def _internal_run_select(
             number_people_wanted=number_people_wanted,
             settings=settings,
             test_selection=test_selection,
+            already_selected=already_selected,
         )
 
         if success:
@@ -400,6 +435,7 @@ def _internal_write_selected(
     select_data: adapters.SelectionData,
     features: FeatureCollection,
     people: people.People,
+    already_selected: people.People | None,
     settings: settings.Settings,
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
@@ -408,18 +444,30 @@ def _internal_write_selected(
     _append_run_log(task_id, [_("About to write selected and remaining tabs")], session_factory=session_factory)
     try:
         # Format results
-        selected_table, remaining_table, _o = selected_remaining_tables(people, selected_panels[0], features, settings)
+        selected_table, remaining_table, _o = selected_remaining_tables(
+            full_people=people,
+            people_selected=selected_panels[0],
+            features=features,
+            settings=settings,
+            already_selected=already_selected,
+            exclude_matching_addresses=False,
+        )
 
         # Export to Google Sheets
-        dupes, report = select_data.output_selected_remaining(selected_table, remaining_table, settings)
+        dupes, report = select_data.output_selected_remaining(
+            people_selected_rows=selected_table,
+            people_remaining_rows=remaining_table,
+            settings=settings,
+            already_selected=already_selected,
+        )
         if dupes:
             # TODO: do something more with dupes? Maybe save to run record extra_info JSON???
             _append_run_log(
                 task_id,
                 [
                     _(
-                        "In the remaining tab there are %(count)s people who share the same address as "
-                        "someone else in the tab. They are highlighted in orange.",
+                        "In the remaining tab there are %(count)s people who share an address with "
+                        "someone else selected or remaining. They are highlighted in orange.",
                         count=len(dupes),
                     ),
                 ],
@@ -469,7 +517,7 @@ def load_gsheet(
     data_source: adapters.GSheetDataSource | CSVGSheetDataSource,
     settings: settings.Settings,
     session_factory: sessionmaker | None = None,
-) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
@@ -497,7 +545,7 @@ def run_select(
     _set_up_celery_logging(task_id, session_factory=session_factory)
     report = RunReport()
     select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
-    success, features, people, load_report = _internal_load_gsheet(
+    success, features, people, already_selected, load_report = _internal_load_gsheet(
         task_obj=self,
         task_id=task_id,
         select_data=select_data,
@@ -518,6 +566,7 @@ def run_select(
         settings=settings,
         number_people_wanted=number_people_wanted,
         test_selection=test_selection,
+        already_selected=already_selected,
         final_task=False,
         session_factory=session_factory,
     )
@@ -531,6 +580,7 @@ def run_select(
         select_data=select_data,
         features=features,
         people=people,
+        already_selected=already_selected,
         settings=settings,
         selected_panels=selected_panels,
         session_factory=session_factory,

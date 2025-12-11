@@ -122,6 +122,20 @@
                 {% endif %}
                 {{ form.replace_targets_tab(class="govuk-input" + (" govuk-input--error" if form.replace_targets_tab.errors else "") ) }}
             </div>
+            <div class="govuk-form-group {% if form.already_selected_tab.errors %}govuk-form-group--error{% endif %}">
+                <label class="govuk-label govuk-label--s"
+                    for="{{ form.already_selected_tab.id }}">{{ form.already_selected_tab.label.text }}</label>
+                {% if form.already_selected_tab.description %}
+                    <div class="govuk-hint">{{ form.already_selected_tab.description }}</div>
+                {% endif %}
+                {% if form.already_selected_tab.errors %}
+                    <p class="govuk-error-message">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        {{ form.already_selected_tab.errors[0] }}
+                    </p>
+                {% endif %}
+                {{ form.already_selected_tab(class="govuk-input" + (" govuk-input--error" if form.already_selected_tab.errors else "") ) }}
+            </div>
         </fieldset>
         <div class="govuk-checkboxes" data-module="govuk-checkboxes">
             <div class="govuk-checkboxes__item">

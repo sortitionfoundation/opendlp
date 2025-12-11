@@ -2,6 +2,15 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 
+[options]
+exclude-newer = "2025-12-04T09:47:00.943708054Z"
+exclude-newer-span = "P1W"
+
+[options.exclude-newer-package]
+uv = { timestamp = "2025-12-11T09:47:00.944493857Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2025-12-11T09:47:00.944027481Z", span = "PT0S" }
+urllib3 = { timestamp = "2025-12-11T09:47:00.944492775Z", span = "PT0S" }
+
 [[package]]
 name = "alembic"
 version = "1.17.2"
@@ -352,16 +361,16 @@ wheels = [
 
 [[package]]
 name = "django"
-version = "5.2.9"
+version = "6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "sqlparse" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/1c/188ce85ee380f714b704283013434976df8d3a2df8e735221a02605b6794/django-5.2.9.tar.gz", hash = "sha256:16b5ccfc5e8c27e6c0561af551d2ea32852d7352c67d452ae3e76b4f6b2ca495", size = 10848762, upload-time = "2025-12-02T14:01:08.418Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/75/19762bfc4ea556c303d9af8e36f0cd910ab17dff6c8774644314427a2120/django-6.0.tar.gz", hash = "sha256:7b0c1f50c0759bbe6331c6a39c89ae022a84672674aeda908784617ef47d8e26", size = 10932418, upload-time = "2025-12-03T16:26:21.878Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/b0/7f42bfc38b8f19b78546d47147e083ed06e12fc29c42da95655e0962c6c2/django-5.2.9-py3-none-any.whl", hash = "sha256:3a4ea88a70370557ab1930b332fd2887a9f48654261cdffda663fef5976bb00a", size = 8290652, upload-time = "2025-12-02T14:01:03.485Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/ae/f19e24789a5ad852670d6885f5480f5e5895576945fcc01817dfd9bc002a/django-6.0-py3-none-any.whl", hash = "sha256:1cc2c7344303bbfb7ba5070487c17f7fc0b7174bbb0a38cebf03c675f5f19b6d", size = 8339181, upload-time = "2025-12-03T16:26:16.231Z" },
 ]
 
 [[package]]
@@ -874,7 +883,7 @@ requires-dist = [
     { name = "markupsafe", specifier = ">=3.0.2" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "redis", specifier = ">=6.4.0" },
-    { name = "sortition-algorithms", specifier = "==0.10.18" },
+    { name = "sortition-algorithms", specifier = "==0.10.20" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.43" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "werkzeug", specifier = ">=3.1.3" },
@@ -1374,7 +1383,7 @@ wheels = [
 
 [[package]]
 name = "sortition-algorithms"
-version = "0.10.18"
+version = "0.10.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1387,9 +1396,9 @@ dependencies = [
     { name = "requests" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/72/24/645ee34ad4413f7d8002b2e2d7eb34f1e7c015a58b0692409f7129c07276/sortition_algorithms-0.10.18.tar.gz", hash = "sha256:5601f8647410378f4ac6968b1ddf33592c98cffab8b026c833ccebd29937c84b", size = 171615, upload-time = "2025-12-03T15:29:12.088Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/64/3a638756cf2b6a9abce811a8d1371af9f6c3b316af412a603c6230f26da6/sortition_algorithms-0.10.20.tar.gz", hash = "sha256:bc657baa0dce0874738e8392bb5990ce5a417a43b56a25afdb246c9bc302602f", size = 178937, upload-time = "2025-12-10T13:34:42.111Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/df/b0db2a8a527e96f46f436c49a3d6dd69b939f1a86988ece819a2d3724e22/sortition_algorithms-0.10.18-py3-none-any.whl", hash = "sha256:e0a4eed3bfe54a46e0a465e44f5b398b46bd8f2d0c9b75c97e7da1afeb3f2eca", size = 69212, upload-time = "2025-12-03T15:29:11.144Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/26/a3e5f53e0b05e404cd4559c026465607ae3ad387f28310c2a31af353f0fa/sortition_algorithms-0.10.20-py3-none-any.whl", hash = "sha256:16c4cc0ac4ffb6022597c3661d84ed8e2bde40c5c5afd5aa064a68ac24f3b4ed", size = 71139, upload-time = "2025-12-10T13:34:40.687Z" },
 ]
 
 [[package]]
@@ -1578,11 +1587,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.5.0"
+version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/1d/0f3a93cca1ac5e8287842ed4eebbd0f7a991315089b1a0b01c7788aa7b63/urllib3-2.6.1.tar.gz", hash = "sha256:5379eb6e1aba4088bae84f8242960017ec8d8e3decf30480b3a1abdaa9671a3f", size = 432678, upload-time = "2025-12-08T15:25:26.773Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/56/190ceb8cb10511b730b564fb1e0293fa468363dbad26145c34928a60cb0c/urllib3-2.6.1-py3-none-any.whl", hash = "sha256:e67d06fe947c36a7ca39f4994b08d73922d40e6cca949907be05efa6fd75110b", size = 131138, upload-time = "2025-12-08T15:25:25.51Z" },
 ]
 
 [[package]]

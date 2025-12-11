@@ -33,16 +33,19 @@ class TestCSVGSheetDataSource:
         """Create a CSV data source for testing."""
         features_file = tmp_path / "features.csv"
         people_file = tmp_path / "people.csv"
+        already_selected_file = tmp_path / "already_selected_file.csv"
         selected_file = tmp_path / "selected.csv"
         remaining_file = tmp_path / "remaining.csv"
 
         # Create minimal CSV files
         features_file.write_text("feature,value,min,max,min_flex,max_flex\ngender,Male,5,5,0,5\n")
         people_file.write_text("id,name,gender\n1,John,Male\n")
+        already_selected_file.write_text("id,name,gender\n11,Joan,Female\n")
 
         return CSVFileDataSource(
             features_file=features_file,
             people_file=people_file,
+            already_selected_file=already_selected_file,
             selected_file=selected_file,
             remaining_file=remaining_file,
         )
@@ -107,6 +110,20 @@ class TestCSVGSheetDataSource:
             assert len(rows_list) == 1
             assert rows_list[0]["id"] == "1"
             assert rows_list[0]["name"] == "John"
+
+    def test_read_already_selected_data_delegates_to_csv(self, adapter):
+        """Test that read_already_selected_data delegates to CSV data source."""
+        report = RunReport()
+
+        with adapter.read_already_selected_data(report) as (headers, rows):
+            headers_list = list(headers)
+            rows_list = list(rows)
+
+            assert "id" in headers_list
+            assert "name" in headers_list
+            assert len(rows_list) == 1
+            assert rows_list[0]["id"] == "11"
+            assert rows_list[0]["name"] == "Joan"
 
     def test_write_selected_delegates_to_csv(self, adapter):
         """Test that write_selected delegates to CSV data source."""

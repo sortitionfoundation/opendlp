@@ -1,0 +1,59 @@
+name: Docker Security Scan
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/**"
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create generated_version.txt
+        run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+        working-directory: ./backend
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: opendlp-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image with Grype (table output for logs)
+        uses: anchore/scan-action@v5
+        continue-on-error: true
+        with:
+          image: opendlp-backend:${{ github.sha }}
+          fail-build: false
+          severity-cutoff: negligible
+          output-format: table
+
+      - name: Scan image with Grype (SARIF output for GitHub Security)
+        uses: anchore/scan-action@v5
+        id: scan
+        with:
+          image: opendlp-backend:${{ github.sha }}
+          fail-build: true
+          severity-cutoff: high
+
+      - name: Upload Grype scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}

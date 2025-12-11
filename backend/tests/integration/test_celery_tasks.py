@@ -39,12 +39,14 @@ def csv_files():
 
     selected_file = temp_dir / f"selected_{uuid.uuid4()}.csv"
     remaining_file = temp_dir / f"remaining_{uuid.uuid4()}.csv"
+    already_selected_file = temp_dir / f"already_selected_{uuid.uuid4()}.csv"
 
     return {
         "features": features_file,
         "people": people_file,
         "selected": selected_file,
         "remaining": remaining_file,
+        "already_selected": already_selected_file,
     }
 
 
@@ -56,11 +58,13 @@ def csv_gsheet_data_source(csv_files):
         people_file=csv_files["people"],
         selected_file=csv_files["selected"],
         remaining_file=csv_files["remaining"],
+        already_selected_file=csv_files["already_selected"],
     )
 
     mock_gsheet = Mock(spec=GSheetDataSource)
     mock_gsheet.feature_tab_name = "Features"
     mock_gsheet.people_tab_name = "People"
+    mock_gsheet.already_selected_tab_name = "Already Selected"
 
     return CSVGSheetDataSource(
         csv_data_source=csv_data_source,
@@ -281,7 +285,7 @@ class TestLoadGSheetTask:
         # Call the actual Celery task (bind=True automatically injects self)
         # Mock update_state since we're not going through Celery's async infrastructure
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, _report = load_gsheet(
+            success, features, people, already_selected, report = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -292,8 +296,10 @@ class TestLoadGSheetTask:
         assert success is True
         assert features is not None
         assert people is not None
+        assert already_selected is not None
         assert len(features) > 0
         assert people.count > 0
+        assert already_selected.count == 0
 
         # Verify record was updated
         with bootstrap(session_factory=postgres_session_factory) as uow:
@@ -334,11 +340,13 @@ class TestLoadGSheetTask:
             people_file=invalid_people,
             selected_file=tmp_path / "selected.csv",
             remaining_file=tmp_path / "remaining.csv",
+            already_selected_file=tmp_path / "already_selected.csv",
         )
 
         mock_gsheet = Mock(spec=GSheetDataSource)
         mock_gsheet.feature_tab_name = "Features"
         mock_gsheet.people_tab_name = "People"
+        mock_gsheet.already_selected_tab_name = "Already Selected"
 
         csv_gsheet_data_source = CSVGSheetDataSource(
             csv_data_source=csv_data_source,
@@ -347,7 +355,7 @@ class TestLoadGSheetTask:
 
         # Attempt to load data
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, _report = load_gsheet(
+            success, features, people, already_selected, report = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -358,6 +366,7 @@ class TestLoadGSheetTask:
         assert success is False
         assert features is None
         assert people is None
+        assert already_selected is None
 
         # Verify record shows failure
         with bootstrap(session_factory=postgres_session_factory) as uow:

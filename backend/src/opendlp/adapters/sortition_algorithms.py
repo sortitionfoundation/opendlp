@@ -39,6 +39,13 @@ class CSVGSheetDataSource(AbstractDataSource):
         with self.csv_data_source.read_people_data(report) as people_data:
             yield people_data
 
+    @contextmanager
+    def read_already_selected_data(
+        self, report: RunReport
+    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+        with self.csv_data_source.read_already_selected_data(report) as people_data:
+            yield people_data
+
     def write_selected(self, selected: list[list[str]], report: RunReport) -> None:
         self.csv_data_source.write_selected(selected, report)
 
@@ -55,6 +62,10 @@ class CSVGSheetDataSource(AbstractDataSource):
     @property
     def people_tab_name(self) -> str:
         return self.gsheet_data_source.people_tab_name
+
+    @property
+    def already_selected_tab_name(self) -> str:
+        return self.gsheet_data_source.already_selected_tab_name
 
     def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
         """
