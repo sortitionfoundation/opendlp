@@ -117,6 +117,19 @@ Configuration is managed through `src/opendlp/config.py` which loads from enviro
 - `TASK_TIMEOUT_HOURS`: Background task timeout in hours (default: 24)
 - `INVITE_EXPIRY_HOURS`: Invite expiration (default: 168)
 
+### Email Configuration
+
+- `EMAIL_ADAPTER`: Email backend type - "console" (logs to console) or "smtp" (sends via SMTP)
+- `SMTP_HOST`: SMTP server hostname (set to "postfix" in production compose)
+- `SMTP_PORT`: SMTP server port (default: 587, use 25 for Postfix container)
+- `SMTP_USERNAME`: SMTP authentication username (not needed for internal Postfix relay)
+- `SMTP_PASSWORD`: SMTP authentication password (not needed for internal Postfix relay)
+- `SMTP_USE_TLS`: Whether to use TLS encryption (default: true, set to false for internal Postfix)
+- `SMTP_FROM_EMAIL`: Default sender email address
+- `SMTP_FROM_NAME`: Default sender display name
+
+For production SMTP relay configuration with Postfix, see `docs/postfix_configuration.md`.
+
 ### Configuration Classes
 
 - `FlaskConfig`: Base development configuration
@@ -255,14 +268,24 @@ The application includes a background task system for long-running operations li
 
 ## Docker Setup
 
-Two Docker Compose configurations:
+Docker Compose configurations:
 
 - `compose.yaml`: Full application with PostgreSQL
-- `compose.production.yaml`: Full application with PostgreSQL, for production deployment
+- `compose.production.yaml`: Full application with PostgreSQL and Postfix relay, for production deployment
 - `compose.localdev.yaml`: Services only for local development
 - `compose.test.yaml`: Services only for local testing
 
 The application runs on port 5005, PostgreSQL on 54321 (mapped from 5432).
+
+### Production Services
+
+The production compose file (`compose.production.yaml`) includes:
+- `app`: Main Flask application (Gunicorn)
+- `app_celery`: Celery worker for background tasks
+- `app_celery_beat`: Celery beat scheduler
+- `postgres`: PostgreSQL database
+- `redis`: Redis for sessions and Celery broker
+- `postfix`: SMTP relay for email sending (see `docs/postfix_configuration.md`)
 
 ## Frontend Testing and Debugging
 

@@ -13,8 +13,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      postfix:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
+      - SMTP_HOST=postfix
       - PYTHONUNBUFFERED=1
     # define DB_PASSWORD in the .env file
     env_file:
@@ -50,8 +53,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      postfix:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
+      - SMTP_HOST=postfix
       - PYTHONUNBUFFERED=1
     # define DB_PASSWORD in the .env file
     env_file:
@@ -97,8 +103,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      postfix:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
+      - SMTP_HOST=postfix
       - PYTHONUNBUFFERED=1
     # define DB_PASSWORD in the .env file
     env_file:
@@ -155,6 +164,33 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  postfix:
+    image: boky/postfix:latest
+    # set these two in the override
+    # mem_limit: 256m
+    # mem_reservation: 128m
+    oom_score_adj: -500 # Medium protection
+    restart: unless-stopped
+    environment:
+      - ALLOWED_SENDER_DOMAINS=
+      - MASQUERADE_DOMAINS=
+    # Define relay settings in .env file:
+    # RELAYHOST=smtp.example.com:587
+    # RELAYHOST_USERNAME=your-username
+    # RELAYHOST_PASSWORD=your-password
+    # ALLOWED_SENDER_DOMAINS=yourdomain.com
+    # MASQUERADE_DOMAINS=yourdomain.com
+    env_file:
+      - .env
+      - .env.prod
+    networks:
+      - opendlp_prod_net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   opendlp_prod_net:
