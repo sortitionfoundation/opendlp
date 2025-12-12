@@ -21,7 +21,7 @@ dependencies = [
   "markupsafe>=3.0.2",
   "python-dotenv>=1.1.1",
   "redis>=6.4.0",
-  "sortition-algorithms==0.10.20",
+  "sortition-algorithms==0.10.21",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.43",
   "structlog>=25.4.0",
   "werkzeug>=3.1.3",
