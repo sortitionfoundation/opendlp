@@ -88,7 +88,7 @@ class TestConsoleEmailAdapter:
     def test_send_email_truncates_long_body(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that long email bodies are truncated in logs."""
         adapter = ConsoleEmailAdapter()
-        long_body = "A" * 300
+        long_body = "A" * 500
 
         with caplog.at_level(logging.INFO):
             adapter.send_email(
