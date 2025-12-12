@@ -25,6 +25,14 @@ class CSVGSheetDataSource(AbstractDataSource):
         # For testing delete_old_output_tabs functionality
         self._simulated_old_tabs: list[str] = []
 
+    @property
+    def people_data_container(self) -> str:
+        return self.gsheet_data_source.people_data_container
+
+    @property
+    def already_selected_data_container(self) -> str:
+        return self.gsheet_data_source.already_selected_data_container
+
     @contextmanager
     def read_feature_data(
         self, report: RunReport
@@ -67,6 +75,10 @@ class CSVGSheetDataSource(AbstractDataSource):
     def already_selected_tab_name(self) -> str:
         return self.gsheet_data_source.already_selected_tab_name
 
+    @property
+    def _g_sheet_name(self) -> str:
+        return self.gsheet_data_source._g_sheet_name
+
     def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
         """
         Simulate deleting old output tabs for testing.
@@ -97,6 +109,11 @@ class CSVGSheetDataSource(AbstractDataSource):
         return error
 
     def customise_people_parse_error(
+        self, error: errors.ParseTableMultiError, headers: Sequence[str]
+    ) -> errors.SelectionMultilineError:
+        return error
+
+    def customise_already_selected_parse_error(
         self, error: errors.ParseTableMultiError, headers: Sequence[str]
     ) -> errors.SelectionMultilineError:
         return error

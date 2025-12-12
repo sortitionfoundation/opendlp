@@ -3,6 +3,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import gspread
 from celery import Task
 from celery.signals import setup_logging
 from sortition_algorithms import (
@@ -177,12 +178,27 @@ def _internal_load_gsheet(
         log_message=_("Starting Google Sheets load task"),
         session_factory=session_factory,
     )
+    # check if we can even get the title
+    try:
+        # TODO: use data_source.get_title() once we have sortition_algorithms>0.10.21
+        spreadsheet_title = data_source.spreadsheet.title
+    except gspread.exceptions.SpreadsheetNotFound:
+        msg = f"Spreadsheet not found, check URL: {data_source._g_sheet_name}"
+        _update_selection_record(
+            task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=msg,
+            error_message=msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, None, report
 
     try:
         _append_run_log(
             task_id,
             [
-                _("Loading spreadsheet with title: %(title)s", title=data_source.spreadsheet.title),
+                _("Loading spreadsheet with title: %(title)s", title=spreadsheet_title),
                 _("Loading targets from tab: %(tab_name)s", tab_name=data_source.feature_tab_name),
             ],
             session_factory=session_factory,
