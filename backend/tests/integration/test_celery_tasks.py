@@ -401,7 +401,7 @@ class TestRunSelectTask:
 
         # Run the full selection task
         with patch.object(run_select, "update_state"):
-            success, selected_panels, report = run_select(
+            success, selected_panels, _report = run_select(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 number_people_wanted=22,
@@ -454,7 +454,7 @@ class TestRunSelectTask:
 
         # Run selection in test mode
         with patch.object(run_select, "update_state"):
-            success, selected_panels, report = run_select(
+            success, selected_panels, _report = run_select(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 number_people_wanted=22,

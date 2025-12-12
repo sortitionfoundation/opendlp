@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 
@@ -218,4 +219,38 @@ class SelectionRunRecordRepository(AbstractRepository):
     @abc.abstractmethod
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        raise NotImplementedError
+
+
+class PasswordResetTokenRepository(AbstractRepository):
+    """Repository interface for PasswordResetToken domain objects."""
+
+    @abc.abstractmethod
+    def get_by_token(self, token: str) -> PasswordResetToken | None:
+        """Get a password reset token by its token string."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_active_tokens_for_user(self, user_id: uuid.UUID) -> Iterable[PasswordResetToken]:
+        """Get all active (not expired and not used) tokens for a user."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_recent_requests(self, user_id: uuid.UUID, since: Any) -> int:
+        """Count password reset requests for a user since a given datetime."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_old_tokens(self, before: Any) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: PasswordResetToken) -> None:
+        """Delete a token from the repository."""
         raise NotImplementedError

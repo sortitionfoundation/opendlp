@@ -26,6 +26,7 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
 
@@ -587,6 +588,26 @@ def run_select(
     report.add_report(write_report)
 
     return success, selected_panels, report
+
+
+@app.task
+def cleanup_old_password_reset_tokens(days_old: int = 30) -> int:
+    """
+    Cleanup old password reset tokens from the database.
+
+    This task should be run periodically (e.g., daily) to remove old
+    expired and used tokens and prevent database bloat.
+
+    Args:
+        days_old: Delete tokens older than this many days (default 30)
+
+    Returns:
+        Number of tokens deleted
+    """
+    uow = bootstrap()
+    count = password_reset_service.cleanup_expired_tokens(uow, days_old=days_old)
+    logging.info(f"Cleaned up {count} old password reset tokens (older than {days_old} days)")
+    return count
 
 
 @app.task(bind=True, on_failure=_on_task_failure)

@@ -169,7 +169,7 @@ class TestAssemblyGSheetEditView:
 
     def test_edit_gsheet_success_with_team_eu(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """Test successful gsheet editing with eu team overriding some settings."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         updated_url = "https://docs.google.com/spreadsheets/d/updated123456789/edit"
 
         response = logged_in_admin.post(
@@ -218,7 +218,7 @@ class TestAssemblyGSheetEditView:
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
     ):
         """Test successful gsheet editing."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         updated_url = "https://docs.google.com/spreadsheets/d/updated123456789/edit"
 
         response = logged_in_admin.post(
@@ -261,7 +261,7 @@ class TestAssemblyGSheetEditView:
 
     def test_edit_gsheet_validation_errors(self, logged_in_admin, assembly_with_gsheet):
         """Test form validation errors on gsheet editing."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/gsheet",
             data={
@@ -276,7 +276,7 @@ class TestAssemblyGSheetEditView:
 
     def test_edit_gsheet_permission_denied_for_user(self, logged_in_user, assembly_with_gsheet):
         """Test regular users cannot edit gsheet configurations."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = logged_in_user.get(f"/assemblies/{assembly.id}/gsheet")
         # Should redirect or show permission error
         assert response.status_code in [302, 403, 500]
@@ -287,7 +287,7 @@ class TestAssemblyGSheetDeleteView:
 
     def test_delete_gsheet_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successful gsheet deletion."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
@@ -326,7 +326,7 @@ class TestAssemblyGSheetDeleteView:
 
     def test_delete_gsheet_permission_denied_for_user(self, logged_in_user, assembly_with_gsheet):
         """Test regular users cannot delete gsheet configurations."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = logged_in_user.post(
             f"/assemblies/{assembly.id}/gsheet/delete",
             data={
@@ -338,7 +338,7 @@ class TestAssemblyGSheetDeleteView:
 
     def test_delete_gsheet_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
         """Test delete gsheet redirects to login when not authenticated."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = client.post(f"/assemblies/{assembly.id}/gsheet/delete")
         assert response.status_code == 302
         assert "login" in response.location

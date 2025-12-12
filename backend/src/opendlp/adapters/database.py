@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 
 from opendlp.adapters import orm
 from opendlp.config import bool_environ_get, get_db_uri
-from opendlp.domain import assembly, user_invites, users
+from opendlp.domain import assembly, password_reset, user_invites, users
 
 
 class DatabaseError(Exception):
@@ -90,6 +90,9 @@ def start_mappers() -> None:
 
         # Map UserInvite domain object to user_invites table
         orm.mapper_registry.map_imperatively(user_invites.UserInvite, orm.user_invites)
+
+        # Map PasswordResetToken domain object to password_reset_tokens table
+        orm.mapper_registry.map_imperatively(password_reset.PasswordResetToken, orm.password_reset_tokens)
 
         # Map AssemblyGSheet domain object to assembly_gsheets table
         orm.mapper_registry.map_imperatively(

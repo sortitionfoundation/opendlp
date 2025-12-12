@@ -225,6 +225,18 @@ user_invites = Table(
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
 
+# Password reset tokens table
+password_reset_tokens = Table(
+    "password_reset_tokens",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("token", String(100), nullable=False, index=True, unique=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
+    Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
+    Column("used_at", TZAwareDatetime(), nullable=True),
+)
+
 # Assembly GSheets table
 assembly_gsheets = Table(
     "assembly_gsheets",
