@@ -73,6 +73,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.admin import admin_bp
     from .blueprints.auth import auth_bp
     from .blueprints.gsheets import gsheets_bp
+    from .blueprints.health import health_bp
     from .blueprints.main import main_bp
     from .blueprints.profile import profile_bp
 
@@ -81,6 +82,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(gsheets_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(profile_bp)
+    app.register_blueprint(health_bp)
 
 
 def register_error_handlers(app: Flask) -> None:
