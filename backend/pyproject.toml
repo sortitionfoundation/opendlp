@@ -239,3 +239,5 @@ extend-exclude = [
 strat = "strat"
 # this is the one Hungarian word found in user_data_agreement.py
 Parlament = "Parlament"
+# a french word in the tests of translations
+algorithme = "algorithme"

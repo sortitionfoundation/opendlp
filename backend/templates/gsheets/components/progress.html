@@ -15,7 +15,7 @@
                         {% if run_record.log_messages %}
                             {% for message in run_record.log_messages %}<p class="govuk-body-s">{{ message }}</p>{% endfor %}
                         {% endif %}
-                        <p class="govuk-body-s">{{ run_report.as_html() | safe }}</p>
+                        <p class="govuk-body-s">{{ translated_report_html | safe }}</p>
                         <p class="govuk-body-s">
                             {{ _("Started At") }}: {{ run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.created_at }}
                         </p>

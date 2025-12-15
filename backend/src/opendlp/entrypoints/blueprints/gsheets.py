@@ -19,6 +19,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
@@ -269,6 +270,7 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
                 run_record=result.run_record,
                 celery_log_messages=result.log_messages,
                 run_report=result.run_report,
+                translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
                 progress_url=url_for("gsheets.gsheet_select_progress", assembly_id=assembly_id, run_id=run_id),
             ),
@@ -531,6 +533,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
                 run_record=result.run_record,
                 celery_log_messages=result.log_messages,
                 run_report=result.run_report,
+                translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
                 progress_url=url_for("gsheets.gsheet_replace_progress", assembly_id=assembly_id, run_id=run_id),
             ),
@@ -773,6 +776,7 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
                 run_record=result.run_record,
                 celery_log_messages=result.log_messages,
                 run_report=result.run_report,
+                translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
                 tab_names=tab_names,
                 progress_url=url_for("gsheets.gsheet_manage_tabs_progress", assembly_id=assembly_id, run_id=run_id),
