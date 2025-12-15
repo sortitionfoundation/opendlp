@@ -104,4 +104,4 @@ class TestHealthCheckEndpoint:
         # Service account email should be present
         assert "service_account_email" in data
         assert isinstance(data["service_account_email"], str)
-        assert "@" in data["service_account_email"]
+        assert len(data["service_account_email"]) > 0

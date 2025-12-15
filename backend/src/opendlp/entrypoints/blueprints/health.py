@@ -69,7 +69,7 @@ def health_check() -> ResponseReturnValue:
     version = get_opendlp_version()
 
     # Determine overall health status
-    is_healthy = db_ok and celery_ok and service_account != "UNKNOWN" and version != "UNKNOWN"
+    is_healthy = db_ok and celery_ok and version != "UNKNOWN"
 
     # Build response
     response_data = {

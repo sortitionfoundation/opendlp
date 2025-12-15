@@ -74,6 +74,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           working-directory: ./backend
 
+      # without this, the health check tests might fail
+      - name: Create generated_version.txt
+        run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+
       - name: Run tests
         env:
           DB_HOST: localhost
