@@ -130,7 +130,8 @@ migrate:
 
 # extract strings to translate from code and templates
 translate-regen:
-  uv run pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+  @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
+  uv run pybabel extract -F babel.cfg -k _l -k N_ -o translations/messages.pot . `uv run python -c "import sortition_algorithms, os; print(os.path.dirname(sortition_algorithms.__file__))"`
   uv run pybabel update -i translations/messages.pot -d translations
 
 # compile translations from .po files so flask can use them

@@ -28,6 +28,7 @@ from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.service_layer import password_reset_service
+from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
 
@@ -289,12 +290,15 @@ def _internal_load_gsheet(
 
         return True, features, people, already_selected, report
     except errors.SortitionBaseError as error:
-        report.add_line(str(error))
+        # Translate the error message using error codes and parameters
+        translated_msg = translate_sortition_error(error)
+        translated_html = translate_sortition_error_to_html(error)
+        report.add_line(translated_msg)
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
-            log_message=str(error),
-            error_message=error.to_html(),
+            log_message=translated_msg,
+            error_message=translated_html,
             completed_at=datetime.now(UTC),
             run_report=report,
             session_factory=session_factory,
@@ -410,7 +414,10 @@ def _internal_run_select(
         else:
             error = report.last_error()
             if error:
-                error_message = error.to_html() if isinstance(error, errors.SortitionBaseError) else str(error)
+                if isinstance(error, errors.SortitionBaseError):
+                    error_message = translate_sortition_error_to_html(error)
+                else:
+                    error_message = str(error)
             else:
                 error_message = _("Selection algorithm could not find panels meeting the specified criteria")
             _update_selection_record(
