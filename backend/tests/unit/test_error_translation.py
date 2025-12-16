@@ -4,6 +4,7 @@ ABOUTME: Tests translation of sortition_algorithms errors using error codes and 
 from typing import cast
 from unittest.mock import patch
 
+from sortition_algorithms.error_messages import ERROR_MESSAGES
 from sortition_algorithms.errors import (
     BadDataError,
     ParseTableErrorMsg,
@@ -37,7 +38,7 @@ class TestTranslateSimpleError:
             result = translate_sortition_error(error)
 
             # Verify it called gettext with the right key
-            mock_gettext.assert_called_once_with("errors.missing_column")
+            mock_gettext.assert_called_once_with("No '%(column)s' column %(error_label)s found in %(data_container)s!")
             # Verify the result has parameters substituted
             assert result == "Missing 'id' column for people in CSV file!"
 
@@ -125,7 +126,7 @@ class TestTranslateParseTableMultiError:
             def fake_gettext(key: str) -> str:
                 # Mock translations for error codes and context templates
                 translations = {
-                    "errors.not_a_number": "'%(value)s' is not a valid number",
+                    "errors.not_a_number": "'%(value)s' is not a number",
                     "errors.empty_value_in_feature": "Empty value in %(feature_column_name)s %(feature_name)s",
                     "errors.parse_error_single_column": "%(msg)s: for row %(row)s, column header %(key)s",
                 }
@@ -136,7 +137,7 @@ class TestTranslateParseTableMultiError:
             result = translate_sortition_error(error)
 
             # Should have translated both errors with context
-            assert "'abc' is not a valid number: for row 2, column header age" in result
+            assert "'abc' is not a number: for row 2, column header age" in result
             assert "Empty value in gender Gender: for row 3, column header gender" in result
             # Should be separated by newlines
             assert "\n" in result
@@ -158,8 +159,8 @@ class TestTranslateParseTableMultiError:
 
             def fake_gettext(key: str) -> str:
                 translations = {
-                    "errors.min_greater_than_max": "Min (%(min)s) > Max (%(max)s)",
-                    "errors.parse_error_multi_column": "%(msg)s: for row %(row)s, column headers %(keys)s",
+                    ERROR_MESSAGES["min_greater_than_max"]: "Min (%(min)s) > Max (%(max)s)",
+                    ERROR_MESSAGES["parse_error_multi_column"]: "%(msg)s: for row %(row)s, column headers %(keys)s",
                 }
                 return translations.get(key, key)
 
@@ -273,7 +274,7 @@ class TestErrorTranslationIntegration:
 
             result = translate_sortition_error(error)
 
-            mock_gettext.assert_called_once_with("errors.spreadsheet_not_found")
+            mock_gettext.assert_called_once_with("Google spreadsheet not found: %(spreadsheet_name)s.")
             assert result == "Spreadsheet non trouvé: MySpreadsheet"
 
     def test_real_tab_not_found_error(self) -> None:

@@ -4,6 +4,7 @@ ABOUTME: Tests translation of sortition_algorithms RunReport messages using mess
 from unittest.mock import patch
 
 from sortition_algorithms.errors import BadDataError
+from sortition_algorithms.report_messages import REPORT_MESSAGES
 from sortition_algorithms.utils import ReportLevel, RunReport
 
 from opendlp.service_layer.report_translation import translate_run_report_to_html
@@ -22,7 +23,7 @@ class TestTranslateRunReportToHtml:
 
             result = translate_run_report_to_html(report)
 
-            mock_gettext.assert_called_once_with("report.loading_features_from_file")
+            mock_gettext.assert_called_once_with(REPORT_MESSAGES["loading_features_from_file"])
             assert "Chargement des caractéristiques depuis le fichier /path/to/features.csv." in result
 
     def test_translate_report_without_message_code_uses_english(self) -> None:
@@ -45,8 +46,10 @@ class TestTranslateRunReportToHtml:
 
             def fake_gettext(key: str) -> str:
                 translations = {
-                    "report.loading_features_from_string": "Chargement des caractéristiques depuis une chaîne.",
-                    "report.features_found": "Nombre de caractéristiques trouvées: %(count)s",
+                    REPORT_MESSAGES[
+                        "loading_features_from_string"
+                    ]: "Chargement des caractéristiques depuis une chaîne.",
+                    REPORT_MESSAGES["features_found"]: "Nombre de caractéristiques trouvées: %(count)s",
                 }
                 return translations.get(key, key)
 
@@ -171,8 +174,8 @@ class TestTranslateRunReportToHtml:
 
             def fake_gettext(key: str) -> str:
                 translations = {
-                    "report.trial_number": "Trial: %(trial)s",
-                    "report.loading_features_from_string": "Loading features...",
+                    REPORT_MESSAGES["trial_number"]: "Trial: %(trial)s",
+                    REPORT_MESSAGES["loading_features_from_string"]: "Loading features...",
                 }
                 return translations.get(key, key)
 
@@ -217,10 +220,10 @@ class TestTranslateRunReportToHtml:
 
             def fake_gettext(key: str) -> str:
                 translations = {
-                    "report.loading_features_from_file": "Chargement: %(file_path)s",
-                    "report.features_found": "Trouvé: %(count)s",
-                    "report.using_legacy_algorithm": "Utilisation de l'algorithme hérité.",
-                    "report.selection_success": "SUCCÈS!!",
+                    REPORT_MESSAGES["loading_features_from_file"]: "Chargement: %(file_path)s",
+                    REPORT_MESSAGES["features_found"]: "Trouvé: %(count)s",
+                    REPORT_MESSAGES["using_legacy_algorithm"]: "Utilisation de l'algorithme hérité.",
+                    REPORT_MESSAGES["selection_success"]: "SUCCÈS!!",
                 }
                 return translations.get(key, key)
 

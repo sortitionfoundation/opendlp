@@ -3,6 +3,7 @@ ABOUTME: Provides functions to translate RunReport messages from sortition_algor
 
 import html as html_module
 
+from sortition_algorithms.report_messages import REPORT_MESSAGES
 from sortition_algorithms.utils import ReportLevel, RunError, RunLineLevel, RunReport, RunTable
 from tabulate import tabulate  # type: ignore[import-untyped]
 
@@ -63,8 +64,7 @@ def _translate_line_to_html(line_level: RunLineLevel, include_logged: bool) -> s
     # Determine the message text (translated if possible)
     if line_level.message_code:
         try:
-            msg_key = f"report.{line_level.message_code}"
-            message_text = _(msg_key) % line_level.message_params
+            message_text = _(REPORT_MESSAGES[line_level.message_code]) % line_level.message_params
         except (KeyError, TypeError, ValueError):
             # Fallback to English if translation fails
             message_text = line_level.line

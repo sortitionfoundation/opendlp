@@ -1,7 +1,13 @@
 """ABOUTME: Translation helpers for sortition-algorithms library errors
 ABOUTME: Provides functions to translate error messages from sortition_algorithms using error codes and parameters"""
 
-from sortition_algorithms.errors import ParseTableMultiError, SelectionMultilineError, SortitionBaseError
+from sortition_algorithms.error_messages import ERROR_MESSAGES
+from sortition_algorithms.errors import (
+    ParseTableMultiError,
+    ParseTableMultiValueErrorMsg,
+    SelectionMultilineError,
+    SortitionBaseError,
+)
 
 from opendlp.translations import gettext as _
 
@@ -69,9 +75,8 @@ def _translate_simple_error(error: SortitionBaseError) -> str:
     """Translate a simple sortition error using its error code."""
     if hasattr(error, "error_code") and error.error_code:
         # Translate using the error code and parameters
-        msg_key = f"errors.{error.error_code}"
         try:
-            translated_msg = _(msg_key) % error.error_params
+            translated_msg = _(ERROR_MESSAGES[error.error_code]) % error.error_params
             return translated_msg
         except (KeyError, TypeError, ValueError):
             # Fallback if translation fails
@@ -81,32 +86,29 @@ def _translate_simple_error(error: SortitionBaseError) -> str:
         return str(error)
 
 
-def _translate_parse_table_multi_error(error: ParseTableMultiError) -> str:
-    """Translate a ParseTableMultiError with all its sub-errors."""
+def _translate_parse_table_multi_error_lines(error: ParseTableMultiError) -> list[str]:
+    """Translate a ParseTableMultiError with all its sub-errors into list of lines."""
     translated_lines = []
 
     for sub_error in error.all_errors:
         if sub_error.error_code:
             # Translate core message
-            msg_key = f"errors.{sub_error.error_code}"
             try:
-                core_msg = _(msg_key) % sub_error.error_params
+                core_msg = _(ERROR_MESSAGES[sub_error.error_code]) % sub_error.error_params
             except (KeyError, TypeError, ValueError):
                 # Fallback to original message if translation fails
                 core_msg = sub_error.msg
 
             # Add context (row/column information)
             try:
-                if hasattr(sub_error, "keys"):  # Multi-column error
-                    context_key = "errors.parse_error_multi_column"
-                    context = _(context_key) % {
+                if isinstance(sub_error, ParseTableMultiValueErrorMsg):
+                    context = _(ERROR_MESSAGES["parse_error_multi_column"]) % {
                         "msg": core_msg,
                         "row": sub_error.row,
                         "keys": ", ".join(sub_error.keys),
                     }
                 else:  # Single-column error
-                    context_key = "errors.parse_error_single_column"
-                    context = _(context_key) % {
+                    context = _(ERROR_MESSAGES["parse_error_single_column"]) % {
                         "msg": core_msg,
                         "row": sub_error.row,
                         "key": sub_error.key,
@@ -119,45 +121,14 @@ def _translate_parse_table_multi_error(error: ParseTableMultiError) -> str:
             # Fallback to English message
             translated_lines.append(str(sub_error))
 
-    return "\n".join(translated_lines)
+    return translated_lines
+
+
+def _translate_parse_table_multi_error(error: ParseTableMultiError) -> str:
+    """Translate a ParseTableMultiError with all its sub-errors."""
+    return "\n".join(_translate_parse_table_multi_error_lines(error))
 
 
 def _translate_parse_table_multi_error_to_html(error: ParseTableMultiError) -> str:
     """Translate a ParseTableMultiError with all its sub-errors to HTML."""
-    translated_lines = []
-
-    for sub_error in error.all_errors:
-        if sub_error.error_code:
-            # Translate core message
-            msg_key = f"errors.{sub_error.error_code}"
-            try:
-                core_msg = _(msg_key) % sub_error.error_params
-            except (KeyError, TypeError, ValueError):
-                # Fallback to original message if translation fails
-                core_msg = sub_error.msg
-
-            # Add context (row/column information)
-            try:
-                if hasattr(sub_error, "keys"):  # Multi-column error
-                    context_key = "errors.parse_error_multi_column"
-                    context = _(context_key) % {
-                        "msg": core_msg,
-                        "row": sub_error.row,
-                        "keys": ", ".join(sub_error.keys),
-                    }
-                else:  # Single-column error
-                    context_key = "errors.parse_error_single_column"
-                    context = _(context_key) % {
-                        "msg": core_msg,
-                        "row": sub_error.row,
-                        "key": sub_error.key,
-                    }
-                translated_lines.append(context)
-            except (KeyError, TypeError, ValueError):
-                # Fallback if context formatting fails
-                translated_lines.append(str(sub_error))
-        else:
-            # Fallback to English message
-            translated_lines.append(str(sub_error))
-
-    return "<br />".join(translated_lines)
+    return "<br />".join(_translate_parse_table_multi_error_lines(error))
