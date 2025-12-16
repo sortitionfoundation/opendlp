@@ -1,6 +1,7 @@
 """ABOUTME: Pytest configuration and fixtures for OpenDLP tests
 ABOUTME: Provides test fixtures and configuration for unit, integration, and e2e tests"""
 
+import logging
 import os
 import shutil
 import subprocess
@@ -21,6 +22,25 @@ from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.service_layer import security
 
 pytest_plugins = ["tests.bdd.shared.ui_shared"]
+
+
+@pytest.fixture(autouse=True)
+def reset_logging_handlers():
+    """Reset sortition_algorithms logging handlers to avoid database writes in unit tests.
+
+    This prevents SelectionRunRecordHandler from persisting across tests when it's
+    set up by Celery tasks that call _set_up_celery_logging().
+    """
+    # Get the sortition_algorithms user logger
+    user_logger = logging.getLogger("sortition_algorithms_user")
+    # Store original handlers
+    original_handlers = user_logger.handlers.copy()
+    # Clear handlers to prevent SelectionRunRecordHandler from being used
+    user_logger.handlers.clear()
+    user_logger.addHandler(logging.NullHandler())
+    yield
+    # Restore original handlers
+    user_logger.handlers = original_handlers
 
 
 @pytest.fixture(autouse=True)

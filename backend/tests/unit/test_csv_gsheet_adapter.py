@@ -1,7 +1,6 @@
 """ABOUTME: Unit tests for CSVGSheetDataSource adapter
 ABOUTME: Tests the adapter that wraps CSV data sources for use in place of GSheet data sources"""
 
-import logging
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -13,20 +12,6 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource, FakeSprea
 
 class TestCSVGSheetDataSource:
     """Test the CSVGSheetDataSource adapter."""
-
-    @pytest.fixture(autouse=True)
-    def reset_logging(self):
-        """Reset logging handlers to avoid database writes in unit tests."""
-        # Get the sortition_algorithms user logger
-        user_logger = logging.getLogger("sortition_algorithms_user")
-        # Store original handlers
-        original_handlers = user_logger.handlers.copy()
-        # Clear handlers to prevent SelectionRunRecordHandler from being used
-        user_logger.handlers.clear()
-        user_logger.addHandler(logging.NullHandler())
-        yield
-        # Restore original handlers
-        user_logger.handlers = original_handlers
 
     @pytest.fixture
     def csv_data_source(self, tmp_path: Path):
