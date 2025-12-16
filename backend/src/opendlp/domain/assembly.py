@@ -277,6 +277,7 @@ class AssemblyGSheet:
                 feature_tab_name=self.replace_targets_tab,
                 people_tab_name=self.replace_registrants_tab,
                 already_selected_tab_name=self.already_selected_tab,
+                id_column=self.id_column,
                 auth_json_path=config.get_google_auth_json_path(),
             )
         else:
