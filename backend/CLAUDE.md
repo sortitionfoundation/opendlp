@@ -57,7 +57,6 @@ uv add --group dev package_name  # for dev dependencies
 ```bash
 # Run all tests with coverage
 just test
-# or: uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
 
 # Watch tests on file changes
 just watch-tests
@@ -71,12 +70,13 @@ uv run deptry src             # Check for obsolete dependencies
 uv run pre-commit run -a      # Run linting
 ```
 
+See [docs/testing.md](docs/testing.md) for complete testing strategy including BDD tests.
+
 ### Running the Application
 
 ```bash
 # Local development with Flask
 just run
-# or: uv run flask run --debug
 
 # Flask shell
 just flask-shell
@@ -84,13 +84,13 @@ just flask-shell
 # Run with Docker
 just start-docker         # Detached mode
 just start-docker-b       # Blocking mode with logs
-just restart-docker       # Stop, rebuild, start detached
-just restart-docker-b     # Stop, rebuild, start blocking
 
 # Services only (PostgreSQL for local development)
 just start-services-docker
 just stop-services-docker
 ```
+
+See [docs/docker.md](docs/docker.md) for complete Docker setup and deployment guide.
 
 ### Database Access
 
@@ -101,94 +101,27 @@ just psql
 
 ## Configuration
 
-Configuration is managed through `src/opendlp/config.py` which loads from environment variables:
+Configuration is managed through `src/opendlp/config.py` which loads from environment variables.
 
-### Required Environment Variables
+### Key Environment Variables
+
+**Required in production:**
 
 - `SECRET_KEY`: Flask secret key (must be set in production)
 - `DATABASE_URL` or `DB_HOST`/`DB_PASSWORD`: PostgreSQL connection
 - `REDIS_HOST`: Redis connection for sessions
 
-### Optional Environment Variables
+**Optional:**
 
 - `FLASK_ENV`: development/testing/production (default: development)
 - `DEBUG`: true/false (default: false)
 - `OAUTH_GOOGLE_CLIENT_ID`/`OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth
 - `TASK_TIMEOUT_HOURS`: Background task timeout in hours (default: 24)
 - `INVITE_EXPIRY_HOURS`: Invite expiration (default: 168)
+- `EMAIL_ADAPTER`: Email backend type - "console" or "smtp"
+- `SMTP_*`: SMTP configuration for email sending
 
-### Email Configuration
-
-- `EMAIL_ADAPTER`: Email backend type - "console" (logs to console) or "smtp" (sends via SMTP)
-- `SMTP_HOST`: SMTP server hostname (set to "postfix" in production compose)
-- `SMTP_PORT`: SMTP server port (default: 587, use 25 for Postfix container)
-- `SMTP_USERNAME`: SMTP authentication username (not needed for internal Postfix relay)
-- `SMTP_PASSWORD`: SMTP authentication password (not needed for internal Postfix relay)
-- `SMTP_USE_TLS`: Whether to use TLS encryption (default: true, set to false for internal Postfix)
-- `SMTP_FROM_EMAIL`: Default sender email address
-- `SMTP_FROM_NAME`: Default sender display name
-
-For production SMTP relay configuration with Postfix, see `docs/postfix_configuration.md`.
-
-### Configuration Classes
-
-- `FlaskConfig`: Base development configuration
-- `FlaskTestConfig`: Uses SQLite in-memory database
-- `FlaskProductionConfig`: Production with stricter validation
-
-Use `get_config()` to get the appropriate configuration based on `FLASK_ENV`.
-
-## Testing Strategy
-
-The project has three levels of testing:
-
-- **Unit tests** (`tests/unit/`): Domain logic, no external dependencies
-- **Integration tests** (`tests/integration/`): Database operations, service layer
-- **End-to-end tests** (`tests/e2e/`): Complete user workflows
-
-All test output must be pristine to pass. Test configuration is in `pyproject.toml`.
-
-### BDD Testing
-
-The project includes Behavior-Driven Development (BDD) tests using pytest-bdd and Playwright for end-to-end testing:
-
-**BDD Test Structure:**
-
-- `features/` - Gherkin feature files (.feature)
-- `tests/bdd/` - BDD test implementation and fixtures
-- `tests/bdd/conftest.py` - BDD-specific fixtures including server management
-- `tests/bdd/config.py` - Test configuration (URLs, credentials)
-- `tests/bdd/shared/ui_shared.py` - Shared step definitions
-
-**Running BDD Tests:**
-
-```bash
-# Run BDD tests (shows browser)
-just test-bdd
-
-# Run BDD tests headless (for CI)
-just test-bdd-headless
-
-# Install development dependencies (including Playwright browsers)
-just install-dev
-```
-
-**BDD Test Infrastructure:**
-
-- Uses `FlaskTestPostgresConfig` (port 54322) for database isolation
-- Auto-starts Flask test server on port 5002 (avoids conflict with dev server on 5000)
-- Creates admin user and fresh database state for each test
-- Service layer integration for creating test data (invites, users)
-- Playwright for browser automation with cross-browser support
-
-**Key BDD Fixtures:**
-
-- `test_database` - PostgreSQL test database setup
-- `test_server` - Auto-managed Flask server (session scope)
-- `admin_user` - Pre-created admin user for testing
-- `user_invite` - Valid invite code generated via service layer
-- `clean_database` - Fresh database state per test
-- `logged_in_page` - Browser page with admin user logged in
+See [docs/configuration.md](docs/configuration.md) for complete configuration reference.
 
 ## Core Domain Models
 
@@ -215,8 +148,8 @@ just install-dev
 - All code files start with 2-line ABOUTME comment
 - Type hints required (`mypy` configured with strict settings)
 - Line length: 120 characters (configured in Ruff)
-- don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
-- prefer the empty string as the default for string arguments, rather than `str | None`
+- Don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
+- Prefer the empty string as the default for string arguments, rather than `str | None`
 
 ### Internationalization (i18n)
 
@@ -224,11 +157,13 @@ All user-facing strings must be wrapped in gettext calls for translation:
 
 - Use `_()` for immediate translation in templates and flash messages
 - Use `_l()` for lazy translation in exceptions and class-level definitions
-- Import from `opendlp.translations`: `from opendlp.translations import getext as _, lazy_gettext as _l`
+- Import from `opendlp.translations`: `from opendlp.translations import gettext as _, lazy_gettext as _l`
 - In templates use: `{{ _('Text to translate') }}`
 - Support parameters: `_('Hello %(name)s', name=user.name)`
 
-See `docs/translations.md` for translation management workflow.
+See [docs/translations.md](docs/translations.md) for translation management workflow.
+
+See [docs/sortition_error_translations.md](docs/sortition_error_translations.md) for translating sortition-algorithms library errors and reports.
 
 ### Database Patterns
 
@@ -257,255 +192,26 @@ This approach maintains the separation between domain objects (plain Python) and
 - Werkzeug.security for password hashing
 - Role-based access control throughout
 
-## Background Tasks
+## Further Documentation
 
-The application includes a background task system for long-running operations like stratified selections:
+### General Documentation
 
-- Tasks run with configurable timeouts
-- Status tracking: running, complete, failed
-- Error handling and retry capability
-- Located in `service_layer/tasks.py`
+- [Testing Strategy](docs/testing.md) - Unit, integration, e2e, and BDD testing
+- [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes
+- [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
+- [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
+- [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
+- [Translation Management](docs/translations.md) - i18n workflow for application strings
+- [Sortition Error Translations](docs/sortition_error_translations.md) - Translating sortition-algorithms library errors and reports
+- [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
+- [Google Service Account Setup](docs/google_service_account.md) - Google Sheets integration credentials
+- [Project Specification](docs/spec.md) - Original project specification
 
-## Docker Setup
+### Agent-Specific Documentation
 
-Docker Compose configurations:
+When working on frontend issues, see:
 
-- `compose.yaml`: Full application with PostgreSQL
-- `compose.production.yaml`: Full application with PostgreSQL and Postfix relay, for production deployment
-- `compose.localdev.yaml`: Services only for local development
-- `compose.test.yaml`: Services only for local testing
-
-The application runs on port 5005, PostgreSQL on 54321 (mapped from 5432).
-
-### Production Services
-
-The production compose file (`compose.production.yaml`) includes:
-- `app`: Main Flask application (Gunicorn)
-- `app_celery`: Celery worker for background tasks
-- `app_celery_beat`: Celery beat scheduler
-- `postgres`: PostgreSQL database
-- `redis`: Redis for sessions and Celery broker
-- `postfix`: SMTP relay for email sending (see `docs/postfix_configuration.md`)
-
-## Frontend Testing and Debugging
-
-### Using Playwright MCP Server
-
-When troubleshooting HTML, CSS, and JavaScript issues in the application frontend, use the Playwright MCP server tools:
-
-1. **Accessing frontend pages**:
-   - Navigate to `http://localhost:5000/` or the configured port
-   - Use `mcp__playwright__browser_navigate` to open pages
-   - Use `mcp__playwright__browser_snapshot` to capture the current page state
-   - Use `mcp__playwright__browser_console_messages` to view JavaScript console output
-
-2. **Common debugging workflows**:
-   - **HTML/CSS issues**: Use `mcp__playwright__browser_snapshot` to inspect the DOM structure
-   - **JavaScript errors**: Check `mcp__playwright__browser_console_messages` for error logs
-   - **Interactive debugging**: Use `mcp__playwright__browser_evaluate` to run JavaScript in the page context
-   - **Network issues**: Monitor API calls with `mcp__playwright__browser_network_requests`
-
-## Frontend Design System
-
-### GOV.UK Design System with Sortition Foundation Branding
-
-This project uses the GOV.UK Frontend framework v5.11.1 with custom Sortition Foundation styling. The design system is built using Sass/SCSS compilation.
-
-**Key Files:**
-
-- `src/scss/application.scss` - Main SCSS file importing govuk-frontend and custom styles
-- `src/scss/_sortition.scss` - Sortition Foundation color palette variables
-- `static/css/application.css` - Compiled CSS output (never edit directly)
-
-### Build Pipeline
-
-CSS must be built using npm/Sass before running the application:
-
-```bash
-# Build CSS once
-just build-css
-# or: npm run build:sass
-
-# Watch and rebuild CSS on changes
-just watch-css
-# or: npm run watch:sass
-
-# Build and run application
-just run  # Automatically builds CSS first
-```
-
-### Sortition Foundation Color Palette
-
-Custom color variables defined in `_sortition.scss`:
-
-```scss
-$hot-pink: #e91e63;
-$burnt-orange: #ff7043;
-$purple-red: #9c27b0;
-$blood-red: #c62828;
-$sap-green: #4caf50;
-$woad-blue: #3f51b5;
-$scarlet-red: #f44336;
-$saffron-yellow: #ffeb3b;
-$buttermilk: #f5f5dc;
-$dark-grey: #424242;
-$white: #ffffff;
-```
-
-### HTML Template Requirements
-
-All templates must extend `base.html` which includes:
-
-1. **Required CSS classes on body element:**
-
-   ```html
-   <body class="govuk-template__body govuk-frontend-supported"></body>
-   ```
-
-2. **CSS import (compiled, not CDN):**
-
-   ```html
-   <link
-     rel="stylesheet"
-     href="{{ url_for('static', filename='css/application.css') }}"
-   />
-   ```
-
-3. **JavaScript initialization:**
-
-   ```html
-   <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
-   <script>
-     document.addEventListener("DOMContentLoaded", function () {
-       if (typeof window.GOVUKFrontend !== "undefined") {
-         window.GOVUKFrontend.initAll();
-       }
-     });
-   </script>
-   ```
-
-### GOV.UK Component Usage
-
-**Common Layout Structure:**
-
-```html
-<div class="govuk-width-container">
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
-      <!-- Content -->
-    </div>
-  </div>
-</div>
-```
-
-**Grid System:**
-
-- `govuk-grid-column-full` - Full width
-- `govuk-grid-column-two-thirds` - 2/3 width
-- `govuk-grid-column-one-third` - 1/3 width
-- `govuk-grid-column-one-half` - 1/2 width
-
-**Typography:**
-
-- `govuk-heading-xl` - Extra large heading
-- `govuk-heading-l` - Large heading
-- `govuk-heading-m` - Medium heading
-- `govuk-heading-s` - Small heading
-- `govuk-body` - Body text
-- `govuk-body-l` - Large body text
-- `govuk-body-s` - Small body text
-
-**Buttons:**
-
-- `govuk-button` - Primary button
-- `govuk-button--secondary` - Secondary button
-- `govuk-button--start` - Start button with arrow icon
-- `govuk-button--white` - Custom white button (Sortition styling)
-
-**Navigation:**
-
-- Mobile-responsive navigation handled by GOV.UK Frontend JavaScript
-- Custom styling for Sortition Foundation branding in `application.scss`
-- Mobile menu button becomes visible on screens < 48.0625em
-- Cross-browser compatibility (Chrome/Firefox differences handled)
-
-**Tags and Status:**
-
-```html
-<strong class="govuk-tag govuk-tag--green">Status</strong>
-<strong class="govuk-tag govuk-tag--blue">Role</strong>
-<strong class="govuk-tag govuk-tag--red">Alert</strong>
-```
-
-**Summary Lists (for key-value data):**
-
-```html
-<dl class="govuk-summary-list">
-  <div class="govuk-summary-list__row">
-    <dt class="govuk-summary-list__key">Label</dt>
-    <dd class="govuk-summary-list__value">Value</dd>
-  </div>
-</dl>
-```
-
-### Custom Components
-
-**Assembly Cards:**
-
-```html
-<div class="assembly-card">
-  <h3 class="govuk-heading-m">Title</h3>
-  <p class="govuk-body-s">Description</p>
-  <dl class="govuk-summary-list">
-    <!-- Summary list content -->
-  </dl>
-</div>
-```
-
-**Feature Cards (front page):**
-
-```html
-<div class="feature-card">
-  <h3 class="govuk-heading-m">Feature Title</h3>
-  <p class="govuk-body">Feature description</p>
-</div>
-```
-
-**Key Details Bars (dashboard):**
-
-```html
-<div class="dwp-key-details-bar">
-  <div class="dwp-key-details-bar__key-details">
-    <dt class="govuk-heading-s">Label</dt>
-    <dd class="dwp-key-details-bar__primary">Value</dd>
-  </div>
-</div>
-```
-
-**Hero Section:**
-
-```html
-<div class="hero-section govuk-!-padding-top-6 govuk-!-padding-bottom-6">
-  <!-- Hero content with burnt-orange background -->
-</div>
-```
-
-### Accessibility Requirements
-
-- All interactive elements must be keyboard accessible
-- Color contrast ratios must meet WCAG standards
-- Screen reader compatibility maintained
-- Mobile navigation close button hidden but functional for assistive technology
-- Focus styles use saffron-yellow highlighting
-
-### Migration Notes
-
-When converting from Bootstrap to GOV.UK:
-
-- Replace Bootstrap grid (`row`, `col-*`) with GOV.UK grid (`govuk-grid-row`, `govuk-grid-column-*`)
-- Replace Bootstrap buttons (`btn`, `btn-primary`) with GOV.UK buttons (`govuk-button`)
-- Replace Bootstrap cards with custom styled components
-- Use GOV.UK spacing utilities (`govuk-!-margin-*`, `govuk-!-padding-*`)
-- Ensure all custom styling uses Sortition Foundation color palette
-- Test mobile navigation across Chrome and Firefox
-- Verify CSS specificity doesn't conflict with GOV.UK base styles
+- [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
+- [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
+- [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
+- [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide

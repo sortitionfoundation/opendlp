@@ -242,3 +242,5 @@ strat = "strat"
 Parlament = "Parlament"
 # a french word in the tests of translations
 algorithme = "algorithme"
+# HashiCorp is leading to errors about Hashi -> Hash
+Hashi = "Hashi"
