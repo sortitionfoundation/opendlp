@@ -216,6 +216,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
+            translated_report_html=translate_run_report_to_html(result.run_report),
             run_id=run_id,
         ), 200
     except NotFoundError as e:
@@ -454,6 +455,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             run_record=result.run_record,
             celery_log_messages=result.log_messages,
             run_report=result.run_report,
+            translated_report_html=translate_run_report_to_html(result.run_report),
             run_id=run_id,
             min_select=min_select,
             max_select=max_select,
