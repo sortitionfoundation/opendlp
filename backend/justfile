@@ -29,12 +29,12 @@ test-nobdd:
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
 	@echo "🚀 Running BDD tests"
-	uv run python -m pytest tests/bdd/ -v --tb=short
+	uv run python -m pytest tests/bdd/ --verbose --tb=short
 
 # Run BDD tests in headless mode (for CI)
 test-bdd-headless:
 	@echo "🚀 Running BDD tests (headless)"
-	@CI=true uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
+	@CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
 
 # run the tests when an files change
 watch-tests:
@@ -95,7 +95,7 @@ flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FL
 
 # run a celery worker (for local dev)
 celery:
-  @uv run celery -A opendlp.entrypoints.celery.tasks worker --loglevel=info
+  @uv run celery --app opendlp.entrypoints.celery.tasks worker --loglevel=info
 
 # run gunicorn locally
 gunicorn:
@@ -131,12 +131,17 @@ migrate:
 # extract strings to translate from code and templates
 translate-regen:
   @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
-  uv run pybabel extract -F babel.cfg -k _l -k N_ -o translations/messages.pot . `uv run python -c "import sortition_algorithms, os; print(os.path.dirname(sortition_algorithms.__file__))"`
-  uv run pybabel update -i translations/messages.pot -d translations
+  uv run pybabel extract \
+    --mapping-file=babel.cfg \
+    --keyword=_l -keyword=N_ \
+    --output-file=translations/messages.pot \
+    --ignore-dirs=thirdparty \
+    . `uv run python -c "import sortition_algorithms, pathlib; print(pathlib.Path(sortition_algorithms.__file__).parent.relative_to(pathlib.Path.cwd()))"`
+  uv run pybabel update --input-file=translations/messages.pot --output-dir=translations
 
 # compile translations from .po files so flask can use them
 translate-compile:
-  uv run pybabel compile -d translations
+  uv run pybabel compile --directory=translations
 
 # shut down docker
 stop-docker:
@@ -149,7 +154,7 @@ build-docker:
 
 # start docker and detach - note NO WATCH
 start-docker:
-	@docker compose up -d
+	@docker compose up --detach
 
 # start docker watching for changes and blocking - i.e. not detaching
 start-docker-b:
@@ -163,7 +168,7 @@ restart-docker-b: stop-docker build-docker start-docker-b
 
 # start the postgres only docker composer for services for local dev
 start-local-docker:
-  @docker compose -f compose.localdev.yaml up -d
+  @docker compose -f compose.localdev.yaml up --detach
 
 # stop the postgres only docker composer for services for local dev
 stop-local-docker:
@@ -171,7 +176,7 @@ stop-local-docker:
 
 # start the postgres only docker composer for services for tests
 start-test-docker:
-  @docker compose -f compose.test.yaml up -d
+  @docker compose -f compose.test.yaml up --detach
 
 # stop the postgres only docker composer for services for tests
 stop-test-docker:
