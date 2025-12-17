@@ -328,6 +328,7 @@ class SelectionRunRecord:
     status_stages: list[dict[str, str]] | None = None  # JSON: list of stage dicts with "name" and "status" keys
     selected_ids: list[list[str]] | None = None  # JSON: list of panels, each panel is list of IDs
     run_report: RunReport = field(default_factory=RunReport)  # serialized RunReport for persistence
+    # TODO: save the targets used for the selection, maybe other settings (address check, algorithm ...)
 
     def __post_init__(self) -> None:
         if self.created_at is None:
