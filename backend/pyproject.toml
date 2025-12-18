@@ -235,6 +235,11 @@ extend-exclude = [
   "thirdparty",
 ]
 
+[tool.typos.default]
+locale = "en"
+# if we want to switch to this, we have to change quite a lot!
+# locale = "en-gb"
+
 [tool.typos.default.extend-words]
 # used for 'strat select' - short for stratification
 strat = "strat"
@@ -244,3 +249,6 @@ Parlament = "Parlament"
 algorithme = "algorithme"
 # HashiCorp is leading to errors about Hashi -> Hash
 Hashi = "Hashi"
+# British English additions, for now at least
+superceded = "superceded"
+supercedes = "supercedes"

@@ -40,19 +40,19 @@ test-bdd-headless:
 watch-tests:
 	ls *.py | entr uv run pytest --tb=short
 
-# Install the virtual environment, dependencies, an editable copy of this install and install the pre-commit hooks
+# Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
 install:
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
-	@echo "🚀 Setting up pre-commit hooks"
-	@uv run pre-commit install
+	@echo "🚀 Setting up prek (pre-commit) hooks"
+	@uv tool run prek install
 	@echo "🚀 Install node dependencies & build sass into css"
 	@npm install
 	@npm run build:sass
 	@echo "🚀 Compile translations"
 	@uv run pybabel compile -d translations
-  @echo "sym link from AGENTS.md to CLAUDE.md"
-  @ln -s AGENTS.md CLAUDE.md
+	@echo "sym link from AGENTS.md to CLAUDE.md"
+	@ln -s AGENTS.md CLAUDE.md
 
 install-dev: install
 	@echo "🚀 Installing development dependencies"
@@ -62,8 +62,8 @@ install-dev: install
 check:
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
 	@uv lock --locked
-	@echo "🚀 Linting code: Running pre-commit"
-	@uv run pre-commit run --all-files
+	@echo "🚀 Linting code: Running prek (pre-commit)"
+	@uv tool run prek run --all-files
 	@echo "🚀 Static type checking: Running mypy"
 	@uv run mypy
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"
@@ -73,8 +73,8 @@ check:
 check-ci:
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
 	@uv lock --locked
-	@echo "🚀 Linting code: Running pre-commit"
-	@uv run pre-commit run --all-files --config .pre-commit-config-ci.yaml
+	@echo "🚀 Linting code: Running prek (pre-commit)"
+	@uv tool run prek run --all-files --config .pre-commit-config-ci.yaml
 	@echo "🚀 Static type checking: Running mypy"
 	@uv run mypy
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"

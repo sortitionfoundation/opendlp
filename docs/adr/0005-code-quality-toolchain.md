@@ -4,7 +4,9 @@ Date: 2025-08-28
 
 ## Status
 
-Accepted
+Partially superceded by [14. switch from pre-commit to prek](0014-switch-from-pre-commit-to-prek.md)
+
+The non-pre-commit parts of this ADR remain accepted.
 
 ## Context
 
