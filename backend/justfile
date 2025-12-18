@@ -51,6 +51,8 @@ install:
 	@npm run build:sass
 	@echo "🚀 Compile translations"
 	@uv run pybabel compile -d translations
+  @echo "sym link from AGENTS.md to CLAUDE.md"
+  @ln -s AGENTS.md CLAUDE.md
 
 install-dev: install
 	@echo "🚀 Installing development dependencies"

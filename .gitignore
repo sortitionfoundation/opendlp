@@ -330,3 +330,12 @@ vite.config.ts.timestamp-*
 
 # generated version
 generated_version.txt
+
+# this is a symlink to AGENTS.md
+CLAUDE.md
+
+# directories containing stuff that should never be committed
+# thirdparty contains repos I want the LLM to see, but not to commit
+backend/thirdparty/
+# this is a place for temporary files
+backend/scratchpad/
