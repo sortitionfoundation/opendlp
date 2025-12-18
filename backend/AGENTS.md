@@ -66,8 +66,8 @@ just check
 
 # Individual quality tools
 uv run mypy                    # Type checking
-uv run deptry src             # Check for obsolete dependencies
-uv run pre-commit run -a      # Run linting
+uv run deptry src              # Check for obsolete dependencies
+uv tool run prek run -a        # Run linting
 ```
 
 See [docs/testing.md](docs/testing.md) for complete testing strategy including BDD tests.

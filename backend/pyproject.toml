@@ -47,7 +47,6 @@ dev = [
   "deptry>=0.23.1",
   "mypy>=1.17.1",
   "playwright>=1.54.0",
-  "pre-commit>=4.3.0",
   "pytest>=8.4.1",
   "pytest-bdd>=8.1.0",
   "pytest-cov>=6.2.1",
