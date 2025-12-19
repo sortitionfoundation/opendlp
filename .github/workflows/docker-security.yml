@@ -36,7 +36,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan image with Grype (table output for logs)
-        uses: anchore/scan-action@v5
+        uses: anchore/scan-action@v7
         continue-on-error: true
         with:
           image: opendlp-backend:${{ github.sha }}
@@ -45,7 +45,7 @@ jobs:
           output-format: table
 
       - name: Scan image with Grype (SARIF output for GitHub Security)
-        uses: anchore/scan-action@v5
+        uses: anchore/scan-action@v7
         id: scan
         with:
           image: opendlp-backend:${{ github.sha }}
