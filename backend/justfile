@@ -74,7 +74,7 @@ check-ci:
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
 	@uv lock --locked
 	@echo "🚀 Linting code: Running prek (pre-commit)"
-	@uv tool run prek run --all-files --config .pre-commit-config-ci.yaml
+	@uv tool run prek run --all-files --config ../.pre-commit-config-ci.yaml
 	@echo "🚀 Static type checking: Running mypy"
 	@uv run mypy
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"
