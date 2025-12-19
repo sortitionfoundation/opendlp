@@ -1,0 +1,161 @@
+# this is to be used when the server has postgres running on the
+# server so we don't need the postgres image
+services:
+  app:
+    image: hamishsortition/opendlp
+    # set these two in the override
+    # mem_limit: 1g
+    # mem_reservation: 512m
+    oom_score_adj: -500 # Medium protection
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      postfix:
+        condition: service_healthy
+    environment:
+      - SMTP_HOST=postfix
+      - PYTHONUNBUFFERED=1
+    # define DB_PASSWORD in the .env file
+    env_file:
+      - .env
+      - .env.prod
+    ports:
+      - "8080:8080"
+    entrypoint: /app/bin/gunicorn
+    command:
+      - --bind=0.0.0.0:8080
+      - --log-level=info
+      - --logger-class=opendlp.logging.GunicornLogger
+      - "opendlp.entrypoints.flask_app:create_app()"
+    networks:
+      - opendlp_prod_net
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  app_celery:
+    image: hamishsortition/opendlp
+    # set these two in the override
+    # mem_limit: 10g # Room for 2 workers @ 3.5GB + overhead
+    # mem_reservation: 5g
+    oom_score_adj: 500 # POSITIVE = kill first during pressure
+    restart: on-failure:10 # Restart on OOM, but limit attempts
+    depends_on:
+      redis:
+        condition: service_healthy
+      postfix:
+        condition: service_healthy
+    environment:
+      - SMTP_HOST=postfix
+      - PYTHONUNBUFFERED=1
+    # define DB_PASSWORD in the .env file
+    env_file:
+      - .env
+      - .env.prod
+    entrypoint: /app/bin/celery
+    # might want to override some args
+    command:
+      - --app=opendlp.entrypoints.celery.tasks
+      - worker
+      - --loglevel=info
+      - --concurrency=2
+      - --max-memory-per-child=5000000
+      - --max-tasks-per-child=50
+      - --prefetch-multiplier=1
+    networks:
+      - opendlp_prod_net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "celery",
+          "-A",
+          "opendlp.entrypoints.celery.tasks",
+          "inspect",
+          "ping",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  app_celery_beat:
+    image: hamishsortition/opendlp
+    # set these two in the override
+    # mem_limit: 256m
+    # mem_reservation: 128m
+    oom_score_adj: -200 # Mild protection
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      postfix:
+        condition: service_healthy
+    environment:
+      - SMTP_HOST=postfix
+      - PYTHONUNBUFFERED=1
+    # define DB_PASSWORD in the .env file
+    env_file:
+      - .env
+      - .env.prod
+    entrypoint: /app/bin/celery
+    command:
+      - --app=opendlp.entrypoints.celery.tasks
+      - beat
+      - --loglevel=info
+    networks:
+      - opendlp_prod_net
+
+  redis:
+    image: redis:alpine
+    # set these two in the override
+    # mem_limit: 512m
+    # mem_reservation: 256m
+    oom_score_adj: -800 # High protection
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --maxmemory
+      - 450mb
+      - --maxmemory-policy
+      - allkeys-lru
+    networks:
+      - opendlp_prod_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postfix:
+    image: boky/postfix:latest
+    # set these two in the override
+    # mem_limit: 256m
+    # mem_reservation: 128m
+    oom_score_adj: -500 # Medium protection
+    restart: unless-stopped
+    # environment:
+    # Define relay settings in .env.prod file:
+    # RELAYHOST=smtp.example.com:587
+    # RELAYHOST_USERNAME=your-username
+    # RELAYHOST_PASSWORD=your-password
+    # ALLOWED_SENDER_DOMAINS=yourdomain.com
+    # MASQUERADE_DOMAINS=yourdomain.com
+    env_file:
+      - .env
+      - .env.prod
+    networks:
+      - opendlp_prod_net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  opendlp_prod_net:
+
+volumes:
+  sqla_opendlp_prod_pgdata:
