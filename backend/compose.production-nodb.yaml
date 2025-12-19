@@ -20,6 +20,8 @@ services:
     env_file:
       - .env
       - .env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8080:8080"
     entrypoint: /app/bin/gunicorn
@@ -55,6 +57,8 @@ services:
     env_file:
       - .env
       - .env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     entrypoint: /app/bin/celery
     # might want to override some args
     command:
@@ -100,6 +104,8 @@ services:
     env_file:
       - .env
       - .env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     entrypoint: /app/bin/celery
     command:
       - --app=opendlp.entrypoints.celery.tasks
