@@ -113,7 +113,7 @@ ENV PATH=/app/bin:$PATH
 # Don't run your app as root.
 RUN <<EOT
 groupadd -r app
-useradd -r --uid 950 -d /app -g app -N app
+useradd -r --uid 999 -d /app -g app -N app
 EOT
 
 # See <https://hynek.me/articles/docker-signals/>.
