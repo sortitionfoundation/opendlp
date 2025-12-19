@@ -1,0 +1,92 @@
+name: Docker Publish
+
+on:
+  workflow_run:
+    workflows: ["Main", "BDD Tests", "Docker Security Scan"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  check-and-publish:
+    runs-on: ubuntu-latest
+    # Only run if all workflows succeeded and this is on main branch
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event != 'pull_request'
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Verify all required workflows passed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredWorkflows = ['Main', 'BDD Tests', 'Docker Security Scan'];
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: '${{ github.event.workflow_run.head_sha }}',
+              status: 'completed',
+              per_page: 100
+            });
+
+            const completedWorkflows = workflowRuns.workflow_runs
+              .filter(run => run.head_sha === '${{ github.event.workflow_run.head_sha }}')
+              .reduce((acc, run) => {
+                acc[run.name] = run.conclusion;
+                return acc;
+              }, {});
+
+            console.log('Completed workflows:', completedWorkflows);
+
+            for (const workflow of requiredWorkflows) {
+              if (completedWorkflows[workflow] !== 'success') {
+                core.setFailed(`Required workflow "${workflow}" has not succeeded. Status: ${completedWorkflows[workflow] || 'not found'}`);
+                return;
+              }
+            }
+
+            console.log('All required workflows passed successfully');
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create generated_version.txt
+        run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+        working-directory: ./backend
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: hamishsortition/opendlp
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image published
+        run: |
+          echo "Docker image published successfully to hamishsortition/opendlp"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
