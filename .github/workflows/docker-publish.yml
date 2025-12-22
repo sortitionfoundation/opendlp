@@ -23,7 +23,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Verify all required workflows passed
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const requiredWorkflows = ['Main', 'BDD Tests', 'Docker Security Scan'];
