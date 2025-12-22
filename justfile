@@ -16,4 +16,4 @@ deploy-opendlp-production:
     echo "claude code is not allowed to deploy"
     exit 1
   fi
-  ssh opendlp-prod just opendlp-update
+  ssh opendlp-prod just --justfile /var/lib/opendlp/justfile opendlp-update
