@@ -334,6 +334,9 @@ generated_version.txt
 # this is a symlink to AGENTS.md
 CLAUDE.md
 
+# celery beat schedule db
+backend/celerybeat-schedule.db
+
 # directories containing stuff that should never be committed
 # thirdparty contains repos I want the LLM to see, but not to commit
 backend/thirdparty/

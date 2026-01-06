@@ -99,6 +99,10 @@ flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FL
 celery:
   @uv run celery --app opendlp.entrypoints.celery.tasks worker --loglevel=info
 
+# run celery beat, to kick off occasional
+celerybeat:
+  @uv run celery --app opendlp.entrypoints.celery.tasks beat --loglevel=info
+
 # run gunicorn locally
 gunicorn:
   @uv run gunicorn --bind=0.0.0.0:8081 --logger-class=opendlp.logging.GunicornLogger --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
