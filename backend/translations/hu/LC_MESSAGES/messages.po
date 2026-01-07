@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-15 20:47+0000\n"
+"POT-Creation-Date: 2026-01-07 11:44+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -597,29 +597,31 @@ msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:124
 #: src/opendlp/entrypoints/blueprints/gsheets.py:178
-#: src/opendlp/entrypoints/blueprints/gsheets.py:223
-#: src/opendlp/entrypoints/blueprints/gsheets.py:381
-#: src/opendlp/entrypoints/blueprints/gsheets.py:466
-#: src/opendlp/entrypoints/blueprints/gsheets.py:670
-#: src/opendlp/entrypoints/blueprints/gsheets.py:724
+#: src/opendlp/entrypoints/blueprints/gsheets.py:224
+#: src/opendlp/entrypoints/blueprints/gsheets.py:382
+#: src/opendlp/entrypoints/blueprints/gsheets.py:468
+#: src/opendlp/entrypoints/blueprints/gsheets.py:672
+#: src/opendlp/entrypoints/blueprints/gsheets.py:726
+#: src/opendlp/entrypoints/blueprints/gsheets.py:919
 #: src/opendlp/entrypoints/blueprints/main.py:68
-#: src/opendlp/entrypoints/blueprints/main.py:99
-#: src/opendlp/entrypoints/blueprints/main.py:142
-#: src/opendlp/entrypoints/blueprints/main.py:239
+#: src/opendlp/entrypoints/blueprints/main.py:116
+#: src/opendlp/entrypoints/blueprints/main.py:159
+#: src/opendlp/entrypoints/blueprints/main.py:256
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:130
 #: src/opendlp/entrypoints/blueprints/gsheets.py:184
-#: src/opendlp/entrypoints/blueprints/gsheets.py:229
-#: src/opendlp/entrypoints/blueprints/gsheets.py:387
-#: src/opendlp/entrypoints/blueprints/gsheets.py:472
-#: src/opendlp/entrypoints/blueprints/gsheets.py:676
-#: src/opendlp/entrypoints/blueprints/gsheets.py:730
+#: src/opendlp/entrypoints/blueprints/gsheets.py:230
+#: src/opendlp/entrypoints/blueprints/gsheets.py:388
+#: src/opendlp/entrypoints/blueprints/gsheets.py:474
+#: src/opendlp/entrypoints/blueprints/gsheets.py:678
+#: src/opendlp/entrypoints/blueprints/gsheets.py:732
+#: src/opendlp/entrypoints/blueprints/gsheets.py:925
 #: src/opendlp/entrypoints/blueprints/main.py:73
-#: src/opendlp/entrypoints/blueprints/main.py:103
-#: src/opendlp/entrypoints/blueprints/main.py:146
-#: src/opendlp/entrypoints/blueprints/main.py:245
+#: src/opendlp/entrypoints/blueprints/main.py:120
+#: src/opendlp/entrypoints/blueprints/main.py:163
+#: src/opendlp/entrypoints/blueprints/main.py:262
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
@@ -636,164 +638,174 @@ msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:208
-#: src/opendlp/entrypoints/blueprints/gsheets.py:413
-#: src/opendlp/entrypoints/blueprints/gsheets.py:700
+#: src/opendlp/entrypoints/blueprints/gsheets.py:414
+#: src/opendlp/entrypoints/blueprints/gsheets.py:702
+#: src/opendlp/entrypoints/blueprints/gsheets.py:891
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:315
+#: src/opendlp/entrypoints/blueprints/gsheets.py:316
 #, fuzzy, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:319
+#: src/opendlp/entrypoints/blueprints/gsheets.py:320
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:326
-#: src/opendlp/entrypoints/blueprints/gsheets.py:356
-#: src/opendlp/entrypoints/blueprints/gsheets.py:582
-#: src/opendlp/entrypoints/blueprints/gsheets.py:639
-#: src/opendlp/entrypoints/blueprints/gsheets.py:828
-#: src/opendlp/entrypoints/blueprints/gsheets.py:860
+#: src/opendlp/entrypoints/blueprints/gsheets.py:327
+#: src/opendlp/entrypoints/blueprints/gsheets.py:357
+#: src/opendlp/entrypoints/blueprints/gsheets.py:584
+#: src/opendlp/entrypoints/blueprints/gsheets.py:641
+#: src/opendlp/entrypoints/blueprints/gsheets.py:830
+#: src/opendlp/entrypoints/blueprints/gsheets.py:862
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:331
+#: src/opendlp/entrypoints/blueprints/gsheets.py:332
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:349
-#: src/opendlp/entrypoints/blueprints/gsheets.py:575
+#: src/opendlp/entrypoints/blueprints/gsheets.py:350
+#: src/opendlp/entrypoints/blueprints/gsheets.py:577
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:361
-#: src/opendlp/entrypoints/blueprints/gsheets.py:587
+#: src/opendlp/entrypoints/blueprints/gsheets.py:362
+#: src/opendlp/entrypoints/blueprints/gsheets.py:589
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:603
+#: src/opendlp/entrypoints/blueprints/gsheets.py:605
 msgid "Number of people to select is required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:609
+#: src/opendlp/entrypoints/blueprints/gsheets.py:611
 msgid "Number of people to select must be greater than zero"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:612
+#: src/opendlp/entrypoints/blueprints/gsheets.py:614
 msgid "Number of people to select must be a valid integer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:632
+#: src/opendlp/entrypoints/blueprints/gsheets.py:634
 #, fuzzy, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:644
+#: src/opendlp/entrypoints/blueprints/gsheets.py:646
 #, fuzzy
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:821
+#: src/opendlp/entrypoints/blueprints/gsheets.py:823
 #, fuzzy, python-format
 msgid "Failed to start listing task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:833
+#: src/opendlp/entrypoints/blueprints/gsheets.py:835
 #, fuzzy
 msgid "An unexpected error occurred while starting the listing task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:853
+#: src/opendlp/entrypoints/blueprints/gsheets.py:855
 #, fuzzy, python-format
 msgid "Failed to start deletion task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:865
+#: src/opendlp/entrypoints/blueprints/gsheets.py:867
 #, fuzzy
 msgid "An unexpected error occurred while starting the deletion task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:174
+#: src/opendlp/entrypoints/blueprints/gsheets.py:883
+#, fuzzy
+msgid "Task run not found"
+msgstr "Az oldal nem elérhető"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:914
+msgid "Unknown task type"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/main.py:191
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:178
+#: src/opendlp/entrypoints/blueprints/main.py:195
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/main.py:182
-#: src/opendlp/entrypoints/blueprints/main.py:185
+#: src/opendlp/entrypoints/blueprints/main.py:199
+#: src/opendlp/entrypoints/blueprints/main.py:202
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:214
+#: src/opendlp/entrypoints/blueprints/main.py:231
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:220
+#: src/opendlp/entrypoints/blueprints/main.py:237
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:226
-#: src/opendlp/entrypoints/blueprints/main.py:229
+#: src/opendlp/entrypoints/blueprints/main.py:243
+#: src/opendlp/entrypoints/blueprints/main.py:246
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:288
+#: src/opendlp/entrypoints/blueprints/main.py:305
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:295
+#: src/opendlp/entrypoints/blueprints/main.py:312
 msgid "User added to assembly successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:297
+#: src/opendlp/entrypoints/blueprints/main.py:314
 #, fuzzy
 msgid "Please check the form and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:303
+#: src/opendlp/entrypoints/blueprints/main.py:320
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/main.py:309
+#: src/opendlp/entrypoints/blueprints/main.py:326
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:315
+#: src/opendlp/entrypoints/blueprints/main.py:332
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:344
+#: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:348
+#: src/opendlp/entrypoints/blueprints/main.py:365
 msgid "User removed from assembly successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:354
+#: src/opendlp/entrypoints/blueprints/main.py:371
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:360
+#: src/opendlp/entrypoints/blueprints/main.py:377
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:366
+#: src/opendlp/entrypoints/blueprints/main.py:383
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -992,6 +1004,14 @@ msgstr ""
 #, fuzzy, python-format
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
+
+#: src/opendlp/service_layer/error_translation.py:105
+msgid "parse_error_multi_column"
+msgstr ""
+
+#: src/opendlp/service_layer/error_translation.py:111
+msgid "parse_error_single_column"
+msgstr ""
 
 #: src/opendlp/service_layer/exceptions.py:23
 #, python-format
@@ -1310,7 +1330,8 @@ msgid "User"
 msgstr ""
 
 #: templates/admin/invite_view.html:56 templates/admin/invites.html:67
-#: templates/admin/users.html:101 templates/main/view_assembly_details.html:13
+#: templates/admin/users.html:101 templates/main/view_assembly_data.html:54
+#: templates/main/view_assembly_details.html:13
 msgid "Status"
 msgstr "Állapot"
 
@@ -1347,6 +1368,7 @@ msgid "Used At"
 msgstr "Elkezdve"
 
 #: templates/admin/invite_view.html:92
+#: templates/main/view_assembly_data.html:82
 msgid "Unknown"
 msgstr ""
 
@@ -1431,12 +1453,14 @@ msgid "Expires"
 msgstr ""
 
 #: templates/admin/invites.html:70 templates/admin/users.html:103
+#: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #, fuzzy
 msgid "Actions"
 msgstr "Kiválasztás"
 
 #: templates/admin/invites.html:101 templates/admin/users.html:136
+#: templates/main/view_assembly_data.html:108
 msgid "View"
 msgstr ""
 
@@ -1607,11 +1631,11 @@ msgstr ""
 msgid "Name"
 msgstr "Vezetéknév"
 
-#: templates/admin/users.html:163
+#: templates/admin/users.html:163 templates/main/view_assembly_data.html:128
 msgid "Previous"
 msgstr ""
 
-#: templates/admin/users.html:192
+#: templates/admin/users.html:192 templates/main/view_assembly_data.html:155
 msgid "Next"
 msgstr ""
 
@@ -2064,10 +2088,12 @@ msgid "Full Run Report"
 msgstr "Teljesen lefuttatott riport"
 
 #: templates/gsheets/components/progress.html:20
+#: templates/main/view_assembly_data.html:57
 msgid "Started At"
 msgstr "Elkezdve"
 
 #: templates/gsheets/components/progress.html:23
+#: templates/main/view_assembly_data.html:58
 msgid "Completed At"
 msgstr "Befejezve"
 
@@ -2334,6 +2360,62 @@ msgstr "Kiválasztás megkezdéséhez:"
 msgid "Configure Google Spreadsheet settings first."
 msgstr "Kezdje a Google táblázat beállításainak megadásával."
 
+#: templates/main/view_assembly_data.html:41
+#, fuzzy
+msgid "Selection Run History"
+msgstr "Kiválasztás"
+
+#: templates/main/view_assembly_data.html:45
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(total)s runs"
+msgstr ""
+
+#: templates/main/view_assembly_data.html:55
+#, fuzzy
+msgid "Task Type"
+msgstr "Kész"
+
+#: templates/main/view_assembly_data.html:56
+#, fuzzy
+msgid "Started By"
+msgstr "Elkezdve"
+
+#: templates/main/view_assembly_data.html:59
+msgid "Comment"
+msgstr ""
+
+#: templates/main/view_assembly_data.html:68
+#, fuzzy
+msgid "Pending"
+msgstr "Függőben"
+
+#: templates/main/view_assembly_data.html:70
+#, fuzzy
+msgid "Running"
+msgstr "Folyamatban"
+
+#: templates/main/view_assembly_data.html:72
+#, fuzzy
+msgid "Completed"
+msgstr "Befejezve"
+
+#: templates/main/view_assembly_data.html:74
+msgid "Failed"
+msgstr ""
+
+#: templates/main/view_assembly_data.html:89
+#: templates/main/view_assembly_data.html:96
+msgid "N/A"
+msgstr ""
+
+#: templates/main/view_assembly_data.html:103
+msgid "None"
+msgstr ""
+
+#: templates/main/view_assembly_data.html:167
+msgid "No selection runs have been performed yet."
+msgstr ""
+
 #: templates/main/view_assembly_details.html:39
 msgid "Last Updated"
 msgstr "Utoljára módosítva"
@@ -2415,257 +2497,221 @@ msgstr "Bejelentkezés"
 msgid "User with username %(username)s already exists"
 msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:33
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:33
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:33
 #, python-format
 msgid "No '%(column)s' column %(error_label)s found in %(data_container)s!"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:34
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:34
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:34
 #, python-format
 msgid ""
 "MORE THAN 1 '%(column)s' column %(error_label)s found in "
 "%(data_container)s!"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:36
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:36
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:36
 #, python-format
 msgid ""
 "Failed to find person at position %(position)s in "
 "%(feature_name)s/%(feature_value)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:37
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:37
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:37
 msgid "Logic error - trying to create new tab before choosing suffix"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:38
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:38
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:38
 #, fuzzy, python-format
 msgid "Google spreadsheet not found: %(spreadsheet_name)s."
 msgstr "Google táblázat beállításai"
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:40
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:40
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:40
 #, python-format
 msgid ""
 "Error in Google sheet: no tab called '%(tab_name)s' found in spreadsheet "
 "'%(spreadsheet_title)s'."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:42
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:42
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:42
 #, python-format
 msgid ""
 "It seems like some variables do not have a value. Original exception: "
 "%(error)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:45
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:45
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:44
+#, python-format
+msgid "the header row in the %(tab_name)s tab contains duplicates: %(duplicates)s"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:48
 msgid ""
 "Running the test selection does not support generating a transparent "
 "lottery, so, if `test_selection` is true, `number_selections` must be 1."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:49
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:49
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:52
 msgid ""
 "Currently, the legacy algorithm does not support generating a transparent"
 " lottery, so `number_selections` must be set to 1."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:53
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:53
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:56
 #, python-format
 msgid ""
 "Unknown selection algorithm %(algorithm)r, must be either 'legacy', "
 "'leximin', 'maximin', or 'nash'."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:55
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:55
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:58
 #, python-format
 msgid "Could not find feature column, looked for column headers: %(column_names)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:57
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:57
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:60
 #, python-format
 msgid ""
 "Could not find feature value column, looked for column headers: "
 "%(column_names)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:59
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:59
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:62
 #, python-format
 msgid "Did not find required column name '%(field_name)s' in the input"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:60
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:60
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:63
 #, python-format
 msgid ""
 "Found MORE THAN 1 column named '%(field_name)s' in the input (found "
 "%(count)s)"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:61
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:61
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:64
 #, python-format
 msgid "Unexpected error in set of column names: %(headers)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:63
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:63
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:66
 msgid "check_same_address_columns must be a LIST of strings"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:64
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:64
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:67
 msgid "check_same_address_columns must be a list of STRINGS"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:66
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:66
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
 msgid ""
 "check_same_address is TRUE but there are no columns listed to check! FIX "
 "THIS and RESTART this program!"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:68
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:68
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:71
 msgid "columns_to_keep must be a LIST of strings"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:69
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:72
 msgid "columns_to_keep must be a list of STRINGS"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:70
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:70
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:73
 #, python-format
 msgid "selection_algorithm %(algorithm)s is not one of: %(valid_algorithms)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:72
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:72
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
 msgid "Leximin algorithm requires Gurobi solver which is not available"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:77
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:77
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:80
 #, python-format
 msgid "There is no %(field)s value set"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:78
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:78
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
 #, python-format
 msgid "'%(value)s' is not a number"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:79
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:79
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
 #, python-format
 msgid "Empty %(value_column_name)s in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:80
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:80
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:83
 #, python-format
 msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:81
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:84
 #, python-format
 msgid "min_flex (%(min_flex)s) should not be greater than min (%(min)s)"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:82
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
 #, python-format
 msgid "max_flex (%(max_flex)s) should not be less than max (%(max)s)"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:84
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:84
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:87
 #, python-format
 msgid "Value '%(value)s' not in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:85
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:88
 #, python-format
 msgid "Empty value in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:89
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:89
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:92
 #, python-format
 msgid "%(msg)s: for row %(row)s, column header %(key)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:90
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:90
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
 #, python-format
 msgid "%(msg)s: for row %(row)s, column headers %(keys)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:94
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:94
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
 #, python-format
 msgid "Parser error(s) while reading features from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:95
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:96
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:95
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:96
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:98
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:99
 #, python-format
 msgid "Parser error(s) while reading people from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:97
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
 #, python-format
 msgid "%(msg)s - see cell %(cell_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:98
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:98
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
 #, python-format
 msgid "%(msg)s - see cells %(cell_names)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:102
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:102
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
 #, python-format
 msgid "Found %(count)s IDs that have more than one row with different data"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:103
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:103
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:106
 #, python-format
 msgid "For ID '%(person_id)s' one row of data is: %(row_data)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:105
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
 #, python-format
 msgid ""
 "Not enough people with the value '%(feature_value)s' in category "
 "'%(feature_name)s' - the minimum is %(min)s but we only have %(count)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:109
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:109
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:112
 #, python-format
 msgid ""
 "The number of people to select (%(desired)s) is out of the range of the "
@@ -2673,144 +2719,120 @@ msgid ""
 "[%(min)s, %(max)s]."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:114
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:114
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
 msgid "The quotas are infeasible:"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:116
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:116
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:119
 #, python-format
 msgid "Inconsistent numbers in min and max in the %(feature_column_name)s input:"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:117
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
 #, python-format
 msgid ""
 "The smallest maximum is %(max_val)s for %(feature_column_name)s "
 "'%(max_feature)s'"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:118
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:118
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
 #, python-format
 msgid ""
 "The largest minimum is %(min_val)s for %(feature_column_name)s "
 "'%(min_feature)s'"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/error_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:123
 #, python-format
 msgid ""
 "You need to reduce the minimums for %(min_feature)s or increase the "
 "maximums for %(max_feature)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:32
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:32
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:32
 msgid "Loading features from string."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:33
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:33
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:33
 msgid "Loading people from string."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:34
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:34
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:34
 msgid "Loading already selected people from string."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:35
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:35
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:35
 msgid "No already selected data provided, using empty data."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:36
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:36
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:36
 #, python-format
 msgid "Loading features from file %(file_path)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:37
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:37
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:37
 #, python-format
 msgid "Loading people from file %(file_path)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:38
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:38
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:38
 #, python-format
 msgid "Loading already selected people from file %(file_path)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:39
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:39
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:39
 msgid ""
 "No already selected file provided or file does not exist, using empty "
 "data."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:40
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:40
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:40
 #, python-format
 msgid "Reading in '%(tab_name)s' tab in above Google sheet."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:41
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:41
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:41
 msgid "No already selected tab specified, using empty data."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:42
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:42
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:42
 #, python-format
 msgid "Number of features found: %(count)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:44
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:44
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:44
 #, python-format
 msgid ""
 "Reading in '%(tab_name)s' tab (header at row %(header_row)s) in above "
 "Google sheet."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:46
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:46
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:46
 #, python-format
 msgid "Opened Google Sheet: '%(title)s'."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:50
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:50
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:50
 msgid "Using legacy algorithm."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:51
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:51
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:51
 msgid "Using maximin algorithm."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:52
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:52
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:52
 msgid "Using leximin algorithm."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:53
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:53
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:53
 msgid "Using Nash algorithm."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:54
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:54
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:54
 msgid "Had to switch to ECOS solver."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:56
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:56
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:56
 msgid ""
 "The leximin algorithm requires the optimization library Gurobi to be "
 "installed (commercial, free academic licenses available). Switching to "
@@ -2818,16 +2840,14 @@ msgid ""
 "solvers."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:61
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:61
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:61
 #, python-format
 msgid ""
 "Algorithm produced distribution over %(total_committees)s committees, out"
 " of which %(non_zero_committees)s are chosen with positive probability."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:65
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:65
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:65
 #, python-format
 msgid ""
 "INFO: The distribution over panels is what is known as a 'basic "
@@ -2838,184 +2858,154 @@ msgid ""
 "num_agents=%(num_agents)s, min_probs=%(min_probs)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:70
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:70
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:70
 #, python-format
 msgid "Agent %(agent_id)s not contained in any feasible committee."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:71
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:71
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:71
 #, python-format
 msgid "Scaled Nash welfare is now: %(scaled_welfare)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:73
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:73
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:73
 #, python-format
 msgid ""
 "Maximin is at most %(at_most)s, can do %(upper_str)s with "
 "%(num_committees)s committees. Gap %(gap_str)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:76
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:76
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:76
 #, python-format
 msgid ""
 "Leximin is at most %(at_most)s, can do %(dual_obj_str)s with "
 "%(num_committees)s committees. Gap %(gap_str)s."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:81
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:81
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:81
 msgid "WARNING: Panel is not selected at random! Only use for testing!"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:82
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:82
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:82
 #, fuzzy
 msgid "Initial: (selected = 0)"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:83
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:83
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:83
 #, python-format
 msgid "Trial number: %(trial)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:84
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:84
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:84
 #, fuzzy
 msgid "SUCCESS!! Final:"
 msgstr "Sikerült"
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:85
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:85
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:85
 #, python-format
 msgid "Failed %(attempts)s times. Gave up."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:86
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:86
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:86
 #, python-format
 msgid "Failed one attempt. Selection Error raised - will retry. %(error)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:87
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:87
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:87
 msgid ""
 "No target checks done for multiple selections - please see your output "
 "files."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:89
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:89
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:89
 msgid ""
 "We do not calculate target details for multiple selections - please see "
 "your output files."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:94
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:94
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:94
 #, python-format
 msgid "Writing selected rows to %(file_path)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:95
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:95
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:95
 #, python-format
 msgid "Writing remaining rows to %(file_path)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:96
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:96
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:96
 #, python-format
 msgid "Writing selected people to tab: %(tab_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:97
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:97
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:97
 #, python-format
 msgid "Writing remaining people to tab: %(tab_name)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:98
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:98
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:98
 msgid "Finished writing selected (only)"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:99
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:99
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:99
 msgid "Finished writing both selected and remaining"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:103
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:103
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:103
 #, python-format
 msgid "WARNING: blank cell found in ID column in row %(row)s - skipped that line!"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:104
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:104
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:104
 msgid "WARNING: Duplicate people found:"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:105
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:105
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:105
 #, python-format
 msgid "Person with ID '%(person_id)s' appears %(count)s times in rows: %(rows)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:106
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:106
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:106
 #, python-format
 msgid "Found %(count)s IDs that have more than one row"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:107
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:107
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:107
 #, python-format
 msgid "Duplicated IDs are: %(ids)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:108
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:108
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:108
 msgid "All duplicate rows have identical data - processing continuing."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:109
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:109
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:109
 msgid "All agents are contained in some feasible committee."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:110
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:110
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:110
 #, python-format
 msgid "Heuristic successfully generated %(count)s additional committees."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:114
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:114
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:114
 #, python-format
 msgid "Using these settings: %(settings)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:115
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:115
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:115
 #, python-format
 msgid "Random seed set to: %(seed)s"
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:117
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
 #, python-format
 msgid ""
 "Wrote default settings to '%(file_path)s' - if editing is required, "
 "restart this app."
 msgstr ""
 
-#: /home/hamish/dev/sf/opendlp/backend/.venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:120
-#: thirdparty/sortition-algorithms/src/sortition_algorithms/report_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:120
 msgid ""
 "WARNING: Settings file is such that we do NOT check if respondents have "
 "same address."
