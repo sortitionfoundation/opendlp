@@ -27,31 +27,72 @@ jobs:
         with:
           script: |
             const requiredWorkflows = ['Main', 'BDD Tests', 'Docker Security Scan'];
-            const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head_sha: '${{ github.event.workflow_run.head_sha }}',
-              status: 'completed',
-              per_page: 100
-            });
+            const maxRetries = 5;
+            const initialDelay = 5000; // 5 seconds
 
-            const completedWorkflows = workflowRuns.workflow_runs
-              .filter(run => run.head_sha === '${{ github.event.workflow_run.head_sha }}')
-              .reduce((acc, run) => {
-                acc[run.name] = run.conclusion;
-                return acc;
-              }, {});
+            async function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
 
-            console.log('Completed workflows:', completedWorkflows);
+            async function checkWorkflows() {
+              const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head_sha: '${{ github.event.workflow_run.head_sha }}',
+                status: 'completed',
+                per_page: 100
+              });
 
-            for (const workflow of requiredWorkflows) {
-              if (completedWorkflows[workflow] !== 'success') {
-                core.setFailed(`Required workflow "${workflow}" has not succeeded. Status: ${completedWorkflows[workflow] || 'not found'}`);
+              const completedWorkflows = workflowRuns.workflow_runs
+                .filter(run => run.head_sha === '${{ github.event.workflow_run.head_sha }}')
+                .reduce((acc, run) => {
+                  acc[run.name] = run.conclusion;
+                  return acc;
+                }, {});
+
+              return completedWorkflows;
+            }
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+              console.log(`Attempt ${attempt}/${maxRetries}: Checking workflow status...`);
+
+              const completedWorkflows = await checkWorkflows();
+              console.log('Completed workflows:', completedWorkflows);
+
+              let allPassed = true;
+              let missingWorkflows = [];
+
+              for (const workflow of requiredWorkflows) {
+                if (completedWorkflows[workflow] !== 'success') {
+                  allPassed = false;
+                  if (!completedWorkflows[workflow]) {
+                    missingWorkflows.push(workflow);
+                  }
+                }
+              }
+
+              if (allPassed) {
+                console.log('All required workflows passed successfully');
                 return;
+              }
+
+              if (attempt < maxRetries) {
+                const delay = initialDelay * Math.pow(2, attempt - 1);
+                console.log(`Not all workflows ready yet. Missing: ${missingWorkflows.join(', ')}. Retrying in ${delay/1000}s...`);
+                await sleep(delay);
               }
             }
 
-            console.log('All required workflows passed successfully');
+            // After all retries exhausted, fail with details
+            const finalWorkflows = await checkWorkflows();
+            console.log('Final workflow status:', finalWorkflows);
+
+            for (const workflow of requiredWorkflows) {
+              if (finalWorkflows[workflow] !== 'success') {
+                core.setFailed(`Required workflow "${workflow}" has not succeeded after ${maxRetries} attempts. Status: ${finalWorkflows[workflow] || 'not found'}`);
+                return;
+              }
+            }
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
