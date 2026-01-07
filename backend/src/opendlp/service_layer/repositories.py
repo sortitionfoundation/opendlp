@@ -221,6 +221,16 @@ class SelectionRunRecordRepository(AbstractRepository):
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_by_assembly_id_paginated(
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+    ) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]:
+        """Get paginated SelectionRunRecords for an assembly with user information.
+
+        Returns: (list of (SelectionRunRecord, User or None), total_count)
+        """
+        raise NotImplementedError
+
 
 class PasswordResetTokenRepository(AbstractRepository):
     """Repository interface for PasswordResetToken domain objects."""

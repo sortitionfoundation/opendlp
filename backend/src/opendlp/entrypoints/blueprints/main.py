@@ -83,16 +83,33 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """View assembly data and selection page."""
     try:
+        # Get pagination parameters from query string
+        page = request.args.get("page", 1, type=int)
+        per_page = 50
+
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Get paginated run history with user information
+            run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
+                assembly_id, page=page, per_page=per_page
+            )
+
+        # Calculate pagination values
+        total_pages = (total_count + per_page - 1) // per_page  # Ceiling division
 
         return render_template(
             "main/view_assembly_data.html",
             assembly=assembly,
             gsheet=gsheet,
             current_tab="data",
+            run_history=run_history,
+            page=page,
+            per_page=per_page,
+            total_count=total_count,
+            total_pages=total_pages,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")

@@ -1029,3 +1029,261 @@ class TestManageTabsRoutes:
 
         # Should get 403 Forbidden
         assert response.status_code == 403
+
+
+class TestSelectionRunHistory:
+    """End-to-end tests for selection run history viewing and navigation."""
+
+    def test_view_assembly_data_shows_run_history(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test that assembly data page shows selection run history table."""
+        assembly, _ = assembly_with_gsheet
+
+        # Create some run records
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            # Completed run
+            record1 = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                log_messages=["Selection completed"],
+                created_at=datetime.now(UTC),
+                completed_at=datetime.now(UTC),
+                comment="Initial selection",
+            )
+            # Failed run
+            record2 = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.LOAD_GSHEET,
+                log_messages=["Load failed"],
+                created_at=datetime.now(UTC) - timedelta(hours=1),
+                error_message="Connection error",
+            )
+            uow.selection_run_records.add(record1)
+            uow.selection_run_records.add(record2)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/data")
+
+        assert response.status_code == 200
+        # Check for history section
+        assert b"Selection Run History" in response.data
+        assert b"Showing 1 to 2 of 2 runs" in response.data
+        # Check status tags
+        assert b"Completed" in response.data
+        assert b"Failed" in response.data
+        # Check task types (using task_type_verbose formatting)
+        assert b"Select google spreadsheet" in response.data
+        assert b"Load google spreadsheet" in response.data
+        # Check comment appears
+        assert b"Initial selection" in response.data
+
+    def test_view_assembly_data_pagination_works(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test that pagination works with >50 run records."""
+        assembly, _ = assembly_with_gsheet
+
+        # Create 55 run records
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            for i in range(55):
+                record = SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=uuid.uuid4(),
+                    status=SelectionRunStatus.COMPLETED,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                    log_messages=[f"Run {i}"],
+                    created_at=datetime.now(UTC) - timedelta(minutes=i),
+                )
+                uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Test page 1
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/data")
+        assert response.status_code == 200
+        assert b"Showing 1 to 50 of 55 runs" in response.data
+        assert b"govuk-pagination" in response.data
+        assert b"Next" in response.data
+
+        # Test page 2
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/data?page=2")
+        assert response.status_code == 200
+        assert b"Showing 51 to 55 of 55 runs" in response.data
+        assert b"Previous" in response.data
+
+    def test_view_assembly_data_empty_history(self, logged_in_admin, assembly_with_gsheet):
+        """Test that empty state message appears when no runs exist."""
+        assembly, _ = assembly_with_gsheet
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/data")
+
+        assert response.status_code == 200
+        assert b"Selection Run History" in response.data
+        assert b"No selection runs have been performed yet" in response.data
+
+    def test_view_gsheet_run_redirect_routes_select_tasks(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test redirect endpoint routes SELECT task types correctly."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create LOAD_GSHEET run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.LOAD_GSHEET,
+                log_messages=["Loaded"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view", follow_redirects=False)
+
+        # Should redirect to select endpoint
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_select/{task_id}" in response.headers["Location"]
+
+    def test_view_gsheet_run_redirect_routes_replace_tasks(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test redirect endpoint routes REPLACE task types correctly."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create LOAD_REPLACEMENT_GSHEET run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+                log_messages=["Selected replacements"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view", follow_redirects=False)
+
+        # Should redirect to replace endpoint
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_replace/{task_id}" in response.headers["Location"]
+
+    def test_view_gsheet_run_redirect_routes_tabs_tasks(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test redirect endpoint routes tab management task types correctly."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create LIST_OLD_TABS run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                log_messages=["Deleted tabs"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view", follow_redirects=False)
+
+        # Should redirect to manage_tabs endpoint
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}" in response.headers["Location"]
+
+    def test_view_gsheet_run_redirect_validates_assembly_ownership(
+        self, admin_user, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test redirect endpoint validates run belongs to assembly."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create run for this assembly
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                log_messages=["Done"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # Try to access via wrong assembly ID
+        wrong_assembly_id = uuid.uuid4()
+        response = logged_in_admin.get(
+            f"/assemblies/{wrong_assembly_id}/gsheet_runs/{task_id}/view", follow_redirects=True
+        )
+
+        # Should show error and redirect
+        assert response.status_code in [302, 404]
+        if response.status_code == 302:
+            assert b"Invalid task ID for this assembly" in response.data or b"not found" in response.data
+
+    def test_view_gsheet_run_redirect_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
+        """Test redirect endpoint requires authentication."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                log_messages=["Done"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = client.get(f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view")
+
+        # Should redirect to login
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_view_gsheet_run_redirect_requires_permissions(
+        self, logged_in_user, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test redirect endpoint requires assembly management permissions."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                log_messages=["Done"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_user.get(f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view")
+
+        # Should get 403 Forbidden
+        assert response.status_code == 403
+
+    def test_view_gsheet_run_redirect_handles_nonexistent_run(self, logged_in_admin, assembly_with_gsheet):
+        """Test redirect endpoint handles nonexistent run ID gracefully."""
+        assembly, _ = assembly_with_gsheet
+        fake_task_id = uuid.uuid4()
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/gsheet_runs/{fake_task_id}/view", follow_redirects=True
+        )
+
+        # Should show error message
+        assert response.status_code == 200
+        assert b"Task run not found" in response.data or b"not found" in response.data

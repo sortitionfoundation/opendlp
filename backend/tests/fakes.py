@@ -317,6 +317,30 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
         return [item for item in self._items if item.is_pending or item.is_running]
 
+    def get_by_assembly_id_paginated(
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+    ) -> tuple[list[tuple[SelectionRunRecord, None]], int]:
+        """Get paginated SelectionRunRecords for an assembly with user information.
+
+        Note: Fake implementation returns None for user in each tuple.
+        """
+        # Get all records for the assembly
+        all_records = sorted(
+            [item for item in self._items if item.assembly_id == assembly_id],
+            key=lambda r: r.created_at or "",
+            reverse=True,  # Newest first
+        )
+
+        total_count = len(all_records)
+
+        # Apply pagination
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        page_records = all_records[start_idx:end_idx]
+
+        # Return tuples of (record, None) to match the real repository signature
+        return [(record, None) for record in page_records], total_count
+
 
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""

@@ -35,4 +35,135 @@
     {% if gsheet %}
         <div class="govuk-!-margin-bottom-6">{% include "gsheets/components/view_config.html" %}</div>
     {% endif %}
+
+    {# Selection Run History Section #}
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible govuk-!-margin-top-8">
+    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Selection Run History") }}</h2>
+
+    {% if run_history %}
+        <p class="govuk-body">
+            {{ _('Showing %(start)s to %(end)s of %(total)s runs',
+            start=(page - 1) * per_page + 1,
+            end=((page - 1) * per_page + run_history|length),
+            total=total_count) }}
+        </p>
+
+        <table class="govuk-table">
+            <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">{{ _("Status") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Task Type") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Started By") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Started At") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Completed At") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Comment") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
+                </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+                {% for run_record, user in run_history %}
+                    <tr class="govuk-table__row">
+                        <td class="govuk-table__cell">
+                            {% if run_record.status.value == 'pending' %}
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Pending") }}</strong>
+                            {% elif run_record.status.value == 'running' %}
+                                <strong class="govuk-tag govuk-tag--blue">{{ _("Running") }}</strong>
+                            {% elif run_record.status.value == 'completed' %}
+                                <strong class="govuk-tag govuk-tag--green">{{ _("Completed") }}</strong>
+                            {% elif run_record.status.value == 'failed' %}
+                                <strong class="govuk-tag govuk-tag--red">{{ _("Failed") }}</strong>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">{{ run_record.task_type_verbose }}</td>
+                        <td class="govuk-table__cell">
+                            {% if user %}
+                                {{ user.display_name or user.email }}
+                            {% else %}
+                                <span class="govuk-hint">{{ _("Unknown") }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">
+                            {% if run_record.created_at %}
+                                {{ run_record.created_at.strftime("%d %b %Y %H:%M") }}
+                            {% else %}
+                                <span class="govuk-hint">{{ _("N/A") }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">
+                            {% if run_record.completed_at %}
+                                {{ run_record.completed_at.strftime("%d %b %Y %H:%M") }}
+                            {% else %}
+                                <span class="govuk-hint">{{ _("N/A") }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">
+                            {% if run_record.comment %}
+                                {{ run_record.comment }}
+                            {% else %}
+                                <span class="govuk-hint">{{ _("None") }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">
+                            <a href="{{ url_for('gsheets.view_gsheet_run', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                                class="govuk-link">{{ _("View") }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {# Pagination - only show if more than 1 page #}
+        {% if total_pages > 1 %}
+            <nav class="govuk-pagination" role="navigation" aria-label="Pagination">
+                {% if page > 1 %}
+                    <div class="govuk-pagination__prev">
+                        <a class="govuk-link govuk-pagination__link"
+                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page-1) }}"
+                            rel="prev">
+                            <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
+                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
+                            </svg>
+                            <span class="govuk-pagination__link-title">{{ _("Previous") }}</span>
+                        </a>
+                    </div>
+                {% endif %}
+                <ul class="govuk-pagination__list">
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <li class="govuk-pagination__item govuk-pagination__item--current">
+                                <a class="govuk-link govuk-pagination__link" href="#"
+                                    aria-label="Page {{ p }}" aria-current="page">{{ p }}</a>
+                            </li>
+                        {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
+                            <li class="govuk-pagination__item">
+                                <a class="govuk-link govuk-pagination__link"
+                                    href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=p) }}"
+                                    aria-label="Page {{ p }}">{{ p }}</a>
+                            </li>
+                        {% elif (p == page - 3) or (p == page + 3) %}
+                            <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+                {% if page < total_pages %}
+                    <div class="govuk-pagination__next">
+                        <a class="govuk-link govuk-pagination__link"
+                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page+1) }}"
+                            rel="next">
+                            <span class="govuk-pagination__link-title">{{ _("Next") }}</span>
+                            <svg class="govuk-pagination__icon govuk-pagination__icon--next"
+                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <p class="govuk-body govuk-!-margin-top-4">{{ _("No selection runs have been performed yet.") }}</p>
+    {% endif %}
 {% endblock %}

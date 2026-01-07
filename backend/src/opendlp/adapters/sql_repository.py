@@ -474,6 +474,26 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .all()
         )
 
+    def get_by_assembly_id_paginated(
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+    ) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]:
+        """Get paginated SelectionRunRecords for an assembly with user information."""
+        from opendlp.domain.users import User
+
+        # Base query with LEFT JOIN to get user info
+        query = (
+            self.session.query(SelectionRunRecord, User)
+            .outerjoin(User, orm.selection_run_records.c.user_id == orm.users.c.id)
+            .filter(orm.selection_run_records.c.assembly_id == assembly_id)
+            .order_by(orm.selection_run_records.c.created_at.desc())
+        )
+
+        total_count = query.count()
+        offset = (page - 1) * per_page
+        results = query.offset(offset).limit(per_page).all()
+
+        return [(record, user) for record, user in results], total_count
+
 
 class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordResetTokenRepository):
     """SQLAlchemy implementation of PasswordResetTokenRepository."""

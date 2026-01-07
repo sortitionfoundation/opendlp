@@ -9,7 +9,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
-from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus
+from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionTaskType
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
@@ -866,3 +866,65 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error starting gsheet delete tabs for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the deletion task"), "error")
         return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_runs/<uuid:run_id>/view", methods=["GET"])
+@login_required
+@require_assembly_management
+def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Generic redirect endpoint that routes to correct task-specific view."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            run_record = uow.selection_run_records.get(run_id)
+
+            if not run_record:
+                current_app.logger.warning(f"Run {run_id} not found for assembly {assembly_id} user {current_user.id}")
+                flash(_("Task run not found"), "error")
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+
+            # Validate run belongs to this assembly
+            if run_record.assembly_id != assembly_id:
+                current_app.logger.warning(
+                    f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+                )
+                flash(_("Invalid task ID for this assembly"), "error")
+                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+
+        # Map task type to appropriate endpoint
+        task_type = run_record.task_type
+
+        if task_type in (
+            SelectionTaskType.LOAD_GSHEET,
+            SelectionTaskType.SELECT_GSHEET,
+            SelectionTaskType.TEST_SELECT_GSHEET,
+        ):
+            return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        elif task_type in (
+            SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
+            SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+        ):
+            return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        elif task_type in (SelectionTaskType.LIST_OLD_TABS, SelectionTaskType.DELETE_OLD_TABS):
+            return redirect(
+                url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
+            )
+        else:
+            current_app.logger.error(f"Unknown task type {task_type} for run {run_id}")
+            flash(_("Unknown task type"), "error")
+            return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for assembly {assembly_id} run view user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Run view error for assembly {assembly_id} run {run_id} user {current_user.id}: {e}")
+        current_app.logger.exception("stacktrace")
+        return render_template("errors/500.html"), 500
