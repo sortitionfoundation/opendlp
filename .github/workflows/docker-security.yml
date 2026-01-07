@@ -41,6 +41,7 @@ jobs:
         with:
           image: opendlp-backend:${{ github.sha }}
           fail-build: false
+          only-fixed: false
           severity-cutoff: negligible
           output-format: table
 
@@ -50,6 +51,7 @@ jobs:
         with:
           image: opendlp-backend:${{ github.sha }}
           fail-build: true
+          only-fixed: true # only fail the build when a fix is available
           severity-cutoff: high
 
       - name: Upload Grype scan results to GitHub Security tab
