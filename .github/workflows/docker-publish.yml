@@ -26,7 +26,12 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const requiredWorkflows = ['Main', 'BDD Tests', 'Docker Security Scan'];
+            // Query by workflow IDs instead of names to avoid API propagation delays
+            const requiredWorkflows = [
+              { id: 181008149, name: 'Main' },
+              { id: 183031324, name: 'BDD Tests' },
+              { id: 214955651, name: 'Docker Security Scan' }
+            ];
             const maxRetries = 5;
             const initialDelay = 5000; // 5 seconds
 
@@ -35,22 +40,28 @@ jobs:
             }
 
             async function checkWorkflows() {
-              const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                head_sha: '${{ github.event.workflow_run.head_sha }}',
-                status: 'completed',
-                per_page: 100
-              });
+              const results = {};
 
-              const completedWorkflows = workflowRuns.workflow_runs
-                .filter(run => run.head_sha === '${{ github.event.workflow_run.head_sha }}')
-                .reduce((acc, run) => {
-                  acc[run.name] = run.conclusion;
-                  return acc;
-                }, {});
+              // Query each workflow individually by ID for more reliable results
+              for (const workflow of requiredWorkflows) {
+                try {
+                  const { data } = await github.rest.actions.listWorkflowRuns({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: workflow.id,
+                    head_sha: '${{ github.event.workflow_run.head_sha }}',
+                    per_page: 1
+                  });
 
-              return completedWorkflows;
+                  if (data.workflow_runs.length > 0) {
+                    results[workflow.name] = data.workflow_runs[0].conclusion;
+                  }
+                } catch (error) {
+                  console.log(`Error querying workflow ${workflow.name}: ${error.message}`);
+                }
+              }
+
+              return results;
             }
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -63,10 +74,10 @@ jobs:
               let missingWorkflows = [];
 
               for (const workflow of requiredWorkflows) {
-                if (completedWorkflows[workflow] !== 'success') {
+                if (completedWorkflows[workflow.name] !== 'success') {
                   allPassed = false;
-                  if (!completedWorkflows[workflow]) {
-                    missingWorkflows.push(workflow);
+                  if (!completedWorkflows[workflow.name]) {
+                    missingWorkflows.push(workflow.name);
                   }
                 }
               }
@@ -88,8 +99,8 @@ jobs:
             console.log('Final workflow status:', finalWorkflows);
 
             for (const workflow of requiredWorkflows) {
-              if (finalWorkflows[workflow] !== 'success') {
-                core.setFailed(`Required workflow "${workflow}" has not succeeded after ${maxRetries} attempts. Status: ${finalWorkflows[workflow] || 'not found'}`);
+              if (finalWorkflows[workflow.name] !== 'success') {
+                core.setFailed(`Required workflow "${workflow.name}" has not succeeded after ${maxRetries} attempts. Status: ${finalWorkflows[workflow.name] || 'not found'}`);
                 return;
               }
             }
