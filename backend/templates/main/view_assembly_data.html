@@ -72,6 +72,8 @@
                                 <strong class="govuk-tag govuk-tag--green">{{ _("Completed") }}</strong>
                             {% elif run_record.status.value == 'failed' %}
                                 <strong class="govuk-tag govuk-tag--red">{{ _("Failed") }}</strong>
+                            {% elif run_record.status.value == 'cancelled' %}
+                                <strong class="govuk-tag govuk-tag--yellow">{{ _("Cancelled") }}</strong>
                             {% endif %}
                         </td>
                         <td class="govuk-table__cell">{{ run_record.task_type_verbose }}</td>

@@ -16,6 +16,7 @@ from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
+    InvalidSelection,
 )
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeUnitOfWork
@@ -596,3 +597,231 @@ class TestCheckAndUpdateTaskHealth:
         # Record should still be RUNNING (can't check health without celery_task_id)
         updated_record = uow.selection_run_records.get_by_task_id(task_id)
         assert updated_record.status == SelectionRunStatus.RUNNING
+
+
+class TestCancelTask:
+    """Test cancelling running tasks."""
+
+    def test_cancel_pending_task_success(self):
+        """Test successfully cancelling a PENDING task."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a PENDING task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.PENDING,
+            celery_task_id="celery-123",
+            log_messages=["Task submitted"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Cancel the task
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke") as mock_revoke:
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+            mock_revoke.assert_called_once_with("celery-123", terminate=True)
+
+        # Verify task is CANCELLED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.CANCELLED
+        assert updated_record.completed_at is not None
+        assert "admin" in updated_record.error_message  # display_name returns email prefix
+        assert "cancelled" in updated_record.error_message.lower()
+        assert "cancelled" in updated_record.log_messages[-1].lower()
+
+    def test_cancel_running_task_success(self):
+        """Test successfully cancelling a RUNNING task."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a RUNNING task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-456",
+            log_messages=["Task started", "Processing..."],
+        )
+        uow.selection_run_records.add(record)
+
+        # Cancel the task
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke") as mock_revoke:
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+            mock_revoke.assert_called_once_with("celery-456", terminate=True)
+
+        # Verify task is CANCELLED
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.CANCELLED
+        assert updated_record.completed_at is not None
+
+    def test_cancel_already_completed_task_fails(self):
+        """Test that cancelling a COMPLETED task raises an error."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a COMPLETED task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.COMPLETED,
+            celery_task_id="celery-789",
+            log_messages=["Task completed"],
+            completed_at=datetime.now(UTC),
+        )
+        uow.selection_run_records.add(record)
+
+        # Attempt to cancel should fail
+        with pytest.raises(InvalidSelection, match="Cannot cancel task"):
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+
+    def test_cancel_already_failed_task_fails(self):
+        """Test that cancelling a FAILED task raises an error."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a FAILED task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.FAILED,
+            celery_task_id="celery-999",
+            log_messages=["Task failed"],
+            error_message="Some error",
+            completed_at=datetime.now(UTC),
+        )
+        uow.selection_run_records.add(record)
+
+        # Attempt to cancel should fail
+        with pytest.raises(InvalidSelection, match="Cannot cancel task"):
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+
+    def test_cancel_already_cancelled_task_fails(self):
+        """Test that cancelling a CANCELLED task raises an error."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a CANCELLED task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.CANCELLED,
+            celery_task_id="celery-111",
+            log_messages=["Task cancelled"],
+            error_message="Task cancelled by user",
+            completed_at=datetime.now(UTC),
+        )
+        uow.selection_run_records.add(record)
+
+        # Attempt to cancel should fail
+        with pytest.raises(InvalidSelection, match="Cannot cancel task"):
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+
+    def test_cancel_nonexistent_task_fails(self):
+        """Test that cancelling a non-existent task raises an error."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Attempt to cancel non-existent task
+        with pytest.raises(InvalidSelection, match="Task not found"):
+            sortition.cancel_task(uow, admin_user.id, assembly.id, uuid.uuid4())
+
+    def test_cancel_task_celery_revoke_fails_still_marks_cancelled(self):
+        """Test that task is marked CANCELLED even if Celery revoke fails."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create a RUNNING task
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-error",
+            log_messages=["Task started"],
+        )
+        uow.selection_run_records.add(record)
+
+        # Cancel the task with Celery revoke failing
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke") as mock_revoke:
+            mock_revoke.side_effect = Exception("Celery connection error")
+            sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
+
+        # Task should still be CANCELLED despite Celery error
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.CANCELLED
+        assert updated_record.completed_at is not None
+
+    def test_has_finished_includes_cancelled(self):
+        """Test that has_finished property includes CANCELLED status."""
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.CANCELLED,
+            celery_task_id="celery-123",
+        )
+
+        assert record.has_finished is True
+        assert record.is_cancelled is True

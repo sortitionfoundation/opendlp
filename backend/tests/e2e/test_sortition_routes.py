@@ -1287,3 +1287,210 @@ class TestSelectionRunHistory:
         # Should show error message
         assert response.status_code == 200
         assert b"Task run not found" in response.data or b"not found" in response.data
+
+
+class TestCancelTaskRoutes:
+    """End-to-end tests for task cancellation routes."""
+
+    def test_cancel_gsheet_select_success(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST to cancel endpoint successfully cancels a running task."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a RUNNING task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                celery_task_id="test-celery-id",
+                log_messages=["Task started"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # POST to cancel endpoint
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke"):
+            response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_select/{task_id}/cancel")
+
+        # Should redirect back to task page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_select/{task_id}" in response.headers["Location"]
+
+        # Verify task status is CANCELLED
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record.status == SelectionRunStatus.CANCELLED
+            assert record.completed_at is not None
+
+    def test_cancel_gsheet_select_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
+        """Test POST to cancel endpoint requires authentication."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a RUNNING task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                celery_task_id="test-celery-id",
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # POST without auth should redirect to login
+        response = client.post(f"/assemblies/{assembly.id}/gsheet_select/{task_id}/cancel")
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_cancel_gsheet_select_already_completed(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test POST to cancel endpoint with completed task shows error."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a COMPLETED task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                celery_task_id="test-celery-id",
+                log_messages=["Task completed"],
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # POST to cancel endpoint
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/gsheet_select/{task_id}/cancel", follow_redirects=True
+        )
+
+        # Should show error message
+        assert response.status_code == 200
+        assert b"Cannot cancel" in response.data or b"already finished" in response.data
+
+    def test_cancel_gsheet_replace_success(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST to cancel replacement task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a RUNNING replacement task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+                celery_task_id="test-celery-replace-id",
+                log_messages=["Replacement task started"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # POST to cancel endpoint
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke"):
+            response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_replace/{task_id}/cancel")
+
+        # Should redirect back to task page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_replace/{task_id}" in response.headers["Location"]
+
+        # Verify task status is CANCELLED
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record.status == SelectionRunStatus.CANCELLED
+
+    def test_cancel_gsheet_manage_tabs_success(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test POST to cancel manage tabs task succeeds."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a RUNNING manage tabs task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.LIST_OLD_TABS,
+                celery_task_id="test-celery-tabs-id",
+                log_messages=["Listing tabs"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # POST to cancel endpoint
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke"):
+            response = logged_in_admin.post(f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}/cancel")
+
+        # Should redirect back to task page
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/gsheet_manage_tabs/{task_id}" in response.headers["Location"]
+
+        # Verify task status is CANCELLED
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record.status == SelectionRunStatus.CANCELLED
+
+    def test_cancel_displays_in_ui(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """Test GET request shows cancelled task status in UI."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a CANCELLED task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.CANCELLED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                celery_task_id="test-celery-cancelled-id",
+                log_messages=["Task cancelled"],
+                error_message="Task cancelled by admin@example.com",
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # GET the task page
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select/{task_id}")
+
+        # Should show cancelled status
+        assert response.status_code == 200
+        assert b"Task Cancelled" in response.data or b"cancelled" in response.data.lower()
+
+    def test_cancelled_task_shows_in_history_table(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test cancelled task appears in Selection Run History table."""
+        assembly, _ = assembly_with_gsheet
+        task_id = uuid.uuid4()
+
+        # Create a CANCELLED task
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.CANCELLED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                celery_task_id="test-celery-history-id",
+                log_messages=["Task cancelled"],
+                error_message="Task cancelled by admin@example.com",
+                created_at=datetime.now(UTC),
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        # GET the data page with run history table
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/data")
+
+        # Should show cancelled status in history table
+        assert response.status_code == 200
+        assert b"Cancelled" in response.data

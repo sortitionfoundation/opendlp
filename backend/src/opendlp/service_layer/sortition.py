@@ -436,6 +436,61 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
     return result
 
 
+@require_assembly_permission(can_manage_assembly)
+def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, task_id: uuid.UUID) -> None:
+    """
+    Cancel a running or pending task.
+
+    Args:
+        uow: Unit of work for database operations
+        user_id: ID of user requesting the cancellation (checked for permissions)
+        assembly_id: ID of assembly (for permission checking)
+        task_id: UUID of the task to cancel
+
+    Raises:
+        NotFoundError: If task not found
+        InvalidSelection: If task has already finished
+        InsufficientPermissions: If user cannot manage the assembly
+    """
+    logger.info(f"User {user_id} attempting to cancel task {task_id}")
+
+    # Get the task record
+    run_record = uow.selection_run_records.get_by_task_id(task_id)
+    if not run_record:
+        raise InvalidSelection(_("Task not found"))
+
+    # Check if task has already finished
+    if run_record.has_finished:
+        raise InvalidSelection(_("Cannot cancel task - it has already finished"))
+
+    # Get user info for the cancellation message
+    user = uow.users.get(user_id)
+    user_name = user.display_name if user else "Unknown User"
+
+    # Revoke the Celery task
+    try:
+        app.app.control.revoke(run_record.celery_task_id, terminate=True)
+        logger.info(f"Successfully revoked Celery task {run_record.celery_task_id}")
+    except Exception as e:
+        # Log the error but continue - we still want to mark as CANCELLED in DB
+        logger.warning(f"Failed to revoke Celery task {run_record.celery_task_id}: {e}")
+
+    # Update the record
+    run_record.status = SelectionRunStatus.CANCELLED
+    run_record.completed_at = datetime.now(UTC)
+    run_record.error_message = _("Task cancelled by %(user_name)s", user_name=user_name)
+    run_record.log_messages.append(f"Task cancelled by {user_name} at {datetime.now(UTC).isoformat()}")
+
+    # Only flag_modified if object is attached to SQLAlchemy session (not needed for fake UoW in tests)
+    if hasattr(run_record, "_sa_instance_state"):
+        flag_modified(run_record, "log_messages")
+
+    uow.selection_run_records.add(run_record)
+    uow.commit()
+
+    logger.info(f"Task {task_id} successfully cancelled by user {user_id}")
+
+
 def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
     """
     Get the ManageOldTabsStatus value, based on the run result.

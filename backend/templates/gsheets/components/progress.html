@@ -94,6 +94,18 @@
                     </ul>
                 </div>
             </div>
+        {% elif run_record.is_cancelled %}
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                    {{ _("Task Cancelled") }}
+                </strong>
+            </div>
+            <p class="govuk-body">{{ _("This task was cancelled.") }}</p>
+            {% if run_record.error_message %}
+                <p class="govuk-body-s">{{ run_record.error_message }}</p>
+            {% endif %}
         {% endif %}
     </div>
 {% endif %}

@@ -23,6 +23,7 @@ from opendlp.service_layer.report_translation import translate_run_report_to_htm
 from opendlp.service_layer.sortition import (
     LoadRunResult,
     TabManagementResult,
+    cancel_task,
     check_and_update_task_health,
     get_manage_old_tabs_status,
     get_selection_run_status,
@@ -363,6 +364,40 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
 
 
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/cancel", methods=["POST"])
+@login_required
+@require_assembly_management
+def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running selection task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            cancel_task(uow, current_user.id, assembly_id, run_id)
+
+        flash(_("Task has been cancelled"), "success")
+        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        flash(_("Task not found"), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
+        flash(str(e), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to cancel this task"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error cancelling task {run_id}: {e}")
+        flash(_("An error occurred while cancelling the task"), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["GET"])
 @login_required
 @require_assembly_management
@@ -647,6 +682,40 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
 
 
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/cancel", methods=["POST"])
+@login_required
+@require_assembly_management
+def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running replacement task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            cancel_task(uow, current_user.id, assembly_id, run_id)
+
+        flash(_("Task has been cancelled"), "success")
+        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        flash(_("Task not found"), "error")
+        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
+        flash(str(e), "error")
+        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to cancel this task"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error cancelling task {run_id}: {e}")
+        flash(_("An error occurred while cancelling the task"), "error")
+        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+
+
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs", methods=["GET"])
 @login_required
 @require_assembly_management
@@ -866,6 +935,40 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error starting gsheet delete tabs for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the deletion task"), "error")
         return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+
+@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/cancel", methods=["POST"])
+@login_required
+@require_assembly_management
+def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running tab management task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            cancel_task(uow, current_user.id, assembly_id, run_id)
+
+        flash(_("Task has been cancelled"), "success")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        flash(_("Task not found"), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
+        flash(str(e), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to cancel this task"), "error")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error cancelling task {run_id}: {e}")
+        flash(_("An error occurred while cancelling the task"), "error")
+        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
 
 
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_runs/<uuid:run_id>/view", methods=["GET"])

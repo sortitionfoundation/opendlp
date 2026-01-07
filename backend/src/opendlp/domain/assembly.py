@@ -356,8 +356,12 @@ class SelectionRunRecord:
         return self.status == SelectionRunStatus.FAILED
 
     @property
+    def is_cancelled(self) -> bool:
+        return self.status == SelectionRunStatus.CANCELLED
+
+    @property
     def has_finished(self) -> bool:
-        return self.status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED)
+        return self.status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED)
 
     @property
     def task_type_verbose(self) -> str:

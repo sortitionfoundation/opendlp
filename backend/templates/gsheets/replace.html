@@ -35,6 +35,17 @@
                     {{ _("Task in Progress...") }}
                 {% endif %}
             </button>
+            <form method="POST"
+                action="{{ url_for('gsheets.cancel_gsheet_replace', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button class="govuk-button govuk-button--warning"
+                    type="submit"
+                    data-module="govuk-button"
+                    onclick="return confirm('{{ _("Are you sure you want to cancel this task?") }}')">
+                    {{ _("Cancel") }}
+                </button>
+            </form>
         {% endif %}
     </div>
     {# Number to select form - shown when min_select and max_select are present #}

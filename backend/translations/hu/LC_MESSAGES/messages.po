@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-07 11:44+0000\n"
+"POT-Creation-Date: 2026-01-07 13:46+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -572,37 +572,37 @@ msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:81
+#: src/opendlp/entrypoints/blueprints/gsheets.py:82
 msgid "Google Spreadsheet configuration created successfully"
 msgstr "Google táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:99
+#: src/opendlp/entrypoints/blueprints/gsheets.py:100
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:106
-#: src/opendlp/entrypoints/blueprints/gsheets.py:156
+#: src/opendlp/entrypoints/blueprints/gsheets.py:107
+#: src/opendlp/entrypoints/blueprints/gsheets.py:157
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr ""
 "Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
 "megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:112
+#: src/opendlp/entrypoints/blueprints/gsheets.py:113
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:117
+#: src/opendlp/entrypoints/blueprints/gsheets.py:118
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:124
-#: src/opendlp/entrypoints/blueprints/gsheets.py:178
-#: src/opendlp/entrypoints/blueprints/gsheets.py:224
-#: src/opendlp/entrypoints/blueprints/gsheets.py:382
-#: src/opendlp/entrypoints/blueprints/gsheets.py:468
-#: src/opendlp/entrypoints/blueprints/gsheets.py:672
-#: src/opendlp/entrypoints/blueprints/gsheets.py:726
-#: src/opendlp/entrypoints/blueprints/gsheets.py:919
+#: src/opendlp/entrypoints/blueprints/gsheets.py:125
+#: src/opendlp/entrypoints/blueprints/gsheets.py:179
+#: src/opendlp/entrypoints/blueprints/gsheets.py:225
+#: src/opendlp/entrypoints/blueprints/gsheets.py:417
+#: src/opendlp/entrypoints/blueprints/gsheets.py:503
+#: src/opendlp/entrypoints/blueprints/gsheets.py:741
+#: src/opendlp/entrypoints/blueprints/gsheets.py:795
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1022
 #: src/opendlp/entrypoints/blueprints/main.py:68
 #: src/opendlp/entrypoints/blueprints/main.py:116
 #: src/opendlp/entrypoints/blueprints/main.py:159
@@ -610,14 +610,14 @@ msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:130
-#: src/opendlp/entrypoints/blueprints/gsheets.py:184
-#: src/opendlp/entrypoints/blueprints/gsheets.py:230
-#: src/opendlp/entrypoints/blueprints/gsheets.py:388
-#: src/opendlp/entrypoints/blueprints/gsheets.py:474
-#: src/opendlp/entrypoints/blueprints/gsheets.py:678
-#: src/opendlp/entrypoints/blueprints/gsheets.py:732
-#: src/opendlp/entrypoints/blueprints/gsheets.py:925
+#: src/opendlp/entrypoints/blueprints/gsheets.py:131
+#: src/opendlp/entrypoints/blueprints/gsheets.py:185
+#: src/opendlp/entrypoints/blueprints/gsheets.py:231
+#: src/opendlp/entrypoints/blueprints/gsheets.py:423
+#: src/opendlp/entrypoints/blueprints/gsheets.py:509
+#: src/opendlp/entrypoints/blueprints/gsheets.py:747
+#: src/opendlp/entrypoints/blueprints/gsheets.py:801
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1028
 #: src/opendlp/entrypoints/blueprints/main.py:73
 #: src/opendlp/entrypoints/blueprints/main.py:120
 #: src/opendlp/entrypoints/blueprints/main.py:163
@@ -625,107 +625,135 @@ msgstr "A gyűlés oldala  nem elérhető"
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:146
+#: src/opendlp/entrypoints/blueprints/gsheets.py:147
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:150
+#: src/opendlp/entrypoints/blueprints/gsheets.py:151
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:160
+#: src/opendlp/entrypoints/blueprints/gsheets.py:161
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:208
-#: src/opendlp/entrypoints/blueprints/gsheets.py:414
-#: src/opendlp/entrypoints/blueprints/gsheets.py:702
-#: src/opendlp/entrypoints/blueprints/gsheets.py:891
+#: src/opendlp/entrypoints/blueprints/gsheets.py:209
+#: src/opendlp/entrypoints/blueprints/gsheets.py:449
+#: src/opendlp/entrypoints/blueprints/gsheets.py:771
+#: src/opendlp/entrypoints/blueprints/gsheets.py:994
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:316
+#: src/opendlp/entrypoints/blueprints/gsheets.py:317
 #, fuzzy, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:320
+#: src/opendlp/entrypoints/blueprints/gsheets.py:321
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:327
-#: src/opendlp/entrypoints/blueprints/gsheets.py:357
-#: src/opendlp/entrypoints/blueprints/gsheets.py:584
-#: src/opendlp/entrypoints/blueprints/gsheets.py:641
-#: src/opendlp/entrypoints/blueprints/gsheets.py:830
-#: src/opendlp/entrypoints/blueprints/gsheets.py:862
+#: src/opendlp/entrypoints/blueprints/gsheets.py:328
+#: src/opendlp/entrypoints/blueprints/gsheets.py:358
+#: src/opendlp/entrypoints/blueprints/gsheets.py:619
+#: src/opendlp/entrypoints/blueprints/gsheets.py:676
+#: src/opendlp/entrypoints/blueprints/gsheets.py:899
+#: src/opendlp/entrypoints/blueprints/gsheets.py:931
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:332
+#: src/opendlp/entrypoints/blueprints/gsheets.py:333
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:350
-#: src/opendlp/entrypoints/blueprints/gsheets.py:577
+#: src/opendlp/entrypoints/blueprints/gsheets.py:351
+#: src/opendlp/entrypoints/blueprints/gsheets.py:612
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:362
-#: src/opendlp/entrypoints/blueprints/gsheets.py:589
+#: src/opendlp/entrypoints/blueprints/gsheets.py:363
+#: src/opendlp/entrypoints/blueprints/gsheets.py:624
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:605
+#: src/opendlp/entrypoints/blueprints/gsheets.py:377
+#: src/opendlp/entrypoints/blueprints/gsheets.py:695
+#: src/opendlp/entrypoints/blueprints/gsheets.py:950
+msgid "Task has been cancelled"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:382
+#: src/opendlp/entrypoints/blueprints/gsheets.py:700
+#: src/opendlp/entrypoints/blueprints/gsheets.py:955
+#: src/opendlp/service_layer/sortition.py:460
+#, fuzzy
+msgid "Task not found"
+msgstr "Az oldal nem elérhető"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:392
+#: src/opendlp/entrypoints/blueprints/gsheets.py:710
+#: src/opendlp/entrypoints/blueprints/gsheets.py:965
+#, fuzzy
+msgid "You don't have permission to cancel this task"
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:397
+#: src/opendlp/entrypoints/blueprints/gsheets.py:715
+#: src/opendlp/entrypoints/blueprints/gsheets.py:970
+#, fuzzy
+msgid "An error occurred while cancelling the task"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:640
 msgid "Number of people to select is required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:611
+#: src/opendlp/entrypoints/blueprints/gsheets.py:646
 msgid "Number of people to select must be greater than zero"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:614
+#: src/opendlp/entrypoints/blueprints/gsheets.py:649
 msgid "Number of people to select must be a valid integer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:634
+#: src/opendlp/entrypoints/blueprints/gsheets.py:669
 #, fuzzy, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:646
+#: src/opendlp/entrypoints/blueprints/gsheets.py:681
 #, fuzzy
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:823
+#: src/opendlp/entrypoints/blueprints/gsheets.py:892
 #, fuzzy, python-format
 msgid "Failed to start listing task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:835
+#: src/opendlp/entrypoints/blueprints/gsheets.py:904
 #, fuzzy
 msgid "An unexpected error occurred while starting the listing task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:855
+#: src/opendlp/entrypoints/blueprints/gsheets.py:924
 #, fuzzy, python-format
 msgid "Failed to start deletion task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:867
+#: src/opendlp/entrypoints/blueprints/gsheets.py:936
 #, fuzzy
 msgid "An unexpected error occurred while starting the deletion task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:883
+#: src/opendlp/entrypoints/blueprints/gsheets.py:986
 #, fuzzy
 msgid "Task run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:914
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1017
 msgid "Unknown task type"
 msgstr ""
 
@@ -845,7 +873,7 @@ msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/celery/tasks.py:105
-#: src/opendlp/service_layer/sortition.py:516
+#: src/opendlp/service_layer/sortition.py:568
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -1100,16 +1128,25 @@ msgid ""
 "selection"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:585
+#: src/opendlp/service_layer/sortition.py:464
+msgid "Cannot cancel task - it has already finished"
+msgstr ""
+
+#: src/opendlp/service_layer/sortition.py:481
+#, python-format
+msgid "Task cancelled by %(user_name)s"
+msgstr ""
+
+#: src/opendlp/service_layer/sortition.py:637
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:612
+#: src/opendlp/service_layer/sortition.py:664
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:624
-#: src/opendlp/service_layer/sortition.py:635
+#: src/opendlp/service_layer/sortition.py:676
+#: src/opendlp/service_layer/sortition.py:687
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -1271,7 +1308,8 @@ msgstr ""
 
 #: templates/admin/invite_create.html:101 templates/admin/user_edit.html:135
 #: templates/gsheets/create_config.html:236
-#: templates/gsheets/edit_config.html:234
+#: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
+#: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
 #: templates/profile/change_password.html:51 templates/profile/edit.html:41
 msgid "Cancel"
@@ -1368,11 +1406,12 @@ msgid "Used At"
 msgstr "Elkezdve"
 
 #: templates/admin/invite_view.html:92
-#: templates/main/view_assembly_data.html:82
+#: templates/main/view_assembly_data.html:84
 msgid "Unknown"
 msgstr ""
 
 #: templates/admin/invite_view.html:102 templates/admin/user_edit.html:127
+#: templates/gsheets/components/progress.html:101
 #, fuzzy
 msgid "Warning"
 msgstr "Folyamatban"
@@ -1460,7 +1499,7 @@ msgid "Actions"
 msgstr "Kiválasztás"
 
 #: templates/admin/invites.html:101 templates/admin/users.html:136
-#: templates/main/view_assembly_data.html:108
+#: templates/main/view_assembly_data.html:110
 msgid "View"
 msgstr ""
 
@@ -1631,11 +1670,11 @@ msgstr ""
 msgid "Name"
 msgstr "Vezetéknév"
 
-#: templates/admin/users.html:163 templates/main/view_assembly_data.html:128
+#: templates/admin/users.html:163 templates/main/view_assembly_data.html:130
 msgid "Previous"
 msgstr ""
 
-#: templates/admin/users.html:192 templates/main/view_assembly_data.html:155
+#: templates/admin/users.html:192 templates/main/view_assembly_data.html:157
 msgid "Next"
 msgstr ""
 
@@ -1961,12 +2000,17 @@ msgstr ""
 msgid "Deleting old tabs"
 msgstr ""
 
-#: templates/gsheets/manage_tabs.html:60
+#: templates/gsheets/manage_tabs.html:62 templates/gsheets/replace.html:45
+#: templates/gsheets/select.html:67
+msgid "Are you sure you want to cancel this task?"
+msgstr ""
+
+#: templates/gsheets/manage_tabs.html:71
 #, python-format
 msgid "Are you sure you want to delete %(count)s tab(s)?"
 msgstr ""
 
-#: templates/gsheets/manage_tabs.html:62
+#: templates/gsheets/manage_tabs.html:73
 msgid "Delete These Tabs"
 msgstr ""
 
@@ -2015,27 +2059,27 @@ msgstr "Adja meg a Google táblázat beállításait"
 msgid "Task in Progress..."
 msgstr "Feladat folyamatban"
 
-#: templates/gsheets/replace.html:45
+#: templates/gsheets/replace.html:56
 #, fuzzy
 msgid "Re-Run Replacement Selection"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/gsheets/replace.html:47
+#: templates/gsheets/replace.html:58
 #, fuzzy
 msgid "Run Replacement Selection"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/gsheets/replace.html:56
+#: templates/gsheets/replace.html:67
 #, fuzzy
 msgid "Number of people to select"
 msgstr "Kiválasztandó emberek száma"
 
-#: templates/gsheets/replace.html:58
+#: templates/gsheets/replace.html:69
 #, python-format
 msgid "Enter a number between %(min)s and %(max)s"
 msgstr ""
 
-#: templates/gsheets/replace.html:69
+#: templates/gsheets/replace.html:80
 #, fuzzy
 msgid "Run Replacements"
 msgstr "Kieső emberek pótlása új kiválasztással"
@@ -2142,6 +2186,15 @@ msgstr ""
 #: templates/gsheets/components/progress.html:86
 msgid "Error Details"
 msgstr "Hiba részletei"
+
+#: templates/gsheets/components/progress.html:102
+#, fuzzy
+msgid "Task Cancelled"
+msgstr "Kész"
+
+#: templates/gsheets/components/progress.html:105
+msgid "This task was cancelled."
+msgstr ""
 
 #: templates/gsheets/components/view_config.html:3
 msgid "Spreadsheet URL"
@@ -2403,16 +2456,21 @@ msgstr "Befejezve"
 msgid "Failed"
 msgstr ""
 
-#: templates/main/view_assembly_data.html:89
-#: templates/main/view_assembly_data.html:96
+#: templates/main/view_assembly_data.html:76
+#, fuzzy
+msgid "Cancelled"
+msgstr "Megszakítás"
+
+#: templates/main/view_assembly_data.html:91
+#: templates/main/view_assembly_data.html:98
 msgid "N/A"
 msgstr ""
 
-#: templates/main/view_assembly_data.html:103
+#: templates/main/view_assembly_data.html:105
 msgid "None"
 msgstr ""
 
-#: templates/main/view_assembly_data.html:167
+#: templates/main/view_assembly_data.html:169
 msgid "No selection runs have been performed yet."
 msgstr ""
 

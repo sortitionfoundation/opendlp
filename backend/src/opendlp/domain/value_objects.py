@@ -55,6 +55,7 @@ class SelectionRunStatus(Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class ManageOldTabsState(Enum):
