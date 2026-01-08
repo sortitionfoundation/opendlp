@@ -6,7 +6,11 @@ from flask.typing import ResponseReturnValue
 
 from opendlp import bootstrap
 from opendlp.entrypoints.celery.app import app as celery_app
-from opendlp.entrypoints.context_processors import get_opendlp_version, get_service_account_email
+from opendlp.entrypoints.context_processors import (
+    get_opendlp_version,
+    get_service_account_email,
+    service_account_email_problem,
+)
 
 health_bp = Blueprint("health", __name__)
 
@@ -79,6 +83,10 @@ def health_check() -> ResponseReturnValue:
         "service_account_email": service_account,
         "version": version,
     }
+
+    # do some debugging, but only if there is an issue
+    if service_account == "UNKNOWN":
+        response_data["service_account_email_problem"] = service_account_email_problem()
 
     # Return appropriate status code
     status_code = 200 if is_healthy else 500

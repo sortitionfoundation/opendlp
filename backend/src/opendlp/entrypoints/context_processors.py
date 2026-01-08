@@ -84,6 +84,32 @@ def get_service_account_email() -> str:
     return "UNKNOWN"
 
 
+def service_account_email_problem() -> str:
+    """
+    Find the email address for the service account used for google spreadsheet access
+    """
+    auth_json_file = config.get_google_auth_json_path()
+    if auth_json_file == "/no-such-file":
+        return "Could not find value of GOOGLE_AUTH_JSON_PATH"
+    if not auth_json_file.is_file():
+        return f"Auth JSON path {auth_json_file} is not a file."
+    try:
+        contents = auth_json_file.read_bytes()
+    except Exception as error:
+        return f"Could not read from {auth_json_file}: {error}"
+    try:
+        credentials = json.loads(contents)
+    except json.JSONDecodeError as error:
+        return f"Could not parse JSON from {auth_json_file}: {error}"
+    try:
+        client_email = credentials["client_email"]
+    except Exception:
+        return f"Could not find 'client_email' in credentials: {credentials}"
+    if not isinstance(client_email, str):
+        return f"client_email is not a string, it is: {client_email}"
+    return f"No problem, found client email: {client_email}"
+
+
 def static_versioning_context_processor() -> dict[str, str]:
     """
     Flask context processor that adds static file version hashes to template context.
