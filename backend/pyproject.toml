@@ -67,6 +67,7 @@ exclude-newer = "1 week"
 [tool.uv.exclude-newer-package]
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
+urllib3 = "0 days"
 
 [tool.mypy]
 files = ["src"]
