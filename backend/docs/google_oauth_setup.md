@@ -59,7 +59,7 @@ Before creating credentials, you must configure the OAuth consent screen.
    - **User support email**: Your support email address
    - **Developer contact information**: Your admin email address
 5. Click "Save and Continue"
-6. **Scopes**: Click "Add or Remove Scopes"
+6. **Scopes**: Under "Data Access", click "Add or Remove Scopes"
    - Select these three scopes:
      - `openid`
      - `email` (`.../auth/userinfo.email`)
