@@ -57,7 +57,11 @@
                                         text-decoration: underline">{{ _("Remove") }}</button>
                             </form>
                         {% elif not current_user.password_hash %}
-                            <span class="govuk-hint govuk-!-font-size-16">{{ _("Sign in with OAuth only") }}</span>
+                            {% if current_user.oauth_provider %}
+                                <a href="{{ url_for('profile.set_password') }}" class="govuk-link">{{ _("Set password") }}</a>
+                            {% else %}
+                                <span class="govuk-hint govuk-!-font-size-16">{{ _("No password set") }}</span>
+                            {% endif %}
                         {% endif %}
                     </dd>
                 </div>
@@ -98,7 +102,7 @@
                 <a href="{{ url_for('profile.edit') }}"
                     class="govuk-button govuk-button--secondary"
                     data-module="govuk-button">{{ _("Edit profile") }}</a>
-                {% if not current_user.oauth_provider %}
+                {% if current_user.password_hash %}
                     <a href="{{ url_for('profile.change_password') }}"
                         class="govuk-button govuk-button--secondary"
                         data-module="govuk-button">{{ _("Change password") }}</a>

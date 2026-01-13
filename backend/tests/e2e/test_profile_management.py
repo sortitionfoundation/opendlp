@@ -105,14 +105,16 @@ class TestPasswordChange:
         assert "/auth/login" in response.location
 
     def test_oauth_user_redirected_from_change_password(self, client: FlaskClient, oauth_user: User) -> None:
-        """Test that OAuth users are redirected away from change password page."""
+        """Test that OAuth users without password are redirected to set-password page."""
         # Login manually by creating session
         with client.session_transaction() as session:
             session["_user_id"] = str(oauth_user.id)
 
         response = client.get("/profile/change-password", follow_redirects=True)
         assert response.status_code == 200
-        assert b"You cannot change your password" in response.data
+        # Should be redirected to set-password page with appropriate message
+        assert b"Set Password" in response.data
+        assert b"You need to set a password first" in response.data
 
     def test_change_password_get(self, logged_in_user: FlaskClient) -> None:
         """Test GET request to change password page."""
@@ -193,3 +195,108 @@ class TestPasswordChange:
             follow_redirects=True,
         )
         assert response.status_code == 200
+
+
+class TestSetPassword:
+    """Tests for setting password as OAuth user."""
+
+    def test_set_password_requires_login(self, client: FlaskClient) -> None:
+        """Test that setting password requires authentication."""
+        response = client.get("/profile/set-password")
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_set_password_redirects_user_with_existing_password(
+        self, logged_in_user: FlaskClient, regular_user: User
+    ) -> None:
+        """Test that users with password can't access set password page."""
+        response = logged_in_user.get("/profile/set-password", follow_redirects=True)
+        assert response.status_code == 200
+        assert b"You already have a password" in response.data
+
+    def test_oauth_user_can_set_password(self, client: FlaskClient, oauth_user: User) -> None:
+        """Test OAuth user can set password successfully."""
+        # Login manually by creating session
+        with client.session_transaction() as session:
+            session["_user_id"] = str(oauth_user.id)
+
+        # GET request should show form
+        response = client.get("/profile/set-password")
+        assert response.status_code == 200
+        assert b"Set Password" in response.data
+
+        # POST with valid password
+        response = client.post(
+            "/profile/set-password",
+            data={
+                "new_password": "NewSecurePass123!",  # pragma: allowlist secret
+                "new_password_confirm": "NewSecurePass123!",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/profile/set-password"),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Password set successfully" in response.data
+        assert b"Active" in response.data  # Both auth methods now active
+
+    def test_set_password_validates_strength(self, client: FlaskClient, oauth_user: User) -> None:
+        """Test that weak passwords are rejected."""
+        with client.session_transaction() as session:
+            session["_user_id"] = str(oauth_user.id)
+
+        response = client.post(
+            "/profile/set-password",
+            data={
+                "new_password": "weak",  # pragma: allowlist secret
+                "new_password_confirm": "weak",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/profile/set-password"),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Field must be at least 8 characters long" in response.data
+
+    def test_set_password_requires_confirmation_match(self, client: FlaskClient, oauth_user: User) -> None:
+        """Test that password confirmation must match."""
+        with client.session_transaction() as session:
+            session["_user_id"] = str(oauth_user.id)
+
+        response = client.post(
+            "/profile/set-password",
+            data={
+                "new_password": "NewSecurePass123!",  # pragma: allowlist secret
+                "new_password_confirm": "DifferentPass456!",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/profile/set-password"),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Passwords must match" in response.data
+
+    def test_after_setting_password_user_can_remove_oauth(self, client: FlaskClient, oauth_user: User) -> None:
+        """Test that after setting password, user has multiple auth methods."""
+        with client.session_transaction() as session:
+            session["_user_id"] = str(oauth_user.id)
+
+        # Set password
+        client.post(
+            "/profile/set-password",
+            data={
+                "new_password": "NewSecurePass123!",  # pragma: allowlist secret
+                "new_password_confirm": "NewSecurePass123!",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/profile/set-password"),
+            },
+        )
+
+        # Now should be able to remove OAuth
+        response = client.post(
+            "/profile/remove-oauth",
+            data={"csrf_token": get_csrf_token(client, "/profile")},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"OAuth authentication removed successfully" in response.data

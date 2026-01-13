@@ -7,9 +7,14 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.entrypoints.extensions import oauth
-from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditOwnProfileForm
+from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditOwnProfileForm, SetPasswordForm
 from opendlp.service_layer.exceptions import CannotRemoveLastAuthMethod, InvalidCredentials, PasswordTooWeak
-from opendlp.service_layer.security import password_validators_help_text_html
+from opendlp.service_layer.security import (
+    TempUser,
+    hash_password,
+    password_validators_help_text_html,
+    validate_password_strength,
+)
 from opendlp.service_layer.user_service import (
     change_own_password,
     link_oauth_to_user,
@@ -64,13 +69,10 @@ def edit() -> ResponseReturnValue:
 @login_required
 def change_password() -> ResponseReturnValue:
     """Change own password."""
-    # OAuth users don't have passwords, redirect them to profile view
-    if current_user.oauth_provider:
-        flash(
-            _("You cannot change your password as you sign in with %(provider)s", provider=current_user.oauth_provider),
-            "info",
-        )
-        return redirect(url_for("profile.view"))
+    # OAuth users without password should use set-password instead
+    if current_user.oauth_provider and not current_user.password_hash:
+        flash(_("You need to set a password first"), "info")
+        return redirect(url_for("profile.set_password"))
 
     form = ChangeOwnPasswordForm()
 
@@ -214,3 +216,58 @@ def remove_oauth() -> ResponseReturnValue:
         flash(_("An error occurred while removing OAuth authentication"), "error")
 
     return redirect(url_for("profile.view"))
+
+
+@profile_bp.route("/profile/set-password", methods=["GET", "POST"])
+@login_required
+def set_password() -> ResponseReturnValue:
+    """Set password for OAuth users who don't have one."""
+    # Redirect if user already has password
+    if current_user.password_hash:
+        flash(_("You already have a password. Use 'Change password' instead."), "info")
+        return redirect(url_for("profile.view"))
+
+    # Require OAuth provider (can't have no auth methods)
+    if not current_user.oauth_provider:
+        flash(_("Cannot set password without another authentication method"), "error")
+        return redirect(url_for("profile.view"))
+
+    form = SetPasswordForm()
+
+    if form.validate_on_submit():
+        try:
+            uow = bootstrap.bootstrap()
+            with uow:
+                assert form.new_password.data is not None
+
+                # Get user from database
+                user = uow.users.get(current_user.id)
+                if not user:
+                    raise ValueError("User not found")
+
+                # Validate password strength
+                temp_user = TempUser(email=user.email, first_name=user.first_name, last_name=user.last_name)
+                is_valid, error_msg = validate_password_strength(form.new_password.data, temp_user)
+                if not is_valid:
+                    raise PasswordTooWeak(error_msg)
+
+                # Hash and set password
+                user.password_hash = hash_password(form.new_password.data)
+
+                uow.commit()
+
+            # Update current_user session object
+            current_user.password_hash = user.password_hash
+
+            flash(_("Password set successfully"), "success")
+            return redirect(url_for("profile.view"))
+
+        except PasswordTooWeak as e:
+            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
+        except Exception as e:
+            current_app.logger.error(f"Unexpected set password error for user {current_user.id}: {e}")
+            flash(_("An error occurred while setting your password"), "error")
+
+    return render_template(
+        "profile/set_password.html", form=form, password_help=password_validators_help_text_html()
+    ), 200

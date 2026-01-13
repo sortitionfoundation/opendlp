@@ -455,6 +455,20 @@ class ChangeOwnPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class SetPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for OAuth users to set their first password."""
+
+    new_password = PasswordField(
+        _l("Password"), validators=[DataRequired(), Length(min=8)], render_kw={"autocomplete": "new-password"}
+    )
+
+    new_password_confirm = PasswordField(
+        _l("Confirm Password"),
+        validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
+        render_kw={"autocomplete": "new-password"},
+    )
+
+
 class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     """OAuth registration form with invite code (no password needed)."""
 
