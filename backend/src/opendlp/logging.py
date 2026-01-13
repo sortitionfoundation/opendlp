@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 import structlog
+from dotenv import load_dotenv
 
 from opendlp import config
 
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
         import gunicorn.http.wsgi
     except ImportError:
         pass
+
+load_dotenv()
 
 timestamper = structlog.processors.TimeStamper(fmt="iso")
 pre_chain = [
@@ -132,6 +135,17 @@ class GunicornLogger:  # pragma: no cover
     def log(self, lvl: int, msg: object, *args: object, **kwargs: object) -> None:
         self._error_logger.log(lvl, msg, *args, **kwargs)
 
+    @staticmethod
+    def header_safe(header_name: str) -> bool:
+        """Return True if the header is safe to log"""
+        lower_header = header_name.lower()
+        if lower_header in ("authorization", "cookie", "csrf_token"):
+            return False
+        for partial_header in ("api-key", "api_key", "authorization", "security-token"):
+            if partial_header in lower_header:
+                return False
+        return True
+
     def access(
         self,
         resp: "gunicorn.http.wsgi.Response",
@@ -143,15 +157,19 @@ class GunicornLogger:  # pragma: no cover
         if isinstance(status, str):
             status = status.split(None, 1)[0]
 
-        self._access_logger.info(
-            "request",
-            method=environ["REQUEST_METHOD"],
-            request_uri=environ["RAW_URI"],
-            status=status,
-            response_length=getattr(resp, "sent", None),
-            request_time_seconds=f"{request_time.seconds:d}.{request_time.microseconds:06d}",
-            pid=f"<{os.getpid()}>",
-        )
+        log_kwargs = {
+            "method": environ["REQUEST_METHOD"],
+            "request_uri": environ["RAW_URI"],
+            "status": status,
+            "response_length": getattr(resp, "sent", None),
+            "request_time_seconds": f"{request_time.seconds:d}.{request_time.microseconds:06d}",
+            "pid": f"<{os.getpid()}>",
+        }
+
+        if config.bool_environ_get("GUNICORN_LOG_HEADERS", False):
+            log_kwargs["headers"] = [h for h in req.headers if self.header_safe(h[0])]
+
+        self._access_logger.info("request", **log_kwargs)
 
     def reopen_files(self) -> None:
         pass  # we don't support files
