@@ -42,7 +42,8 @@ class TempUser:
 def get_password_validators() -> Iterable[pv.PasswordValidator]:
     return (
         pv.SafeCommonPasswordValidator(),
-        pv.MinimumLengthValidator(min_length=9),
+        pv.MinimumLengthValidator(min_length=10),
+        pv.MaximumLengthValidator(max_length=256),
         pv.NumericPasswordValidator(),
         # this means we check every attribute of TempUser
         pv.UserAttributeSimilarityValidator(user_attributes=(f.name for f in fields(TempUser))),

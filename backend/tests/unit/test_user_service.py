@@ -106,10 +106,11 @@ class TestCreateUser:
     @pytest.mark.parametrize(
         "password,msg",
         [
-            ("weak", "must contain at least 9 characters"),
+            ("weak", "must contain at least 10 characters"),
             ("123412341234", "password is entirely numeric"),
             ("test@example.com", "password is too similar to the email"),
             ("spongebob1", "password is too common"),
+            ("a" * 258, "must not contain more than 256 characters"),
         ],
     )
     def test_create_user_weak_password(self, password, msg):

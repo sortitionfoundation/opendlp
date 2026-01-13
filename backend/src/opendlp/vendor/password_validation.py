@@ -46,6 +46,33 @@ class MinimumLengthValidator:
         return f"Your password must contain at least {self.min_length} character."
 
 
+class MaximumLengthValidator:
+    """
+    Validate that the password is not longer than the maximum. Very long passwords can cause
+    Denial of Service issues.
+
+    For reference see:
+    https://docs.djangoproject.com/en/6.0/releases/1.5.4/
+    https://medium.com/@instatunnel/the-1mb-password-crashing-backends-via-hashing-exhaustion-6e805156d791
+    """
+
+    def __init__(self, max_length: int = 256) -> None:
+        self.max_length = max_length
+
+    def validate(self, password: str, user: object | None = None) -> None:
+        if len(password) > self.max_length:
+            raise ValidationError(
+                self.get_error_message(),
+                code="password_too_long",
+            )
+
+    def get_error_message(self) -> str:
+        return f"This password is too long. It must not contain more than {self.max_length} characters."
+
+    def get_help_text(self) -> str:
+        return f"Your password must contain no more than {self.max_length} characters."
+
+
 class UserAttributeSimilarityValidator:  # pragma: no cover
     """
     Validate that the password is sufficiently different from the user's
