@@ -245,8 +245,8 @@ def login_google() -> ResponseReturnValue:
     if next_page and next_page.startswith("/"):
         session["oauth_next"] = next_page
 
-    # Redirect to Google OAuth
-    redirect_uri = url_for("auth.google_callback", _external=True)
+    # Redirect to Google OAuth - it has to be https, so do that
+    redirect_uri = url_for("auth.google_callback", _external=True, _scheme="https")
     response = oauth.google.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
