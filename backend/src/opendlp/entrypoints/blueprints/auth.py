@@ -2,14 +2,16 @@
 ABOUTME: Handles user authentication flow with invite-based registration"""
 
 import markdown
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_babel import get_locale
 from flask_login import current_user, login_required, login_user, logout_user
+from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter
 from opendlp.domain.user_data_agreement import get_user_data_agreement_content
+from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
 from opendlp.service_layer.exceptions import (
     InvalidCredentials,
@@ -26,7 +28,7 @@ from opendlp.service_layer.password_reset_service import (
     validate_reset_token,
 )
 from opendlp.service_layer.security import password_validators_help_text_html
-from opendlp.service_layer.user_service import authenticate_user, create_user
+from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
 from opendlp.translations import gettext as _
 
 auth_bp = Blueprint("auth", __name__)
@@ -230,3 +232,107 @@ def reset_password(token: str) -> ResponseReturnValue:
     return render_template(
         "auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
     )
+
+
+@auth_bp.route("/login/google")
+def login_google() -> ResponseReturnValue:
+    """Initiate Google OAuth login flow."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    # Store redirect URL in session for post-OAuth redirect
+    next_page = request.args.get("next")
+    if next_page and next_page.startswith("/"):
+        session["oauth_next"] = next_page
+
+    # Redirect to Google OAuth
+    redirect_uri = url_for("auth.google_callback", _external=True)
+    response = oauth.google.authorize_redirect(redirect_uri)
+    assert isinstance(response, Response)
+    return response
+
+
+@auth_bp.route("/login/google/callback")
+def google_callback() -> ResponseReturnValue:
+    """Handle Google OAuth callback."""
+    try:
+        # Get OAuth token
+        token = oauth.google.authorize_access_token()
+
+        # Get user info from Google
+        user_info = token.get("userinfo")
+        if not user_info:
+            user_info = oauth.google.userinfo()
+
+        google_id = user_info.get("sub")
+        email = user_info.get("email")
+        first_name = user_info.get("given_name", "")
+        last_name = user_info.get("family_name", "")
+
+        if not google_id or not email:
+            flash(_("Failed to get user information from Google"), "error")
+            return redirect(url_for("auth.login"))
+
+        uow = bootstrap.bootstrap()
+
+        # Try to find or create OAuth user
+        user, created = find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id=google_id,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            invite_code=session.get("oauth_invite_code"),
+            accept_data_agreement=session.get("oauth_accept_agreement", False),
+        )
+
+        # Clear OAuth session data
+        session.pop("oauth_invite_code", None)
+        session.pop("oauth_accept_agreement", None)
+
+        # Log user in
+        login_user(user)
+
+        if created:
+            flash(_("Account created successfully! Welcome to OpenDLP."), "success")
+        else:
+            flash(_("Signed in successfully"), "success")
+
+        # Redirect to next page or dashboard
+        next_page = session.pop("oauth_next", None)
+        if next_page and next_page.startswith("/"):
+            return redirect(next_page)
+        return redirect(url_for("main.dashboard"))
+
+    except InvalidInvite as e:
+        # User needs invite code - redirect to OAuth registration
+        flash(str(e), "error")
+        return redirect(url_for("auth.register_google"))
+    except Exception as e:
+        current_app.logger.error(f"Google OAuth callback error: {e}")
+        flash(_("An error occurred during Google sign in. Please try again."), "error")
+        return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/register/google", methods=["GET", "POST"])
+def register_google() -> ResponseReturnValue:
+    """Register with Google OAuth (requires invite code)."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    # Import here to avoid circular import
+    from opendlp.entrypoints.forms import OAuthRegistrationForm
+
+    form = OAuthRegistrationForm()
+
+    if form.validate_on_submit():
+        # Store invite code and agreement in session
+        assert form.invite_code.data is not None
+        session["oauth_invite_code"] = form.invite_code.data
+        session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
+
+        # Redirect to Google OAuth
+        return redirect(url_for("auth.login_google"))
+
+    return render_template("auth/register_google.html", form=form)

@@ -453,3 +453,33 @@ class ChangeOwnPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
+
+
+class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """OAuth registration form with invite code (no password needed)."""
+
+    invite_code = StringField(
+        _l("Invite Code"),
+        validators=[DataRequired(), Length(min=5, max=50)],
+        description=_l("Enter your invitation code to register"),
+    )
+
+    accept_data_agreement = BooleanField(
+        _l("Accept Data Agreement"),
+        validators=[DataRequired(message=_l("You must accept the data agreement to register"))],
+        description=_l("I agree to the data agreement"),
+    )
+
+    def validate_invite_code(self, invite_code: StringField) -> None:
+        """Validate that invite code exists and is valid."""
+        if not invite_code.data:
+            return
+        try:
+            with SqlAlchemyUnitOfWork() as uow:
+                invite = uow.user_invites.get_by_code(invite_code.data)
+                if not invite or not invite.is_valid():
+                    raise ValidationError(_("Invalid or expired invite code."))
+        except Exception:  # noqa: S110
+            # If we can't check (e.g., database error), allow form to continue
+            # The service layer will handle this case properly
+            pass

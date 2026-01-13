@@ -3,6 +3,7 @@ ABOUTME: Sets up Flask-Login, Flask-Session, security headers, and database sess
 
 import uuid
 
+from authlib.integrations.flask_client import OAuth
 from flask import Flask, request, session
 from flask_babel import Babel
 from flask_login import LoginManager
@@ -22,6 +23,7 @@ session_store = Session()
 talisman = Talisman()
 babel = Babel()
 csrf = CSRFProtect()
+oauth = OAuth()
 
 
 def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
@@ -77,6 +79,19 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
         # max_age=31536000,  # 1 year cache for static files
         charset="utf-8",  # Explicit charset to prevent encoding issues
     )
+
+    # Initialize Authlib OAuth (only if configured)
+    oauth.init_app(app)
+
+    # Register Google OAuth provider (only if client ID is configured)
+    if app.config.get("OAUTH_GOOGLE_CLIENT_ID"):
+        oauth.register(
+            name="google",
+            client_id=app.config["OAUTH_GOOGLE_CLIENT_ID"],
+            client_secret=app.config["OAUTH_GOOGLE_CLIENT_SECRET"],
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={"scope": "openid email profile"},
+        )
 
 
 def get_locale() -> str:

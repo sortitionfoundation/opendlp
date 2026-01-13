@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Register with Google") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("Register with Google") }}</h1>
+            <p class="govuk-body">{{ _("To register with your Google account, you need a valid invite code.") }}</p>
+            <div class="govuk-inset-text">
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact your administrator.") }}
+            </div>
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
+                    {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
+                    {% if form.invite_code.description %}
+                        <div id="invite-hint" class="govuk-hint">{{ form.invite_code.description }}</div>
+                    {% endif %}
+                    {% if form.invite_code.errors %}
+                        {% for error in form.invite_code.errors %}
+                            <p id="invite-error" class="govuk-error-message">
+                                <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                    {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else ""),
+                    aria_describedby=("invite-hint" if form.invite_code.description else "") + (" invite-error" if form.invite_code.errors else "")) }}
+                </div>
+                <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
+                    <fieldset class="govuk-fieldset"
+                        aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ _("Data Agreement") }}</legend>
+                        <div id="data-agreement-hint" class="govuk-hint">
+                            {{ _("Please read and accept our data agreement to proceed.") }}
+                            <a href="{{ url_for('auth.user_data_agreement') }}"
+                                class="govuk-link"
+                                target="_blank"
+                                rel="noopener noreferrer">{{ _("View data agreement") }}</a>
+                        </div>
+                        {% if form.accept_data_agreement.errors %}
+                            {% for error in form.accept_data_agreement.errors %}
+                                <p id="data-agreement-error" class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                            <div class="govuk-checkboxes__item">
+                                {{ form.accept_data_agreement(class="govuk-checkboxes__input") }}
+                                {{ form.accept_data_agreement.label(class="govuk-label govuk-checkboxes__label") }}
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Continue with Google") }}</button>
+            </form>
+            <p class="govuk-body">
+                {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

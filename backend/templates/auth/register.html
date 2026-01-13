@@ -119,6 +119,16 @@
                 </div>
                 <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create account") }}</button>
             </form>
+            {% if config.OAUTH_GOOGLE_CLIENT_ID %}
+                <div class="govuk-!-margin-top-6">
+                    <h2 class="govuk-heading-m">{{ _("Or register with") }}</h2>
+                    <a href="{{ url_for('auth.register_google') }}"
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">
+                        {{ _("Register with Google") }}
+                    </a>
+                </div>
+            {% endif %}
             <p class="govuk-body">
                 {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>
             </p>

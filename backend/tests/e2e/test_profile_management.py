@@ -55,7 +55,9 @@ class TestProfileViewing:
         response = client.get("/profile")
         assert response.status_code == 200
         assert b"Change password" not in response.data
-        assert oauth_user.oauth_provider.encode() in response.data
+        # Check that the OAuth authentication method is displayed
+        assert b"Google OAuth" in response.data
+        assert b"Active" in response.data
 
 
 class TestProfileEditing:

@@ -30,14 +30,65 @@
                         <strong class="govuk-tag govuk-tag--blue">{{ current_user.global_role.value }}</strong>
                     </dd>
                 </div>
-                {% if current_user.oauth_provider %}
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Sign in method") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {{ current_user.oauth_provider }}
-                        </dd>
-                    </div>
-                {% endif %}
+            </dl>
+            <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Authentication Methods") }}</h2>
+            <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _("Password") }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if current_user.password_hash %}
+                            <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
+                        {% else %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not set") }}</strong>
+                        {% endif %}
+                    </dd>
+                    <dd class="govuk-summary-list__actions">
+                        {% if current_user.password_hash and current_user.oauth_provider %}
+                            <form method="POST"
+                                action="{{ url_for('profile.remove_password') }}"
+                                style="display: inline;"
+                                onsubmit="return confirm('{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}');">
+                                {{ csrf_token() }}
+                                <button type="submit" class="govuk-link govuk-!-font-size-19" style="border: none; background: none; cursor: pointer; text-decoration: underline;">
+                                    {{ _("Remove") }}
+                                </button>
+                            </form>
+                        {% elif not current_user.password_hash %}
+                            <span class="govuk-hint govuk-!-font-size-16">{{ _("Sign in with OAuth only") }}</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _("Google OAuth") }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if current_user.oauth_provider == 'google' %}
+                            <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
+                        {% else %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not linked") }}</strong>
+                        {% endif %}
+                    </dd>
+                    <dd class="govuk-summary-list__actions">
+                        {% if current_user.oauth_provider == 'google' %}
+                            {% if current_user.password_hash %}
+                                <form method="POST"
+                                    action="{{ url_for('profile.remove_oauth') }}"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}');">
+                                    {{ csrf_token() }}
+                                    <button type="submit" class="govuk-link govuk-!-font-size-19" style="border: none; background: none; cursor: pointer; text-decoration: underline;">
+                                        {{ _("Unlink") }}
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
+                            {% endif %}
+                        {% elif not current_user.oauth_provider and config.OAUTH_GOOGLE_CLIENT_ID %}
+                            <a href="{{ url_for('profile.link_google') }}" class="govuk-link">
+                                {{ _("Link Google account") }}
+                            </a>
+                        {% endif %}
+                    </dd>
+                </div>
             </dl>
             <div class="govuk-button-group">
                 <a href="{{ url_for('profile.edit') }}"

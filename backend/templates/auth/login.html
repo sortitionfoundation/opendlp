@@ -39,6 +39,16 @@
                 </div>
                 <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Sign in") }}</button>
             </form>
+            {% if config.OAUTH_GOOGLE_CLIENT_ID %}
+                <div class="govuk-!-margin-top-6">
+                    <h2 class="govuk-heading-m">{{ _("Or sign in with") }}</h2>
+                    <a href="{{ url_for('auth.login_google') }}"
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">
+                        {{ _("Sign in with Google") }}
+                    </a>
+                </div>
+            {% endif %}
             <p class="govuk-body">
                 <a href="{{ url_for('auth.forgot_password') }}" class="govuk-link">{{ _("Forgot your password?") }}</a>
             </p>
