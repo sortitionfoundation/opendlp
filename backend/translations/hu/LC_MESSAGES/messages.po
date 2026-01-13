@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-07 13:46+0000\n"
+"POT-Creation-Date: 2026-01-13 13:17+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -66,7 +66,7 @@ msgid "Email address"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:99 src/opendlp/entrypoints/forms.py:135
-#: templates/admin/user_view.html:75
+#: templates/admin/user_view.html:75 templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
 
@@ -74,11 +74,12 @@ msgstr "Jelszó"
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:109 templates/admin/invite_view.html:22
+#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:462
+#: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:111
+#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:464
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
@@ -111,21 +112,21 @@ msgstr "Jelszó megerősítése"
 msgid "Passwords must match"
 msgstr "A jelszavaknak egyeznie kell"
 
-#: src/opendlp/entrypoints/forms.py:145
+#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:468
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás elfogadása"
 
-#: src/opendlp/entrypoints/forms.py:146
+#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:469
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat"
 
-#: src/opendlp/entrypoints/forms.py:147
+#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:470
 msgid "I agree to the data agreement"
 msgstr "Elfogadom az adatkezelési megállapodást"
 
-#: src/opendlp/entrypoints/forms.py:158
+#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:481
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
@@ -532,45 +533,65 @@ msgstr ""
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:60
+#: src/opendlp/entrypoints/blueprints/auth.py:62
 msgid "Invalid email or password."
 msgstr "Érvénytelen email cím vagy jelszó."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:63
+#: src/opendlp/entrypoints/blueprints/auth.py:65
 msgid "An error occurred during login. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:73
+#: src/opendlp/entrypoints/blueprints/auth.py:75
 msgid "You have been logged out."
 msgstr "Kijelentkeztél."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:110
+#: src/opendlp/entrypoints/blueprints/auth.py:112
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:118
-#: src/opendlp/entrypoints/blueprints/auth.py:225
+#: src/opendlp/entrypoints/blueprints/auth.py:120
+#: src/opendlp/entrypoints/blueprints/auth.py:227
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:121
+#: src/opendlp/entrypoints/blueprints/auth.py:123
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:179
+#: src/opendlp/entrypoints/blueprints/auth.py:181
 msgid "If an account exists with this email, a password reset link has been sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:188
-#: src/opendlp/entrypoints/blueprints/auth.py:228
+#: src/opendlp/entrypoints/blueprints/auth.py:190
+#: src/opendlp/entrypoints/blueprints/auth.py:230
 #, fuzzy
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:218
+#: src/opendlp/entrypoints/blueprints/auth.py:220
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:273
+#: src/opendlp/entrypoints/blueprints/profile.py:150
+msgid "Failed to get user information from Google"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:298
+#, fuzzy
+msgid "Account created successfully! Welcome to OpenDLP."
+msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:300
+#, fuzzy
+msgid "Signed in successfully"
+msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#: src/opendlp/entrypoints/blueprints/auth.py:314
+#, fuzzy
+msgid "An error occurred during Google sign in. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:82
 msgid "Google Spreadsheet configuration created successfully"
@@ -838,42 +859,81 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:46
+#: src/opendlp/entrypoints/blueprints/profile.py:53
 #, fuzzy
 msgid "Profile updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:51
+#: src/opendlp/entrypoints/blueprints/profile.py:58
 #, fuzzy
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:63
+#: src/opendlp/entrypoints/blueprints/profile.py:70
 #, python-format
 msgid "You cannot change your password as you sign in with %(provider)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:85
+#: src/opendlp/entrypoints/blueprints/profile.py:92
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:89
+#: src/opendlp/entrypoints/blueprints/profile.py:96
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:91
+#: src/opendlp/entrypoints/blueprints/profile.py:98
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:94
+#: src/opendlp/entrypoints/blueprints/profile.py:101
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
+#: src/opendlp/entrypoints/blueprints/profile.py:113
+#, fuzzy
+msgid "You already have an OAuth account linked"
+msgstr "Már van fiókod?"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:135
+msgid "Invalid OAuth linking request"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:164
+#, fuzzy
+msgid "Google account linked successfully"
+msgstr "A '%(title)s' gyűlés sikeresen frissült"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:172
+#, fuzzy
+msgid "An error occurred while linking your Google account"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:187
+#, fuzzy
+msgid "Password authentication removed successfully"
+msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:192
+#, fuzzy
+msgid "An error occurred while removing password authentication"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:209
+#, fuzzy
+msgid "OAuth authentication removed successfully"
+msgstr "Google táblázat beállításai sikeresen eltávolítva"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:214
+#, fuzzy
+msgid "An error occurred while removing OAuth authentication"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
 #: src/opendlp/entrypoints/celery/tasks.py:105
-#: src/opendlp/service_layer/sortition.py:568
+#: src/opendlp/service_layer/sortition.py:571
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -1122,6 +1182,33 @@ msgstr ""
 msgid "Rate limit exceeded. Please try again later"
 msgstr ""
 
+#: src/opendlp/service_layer/exceptions.py:139
+#, python-format
+msgid "OAuth authentication failed for %(provider)s: %(reason)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:141
+#, python-format
+msgid "OAuth authentication failed for %(provider)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:143
+#, python-format
+msgid "OAuth authentication failed: %(reason)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:145
+msgid "OAuth authentication failed"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:155
+msgid "Invalid OAuth state parameter"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:162
+msgid "Cannot remove last authentication method. Add another method first."
+msgstr ""
+
 #: src/opendlp/service_layer/sortition.py:96
 msgid ""
 "The assembly needs to have a non-zero number to select before we can do "
@@ -1137,16 +1224,16 @@ msgstr ""
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:637
+#: src/opendlp/service_layer/sortition.py:640
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:664
+#: src/opendlp/service_layer/sortition.py:667
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:676
-#: src/opendlp/service_layer/sortition.py:687
+#: src/opendlp/service_layer/sortition.py:679
+#: src/opendlp/service_layer/sortition.py:690
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -1200,9 +1287,10 @@ msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:2
 #: templates/auth/login.html:6 templates/auth/login.html:40
-#: templates/auth/register.html:123 templates/base.html:86
-#: templates/errors/403.html:27 templates/errors/404.html:28
-#: templates/errors/500.html:28 templates/main/index.html:17
+#: templates/auth/register.html:133 templates/auth/register_google.html:57
+#: templates/base.html:86 templates/errors/403.html:27
+#: templates/errors/404.html:28 templates/errors/500.html:28
+#: templates/main/index.html:17
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
@@ -1379,7 +1467,8 @@ msgstr ""
 
 #: templates/admin/invite_view.html:61 templates/admin/invites.html:92
 #: templates/admin/user_view.html:63 templates/admin/users.html:74
-#: templates/admin/users.html:128
+#: templates/admin/users.html:128 templates/profile/view.html:40
+#: templates/profile/view.html:65
 msgid "Active"
 msgstr ""
 
@@ -1588,6 +1677,7 @@ msgid "OAuth"
 msgstr ""
 
 #: templates/admin/user_view.html:80 templates/auth/register.html:97
+#: templates/auth/register_google.html:31
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
@@ -1716,11 +1806,21 @@ msgstr ""
 msgid "Remember your password?"
 msgstr ""
 
-#: templates/auth/login.html:43
+#: templates/auth/login.html:44
+#, fuzzy
+msgid "Or sign in with"
+msgstr "Jelentkezzen be"
+
+#: templates/auth/login.html:48
+#, fuzzy
+msgid "Sign in with Google"
+msgstr "Jelentkezzen be"
+
+#: templates/auth/login.html:53
 msgid "Forgot your password?"
 msgstr ""
 
-#: templates/auth/login.html:46
+#: templates/auth/login.html:56
 msgid ""
 "Don't have an account? You need an <strong>invite code</strong> to "
 "register."
@@ -1728,7 +1828,7 @@ msgstr ""
 "Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a "
 "bejelentkezéshez."
 
-#: templates/auth/login.html:47
+#: templates/auth/login.html:57
 msgid "Register here"
 msgstr "Regisztrálj itt"
 
@@ -1740,7 +1840,7 @@ msgstr "Regisztráció"
 msgid "Create an account"
 msgstr "Fiók létrehozása"
 
-#: templates/auth/register.html:8
+#: templates/auth/register.html:8 templates/auth/register_google.html:9
 msgid ""
 "You need an invitation code to create an account. If you do not have one,"
 " please contact your administrator."
@@ -1748,17 +1848,19 @@ msgstr ""
 "Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
 "kapcsolatba az adminisztrátorral."
 
-#: templates/auth/register.html:99
+#: templates/auth/register.html:99 templates/auth/register_google.html:33
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: templates/auth/register.html:103
+#: templates/auth/register.html:103 templates/auth/register_google.html:37
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: templates/auth/register.html:108 templates/profile/change_password.html:18
+#: templates/auth/register.html:108 templates/auth/register_google.html:21
+#: templates/auth/register_google.html:42
+#: templates/profile/change_password.html:18
 #: templates/profile/change_password.html:30
 #: templates/profile/change_password.html:42 templates/profile/edit.html:17
 #: templates/profile/edit.html:32
@@ -1769,9 +1871,28 @@ msgstr "Hiba történt"
 msgid "Create account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/auth/register.html:123
+#: templates/auth/register.html:124
+#, fuzzy
+msgid "Or register with"
+msgstr "Regisztrálj itt"
+
+#: templates/auth/register.html:128 templates/auth/register_google.html:2
+#: templates/auth/register_google.html:6
+#, fuzzy
+msgid "Register with Google"
+msgstr "Regisztrálj itt"
+
+#: templates/auth/register.html:133 templates/auth/register_google.html:57
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
+
+#: templates/auth/register_google.html:7
+msgid "To register with your Google account, you need a valid invite code."
+msgstr ""
+
+#: templates/auth/register_google.html:54
+msgid "Continue with Google"
+msgstr ""
 
 #: templates/auth/reset_password.html:3
 #, fuzzy
@@ -2226,6 +2347,7 @@ msgstr ""
 
 #: templates/gsheets/components/view_config.html:41
 #: templates/profile/view.html:18 templates/profile/view.html:24
+#: templates/profile/view.html:42
 msgid "Not set"
 msgstr ""
 
@@ -2483,7 +2605,7 @@ msgstr "Utoljára módosítva"
 msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
-#: templates/main/view_assembly_members.html:31
+#: templates/main/view_assembly_members.html:31 templates/profile/view.html:53
 msgid "Remove"
 msgstr ""
 
@@ -2513,7 +2635,7 @@ msgstr "Új jelszó"
 msgid "Your password must meet the following requirements:"
 msgstr ""
 
-#: templates/profile/change_password.html:50 templates/profile/view.html:49
+#: templates/profile/change_password.html:50 templates/profile/view.html:100
 #, fuzzy
 msgid "Change password"
 msgstr "Új jelszó"
@@ -2532,16 +2654,54 @@ msgstr "Módosítások mentése"
 msgid "Profile Information"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: templates/profile/view.html:35
-#, fuzzy
-msgid "Sign in method"
-msgstr "Jelentkezzen be"
+#: templates/profile/view.html:34
+msgid "Authentication Methods"
+msgstr ""
 
-#: templates/profile/view.html:45
+#: templates/profile/view.html:50
+msgid ""
+"Are you sure you want to remove password authentication? You will only be"
+" able to sign in with Google."
+msgstr ""
+
+#: templates/profile/view.html:57
+msgid "Sign in with OAuth only"
+msgstr ""
+
+#: templates/profile/view.html:62
+#, fuzzy
+msgid "Google OAuth"
+msgstr "Google Táblázat teljes linkje"
+
+#: templates/profile/view.html:67
+msgid "Not linked"
+msgstr ""
+
+#: templates/profile/view.html:76
+msgid ""
+"Are you sure you want to unlink your Google account? You will only be "
+"able to sign in with your password."
+msgstr ""
+
+#: templates/profile/view.html:79
+#, fuzzy
+msgid "Unlink"
+msgstr "Folyamatban"
+
+#: templates/profile/view.html:83
+msgid "Only authentication method"
+msgstr ""
+
+#: templates/profile/view.html:87
+#, fuzzy
+msgid "Link Google account"
+msgstr "Hozzon létre fiókot"
+
+#: templates/profile/view.html:96
 msgid "Edit profile"
 msgstr ""
 
-#: templates/profile/view.html:53
+#: templates/profile/view.html:104
 #, fuzzy
 msgid "Back to dashboard"
 msgstr "Vissza az irányító pulthoz"
@@ -3257,4 +3417,9 @@ msgstr ""
 #~ " to <a href=\"%(sheet_url)s\" "
 #~ "target=\"_blank\">the spreadsheet</a> and view "
 #~ "the new tabs."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "the header row in the %(tab_name)s "
+#~ "tab contains duplicates: %(duplicates)s"
 #~ msgstr ""
