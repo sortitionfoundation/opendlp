@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-13 13:17+0000\n"
+"POT-Creation-Date: 2026-01-13 16:45+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -53,8 +53,9 @@ msgid "Invalid email address"
 msgstr "Érvénytelen email cím"
 
 #: src/opendlp/entrypoints/forms.py:63
+#, fuzzy
 msgid "This email address is already registered."
-msgstr "Ezen az emailcímen már van regisztráció."
+msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
 #: src/opendlp/entrypoints/forms.py:84
 msgid "Number cannot be negative"
@@ -66,20 +67,23 @@ msgid "Email address"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:99 src/opendlp/entrypoints/forms.py:135
-#: templates/admin/user_view.html:75 templates/profile/view.html:37
+#: src/opendlp/entrypoints/forms.py:462 templates/admin/user_view.html:75
+#: templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
 
 #: src/opendlp/entrypoints/forms.py:102
+#, fuzzy
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:462
+#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:476
 #: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:464
+#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:478
+#, fuzzy
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
@@ -91,7 +95,7 @@ msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:117
 msgid "Optional - your first name"
-msgstr "Keresztnév - nem kötelező"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:122 src/opendlp/entrypoints/forms.py:351
 #: src/opendlp/entrypoints/forms.py:429 templates/admin/user_view.html:38
@@ -101,54 +105,64 @@ msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:124
 msgid "Optional - your last name"
-msgstr "Vezetéknév - nem kötelező"
+msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:139
+#: src/opendlp/entrypoints/forms.py:139 src/opendlp/entrypoints/forms.py:466
+#, fuzzy
 msgid "Confirm Password"
-msgstr "Jelszó megerősítése"
+msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py:140 src/opendlp/entrypoints/forms.py:185
-#: src/opendlp/entrypoints/forms.py:453
+#: src/opendlp/entrypoints/forms.py:453 src/opendlp/entrypoints/forms.py:467
+#, fuzzy
 msgid "Passwords must match"
-msgstr "A jelszavaknak egyeznie kell"
+msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:468
+#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:482
+#, fuzzy
 msgid "Accept Data Agreement"
-msgstr "Adatkezelési megállapodás elfogadása"
+msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:469
+#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:483
+#, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
-"megállapodásunkat"
+"megállapodásunkat."
 
-#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:470
+#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:484
+#, fuzzy
 msgid "I agree to the data agreement"
-msgstr "Elfogadom az adatkezelési megállapodást"
+msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:481
+#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:495
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
 #: src/opendlp/entrypoints/forms.py:171
+#, fuzzy
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
 #: src/opendlp/entrypoints/forms.py:180 src/opendlp/entrypoints/forms.py:446
+#, fuzzy
 msgid "New Password"
 msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py:184 src/opendlp/entrypoints/forms.py:452
+#, fuzzy
 msgid "Confirm New Password"
-msgstr "Új jelszó megerősítése"
+msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py:194
+#, fuzzy
 msgid "Assembly Title"
-msgstr "Gyűlés címe"
+msgstr "Közösségi gyűlés"
 
 #: src/opendlp/entrypoints/forms.py:196
+#, fuzzy
 msgid "Enter the title for this assembly"
-msgstr "Adja meg a gyűlés címét"
+msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
 #: src/opendlp/entrypoints/forms.py:200
 #: templates/main/view_assembly_details.html:6
@@ -157,7 +171,7 @@ msgstr "A gyűlés fő témája"
 
 #: src/opendlp/entrypoints/forms.py:202
 msgid "Optional - the key question this assembly will address"
-msgstr "Választható - a fő kérdés, amellyel ez a közösségi gyűlés foglalkozni fog"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:207
 #: templates/main/view_assembly_details.html:20
@@ -166,7 +180,7 @@ msgstr "Első gyűlés időpontja"
 
 #: src/opendlp/entrypoints/forms.py:209
 msgid "Optional - when the first assembly meeting will take place"
-msgstr "Választható - az első közösségi gyűlés időpontja"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:213
 #: templates/main/view_assembly_details.html:27
@@ -174,72 +188,59 @@ msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
 #: src/opendlp/entrypoints/forms.py:215
-#, fuzzy
 msgid "The number of participants to select for this assembly"
 msgstr ""
-"Választható - a résztvevők száma, akiket ki kell választani ehhez a "
-"gyűléshez"
 
 #: src/opendlp/entrypoints/forms.py:232
+#, fuzzy
 msgid "Google Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
 
 #: src/opendlp/entrypoints/forms.py:234
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
-"A regisztrált válaszadók adatait tartalmazó Google Táblázat teljes URL "
-"címe"
 
 #: src/opendlp/entrypoints/forms.py:240 src/opendlp/entrypoints/forms.py:256
+#, fuzzy
 msgid "Respondents Tab Name"
-msgstr "Regisztrált válaszadók adatait tartalmazó lapfül neve"
+msgstr "Válaszadókat tartalmazó lapful neve"
 
 #: src/opendlp/entrypoints/forms.py:242
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
-"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
-"kezdeti kiválasztáshoz"
 
 #: src/opendlp/entrypoints/forms.py:248 src/opendlp/entrypoints/forms.py:264
+#, fuzzy
 msgid "Targets Tab Name"
-msgstr "Célszámok lapfül neve"
+msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:250
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
-"A kategóriákat, kategóriaértékeket és célszámokat tartalmazó lapfül neve "
-"- a kezdeti kiválasztásnál"
 
 #: src/opendlp/entrypoints/forms.py:258
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
-"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
-"kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:266
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
-"A kategóriákat, kategóriaértékeket és célokat tartalmazó lapfül neve - "
-"Kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:271
 msgid "Already Selected Tab Name"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:273
-#, fuzzy
 msgid "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
-"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
-"kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:278
 #: templates/gsheets/components/view_config.html:48
@@ -248,7 +249,7 @@ msgstr "Címegyezés ellenőrzése"
 
 #: src/opendlp/entrypoints/forms.py:279
 msgid "Enable checking for participants with the same address"
-msgstr "Ellenőrizze hogy azonos címen van-e másik személy a résztvevők közül"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:284
 #: templates/gsheets/components/view_config.html:54
@@ -257,35 +258,35 @@ msgstr "Fennmaradó résztvevők lap generálása"
 
 #: src/opendlp/entrypoints/forms.py:285
 msgid "Create a tab with remaining participants after selection"
-msgstr "Hozzon létre egy lapot a fennmaradó résztvevőkkel a kiválasztás után"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:290
+#, fuzzy
 msgid "Team Configuration"
-msgstr "Csapat beállítás"
+msgstr "Google Táblázat beállításainak eltávolítása"
 
 #: src/opendlp/entrypoints/forms.py:292
 msgid "UK Team"
-msgstr "Egyesült Királyság csapat"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:293
 msgid "EU Team"
-msgstr "EU csapat"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:294
 msgid "Australia Team"
-msgstr "Ausztrália csapat"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:295
+#, fuzzy
 msgid "Custom configuration"
-msgstr "Egyedi beállítások"
+msgstr "Beállítások mentése"
 
 #: src/opendlp/entrypoints/forms.py:300
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
-"Válassza ki az ID oszlop, a Cím oszlopok és a Megőrizendő oszlopok "
-"alapértelmezett beállításaihoz használni kívánt Csoport beállítást."
 
 #: src/opendlp/entrypoints/forms.py:305
 #: templates/gsheets/components/view_config.html:60
@@ -297,8 +298,6 @@ msgid ""
 "Column name containing unique identifiers for respondents. Note will be "
 "overridden if the Team Configuration is not 'Custom'."
 msgstr ""
-"A válaszadók egyedi azonosítóit tartalmazó oszlopnév. Megjegyzés: "
-"felülírásra kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:314
 #: templates/gsheets/components/view_config.html:66
@@ -311,9 +310,6 @@ msgid ""
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
-"Ugyanazon cím ellenőrzésére használt oszlopnevek vesszővel elválasztott "
-"listája (pl. primary_address1, zip_royal_mail). Megjegyzés: felülírásra "
-"kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:323
 #: templates/gsheets/components/view_config.html:72
@@ -326,9 +322,6 @@ msgid ""
 " last_name, email). Note will be overridden if the Team Configuration is "
 "not 'Custom'."
 msgstr ""
-"Az export fájlban megtartandó oszlopnevek vesszővel elválasztott listája "
-"(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
-" Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:346
 #, fuzzy
@@ -393,12 +386,12 @@ msgstr "Hiba részletei"
 #: src/opendlp/entrypoints/forms.py:405
 #, fuzzy
 msgid "Select a user to add to this assembly"
-msgstr "Adja meg a gyűlés címét"
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/forms.py:409
 #, fuzzy
 msgid "Assembly Role"
-msgstr "Gyűlés címe"
+msgstr "Közösségi gyűlés"
 
 #: src/opendlp/entrypoints/forms.py:413
 msgid "Select the role this user will have on the assembly"
@@ -551,6 +544,7 @@ msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:120
 #: src/opendlp/entrypoints/blueprints/auth.py:227
+#: src/opendlp/entrypoints/blueprints/profile.py:266
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
@@ -574,7 +568,7 @@ msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:273
-#: src/opendlp/entrypoints/blueprints/profile.py:150
+#: src/opendlp/entrypoints/blueprints/profile.py:152
 msgid "Failed to get user information from Google"
 msgstr ""
 
@@ -859,77 +853,94 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:53
+#: src/opendlp/entrypoints/blueprints/profile.py:58
 #, fuzzy
 msgid "Profile updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:58
+#: src/opendlp/entrypoints/blueprints/profile.py:63
 #, fuzzy
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:70
-#, python-format
-msgid "You cannot change your password as you sign in with %(provider)s"
+#: src/opendlp/entrypoints/blueprints/profile.py:74
+msgid "You need to set a password first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:92
+#: src/opendlp/entrypoints/blueprints/profile.py:94
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:96
+#: src/opendlp/entrypoints/blueprints/profile.py:98
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:98
+#: src/opendlp/entrypoints/blueprints/profile.py:100
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:101
+#: src/opendlp/entrypoints/blueprints/profile.py:103
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:113
+#: src/opendlp/entrypoints/blueprints/profile.py:115
 #, fuzzy
 msgid "You already have an OAuth account linked"
 msgstr "Már van fiókod?"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:135
+#: src/opendlp/entrypoints/blueprints/profile.py:137
 msgid "Invalid OAuth linking request"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:164
+#: src/opendlp/entrypoints/blueprints/profile.py:166
 #, fuzzy
 msgid "Google account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:172
+#: src/opendlp/entrypoints/blueprints/profile.py:174
 #, fuzzy
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:187
+#: src/opendlp/entrypoints/blueprints/profile.py:189
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:192
+#: src/opendlp/entrypoints/blueprints/profile.py:194
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:209
+#: src/opendlp/entrypoints/blueprints/profile.py:211
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:214
+#: src/opendlp/entrypoints/blueprints/profile.py:216
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:227
+msgid "You already have a password. Use 'Change password' instead."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:232
+msgid "Cannot set password without another authentication method"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:262
+#, fuzzy
+msgid "Password set successfully"
+msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:269
+#, fuzzy
+msgid "An error occurred while setting your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/celery/tasks.py:105
@@ -1400,6 +1411,7 @@ msgstr ""
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
 #: templates/profile/change_password.html:51 templates/profile/edit.html:41
+#: templates/profile/set_password.html:42
 msgid "Cancel"
 msgstr "Megszakítás"
 
@@ -1468,7 +1480,7 @@ msgstr ""
 #: templates/admin/invite_view.html:61 templates/admin/invites.html:92
 #: templates/admin/user_view.html:63 templates/admin/users.html:74
 #: templates/admin/users.html:128 templates/profile/view.html:40
-#: templates/profile/view.html:65
+#: templates/profile/view.html:72
 msgid "Active"
 msgstr ""
 
@@ -1863,7 +1875,8 @@ msgstr "Adatkezelési megállapodás megtekintése"
 #: templates/profile/change_password.html:18
 #: templates/profile/change_password.html:30
 #: templates/profile/change_password.html:42 templates/profile/edit.html:17
-#: templates/profile/edit.html:32
+#: templates/profile/edit.html:32 templates/profile/set_password.html:21
+#: templates/profile/set_password.html:33
 msgid "Error"
 msgstr "Hiba történt"
 
@@ -2605,7 +2618,7 @@ msgstr "Utoljára módosítva"
 msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
-#: templates/main/view_assembly_members.html:31 templates/profile/view.html:53
+#: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
 msgid "Remove"
 msgstr ""
 
@@ -2632,10 +2645,11 @@ msgid "Change Password"
 msgstr "Új jelszó"
 
 #: templates/profile/change_password.html:8
+#: templates/profile/set_password.html:11
 msgid "Your password must meet the following requirements:"
 msgstr ""
 
-#: templates/profile/change_password.html:50 templates/profile/view.html:100
+#: templates/profile/change_password.html:50 templates/profile/view.html:108
 #, fuzzy
 msgid "Change password"
 msgstr "Új jelszó"
@@ -2648,6 +2662,22 @@ msgstr ""
 #, fuzzy
 msgid "Save changes"
 msgstr "Módosítások mentése"
+
+#: templates/profile/set_password.html:2 templates/profile/set_password.html:6
+#, fuzzy
+msgid "Set Password"
+msgstr "Új jelszó"
+
+#: templates/profile/set_password.html:8
+msgid ""
+"Set a password to add it as an additional authentication method. You will"
+" be able to sign in using either your password or Google OAuth."
+msgstr ""
+
+#: templates/profile/set_password.html:41 templates/profile/view.html:61
+#, fuzzy
+msgid "Set password"
+msgstr "Új jelszó"
 
 #: templates/profile/view.html:7
 #, fuzzy
@@ -2664,44 +2694,45 @@ msgid ""
 " able to sign in with Google."
 msgstr ""
 
-#: templates/profile/view.html:57
-msgid "Sign in with OAuth only"
-msgstr ""
+#: templates/profile/view.html:63
+#, fuzzy
+msgid "No password set"
+msgstr "Új jelszó"
 
-#: templates/profile/view.html:62
+#: templates/profile/view.html:69
 #, fuzzy
 msgid "Google OAuth"
 msgstr "Google Táblázat teljes linkje"
 
-#: templates/profile/view.html:67
+#: templates/profile/view.html:74
 msgid "Not linked"
 msgstr ""
 
-#: templates/profile/view.html:76
+#: templates/profile/view.html:83
 msgid ""
 "Are you sure you want to unlink your Google account? You will only be "
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:79
+#: templates/profile/view.html:90
 #, fuzzy
 msgid "Unlink"
 msgstr "Folyamatban"
 
-#: templates/profile/view.html:83
+#: templates/profile/view.html:93
 msgid "Only authentication method"
 msgstr ""
 
-#: templates/profile/view.html:87
+#: templates/profile/view.html:96
 #, fuzzy
 msgid "Link Google account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:96
+#: templates/profile/view.html:104
 msgid "Edit profile"
 msgstr ""
 
-#: templates/profile/view.html:104
+#: templates/profile/view.html:112
 #, fuzzy
 msgid "Back to dashboard"
 msgstr "Vissza az irányító pulthoz"
@@ -3422,4 +3453,270 @@ msgstr ""
 #~ msgid ""
 #~ "the header row in the %(tab_name)s "
 #~ "tab contains duplicates: %(duplicates)s"
+#~ msgstr ""
+
+#~ msgid "User - Basic access to assigned assemblies"
+#~ msgstr ""
+
+#~ msgid "Global Organiser - Can create and manage all assemblies"
+#~ msgstr ""
+
+#~ msgid "Admin - Full system access including user management"
+#~ msgstr ""
+
+#~ msgid "Assembly Manager - Can manage the assembly and add other users"
+#~ msgstr ""
+
+#~ msgid "Confirmation Caller - Can call confirmations for selected participants"
+#~ msgstr ""
+
+#~ msgid "This email address is already registered."
+#~ msgstr "Ezen az emailcímen már van regisztráció."
+
+#~ msgid "Number cannot be negative"
+#~ msgstr ""
+
+#~ msgid "Remember me"
+#~ msgstr "Maradjak bejelentkezve"
+
+#~ msgid "Enter your invitation code to register"
+#~ msgstr "Add meg a meghívókódodat a regisztrációhoz"
+
+#~ msgid "Optional - your first name"
+#~ msgstr "Keresztnév - nem kötelező"
+
+#~ msgid "Optional - your last name"
+#~ msgstr "Vezetéknév - nem kötelező"
+
+#~ msgid "Confirm Password"
+#~ msgstr "Jelszó megerősítése"
+
+#~ msgid "Passwords must match"
+#~ msgstr "A jelszavaknak egyeznie kell"
+
+#~ msgid "Accept Data Agreement"
+#~ msgstr "Adatkezelési megállapodás elfogadása"
+
+#~ msgid "You must accept the data agreement to register"
+#~ msgstr ""
+#~ "A folytatáshoz kérjük, olvassa el és "
+#~ "fogadja el az adatkezelési megállapodásunkat"
+
+#~ msgid "I agree to the data agreement"
+#~ msgstr "Elfogadom az adatkezelési megállapodást"
+
+#~ msgid "Enter your email address to receive a password reset link"
+#~ msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
+
+#~ msgid "Confirm New Password"
+#~ msgstr "Új jelszó megerősítése"
+
+#~ msgid "Assembly Title"
+#~ msgstr "Gyűlés címe"
+
+#~ msgid "Enter the title for this assembly"
+#~ msgstr "Adja meg a gyűlés címét"
+
+#~ msgid "Optional - the key question this assembly will address"
+#~ msgstr ""
+#~ "Választható - a fő kérdés, amellyel "
+#~ "ez a közösségi gyűlés foglalkozni fog"
+
+#~ msgid "Optional - when the first assembly meeting will take place"
+#~ msgstr "Választható - az első közösségi gyűlés időpontja"
+
+#~ msgid "The number of participants to select for this assembly"
+#~ msgstr ""
+#~ "Választható - a résztvevők száma, akiket"
+#~ " ki kell választani ehhez a gyűléshez"
+
+#~ msgid "Google Spreadsheet URL"
+#~ msgstr "Google Táblázat teljes linkje"
+
+#~ msgid "Full URL of the Google Spreadsheet containing respondent data"
+#~ msgstr ""
+#~ "A regisztrált válaszadók adatait tartalmazó"
+#~ " Google Táblázat teljes URL címe"
+
+#~ msgid "Respondents Tab Name"
+#~ msgstr "Regisztrált válaszadók adatait tartalmazó lapfül neve"
+
+#~ msgid ""
+#~ "Name of the tab containing respondents"
+#~ " data in the Google Spreadsheet - "
+#~ "for initial Selection"
+#~ msgstr ""
+#~ "A Google Táblázatban a regisztráltak "
+#~ "adatait tartalmazó lapfül neve - a "
+#~ "kezdeti kiválasztáshoz"
+
+#~ msgid "Targets Tab Name"
+#~ msgstr "Célszámok lapfül neve"
+
+#~ msgid ""
+#~ "Name of the tab containing categories,"
+#~ " category values and targets - for"
+#~ " initial Selection"
+#~ msgstr ""
+#~ "A kategóriákat, kategóriaértékeket és "
+#~ "célszámokat tartalmazó lapfül neve - a"
+#~ " kezdeti kiválasztásnál"
+
+#~ msgid ""
+#~ "Name of the tab containing respondents"
+#~ " data in the Google Spreadsheet - "
+#~ "for Replacements"
+#~ msgstr ""
+#~ "A Google Táblázatban a regisztráltak "
+#~ "adatait tartalmazó lapfül neve - a "
+#~ "kieső emberek pótlásához"
+
+#~ msgid ""
+#~ "Name of the tab containing categories,"
+#~ " category values and targets - for"
+#~ " Replacements"
+#~ msgstr ""
+#~ "A kategóriákat, kategóriaértékeket és célokat"
+#~ " tartalmazó lapfül neve - Kieső "
+#~ "emberek pótlásához"
+
+#~ msgid "Already Selected Tab Name"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Name of the tab containing already "
+#~ "selected people (used for Replacements)"
+#~ msgstr ""
+#~ "A Google Táblázatban a regisztráltak "
+#~ "adatait tartalmazó lapfül neve - a "
+#~ "kieső emberek pótlásához"
+
+#~ msgid "Enable checking for participants with the same address"
+#~ msgstr "Ellenőrizze hogy azonos címen van-e másik személy a résztvevők közül"
+
+#~ msgid "Create a tab with remaining participants after selection"
+#~ msgstr "Hozzon létre egy lapot a fennmaradó résztvevőkkel a kiválasztás után"
+
+#~ msgid "Team Configuration"
+#~ msgstr "Csapat beállítás"
+
+#~ msgid "UK Team"
+#~ msgstr "Egyesült Királyság csapat"
+
+#~ msgid "EU Team"
+#~ msgstr "EU csapat"
+
+#~ msgid "Australia Team"
+#~ msgstr "Ausztrália csapat"
+
+#~ msgid "Custom configuration"
+#~ msgstr "Egyedi beállítások"
+
+#~ msgid ""
+#~ "Select the team configuration to use "
+#~ "for default settings for ID Column, "
+#~ "Address Columns and Columns To Keep."
+#~ msgstr ""
+#~ "Válassza ki az ID oszlop, a Cím"
+#~ " oszlopok és a Megőrizendő oszlopok "
+#~ "alapértelmezett beállításaihoz használni kívánt "
+#~ "Csoport beállítást."
+
+#~ msgid ""
+#~ "Column name containing unique identifiers "
+#~ "for respondents. Note will be overridden"
+#~ " if the Team Configuration is not "
+#~ "'Custom'."
+#~ msgstr ""
+#~ "A válaszadók egyedi azonosítóit tartalmazó "
+#~ "oszlopnév. Megjegyzés: felülírásra kerül, ha"
+#~ " a Csapat beállítás nem 'Egyedi'."
+
+#~ msgid ""
+#~ "Comma-separated list of column names "
+#~ "used for checking same address (e.g.,"
+#~ " primary_address1, zip_royal_mail). Note will "
+#~ "be overridden if the Team Configuration"
+#~ " is not 'Custom'."
+#~ msgstr ""
+#~ "Ugyanazon cím ellenőrzésére használt "
+#~ "oszlopnevek vesszővel elválasztott listája "
+#~ "(pl. primary_address1, zip_royal_mail). Megjegyzés:"
+#~ " felülírásra kerül, ha a Csapat "
+#~ "beállítás nem 'Egyedi'."
+
+#~ msgid ""
+#~ "Comma-separated list of column names "
+#~ "to keep in output (e.g., first_name, "
+#~ "last_name, email). Note will be "
+#~ "overridden if the Team Configuration is"
+#~ " not 'Custom'."
+#~ msgstr ""
+#~ "Az export fájlban megtartandó oszlopnevek "
+#~ "vesszővel elválasztott listája (pl. "
+#~ "keresztnév, vezetéknév, e-mail). Megjegyzés: "
+#~ "felülírásra kerül, ha a Csapat beállítás"
+#~ " nem 'Egyedi'."
+
+#~ msgid "User's first name"
+#~ msgstr "Keresztnév"
+
+#~ msgid "User's last name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "User's global role determines their permissions across the system"
+#~ msgstr ""
+
+#~ msgid "Active Account"
+#~ msgstr "Hozzon létre fiókot"
+
+#~ msgid "Inactive users cannot log in to the system"
+#~ msgstr ""
+
+#~ msgid "Role for New User"
+#~ msgstr ""
+
+#~ msgid "The role that will be granted to the user who uses this invite"
+#~ msgstr ""
+
+#~ msgid "Email Address (Optional)"
+#~ msgstr "Email cím"
+
+#~ msgid "Optional - if provided, the invite will be emailed to this address"
+#~ msgstr ""
+
+#~ msgid "Expires In (Hours)"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Optional - number of hours until "
+#~ "the invite expires (default: 168 hours"
+#~ " / 7 days)"
+#~ msgstr ""
+
+#~ msgid "User Email"
+#~ msgstr "Hiba részletei"
+
+#~ msgid "Select a user to add to this assembly"
+#~ msgstr "Adja meg a gyűlés címét"
+
+#~ msgid "Assembly Role"
+#~ msgstr "Gyűlés címe"
+
+#~ msgid "Select the role this user will have on the assembly"
+#~ msgstr ""
+
+#~ msgid "Your first name"
+#~ msgstr "Keresztnév"
+
+#~ msgid "Your last name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "Current Password"
+#~ msgstr "Új jelszó"
+
+#~ msgid "You cannot change your password as you sign in with %(provider)s"
+#~ msgstr ""
+
+#~ msgid "Sign in with OAuth only"
 #~ msgstr ""
