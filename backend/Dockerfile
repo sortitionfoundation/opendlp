@@ -122,6 +122,7 @@ STOPSIGNAL SIGINT
 # Note how the runtime dependencies differ from build-time ones.
 # Notably, there is no uv either!
 # curl is added to allow the healthcheck to run
+# Also we run unattended-upgrade to get just security updates
 RUN <<EOT
 apt-get update -qy
 apt-get install -qyy \
@@ -131,7 +132,10 @@ apt-get install -qyy \
   libpython3.12 \
   libpcre3 \
   libxml2 \
-  curl
+  curl \
+  unattended-upgrades
+
+/usr/bin/unattended-upgrade
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
