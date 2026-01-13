@@ -205,6 +205,95 @@ class TestUser:
         assert hash(user1) == hash(user2)
         assert hash(user1) != hash(user3)
 
+    def test_add_oauth_credentials(self):
+        """Test adding OAuth credentials to user."""
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        user.add_oauth_credentials("google", "google123")
+
+        assert user.oauth_provider == "google"
+        assert user.oauth_id == "google123"
+        assert user.password_hash == "hashed"  # pragma: allowlist secret
+
+    def test_add_oauth_credentials_validation(self):
+        """Test OAuth credentials validation."""
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        with pytest.raises(ValueError, match="Provider and OAuth ID are required"):
+            user.add_oauth_credentials("", "id123")
+
+        with pytest.raises(ValueError, match="Provider and OAuth ID are required"):
+            user.add_oauth_credentials("google", "")
+
+    def test_remove_password(self):
+        """Test removing password with OAuth present."""
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+
+        user.remove_password()
+
+        assert user.password_hash is None
+        assert user.oauth_provider == "google"
+
+    def test_remove_password_fails_without_oauth(self):
+        """Test cannot remove password without OAuth."""
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        with pytest.raises(ValueError, match="Cannot remove password: no OAuth authentication configured"):
+            user.remove_password()
+
+    def test_remove_oauth(self):
+        """Test removing OAuth with password present."""
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+
+        user.remove_oauth()
+
+        assert user.oauth_provider is None
+        assert user.oauth_id is None
+        assert user.password_hash == "hashed"  # pragma: allowlist secret
+
+    def test_remove_oauth_fails_without_password(self):
+        """Test cannot remove OAuth without password."""
+        user = User(
+            email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
+        )
+
+        with pytest.raises(ValueError, match="Cannot remove OAuth: no password authentication configured"):
+            user.remove_oauth()
+
+    def test_has_multiple_auth_methods(self):
+        """Test checking for multiple auth methods."""
+        # Both password and OAuth
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        assert user.has_multiple_auth_methods() is True
+
+        # Only password
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        assert user.has_multiple_auth_methods() is False
+
+        # Only OAuth
+        user = User(
+            email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
+        )
+        assert user.has_multiple_auth_methods() is False
+
 
 class TestUserAssemblyRole:
     def test_create_user_assembly_role(self):

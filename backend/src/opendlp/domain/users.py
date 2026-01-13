@@ -86,6 +86,33 @@ class User:
         self.oauth_id = oauth_id
         self.password_hash = None
 
+    def add_oauth_credentials(self, provider: str, oauth_id: str) -> None:
+        """Add OAuth credentials to existing user account (account linking)."""
+        if not provider or not oauth_id:
+            raise ValueError("Provider and OAuth ID are required")
+
+        self.oauth_provider = provider
+        self.oauth_id = oauth_id
+
+    def remove_password(self) -> None:
+        """Remove password authentication. Requires OAuth to be set."""
+        if not self.oauth_provider:
+            raise ValueError("Cannot remove password: no OAuth authentication configured")
+
+        self.password_hash = None
+
+    def remove_oauth(self) -> None:
+        """Remove OAuth authentication. Requires password to be set."""
+        if not self.password_hash:
+            raise ValueError("Cannot remove OAuth: no password authentication configured")
+
+        self.oauth_provider = None
+        self.oauth_id = None
+
+    def has_multiple_auth_methods(self) -> bool:
+        """Check if user has more than one authentication method."""
+        return bool(self.password_hash and self.oauth_provider)
+
     def get_assembly_role(self, assembly_id: uuid.UUID) -> AssemblyRole | None:
         """Get user's role for a specific assembly."""
         for role in self.assembly_roles:

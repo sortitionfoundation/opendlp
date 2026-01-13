@@ -129,3 +129,34 @@ class GoogleSheetConfigNotFoundError(NotFoundError):
 
 class SelectionRunRecordNotFoundError(NotFoundError):
     """A selection run record could not be found in the database"""
+
+
+class OAuthError(ServiceLayerError):
+    """Raised when OAuth authentication fails."""
+
+    def __init__(self, provider: str = "", reason: str = "") -> None:
+        if provider and reason:
+            message = _("OAuth authentication failed for %(provider)s: %(reason)s", provider=provider, reason=reason)
+        elif provider:
+            message = _("OAuth authentication failed for %(provider)s", provider=provider)
+        elif reason:
+            message = _("OAuth authentication failed: %(reason)s", reason=reason)
+        else:
+            message = _("OAuth authentication failed")
+        super().__init__(message)
+        self.provider = provider
+        self.reason = reason
+
+
+class OAuthStateError(OAuthError):
+    """Raised when OAuth state validation fails (CSRF protection)."""
+
+    def __init__(self) -> None:
+        super().__init__(reason=_("Invalid OAuth state parameter"))
+
+
+class CannotRemoveLastAuthMethod(ServiceLayerError):
+    """Raised when attempting to remove the last authentication method."""
+
+    def __init__(self) -> None:
+        super().__init__(_("Cannot remove last authentication method. Add another method first."))

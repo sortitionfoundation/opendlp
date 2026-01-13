@@ -9,6 +9,7 @@ from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
 from .exceptions import (
     AssemblyNotFoundError,
+    CannotRemoveLastAuthMethod,
     InsufficientPermissions,
     InvalidCredentials,
     InvalidInvite,
@@ -292,6 +293,11 @@ def find_or_create_oauth_user(
     """
     Find existing OAuth user or create new one.
 
+    This function handles three scenarios:
+    1. OAuth user exists -> return existing user
+    2. Email matches existing user -> link OAuth to that account
+    3. New user -> create with invite code required
+
     Args:
         uow: Unit of Work for database operations
         provider: OAuth provider (e.g., 'google')
@@ -304,23 +310,29 @@ def find_or_create_oauth_user(
 
     Returns:
         Tuple of (User, created_flag) where created_flag is True if user was created
+
+    Raises:
+        InvalidInvite: If invite code is invalid/expired when creating new user
     """
     with uow:
         # Check for existing OAuth user
         existing_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
         if existing_user:
-            return existing_user, False
+            return existing_user.create_detached_copy(), False
 
-        # Check for existing user with same email (potential account linking)
+        # Check for existing user with same email (account linking)
         existing_user = uow.users.get_by_email(email)
         if existing_user:
             # Link OAuth to existing account
-            existing_user.oauth_provider = provider
-            existing_user.oauth_id = oauth_id
+            existing_user.add_oauth_credentials(provider, oauth_id)
+            detached_user = existing_user.create_detached_copy()
             uow.commit()
-            return existing_user, False
+            return detached_user, False
 
-        # Create new user
+        # Create new user - invite code required
+        if not invite_code:
+            raise InvalidInvite(reason="Invite code required for new user registration")
+
         user = create_user(
             uow=uow,
             email=email,
@@ -331,7 +343,7 @@ def find_or_create_oauth_user(
             invite_code=invite_code,
             accept_data_agreement=accept_data_agreement,
         )
-        return user.create_detached_copy(), True
+        return user, True
 
 
 def list_users_paginated(
@@ -735,3 +747,112 @@ def change_own_password(
         # Update password
         user.password_hash = hash_password(new_password)
         uow.commit()
+
+
+def link_oauth_to_user(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    provider: str,
+    oauth_id: str,
+    oauth_email: str,
+) -> User:
+    """
+    Link OAuth credentials to existing user account.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to link OAuth to
+        provider: OAuth provider (e.g., 'google')
+        oauth_id: Provider's user ID
+        oauth_email: Email from OAuth provider (must match user's email)
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        UserNotFoundError: If user not found
+        ValueError: If emails don't match or OAuth already linked to another account
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+        assert isinstance(user, User)
+
+        # Verify email match for security
+        if user.email.lower() != oauth_email.lower():
+            raise ValueError("OAuth email does not match your account email")
+
+        # Check if OAuth credentials already linked to different account
+        existing_oauth_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
+        if existing_oauth_user and existing_oauth_user.id != user_id:
+            raise ValueError(f"This {provider} account is already linked to another user")
+
+        # Link OAuth credentials
+        user.add_oauth_credentials(provider, oauth_id)
+
+        detached_user = user.create_detached_copy()
+        uow.commit()
+        return detached_user
+
+
+def remove_password_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
+    """
+    Remove password authentication from user account.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to remove password from
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        UserNotFoundError: If user not found
+        CannotRemoveLastAuthMethod: If user has no OAuth authentication
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assert isinstance(user, User)
+        if not user.oauth_provider:
+            raise CannotRemoveLastAuthMethod()
+
+        user.remove_password()
+
+        detached_user = user.create_detached_copy()
+        uow.commit()
+        return detached_user
+
+
+def remove_oauth_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
+    """
+    Remove OAuth authentication from user account.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to remove OAuth from
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        UserNotFoundError: If user not found
+        CannotRemoveLastAuthMethod: If user has no password authentication
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+        assert isinstance(user, User)
+
+        if not user.password_hash:
+            raise CannotRemoveLastAuthMethod()
+
+        user.remove_oauth()
+
+        detached_user = user.create_detached_copy()
+        uow.commit()
+        return detached_user

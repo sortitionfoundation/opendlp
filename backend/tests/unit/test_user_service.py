@@ -12,6 +12,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer import user_service
 from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAuthMethod,
     InsufficientPermissions,
     InvalidCredentials,
     InvalidInvite,
@@ -983,3 +984,179 @@ class TestChangeOwnPassword:
             user_service.change_own_password(
                 uow=uow, user_id=user.id, current_password="test", new_password="NewPass456!"
             )
+
+
+class TestOAuthUserOperations:
+    """Test OAuth user operations."""
+
+    def test_find_or_create_oauth_user_new_user_requires_invite(self):
+        """Test OAuth registration requires invite code."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(InvalidInvite, match="Invite code required"):
+            user_service.find_or_create_oauth_user(
+                uow=uow, provider="google", oauth_id="google123", email="newuser@example.com", invite_code=None
+            )
+
+    def test_find_or_create_oauth_user_creates_new_user_with_invite(self, patch_password_hashing):
+        """Test OAuth user creation with valid invite."""
+        uow = FakeUnitOfWork()
+        invite = UserInvite(
+            code="TESTCODE",
+            global_role=GlobalRole.USER,
+            created_by=uuid.uuid4(),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id="google123",
+            email="newuser@example.com",
+            first_name="New",
+            last_name="User",
+            invite_code="TESTCODE",
+            accept_data_agreement=True,
+        )
+
+        assert created is True
+        assert user.email == "newuser@example.com"
+        assert user.oauth_provider == "google"
+        assert user.oauth_id == "google123"
+        assert user.password_hash is None
+        assert user.first_name == "New"
+        assert user.last_name == "User"
+
+    def test_find_or_create_oauth_user_returns_existing_oauth_user(self):
+        """Test finding existing OAuth user."""
+        uow = FakeUnitOfWork()
+        existing = User(
+            email="existing@example.com",
+            global_role=GlobalRole.USER,
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        uow.users.add(existing)
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow, provider="google", oauth_id="google123", email="existing@example.com"
+        )
+
+        assert created is False
+        assert user.id == existing.id
+        assert user.email == "existing@example.com"
+
+    def test_find_or_create_oauth_user_links_to_existing_email(self):
+        """Test auto-linking OAuth to existing email account."""
+        uow = FakeUnitOfWork()
+        existing = User(email="existing@example.com", global_role=GlobalRole.USER, password_hash="hashed_password")
+        uow.users.add(existing)
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow, provider="google", oauth_id="google123", email="existing@example.com"
+        )
+
+        assert created is False
+        assert user.id == existing.id
+        assert user.oauth_provider == "google"
+        assert user.oauth_id == "google123"
+        assert user.password_hash == "hashed_password"  # pragma: allowlist secret
+
+    def test_link_oauth_to_user_success(self):
+        """Test linking OAuth to user account."""
+        uow = FakeUnitOfWork()
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        uow.users.add(user)
+
+        updated = user_service.link_oauth_to_user(
+            uow=uow, user_id=user.id, provider="google", oauth_id="google123", oauth_email="user@example.com"
+        )
+
+        assert updated.oauth_provider == "google"
+        assert updated.oauth_id == "google123"
+
+    def test_link_oauth_to_user_email_mismatch(self):
+        """Test OAuth linking fails on email mismatch."""
+        uow = FakeUnitOfWork()
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        uow.users.add(user)
+
+        with pytest.raises(ValueError, match="email does not match"):
+            user_service.link_oauth_to_user(
+                uow=uow, user_id=user.id, provider="google", oauth_id="google123", oauth_email="different@example.com"
+            )
+
+    def test_link_oauth_to_user_already_linked_to_another(self):
+        """Test OAuth linking fails when OAuth already linked to different account."""
+        uow = FakeUnitOfWork()
+        user1 = User(
+            email="user1@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        user2 = User(email="user2@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        uow.users.add(user1)
+        uow.users.add(user2)
+
+        with pytest.raises(ValueError, match="already linked to another user"):
+            user_service.link_oauth_to_user(
+                uow=uow, user_id=user2.id, provider="google", oauth_id="google123", oauth_email="user2@example.com"
+            )
+
+    def test_remove_password_auth_success(self):
+        """Test removing password when OAuth exists."""
+        uow = FakeUnitOfWork()
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        uow.users.add(user)
+
+        updated = user_service.remove_password_auth(uow=uow, user_id=user.id)
+
+        assert updated.password_hash is None
+        assert updated.oauth_provider == "google"
+
+    def test_remove_password_auth_fails_without_oauth(self):
+        """Test cannot remove password without OAuth."""
+        uow = FakeUnitOfWork()
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        uow.users.add(user)
+
+        with pytest.raises(CannotRemoveLastAuthMethod):
+            user_service.remove_password_auth(uow=uow, user_id=user.id)
+
+    def test_remove_oauth_auth_success(self):
+        """Test removing OAuth when password exists."""
+        uow = FakeUnitOfWork()
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        uow.users.add(user)
+
+        updated = user_service.remove_oauth_auth(uow=uow, user_id=user.id)
+
+        assert updated.oauth_provider is None
+        assert updated.oauth_id is None
+        assert updated.password_hash == "hashed"  # pragma: allowlist secret
+
+    def test_remove_oauth_auth_fails_without_password(self):
+        """Test cannot remove OAuth without password."""
+        uow = FakeUnitOfWork()
+        user = User(
+            email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
+        )
+        uow.users.add(user)
+
+        with pytest.raises(CannotRemoveLastAuthMethod):
+            user_service.remove_oauth_auth(uow=uow, user_id=user.id)
