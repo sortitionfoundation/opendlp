@@ -9,17 +9,17 @@ set dotenv-load
 # Test the code with pytest (HTML report)
 default: test-nobdd
 
-# Test the code with pytest (HTML report)
+# Test the code with pytest, headless BDD, HTML report
 test-html:
 	@echo "🚀 Testing code: Running pytest"
-	uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+	CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
 
-# Test the code with pytest (XML report)
+# Test the code with pytest, headless BDD, XML report
 test-xml:
 	@echo "🚀 Testing code: Running pytest"
-	uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
+	CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
 
-# Test the code with pytest (HTML report)
+# Test the code with pytest, headless BDD, HTML report
 test: test-html
 
 test-nobdd:
@@ -28,6 +28,10 @@ test-nobdd:
 
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
+	@echo "🚀 Running BDD tests"
+	CI=true uv run python -m pytest tests/bdd/ --verbose --tb=short
+
+test-bdd-not-headless:
 	@echo "🚀 Running BDD tests"
 	uv run python -m pytest tests/bdd/ --verbose --tb=short
 
@@ -38,7 +42,7 @@ test-bdd-headless:
 
 # run the tests when an files change
 watch-tests:
-	ls *.py | entr uv run pytest --tb=short
+	ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
 # Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
 install:
