@@ -161,6 +161,12 @@ All user-facing strings must be wrapped in gettext calls for translation:
 - In templates use: `{{ _('Text to translate') }}`
 - Support parameters: `_('Hello %(name)s', name=user.name)`
 
+After adding new translatable strings, regenerate translations with:
+
+```bash
+just translate-regen
+```
+
 See [docs/translations.md](docs/translations.md) for translation management workflow.
 
 See [docs/sortition_error_translations.md](docs/sortition_error_translations.md) for translating sortition-algorithms library errors and reports.
