@@ -113,6 +113,7 @@ class GunicornLogger:  # pragma: no cover
         self._access_logger = structlog.get_logger("gunicorn.access")
         self._access_logger.setLevel(log_level)
         self.cfg = cfg
+        self.log_headers = config.bool_environ_get("GUNICORN_LOG_HEADERS", default=False)
 
     def critical(self, msg: object, *args: object, **kwargs: object) -> None:
         self._error_logger.error(msg, *args, **kwargs)
@@ -166,7 +167,7 @@ class GunicornLogger:  # pragma: no cover
             "pid": f"<{os.getpid()}>",
         }
 
-        if config.bool_environ_get("GUNICORN_LOG_HEADERS", False):
+        if self.log_headers:
             log_kwargs["headers"] = [h for h in req.headers if self.header_safe(h[0])]
 
         self._access_logger.info("request", **log_kwargs)
