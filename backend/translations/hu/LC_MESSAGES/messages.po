@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-13 16:45+0000\n"
+"POT-Creation-Date: 2026-01-16 14:53+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -544,7 +544,7 @@ msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:120
 #: src/opendlp/entrypoints/blueprints/auth.py:227
-#: src/opendlp/entrypoints/blueprints/profile.py:266
+#: src/opendlp/entrypoints/blueprints/profile.py:334
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
@@ -573,11 +573,13 @@ msgid "Failed to get user information from Google"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:298
+#: src/opendlp/entrypoints/blueprints/auth.py:402
 #, fuzzy
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:300
+#: src/opendlp/entrypoints/blueprints/auth.py:404
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
@@ -585,6 +587,16 @@ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 #: src/opendlp/entrypoints/blueprints/auth.py:314
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:377
+#: src/opendlp/entrypoints/blueprints/profile.py:220
+msgid "Failed to get user information from Microsoft"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:418
+#, fuzzy
+msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:82
@@ -886,12 +898,8 @@ msgstr "A jelszó túl gyenge: %(error)s"
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:115
-#, fuzzy
-msgid "You already have an OAuth account linked"
-msgstr "Már van fiókod?"
-
 #: src/opendlp/entrypoints/blueprints/profile.py:137
+#: src/opendlp/entrypoints/blueprints/profile.py:205
 msgid "Invalid OAuth linking request"
 msgstr ""
 
@@ -905,40 +913,50 @@ msgstr "A '%(title)s' gyűlés sikeresen frissült"
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:189
+#: src/opendlp/entrypoints/blueprints/profile.py:234
+#, fuzzy
+msgid "Microsoft account linked successfully"
+msgstr "A '%(title)s' gyűlés sikeresen frissült"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:242
+#, fuzzy
+msgid "An error occurred while linking your Microsoft account"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:257
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:194
+#: src/opendlp/entrypoints/blueprints/profile.py:262
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:211
+#: src/opendlp/entrypoints/blueprints/profile.py:279
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:216
+#: src/opendlp/entrypoints/blueprints/profile.py:284
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:227
+#: src/opendlp/entrypoints/blueprints/profile.py:295
 msgid "You already have a password. Use 'Change password' instead."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:232
+#: src/opendlp/entrypoints/blueprints/profile.py:300
 msgid "Cannot set password without another authentication method"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:262
+#: src/opendlp/entrypoints/blueprints/profile.py:330
 #, fuzzy
 msgid "Password set successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:269
+#: src/opendlp/entrypoints/blueprints/profile.py:337
 #, fuzzy
 msgid "An error occurred while setting your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -1298,10 +1316,10 @@ msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:2
 #: templates/auth/login.html:6 templates/auth/login.html:40
-#: templates/auth/register.html:133 templates/auth/register_google.html:57
-#: templates/base.html:86 templates/errors/403.html:27
-#: templates/errors/404.html:28 templates/errors/500.html:28
-#: templates/main/index.html:17
+#: templates/auth/register.html:183 templates/auth/register_google.html:80
+#: templates/auth/register_microsoft.html:71 templates/base.html:86
+#: templates/errors/403.html:27 templates/errors/404.html:28
+#: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
@@ -1480,7 +1498,7 @@ msgstr ""
 #: templates/admin/invite_view.html:61 templates/admin/invites.html:92
 #: templates/admin/user_view.html:63 templates/admin/users.html:74
 #: templates/admin/users.html:128 templates/profile/view.html:40
-#: templates/profile/view.html:72
+#: templates/profile/view.html:72 templates/profile/view.html:106
 msgid "Active"
 msgstr ""
 
@@ -1690,6 +1708,7 @@ msgstr ""
 
 #: templates/admin/user_view.html:80 templates/auth/register.html:97
 #: templates/auth/register_google.html:31
+#: templates/auth/register_microsoft.html:31
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
@@ -1818,21 +1837,26 @@ msgstr ""
 msgid "Remember your password?"
 msgstr ""
 
-#: templates/auth/login.html:44
+#: templates/auth/login.html:43
 #, fuzzy
 msgid "Or sign in with"
 msgstr "Jelentkezzen be"
 
-#: templates/auth/login.html:48
+#: templates/auth/login.html:69 templates/auth/login.html:70
 #, fuzzy
 msgid "Sign in with Google"
 msgstr "Jelentkezzen be"
 
-#: templates/auth/login.html:53
+#: templates/auth/login.html:92 templates/auth/login.html:93
+#, fuzzy
+msgid "Sign in with Microsoft"
+msgstr "Jelentkezzen be"
+
+#: templates/auth/login.html:101
 msgid "Forgot your password?"
 msgstr ""
 
-#: templates/auth/login.html:56
+#: templates/auth/login.html:104
 msgid ""
 "Don't have an account? You need an <strong>invite code</strong> to "
 "register."
@@ -1840,7 +1864,7 @@ msgstr ""
 "Még nincs fiókod? Szükséged lesz egy <strong>meghívókódra</strong> a "
 "bejelentkezéshez."
 
-#: templates/auth/login.html:57
+#: templates/auth/login.html:105
 msgid "Register here"
 msgstr "Regisztrálj itt"
 
@@ -1853,6 +1877,7 @@ msgid "Create an account"
 msgstr "Fiók létrehozása"
 
 #: templates/auth/register.html:8 templates/auth/register_google.html:9
+#: templates/auth/register_microsoft.html:9
 msgid ""
 "You need an invitation code to create an account. If you do not have one,"
 " please contact your administrator."
@@ -1861,17 +1886,21 @@ msgstr ""
 "kapcsolatba az adminisztrátorral."
 
 #: templates/auth/register.html:99 templates/auth/register_google.html:33
+#: templates/auth/register_microsoft.html:33
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
 #: templates/auth/register.html:103 templates/auth/register_google.html:37
+#: templates/auth/register_microsoft.html:37
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
 #: templates/auth/register.html:108 templates/auth/register_google.html:21
 #: templates/auth/register_google.html:42
+#: templates/auth/register_microsoft.html:21
+#: templates/auth/register_microsoft.html:42
 #: templates/profile/change_password.html:18
 #: templates/profile/change_password.html:30
 #: templates/profile/change_password.html:42 templates/profile/edit.html:17
@@ -1889,13 +1918,25 @@ msgstr "Hozzon létre fiókot"
 msgid "Or register with"
 msgstr "Regisztrálj itt"
 
-#: templates/auth/register.html:128 templates/auth/register_google.html:2
-#: templates/auth/register_google.html:6
+#: templates/auth/register.html:150 templates/auth/register.html:151
+#: templates/auth/register_google.html:2 templates/auth/register_google.html:6
+#: templates/auth/register_google.html:74
+#: templates/auth/register_google.html:75
 #, fuzzy
 msgid "Register with Google"
 msgstr "Regisztrálj itt"
 
-#: templates/auth/register.html:133 templates/auth/register_google.html:57
+#: templates/auth/register.html:173 templates/auth/register.html:174
+#: templates/auth/register_microsoft.html:2
+#: templates/auth/register_microsoft.html:6
+#: templates/auth/register_microsoft.html:65
+#: templates/auth/register_microsoft.html:66
+#, fuzzy
+msgid "Register with Microsoft"
+msgstr "Regisztrálj itt"
+
+#: templates/auth/register.html:183 templates/auth/register_google.html:80
+#: templates/auth/register_microsoft.html:71
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
 
@@ -1903,8 +1944,8 @@ msgstr "Már van fiókod?"
 msgid "To register with your Google account, you need a valid invite code."
 msgstr ""
 
-#: templates/auth/register_google.html:54
-msgid "Continue with Google"
+#: templates/auth/register_microsoft.html:7
+msgid "To register with your Microsoft account, you need a valid invite code."
 msgstr ""
 
 #: templates/auth/reset_password.html:3
@@ -2649,7 +2690,7 @@ msgstr "Új jelszó"
 msgid "Your password must meet the following requirements:"
 msgstr ""
 
-#: templates/profile/change_password.html:50 templates/profile/view.html:108
+#: templates/profile/change_password.html:50 templates/profile/view.html:144
 #, fuzzy
 msgid "Change password"
 msgstr "Új jelszó"
@@ -2704,7 +2745,7 @@ msgstr "Új jelszó"
 msgid "Google OAuth"
 msgstr "Google Táblázat teljes linkje"
 
-#: templates/profile/view.html:74
+#: templates/profile/view.html:74 templates/profile/view.html:108
 msgid "Not linked"
 msgstr ""
 
@@ -2714,12 +2755,12 @@ msgid ""
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:90
+#: templates/profile/view.html:90 templates/profile/view.html:124
 #, fuzzy
 msgid "Unlink"
 msgstr "Folyamatban"
 
-#: templates/profile/view.html:93
+#: templates/profile/view.html:93 templates/profile/view.html:127
 msgid "Only authentication method"
 msgstr ""
 
@@ -2728,11 +2769,31 @@ msgstr ""
 msgid "Link Google account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:104
+#: templates/profile/view.html:98 templates/profile/view.html:132
+#, python-format
+msgid "Remove %(provider)s first"
+msgstr ""
+
+#: templates/profile/view.html:103
+msgid "Microsoft OAuth"
+msgstr ""
+
+#: templates/profile/view.html:117
+msgid ""
+"Are you sure you want to unlink your Microsoft account? You will only be "
+"able to sign in with your password."
+msgstr ""
+
+#: templates/profile/view.html:130
+#, fuzzy
+msgid "Link Microsoft account"
+msgstr "Hozzon létre fiókot"
+
+#: templates/profile/view.html:140
 msgid "Edit profile"
 msgstr ""
 
-#: templates/profile/view.html:112
+#: templates/profile/view.html:148
 #, fuzzy
 msgid "Back to dashboard"
 msgstr "Vissza az irányító pulthoz"
@@ -3720,3 +3781,9 @@ msgstr ""
 
 #~ msgid "Sign in with OAuth only"
 #~ msgstr ""
+
+#~ msgid "Continue with Google"
+#~ msgstr ""
+
+#~ msgid "You already have an OAuth account linked"
+#~ msgstr "Már van fiókod?"
