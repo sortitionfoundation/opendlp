@@ -93,6 +93,16 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
             client_kwargs={"scope": "openid email profile"},
         )
 
+    # Register Microsoft OAuth provider (only if client ID is configured)
+    if app.config.get("OAUTH_MICROSOFT_CLIENT_ID"):
+        oauth.register(
+            name="microsoft",
+            client_id=app.config["OAUTH_MICROSOFT_CLIENT_ID"],
+            client_secret=app.config["OAUTH_MICROSOFT_CLIENT_SECRET"],
+            server_metadata_url="https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration",
+            client_kwargs={"scope": "openid email profile"},
+        )
+
 
 def get_locale() -> str:
     """Get the best language match for the user."""

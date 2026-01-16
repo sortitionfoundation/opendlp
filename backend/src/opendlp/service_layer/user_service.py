@@ -759,10 +759,13 @@ def link_oauth_to_user(
     """
     Link OAuth credentials to existing user account.
 
+    If the user already has a different OAuth provider linked, it will be automatically
+    replaced with the new provider (single provider choice model).
+
     Args:
         uow: Unit of Work for database operations
         user_id: ID of user to link OAuth to
-        provider: OAuth provider (e.g., 'google')
+        provider: OAuth provider (e.g., 'google', 'microsoft')
         oauth_id: Provider's user ID
         oauth_email: Email from OAuth provider (must match user's email)
 

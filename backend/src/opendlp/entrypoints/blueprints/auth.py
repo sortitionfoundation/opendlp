@@ -336,3 +336,107 @@ def register_google() -> ResponseReturnValue:
         return redirect(url_for("auth.login_google"))
 
     return render_template("auth/register_google.html", form=form)
+
+
+@auth_bp.route("/login/microsoft")
+def login_microsoft() -> ResponseReturnValue:
+    """Initiate Microsoft OAuth login flow."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    # Store redirect URL in session for post-OAuth redirect
+    next_page = request.args.get("next")
+    if next_page and next_page.startswith("/"):
+        session["oauth_next"] = next_page
+
+    # Redirect to Microsoft OAuth - it has to be https, so do that
+    redirect_uri = url_for("auth.microsoft_callback", _external=True, _scheme="https")
+    response = oauth.microsoft.authorize_redirect(redirect_uri)
+    assert isinstance(response, Response)
+    return response
+
+
+@auth_bp.route("/login/microsoft/callback")
+def microsoft_callback() -> ResponseReturnValue:
+    """Handle Microsoft OAuth callback."""
+    try:
+        # Get OAuth token
+        token = oauth.microsoft.authorize_access_token()
+
+        # Get user info from Microsoft
+        user_info = token.get("userinfo")
+        if not user_info:
+            user_info = oauth.microsoft.userinfo()
+
+        microsoft_id = user_info.get("sub")
+        email = user_info.get("email")
+        first_name = user_info.get("given_name", "")
+        last_name = user_info.get("family_name", "")
+
+        if not microsoft_id or not email:
+            flash(_("Failed to get user information from Microsoft"), "error")
+            return redirect(url_for("auth.login"))
+
+        uow = bootstrap.bootstrap()
+
+        # Try to find or create OAuth user
+        user, created = find_or_create_oauth_user(
+            uow=uow,
+            provider="microsoft",
+            oauth_id=microsoft_id,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            invite_code=session.get("oauth_invite_code"),
+            accept_data_agreement=session.get("oauth_accept_agreement", False),
+        )
+
+        # Clear OAuth session data
+        session.pop("oauth_invite_code", None)
+        session.pop("oauth_accept_agreement", None)
+
+        # Log user in
+        login_user(user)
+
+        if created:
+            flash(_("Account created successfully! Welcome to OpenDLP."), "success")
+        else:
+            flash(_("Signed in successfully"), "success")
+
+        # Redirect to next page or dashboard
+        next_page = session.pop("oauth_next", None)
+        if next_page and next_page.startswith("/"):
+            return redirect(next_page)
+        return redirect(url_for("main.dashboard"))
+
+    except InvalidInvite as e:
+        # User needs invite code - redirect to OAuth registration
+        flash(str(e), "error")
+        return redirect(url_for("auth.register_microsoft"))
+    except Exception as e:
+        current_app.logger.error(f"Microsoft OAuth callback error: {e}")
+        flash(_("An error occurred during Microsoft sign in. Please try again."), "error")
+        return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/register/microsoft", methods=["GET", "POST"])
+def register_microsoft() -> ResponseReturnValue:
+    """Register with Microsoft OAuth (requires invite code)."""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    # Import here to avoid circular import
+    from opendlp.entrypoints.forms import OAuthRegistrationForm
+
+    form = OAuthRegistrationForm()
+
+    if form.validate_on_submit():
+        # Store invite code and agreement in session
+        assert form.invite_code.data is not None
+        session["oauth_invite_code"] = form.invite_code.data
+        session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
+
+        # Redirect to Microsoft OAuth
+        return redirect(url_for("auth.login_microsoft"))
+
+    return render_template("auth/register_microsoft.html", form=form)

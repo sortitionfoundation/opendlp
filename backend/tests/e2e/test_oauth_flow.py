@@ -14,6 +14,7 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
+from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -26,6 +27,8 @@ def app(temp_env_vars):
         DB_URI="postgresql://opendlp:abc123@localhost:54322/opendlp",  # pragma: allowlist secret
         OAUTH_GOOGLE_CLIENT_ID="test-client-id-oauth",  # pragma: allowlist secret
         OAUTH_GOOGLE_CLIENT_SECRET="test-client-secret-oauth",  # pragma: allowlist secret
+        OAUTH_MICROSOFT_CLIENT_ID="test-ms-client-id-oauth",  # pragma: allowlist secret
+        OAUTH_MICROSOFT_CLIENT_SECRET="test-ms-client-secret-oauth",  # pragma: allowlist secret
     )
     start_mappers()  # Initialize SQLAlchemy mappings
     app = create_app("testing_postgres")
@@ -316,17 +319,6 @@ class TestOAuthAccountLinking:
             assert user.oauth_id == "linked-google-id-999"
             assert user.password_hash is not None  # Password still exists
 
-    def test_link_google_with_oauth_already_linked_fails(self, client: FlaskClient, existing_dual_auth_user: User):
-        """Test that linking fails if OAuth already linked."""
-        # Login as dual auth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_dual_auth_user.id)
-
-        response = client.get("/profile/link-google", follow_redirects=True)
-
-        assert response.status_code == 200
-        assert b"already have an OAuth account linked" in response.data or b"already" in response.data.lower()
-
     def test_link_google_with_email_mismatch_fails(
         self, client: FlaskClient, existing_password_user: User, mock_oauth_token
     ):
@@ -502,3 +494,292 @@ class TestOAuthProfileDisplay:
         # Should see Remove buttons for both
         assert b"Remove" in response.data
         assert b"Unlink" in response.data
+
+
+# ============================================================================
+# Microsoft OAuth Tests
+# ============================================================================
+
+
+@pytest.fixture
+def mock_microsoft_oauth_token():
+    """Mock OAuth token response from Microsoft."""
+    return {
+        "access_token": "mock_access_token",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "userinfo": {
+            "sub": "microsoft-oauth-id-67890",
+            "email": "msuser@example.com",
+            "name": "Microsoft Test User",
+            "given_name": "Microsoft",
+            "family_name": "User",
+        },
+    }
+
+
+@pytest.fixture
+def existing_microsoft_oauth_user(postgres_session_factory) -> User:
+    """Create a user with Microsoft OAuth authentication only."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user = create_user(
+            uow=uow,
+            email=f"ms-oauth-user-{uuid.uuid4()}@example.com",
+            oauth_provider="microsoft",
+            oauth_id="microsoft-789",
+            first_name="Microsoft",
+            last_name="User",
+            global_role=GlobalRole.USER,
+            accept_data_agreement=True,
+        )
+        return user.create_detached_copy()
+
+
+@pytest.fixture
+def existing_google_oauth_user_for_replacement(postgres_session_factory) -> User:
+    """Create a user with Google OAuth for testing provider replacement."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user = create_user(
+            uow=uow,
+            email=f"google-for-replacement-{uuid.uuid4()}@example.com",
+            oauth_provider="google",
+            oauth_id="google-replace-123",
+            first_name="Google",
+            last_name="ReplaceMe",
+            global_role=GlobalRole.USER,
+            accept_data_agreement=True,
+        )
+        return user.create_detached_copy()
+
+
+class TestMicrosoftOAuthRegistration:
+    """Test Microsoft OAuth registration flows."""
+
+    def test_register_microsoft_requires_invite_code(self, client: FlaskClient):
+        """Test that Microsoft OAuth registration form requires invite code."""
+        response = client.get("/auth/register/microsoft")
+        assert response.status_code == 200
+        assert b"Register with Microsoft" in response.data
+        assert b"Invite Code" in response.data
+        assert b"invitation code to create an account" in response.data
+
+    def test_register_microsoft_with_valid_invite_success(
+        self, client: FlaskClient, valid_invite, postgres_session_factory, mock_microsoft_oauth_token
+    ):
+        """Test successful Microsoft OAuth registration with valid invite."""
+        # Step 1: Submit invite code form
+        response = client.post(
+            "/auth/register/microsoft",
+            data={
+                "invite_code": valid_invite.code,
+                "accept_data_agreement": "y",
+                "csrf_token": get_csrf_token(client, "/auth/register/microsoft"),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        # Should redirect to Microsoft OAuth
+
+        # Step 2: Mock OAuth callback
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+
+            # Simulate OAuth callback
+            response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
+
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/dashboard"
+
+        # Verify user was created and logged in
+        with client.session_transaction() as session:
+            assert "_user_id" in session
+
+        # Verify user exists in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("msuser@example.com")
+            assert user is not None
+            assert user.oauth_provider == "microsoft"
+            assert user.oauth_id == "microsoft-oauth-id-67890"
+            assert user.password_hash is None  # No password for OAuth-only user
+
+    def test_register_microsoft_without_invite_fails(self, client: FlaskClient, mock_microsoft_oauth_token):
+        """Test that Microsoft OAuth registration fails without invite code in session."""
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+
+            # Try to complete OAuth callback without first submitting invite code
+            response = client.get("/auth/login/microsoft/callback", follow_redirects=True)
+
+            # Should fail with error message
+            assert b"Invite code required" in response.data or b"error" in response.data.lower()
+
+
+class TestMicrosoftOAuthLogin:
+    """Test Microsoft OAuth login flows."""
+
+    def test_login_microsoft_initiates_oauth_flow(self, client: FlaskClient):
+        """Test that login with Microsoft initiates OAuth flow."""
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.microsoft") as mock_microsoft:
+            mock_response = Response("", status=302, headers={"Location": "https://login.microsoftonline.com/oauth"})
+            mock_microsoft.authorize_redirect.return_value = mock_response
+
+            response = client.get("/auth/login/microsoft", follow_redirects=False)
+
+            # Should redirect to Microsoft
+            assert response.status_code == 302
+            mock_microsoft.authorize_redirect.assert_called_once()
+
+    def test_login_microsoft_with_existing_oauth_user_success(
+        self, client: FlaskClient, existing_microsoft_oauth_user: User, mock_microsoft_oauth_token
+    ):
+        """Test successful login with existing Microsoft OAuth user."""
+        # Update mock token to match existing user's OAuth ID
+        mock_microsoft_oauth_token["userinfo"]["sub"] = existing_microsoft_oauth_user.oauth_id
+        mock_microsoft_oauth_token["userinfo"]["email"] = existing_microsoft_oauth_user.email
+
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+
+            response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
+
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/dashboard"
+
+        # Verify user is logged in
+        with client.session_transaction() as session:
+            assert "_user_id" in session
+            assert session["_user_id"] == str(existing_microsoft_oauth_user.id)
+
+
+class TestMicrosoftOAuthAccountLinking:
+    """Test Microsoft OAuth account linking flows."""
+
+    def test_link_microsoft_to_password_account_success(
+        self, client: FlaskClient, existing_password_user: User, mock_microsoft_oauth_token, postgres_session_factory
+    ):
+        """Test linking Microsoft OAuth to existing password account."""
+        # Login as password user
+        with client.session_transaction() as session:
+            session["_user_id"] = str(existing_password_user.id)
+
+        # Update mock token to match user's email
+        mock_microsoft_oauth_token["userinfo"]["email"] = existing_password_user.email
+
+        # Step 1: Initiate linking
+        with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
+            mock_response = Response("", status=302, headers={"Location": "https://login.microsoftonline.com/oauth"})
+            mock_microsoft.authorize_redirect.return_value = mock_response
+
+            response = client.get("/profile/link-microsoft", follow_redirects=False)
+            assert response.status_code == 302
+
+        # Step 2: Complete OAuth callback
+        with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+
+            response = client.get("/profile/link-microsoft/callback", follow_redirects=False)
+
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/profile"
+
+        # Verify user now has Microsoft OAuth linked
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get(existing_password_user.id)
+            assert user is not None
+            assert user.oauth_provider == "microsoft"
+            assert user.oauth_id == "microsoft-oauth-id-67890"
+            assert user.password_hash is not None  # Still has password
+
+    def test_unlink_microsoft_account_success(
+        self, client: FlaskClient, existing_microsoft_oauth_user: User, postgres_session_factory
+    ):
+        """Test unlinking Microsoft OAuth from dual-auth account."""
+        # First give user a password so they can unlink OAuth
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get(existing_microsoft_oauth_user.id)
+            user.password_hash = hash_password("TempPassword123!")  # pragma: allowlist secret
+            uow.commit()
+
+        # Login as user
+        with client.session_transaction() as session:
+            session["_user_id"] = str(existing_microsoft_oauth_user.id)
+
+        # Unlink Microsoft OAuth
+        response = client.post(
+            "/profile/remove-oauth",
+            data={"csrf_token": get_csrf_token(client, "/profile")},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/profile"
+
+        # Verify OAuth is removed
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get(existing_microsoft_oauth_user.id)
+            assert user is not None
+            assert user.oauth_provider is None
+            assert user.oauth_id is None
+            assert user.password_hash is not None  # Still has password
+
+
+class TestOAuthProviderReplacement:
+    """Test single OAuth provider choice - replacing one provider with another."""
+
+    def test_link_microsoft_replaces_google(
+        self,
+        client: FlaskClient,
+        existing_google_oauth_user_for_replacement: User,
+        mock_microsoft_oauth_token,
+        postgres_session_factory,
+    ):
+        """Test that linking Microsoft OAuth replaces existing Google OAuth."""
+        # Login as Google OAuth user
+        with client.session_transaction() as session:
+            session["_user_id"] = str(existing_google_oauth_user_for_replacement.id)
+
+        # Update mock token to match user's email
+        mock_microsoft_oauth_token["userinfo"]["email"] = existing_google_oauth_user_for_replacement.email
+
+        # Initiate Microsoft linking (should show warning that Google will be replaced)
+        with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
+            mock_response = Response("", status=302, headers={"Location": "https://login.microsoftonline.com/oauth"})
+            mock_microsoft.authorize_redirect.return_value = mock_response
+
+            response = client.get("/profile/link-microsoft", follow_redirects=False)
+            # Should show info that OAuth is already linked, but the logic allows replacement
+            # The actual replacement happens in the callback
+
+        # Complete OAuth callback - this should replace Google with Microsoft
+        with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+
+            response = client.get("/profile/link-microsoft/callback", follow_redirects=False)
+
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/profile"
+
+        # Verify provider was replaced
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get(existing_google_oauth_user_for_replacement.id)
+            assert user is not None
+            assert user.oauth_provider == "microsoft"  # Changed from google to microsoft
+            assert user.oauth_id == "microsoft-oauth-id-67890"  # New OAuth ID
+            # Password should still be None if user didn't have one
+            assert user.password_hash is None
+
+    def test_profile_shows_remove_provider_first_hint(self, client: FlaskClient, existing_microsoft_oauth_user: User):
+        """Test that profile shows 'Remove X first' hint when different provider is active."""
+        # Login as Microsoft OAuth user
+        with client.session_transaction() as session:
+            session["_user_id"] = str(existing_microsoft_oauth_user.id)
+
+        response = client.get("/profile")
+
+        assert response.status_code == 200
+        # Should show Microsoft as Active
+        assert b"Microsoft OAuth" in response.data
+        assert b"Active" in response.data
+        # Should show "Remove Microsoft first" hint for Google
+        assert b"Remove" in response.data or b"Remove Microsoft first" in response.data

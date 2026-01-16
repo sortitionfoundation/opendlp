@@ -111,9 +111,9 @@ def change_password() -> ResponseReturnValue:
 @login_required
 def link_google() -> ResponseReturnValue:
     """Link Google account to existing user."""
-    if current_user.oauth_provider:
-        flash(_("You already have an OAuth account linked"), "info")
-        return redirect(url_for("profile.view"))
+    # Note: We allow linking even if user has another OAuth provider
+    # The single-provider choice model means linking Google will replace
+    # any existing OAuth provider (e.g., Microsoft)
 
     # Store action in session for callback
     session["oauth_action"] = "link"
@@ -172,6 +172,74 @@ def google_link_callback() -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Google linking error: {e}")
         flash(_("An error occurred while linking your Google account"), "error")
+        return redirect(url_for("profile.view"))
+
+
+@profile_bp.route("/profile/link-microsoft")
+@login_required
+def link_microsoft() -> ResponseReturnValue:
+    """Link Microsoft account to existing user."""
+    # Note: We allow linking even if user has another OAuth provider
+    # The single-provider choice model means linking Microsoft will replace
+    # any existing OAuth provider (e.g., Google)
+
+    # Store action in session for callback
+    session["oauth_action"] = "link"
+
+    # Redirect to Microsoft OAuth
+    redirect_uri = url_for("profile.microsoft_link_callback", _external=True)
+    from werkzeug.wrappers import Response
+
+    response = oauth.microsoft.authorize_redirect(redirect_uri)
+    assert isinstance(response, Response)
+    return response
+
+
+@profile_bp.route("/profile/link-microsoft/callback")
+@login_required
+def microsoft_link_callback() -> ResponseReturnValue:
+    """Handle Microsoft OAuth linking callback."""
+    try:
+        # Verify this is a linking action
+        if session.get("oauth_action") != "link":
+            flash(_("Invalid OAuth linking request"), "error")
+            return redirect(url_for("profile.view"))
+
+        session.pop("oauth_action", None)
+
+        # Get OAuth token
+        token = oauth.microsoft.authorize_access_token()
+        user_info = token.get("userinfo")
+        if not user_info:
+            user_info = oauth.microsoft.userinfo()
+
+        microsoft_id = user_info.get("sub")
+        email = user_info.get("email")
+
+        if not microsoft_id or not email:
+            flash(_("Failed to get user information from Microsoft"), "error")
+            return redirect(url_for("profile.view"))
+
+        uow = bootstrap.bootstrap()
+
+        # Link OAuth to current user
+        updated_user = link_oauth_to_user(
+            uow=uow, user_id=current_user.id, provider="microsoft", oauth_id=microsoft_id, oauth_email=email
+        )
+
+        # Update current_user
+        current_user.oauth_provider = updated_user.oauth_provider
+        current_user.oauth_id = updated_user.oauth_id
+
+        flash(_("Microsoft account linked successfully"), "success")
+        return redirect(url_for("profile.view"))
+
+    except ValueError as e:
+        flash(str(e), "error")
+        return redirect(url_for("profile.view"))
+    except Exception as e:
+        current_app.logger.error(f"Microsoft linking error: {e}")
+        flash(_("An error occurred while linking your Microsoft account"), "error")
         return redirect(url_for("profile.view"))
 
 
