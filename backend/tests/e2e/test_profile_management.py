@@ -46,19 +46,6 @@ class TestProfileViewing:
         assert b"My Account" in response.data
         assert b"Edit profile" in response.data
 
-    def test_oauth_user_sees_no_change_password_button(self, client: FlaskClient, oauth_user: User) -> None:
-        """Test that OAuth users don't see change password option."""
-        # Login manually by creating session
-        with client.session_transaction() as session:
-            session["_user_id"] = str(oauth_user.id)
-
-        response = client.get("/profile")
-        assert response.status_code == 200
-        assert b"Change password" not in response.data
-        # Check that the OAuth authentication method is displayed
-        assert b"Google OAuth" in response.data
-        assert b"Active" in response.data
-
 
 class TestProfileEditing:
     """Tests for editing user profile."""

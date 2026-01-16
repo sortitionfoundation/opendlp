@@ -477,6 +477,7 @@ class TestOAuthProfileDisplay:
         assert b"Active" in response.data
         # Should see hint that it's the only auth method
         assert b"Only authentication method" in response.data
+        assert b"Change password" not in response.data
 
     def test_dual_auth_user_sees_both_methods_active(self, client: FlaskClient, existing_dual_auth_user: User):
         """Test that dual auth user sees both methods as active."""

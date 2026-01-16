@@ -65,74 +65,78 @@
                         {% endif %}
                     </dd>
                 </div>
-                <div class="govuk-summary-list__row">
-                    <dt class="govuk-summary-list__key">{{ _("Google OAuth") }}</dt>
-                    <dd class="govuk-summary-list__value">
-                        {% if current_user.oauth_provider == 'google' %}
-                            <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
-                        {% else %}
-                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not linked") }}</strong>
-                        {% endif %}
-                    </dd>
-                    <dd class="govuk-summary-list__actions">
-                        {% if current_user.oauth_provider == 'google' %}
-                            {% if current_user.password_hash %}
-                                <form method="POST"
-                                    action="{{ url_for('profile.remove_oauth') }}"
-                                    style="display: inline"
-                                    onsubmit="return confirm('{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit"
-                                        class="govuk-link govuk-!-font-size-19"
-                                        style="border: none;
-                                            background: none;
-                                            cursor: pointer;
-                                            text-decoration: underline">{{ _("Unlink") }}</button>
-                                </form>
+                {% if config.OAUTH_GOOGLE_CLIENT_ID %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _("Google OAuth") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {% if current_user.oauth_provider == 'google' %}
+                                <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                             {% else %}
-                                <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Not linked") }}</strong>
                             {% endif %}
-                        {% elif not current_user.oauth_provider and config.OAUTH_GOOGLE_CLIENT_ID %}
-                            <a href="{{ url_for('profile.link_google') }}" class="govuk-link">{{ _("Link Google account") }}</a>
-                        {% elif current_user.oauth_provider and current_user.oauth_provider != 'google' %}
-                            <span class="govuk-hint govuk-!-font-size-16">{{ _("Remove %(provider)s first", provider=current_user.oauth_provider.title()) }}</span>
-                        {% endif %}
-                    </dd>
-                </div>
-                <div class="govuk-summary-list__row">
-                    <dt class="govuk-summary-list__key">{{ _("Microsoft OAuth") }}</dt>
-                    <dd class="govuk-summary-list__value">
-                        {% if current_user.oauth_provider == 'microsoft' %}
-                            <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
-                        {% else %}
-                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not linked") }}</strong>
-                        {% endif %}
-                    </dd>
-                    <dd class="govuk-summary-list__actions">
-                        {% if current_user.oauth_provider == 'microsoft' %}
-                            {% if current_user.password_hash %}
-                                <form method="POST"
-                                    action="{{ url_for('profile.remove_oauth') }}"
-                                    style="display: inline"
-                                    onsubmit="return confirm('{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit"
-                                        class="govuk-link govuk-!-font-size-19"
-                                        style="border: none;
-                                            background: none;
-                                            cursor: pointer;
-                                            text-decoration: underline">{{ _("Unlink") }}</button>
-                                </form>
+                        </dd>
+                        <dd class="govuk-summary-list__actions">
+                            {% if current_user.oauth_provider == 'google' %}
+                                {% if current_user.password_hash %}
+                                    <form method="POST"
+                                        action="{{ url_for('profile.remove_oauth') }}"
+                                        style="display: inline"
+                                        onsubmit="return confirm('{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        <button type="submit"
+                                            class="govuk-link govuk-!-font-size-19"
+                                            style="border: none;
+                                                background: none;
+                                                cursor: pointer;
+                                                text-decoration: underline">{{ _("Unlink") }}</button>
+                                    </form>
+                                {% else %}
+                                    <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
+                                {% endif %}
+                            {% elif not current_user.oauth_provider and config.OAUTH_GOOGLE_CLIENT_ID %}
+                                <a href="{{ url_for('profile.link_google') }}" class="govuk-link">{{ _("Link Google account") }}</a>
+                            {% elif current_user.oauth_provider and current_user.oauth_provider != 'google' %}
+                                <span class="govuk-hint govuk-!-font-size-16">{{ _("Remove %(provider)s first", provider=current_user.oauth_provider.title() ) }}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                {% endif %}
+                {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _("Microsoft OAuth") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {% if current_user.oauth_provider == 'microsoft' %}
+                                <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                             {% else %}
-                                <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Not linked") }}</strong>
                             {% endif %}
-                        {% elif not current_user.oauth_provider and config.OAUTH_MICROSOFT_CLIENT_ID %}
-                            <a href="{{ url_for('profile.link_microsoft') }}" class="govuk-link">{{ _("Link Microsoft account") }}</a>
-                        {% elif current_user.oauth_provider and current_user.oauth_provider != 'microsoft' %}
-                            <span class="govuk-hint govuk-!-font-size-16">{{ _("Remove %(provider)s first", provider=current_user.oauth_provider.title()) }}</span>
-                        {% endif %}
-                    </dd>
-                </div>
+                        </dd>
+                        <dd class="govuk-summary-list__actions">
+                            {% if current_user.oauth_provider == 'microsoft' %}
+                                {% if current_user.password_hash %}
+                                    <form method="POST"
+                                        action="{{ url_for('profile.remove_oauth') }}"
+                                        style="display: inline"
+                                        onsubmit="return confirm('{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        <button type="submit"
+                                            class="govuk-link govuk-!-font-size-19"
+                                            style="border: none;
+                                                background: none;
+                                                cursor: pointer;
+                                                text-decoration: underline">{{ _("Unlink") }}</button>
+                                    </form>
+                                {% else %}
+                                    <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
+                                {% endif %}
+                            {% elif not current_user.oauth_provider and config.OAUTH_MICROSOFT_CLIENT_ID %}
+                                <a href="{{ url_for('profile.link_microsoft') }}" class="govuk-link">{{ _("Link Microsoft account") }}</a>
+                            {% elif current_user.oauth_provider and current_user.oauth_provider != 'microsoft' %}
+                                <span class="govuk-hint govuk-!-font-size-16">{{ _("Remove %(provider)s first", provider=current_user.oauth_provider.title() ) }}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                {% endif %}
             </dl>
             <div class="govuk-button-group">
                 <a href="{{ url_for('profile.edit') }}"
