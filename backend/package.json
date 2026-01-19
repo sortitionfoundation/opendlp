@@ -11,6 +11,6 @@
     "govuk-frontend": "^5.14.0"
   },
   "devDependencies": {
-    "sass": "^1.97.1"
+    "sass": "^1.97.2"
   }
 }
