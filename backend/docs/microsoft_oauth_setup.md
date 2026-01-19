@@ -171,6 +171,232 @@ just run
    - After signing in with Microsoft, you're redirected back to OpenDLP
    - You're successfully authenticated
 
+## Step 10: Publisher Verification (Optional but Recommended)
+
+### What is Publisher Verification?
+
+When users try to sign in with an **unverified publisher** app, they see a warning screen stating:
+
+> "This app is not verified. This app was created by an unverified publisher. Unverified apps may be risky to use."
+
+**Publisher verification** adds a blue verified badge to your app's consent screen, providing:
+
+- **Increased trust**: Users see your organization is verified by Microsoft
+- **Smoother adoption**: Admins can set policies allowing only verified publishers
+- **Professional branding**: Blue verified badge across Microsoft consent screens
+
+Beginning **November 2020**, users **cannot consent** to most newly registered multitenant apps from unverified publishers. This particularly affects apps requiring permissions beyond basic sign-in.
+
+### Should You Complete Publisher Verification?
+
+**Yes, if:**
+- Your OpenDLP instance is used by external organizations
+- Users from multiple tenants need to sign in
+- You want to maximize trust and adoption
+- You need to comply with organizational policies requiring verified publishers
+
+**Maybe not immediately, if:**
+- You're only using OpenDLP internally within your own organization
+- Your IT admin can grant tenant-wide admin consent
+- You're still testing the integration
+
+**Note**: There is **no cost** to complete publisher verification. Microsoft provides this free to developers.
+
+### Prerequisites for Publisher Verification
+
+Before you can verify your publisher, you must meet these requirements:
+
+#### 1. Microsoft AI Cloud Partner Program Account
+
+You need a verified **Microsoft AI Cloud Partner Program (CPP)** account (formerly Microsoft Partner Network/MPN):
+
+- **Enrollment**: Free to join at [partner.microsoft.com](https://partner.microsoft.com/cloud-partner-program)
+- **Account type**: Must be the **Partner Global Account (PGA)** for your organization
+- **Verification**: Account must complete Microsoft's verification process (typically 3-5 business days)
+- **Email requirement**: Valid business email (not personal accounts like hotmail.com, outlook.com)
+
+**Important**: The domain of the email address used during CPP verification must either:
+- Match the publisher domain you set for the app, OR
+- Be a DNS-verified custom domain added to your Microsoft Entra tenant
+
+#### 2. App Registration Requirements
+
+- App must be registered using a **Microsoft Entra work or school account** (not a personal Microsoft account)
+- Apps registered in **Azure AD B2C tenants are NOT supported**
+- App must have a **publisher domain configured** (cannot be `*.onmicrosoft.com`)
+
+#### 3. User Permissions
+
+The user performing verification must have specific roles in both systems:
+
+**In Azure Portal (Microsoft Entra ID)**:
+- Application Administrator, OR
+- Cloud Application Administrator
+
+**In Partner Center**:
+- Microsoft AI Cloud Partner Program Admin, OR
+- Accounts Admin
+
+#### 4. Additional Requirements
+
+- **Multifactor authentication (MFA)** must be enabled on your organizational account
+- Must consent to the **Microsoft identity platform for developers Terms of Use**
+
+### Step-by-Step: Enroll in Microsoft AI Cloud Partner Program
+
+If you don't already have a Partner Program account:
+
+1. **Go to Partner Center**:
+   - Visit [partner.microsoft.com/partnership](https://partner.microsoft.com/en-US/partnership)
+   - Click **"Become a partner"** or **"Enroll now"**
+
+2. **Sign in or Create Account**:
+   - Use a valid business email address (not personal)
+   - Email cannot contain generic terms like "info", "admin", or "marketing"
+   - You'll receive a verification code by email
+
+3. **Provide Company Information**:
+   - Legal business name and details
+   - Business address
+   - Primary contact information
+   - You must have authorization to sign legal agreements on behalf of your organization
+
+4. **Submit for Verification**:
+   - Microsoft will verify your email address
+   - Identity verification may be required (government ID like passport or driver's license)
+   - Verification typically takes **3-5 business days**
+
+5. **Monitor Verification Status**:
+   - Go to **Legal Info** in Partner Center
+   - Check the **Verification summary** page
+   - You'll receive email notifications about verification progress
+
+6. **Note Your Partner ID**:
+   - Once verified, locate your **Partner ID** (also called MPN ID or Location MPN ID)
+   - You'll need this when marking your app as verified
+   - Ensure you use the **Partner Global Account (PGA)** ID, not a location ID
+
+**Reference**: [Create a Microsoft AI Cloud Partner Program account](https://learn.microsoft.com/en-us/partner-center/enroll/mpn-create-a-partner-center-account)
+
+### Step-by-Step: Mark Your App as Publisher Verified
+
+Once your Partner Program account is verified:
+
+1. **Sign in to Azure Portal**:
+   - Go to [portal.azure.com](https://portal.azure.com/)
+   - Use an account with Application Administrator or Cloud Application Administrator role
+   - Ensure MFA is enabled on your account
+
+2. **Navigate to Your App**:
+   - Go to **App registrations**
+   - Select your OpenDLP app registration
+
+3. **Configure Publisher Domain** (if not already set):
+   - Go to **Branding & properties**
+   - Set the **Publisher domain** to match your organization's verified domain
+   - This domain must match the email domain used in your CPP account verification
+
+4. **Add Publisher Domain to Tenant** (if needed):
+   - Go to **Microsoft Entra ID** > **Custom domain names**
+   - Add your domain and complete DNS verification
+   - Follow Microsoft's domain verification process
+
+5. **Start Verification Process**:
+   - Return to your app's **Branding & properties** blade
+   - Scroll to the bottom
+   - Click **"Add Partner ID to verify publisher"**
+
+6. **Review Requirements**:
+   - A dialog will show the verification requirements
+   - Ensure all prerequisites are met
+
+7. **Enter Partner ID**:
+   - Input your **Partner ID** from Partner Center
+   - Use the Partner Global Account (PGA) ID
+   - Click **"Verify and save"**
+
+8. **Wait for Processing**:
+   - Verification may take a few minutes
+   - Upon success, you'll see a blue verified badge next to your **Publisher display name**
+
+9. **Test the Verification**:
+   - Sign out and try signing in to OpenDLP with Microsoft OAuth
+   - The consent screen should now show the blue verified badge
+   - To force a consent prompt for testing: add `?prompt=consent` to your authorization URL (testing only)
+
+10. **Verification Complete**:
+    - The verified badge will appear to all users
+    - Badge replication across Microsoft systems may take some time
+    - Repeat steps 2-8 for any additional app registrations
+
+**Reference**: [Mark an app as publisher verified](https://learn.microsoft.com/en-us/entra/identity-platform/mark-app-as-publisher-verified)
+
+### Alternatives to Publisher Verification
+
+If you cannot complete publisher verification immediately, these alternatives may help:
+
+#### 1. Tenant-Wide Admin Consent
+
+If OpenDLP is used primarily within a single organization:
+
+- IT admin can grant **tenant-wide admin consent** for the app
+- This allows all users in that organization to use the app without individual consent
+- Does not require publisher verification
+- **How**: Azure Portal > App registrations > [Your App] > API permissions > Grant admin consent
+
+#### 2. Admin Consent Workflow
+
+Organizations can enable an **admin consent workflow**:
+
+- Users request admin approval when they encounter an unverified app
+- Admins receive notifications and can approve/deny requests
+- Provides a middle ground between blocking unverified apps and allowing all access
+
+#### 3. Custom App Consent Policies
+
+Organizations can create **custom consent policies** to:
+
+- Allow specific unverified apps
+- Set conditions for when users can consent
+- Managed through Microsoft Graph API
+
+### Important Limitations
+
+Publisher verification does **NOT** indicate:
+
+- ✗ Specific security certifications or compliance standards
+- ✗ App quality criteria or code review
+- ✗ Industry standard adherence
+- ✗ Specific best practices compliance
+
+It only verifies the **authenticity of the publisher's organization**, not the app itself.
+
+### Troubleshooting Publisher Verification
+
+**Problem**: "Domain doesn't match"
+
+- **Solution**: Ensure your CPP account email domain matches your app's publisher domain or is a verified custom domain in your tenant
+
+**Problem**: "Partner ID not found"
+
+- **Solution**: Verify you're using the Partner Global Account (PGA) ID, not a location-specific ID
+
+**Problem**: "Insufficient permissions"
+
+- **Solution**: Ensure you have the required roles in both Azure Portal and Partner Center
+
+**Problem**: Verification badge not appearing
+
+- **Solution**: Wait a few hours for replication, clear browser cache, or check you're testing with the correct tenant
+
+For more troubleshooting, see [Microsoft's troubleshooting guide](https://learn.microsoft.com/en-us/entra/identity-platform/troubleshoot-publisher-verification).
+
+### Additional Resources
+
+- [Publisher verification overview](https://learn.microsoft.com/en-us/entra/identity-platform/publisher-verification-overview)
+- [Microsoft AI Cloud Partner Program](https://partner.microsoft.com/cloud-partner-program)
+- [Verify your account information](https://learn.microsoft.com/en-us/partner-center/enroll/verification-responses)
+
 ## Security Considerations
 
 ### Client Secret Protection
