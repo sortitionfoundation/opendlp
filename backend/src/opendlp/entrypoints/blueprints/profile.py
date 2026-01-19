@@ -208,7 +208,8 @@ def microsoft_link_callback() -> ResponseReturnValue:
         session.pop("oauth_action", None)
 
         # Get OAuth token
-        token = oauth.microsoft.authorize_access_token()
+        # Skip issuer validation for Microsoft /common endpoint since it returns tenant-specific issuer
+        token = oauth.microsoft.authorize_access_token(claims_options={"iss": {"essential": False}})
         user_info = token.get("userinfo")
         if not user_info:
             user_info = oauth.microsoft.userinfo()

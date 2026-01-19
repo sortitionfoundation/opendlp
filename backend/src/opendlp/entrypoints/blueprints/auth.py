@@ -361,7 +361,8 @@ def microsoft_callback() -> ResponseReturnValue:
     """Handle Microsoft OAuth callback."""
     try:
         # Get OAuth token
-        token = oauth.microsoft.authorize_access_token()
+        # Skip issuer validation for Microsoft /common endpoint since it returns tenant-specific issuer
+        token = oauth.microsoft.authorize_access_token(claims_options={"iss": {"essential": False}})
 
         # Get user info from Microsoft
         user_info = token.get("userinfo")
