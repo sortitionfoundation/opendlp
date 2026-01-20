@@ -34,8 +34,9 @@ Note that there are more detailed notes in [AGENTS.md](/backend/AGENTS.md) you m
 
 The following should all be installed on the machine used for development.
 
+- [detect-secrets](https://github.com/Yelp/detect-secrets) - for ensuring passwords, keys etc are not committed in error
 - docker
-- [just]() for running commands - read the [justfile](justfile) to see what the various commands do
+- [just](https://just.systems/man/en/) for running commands - read the [justfile](justfile) to see what the various commands do
 - npm
 - [prek](https://prek.j178.dev/) for pre-commit hook management
 - [uv](https://docs.astral.sh/uv/) for python and dependency management
