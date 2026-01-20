@@ -10,6 +10,7 @@ dependencies = [
   "cachelib>=0.13.0",
   "celery>=5.5.3",
   "click>=8.2.1",
+  "cryptography>=46.0.0",
   "django>=5.2.5",
   "flask>=3.1.1",
   "flask-babel>=4.0.0",
@@ -20,7 +21,10 @@ dependencies = [
   "gspread>=6.2.1",
   "markdown>=3.8.2",
   "markupsafe>=3.0.2",
+  "pillow>=12.1.0",
+  "pyotp>=2.9.0",
   "python-dotenv>=1.1.1",
+  "qrcode>=8.2",
   "redis>=6.4.0",
   "sortition-algorithms==0.11.4",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.43",
@@ -225,7 +229,8 @@ fail_under = 90
 # these are not imported directly, but are used.
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
 # - gunicorn - web server for production
-DEP002 = ["alembic", "gunicorn"]
+# pending usage - delete the other exceptions once 2FA is fully working
+DEP002 = ["alembic", "gunicorn", "cryptography", "pillow", "pyotp", "qrcode"]
 
 [tool.djlint]
 profile = "jinja"

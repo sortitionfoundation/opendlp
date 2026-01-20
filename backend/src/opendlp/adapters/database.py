@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 
 from opendlp.adapters import orm
 from opendlp.config import bool_environ_get, get_db_uri
-from opendlp.domain import assembly, password_reset, user_invites, users
+from opendlp.domain import assembly, password_reset, two_factor_audit, user_backup_codes, user_invites, users
 
 
 class DatabaseError(Exception):
@@ -108,6 +108,12 @@ def start_mappers() -> None:
 
         # Map SelectionRunRecord domain object to selection_run_records table
         orm.mapper_registry.map_imperatively(assembly.SelectionRunRecord, orm.selection_run_records)
+
+        # Map UserBackupCode domain object to user_backup_codes table
+        orm.mapper_registry.map_imperatively(user_backup_codes.UserBackupCode, orm.user_backup_codes)
+
+        # Map TwoFactorAuditLog domain object to two_factor_audit_log table
+        orm.mapper_registry.map_imperatively(two_factor_audit.TwoFactorAuditLog, orm.two_factor_audit_log)
 
         _mappers_started = True
 

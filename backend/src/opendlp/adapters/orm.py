@@ -178,6 +178,10 @@ users = Table(
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("is_active", Boolean, nullable=False, default=True),
     Column("user_data_agreement_agreed_at", TZAwareDatetime(), nullable=True),
+    # Two-factor authentication fields
+    Column("totp_secret_encrypted", String(255), nullable=True),
+    Column("totp_enabled", Boolean, nullable=False, default=False),
+    Column("totp_enabled_at", TZAwareDatetime(), nullable=True),
     Index("ix_users_oauth_provider_id", "oauth_provider", "oauth_id"),
 )
 
@@ -280,4 +284,38 @@ selection_run_records = Table(
     Column("status_stages", JSON, nullable=True),
     Column("selected_ids", JSON, nullable=True),
     Column("run_report", RunReportJSON(), nullable=True),
+)
+
+# User backup codes table for 2FA recovery
+user_backup_codes = Table(
+    "user_backup_codes",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("code_hash", String(255), nullable=False),
+    Column("used_at", TZAwareDatetime(), nullable=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Index("ix_user_backup_codes_user_id", "user_id"),
+)
+
+# TOTP verification attempts table for rate limiting
+totp_verification_attempts = Table(
+    "totp_verification_attempts",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("attempted_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
+    Column("success", Boolean, nullable=False),
+)
+
+# Two-factor authentication audit log table
+two_factor_audit_log = Table(
+    "two_factor_audit_log",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("action", String(50), nullable=False),
+    Column("performed_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+    Column("timestamp", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
+    Column("metadata", JSON, nullable=True),
 )

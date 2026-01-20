@@ -23,6 +23,9 @@ class User:
         created_at: datetime | None = None,
         is_active: bool = True,
         user_data_agreement_agreed_at: datetime | None = None,
+        totp_secret_encrypted: str | None = None,
+        totp_enabled: bool = False,
+        totp_enabled_at: datetime | None = None,
     ):
         validate_email(email)
 
@@ -40,6 +43,9 @@ class User:
         self.created_at = created_at or datetime.now(UTC)
         self.is_active = is_active
         self.user_data_agreement_agreed_at = user_data_agreement_agreed_at
+        self.totp_secret_encrypted = totp_secret_encrypted
+        self.totp_enabled = totp_enabled
+        self.totp_enabled_at = totp_enabled_at
         self.assembly_roles: list[UserAssemblyRole] = []
 
     # couple of things required for flask_login
@@ -124,6 +130,24 @@ class User:
         """Mark that the user has agreed to the data agreement at the current time."""
         self.user_data_agreement_agreed_at = datetime.now(UTC)
 
+    def enable_totp(self, encrypted_secret: str) -> None:
+        """Enable TOTP 2FA with encrypted secret."""
+        if self.oauth_provider:
+            raise ValueError("Cannot enable 2FA for OAuth users")
+        self.totp_secret_encrypted = encrypted_secret
+        self.totp_enabled = True
+        self.totp_enabled_at = datetime.now(UTC)
+
+    def disable_totp(self) -> None:
+        """Disable TOTP 2FA."""
+        self.totp_secret_encrypted = None
+        self.totp_enabled = False
+        self.totp_enabled_at = None
+
+    def requires_2fa(self) -> bool:
+        """Check if user requires 2FA verification (password users with 2FA enabled)."""
+        return self.totp_enabled and not self.oauth_provider
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, User):  # pragma: no cover
             return False
@@ -146,6 +170,9 @@ class User:
             created_at=self.created_at,
             is_active=self.is_active,
             user_data_agreement_agreed_at=self.user_data_agreement_agreed_at,
+            totp_secret_encrypted=self.totp_secret_encrypted,
+            totp_enabled=self.totp_enabled,
+            totp_enabled_at=self.totp_enabled_at,
         )
         detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user
