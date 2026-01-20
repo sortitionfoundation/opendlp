@@ -1,36 +1,91 @@
-# OpenDLP
+# OpenDLP Backend
 
-OpenDLP is the Open Democratic Lottery Platform.
+OpenDLP (Open Democratic Lottery Platform) is a Flask web application for supporting Citizens' Assemblies through stratified selection processes. The project follows Domain-Driven Design principles from "Architecture Patterns with Python" with clear separation between domain models, adapters, service layer, and entrypoints.
 
-## About
+**Technology Stack:** Flask, SQLAlchemy, PostgreSQL, Redis, following DDD architecture
 
-**Purpose:** A web application to support finding representative samples of people to participate in Citizens' Assemblies through a two stage Democratic Lottery.
+See the [docs](docs/) folder for many more details.
 
-### What is a Two Stage Democratic Lottery?
+## Architecture
 
-A two-stage democratic lottery developers
+The codebase follows a layered architecture:
 
-- stage 1 - location selection. For example, choosing addresses to send invitations to.
-- stage 2 - stratified selection.
+```txt
+src/opendlp/
+    domain/           # Plain Python domain objects (core business logic)
+    adapters/         # SQLAlchemy models and database adapters
+    service_layer/    # Repository and UnitOfWork abstractions
+    entrypoints/      # Flask routes and web interface
+```
 
-Sortition creates representative groups by randomly selecting people while respecting demographic quotas. For example, if your population is 52% women and 48% men, sortition ensures your panel maintains similar proportions rather than risking an all-male or all-female selection through pure chance.
+Key architectural principles:
 
-### Key Features
+- Domain models are plain Python objects, testable without Flask/SQLAlchemy
+- SQLAlchemy mappings use `map_imperatively()` in adapters
+- Users/Organisers are separate aggregates from Assembly/Registrants
+- Extensive use of JSON columns for flexible data storage
+- Use existing Flask extensions for security (flask-login, flask-session, etc.)
 
-- Specifying the Assembly.
-- Support multiple methods of location selection.
-- Creating and hosting a RSVP page for invitees to sign up on.
-- Doing the second stage of the democratic lottery over the set of invitees who signed up.
-- Managing the confirmation process.
+## Getting going
 
-## Docs
+Note that there are more detailed notes in [AGENTS.md](/backend/AGENTS.md) you might want to review.
 
-The [docs](docs/) folder has lots of info in it.
+### Dev tools assumed
 
-## Deployment
+The following should all be installed on the machine used for development.
 
-Will write this when we can do it.
+- docker
+- [just]() for running commands - read the [justfile](justfile) to see what the various commands do
+- npm
+- [prek](https://prek.j178.dev/) for pre-commit hook management
+- [uv](https://docs.astral.sh/uv/) for python and dependency management
 
-## Development
+### Setting up the dev environment
 
-The [CLAUDE.md](/CLAUDE.md) file has good info for developers.
+In this directory:
+
+```sh
+# create the .env file
+cp env.example .env
+# then edit and review as required.
+
+just install
+```
+
+The command `just install` will set up the virtualenv, pre-commit hooks, set up node and a few other things.
+
+### Testing and Quality
+
+```bash
+# Start the docker containers relied on for tests
+just start-test-docker
+
+# Run all tests with coverage
+just test
+
+# Run all tests (without bdd tests)
+just test-nobdd
+
+# Run all quality checks (linting, type checking, dependency analysis)
+just check
+```
+
+### Running the Application
+
+```bash
+# Start the docker containers relied on for local services
+just start-local-docker
+
+# Local development with Flask
+just run
+
+# Flask shell
+just flask-shell
+```
+
+### Database Access
+
+```bash
+# Connect to PostgreSQL (password: abc123)
+just psql
+```
