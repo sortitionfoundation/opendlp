@@ -1,13 +1,15 @@
 {% extends "main/view_assembly_base.html" %}
 {% block assembly_breadcrumbs %}<li class="govuk-breadcrumbs__list-item">{{ _("Data & Selection") }}</li>{% endblock %}
 {% block assembly_content %}
-    <h2 class="govuk-heading-m">{{ _("Google Spreadsheet") }}</h2>
+    <h2 class="govuk-heading-m">{{ _("Data Sources") }}</h2>
     {# Action Buttons at Top #}
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
         {% if not gsheet %}
             <a href="{{ url_for('gsheets.manage_assembly_gsheet', assembly_id=assembly.id) }}"
                 class="govuk-button govuk-button--secondary">{{ _("Configure Google Spreadsheet") }}</a>
         {% endif %}
+        <a href="{{ url_for('csv_upload.upload_csv', assembly_id=assembly.id) }}"
+            class="govuk-button govuk-button--secondary">{{ _("Upload CSV") }}</a>
         {% if gsheet and gsheet.url %}
             <a href="{{ url_for('gsheets.select_assembly_gsheet', assembly_id=assembly.id) }}"
                 class="govuk-button govuk-button--secondary">{{ _("Selection") }}</a>

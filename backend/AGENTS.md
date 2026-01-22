@@ -259,3 +259,7 @@ When working on frontend issues, see:
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
+
+Feature specifications:
+
+- [CSV Upload Feature](docs/agent/csv_upload_feature.md) - Specification for CSV participant data upload
