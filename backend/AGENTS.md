@@ -36,6 +36,44 @@ Key architectural principles:
 - The `.secrets.baseline` file is also in the parent directory, not in `backend/`
 - Git operations and secret scanning use the parent directory context
 
+## First Time Local Setup
+
+If setting up the project from scratch:
+
+```bash
+# 1. Create .env file
+cp env.example .env
+
+# 2. Install dependencies and set up environment
+just install
+
+# 3. Start Docker services (PostgreSQL, Redis)
+just start-local-docker
+
+# 4. Run database migrations
+just migrate
+
+# 5. Create an admin user (password must be 10+ characters)
+uv run opendlp users add --email admin@example.com
+
+# 6. Start the application
+just run
+
+# 7. Access at http://localhost:5000
+```
+
+### Database Connection (for external DB viewers)
+
+| Setting  | Local Dev | Test DB  |
+|----------|-----------|----------|
+| Host     | localhost | localhost|
+| Port     | 54321     | 54322    |
+| User     | opendlp   | opendlp  |
+| Password | abc123    | abc123   |
+| Database | opendlp   | opendlp  |
+
+Connection string: `postgresql://opendlp:abc123@localhost:54321/opendlp` <!-- pragma: allowlist secret -->
+
 ## Development Commands
 
 ### Package Management
