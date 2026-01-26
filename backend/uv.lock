@@ -3,13 +3,13 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-01-14T15:27:14.013642253Z"
+exclude-newer = "2026-01-19T19:34:21.964124446Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-setuptools = { timestamp = "2026-01-21T15:27:14.013663493Z", span = "PT0S" }
-sortition-algorithms = { timestamp = "2026-01-21T15:27:14.0136511Z", span = "PT0S" }
-pyasn1 = { timestamp = "2026-01-21T15:27:14.013664916Z", span = "PT0S" }
+setuptools = { timestamp = "2026-01-26T19:34:21.964135513Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-01-26T19:34:21.964130806Z", span = "PT0S" }
+pyasn1 = { timestamp = "2026-01-26T19:34:21.964136524Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -1539,14 +1539,14 @@ wheels = [
 
 [[package]]
 name = "types-authlib"
-version = "1.6.6.20251220"
+version = "1.6.6.20260116"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/46/c5/ed668b28a66b847903cc94362bf05171a01473e3782e60b362f246c160fe/types_authlib-1.6.6.20251220.tar.gz", hash = "sha256:a2369f23732fe88d5087ed720864f40d0319c19e8411d85a4930e31018996f90", size = 45595, upload-time = "2025-12-20T03:07:43.241Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/63/53dfe3b69d6f192842b27f66b747635523ef14e4853bc245b7bc6f9e52df/types_authlib-1.6.6.20260116.tar.gz", hash = "sha256:caf37903d7bd083874b4b39687edf36ccf11c652bf01d85628f2afa1d0b01e63", size = 46209, upload-time = "2026-01-16T03:21:54.896Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/ef/e783f3d0d489f7bf66557c3f26cd620e4bae1cba43a59e69c4ced25853bc/types_authlib-1.6.6.20251220-py3-none-any.whl", hash = "sha256:dd1d545fe4c498686c0285d59dc950d87d977d294fc430617c91e0a11f6f4f2b", size = 102884, upload-time = "2025-12-20T03:07:42.028Z" },
+    { url = "https://files.pythonhosted.org/packages/29/ba/df293fd2e3a29dc6e749b93e2fba198db73f9f79c70bb15ca9aff85028ee/types_authlib-1.6.6.20260116-py3-none-any.whl", hash = "sha256:036b5972cf49062d60f846f1ad9e401e031bf81059b433534ccd3cd4303e6390", size = 103895, upload-time = "2026-01-16T03:21:53.444Z" },
 ]
 
 [[package]]
