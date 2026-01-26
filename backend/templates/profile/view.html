@@ -189,6 +189,26 @@
                     </div>
                 {% endif %}
             </dl>
+            <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Security") }}</h2>
+            <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key">{{ _("Two-Factor Authentication") }}</dt>
+                    <dd class="govuk-summary-list__value">
+                        {% if current_user.oauth_provider %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not available") }}</strong>
+                            <br />
+                            <span class="govuk-hint govuk-!-font-size-16">{{ _("OAuth users rely on their provider's security") }}</span>
+                        {% elif current_user.totp_enabled %}
+                            <strong class="govuk-tag govuk-tag--green">{{ _("Enabled") }}</strong>
+                        {% else %}
+                            <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
+                        {% endif %}
+                    </dd>
+                    <dd class="govuk-summary-list__actions">
+                        <a href="{{ url_for('profile.two_factor_settings') }}" class="govuk-link">{{ _("Manage") }}</a>
+                    </dd>
+                </div>
+            </dl>
             <div class="govuk-button-group">
                 <a href="{{ url_for('profile.edit') }}"
                     class="govuk-button govuk-button--secondary"

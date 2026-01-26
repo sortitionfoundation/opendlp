@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ _("New Backup Codes") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("New Backup Codes") }}</h1>
+            <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Success") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <h3 class="govuk-notification-banner__heading">{{ _("Your backup codes have been regenerated") }}</h3>
+                    <p class="govuk-body">{{ _("Your old backup codes are no longer valid.") }}</p>
+                </div>
+            </div>
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-warning-text__assistive">{{ _("Warning") }}</span>
+                    {{ _("Save these backup codes in a safe place. Each code can only be used once. This is the only time you'll see these codes.") }}
+                </strong>
+            </div>
+            <div style="background: #f3f2f1;
+                padding: 20px;
+                border: 1px solid #b1b4b6;
+                margin-bottom: 30px">
+                <div style="display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    font-family: monospace;
+                    font-size: 16px">
+                    {% for code in backup_codes %}
+                        <div>{{ code }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="govuk-button-group">
+                <button onclick="downloadBackupCodes()"
+                    class="govuk-button govuk-button--secondary"
+                    data-module="govuk-button">{{ _("Download codes") }}</button>
+                <button onclick="window.print()"
+                    class="govuk-button govuk-button--secondary"
+                    data-module="govuk-button">{{ _("Print codes") }}</button>
+                <a href="{{ url_for('profile.two_factor_settings') }}" class="govuk-button" data-module="govuk-button">{{ _("Done") }}</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function downloadBackupCodes() {
+            const codes = {{ backup_codes | tojson }};
+            const text = 'OpenDLP Two-Factor Authentication Backup Codes\n\n' +
+            codes.join('\n') +
+            '\n\nEach code can only be used once. Keep them in a safe place.';
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'opendlp-backup-codes.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+{% endblock %}

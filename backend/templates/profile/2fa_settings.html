@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Two-Factor Authentication") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("Two-Factor Authentication") }}</h1>
+            {% if status.is_oauth_user %}
+                <div class="govuk-warning-text">
+                    <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                    <strong class="govuk-warning-text__text">
+                        <span class="govuk-warning-text__assistive">{{ _("Information") }}</span>
+                        {{ _("Two-factor authentication is not available for users who sign in with Google or Microsoft. Your OAuth provider already provides strong authentication security.") }}
+                    </strong>
+                </div>
+                <p class="govuk-body">
+                    <a href="{{ url_for('profile.view') }}" class="govuk-link">{{ _("Back to profile") }}</a>
+                </p>
+            {% else %}
+                <h2 class="govuk-heading-m">{{ _("Current Status") }}</h2>
+                <dl class="govuk-summary-list">
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _("Two-Factor Authentication") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {% if status.enabled %}
+                                <strong class="govuk-tag govuk-tag--green">{{ _("Enabled") }}</strong>
+                            {% else %}
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% if status.enabled and status.enabled_at %}
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _("Enabled on") }}</dt>
+                            <dd class="govuk-summary-list__value">
+                                {{ status.enabled_at.strftime('%Y-%m-%d %H:%M') }}
+                            </dd>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key">{{ _("Backup codes remaining") }}</dt>
+                            <dd class="govuk-summary-list__value">
+                                {{ status.backup_codes_remaining }} {{ _("of 8") }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+                {% if not status.enabled %}
+                    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Enable Two-Factor Authentication") }}</h2>
+                    <p class="govuk-body">
+                        {{ _("Two-factor authentication adds an extra layer of security to your account. When enabled, you'll need to enter a code from your authenticator app in addition to your password.") }}
+                    </p>
+                    <h3 class="govuk-heading-s">{{ _("What you'll need:") }}</h3>
+                    <ul class="govuk-list govuk-list--bullet">
+                        <li>{{ _("An authenticator app such as Google Authenticator, Authy, or Microsoft Authenticator") }}</li>
+                        <li>{{ _("A safe place to store backup codes for account recovery") }}</li>
+                    </ul>
+                    <a href="{{ url_for('profile.setup_2fa') }}"
+                        role="button"
+                        draggable="false"
+                        class="govuk-button"
+                        data-module="govuk-button">{{ _("Set up two-factor authentication") }}</a>
+                {% else %}
+                    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Manage Two-Factor Authentication") }}</h2>
+                    <h3 class="govuk-heading-s">{{ _("Regenerate backup codes") }}</h3>
+                    <p class="govuk-body">
+                        {{ _("If you've used some of your backup codes, you can generate a new set. This will invalidate all existing backup codes.") }}
+                    </p>
+                    <details class="govuk-details">
+                        <summary class="govuk-details__summary">
+                            <span class="govuk-details__summary-text">{{ _("Regenerate backup codes") }}</span>
+                        </summary>
+                        <div class="govuk-details__text">
+                            <form method="POST" action="{{ url_for('profile.regenerate_backup_codes') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="totp_code">{{ _("Verification code") }}</label>
+                                    <div class="govuk-hint">{{ _("Enter the 6-digit code from your authenticator app") }}</div>
+                                    <input class="govuk-input govuk-input--width-10"
+                                        id="totp_code"
+                                        name="totp_code"
+                                        type="text"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{6}"
+                                        maxlength="6"
+                                        autocomplete="one-time-code"
+                                        required />
+                                </div>
+                                <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button">{{ _("Regenerate codes") }}</button>
+                            </form>
+                        </div>
+                    </details>
+                    <h3 class="govuk-heading-s govuk-!-margin-top-6">{{ _("Disable two-factor authentication") }}</h3>
+                    <p class="govuk-body">
+                        {{ _("Disabling two-factor authentication will make your account less secure.") }}
+                    </p>
+                    <details class="govuk-details">
+                        <summary class="govuk-details__summary">
+                            <span class="govuk-details__summary-text">{{ _("Disable two-factor authentication") }}</span>
+                        </summary>
+                        <div class="govuk-details__text">
+                            <form method="POST"
+                                action="{{ url_for('profile.disable_2fa') }}"
+                                onsubmit="return confirm('{{ _("Are you sure you want to disable two-factor authentication? This will make your account less secure.") }}');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="totp_code_disable">{{ _("Verification code") }}</label>
+                                    <div class="govuk-hint">{{ _("Enter the 6-digit code from your authenticator app") }}</div>
+                                    <input class="govuk-input govuk-input--width-10"
+                                        id="totp_code_disable"
+                                        name="totp_code"
+                                        type="text"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{6}"
+                                        maxlength="6"
+                                        autocomplete="one-time-code"
+                                        required />
+                                </div>
+                                <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button">{{ _("Disable") }}</button>
+                            </form>
+                        </div>
+                    </details>
+                {% endif %}
+                <p class="govuk-body govuk-!-margin-top-6">
+                    <a href="{{ url_for('profile.view') }}" class="govuk-link">{{ _("Back to profile") }}</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

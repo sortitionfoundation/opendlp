@@ -8,6 +8,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditOwnProfileForm, SetPasswordForm
+from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import CannotRemoveLastAuthMethod, InvalidCredentials, PasswordTooWeak
 from opendlp.service_layer.security import (
     TempUser,
@@ -15,6 +16,7 @@ from opendlp.service_layer.security import (
     password_validators_help_text_html,
     validate_password_strength,
 )
+from opendlp.service_layer.two_factor_service import TwoFactorSetupError, TwoFactorVerificationError
 from opendlp.service_layer.user_service import (
     change_own_password,
     link_oauth_to_user,
@@ -340,3 +342,155 @@ def set_password() -> ResponseReturnValue:
     return render_template(
         "profile/set_password.html", form=form, password_help=password_validators_help_text_html()
     ), 200
+
+
+@profile_bp.route("/profile/2fa")
+@login_required
+def two_factor_settings() -> ResponseReturnValue:
+    """View 2FA settings and status."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            status = two_factor_service.get_2fa_status(uow, current_user.id)
+
+        return render_template("profile/2fa_settings.html", status=status), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error loading 2FA settings for user {current_user.id}: {e}")
+        flash(_("An error occurred while loading 2FA settings"), "error")
+        return redirect(url_for("profile.view"))
+
+
+@profile_bp.route("/profile/2fa/setup")
+@login_required
+def setup_2fa() -> ResponseReturnValue:
+    """Start 2FA setup - show QR code and backup codes."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            totp_secret, qr_code_url, backup_codes = two_factor_service.setup_2fa(uow, current_user.id)
+
+        # Store the secret and backup codes in session for the enable step
+        session["totp_setup_secret"] = totp_secret
+        session["totp_setup_backup_codes"] = backup_codes
+
+        return render_template(
+            "profile/2fa_setup.html",
+            qr_code_url=qr_code_url,
+            totp_secret=totp_secret,
+            backup_codes=backup_codes,
+        ), 200
+
+    except TwoFactorSetupError as e:
+        flash(str(e), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+    except Exception as e:
+        current_app.logger.error(f"Error starting 2FA setup for user {current_user.id}: {e}")
+        flash(_("An error occurred while setting up 2FA"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+
+@profile_bp.route("/profile/2fa/enable", methods=["POST"])
+@login_required
+def enable_2fa() -> ResponseReturnValue:
+    """Complete 2FA setup by verifying TOTP code."""
+    from flask import request
+
+    totp_code = request.form.get("totp_code", "").strip()
+
+    if not totp_code:
+        flash(_("Please enter the verification code from your authenticator app"), "error")
+        return redirect(url_for("profile.setup_2fa"))
+
+    # Get the secret and backup codes from session
+    totp_secret = session.get("totp_setup_secret")
+    backup_codes = session.get("totp_setup_backup_codes")
+
+    if not totp_secret or not backup_codes:
+        flash(_("Setup session expired. Please start over."), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
+
+        # Clear setup session data
+        session.pop("totp_setup_secret", None)
+        session.pop("totp_setup_backup_codes", None)
+
+        # Update current_user object
+        current_user.totp_enabled = True
+
+        flash(_("Two-factor authentication has been enabled successfully"), "success")
+        return redirect(url_for("profile.two_factor_settings"))
+
+    except TwoFactorVerificationError as e:
+        flash(str(e), "error")
+        return redirect(url_for("profile.setup_2fa"))
+    except Exception as e:
+        current_app.logger.error(f"Error enabling 2FA for user {current_user.id}: {e}")
+        flash(_("An error occurred while enabling 2FA"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+
+@profile_bp.route("/profile/2fa/disable", methods=["POST"])
+@login_required
+def disable_2fa() -> ResponseReturnValue:
+    """Disable 2FA (requires TOTP code)."""
+    from flask import request
+
+    totp_code = request.form.get("totp_code", "").strip()
+
+    if not totp_code:
+        flash(_("Please enter your verification code to disable 2FA"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            two_factor_service.disable_2fa(uow, current_user.id, totp_code)
+
+        # Update current_user object
+        current_user.totp_enabled = False
+        current_user.totp_secret_encrypted = None
+        current_user.totp_enabled_at = None
+
+        flash(_("Two-factor authentication has been disabled"), "success")
+        return redirect(url_for("profile.two_factor_settings"))
+
+    except TwoFactorVerificationError as e:
+        flash(str(e), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+    except Exception as e:
+        current_app.logger.error(f"Error disabling 2FA for user {current_user.id}: {e}")
+        flash(_("An error occurred while disabling 2FA"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+
+@profile_bp.route("/profile/2fa/backup-codes/regenerate", methods=["POST"])
+@login_required
+def regenerate_backup_codes() -> ResponseReturnValue:
+    """Regenerate backup codes (requires TOTP code)."""
+    from flask import request
+
+    totp_code = request.form.get("totp_code", "").strip()
+
+    if not totp_code:
+        flash(_("Please enter your verification code to regenerate backup codes"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            backup_codes = two_factor_service.regenerate_backup_codes(uow, current_user.id, totp_code)
+
+        return render_template("profile/2fa_backup_codes.html", backup_codes=backup_codes), 200
+
+    except TwoFactorVerificationError as e:
+        flash(str(e), "error")
+        return redirect(url_for("profile.two_factor_settings"))
+    except Exception as e:
+        current_app.logger.error(f"Error regenerating backup codes for user {current_user.id}: {e}")
+        flash(_("An error occurred while regenerating backup codes"), "error")
+        return redirect(url_for("profile.two_factor_settings"))
