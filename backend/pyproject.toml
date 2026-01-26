@@ -73,10 +73,8 @@ exclude-newer = "1 week"
 [tool.uv.exclude-newer-package]
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
-# for security update 8.9.x, released 2026-01-?? - so can remove after 2026-01-?? + 7
+# for security update 8.10.x, released 2026-01-21 - so can remove after 2026-01-28
 setuptools = "0 days"
-# Need pyasn1 0.6.2, released 2026-01-16 - so can remove after 2026-01-23
-pyasn1 = "0 days"
 
 [tool.mypy]
 files = ["src"]
