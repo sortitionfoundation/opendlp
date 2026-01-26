@@ -295,7 +295,6 @@ user_backup_codes = Table(
     Column("code_hash", String(255), nullable=False),
     Column("used_at", TZAwareDatetime(), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    Index("ix_user_backup_codes_user_id", "user_id"),
 )
 
 # TOTP verification attempts table for rate limiting

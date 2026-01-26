@@ -21,10 +21,9 @@ dependencies = [
   "gspread>=6.2.1",
   "markdown>=3.8.2",
   "markupsafe>=3.0.2",
-  "pillow>=12.1.0",
   "pyotp>=2.9.0",
   "python-dotenv>=1.1.1",
-  "qrcode>=8.2",
+  "qrcode[pil]>=8.2",
   "redis>=6.4.0",
   "sortition-algorithms==0.11.4",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.43",
@@ -62,6 +61,7 @@ dev = [
   "types-authlib>=1.6.6.20251220",
   "types-gunicorn>=23.0.0.20251001",
   "types-markdown>=3.8.0.20250809",
+  "types-qrcode>=8.2.0.20250914",
   "types-wtforms>=3.2.1.20250809",
 ]
 
@@ -230,7 +230,7 @@ fail_under = 90
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
 # - gunicorn - web server for production
 # pending usage - delete the other exceptions once 2FA is fully working
-DEP002 = ["alembic", "gunicorn", "cryptography", "pillow", "pyotp", "qrcode"]
+DEP002 = ["alembic", "gunicorn"]
 
 [tool.djlint]
 profile = "jinja"

@@ -2,8 +2,3 @@
 # Docs at https://oss.anchore.com/docs/guides/vulnerability/filter-results/#ignore-specific-vulnerabilities-or-packages
 
 ignore:
-  # This vulnerability is in jaraco-context, which is vendored in to setuptools.
-  # The setuptools author states it does not use the vulnerable code paths.
-  # Source: https://github.com/pypa/setuptools/issues/5138#issuecomment-3751653289
-  # Follow that issue until we have a fix, in setuptools > 80.9.0
-  - vulnerability: GHSA-58pv-8j8x-9vj2

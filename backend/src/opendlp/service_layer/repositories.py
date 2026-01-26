@@ -10,6 +10,8 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.two_factor_audit import TwoFactorAuditLog
+from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 
@@ -263,4 +265,32 @@ class PasswordResetTokenRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: PasswordResetToken) -> None:
         """Delete a token from the repository."""
+        raise NotImplementedError
+
+
+class UserBackupCodeRepository(AbstractRepository):
+    """Repository interface for UserBackupCode domain objects."""
+
+    @abc.abstractmethod
+    def get_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all backup codes for a user."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_unused_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all unused backup codes for a user."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_codes_for_user(self, user_id: uuid.UUID) -> int:
+        """Delete all backup codes for a user. Returns count deleted."""
+        raise NotImplementedError
+
+
+class TwoFactorAuditLogRepository(AbstractRepository):
+    """Repository interface for TwoFactorAuditLog domain objects."""
+
+    @abc.abstractmethod
+    def get_logs_for_user(self, user_id: uuid.UUID, limit: int = 100) -> Iterable[TwoFactorAuditLog]:
+        """Get audit logs for a user, most recent first."""
         raise NotImplementedError

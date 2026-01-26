@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.two_factor_audit import TwoFactorAuditLog
+from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.service_layer.repositories import (
@@ -13,7 +15,9 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     SelectionRunRecordRepository,
+    TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
+    UserBackupCodeRepository,
     UserInviteRepository,
     UserRepository,
 )
@@ -342,6 +346,36 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         return [(record, None) for record in page_records], total_count
 
 
+class FakeUserBackupCodeRepository(FakeRepository, UserBackupCodeRepository):
+    """Fake implementation of UserBackupCodeRepository."""
+
+    def get_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all backup codes for a user."""
+        return [code for code in self._items if code.user_id == user_id]
+
+    def get_unused_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all unused backup codes for a user."""
+        return [code for code in self._items if code.user_id == user_id and not code.is_used()]
+
+    def delete_codes_for_user(self, user_id: uuid.UUID) -> int:
+        """Delete all backup codes for a user. Returns count deleted."""
+        codes_to_delete = [code for code in self._items if code.user_id == user_id]
+        count = len(codes_to_delete)
+        self._items = [code for code in self._items if code.user_id != user_id]
+        return count
+
+
+class FakeTwoFactorAuditLogRepository(FakeRepository, TwoFactorAuditLogRepository):
+    """Fake implementation of TwoFactorAuditLogRepository."""
+
+    def get_logs_for_user(self, user_id: uuid.UUID, limit: int = 100) -> Iterable[TwoFactorAuditLog]:
+        """Get audit logs for a user, most recent first."""
+        user_logs = [log for log in self._items if log.user_id == user_id]
+        # Sort by timestamp desc
+        user_logs.sort(key=lambda log: log.timestamp, reverse=True)
+        return user_logs[:limit]
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -352,6 +386,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.user_invites = self.fake_user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = self.fake_user_assembly_roles = FakeUserAssemblyRoleRepository()
         self.selection_run_records = self.fake_selection_run_records = FakeSelectionRunRecordRepository()
+        self.user_backup_codes = self.fake_user_backup_codes = FakeUserBackupCodeRepository()
+        self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -374,4 +410,6 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_user_invites._items.clear()
         self.fake_user_assembly_roles._items.clear()
         self.fake_selection_run_records._items.clear()
+        self.fake_user_backup_codes._items.clear()
+        self.fake_two_factor_audit_logs._items.clear()
         self.committed = False

@@ -1,6 +1,7 @@
 """ABOUTME: Configuration management for OpenDLP Flask application
 ABOUTME: Loads environment variables and provides configuration objects for different environments"""
 
+import base64
 import logging
 import logging.config
 import os
@@ -388,3 +389,19 @@ def get_test_csv_data_dir() -> Path:
     """Get directory containing test CSV files (features.csv, candidates.csv)"""
     default_dir = _get_project_root() / "tests" / "csv_fixtures" / "selection_data"
     return Path(os.environ.get("TEST_CSV_DATA_DIR", str(default_dir)))
+
+
+def get_totp_encryption_key() -> bytes:
+    """Get the master encryption key from environment.
+
+    Raises:
+        ValueError: If TOTP_ENCRYPTION_KEY is not set
+    """
+    key_str = os.environ.get("TOTP_ENCRYPTION_KEY", "")
+    if not key_str:
+        raise ValueError("TOTP_ENCRYPTION_KEY environment variable must be set for 2FA to work")
+
+    try:
+        return base64.b64decode(key_str)
+    except Exception as e:
+        raise ValueError(f"TOTP_ENCRYPTION_KEY must be a valid base64-encoded 32-byte key: {e}") from e

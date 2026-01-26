@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.two_factor_audit import TwoFactorAuditLog
+from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, SelectionRunStatus
@@ -21,7 +23,9 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     PasswordResetTokenRepository,
     SelectionRunRecordRepository,
+    TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
+    UserBackupCodeRepository,
     UserInviteRepository,
     UserRepository,
 )
@@ -581,3 +585,78 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
     def delete(self, item: PasswordResetToken) -> None:
         """Delete a token from the repository."""
         self.session.delete(item)
+
+
+class SqlAlchemyUserBackupCodeRepository(SqlAlchemyRepository, UserBackupCodeRepository):
+    """SQLAlchemy implementation of UserBackupCodeRepository."""
+
+    def add(self, item: UserBackupCode) -> None:
+        """Add a backup code to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> UserBackupCode | None:
+        """Get a backup code by its ID."""
+        return self.session.query(UserBackupCode).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[UserBackupCode]:
+        """Get all backup codes."""
+        return self.session.query(UserBackupCode).order_by(orm.user_backup_codes.c.created_at.desc()).all()
+
+    def get_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all backup codes for a user."""
+        return (
+            self.session.query(UserBackupCode)
+            .filter_by(user_id=user_id)
+            .order_by(orm.user_backup_codes.c.created_at.desc())
+            .all()
+        )
+
+    def get_unused_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
+        """Get all unused backup codes for a user."""
+        return (
+            self.session.query(UserBackupCode)
+            .filter(
+                and_(
+                    orm.user_backup_codes.c.user_id == user_id,
+                    orm.user_backup_codes.c.used_at.is_(None),
+                )
+            )
+            .order_by(orm.user_backup_codes.c.created_at.desc())
+            .all()
+        )
+
+    def delete_codes_for_user(self, user_id: uuid.UUID) -> int:
+        """Delete all backup codes for a user. Returns count deleted."""
+        codes_to_delete = self.session.query(UserBackupCode).filter_by(user_id=user_id).all()
+
+        count = len(codes_to_delete)
+        for code in codes_to_delete:
+            self.session.delete(code)
+
+        return count
+
+
+class SqlAlchemyTwoFactorAuditLogRepository(SqlAlchemyRepository, TwoFactorAuditLogRepository):
+    """SQLAlchemy implementation of TwoFactorAuditLogRepository."""
+
+    def add(self, item: TwoFactorAuditLog) -> None:
+        """Add an audit log entry to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> TwoFactorAuditLog | None:
+        """Get an audit log entry by its ID."""
+        return self.session.query(TwoFactorAuditLog).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[TwoFactorAuditLog]:
+        """Get all audit log entries."""
+        return self.session.query(TwoFactorAuditLog).order_by(orm.two_factor_audit_log.c.timestamp.desc()).all()
+
+    def get_logs_for_user(self, user_id: uuid.UUID, limit: int = 100) -> Iterable[TwoFactorAuditLog]:
+        """Get audit logs for a user, most recent first."""
+        return (
+            self.session.query(TwoFactorAuditLog)
+            .filter_by(user_id=user_id)
+            .order_by(orm.two_factor_audit_log.c.timestamp.desc())
+            .limit(limit)
+            .all()
+        )
