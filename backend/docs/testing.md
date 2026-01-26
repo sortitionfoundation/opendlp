@@ -134,6 +134,93 @@ uv run pytest tests/e2e/
 
 Test configuration is in `pyproject.toml` under the `[tool.pytest.ini_options]` section.
 
+## Reusable Test Fixtures
+
+The project provides standardized fixtures in `tests/conftest.py` that should be used instead of creating custom fixtures for common tasks.
+
+### Environment Variable Fixtures
+
+**`temp_env_vars`** - Temporarily set environment variables for a test:
+
+```python
+def test_requires_encryption_key(temp_env_vars):
+    """Test that encryption requires TOTP_ENCRYPTION_KEY to be set."""
+    # Set environment variable for this test only
+    temp_env_vars(TOTP_ENCRYPTION_KEY="test-key-value")
+
+    # Test code that uses the environment variable
+    result = some_function_that_needs_env_var()
+    assert result is not None
+```
+
+**`clear_env_vars`** - Temporarily clear environment variables for a test:
+
+```python
+def test_fails_without_required_env_var(clear_env_vars):
+    """Test that function raises error when env var is missing."""
+    # Clear the environment variable for this test
+    clear_env_vars("TOTP_ENCRYPTION_KEY")
+
+    # Test that missing env var causes expected error
+    with pytest.raises(ValueError, match="TOTP_ENCRYPTION_KEY"):
+        function_that_requires_env_var()
+```
+
+**`set_test_env`** - Automatically sets `FLASK_ENV=testing` for all tests (autouse=True).
+
+### Database Fixtures
+
+**For unit tests:**
+- `in_memory_sqlite_db` - Fast in-memory SQLite database
+- `sqlite_session_factory` - Session factory with mappers
+
+**For integration/e2e tests:**
+- `postgres_engine` - PostgreSQL test database engine (port 54322)
+- `postgres_session_factory` - PostgreSQL session factory with mappers
+- `postgres_session` - Individual test session with rollback
+
+### Security Fixtures
+
+**`patch_password_hashing`** - Speeds up password hashing in tests (autouse=True):
+- Uses only 1 iteration instead of 1 million
+- Makes tests run much faster
+- Applied automatically to all tests
+
+### Example: Using Fixtures for Environment-Dependent Tests
+
+```python
+def _setup_test_encryption_key(temp_env_vars):
+    """Helper to set up a test encryption key."""
+    raw_key = secrets.token_bytes(32)
+    test_key = base64.b64encode(raw_key).decode()
+    temp_env_vars(TOTP_ENCRYPTION_KEY=test_key)
+    return test_key
+
+def test_encryption_works(temp_env_vars):
+    """Test that secret encryption works with valid key."""
+    _setup_test_encryption_key(temp_env_vars)
+
+    secret = "test-secret"  # pragma: allowlist secret
+    encrypted = encrypt_secret(secret)
+
+    assert encrypted != secret
+    assert len(encrypted) > len(secret)
+
+def test_encryption_fails_without_key(clear_env_vars):
+    """Test that encryption fails without TOTP_ENCRYPTION_KEY."""
+    clear_env_vars("TOTP_ENCRYPTION_KEY")
+
+    with pytest.raises(ValueError, match="TOTP_ENCRYPTION_KEY"):
+        encrypt_secret("test-secret")  # pragma: allowlist secret
+```
+
+### Benefits of Using Standard Fixtures
+
+- **Consistency:** All tests use the same patterns for common tasks
+- **Automatic cleanup:** Fixtures restore original state after tests
+- **Readability:** Clear intent from fixture names
+- **Maintainability:** Changes to test infrastructure happen in one place
+
 ### Pristine Output Policy
 
 **All test output must be pristine to pass.**
