@@ -1,0 +1,67 @@
+{% extends "main/view_assembly_base.html" %}
+{% block title %}{{ _("Upload CSV") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block assembly_breadcrumbs %}
+    <li class="govuk-breadcrumbs__list-item">
+        <a class="govuk-breadcrumbs__link"
+            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
+    </li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("Upload CSV") }}</li>
+{% endblock %}
+{% block assembly_content %}
+    {% if form.errors %}
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+            <div role="alert">
+                <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
+                <div class="govuk-error-summary__body">
+                    <ul class="govuk-list govuk-error-summary__list">
+                        {% for field_name, errors in form.errors.items() %}
+                            {% for error in errors %}
+                                <li>
+                                    <a href="#{{ form[field_name].id }}">{{ error }}</a>
+                                </li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <h2 class="govuk-heading-m">{{ _("Upload CSV File") }}</h2>
+
+    <p class="govuk-body">
+        {{ _("Upload a CSV file containing participant data for this assembly. The file should include column headers in the first row.") }}
+    </p>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="govuk-form-group {% if form.csv_file.errors %}govuk-form-group--error{% endif %}">
+            <label class="govuk-label govuk-label--s" for="{{ form.csv_file.id }}">
+                {{ form.csv_file.label.text }}
+            </label>
+            {% if form.csv_file.description %}
+                <div class="govuk-hint">{{ form.csv_file.description }}</div>
+            {% endif %}
+            {% if form.csv_file.errors %}
+                <p class="govuk-error-message">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    {{ form.csv_file.errors[0] }}
+                </p>
+            {% endif %}
+            <input class="govuk-file-upload {% if form.csv_file.errors %}govuk-file-upload--error{% endif %}"
+                id="{{ form.csv_file.id }}"
+                name="{{ form.csv_file.name }}"
+                type="file"
+                accept=".csv">
+        </div>
+
+        <div class="govuk-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+                {{ _("Upload") }}
+            </button>
+            <a class="govuk-link"
+                href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Cancel") }}</a>
+        </div>
+    </form>
+{% endblock %}

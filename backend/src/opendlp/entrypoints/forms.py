@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import (
     BooleanField,
     DateField,
@@ -497,3 +498,16 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly
             pass
+
+
+class CSVUploadForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for uploading CSV files containing participant data."""
+
+    csv_file = FileField(
+        _l("CSV File"),
+        validators=[
+            FileRequired(message=_l("Please select a CSV file to upload")),
+            FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
+        ],
+        description=_l("Select a CSV file containing participant data"),
+    )
