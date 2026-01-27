@@ -216,6 +216,53 @@ def regenerate_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_co
         return backup_codes
 
 
+def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> None:
+    """Disable 2FA for a user (admin-initiated).
+
+    This does not require a TOTP code - it's for admin recovery scenarios.
+    The action is logged in the audit trail with the admin's ID.
+
+    Args:
+        uow: Unit of Work for database access
+        user_id: The user's UUID whose 2FA should be disabled
+        admin_user_id: The admin user's UUID performing the action
+
+    Raises:
+        TwoFactorSetupError: If user doesn't have 2FA enabled or is OAuth user
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if user is None:
+            raise TwoFactorSetupError(_l("User not found"))
+
+        admin_user = uow.users.get(admin_user_id)
+        if admin_user is None:
+            raise TwoFactorSetupError(_l("Admin user not found"))
+
+        if not user.totp_enabled:
+            raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
+
+        if user.oauth_provider:
+            raise TwoFactorSetupError(_l("Cannot disable 2FA for OAuth users (they don't use 2FA)"))
+
+        # Disable 2FA
+        user.disable_totp()
+
+        # Delete all backup codes
+        uow.user_backup_codes.delete_codes_for_user(user_id)
+
+        # Create audit log entry
+        audit_log = TwoFactorAuditLog(
+            user_id=user_id,
+            action="admin_disabled",
+            performed_by=admin_user_id,
+            metadata={"admin_email": admin_user.email},
+        )
+        uow.two_factor_audit_logs.add(audit_log)
+
+        uow.commit()
+
+
 def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:
     """Get the 2FA status for a user.
 
@@ -237,3 +284,23 @@ def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:
             "is_oauth_user": user.oauth_provider is not None,
             "backup_codes_remaining": totp_service.count_remaining_backup_codes(uow, user_id),
         }
+
+
+def get_2fa_audit_logs(uow: AbstractUnitOfWork, user_id: uuid.UUID, limit: int = 100) -> list[TwoFactorAuditLog]:
+    """Get 2FA audit logs for a user.
+
+    Note: This function does not manage the UOW session - the caller must use `with uow:`.
+
+    Args:
+        uow: Unit of Work for database access
+        user_id: The user's UUID
+        limit: Maximum number of logs to return (default: 100)
+
+    Returns:
+        List of TwoFactorAuditLog entries, most recent first
+    """
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
+
+    return list(uow.two_factor_audit_logs.get_logs_for_user(user_id, limit=limit))

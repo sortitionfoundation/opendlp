@@ -37,6 +37,20 @@
             </div>
         </div>
     </div>
+    <div class="govuk-grid-row govuk-!-margin-bottom-6">
+        <div class="govuk-grid-column-one-quarter">
+            <div class="stat-card">
+                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Password Users") }}</p>
+                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.password_users }}</p>
+            </div>
+        </div>
+        <div class="govuk-grid-column-one-quarter">
+            <div class="stat-card">
+                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("2FA Enabled") }}</p>
+                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.users_with_2fa }}</p>
+            </div>
+        </div>
+    </div>
     <!-- Search and Filter Form -->
     <div class="govuk-!-margin-bottom-6">
         <form method="get" action="{{ url_for('admin.list_users') }}">
@@ -99,6 +113,7 @@
                     <th scope="col" class="govuk-table__header">{{ _("Email") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Role") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Status") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("2FA") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Created") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
                 </tr>
@@ -128,6 +143,15 @@
                                 <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                             {% else %}
                                 <strong class="govuk-tag govuk-tag--grey">{{ _("Inactive") }}</strong>
+                            {% endif %}
+                        </td>
+                        <td class="govuk-table__cell">
+                            {% if user.oauth_provider %}
+                                <span class="govuk-hint">{{ _("N/A (OAuth)") }}</span>
+                            {% elif user.totp_enabled %}
+                                <strong class="govuk-tag govuk-tag--blue">{{ _("Enabled") }}</strong>
+                            {% else %}
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
                             {% endif %}
                         </td>
                         <td class="govuk-table__cell">{{ user.created_at.strftime("%d %b %Y") }}</td>

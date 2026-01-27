@@ -522,12 +522,18 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
 
         all_users = list(uow.users.all())
 
+        # Count password-based users (not OAuth) for 2FA statistics
+        password_users = [u for u in all_users if not u.oauth_provider]
+        users_with_2fa = [u for u in password_users if u.totp_enabled]
+
         return {
             "total_users": len(all_users),
             "active_users": len([u for u in all_users if u.is_active]),
             "inactive_users": len([u for u in all_users if not u.is_active]),
             "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
             "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
+            "password_users": len(password_users),
+            "users_with_2fa": len(users_with_2fa),
             "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
         }
 

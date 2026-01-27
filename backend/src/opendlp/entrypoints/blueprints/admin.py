@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
+from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     InviteNotFoundError,
@@ -23,6 +24,7 @@ from opendlp.service_layer.invite_service import (
     list_invites,
     revoke_invite,
 )
+from opendlp.service_layer.two_factor_service import TwoFactorSetupError
 from opendlp.service_layer.user_service import get_user_by_id, get_user_stats, list_users_paginated, update_user
 from opendlp.translations import gettext as _
 
@@ -190,6 +192,78 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error loading user edit page for user {user_id}, admin {current_user.id}: {e}")
         flash(_("An error occurred while loading the edit page"), "error")
         return redirect(url_for("admin.list_users"))
+
+
+@admin_bp.route("/users/<uuid:user_id>/2fa/disable", methods=["POST"])
+@login_required
+@require_admin
+def disable_user_2fa(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Admin route to disable 2FA for a user."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            two_factor_service.admin_disable_2fa(uow, user_id, current_user.id)
+
+        flash(_("Two-factor authentication has been disabled for this user"), "success")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+    except TwoFactorSetupError as e:
+        current_app.logger.warning(f"Error disabling 2FA for user {user_id} by admin {current_user.id}: {e}")
+        flash(str(e), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+    except UserNotFoundError as e:
+        current_app.logger.warning(f"User {user_id} not found for 2FA disable by admin {current_user.id}: {e}")
+        flash(_("User not found"), "error")
+        return redirect(url_for("admin.list_users"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Unauthorized 2FA disable attempt by user {current_user.id}: {e}")
+        flash(_("You don't have permission to perform this action"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Error disabling 2FA for user {user_id} by admin {current_user.id}: {e}")
+        flash(_("An error occurred while disabling two-factor authentication"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+
+@admin_bp.route("/users/<uuid:user_id>/2fa/audit-log")
+@login_required
+@require_admin
+def view_user_2fa_audit_log(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Admin route to view 2FA audit log for a user."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            user = get_user_by_id(uow, user_id, current_user.id)
+            audit_logs = two_factor_service.get_2fa_audit_logs(uow, user_id, limit=100)
+
+        # Get performer details for audit log entries
+        with uow:
+            performer_cache = {}
+            for log in audit_logs:
+                if log.performed_by and log.performed_by not in performer_cache:
+                    performer = uow.users.get(log.performed_by)
+                    if performer:
+                        performer_cache[log.performed_by] = performer.email
+
+        return render_template(
+            "admin/user_2fa_audit_log.html",
+            user=user,
+            audit_logs=audit_logs,
+            performer_cache=performer_cache,
+        ), 200
+
+    except UserNotFoundError as e:
+        current_app.logger.warning(f"User {user_id} not found for 2FA audit log by admin {current_user.id}: {e}")
+        flash(_("User not found"), "error")
+        return redirect(url_for("admin.list_users"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Unauthorized 2FA audit log access by user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this page"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Error viewing 2FA audit log for user {user_id} by admin {current_user.id}: {e}")
+        flash(_("An error occurred while loading the audit log"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
 
 
 @admin_bp.route("/invites")

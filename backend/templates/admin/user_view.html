@@ -77,6 +77,30 @@
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key">{{ _("Two-Factor Authentication") }}</dt>
+                        <dd class="govuk-summary-list__value">
+                            {% if user.oauth_provider %}
+                                <span class="govuk-hint">{{ _("Not applicable (OAuth user)") }}</span>
+                            {% elif user.totp_enabled %}
+                                <strong class="govuk-tag govuk-tag--blue">{{ _("Enabled") }}</strong>
+                                {% if user.totp_enabled_at %}
+                                    <br>
+                                    <span class="govuk-hint govuk-!-margin-top-2">
+                                        {{ _("Enabled on") }} {{ user.totp_enabled_at.strftime("%d %B %Y at %H:%M") }}
+                                    </span>
+                                {% endif %}
+                                <br>
+                                <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
+                                    class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
+                            {% else %}
+                                <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
+                                <br>
+                                <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
+                                    class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _("Data Agreement") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.user_data_agreement_agreed_at %}
@@ -96,6 +120,15 @@
                 <div class="govuk-button-group govuk-!-margin-top-6">
                     <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
                         class="govuk-button">{{ _("Edit User") }}</a>
+                    {% if user.totp_enabled and not user.oauth_provider %}
+                        <form method="POST"
+                            action="{{ url_for('admin.disable_user_2fa', user_id=user.id) }}"
+                            style="display: inline;"
+                            onsubmit="return confirm('{{ _('Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.') }}');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable 2FA") }}</button>
+                        </form>
+                    {% endif %}
                     <a href="{{ url_for('admin.list_users') }}"
                         class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
                 </div>
