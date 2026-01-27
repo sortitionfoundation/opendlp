@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
@@ -23,6 +24,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     PasswordResetTokenRepository,
     SelectionRunRecordRepository,
+    TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
     UserBackupCodeRepository,
@@ -658,5 +660,39 @@ class SqlAlchemyTwoFactorAuditLogRepository(SqlAlchemyRepository, TwoFactorAudit
             .filter_by(user_id=user_id)
             .order_by(orm.two_factor_audit_log.c.timestamp.desc())
             .limit(limit)
+            .all()
+        )
+
+
+class SqlAlchemyTotpVerificationAttemptRepository(SqlAlchemyRepository, TotpVerificationAttemptRepository):
+    """SQLAlchemy implementation of TotpVerificationAttemptRepository."""
+
+    def add(self, item: TotpVerificationAttempt) -> None:
+        """Add a verification attempt to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> TotpVerificationAttempt | None:
+        """Get a verification attempt by its ID."""
+        return self.session.query(TotpVerificationAttempt).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[TotpVerificationAttempt]:
+        """Get all verification attempts."""
+        return (
+            self.session.query(TotpVerificationAttempt)
+            .order_by(orm.totp_verification_attempts.c.attempted_at.desc())
+            .all()
+        )
+
+    def get_attempts_since(self, user_id: uuid.UUID, since: datetime) -> Iterable[TotpVerificationAttempt]:
+        """Get all verification attempts for a user since a given datetime."""
+        return (
+            self.session.query(TotpVerificationAttempt)
+            .filter(
+                and_(
+                    orm.totp_verification_attempts.c.user_id == user_id,
+                    orm.totp_verification_attempts.c.attempted_at >= since,
+                )
+            )
+            .order_by(orm.totp_verification_attempts.c.attempted_at.desc())
             .all()
         )

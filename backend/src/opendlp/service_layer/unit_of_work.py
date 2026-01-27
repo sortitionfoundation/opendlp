@@ -14,6 +14,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyPasswordResetTokenRepository,
     SqlAlchemySelectionRunRecordRepository,
+    SqlAlchemyTotpVerificationAttemptRepository,
     SqlAlchemyTwoFactorAuditLogRepository,
     SqlAlchemyUserAssemblyRoleRepository,
     SqlAlchemyUserBackupCodeRepository,
@@ -25,6 +26,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     PasswordResetTokenRepository,
     SelectionRunRecordRepository,
+    TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
     UserBackupCodeRepository,
@@ -45,6 +47,7 @@ class AbstractUnitOfWork(abc.ABC):
     password_reset_tokens: PasswordResetTokenRepository
     user_backup_codes: UserBackupCodeRepository
     two_factor_audit_logs: TwoFactorAuditLogRepository
+    totp_attempts: TotpVerificationAttemptRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -99,6 +102,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.password_reset_tokens = SqlAlchemyPasswordResetTokenRepository(self.session)
         self.user_backup_codes = SqlAlchemyUserBackupCodeRepository(self.session)
         self.two_factor_audit_logs = SqlAlchemyTwoFactorAuditLogRepository(self.session)
+        self.totp_attempts = SqlAlchemyTotpVerificationAttemptRepository(self.session)
 
         return self
 

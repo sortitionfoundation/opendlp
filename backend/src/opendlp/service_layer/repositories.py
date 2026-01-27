@@ -10,6 +10,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
@@ -293,4 +294,13 @@ class TwoFactorAuditLogRepository(AbstractRepository):
     @abc.abstractmethod
     def get_logs_for_user(self, user_id: uuid.UUID, limit: int = 100) -> Iterable[TwoFactorAuditLog]:
         """Get audit logs for a user, most recent first."""
+        raise NotImplementedError
+
+
+class TotpVerificationAttemptRepository(AbstractRepository):
+    """Repository interface for TotpVerificationAttempt domain objects."""
+
+    @abc.abstractmethod
+    def get_attempts_since(self, user_id: uuid.UUID, since: Any) -> Iterable[TotpVerificationAttempt]:
+        """Get all verification attempts for a user since a given datetime."""
         raise NotImplementedError

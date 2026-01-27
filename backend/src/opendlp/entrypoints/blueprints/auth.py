@@ -1,6 +1,9 @@
 """ABOUTME: Authentication routes for login, logout, and registration
 ABOUTME: Handles user authentication flow with invite-based registration"""
 
+import uuid
+from datetime import UTC, datetime, timedelta
+
 import markdown
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
@@ -13,6 +16,7 @@ from opendlp.bootstrap import get_email_adapter
 from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
+from opendlp.service_layer import totp_service
 from opendlp.service_layer.exceptions import (
     InvalidCredentials,
     InvalidInvite,
@@ -28,6 +32,8 @@ from opendlp.service_layer.password_reset_service import (
     validate_reset_token,
 )
 from opendlp.service_layer.security import password_validators_help_text_html
+from opendlp.service_layer.two_factor_service import TwoFactorVerificationError
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
 from opendlp.translations import gettext as _
 
@@ -50,6 +56,22 @@ def login() -> ResponseReturnValue:
                 assert form.email.data is not None
                 assert form.password.data is not None
                 user = authenticate_user(uow, form.email.data, form.password.data)
+
+                # Check if user requires 2FA
+                if user.requires_2fa():
+                    # Store user info in session for 2FA verification
+                    session["pending_2fa_user_id"] = str(user.id)
+                    session["pending_2fa_remember_me"] = form.remember_me.data
+                    session["pending_2fa_timestamp"] = request.utcnow.timestamp() if hasattr(request, "utcnow") else 0
+
+                    # Store next page if specified
+                    next_page = request.args.get("next")
+                    if next_page and next_page.startswith("/"):
+                        session["pending_2fa_next"] = next_page
+
+                    return redirect(url_for("auth.verify_2fa"))
+
+                # No 2FA required - log in directly
                 login_user(user, remember=form.remember_me.data)
 
                 # Redirect to next page if specified, otherwise dashboard
@@ -65,6 +87,174 @@ def login() -> ResponseReturnValue:
             flash(_("An error occurred during login. Please try again."), "error")
 
     return render_template("auth/login.html", form=form)
+
+
+def _validate_2fa_session() -> tuple[bool, str | None]:
+    """Validate 2FA session and return (is_valid, user_id_str).
+
+    Returns (False, None) if invalid and sets flash message.
+    """
+    # Check if user has pending 2FA verification
+    pending_user_id_str = session.get("pending_2fa_user_id")
+    if not pending_user_id_str:
+        flash(_("No pending two-factor authentication. Please log in first."), "error")
+        return (False, None)
+
+    # Check session timeout (5 minutes)
+    pending_timestamp = session.get("pending_2fa_timestamp", 0)
+    if pending_timestamp:
+        pending_time = datetime.fromtimestamp(pending_timestamp, UTC)
+        if datetime.now(UTC) - pending_time > timedelta(minutes=5):
+            # Clear expired session
+            session.pop("pending_2fa_user_id", None)
+            session.pop("pending_2fa_remember_me", None)
+            session.pop("pending_2fa_timestamp", None)
+            session.pop("pending_2fa_next", None)
+            flash(_("Two-factor authentication session expired. Please log in again."), "error")
+            return (False, None)
+
+    # Validate UUID format
+    try:
+        uuid.UUID(pending_user_id_str)
+    except ValueError:
+        flash(_("Invalid session. Please log in again."), "error")
+        return (False, None)
+
+    return (True, pending_user_id_str)
+
+
+def _verify_2fa_code_for_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, verification_code: str) -> tuple[bool, bool]:
+    """Verify 2FA code (TOTP or backup code) for a user.
+
+    Returns (success, is_backup_code).
+    """
+    # Try TOTP code first
+    success = False
+    is_backup_code = False
+
+    with uow:
+        user = uow.users.get(user_id)
+        if user and user.totp_secret_encrypted:
+            decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
+            if totp_service.verify_totp_code(decrypted_secret, verification_code):
+                success = True
+                totp_service.record_totp_attempt(uow, user_id, success=True)
+
+    # If TOTP failed, try backup code
+    if not success:
+        with uow:
+            if totp_service.verify_backup_code(uow, user_id, verification_code):
+                success = True
+                is_backup_code = True
+
+    return (success, is_backup_code)
+
+
+def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_code: bool) -> ResponseReturnValue:
+    """Complete 2FA login and redirect to appropriate page."""
+    # Clear session and get login details
+    remember_me = session.pop("pending_2fa_remember_me", False)
+    next_page = session.pop("pending_2fa_next", None)
+    session.pop("pending_2fa_user_id", None)
+    session.pop("pending_2fa_timestamp", None)
+
+    # Get fresh user object for login
+    with uow:
+        user = uow.users.get(user_id)
+        login_user(user, remember=remember_me)
+
+    # Show backup code warning if used
+    if is_backup_code:
+        with uow:
+            remaining = totp_service.count_remaining_backup_codes(uow, user_id)
+        flash(
+            _(
+                "Backup code used successfully. You have %(remaining)s backup codes remaining.",
+                remaining=remaining,
+            ),
+            "warning",
+        )
+    else:
+        flash(_("Successfully authenticated"), "success")
+
+    # Redirect to next page or dashboard
+    if next_page and next_page.startswith("/"):
+        return redirect(next_page)
+    return redirect(url_for("main.dashboard"))
+
+
+@auth_bp.route("/login/verify-2fa", methods=["GET", "POST"])
+def verify_2fa() -> ResponseReturnValue:
+    """Two-factor authentication verification page."""
+    # Validate session
+    is_valid, pending_user_id_str = _validate_2fa_session()
+    if not is_valid:
+        return redirect(url_for("auth.login"))
+
+    pending_user_id = uuid.UUID(pending_user_id_str)
+
+    if request.method == "POST":
+        verification_code = request.form.get("verification_code", "").strip()
+
+        if not verification_code:
+            flash(_("Please enter a verification code"), "error")
+            return render_template("auth/verify_2fa.html")
+
+        try:
+            uow = bootstrap.bootstrap()
+
+            # Check rate limit
+            with uow:
+                is_allowed, attempts_remaining = totp_service.check_totp_rate_limit(uow, pending_user_id)
+
+            if not is_allowed:
+                flash(
+                    _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
+                    "error",
+                )
+                return render_template("auth/verify_2fa.html", rate_limited=True)
+
+            # Get user
+            with uow:
+                user = uow.users.get(pending_user_id)
+                if not user or not user.totp_enabled:
+                    flash(_("Two-factor authentication is not enabled for this account."), "error")
+                    return redirect(url_for("auth.login"))
+
+            # Verify code (TOTP or backup code)
+            success, is_backup_code = _verify_2fa_code_for_user(uow, pending_user_id, verification_code)
+
+            # Handle failed verification
+            if not success:
+                with uow:
+                    totp_service.record_totp_attempt(uow, pending_user_id, success=False)
+                    _rate_limit_allowed, attempts_remaining = totp_service.check_totp_rate_limit(uow, pending_user_id)
+
+                if attempts_remaining > 0:
+                    flash(
+                        _("Invalid verification code. %(attempts)s attempts remaining.", attempts=attempts_remaining),
+                        "error",
+                    )
+                else:
+                    flash(
+                        _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
+                        "error",
+                    )
+                return render_template("auth/verify_2fa.html")
+
+            # Success! Complete login
+            return _complete_2fa_login(uow, pending_user_id, is_backup_code)
+
+        except TwoFactorVerificationError as e:
+            flash(str(e), "error")
+            return render_template("auth/verify_2fa.html")
+        except Exception as e:
+            current_app.logger.error(f"2FA verification error: {e}")
+            flash(_("An error occurred during verification. Please try again."), "error")
+            return render_template("auth/verify_2fa.html")
+
+    # GET request - show 2FA form
+    return render_template("auth/verify_2fa.html")
 
 
 @auth_bp.route("/logout")

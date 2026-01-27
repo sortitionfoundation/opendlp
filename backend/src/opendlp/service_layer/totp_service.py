@@ -5,6 +5,7 @@ import base64
 import io
 import secrets
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pyotp
 import qrcode
@@ -14,6 +15,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from opendlp.config import get_totp_encryption_key
+from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -240,14 +242,23 @@ def check_totp_rate_limit(
     Returns:
         Tuple of (is_allowed, attempts_remaining)
     """
-    # Count failed attempts in the time window
-    # For now, we'll implement a simple in-memory approach
-    # TODO: Implement proper database-backed rate limiting using totp_verification_attempts table
-    # cutoff_time = datetime.now(UTC) - timedelta(minutes=window_minutes)
+    # Calculate cutoff time
+    cutoff_time = datetime.now(UTC) - timedelta(minutes=window_minutes)
 
-    # Placeholder: Allow all attempts for now
-    # This will be properly implemented when we add the TotpVerificationAttempt domain model
-    return (True, max_attempts)
+    # Get all attempts since the cutoff time
+    recent_attempts = uow.totp_attempts.get_attempts_since(user_id, cutoff_time)
+
+    # Count failed attempts only
+    failed_attempts = [attempt for attempt in recent_attempts if not attempt.success]
+    failed_count = len(failed_attempts)
+
+    # Check if user has exceeded the limit
+    if failed_count >= max_attempts:
+        return (False, 0)
+
+    # Return True and remaining attempts
+    remaining_attempts = max_attempts - failed_count
+    return (True, remaining_attempts)
 
 
 def record_totp_attempt(uow: AbstractUnitOfWork, user_id: uuid.UUID, success: bool) -> None:
@@ -258,6 +269,6 @@ def record_totp_attempt(uow: AbstractUnitOfWork, user_id: uuid.UUID, success: bo
         user_id: The user's UUID
         success: Whether the verification was successful
     """
-    # TODO: Implement when we add TotpVerificationAttempt domain model and repository
-    # For now, this is a no-op
-    pass
+    attempt = TotpVerificationAttempt(user_id=user_id, success=success)
+    uow.totp_attempts.add(attempt)
+    uow.commit()

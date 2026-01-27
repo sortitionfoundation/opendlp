@@ -7,7 +7,15 @@ from sqlalchemy.orm import relationship, sessionmaker
 
 from opendlp.adapters import orm
 from opendlp.config import bool_environ_get, get_db_uri
-from opendlp.domain import assembly, password_reset, two_factor_audit, user_backup_codes, user_invites, users
+from opendlp.domain import (
+    assembly,
+    password_reset,
+    totp_attempts,
+    two_factor_audit,
+    user_backup_codes,
+    user_invites,
+    users,
+)
 
 
 class DatabaseError(Exception):
@@ -114,6 +122,9 @@ def start_mappers() -> None:
 
         # Map TwoFactorAuditLog domain object to two_factor_audit_log table
         orm.mapper_registry.map_imperatively(two_factor_audit.TwoFactorAuditLog, orm.two_factor_audit_log)
+
+        # Map TotpVerificationAttempt domain object to totp_verification_attempts table
+        orm.mapper_registry.map_imperatively(totp_attempts.TotpVerificationAttempt, orm.totp_verification_attempts)
 
         _mappers_started = True
 

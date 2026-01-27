@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Two-Factor Authentication") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("Two-Factor Authentication") }}</h1>
+            <p class="govuk-body">
+                {{ _("Enter the 6-digit code from your authenticator app to complete sign in.") }}
+            </p>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="govuk-form-group">
+                    <label class="govuk-label govuk-label--m" for="verification_code">{{ _("Verification code") }}</label>
+                    <input class="govuk-input govuk-input--width-10"
+                        id="verification_code"
+                        name="verification_code"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        autofocus
+                        required />
+                </div>
+                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Verify") }}</button>
+            </form>
+            <details class="govuk-details govuk-!-margin-top-6">
+                <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">{{ _("Use a backup code instead") }}</span>
+                </summary>
+                <div class="govuk-details__text">
+                    <p class="govuk-body">
+                        {{ _("If you've lost access to your authenticator app, you can use one of your backup codes. Each backup code can only be used once.") }}
+                    </p>
+                    <p class="govuk-body">
+                        {{ _("Enter your backup code in the format XXXX-XXXX in the verification code field above.") }}
+                    </p>
+                </div>
+            </details>
+            <p class="govuk-body govuk-!-margin-top-6">
+                <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Back to sign in") }}</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

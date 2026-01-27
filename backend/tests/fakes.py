@@ -3,9 +3,11 @@ ABOUTME: In-memory repositories that implement the same interfaces as real ones"
 
 import uuid
 from collections.abc import Iterable
+from datetime import datetime
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
@@ -15,6 +17,7 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     SelectionRunRecordRepository,
+    TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
     UserBackupCodeRepository,
@@ -376,6 +379,19 @@ class FakeTwoFactorAuditLogRepository(FakeRepository, TwoFactorAuditLogRepositor
         return user_logs[:limit]
 
 
+class FakeTotpVerificationAttemptRepository(FakeRepository, TotpVerificationAttemptRepository):
+    """Fake implementation of TotpVerificationAttemptRepository."""
+
+    def get_attempts_since(self, user_id: uuid.UUID, since: datetime) -> Iterable[TotpVerificationAttempt]:
+        """Get all verification attempts for a user since a given datetime."""
+        user_attempts = [
+            attempt for attempt in self._items if attempt.user_id == user_id and attempt.attempted_at >= since
+        ]
+        # Sort by attempted_at desc
+        user_attempts.sort(key=lambda attempt: attempt.attempted_at, reverse=True)
+        return user_attempts
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -388,6 +404,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.selection_run_records = self.fake_selection_run_records = FakeSelectionRunRecordRepository()
         self.user_backup_codes = self.fake_user_backup_codes = FakeUserBackupCodeRepository()
         self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
+        self.totp_attempts = self.fake_totp_attempts = FakeTotpVerificationAttemptRepository()
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -412,4 +429,5 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_selection_run_records._items.clear()
         self.fake_user_backup_codes._items.clear()
         self.fake_two_factor_audit_logs._items.clear()
+        self.fake_totp_attempts._items.clear()
         self.committed = False
