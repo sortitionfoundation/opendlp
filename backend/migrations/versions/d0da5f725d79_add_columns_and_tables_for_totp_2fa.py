@@ -65,7 +65,9 @@ def upgrade() -> None:
     )
     op.create_index("ix_user_backup_codes_user_id", "user_backup_codes", ["user_id"], unique=False)
     op.add_column("users", sa.Column("totp_secret_encrypted", sa.String(length=255), nullable=True))
-    op.add_column("users", sa.Column("totp_enabled", sa.Boolean(), nullable=False))
+    op.add_column("users", sa.Column("totp_enabled", sa.Boolean(), nullable=True))
+    op.execute("UPDATE users SET totp_enabled = FALSE WHERE totp_enabled IS NULL")
+    op.alter_column("users", "totp_enabled", nullable=False)
     op.add_column(
         "users", sa.Column("totp_enabled_at", opendlp.adapters.orm.TZAwareDatetime(timezone=True), nullable=True)
     )
