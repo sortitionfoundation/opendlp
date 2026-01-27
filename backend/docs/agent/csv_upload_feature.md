@@ -425,7 +425,7 @@ Each iteration is small and independently testable.
 |-----------|--------|------|
 | 1. Add "Upload CSV" Button | Complete | 2025-01-22 |
 | 2. Basic File Upload Form | Complete | 2025-01-22 |
-| 3. CSV Parsing and Preview | Not Started | - |
+| 3. CSV Parsing and Preview | Complete | 2025-01-22 |
 | 4. Domain Model and Database | Not Started | - |
 | 5. Repository and Persistence | Not Started | - |
 | 6. File Storage | Not Started | - |

@@ -1,0 +1,73 @@
+{% extends "main/view_assembly_base.html" %}
+{% block title %}{{ _("CSV Preview") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block assembly_breadcrumbs %}
+    <li class="govuk-breadcrumbs__list-item">
+        <a class="govuk-breadcrumbs__link"
+            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
+    </li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("CSV Preview") }}</li>
+{% endblock %}
+{% block assembly_content %}
+    <h2 class="govuk-heading-m">{{ _("CSV File Preview") }}</h2>
+
+    <div class="govuk-summary-list govuk-!-margin-bottom-6">
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("File name") }}</dt>
+            <dd class="govuk-summary-list__value">{{ filename }}</dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Columns") }}</dt>
+            <dd class="govuk-summary-list__value">{{ columns|length }}</dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">{{ _("Total rows") }}</dt>
+            <dd class="govuk-summary-list__value">{{ total_row_count }}</dd>
+        </div>
+    </div>
+
+    <h3 class="govuk-heading-s">
+        {{ _("Preview (first %(count)s rows)", count=preview_row_count) }}
+    </h3>
+
+    <div class="govuk-!-margin-bottom-6" style="overflow-x: auto;">
+        <table class="govuk-table">
+            <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    {% for column in columns %}
+                        <th scope="col" class="govuk-table__header">{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+                {% for row in preview_rows %}
+                    <tr class="govuk-table__row">
+                        {% for cell in row %}
+                            <td class="govuk-table__cell">{{ cell }}</td>
+                        {% endfor %}
+                        {# Handle rows with fewer columns than header #}
+                        {% for _ in range(columns|length - row|length) %}
+                            <td class="govuk-table__cell"></td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_row_count > preview_row_count %}
+        <p class="govuk-body govuk-!-margin-bottom-6">
+            <em>{{ _("... and %(remaining)s more rows", remaining=total_row_count - preview_row_count) }}</em>
+        </p>
+    {% endif %}
+
+    <div class="govuk-inset-text">
+        {{ _("Column mapping and data validation will be available in the next iteration.") }}
+    </div>
+
+    <div class="govuk-button-group">
+        <a href="{{ url_for('csv_upload.upload_csv', assembly_id=assembly.id) }}"
+            class="govuk-button govuk-button--secondary">{{ _("Upload Different File") }}</a>
+        <a href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}"
+            class="govuk-link">{{ _("Cancel") }}</a>
+    </div>
+{% endblock %}
