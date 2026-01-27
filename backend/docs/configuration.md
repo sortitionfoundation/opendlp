@@ -89,6 +89,18 @@ REDIS_PORT=6379
 
 Redis is used for session storage and Celery task queue.
 
+### Two-Factor Authentication
+
+**Required for 2FA functionality:**
+
+```bash
+# Encryption key for storing TOTP secrets (32-byte base64-encoded key)
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+TOTP_ENCRYPTION_KEY=your-base64-encoded-key-here
+```
+
+**Security:** This key encrypts TOTP secrets at rest in the database. Must be set before users can enable 2FA. Use a cryptographically secure random key and never commit to version control. If lost, all users with 2FA enabled will need to reset their 2FA setup.
+
 ## Optional Environment Variables
 
 ### Application Settings
@@ -227,6 +239,9 @@ RELAYHOST=smtp.sendgrid.net:587
 RELAYHOST_USERNAME=apikey
 RELAYHOST_PASSWORD=SG.your-api-key-here
 ALLOWED_SENDER_DOMAINS=yourdomain.com
+
+# Two-factor authentication (required if users will enable 2FA)
+TOTP_ENCRYPTION_KEY=your-32-byte-base64-encoded-key-here
 ```
 
 ## Configuration Validation
