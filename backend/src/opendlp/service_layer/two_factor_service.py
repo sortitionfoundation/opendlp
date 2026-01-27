@@ -4,6 +4,8 @@ ABOUTME: High-level functions for 2FA setup, management, and verification flows"
 import uuid
 
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
+from opendlp.domain.user_backup_codes import UserBackupCode
+from opendlp.domain.users import User
 from opendlp.service_layer import totp_service
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
@@ -69,7 +71,7 @@ def enable_2fa(
     totp_secret: str,
     totp_code: str,
     backup_codes: list[str],
-) -> None:
+) -> User:
     """Complete 2FA setup by verifying the TOTP code and enabling 2FA.
 
     Args:
@@ -78,6 +80,9 @@ def enable_2fa(
         totp_secret: The plaintext TOTP secret from setup_2fa()
         totp_code: The 6-digit code from the authenticator app
         backup_codes: The backup codes from setup_2fa() to store
+
+    Returns:
+        Updated User instance (detached)
 
     Raises:
         TwoFactorVerificationError: If TOTP code is invalid
@@ -105,8 +110,6 @@ def enable_2fa(
         uow.user_backup_codes.delete_codes_for_user(user_id)
 
         for code in backup_codes:
-            from opendlp.domain.user_backup_codes import UserBackupCode
-
             hashed = totp_service.hash_backup_code(code)
             backup_code = UserBackupCode(user_id=user_id, code_hash=hashed)
             uow.user_backup_codes.add(backup_code)
@@ -120,10 +123,12 @@ def enable_2fa(
         )
         uow.two_factor_audit_logs.add(audit_log)
 
+        detached_user: User = user.create_detached_copy()
         uow.commit()
+        return detached_user
 
 
-def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> None:
+def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> User:
     """Disable 2FA for a user (user-initiated).
 
     Requires a valid TOTP code to confirm the action.
@@ -133,10 +138,14 @@ def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> 
         user_id: The user's UUID
         totp_code: The 6-digit code from the authenticator app
 
+    Returns:
+        Updated User instance (detached)
+
     Raises:
         TwoFactorVerificationError: If TOTP code is invalid
         TwoFactorSetupError: If user doesn't have 2FA enabled
     """
+
     with uow:
         user = uow.users.get(user_id)
         if user is None:
@@ -165,7 +174,9 @@ def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> 
         )
         uow.two_factor_audit_logs.add(audit_log)
 
+        detached_user: User = user.create_detached_copy()
         uow.commit()
+        return detached_user
 
 
 def regenerate_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> list[str]:
@@ -216,7 +227,7 @@ def regenerate_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_co
         return backup_codes
 
 
-def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> None:
+def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
     """Disable 2FA for a user (admin-initiated).
 
     This does not require a TOTP code - it's for admin recovery scenarios.
@@ -227,9 +238,13 @@ def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
         user_id: The user's UUID whose 2FA should be disabled
         admin_user_id: The admin user's UUID performing the action
 
+    Returns:
+        Updated User instance (detached)
+
     Raises:
         TwoFactorSetupError: If user doesn't have 2FA enabled or is OAuth user
     """
+
     with uow:
         user = uow.users.get(user_id)
         if user is None:
@@ -260,7 +275,9 @@ def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
         )
         uow.two_factor_audit_logs.add(audit_log)
 
+        detached_user: User = user.create_detached_copy()
         uow.commit()
+        return detached_user
 
 
 def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:

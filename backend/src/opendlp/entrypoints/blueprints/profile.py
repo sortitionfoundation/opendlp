@@ -1,9 +1,10 @@
 """ABOUTME: Profile management routes for users to view and edit their own account
 ABOUTME: Handles profile viewing, editing, and password changes for self-service"""
 
-from flask import Blueprint, current_app, flash, redirect, render_template, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
 from opendlp.entrypoints.extensions import oauth
@@ -46,16 +47,12 @@ def edit() -> ResponseReturnValue:
         try:
             uow = bootstrap.bootstrap()
             with uow:
-                updated_user = update_own_profile(
+                update_own_profile(
                     uow=uow,
                     user_id=current_user.id,
                     first_name=form.first_name.data or "",
                     last_name=form.last_name.data or "",
                 )
-
-            # Update current_user object with new values
-            current_user.first_name = updated_user.first_name
-            current_user.last_name = updated_user.last_name
 
             flash(_("Profile updated successfully"), "success")
             return redirect(url_for("profile.view"))
@@ -122,8 +119,6 @@ def link_google() -> ResponseReturnValue:
 
     # Redirect to Google OAuth
     redirect_uri = url_for("profile.google_link_callback", _external=True)
-    from werkzeug.wrappers import Response
-
     response = oauth.google.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
@@ -157,13 +152,7 @@ def google_link_callback() -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
 
         # Link OAuth to current user
-        updated_user = link_oauth_to_user(
-            uow=uow, user_id=current_user.id, provider="google", oauth_id=google_id, oauth_email=email
-        )
-
-        # Update current_user
-        current_user.oauth_provider = updated_user.oauth_provider
-        current_user.oauth_id = updated_user.oauth_id
+        link_oauth_to_user(uow=uow, user_id=current_user.id, provider="google", oauth_id=google_id, oauth_email=email)
 
         flash(_("Google account linked successfully"), "success")
         return redirect(url_for("profile.view"))
@@ -190,8 +179,6 @@ def link_microsoft() -> ResponseReturnValue:
 
     # Redirect to Microsoft OAuth
     redirect_uri = url_for("profile.microsoft_link_callback", _external=True)
-    from werkzeug.wrappers import Response
-
     response = oauth.microsoft.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
@@ -226,13 +213,9 @@ def microsoft_link_callback() -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
 
         # Link OAuth to current user
-        updated_user = link_oauth_to_user(
+        link_oauth_to_user(
             uow=uow, user_id=current_user.id, provider="microsoft", oauth_id=microsoft_id, oauth_email=email
         )
-
-        # Update current_user
-        current_user.oauth_provider = updated_user.oauth_provider
-        current_user.oauth_id = updated_user.oauth_id
 
         flash(_("Microsoft account linked successfully"), "success")
         return redirect(url_for("profile.view"))
@@ -254,9 +237,6 @@ def remove_password() -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         remove_password_auth(uow=uow, user_id=current_user.id)
 
-        # Update current_user
-        current_user.password_hash = None
-
         flash(_("Password authentication removed successfully"), "success")
     except CannotRemoveLastAuthMethod as e:
         flash(str(e), "error")
@@ -274,10 +254,6 @@ def remove_oauth() -> ResponseReturnValue:
     try:
         uow = bootstrap.bootstrap()
         remove_oauth_auth(uow=uow, user_id=current_user.id)
-
-        # Update current_user
-        current_user.oauth_provider = None
-        current_user.oauth_id = None
 
         flash(_("OAuth authentication removed successfully"), "success")
     except CannotRemoveLastAuthMethod as e:
@@ -326,9 +302,6 @@ def set_password() -> ResponseReturnValue:
                 user.password_hash = hash_password(form.new_password.data)
 
                 uow.commit()
-
-            # Update current_user session object
-            current_user.password_hash = user.password_hash
 
             flash(_("Password set successfully"), "success")
             return redirect(url_for("profile.view"))
@@ -394,8 +367,6 @@ def setup_2fa() -> ResponseReturnValue:
 @login_required
 def enable_2fa() -> ResponseReturnValue:
     """Complete 2FA setup by verifying TOTP code."""
-    from flask import request
-
     totp_code = request.form.get("totp_code", "").strip()
 
     if not totp_code:
@@ -412,15 +383,11 @@ def enable_2fa() -> ResponseReturnValue:
 
     try:
         uow = bootstrap.bootstrap()
-        with uow:
-            two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
+        two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
 
         # Clear setup session data
         session.pop("totp_setup_secret", None)
         session.pop("totp_setup_backup_codes", None)
-
-        # Update current_user object
-        current_user.totp_enabled = True
 
         flash(_("Two-factor authentication has been enabled successfully"), "success")
         return redirect(url_for("profile.two_factor_settings"))
@@ -438,8 +405,6 @@ def enable_2fa() -> ResponseReturnValue:
 @login_required
 def disable_2fa() -> ResponseReturnValue:
     """Disable 2FA (requires TOTP code)."""
-    from flask import request
-
     totp_code = request.form.get("totp_code", "").strip()
 
     if not totp_code:
@@ -448,13 +413,7 @@ def disable_2fa() -> ResponseReturnValue:
 
     try:
         uow = bootstrap.bootstrap()
-        with uow:
-            two_factor_service.disable_2fa(uow, current_user.id, totp_code)
-
-        # Update current_user object
-        current_user.totp_enabled = False
-        current_user.totp_secret_encrypted = None
-        current_user.totp_enabled_at = None
+        two_factor_service.disable_2fa(uow, current_user.id, totp_code)
 
         flash(_("Two-factor authentication has been disabled"), "success")
         return redirect(url_for("profile.two_factor_settings"))
@@ -472,8 +431,6 @@ def disable_2fa() -> ResponseReturnValue:
 @login_required
 def regenerate_backup_codes() -> ResponseReturnValue:
     """Regenerate backup codes (requires TOTP code)."""
-    from flask import request
-
     totp_code = request.form.get("totp_code", "").strip()
 
     if not totp_code:
