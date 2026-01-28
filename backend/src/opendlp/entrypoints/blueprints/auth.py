@@ -74,6 +74,8 @@ def login() -> ResponseReturnValue:
                 # No 2FA required - log in directly
                 login_user(user, remember=form.remember_me.data)
 
+                flash(_("Signed in successfully"), "success")
+
                 # Redirect to next page if specified, otherwise dashboard
                 next_page = request.args.get("next")
                 if next_page and next_page.startswith("/"):
@@ -175,7 +177,7 @@ def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_c
             "warning",
         )
     else:
-        flash(_("Successfully authenticated"), "success")
+        flash(_("Signed in successfully"), "success")
 
     # Redirect to next page or dashboard
     if next_page and next_page.startswith("/"):
