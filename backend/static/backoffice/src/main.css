@@ -2,4 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design Tokens are loaded separately in templates:
+ * - tokens/primitive.css (raw color values)
+ * - tokens/semantic.css (purpose-based aliases)
+ *
+ * This keeps the build simple (no postcss-import needed).
+ */
+
 /* Backoffice-specific styles will go here */

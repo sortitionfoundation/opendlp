@@ -12,3 +12,10 @@ Feature: Backoffice UI
     Given I am on the backoffice hello page
     Then I should see the Tailwind test box
     And the Tailwind test box should have a blue background
+
+  Scenario: Design tokens are loaded and working
+    Given I am on the backoffice hello page
+    Then I should see the primary token box
+    And the primary token box should have the brand orange background
+    And I should see the secondary token box
+    And the secondary token box should have the brand plum background

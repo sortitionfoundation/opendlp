@@ -44,3 +44,40 @@ def tailwind_box_has_blue_background(page: Page):
     # Tailwind's bg-blue-600 compiles to rgb(37, 99, 235)
     background_color = test_box.evaluate("el => getComputedStyle(el).backgroundColor")
     assert background_color == "rgb(37, 99, 235)", f"Expected blue background, got {background_color}"
+
+
+# Design Token Tests (Iteration 3)
+
+
+@then("I should see the primary token box")
+def see_primary_token_box(page: Page):
+    """Verify the primary token box is visible."""
+    token_box = page.locator("#token-primary")
+    expect(token_box).to_be_visible()
+    expect(token_box).to_contain_text("Primary")
+
+
+@then("the primary token box should have the brand orange background")
+def primary_token_has_orange_background(page: Page):
+    """Verify design token --color-brand-primary (#D7764E) is applied."""
+    token_box = page.locator("#token-primary")
+    # Brand orange #D7764E = rgb(215, 118, 78)
+    background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(215, 118, 78)", f"Expected brand orange, got {background_color}"
+
+
+@then("I should see the secondary token box")
+def see_secondary_token_box(page: Page):
+    """Verify the secondary token box is visible."""
+    token_box = page.locator("#token-secondary")
+    expect(token_box).to_be_visible()
+    expect(token_box).to_contain_text("Secondary")
+
+
+@then("the secondary token box should have the brand plum background")
+def secondary_token_has_plum_background(page: Page):
+    """Verify design token --color-brand-secondary (#501D43) is applied."""
+    token_box = page.locator("#token-secondary")
+    # Brand plum #501D43 = rgb(80, 29, 67)
+    background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
