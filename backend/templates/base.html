@@ -24,6 +24,14 @@
             class="govuk-skip-link"
             data-module="govuk-skip-link">{{ _("Skip to main content") }}</a>
         <header class="govuk-header" role="banner" data-module="govuk-header">
+            {% if site_banner_text %}
+                <div class="site-banner"
+                    style="background-color: {{ site_banner_colour }}">
+                    <div class="govuk-width-container">
+                        <p class="site-banner__text">{{ site_banner_text }}</p>
+                    </div>
+                </div>
+            {% endif %}
             <div class="govuk-header__container govuk-width-container">
                 <div class="govuk-header__logo">
                     <a href="{{ url_for('main.index') }}"
@@ -179,6 +187,7 @@
                 }
             });
         </script>
-        {% block extra_js %}{% endblock %}
+        {% block extra_js %}
+        {% endblock %}
     </body>
 </html>

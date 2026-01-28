@@ -136,6 +136,20 @@ TASK_TIMEOUT_HOURS=24
 INVITE_EXPIRY_HOURS=168
 ```
 
+### Site Banner Configuration
+
+Display a banner at the top of all pages to distinguish demo/staging environments from production:
+
+```bash
+# Banner text (if empty, no banner is shown)
+SITE_BANNER_TEXT=Demo site - do not use production data
+
+# Banner background colour (CSS colour value, default: yellow)
+SITE_BANNER_COLOUR=yellow
+```
+
+The banner is hidden by default. When `SITE_BANNER_TEXT` is set, a full-width banner appears below the header on all pages.
+
 ### Email Configuration
 
 OpenDLP supports two email adapters:

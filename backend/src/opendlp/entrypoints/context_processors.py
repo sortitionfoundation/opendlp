@@ -110,6 +110,17 @@ def service_account_email_problem() -> str:
     return f"No problem, found client email: {client_email}"
 
 
+def get_site_banner_config() -> tuple[str, str]:
+    """
+    Get site banner configuration from environment.
+
+    Returns:
+        Tuple of (banner_text, banner_colour)
+    """
+    flask_config = config.get_config()
+    return flask_config.SITE_BANNER_TEXT, flask_config.SITE_BANNER_COLOUR
+
+
 def static_versioning_context_processor() -> dict[str, str]:
     """
     Flask context processor that adds static file version hashes to template context.
@@ -117,8 +128,11 @@ def static_versioning_context_processor() -> dict[str, str]:
     Returns:
         Dictionary with css_hash key for use in templates
     """
+    site_banner_text, site_banner_colour = get_site_banner_config()
     return {
         "css_hash": get_css_hash(),
         "opendlp_version": get_opendlp_version(),
         "google_service_account_email": get_service_account_email(),
+        "site_banner_text": site_banner_text,
+        "site_banner_colour": site_banner_colour,
     }

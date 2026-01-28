@@ -475,6 +475,20 @@ button.govuk-link {
 .govuk-footer {
     border-top: 5px solid $purple-red;
 }
+
+// Site banner for demo/staging environments
+.site-banner {
+    padding: 10px 0;
+    text-align: center;
+
+    .site-banner__text {
+        margin: 0;
+        font-family: "GDS Transport", arial, sans-serif;
+        font-weight: bold;
+        font-size: 1.25rem;
+        color: $dark-grey;
+    }
+}
 .govuk-footer .govuk-secondary-text-colour {
     color: $dark-grey;
 }

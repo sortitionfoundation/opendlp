@@ -218,6 +218,12 @@ class FlaskBaseConfig:
         # Valid values: "smtp", "console"
         self.EMAIL_ADAPTER: str = os.environ.get("EMAIL_ADAPTER", "console")
 
+        # Site banner configuration (for demo/staging environments)
+        # If SITE_BANNER_TEXT is empty (default), no banner is shown
+        self.SITE_BANNER_TEXT: str = os.environ.get("SITE_BANNER_TEXT", "")
+        # Colour for the banner background (e.g. "yellow", "#ffdd00")
+        self.SITE_BANNER_COLOUR: str = os.environ.get("SITE_BANNER_COLOUR", "yellow")
+
         # Selection algorithm configuration
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
