@@ -122,6 +122,7 @@
         <div class="mt-6">
             <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
             <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>{% raw %}{% from "backoffice/components/card.html" import card %}
+{% from "backoffice/components/button.html" import button %}
 
 {# Basic card #}
 {% call card() %}
@@ -131,7 +132,21 @@
 {# Card with header #}
 {% call card(title="Title", subtitle="Subtitle") %}
   Card content here
-{% endcall %}{% endraw %}</code></pre>
+{% endcall %}
+
+{# Card with actions (compose card + buttons manually) #}
+<div style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+     class="rounded-lg shadow-md overflow-hidden">
+  <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
+    <h3 style="color: var(--color-text-primary);" class="text-lg font-semibold">Title</h3>
+  </div>
+  <div class="px-6 py-4">Content here</div>
+  <div style="border-top: 1px solid var(--color-border); background-color: var(--color-surface-sunken);"
+       class="px-6 py-3 flex gap-2 justify-end">
+    {{ button("Cancel", variant="outline") }}
+    {{ button("Save", variant="primary") }}
+  </div>
+</div>{% endraw %}</code></pre>
         </div>
     </section>
 
