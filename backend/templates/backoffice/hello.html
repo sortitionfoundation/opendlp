@@ -4,16 +4,51 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Backoffice - Hello</title>
+        <!-- Tailwind CSS (compiled) -->
         <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/dist/main.css') }}">
+        <!-- Design Tokens -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/primitive.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/semantic.css') }}">
     </head>
-    <body class="bg-gray-100 min-h-screen p-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-4">Hello from Backoffice!</h1>
-        <p class="text-gray-700 mb-4">This is the backoffice module using a separate design system (Pines UI + Tailwind CSS).</p>
+    <body style="background-color: var(--color-bg-secondary);" class="min-h-screen p-8">
+        <h1 style="color: var(--color-text-primary);" class="text-3xl font-bold mb-4">Hello from Backoffice!</h1>
+        <p style="color: var(--color-text-body);" class="mb-6">This is the backoffice module using a separate design system (Pines UI + Tailwind CSS).</p>
 
         <!-- Tailwind validation box - proves CSS is loading -->
-        <div id="tailwind-test" class="bg-blue-600 text-white p-4 rounded-lg shadow-md max-w-md">
+        <div id="tailwind-test" class="bg-blue-600 text-white p-4 rounded-lg shadow-md max-w-md mb-6">
             <p class="font-semibold">Tailwind CSS is working!</p>
             <p class="text-sm text-blue-100">If you see this box with a blue background and white text, Iteration 2 is complete.</p>
         </div>
+
+        <!-- Design Token validation boxes - proves tokens are loading -->
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Design Tokens (Iteration 3)</h2>
+
+        <div class="flex flex-wrap gap-4 mb-6">
+            <!-- Primary brand color (Orange) -->
+            <div id="token-primary" style="background-color: var(--color-brand-primary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Primary</p>
+                <p class="text-sm opacity-90">#D7764E (Orange)</p>
+            </div>
+
+            <!-- Secondary brand color (Plum) -->
+            <div id="token-secondary" style="background-color: var(--color-brand-secondary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Secondary</p>
+                <p class="text-sm opacity-90">#501D43 (Plum)</p>
+            </div>
+
+            <!-- Accent color (Burgundy) -->
+            <div id="token-accent" style="background-color: var(--color-brand-accent); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Accent</p>
+                <p class="text-sm opacity-90">#841E40 (Burgundy)</p>
+            </div>
+
+            <!-- Surface color -->
+            <div id="token-surface" style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Surface</p>
+                <p class="text-sm opacity-75">#FFFFFF (White)</p>
+            </div>
+        </div>
+
+        <p style="color: var(--color-text-muted);" class="text-sm">If you see the colored boxes above with brand colors, Iteration 3 is complete.</p>
     </body>
 </html>

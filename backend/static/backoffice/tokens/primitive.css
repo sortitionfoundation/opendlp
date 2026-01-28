@@ -1,0 +1,139 @@
+/**
+ * Primitive Design Tokens
+ * Raw design values - colors, spacing, typography scales
+ * Based on Sortition Foundation brand colors
+ * These are the foundation that semantic tokens reference
+ */
+
+:root {
+    /* ========================================
+     BRAND COLOR PALETTE
+     ======================================== */
+
+    /* Primary - Warm Orange (CTAs, links, highlights) */
+    --color-orange-100: #f8e5dc;
+    --color-orange-200: #f0cbba;
+    --color-orange-400: #e18f6f;
+    --color-orange-500: #d7764e; /* Base brand orange */
+    --color-orange-600: #c66639;
+    --color-orange-700: #b54f2a;
+    --color-orange-800: #8f3d20;
+
+    /* Secondary - Deep Plum (Headings, logo, navigation) */
+    --color-plum-100: #e8d9e4;
+    --color-plum-200: #d1b3c9;
+    --color-plum-800: #6b2858;
+    --color-plum-900: #501d43; /* Base brand plum */
+    --color-plum-950: #3d1632;
+
+    /* Tertiary - Burgundy (Backgrounds, accents) */
+    --color-burgundy-100: #f2d9e0;
+    --color-burgundy-200: #e5b3c1;
+    --color-burgundy-700: #841e40; /* Base brand burgundy */
+    --color-burgundy-800: #6b1a35;
+    --color-burgundy-900: #521529;
+
+    /* ========================================
+     NEUTRAL COLORS
+     ======================================== */
+
+    --color-gray-50: #f7f7f7;  /* Brand light background */
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+
+    --color-white: #ffffff;
+    --color-black: #000000;
+
+    /* ========================================
+     FUNCTIONAL COLORS
+     ======================================== */
+
+    /* Success - Green */
+    --color-green-50: #f0fdf4;
+    --color-green-100: #dcfce7;
+    --color-green-500: #22c55e;
+    --color-green-600: #2d7a4f;
+    --color-green-700: #15803d;
+
+    /* Error - Red */
+    --color-red-50: #fef2f2;
+    --color-red-100: #fee2e2;
+    --color-red-500: #ef4444;
+    --color-red-600: #c1272d;
+    --color-red-700: #b91c1c;
+
+    /* Warning - uses brand orange for cohesion */
+    --color-warning-50: #fef9e8;
+    --color-warning-100: #fef3c3;
+    --color-warning-500: #d7764e; /* Same as brand orange */
+    --color-warning-600: #c66639;
+
+    /* Info - Blue */
+    --color-info-50: #eff6ff;
+    --color-info-100: #dbeafe;
+    --color-info-500: #0077b6;
+    --color-info-600: #005a8c;
+
+    /* ========================================
+     SPACING SCALE
+     ======================================== */
+
+    --spacing-0: 0;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+
+    /* ========================================
+     TYPOGRAPHY
+     ======================================== */
+
+    /* Font Sizes */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+
+    /* Font Weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* ========================================
+     BORDERS & EFFECTS
+     ======================================== */
+
+    /* Border Radius */
+    --radius-sm: 0.125rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Borders */
+    --border-light: #e0e0e0;
+    --border-medium: #cccccc;
+}

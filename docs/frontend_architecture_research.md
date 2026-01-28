@@ -241,17 +241,23 @@ Step-by-step iterations with manual validation checkpoints. Each iteration inclu
 **Goal:** Create token files and prove they're working in browser.
 
 **Changes:**
-- Create `static/backoffice/tokens/primitive.css` with color palette
+- Create `static/backoffice/tokens/primitive.css` with Sortition Foundation brand colors
 - Create `static/backoffice/tokens/semantic.css` referencing primitives
-- Import tokens into Tailwind input file
-- Update `hello.html` to use CSS custom properties from tokens
-- Add test elements: one using `var(--color-primary)`, one using `var(--color-surface)`
+- Load token CSS files directly in templates (simpler than postcss-import)
+- Update `hello.html` to showcase token-styled elements
+- Add token boxes: primary (orange), secondary (plum), accent (burgundy), surface (white)
+
+**Testing:**
+- Add BDD scenario: "Design tokens are loaded and working"
+- Test verifies `#token-primary` has brand orange background (#D7764E → rgb(215, 118, 78))
+- Test verifies `#token-secondary` has brand plum background (#501D43 → rgb(80, 29, 67))
 
 **Visual validation:**
-- [ ] Rebuild CSS succeeds
+- [ ] Token CSS files load in browser
 - [ ] Visit `/backoffice/hello`
-- [ ] See elements styled with token colors (not Tailwind defaults)
-- [ ] Browser DevTools → Computed shows `--color-primary` resolving correctly
+- [ ] See token boxes with brand colors (orange, plum, burgundy)
+- [ ] Browser DevTools → Computed shows `--color-brand-primary` resolving correctly
+- [ ] BDD tests pass
 
 ---
 
@@ -336,7 +342,7 @@ Step-by-step iterations with manual validation checkpoints. Each iteration inclu
 |-----------|--------|-------|
 | 1. Folder Structure | **Complete** | BDD test added: `test_backoffice.py` |
 | 2. Tailwind Build | **Complete** | BDD test verifies computed CSS colors |
-| 3. Design Tokens | Not started | |
+| 3. Design Tokens | **Complete** | Sortition Foundation brand colors, BDD tests for token verification |
 | 4. Blueprint + Layout | Not started | |
 | 5. Button Atom | Not started | |
 | 6. Card Atom | Not started | |

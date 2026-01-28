@@ -1,0 +1,133 @@
+/**
+ * Semantic Design Tokens
+ * Purpose-based tokens that reference primitives
+ * These create meaningful names for UI contexts
+ */
+
+:root {
+    /* ========================================
+     BRAND IDENTITY
+     ======================================== */
+
+    --color-brand-primary: var(--color-orange-500);
+    --color-brand-primary-hover: var(--color-orange-600);
+    --color-brand-primary-light: var(--color-orange-100);
+
+    --color-brand-secondary: var(--color-plum-900);
+    --color-brand-secondary-hover: var(--color-plum-950);
+    --color-brand-secondary-light: var(--color-plum-100);
+
+    --color-brand-accent: var(--color-burgundy-700);
+    --color-brand-accent-hover: var(--color-burgundy-800);
+    --color-brand-accent-light: var(--color-burgundy-100);
+
+    /* ========================================
+     TEXT COLORS
+     ======================================== */
+
+    --color-text-primary: var(--color-plum-900);      /* Headings */
+    --color-text-body: var(--color-gray-900);          /* Body text */
+    --color-text-muted: var(--color-gray-500);         /* Secondary text */
+    --color-text-on-dark: var(--color-white);          /* Text on dark backgrounds */
+    --color-text-on-brand: var(--color-white);         /* Text on brand colors */
+
+    --color-text-link: var(--color-orange-500);
+    --color-text-link-hover: var(--color-orange-600);
+    --color-text-link-visited: var(--color-plum-800);
+
+    /* ========================================
+     BACKGROUNDS
+     ======================================== */
+
+    --color-bg-primary: var(--color-white);
+    --color-bg-secondary: var(--color-gray-50);        /* Light sections */
+    --color-bg-tertiary: var(--color-burgundy-700);    /* Accent sections */
+    --color-bg-dark: var(--color-black);               /* Dark sections, footer */
+    --color-bg-brand: var(--color-plum-900);           /* Brand sections */
+
+    /* ========================================
+     SURFACES (Cards, Modals, Panels)
+     ======================================== */
+
+    --color-surface: var(--color-white);
+    --color-surface-raised: var(--color-white);
+    --color-surface-overlay: var(--color-white);
+    --color-surface-sunken: var(--color-gray-50);
+
+    /* ========================================
+     INTERACTIVE ELEMENTS
+     ======================================== */
+
+    /* Primary Button (Orange - for main CTAs) */
+    --color-button-primary-bg: var(--color-orange-500);
+    --color-button-primary-bg-hover: var(--color-orange-600);
+    --color-button-primary-bg-active: var(--color-orange-700);
+    --color-button-primary-text: var(--color-white);
+
+    /* Secondary Button (Plum - for secondary actions) */
+    --color-button-secondary-bg: var(--color-plum-900);
+    --color-button-secondary-bg-hover: var(--color-plum-950);
+    --color-button-secondary-bg-active: var(--color-plum-950);
+    --color-button-secondary-text: var(--color-white);
+
+    /* Outline Button */
+    --color-button-outline-border: var(--color-plum-900);
+    --color-button-outline-text: var(--color-plum-900);
+    --color-button-outline-bg-hover: var(--color-plum-100);
+
+    /* Disabled state */
+    --color-button-disabled-bg: var(--color-gray-200);
+    --color-button-disabled-text: var(--color-gray-400);
+
+    /* ========================================
+     FORM ELEMENTS
+     ======================================== */
+
+    --color-input-bg: var(--color-white);
+    --color-input-border: var(--color-gray-300);
+    --color-input-border-hover: var(--color-gray-400);
+    --color-input-border-focus: var(--color-orange-500);
+    --color-input-text: var(--color-gray-900);
+    --color-input-placeholder: var(--color-gray-400);
+
+    /* ========================================
+     FEEDBACK / STATUS
+     ======================================== */
+
+    /* Success */
+    --color-success: var(--color-green-600);
+    --color-success-light: var(--color-green-50);
+    --color-success-text: var(--color-green-700);
+
+    /* Error */
+    --color-error: var(--color-red-600);
+    --color-error-light: var(--color-red-50);
+    --color-error-text: var(--color-red-700);
+
+    /* Warning */
+    --color-warning: var(--color-warning-500);
+    --color-warning-light: var(--color-warning-50);
+    --color-warning-text: var(--color-warning-600);
+
+    /* Info */
+    --color-info: var(--color-info-500);
+    --color-info-light: var(--color-info-50);
+    --color-info-text: var(--color-info-600);
+
+    /* ========================================
+     BORDERS & DIVIDERS
+     ======================================== */
+
+    --color-border: var(--color-gray-200);
+    --color-border-light: var(--color-gray-100);
+    --color-border-strong: var(--color-gray-300);
+    --color-divider: var(--color-gray-200);
+
+    /* ========================================
+     FOCUS RING
+     ======================================== */
+
+    --color-focus-ring: var(--color-orange-500);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+}
