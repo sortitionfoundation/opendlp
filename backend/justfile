@@ -50,9 +50,10 @@ install:
 	@uv sync
 	@echo "🚀 Setting up prek (pre-commit) hooks"
 	@uv tool run prek install
-	@echo "🚀 Install node dependencies & build sass into css"
+	@echo "🚀 Install node dependencies & build CSS"
 	@npm install
 	@npm run build:sass
+	@npm run build:backoffice
 	@echo "🚀 Compile translations"
 	@uv run pybabel compile -d translations
 	@echo "sym link from AGENTS.md to CLAUDE.md"
@@ -111,18 +112,31 @@ celerybeat:
 gunicorn:
   @uv run gunicorn --bind=0.0.0.0:8081 --logger-class=opendlp.logging.GunicornLogger --log-level=debug 'opendlp.entrypoints.flask_app:create_app()'
 
-# build CSS from SCSS
+# build CSS from SCSS (GOV.UK public pages)
 build-css:
   @echo "🚀 Building CSS from SCSS"
   @npm run build:sass
 
-# watch and rebuild CSS from SCSS
+# watch and rebuild CSS from SCSS (GOV.UK public pages)
 watch-css:
   @echo "🚀 Watching and building CSS from SCSS"
   @npm run watch:sass
 
+# build Tailwind CSS for backoffice
+build-backoffice:
+  @echo "🚀 Building Tailwind CSS for backoffice"
+  @npm run build:backoffice
+
+# watch and rebuild Tailwind CSS for backoffice
+watch-backoffice:
+  @echo "🚀 Watching and building Tailwind CSS for backoffice"
+  @npm run watch:backoffice
+
+# build all CSS (GOV.UK + backoffice)
+build-all-css: build-css build-backoffice
+
 # run flask locally
-run: build-css flask
+run: build-all-css flask
 
 # connect to docker postgres (local services)
 psql:
