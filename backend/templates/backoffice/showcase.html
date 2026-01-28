@@ -1,4 +1,5 @@
 {% extends "backoffice/base.html" %}
+{% from "backoffice/components/button.html" import button %}
 
 {% block title %}Component Showcase{% endblock %}
 
@@ -34,6 +35,38 @@
         </div>
     </section>
 
+    <!-- Button Component Section -->
+    <section class="mb-10">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Button Component</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">Reusable button macro with variant support.</p>
+
+        <div class="flex flex-wrap gap-4 items-center">
+            <!-- Primary Button -->
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Primary", variant="primary", id="btn-primary") }}
+                <span style="color: var(--color-text-muted);" class="text-xs">Primary</span>
+            </div>
+
+            <!-- Secondary Button -->
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Secondary", variant="secondary", id="btn-secondary") }}
+                <span style="color: var(--color-text-muted);" class="text-xs">Secondary</span>
+            </div>
+
+            <!-- Outline Button -->
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Outline", variant="outline", id="btn-outline") }}
+                <span style="color: var(--color-text-muted);" class="text-xs">Outline</span>
+            </div>
+
+            <!-- Disabled Button -->
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Disabled", disabled=true, id="btn-disabled") }}
+                <span style="color: var(--color-text-muted);" class="text-xs">Disabled</span>
+            </div>
+        </div>
+    </section>
+
     <!-- Design Tokens Section -->
     <section class="mb-10">
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Design Tokens</h2>
@@ -62,16 +95,6 @@
                 <p class="font-semibold">Surface</p>
                 <p class="text-sm opacity-75">#FFFFFF (White)</p>
             </div>
-        </div>
-    </section>
-
-    <!-- Tailwind CSS Validation -->
-    <section class="mb-10">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Tailwind CSS</h2>
-
-        <div id="tailwind-test" class="bg-blue-600 text-white p-4 rounded-lg shadow-md max-w-md">
-            <p class="font-semibold">Tailwind CSS is working!</p>
-            <p class="text-sm text-blue-100">This box uses Tailwind utility classes.</p>
         </div>
     </section>
 {% endblock %}
