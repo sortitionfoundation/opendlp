@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Backoffice{% endblock %} - OpenDLP</title>
+
+        <!-- Tailwind CSS (compiled) -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/dist/main.css') }}">
+        <!-- Design Tokens -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/primitive.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/semantic.css') }}">
+
+        <!-- Alpine.js -->
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script>
+            document.addEventListener('alpine:init', () => {
+                console.log('Alpine.js loaded');
+            });
+        </script>
+
+        {% block head %}{% endblock %}
+    </head>
+    <body style="background-color: var(--color-bg-secondary);" class="min-h-screen">
+        {% block body %}
+            <main class="p-8">
+                {% block content %}{% endblock %}
+            </main>
+        {% endblock %}
+    </body>
+</html>
