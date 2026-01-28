@@ -8,43 +8,52 @@
     <h1 style="color: var(--color-text-primary);" class="text-3xl font-bold mb-2">Component Showcase</h1>
     <p style="color: var(--color-text-muted);" class="mb-8">Backoffice design system using Pines UI + Tailwind CSS</p>
 
-    <!-- Alpine.js Demo Section -->
-    <section class="mb-10">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Alpine.js Interactivity</h2>
 
-        <div x-data="{ open: false }" class="max-w-md">
-            <button
-                id="alpine-toggle"
-                @click="open = !open"
-                style="background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text);"
-                class="px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-focus-ring)]"
-            >
-                <span x-text="open ? 'Hide Message' : 'Show Message'">Show Message</span>
-            </button>
+    <!-- Design Tokens Section -->
+    <section class="mb-24">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Design Tokens</h2>
 
-            <div
-                id="alpine-message"
-                x-show="open"
-                x-transition
-                style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
-                class="mt-4 p-4 rounded-lg"
-            >
-                <p style="color: var(--color-text-body);">
-                    Alpine.js is working! This message toggles on button click.
-                </p>
+        <div class="flex flex-wrap gap-4">
+            <!-- Primary brand color (Orange) -->
+            <div id="token-primary" style="background-color: var(--color-brand-primary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Primary</p>
+                <p class="text-sm opacity-90">#D7764E (Orange)</p>
+            </div>
+
+            <!-- Secondary brand color (Plum) -->
+            <div id="token-secondary" style="background-color: var(--color-brand-secondary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Secondary</p>
+                <p class="text-sm opacity-90">#501D43 (Plum)</p>
+            </div>
+
+            <!-- Accent color (Burgundy) -->
+            <div id="token-accent" style="background-color: var(--color-brand-accent); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Accent</p>
+                <p class="text-sm opacity-90">#841E40 (Burgundy)</p>
+            </div>
+
+            <!-- Surface color -->
+            <div id="token-surface" style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Surface</p>
+                <p class="text-sm opacity-75">#FFFFFF (White)</p>
             </div>
         </div>
     </section>
 
     <!-- Button Component Section -->
-    <section class="mb-10">
+    <section class="mb-24 ">
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Button Component</h2>
         <p style="color: var(--color-text-muted);" class="mb-4">Reusable button macro with variant support.</p>
 
         <div class="flex flex-wrap gap-4 items-center">
             <!-- Primary Button -->
             <div class="flex flex-col items-center gap-2">
-                {{ button("Primary", variant="primary", id="btn-primary") }}
+                {{ button("Click me", id="btn-default") }}
+                <span style="color: var(--color-text-muted);" class="text-xs">Default</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Submit", variant="primary", id="btn-primary") }}
                 <span style="color: var(--color-text-muted);" class="text-xs">Primary</span>
             </div>
 
@@ -56,7 +65,7 @@
 
             <!-- Outline Button -->
             <div class="flex flex-col items-center gap-2">
-                {{ button("Outline", variant="outline", id="btn-outline") }}
+                {{ button("Cancel", variant="outline", id="btn-outline") }}
                 <span style="color: var(--color-text-muted);" class="text-xs">Outline</span>
             </div>
 
@@ -81,7 +90,7 @@
     </section>
 
     <!-- Card Component Section -->
-    <section class="mb-10">
+    <section class="mb-24">
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Card Component</h2>
         <p style="color: var(--color-text-muted);" class="mb-4">Reusable card macro for content containers.</p>
 
@@ -150,34 +159,46 @@
         </div>
     </section>
 
-    <!-- Design Tokens Section -->
-    <section class="mb-10">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Design Tokens</h2>
+    <!-- Alpine.js Demo Section -->
+    <section class="mb-24">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Alpine.js Interactivity</h2>
 
-        <div class="flex flex-wrap gap-4">
-            <!-- Primary brand color (Orange) -->
-            <div id="token-primary" style="background-color: var(--color-brand-primary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Primary</p>
-                <p class="text-sm opacity-90">#D7764E (Orange)</p>
-            </div>
+        <div x-data="{ open: false }" class="max-w-md">
+            {% call button(variant="primary", id="alpine-toggle", attrs='@click="open = !open"') %}
+                <span x-text="open ? 'Hide Message' : 'Show Message'">Show Message</span>
+            {% endcall %}
 
-            <!-- Secondary brand color (Plum) -->
-            <div id="token-secondary" style="background-color: var(--color-brand-secondary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Secondary</p>
-                <p class="text-sm opacity-90">#501D43 (Plum)</p>
-            </div>
-
-            <!-- Accent color (Burgundy) -->
-            <div id="token-accent" style="background-color: var(--color-brand-accent); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Accent</p>
-                <p class="text-sm opacity-90">#841E40 (Burgundy)</p>
-            </div>
-
-            <!-- Surface color -->
-            <div id="token-surface" style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Surface</p>
-                <p class="text-sm opacity-75">#FFFFFF (White)</p>
+            <div
+                id="alpine-message"
+                x-show="open"
+                x-transition
+                style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+                class="mt-4 p-4 rounded-lg"
+            >
+                <p style="color: var(--color-text-body);">
+                    Alpine.js is working! This message toggles on button click.
+                </p>
             </div>
         </div>
+
+        <!-- How to Use -->
+        <div class="mt-6">
+            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
+            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>
+{% raw %}{# Alpine.js toggle pattern with Button macro #}
+{% from "backoffice/components/button.html" import button %}
+
+&lt;div x-data="{ open: false }"&gt;
+  {% call button(variant="primary", id="my-btn", attrs='@click="open = !open"') %}
+    &lt;span x-text="open ? 'Hide' : 'Show'"&gt;Show&lt;/span&gt;
+  {% endcall %}
+
+  &lt;div x-show="open" x-transition&gt;
+    Content to toggle
+  &lt;/div&gt;
+&lt;/div&gt;{% endraw %}
+        </code></pre>
+        </div>
     </section>
+
 {% endblock %}
