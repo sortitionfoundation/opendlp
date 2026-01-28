@@ -4,20 +4,19 @@
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
             <h1 class="govuk-heading-xl">{{ _("Two-Factor Authentication") }}</h1>
-            <p class="govuk-body">
-                {{ _("Enter the 6-digit code from your authenticator app to complete sign in.") }}
-            </p>
+            <p class="govuk-body">{{ _("Enter the 6-digit code from your authenticator app to complete sign in.") }}</p>
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="govuk-form-group">
                     <label class="govuk-label govuk-label--m" for="verification_code">{{ _("Verification code") }}</label>
+                    <div class="govuk-hint">{{ _("Six digits or a backup code in the format XXXX-XXXX") }}</div>
                     <input class="govuk-input govuk-input--width-10"
                         id="verification_code"
                         name="verification_code"
                         type="text"
                         inputmode="numeric"
-                        pattern="[0-9]{6}"
-                        maxlength="6"
+                        pattern="[0-9]{6}|[0-9A-F]{4}-[0-9A-F]{4}"
+                        maxlength="9"
                         autocomplete="one-time-code"
                         autofocus
                         required />
