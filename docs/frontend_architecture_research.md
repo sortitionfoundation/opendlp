@@ -214,19 +214,25 @@ Step-by-step iterations with manual validation checkpoints. Each iteration inclu
 **Goal:** Set up Tailwind CSS compilation and prove it loads in browser.
 
 **Changes:**
-- Add `package.json` in backend root with Tailwind dependencies
+- Add Tailwind to `package.json` (alongside existing GOV.UK/sass setup)
 - Create `tailwind.config.js` scoped to backoffice templates
 - Create `static/backoffice/src/main.css` (Tailwind input file)
-- Add npm scripts to build CSS
+- Add npm scripts: `build:backoffice`, `watch:backoffice`
 - Update `hello.html` to load compiled CSS
-- Add a Tailwind-styled element (e.g., blue background, white text)
+- Add a Tailwind-styled element (`#tailwind-test` box with blue background)
+
+**Testing:**
+- Add BDD scenario: "Tailwind CSS is loaded and working"
+- Test verifies `#tailwind-test` element is visible
+- Test verifies computed background color matches Tailwind's `bg-blue-600`
 
 **Visual validation:**
 - [ ] `npm install` succeeds
-- [ ] `npm run build:css` produces output file
+- [ ] `npm run build:backoffice` produces `static/backoffice/dist/main.css`
 - [ ] Visit `/backoffice/hello`
 - [ ] See styled element (proves Tailwind is loading)
 - [ ] Browser DevTools shows Tailwind classes applied
+- [ ] BDD tests pass
 
 ---
 
@@ -329,7 +335,7 @@ Step-by-step iterations with manual validation checkpoints. Each iteration inclu
 | Iteration | Status | Notes |
 |-----------|--------|-------|
 | 1. Folder Structure | **Complete** | BDD test added: `test_backoffice.py` |
-| 2. Tailwind Build | Not started | |
+| 2. Tailwind Build | **Complete** | BDD test verifies computed CSS colors |
 | 3. Design Tokens | Not started | |
 | 4. Blueprint + Layout | Not started | |
 | 5. Button Atom | Not started | |

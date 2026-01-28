@@ -27,3 +27,20 @@ def see_hello_text(page: Page):
 def see_design_system_text(page: Page):
     """Verify the design system description is visible."""
     expect(page.locator("body")).to_contain_text("Pines UI + Tailwind CSS")
+
+
+@then("I should see the Tailwind test box")
+def see_tailwind_test_box(page: Page):
+    """Verify the Tailwind test box is visible."""
+    test_box = page.locator("#tailwind-test")
+    expect(test_box).to_be_visible()
+    expect(test_box).to_contain_text("Tailwind CSS is working!")
+
+
+@then("the Tailwind test box should have a blue background")
+def tailwind_box_has_blue_background(page: Page):
+    """Verify Tailwind CSS is applied by checking computed background color."""
+    test_box = page.locator("#tailwind-test")
+    # Tailwind's bg-blue-600 compiles to rgb(37, 99, 235)
+    background_color = test_box.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(37, 99, 235)", f"Expected blue background, got {background_color}"
