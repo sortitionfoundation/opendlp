@@ -11,31 +11,189 @@
 
     <!-- Design Tokens Section -->
     <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Design Tokens</h2>
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Primitive Tokens</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">Sortition Foundation brand colors from the design system.</p>
 
         <div class="flex flex-wrap gap-4">
-            <!-- Primary brand color (Orange) -->
-            <div id="token-primary" style="background-color: var(--color-brand-primary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Primary</p>
-                <p class="text-sm opacity-90">#D7764E (Orange)</p>
+            <!-- Burnt Orange (Primary CTA) -->
+            <div id="token-primary" style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Burnt Orange</p>
+                <p class="text-sm opacity-90">#FF7043</p>
             </div>
 
-            <!-- Secondary brand color (Plum) -->
-            <div id="token-secondary" style="background-color: var(--color-brand-secondary); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Secondary</p>
-                <p class="text-sm opacity-90">#501D43 (Plum)</p>
+            <!-- Dark Grey (Secondary) -->
+            <div id="token-secondary" style="background-color: var(--color-dark-grey); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Dark Grey</p>
+                <p class="text-sm opacity-90">#424242</p>
             </div>
 
-            <!-- Accent color (Burgundy) -->
-            <div id="token-accent" style="background-color: var(--color-brand-accent); color: var(--color-text-on-brand);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Accent</p>
-                <p class="text-sm opacity-90">#841E40 (Burgundy)</p>
+            <!-- Hot Pink (Accent) -->
+            <div id="token-accent" style="background-color: var(--color-hot-pink); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Hot Pink</p>
+                <p class="text-sm opacity-90">#E91E63</p>
             </div>
 
-            <!-- Surface color -->
-            <div id="token-surface" style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Surface</p>
-                <p class="text-sm opacity-75">#FFFFFF (White)</p>
+            <!-- Woad Blue (Links/Info) -->
+            <div style="background-color: var(--color-woad-blue); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Woad Blue</p>
+                <p class="text-sm opacity-90">#3F51B5</p>
+            </div>
+
+            <!-- Sap Green (Success) -->
+            <div style="background-color: var(--color-sap-green); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Sap Green</p>
+                <p class="text-sm opacity-90">#4CAF50</p>
+            </div>
+
+            <!-- Scarlet Red (Error) -->
+            <div style="background-color: var(--color-scarlet-red); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Scarlet Red</p>
+                <p class="text-sm opacity-90">#F44336</p>
+            </div>
+
+            <!-- Saffron Yellow (Focus) -->
+            <div style="background-color: var(--color-saffron-yellow); color: var(--color-dark-grey);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Saffron Yellow</p>
+                <p class="text-sm opacity-90">#FFEB3B</p>
+            </div>
+
+            <!-- Buttermilk (Light BG) -->
+            <div style="background-color: var(--color-buttermilk); color: var(--color-dark-grey); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="font-semibold">Buttermilk</p>
+                <p class="text-sm opacity-90">#F5F5DC</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Semantic Tokens Section -->
+    <section class="mb-24">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Semantic Tokens</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">Purpose-based tokens grouped by usage type.</p>
+
+        <!-- Background Colors -->
+        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Background Colors</h3>
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-button-primary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-button-primary-bg</p>
+                <p class="text-xs opacity-75 mt-1">→ burnt-orange</p>
+            </div>
+            <div style="background-color: var(--color-button-secondary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-button-secondary-bg</p>
+                <p class="text-xs opacity-75 mt-1">→ dark-grey</p>
+            </div>
+            <div style="background-color: var(--color-button-disabled-bg); color: var(--color-gray-500);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-button-disabled-bg</p>
+                <p class="text-xs opacity-75 mt-1">→ gray-200</p>
+            </div>
+            <div style="background-color: var(--color-bg-secondary); color: var(--color-text-body);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-bg-secondary</p>
+                <p class="text-xs opacity-75 mt-1">→ buttermilk</p>
+            </div>
+            <div style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-surface</p>
+                <p class="text-xs opacity-75 mt-1">→ white</p>
+            </div>
+            <div style="background-color: var(--color-surface-sunken); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-sm font-mono">--color-surface-sunken</p>
+                <p class="text-xs opacity-75 mt-1">→ gray-50</p>
+            </div>
+        </div>
+
+        <!-- Border Colors -->
+        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Border Colors</h3>
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-surface); border: 3px solid var(--color-button-outline-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-button-outline-border</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ dark-grey</p>
+            </div>
+            <div style="background-color: var(--color-surface); border: 3px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-border</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-200</p>
+            </div>
+            <div style="background-color: var(--color-surface); border: 3px solid var(--color-input-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-input-border</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-300</p>
+            </div>
+            <div style="background-color: var(--color-surface); box-shadow: 0 0 0 3px var(--color-focus-ring);" class="p-4 rounded-lg w-56">
+                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-focus-ring</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ saffron-yellow</p>
+            </div>
+        </div>
+
+        <!-- Text Colors -->
+        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Text Colors</h3>
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-primary);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-primary</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ dark-grey</p>
+            </div>
+            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-body);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-body</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-900</p>
+            </div>
+            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-muted);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-muted</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-500</p>
+            </div>
+            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-text-link);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-link</p>
+                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ woad-blue</p>
+            </div>
+            <div style="background-color: var(--color-button-primary-bg);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-button-primary-text);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-white); opacity: 0.9;" class="text-sm font-mono">--color-button-primary-text</p>
+                <p style="color: var(--color-white); opacity: 0.75;" class="text-xs mt-1">→ white</p>
+            </div>
+            <div style="background-color: var(--color-button-disabled-bg);" class="p-4 rounded-lg shadow-md w-56">
+                <p style="color: var(--color-button-disabled-text);" class="text-lg font-semibold mb-2">Aa</p>
+                <p style="color: var(--color-gray-500);" class="text-sm font-mono">--color-button-disabled-text</p>
+                <p style="color: var(--color-gray-500);" class="text-xs mt-1">→ gray-400</p>
+            </div>
+        </div>
+
+        <!-- Feedback Colors -->
+        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Feedback Colors</h3>
+        <p style="color: var(--color-text-muted);" class="text-sm mb-3">Can be used as background or text color depending on context.</p>
+        <div class="flex flex-wrap gap-4">
+            <div class="flex flex-col gap-2">
+                <div style="background-color: var(--color-feedback-success); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                    <p class="text-sm font-mono">--color-feedback-success</p>
+                    <p class="text-xs opacity-75 mt-1">→ sap-green</p>
+                </div>
+                <div style="background-color: var(--color-feedback-success-light); border: 1px solid var(--color-feedback-success);" class="p-4 rounded-lg w-56">
+                    <p style="color: var(--color-feedback-success-text);" class="text-sm font-mono">--color-feedback-success-text</p>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div style="background-color: var(--color-feedback-error); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                    <p class="text-sm font-mono">--color-feedback-error</p>
+                    <p class="text-xs opacity-75 mt-1">→ scarlet-red</p>
+                </div>
+                <div style="background-color: var(--color-feedback-error-light); border: 1px solid var(--color-feedback-error);" class="p-4 rounded-lg w-56">
+                    <p style="color: var(--color-feedback-error-text);" class="text-sm font-mono">--color-feedback-error-text</p>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div style="background-color: var(--color-feedback-warning); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                    <p class="text-sm font-mono">--color-feedback-warning</p>
+                    <p class="text-xs opacity-75 mt-1">→ burnt-orange</p>
+                </div>
+                <div style="background-color: var(--color-feedback-warning-light); border: 1px solid var(--color-feedback-warning);" class="p-4 rounded-lg w-56">
+                    <p style="color: var(--color-feedback-warning-text);" class="text-sm font-mono">--color-feedback-warning-text</p>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div style="background-color: var(--color-feedback-info); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
+                    <p class="text-sm font-mono">--color-feedback-info</p>
+                    <p class="text-xs opacity-75 mt-1">→ woad-blue</p>
+                </div>
+                <div style="background-color: var(--color-feedback-info-light); border: 1px solid var(--color-feedback-info);" class="p-4 rounded-lg w-56">
+                    <p style="color: var(--color-feedback-info-text);" class="text-sm font-mono">--color-feedback-info-text</p>
+                </div>
             </div>
         </div>
     </section>

@@ -77,16 +77,16 @@ def see_primary_token_box(page: Page):
     """Verify the primary token box is visible."""
     token_box = page.locator("#token-primary")
     expect(token_box).to_be_visible()
-    expect(token_box).to_contain_text("Primary")
+    expect(token_box).to_contain_text("Burnt Orange")
 
 
 @then("the primary token box should have the brand orange background")
 def primary_token_has_orange_background(page: Page):
-    """Verify design token --color-brand-primary (#D7764E) is applied."""
+    """Verify design token --color-burnt-orange (#FF7043) is applied."""
     token_box = page.locator("#token-primary")
-    # Brand orange #D7764E = rgb(215, 118, 78)
+    # Burnt orange #FF7043 = rgb(255, 112, 67)
     background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(215, 118, 78)", f"Expected brand orange, got {background_color}"
+    assert background_color == "rgb(255, 112, 67)", f"Expected burnt orange, got {background_color}"
 
 
 @then("I should see the secondary token box")
@@ -94,16 +94,16 @@ def see_secondary_token_box(page: Page):
     """Verify the secondary token box is visible."""
     token_box = page.locator("#token-secondary")
     expect(token_box).to_be_visible()
-    expect(token_box).to_contain_text("Secondary")
+    expect(token_box).to_contain_text("Dark Grey")
 
 
 @then("the secondary token box should have the brand plum background")
 def secondary_token_has_plum_background(page: Page):
-    """Verify design token --color-brand-secondary (#501D43) is applied."""
+    """Verify design token --color-dark-grey (#424242) is applied."""
     token_box = page.locator("#token-secondary")
-    # Brand plum #501D43 = rgb(80, 29, 67)
+    # Dark grey #424242 = rgb(66, 66, 66)
     background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
+    assert background_color == "rgb(66, 66, 66)", f"Expected dark grey, got {background_color}"
 
 
 # Alpine.js Tests
@@ -144,7 +144,7 @@ def see_primary_button(page: Page):
     """Verify the primary button is visible."""
     button = page.locator("#btn-primary")
     expect(button).to_be_visible()
-    expect(button).to_contain_text("Primary")
+    expect(button).to_contain_text("Submit")
 
 
 @then("I should see the secondary button")
@@ -160,7 +160,7 @@ def see_outline_button(page: Page):
     """Verify the outline button is visible."""
     button = page.locator("#btn-outline")
     expect(button).to_be_visible()
-    expect(button).to_contain_text("Outline")
+    expect(button).to_contain_text("Cancel")
 
 
 @then("I should see the disabled button")
@@ -173,20 +173,20 @@ def see_disabled_button(page: Page):
 
 @then("the primary button should have the brand orange background")
 def primary_button_has_orange_background(page: Page):
-    """Verify primary button uses --color-button-primary-bg (#D7764E)."""
+    """Verify primary button uses --color-button-primary-bg (burnt orange #FF7043)."""
     button = page.locator("#btn-primary")
-    # Brand orange #D7764E = rgb(215, 118, 78)
+    # Burnt orange #FF7043 = rgb(255, 112, 67)
     background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(215, 118, 78)", f"Expected brand orange, got {background_color}"
+    assert background_color == "rgb(255, 112, 67)", f"Expected burnt orange, got {background_color}"
 
 
 @then("the secondary button should have the brand plum background")
 def secondary_button_has_plum_background(page: Page):
-    """Verify secondary button uses --color-button-secondary-bg (#501D43)."""
+    """Verify secondary button uses --color-button-secondary-bg (dark grey #424242)."""
     button = page.locator("#btn-secondary")
-    # Brand plum #501D43 = rgb(80, 29, 67)
+    # Dark grey #424242 = rgb(66, 66, 66)
     background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
+    assert background_color == "rgb(66, 66, 66)", f"Expected dark grey, got {background_color}"
 
 
 @then("the disabled button should be disabled")
