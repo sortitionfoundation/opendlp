@@ -82,6 +82,7 @@ def register_context_processors(app: Flask) -> None:
 
 def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
+    from .backoffice.routes import backoffice_bp
     from .blueprints.admin import admin_bp
     from .blueprints.auth import auth_bp
     from .blueprints.gsheets import gsheets_bp
@@ -95,6 +96,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
 
 
 def register_error_handlers(app: Flask) -> None:
