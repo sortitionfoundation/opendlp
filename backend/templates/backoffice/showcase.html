@@ -1,5 +1,6 @@
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card, card_with_actions %}
 
 {% block title %}Component Showcase{% endblock %}
 
@@ -16,7 +17,7 @@
                 id="alpine-toggle"
                 @click="open = !open"
                 style="background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text);"
-                class="px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                class="px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-focus-ring)]"
             >
                 <span x-text="open ? 'Hide Message' : 'Show Message'">Show Message</span>
             </button>
@@ -63,6 +64,45 @@
             <div class="flex flex-col items-center gap-2">
                 {{ button("Disabled", disabled=true, id="btn-disabled") }}
                 <span style="color: var(--color-text-muted);" class="text-xs">Disabled</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Card Component Section -->
+    <section class="mb-10">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Card Component</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">Reusable card macro for content containers.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Basic Card -->
+            {% call card(id="card-basic", classes="max-w-sm") %}
+                <p style="color: var(--color-text-body);">
+                    This is a basic card without a header. It can contain any content.
+                </p>
+            {% endcall %}
+
+            <!-- Card with Header -->
+            {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header", classes="max-w-sm") %}
+                <p style="color: var(--color-text-body);">
+                    This card has a title and subtitle in the header section.
+                </p>
+            {% endcall %}
+
+            <!-- Card with Actions -->
+            <div id="card-actions" style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg shadow-md overflow-hidden max-w-sm">
+                <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
+                    <h3 style="color: var(--color-text-primary);" class="text-lg font-semibold">Card with Actions</h3>
+                    <p style="color: var(--color-text-muted);" class="text-sm mt-1">Includes button actions</p>
+                </div>
+                <div class="px-6 py-4">
+                    <p style="color: var(--color-text-body);">
+                        This card demonstrates composition with the Button component.
+                    </p>
+                </div>
+                <div style="border-top: 1px solid var(--color-border); background-color: var(--color-surface-sunken);" class="px-6 py-3 flex gap-2 justify-end">
+                    {{ button("Cancel", variant="outline") }}
+                    {{ button("Save", variant="primary") }}
+                </div>
             </div>
         </div>
     </section>
