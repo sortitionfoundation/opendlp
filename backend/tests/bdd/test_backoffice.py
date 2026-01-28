@@ -2,7 +2,7 @@
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, scenarios, then
+from pytest_bdd import given, scenarios, then, when
 
 from .config import Urls
 
@@ -81,3 +81,58 @@ def secondary_token_has_plum_background(page: Page):
     # Brand plum #501D43 = rgb(80, 29, 67)
     background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
     assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
+
+
+# Showcase Page Tests (Iteration 4)
+
+
+@given("I am on the backoffice showcase page")
+def visit_backoffice_showcase(page: Page):
+    """Navigate to the backoffice showcase page."""
+    page.goto(Urls.backoffice_showcase)
+
+
+@then('I should see "Component Showcase"')
+def see_component_showcase_text(page: Page):
+    """Verify the Component Showcase heading is visible."""
+    heading = page.locator("h1")
+    expect(heading).to_contain_text("Component Showcase")
+
+
+@then('I should see "Alpine.js Interactivity"')
+def see_alpine_interactivity_text(page: Page):
+    """Verify the Alpine.js section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Alpine.js Interactivity")
+
+
+@then('I should see "Design Tokens"')
+def see_design_tokens_text(page: Page):
+    """Verify the Design Tokens section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Design Tokens")
+
+
+@then("the Alpine message should be hidden")
+def alpine_message_hidden(page: Page):
+    """Verify the Alpine.js toggle message is hidden."""
+    message = page.locator("#alpine-message")
+    expect(message).to_be_hidden()
+
+
+@then("the Alpine message should be visible")
+def alpine_message_visible(page: Page):
+    """Verify the Alpine.js toggle message is visible."""
+    message = page.locator("#alpine-message")
+    expect(message).to_be_visible()
+
+
+@when("I click the Alpine toggle button")
+def click_alpine_toggle(page: Page):
+    """Click the Alpine.js toggle button."""
+    button = page.locator("#alpine-toggle")
+    button.click()
+
+
+@then('I should see "Alpine.js is working!"')
+def see_alpine_working_text(page: Page):
+    """Verify the Alpine.js confirmation message is visible."""
+    expect(page.locator("body")).to_contain_text("Alpine.js is working!")

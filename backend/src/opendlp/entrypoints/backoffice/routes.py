@@ -11,3 +11,9 @@ backoffice_bp = Blueprint("backoffice", __name__, template_folder="backoffice")
 def hello() -> ResponseReturnValue:
     """Simple hello world route to verify backoffice setup."""
     return render_template("backoffice/hello.html"), 200
+
+
+@backoffice_bp.route("/showcase")
+def showcase() -> ResponseReturnValue:
+    """Component showcase page demonstrating the backoffice design system."""
+    return render_template("backoffice/showcase.html"), 200
