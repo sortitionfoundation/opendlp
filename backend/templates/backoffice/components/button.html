@@ -1,0 +1,52 @@
+{#
+ABOUTME: Button component macro for backoffice design system
+ABOUTME: Supports primary, secondary, outline variants with proper token styling
+#}
+
+{% macro button(text, variant="primary", disabled=false, type="button", id="", classes="") %}
+    {#
+  Button component using semantic design tokens.
+
+  Args:
+    text: Button label text
+    variant: "primary" | "secondary" | "outline" (default: "primary")
+    disabled: boolean to disable the button
+    type: button type attribute (default: "button")
+    id: optional id attribute
+    classes: additional CSS classes to append
+
+  Usage:
+    {{ button("Click me") }}
+    {{ button("Submit", variant="primary", type="submit") }}
+    {{ button("Cancel", variant="outline") }}
+    {{ button("Disabled", disabled=true) }}
+    #}
+    {% set base_classes = "px-4 py-2 rounded-lg font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2" %}
+
+    {% if disabled %}
+        {% set variant_styles = "background-color: var(--color-button-disabled-bg); color: var(--color-button-disabled-text); cursor: not-allowed;" %}
+        {% set focus_ring = "" %}
+    {% elif variant == "primary" %}
+        {% set variant_styles = "background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text);" %}
+        {% set hover_styles = "hover:opacity-90" %}
+        {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
+    {% elif variant == "secondary" %}
+        {% set variant_styles = "background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text);" %}
+        {% set hover_styles = "hover:opacity-90" %}
+        {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
+    {% elif variant == "outline" %}
+        {% set variant_styles = "background-color: transparent; color: var(--color-button-outline-text); border: 2px solid var(--color-button-outline-border);" %}
+        {% set hover_styles = "hover:bg-[var(--color-button-outline-bg-hover)]" %}
+        {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
+    {% endif %}
+
+    <button
+        type="{{ type }}"
+        {% if id %}id="{{ id }}"{% endif %}
+        {% if disabled %}disabled{% endif %}
+        style="{{ variant_styles }}"
+        class="{{ base_classes }} {{ hover_styles if not disabled else '' }} {{ focus_ring }} {{ classes }}"
+    >
+        {{ text }}
+    </button>
+{% endmacro %}

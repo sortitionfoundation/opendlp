@@ -10,43 +10,35 @@ from .config import Urls
 scenarios("../../features/backoffice.feature")
 
 
-@given("I am on the backoffice hello page")
-def visit_backoffice_hello(page: Page):
-    """Navigate to the backoffice hello page."""
-    page.goto(Urls.backoffice_hello)
+# Showcase Page Tests
 
 
-@then('I should see "Hello from Backoffice!"')
-def see_hello_text(page: Page):
-    """Verify the hello heading is visible."""
+@given("I am on the backoffice showcase page")
+def visit_backoffice_showcase(page: Page):
+    """Navigate to the backoffice showcase page."""
+    page.goto(Urls.backoffice_showcase)
+
+
+@then('I should see "Component Showcase"')
+def see_component_showcase_text(page: Page):
+    """Verify the Component Showcase heading is visible."""
     heading = page.locator("h1")
-    expect(heading).to_contain_text("Hello from Backoffice!")
+    expect(heading).to_contain_text("Component Showcase")
 
 
-@then('I should see "Pines UI + Tailwind CSS"')
-def see_design_system_text(page: Page):
-    """Verify the design system description is visible."""
-    expect(page.locator("body")).to_contain_text("Pines UI + Tailwind CSS")
+@then('I should see "Alpine.js Interactivity"')
+def see_alpine_interactivity_text(page: Page):
+    """Verify the Alpine.js section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Alpine.js Interactivity")
 
 
-@then("I should see the Tailwind test box")
-def see_tailwind_test_box(page: Page):
-    """Verify the Tailwind test box is visible."""
-    test_box = page.locator("#tailwind-test")
-    expect(test_box).to_be_visible()
-    expect(test_box).to_contain_text("Tailwind CSS is working!")
+@then('I should see "Design Tokens"')
+def see_design_tokens_text(page: Page):
+    """Verify the Design Tokens section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Design Tokens")
 
 
-@then("the Tailwind test box should have a blue background")
-def tailwind_box_has_blue_background(page: Page):
-    """Verify Tailwind CSS is applied by checking computed background color."""
-    test_box = page.locator("#tailwind-test")
-    # Tailwind's bg-blue-600 compiles to rgb(37, 99, 235)
-    background_color = test_box.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(37, 99, 235)", f"Expected blue background, got {background_color}"
-
-
-# Design Token Tests (Iteration 3)
+# Design Token Tests
 
 
 @then("I should see the primary token box")
@@ -83,32 +75,7 @@ def secondary_token_has_plum_background(page: Page):
     assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
 
 
-# Showcase Page Tests (Iteration 4)
-
-
-@given("I am on the backoffice showcase page")
-def visit_backoffice_showcase(page: Page):
-    """Navigate to the backoffice showcase page."""
-    page.goto(Urls.backoffice_showcase)
-
-
-@then('I should see "Component Showcase"')
-def see_component_showcase_text(page: Page):
-    """Verify the Component Showcase heading is visible."""
-    heading = page.locator("h1")
-    expect(heading).to_contain_text("Component Showcase")
-
-
-@then('I should see "Alpine.js Interactivity"')
-def see_alpine_interactivity_text(page: Page):
-    """Verify the Alpine.js section heading is visible."""
-    expect(page.locator("body")).to_contain_text("Alpine.js Interactivity")
-
-
-@then('I should see "Design Tokens"')
-def see_design_tokens_text(page: Page):
-    """Verify the Design Tokens section heading is visible."""
-    expect(page.locator("body")).to_contain_text("Design Tokens")
+# Alpine.js Tests
 
 
 @then("the Alpine message should be hidden")
@@ -136,3 +103,63 @@ def click_alpine_toggle(page: Page):
 def see_alpine_working_text(page: Page):
     """Verify the Alpine.js confirmation message is visible."""
     expect(page.locator("body")).to_contain_text("Alpine.js is working!")
+
+
+# Button Component Tests (Iteration 5)
+
+
+@then("I should see the primary button")
+def see_primary_button(page: Page):
+    """Verify the primary button is visible."""
+    button = page.locator("#btn-primary")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Primary")
+
+
+@then("I should see the secondary button")
+def see_secondary_button(page: Page):
+    """Verify the secondary button is visible."""
+    button = page.locator("#btn-secondary")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Secondary")
+
+
+@then("I should see the outline button")
+def see_outline_button(page: Page):
+    """Verify the outline button is visible."""
+    button = page.locator("#btn-outline")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Outline")
+
+
+@then("I should see the disabled button")
+def see_disabled_button(page: Page):
+    """Verify the disabled button is visible."""
+    button = page.locator("#btn-disabled")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Disabled")
+
+
+@then("the primary button should have the brand orange background")
+def primary_button_has_orange_background(page: Page):
+    """Verify primary button uses --color-button-primary-bg (#D7764E)."""
+    button = page.locator("#btn-primary")
+    # Brand orange #D7764E = rgb(215, 118, 78)
+    background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(215, 118, 78)", f"Expected brand orange, got {background_color}"
+
+
+@then("the secondary button should have the brand plum background")
+def secondary_button_has_plum_background(page: Page):
+    """Verify secondary button uses --color-button-secondary-bg (#501D43)."""
+    button = page.locator("#btn-secondary")
+    # Brand plum #501D43 = rgb(80, 29, 67)
+    background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(80, 29, 67)", f"Expected brand plum, got {background_color}"
+
+
+@then("the disabled button should be disabled")
+def disabled_button_is_disabled(page: Page):
+    """Verify the disabled button has the disabled attribute."""
+    button = page.locator("#btn-disabled")
+    expect(button).to_be_disabled()
