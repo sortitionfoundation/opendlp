@@ -223,3 +223,64 @@ When working on frontend issues, see:
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
+
+## Backoffice Development
+
+The backoffice uses a separate design system (Pines UI + Tailwind CSS) from the public-facing GOV.UK pages.
+
+### Key Files
+
+- **Routes:** `src/opendlp/entrypoints/backoffice/routes.py`
+- **Templates:** `templates/backoffice/`
+- **Components:** `templates/backoffice/components/` (Button, Card macros)
+- **Design Tokens:** `static/backoffice/tokens/` (primitive.css, semantic.css)
+- **Tailwind CSS:** `static/backoffice/src/main.css` → `static/backoffice/dist/main.css`
+
+### Building CSS
+
+```bash
+# Build Tailwind CSS for backoffice
+npm run build:backoffice
+
+# Watch for changes during development
+npm run watch:backoffice
+```
+
+### Component Showcase
+
+Visit `/backoffice/showcase` to see all available components with usage examples.
+
+### Using Components
+
+```jinja
+{# Import and use Button #}
+{% from "backoffice/components/button.html" import button %}
+{{ button("Click me", variant="primary") }}
+{{ button("Cancel", variant="outline") }}
+
+{# Import and use Card #}
+{% from "backoffice/components/card.html" import card %}
+{% call card(title="Card Title") %}
+  Card content here
+{% endcall %}
+```
+
+### Design Tokens
+
+Sortition Foundation brand colors are defined as primitives:
+
+- `--color-burnt-orange` (#FF7043) - Primary CTA
+- `--color-dark-grey` (#424242) - Secondary
+- `--color-hot-pink` (#E91E63) - Accent
+- `--color-woad-blue` (#3F51B5) - Links/Info
+- `--color-sap-green` (#4CAF50) - Success
+- `--color-scarlet-red` (#F44336) - Error
+- `--color-saffron-yellow` (#FFEB3B) - Focus ring
+- `--color-buttermilk` (#F5F5DC) - Light backgrounds
+
+Use semantic tokens for UI elements:
+
+- `--color-button-primary-bg`, `--color-button-secondary-bg`
+- `--color-surface`, `--color-border`, `--color-text-body`
+
+See [Frontend Architecture Research](docs/frontend_architecture_research.md) for full design system documentation.
