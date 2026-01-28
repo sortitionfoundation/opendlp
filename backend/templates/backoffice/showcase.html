@@ -66,6 +66,18 @@
                 <span style="color: var(--color-text-muted);" class="text-xs">Disabled</span>
             </div>
         </div>
+
+        <!-- How to Use -->
+        <div class="mt-6">
+            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
+            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>{% raw %}{% from "backoffice/components/button.html" import button %}
+
+{{ button("Click me") }}
+{{ button("Submit", variant="primary", type="submit") }}
+{{ button("Secondary", variant="secondary") }}
+{{ button("Cancel", variant="outline") }}
+{{ button("Disabled", disabled=true) }}{% endraw %}</code></pre>
+        </div>
     </section>
 
     <!-- Card Component Section -->
@@ -104,6 +116,22 @@
                     {{ button("Save", variant="primary") }}
                 </div>
             </div>
+        </div>
+
+        <!-- How to Use -->
+        <div class="mt-6">
+            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
+            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>{% raw %}{% from "backoffice/components/card.html" import card %}
+
+{# Basic card #}
+{% call card() %}
+  Card content here
+{% endcall %}
+
+{# Card with header #}
+{% call card(title="Title", subtitle="Subtitle") %}
+  Card content here
+{% endcall %}{% endraw %}</code></pre>
         </div>
     </section>
 

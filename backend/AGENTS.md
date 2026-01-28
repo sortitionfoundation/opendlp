@@ -263,3 +263,56 @@ When working on frontend issues, see:
 Feature specifications:
 
 - [CSV Upload Feature](docs/agent/csv_upload_feature.md) - Specification for CSV participant data upload
+
+## Backoffice Development
+
+The backoffice uses a separate design system (Pines UI + Tailwind CSS) from the public-facing GOV.UK pages.
+
+### Key Files
+
+- **Routes:** `src/opendlp/entrypoints/backoffice/routes.py`
+- **Templates:** `templates/backoffice/`
+- **Components:** `templates/backoffice/components/` (Button, Card macros)
+- **Design Tokens:** `static/backoffice/tokens/` (primitive.css, semantic.css)
+- **Tailwind CSS:** `static/backoffice/src/main.css` → `static/backoffice/dist/main.css`
+
+### Building CSS
+
+```bash
+# Build Tailwind CSS for backoffice
+npm run build:backoffice
+
+# Watch for changes during development
+npm run watch:backoffice
+```
+
+### Component Showcase
+
+Visit `/backoffice/showcase` to see all available components with usage examples.
+
+### Using Components
+
+```jinja
+{# Import and use Button #}
+{% from "backoffice/components/button.html" import button %}
+{{ button("Click me", variant="primary") }}
+{{ button("Cancel", variant="outline") }}
+
+{# Import and use Card #}
+{% from "backoffice/components/card.html" import card %}
+{% call card(title="Card Title") %}
+  Card content here
+{% endcall %}
+```
+
+### Design Tokens
+
+Use semantic tokens in styles for consistent theming:
+
+- `--color-brand-primary` (Orange #D7764E)
+- `--color-brand-secondary` (Plum #501D43)
+- `--color-brand-accent` (Burgundy #841E40)
+- `--color-button-primary-bg`, `--color-button-secondary-bg`
+- `--color-surface`, `--color-border`, `--color-text-body`
+
+See [Frontend Architecture Research](docs/frontend_architecture_research.md) for full design system documentation.

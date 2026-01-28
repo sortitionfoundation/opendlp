@@ -343,7 +343,7 @@ Step-by-step iterations with manual validation checkpoints. Each iteration inclu
 | 1. Folder Structure | **Complete** | BDD test added: `test_backoffice.py` |
 | 2. Tailwind Build | **Complete** | BDD test verifies computed CSS colors |
 | 3. Design Tokens | **Complete** | Sortition Foundation brand colors, BDD tests for token verification |
-| 4. Blueprint + Layout | Not started | |
-| 5. Button Atom | Not started | |
-| 6. Card Atom | Not started | |
-| 7. Documentation | Not started | |
+| 4. Blueprint + Layout | **Complete** | Base template, showcase page, Alpine.js toggle demo |
+| 5. Button Atom | **Complete** | Primary, secondary, outline, disabled variants with BDD tests |
+| 6. Card Atom | **Complete** | Basic, header, actions variants with BDD tests |
+| 7. Documentation | **Complete** | How to Use snippets, CLAUDE.md updated |

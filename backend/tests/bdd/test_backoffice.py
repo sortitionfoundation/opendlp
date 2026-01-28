@@ -1,13 +1,44 @@
 """ABOUTME: BDD tests for backoffice UI (Pines UI + Tailwind CSS)
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
-from playwright.sync_api import Page, expect
+import os
+
+import pytest
+from playwright.sync_api import Page, expect, sync_playwright
 from pytest_bdd import given, scenarios, then, when
 
 from .config import Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
+
+
+# Override fixtures for backoffice tests - no Celery needed for static pages
+@pytest.fixture(scope="module")
+def backoffice_browser():
+    """Browser instance for backoffice tests only."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=os.getenv("CI", "false").lower() == "true")
+        yield browser
+        browser.close()
+
+
+@pytest.fixture(scope="module")
+def backoffice_context(backoffice_browser, test_server):
+    """Browser context without Celery dependency."""
+    context = backoffice_browser.new_context()
+    context.set_default_navigation_timeout(5000)
+    context.set_default_timeout(5000)
+    yield context
+    context.close()
+
+
+@pytest.fixture(scope="function")
+def page(backoffice_context):
+    """Override page fixture to use backoffice_context (no Celery)."""
+    page = backoffice_context.new_page()
+    yield page
+    page.close()
 
 
 # Showcase Page Tests
