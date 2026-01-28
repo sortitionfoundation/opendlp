@@ -25,7 +25,6 @@ class Urls:
     admin_invites = f"{base}/admin/invites"
 
     # Backoffice URLs (Pines UI + Tailwind)
-    backoffice_hello = f"{base}/backoffice/hello"
     backoffice_showcase = f"{base}/backoffice/showcase"
 
     assembly_urls: typing.ClassVar = {
