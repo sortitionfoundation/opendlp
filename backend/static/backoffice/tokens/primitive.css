@@ -1,43 +1,56 @@
 /**
  * Primitive Design Tokens
  * Raw design values - colors, spacing, typography scales
- * Based on Sortition Foundation brand colors
+ * Based on Sortition Foundation brand colors (from _sortition.scss)
  * These are the foundation that semantic tokens reference
  */
 
 :root {
     /* ========================================
-     BRAND COLOR PALETTE
+     SORTITION FOUNDATION BRAND PALETTE
      ======================================== */
 
-    /* Primary - Warm Orange (CTAs, links, highlights) */
-    --color-orange-100: #f8e5dc;
-    --color-orange-200: #f0cbba;
-    --color-orange-400: #e18f6f;
-    --color-orange-500: #d7764e; /* Base brand orange */
-    --color-orange-600: #c66639;
-    --color-orange-700: #b54f2a;
-    --color-orange-800: #8f3d20;
+    /* Hot Pink - Vibrant accent */
+    --color-hot-pink: #e91e63;
 
-    /* Secondary - Deep Plum (Headings, logo, navigation) */
-    --color-plum-100: #e8d9e4;
-    --color-plum-200: #d1b3c9;
-    --color-plum-800: #6b2858;
-    --color-plum-900: #501d43; /* Base brand plum */
-    --color-plum-950: #3d1632;
+    /* Burnt Orange - Warm CTA color */
+    --color-burnt-orange: #ff7043;
 
-    /* Tertiary - Burgundy (Backgrounds, accents) */
-    --color-burgundy-100: #f2d9e0;
-    --color-burgundy-200: #e5b3c1;
-    --color-burgundy-700: #841e40; /* Base brand burgundy */
-    --color-burgundy-800: #6b1a35;
-    --color-burgundy-900: #521529;
+    /* Purple Red - Secondary accent */
+    --color-purple-red: #9c27b0;
+
+    /* Blood Red - Strong emphasis */
+    --color-blood-red: #c62828;
+
+    /* Sap Green - Success, positive actions */
+    --color-sap-green: #4caf50;
+
+    /* Woad Blue - Info, links */
+    --color-woad-blue: #3f51b5;
+
+    /* Scarlet Red - Errors, warnings */
+    --color-scarlet-red: #f44336;
+
+    /* Saffron Yellow - Highlights, focus states */
+    --color-saffron-yellow: #ffeb3b;
+
+    /* Buttermilk - Light backgrounds */
+    --color-buttermilk: #f5f5dc;
+
+    /* Dark Grey - Text, dark backgrounds */
+    --color-dark-grey: #424242;
+
+    /* White */
+    --color-white: #ffffff;
+
+    /* Black */
+    --color-black: #000000;
 
     /* ========================================
      NEUTRAL COLORS
      ======================================== */
 
-    --color-gray-50: #f7f7f7;  /* Brand light background */
+    --color-gray-50: #f7f7f7;
     --color-gray-100: #f3f4f6;
     --color-gray-200: #e5e7eb;
     --color-gray-300: #d1d5db;
@@ -48,38 +61,21 @@
     --color-gray-800: #1f2937;
     --color-gray-900: #111827;
 
-    --color-white: #ffffff;
-    --color-black: #000000;
-
     /* ========================================
-     FUNCTIONAL COLORS
+     FUNCTIONAL COLORS (mapped from brand)
      ======================================== */
 
-    /* Success - Green */
-    --color-green-50: #f0fdf4;
-    --color-green-100: #dcfce7;
-    --color-green-500: #22c55e;
-    --color-green-600: #2d7a4f;
-    --color-green-700: #15803d;
+    /* Success - Sap Green */
+    --color-success: var(--color-sap-green);
 
-    /* Error - Red */
-    --color-red-50: #fef2f2;
-    --color-red-100: #fee2e2;
-    --color-red-500: #ef4444;
-    --color-red-600: #c1272d;
-    --color-red-700: #b91c1c;
+    /* Error - Scarlet Red */
+    --color-error: var(--color-scarlet-red);
 
-    /* Warning - uses brand orange for cohesion */
-    --color-warning-50: #fef9e8;
-    --color-warning-100: #fef3c3;
-    --color-warning-500: #d7764e; /* Same as brand orange */
-    --color-warning-600: #c66639;
+    /* Warning - Burnt Orange */
+    --color-warning: var(--color-burnt-orange);
 
-    /* Info - Blue */
-    --color-info-50: #eff6ff;
-    --color-info-100: #dbeafe;
-    --color-info-500: #0077b6;
-    --color-info-600: #005a8c;
+    /* Info - Woad Blue */
+    --color-info: var(--color-woad-blue);
 
     /* ========================================
      SPACING SCALE
