@@ -37,3 +37,10 @@ Feature: Backoffice UI
     Then the primary button should have the brand orange background
     And the secondary button should have the brand plum background
     And the disabled button should be disabled
+
+  Scenario: Card component variants are displayed
+    Given I am on the backoffice showcase page
+    Then I should see the basic card
+    And I should see the card with header
+    And I should see the card with actions
+    And the card with actions should contain buttons

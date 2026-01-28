@@ -163,3 +163,37 @@ def disabled_button_is_disabled(page: Page):
     """Verify the disabled button has the disabled attribute."""
     button = page.locator("#btn-disabled")
     expect(button).to_be_disabled()
+
+
+# Card Component Tests (Iteration 6)
+
+
+@then("I should see the basic card")
+def see_basic_card(page: Page):
+    """Verify the basic card is visible."""
+    card = page.locator("#card-basic")
+    expect(card).to_be_visible()
+
+
+@then("I should see the card with header")
+def see_card_with_header(page: Page):
+    """Verify the card with header is visible."""
+    card = page.locator("#card-header")
+    expect(card).to_be_visible()
+    expect(card).to_contain_text("Card with Header")
+
+
+@then("I should see the card with actions")
+def see_card_with_actions(page: Page):
+    """Verify the card with actions is visible."""
+    card = page.locator("#card-actions")
+    expect(card).to_be_visible()
+    expect(card).to_contain_text("Card with Actions")
+
+
+@then("the card with actions should contain buttons")
+def card_with_actions_has_buttons(page: Page):
+    """Verify the card with actions contains Save and Cancel buttons."""
+    card = page.locator("#card-actions")
+    expect(card.locator("button", has_text="Save")).to_be_visible()
+    expect(card.locator("button", has_text="Cancel")).to_be_visible()
