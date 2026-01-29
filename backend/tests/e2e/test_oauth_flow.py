@@ -752,6 +752,9 @@ class TestOAuthProviderReplacement:
             # Should show info that OAuth is already linked, but the logic allows replacement
             # The actual replacement happens in the callback
 
+            assert response.status_code == 302
+            assert response.headers["Location"] == "https://login.microsoftonline.com/oauth"
+
         # Complete OAuth callback - this should replace Google with Microsoft
         with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
             mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
