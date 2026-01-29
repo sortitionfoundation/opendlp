@@ -262,7 +262,7 @@ def _internal_load_gsheet(
                 session_factory=session_factory,
             )
         # always do this, as it gives a safe default
-        already_selected, a_s_report = select_data.load_already_selected(settings, features)
+        already_selected, a_s_report = select_data.load_already_selected(settings)
         if data_source.already_selected_tab_name:
             report.add_report(a_s_report)
             task_obj.update_state(
