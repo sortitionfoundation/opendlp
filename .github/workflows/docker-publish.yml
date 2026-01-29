@@ -10,6 +10,9 @@ on:
 
 jobs:
   check-and-publish:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     # Only run if all workflows succeeded and this is on main branch
     if: >

@@ -12,6 +12,9 @@ on:
 
 jobs:
   bdd-tests:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
 
     services:

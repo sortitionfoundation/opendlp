@@ -12,6 +12,9 @@ on:
 
 jobs:
   quality:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,6 +39,9 @@ jobs:
         run: just check-ci
 
   tests-and-type-check:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     # Service containers to run with `container-job`
     services:

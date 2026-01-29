@@ -12,6 +12,9 @@ on:
 
 jobs:
   build-and-scan:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out
