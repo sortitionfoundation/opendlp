@@ -110,6 +110,7 @@ def service_account_email_problem() -> str:
     return f"No problem, found client email: {client_email}"
 
 
+@cache
 def get_site_banner_config() -> tuple[str, str]:
     """
     Get site banner configuration from environment.
