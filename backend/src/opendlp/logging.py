@@ -14,6 +14,7 @@ if TYPE_CHECKING:
         import gunicorn.http
         import gunicorn.http.wsgi
     except ImportError:
+        # only type checking, no need to worry
         pass
 
 load_dotenv()

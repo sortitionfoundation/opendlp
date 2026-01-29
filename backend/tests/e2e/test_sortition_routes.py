@@ -66,7 +66,6 @@ class TestSortitionRoutes:
     ):
         """Test GET request with run_id for wrong assembly redirects."""
         # Create assembly and task for different assembly
-        wrong_assembly_id = uuid.uuid4()
         task_id = uuid.uuid4()
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -77,7 +76,6 @@ class TestSortitionRoutes:
                 question="What should we configure?",
                 first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
             )
-            wrong_assembly_id = assembly.id
             uow.flush()
 
             gsheet = AssemblyGSheet(
@@ -89,7 +87,7 @@ class TestSortitionRoutes:
             uow.assembly_gsheets.add(gsheet)
 
             record = SelectionRunRecord(
-                assembly_id=wrong_assembly_id,
+                assembly_id=assembly.id,
                 task_id=task_id,
                 task_type=SelectionTaskType.LOAD_GSHEET,
                 status=SelectionRunStatus.RUNNING,
@@ -496,7 +494,6 @@ class TestReplacementRoutes:
     ):
         """Test GET request with run_id for wrong assembly redirects."""
         # Create assembly and task for different assembly
-        wrong_assembly_id = uuid.uuid4()
         task_id = uuid.uuid4()
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -507,7 +504,6 @@ class TestReplacementRoutes:
                 question="What should we configure?",
                 first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
             )
-            wrong_assembly_id = assembly.id
             uow.flush()
 
             gsheet = AssemblyGSheet(
@@ -519,7 +515,7 @@ class TestReplacementRoutes:
             uow.assembly_gsheets.add(gsheet)
 
             record = SelectionRunRecord(
-                assembly_id=wrong_assembly_id,
+                assembly_id=assembly.id,
                 task_id=task_id,
                 task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
                 status=SelectionRunStatus.RUNNING,

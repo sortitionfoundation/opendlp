@@ -62,7 +62,7 @@ class TestCliUsersIntegration:
         # Create a user first
         user_email = "deactivate-test@example.com"
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            user = create_user(
+            create_user(
                 uow=uow,
                 email=user_email,
                 password="pass123oiua",
