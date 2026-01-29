@@ -25,7 +25,7 @@ class TestAssemblyGSheetCreateView:
 
         # URL field
         assert b"Google Spreadsheet URL" in response.data
-        assert b"docs.google.com" in response.data  # Placeholder
+        assert b'placeholder="https://docs.google.com/spreadsheets/d/' in response.data  # Placeholder
 
         # Team selection
         assert b"Team Configuration" in response.data

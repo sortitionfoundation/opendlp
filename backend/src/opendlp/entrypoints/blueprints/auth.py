@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import markdown
+from django.utils.http import url_has_allowed_host_and_scheme
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_babel import get_locale
@@ -40,6 +41,16 @@ from opendlp.translations import gettext as _
 auth_bp = Blueprint("auth", __name__)
 
 
+def get_safe_next_page(next_page: str | None, default: str = "") -> str:
+    """
+    Check if the next page link is safe, using the django function.
+
+    Safe means that the link is a relative or absolute link, but does not have a netloc or host.
+    """
+    next_page = next_page or ""
+    return next_page if url_has_allowed_host_and_scheme(next_page, allowed_hosts=None) else default
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login() -> ResponseReturnValue:
     """User login page."""
@@ -65,9 +76,9 @@ def login() -> ResponseReturnValue:
                     session["pending_2fa_timestamp"] = request.utcnow.timestamp() if hasattr(request, "utcnow") else 0
 
                     # Store next page if specified
-                    next_page = request.args.get("next")
-                    if next_page and next_page.startswith("/"):
-                        session["pending_2fa_next"] = next_page
+                    safe_next_page = get_safe_next_page(request.args.get("next"))
+                    if safe_next_page:
+                        session["pending_2fa_next"] = safe_next_page
 
                     return redirect(url_for("auth.verify_2fa"))
 
@@ -78,9 +89,7 @@ def login() -> ResponseReturnValue:
 
                 # Redirect to next page if specified, otherwise dashboard
                 next_page = request.args.get("next")
-                if next_page and next_page.startswith("/"):
-                    return redirect(next_page)
-                return redirect(url_for("main.dashboard"))
+                return redirect(get_safe_next_page(next_page, default=url_for("main.dashboard")))
 
         except InvalidCredentials:
             flash(_("Invalid email or password."), "error")
@@ -180,9 +189,7 @@ def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_c
         flash(_("Signed in successfully"), "success")
 
     # Redirect to next page or dashboard
-    if next_page and next_page.startswith("/"):
-        return redirect(next_page)
-    return redirect(url_for("main.dashboard"))
+    return redirect(get_safe_next_page(next_page, default=url_for("main.dashboard")))
 
 
 @auth_bp.route("/login/verify-2fa", methods=["GET", "POST"])
@@ -433,9 +440,9 @@ def login_google() -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
     # Store redirect URL in session for post-OAuth redirect
-    next_page = request.args.get("next")
-    if next_page and next_page.startswith("/"):
-        session["oauth_next"] = next_page
+    safe_next_page = get_safe_next_page(request.args.get("next"))
+    if safe_next_page:
+        session["oauth_next"] = safe_next_page
 
     # Redirect to Google OAuth - it has to be https, so do that
     redirect_uri = url_for("auth.google_callback", _external=True, _scheme="https")
@@ -493,9 +500,7 @@ def google_callback() -> ResponseReturnValue:
 
         # Redirect to next page or dashboard
         next_page = session.pop("oauth_next", None)
-        if next_page and next_page.startswith("/"):
-            return redirect(next_page)
-        return redirect(url_for("main.dashboard"))
+        return redirect(get_safe_next_page(next_page, default=url_for("main.dashboard")))
 
     except InvalidInvite as e:
         # User needs invite code - redirect to OAuth registration
@@ -537,9 +542,9 @@ def login_microsoft() -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
     # Store redirect URL in session for post-OAuth redirect
-    next_page = request.args.get("next")
-    if next_page and next_page.startswith("/"):
-        session["oauth_next"] = next_page
+    safe_next_page = get_safe_next_page(request.args.get("next"))
+    if safe_next_page:
+        session["oauth_next"] = safe_next_page
 
     # Redirect to Microsoft OAuth - it has to be https, so do that
     redirect_uri = url_for("auth.microsoft_callback", _external=True, _scheme="https")
@@ -598,9 +603,7 @@ def microsoft_callback() -> ResponseReturnValue:
 
         # Redirect to next page or dashboard
         next_page = session.pop("oauth_next", None)
-        if next_page and next_page.startswith("/"):
-            return redirect(next_page)
-        return redirect(url_for("main.dashboard"))
+        return redirect(get_safe_next_page(next_page, default=url_for("main.dashboard")))
 
     except InvalidInvite as e:
         # User needs invite code - redirect to OAuth registration
