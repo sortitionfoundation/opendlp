@@ -182,6 +182,8 @@ users = Table(
     Column("totp_secret_encrypted", String(255), nullable=True),
     Column("totp_enabled", Boolean, nullable=False, default=False),
     Column("totp_enabled_at", TZAwareDatetime(), nullable=True),
+    # Email confirmation field
+    Column("email_confirmed_at", TZAwareDatetime(), nullable=True),
     Index("ix_users_oauth_provider_id", "oauth_provider", "oauth_id"),
 )
 
@@ -232,6 +234,18 @@ user_invites = Table(
 # Password reset tokens table
 password_reset_tokens = Table(
     "password_reset_tokens",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("token", String(100), nullable=False, index=True, unique=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
+    Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
+    Column("used_at", TZAwareDatetime(), nullable=True),
+)
+
+# Email confirmation tokens table
+email_confirmation_tokens = Table(
+    "email_confirmation_tokens",
     metadata,
     Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
     Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),

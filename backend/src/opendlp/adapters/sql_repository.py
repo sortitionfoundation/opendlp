@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
@@ -22,6 +23,7 @@ from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, SelectionRu
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
     SelectionRunRecordRepository,
     TotpVerificationAttemptRepository,
@@ -587,6 +589,76 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
     def delete(self, item: PasswordResetToken) -> None:
         """Delete a token from the repository."""
         self.session.delete(item)
+
+
+class SqlAlchemyEmailConfirmationTokenRepository(SqlAlchemyRepository, EmailConfirmationTokenRepository):
+    """SQLAlchemy implementation of EmailConfirmationTokenRepository."""
+
+    def add(self, item: EmailConfirmationToken) -> None:
+        """Add a token to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> EmailConfirmationToken | None:
+        """Get a token by its ID."""
+        return self.session.query(EmailConfirmationToken).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[EmailConfirmationToken]:
+        """Get all tokens."""
+        return (
+            self.session.query(EmailConfirmationToken).order_by(orm.email_confirmation_tokens.c.created_at.desc()).all()
+        )
+
+    def get_by_token(self, token: str) -> EmailConfirmationToken | None:
+        """Get an email confirmation token by its token string."""
+        return self.session.query(EmailConfirmationToken).filter_by(token=token).first()
+
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
+        """Count email confirmation requests for a user since a given datetime."""
+        return (
+            self.session.query(EmailConfirmationToken)
+            .filter(
+                and_(
+                    orm.email_confirmation_tokens.c.user_id == user_id,
+                    orm.email_confirmation_tokens.c.created_at >= since,
+                )
+            )
+            .count()
+        )
+
+    def delete_old_tokens(self, before: datetime) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        tokens_to_delete = (
+            self.session.query(EmailConfirmationToken).filter(orm.email_confirmation_tokens.c.created_at < before).all()
+        )
+
+        count = len(tokens_to_delete)
+        for token in tokens_to_delete:
+            self.session.delete(token)
+
+        return count
+
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
+        now = datetime.now(UTC)
+        active_tokens = (
+            self.session.query(EmailConfirmationToken)
+            .filter(
+                and_(
+                    orm.email_confirmation_tokens.c.user_id == user_id,
+                    orm.email_confirmation_tokens.c.used_at.is_(None),
+                    orm.email_confirmation_tokens.c.expires_at > now,
+                )
+            )
+            .all()
+        )
+
+        count = 0
+        for token in active_tokens:
+            if token.is_valid():  # Double-check validity
+                token.use()
+                count += 1
+
+        return count
 
 
 class SqlAlchemyUserBackupCodeRepository(SqlAlchemyRepository, UserBackupCodeRepository):

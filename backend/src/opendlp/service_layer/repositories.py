@@ -6,9 +6,11 @@ from __future__ import annotations
 import abc
 import uuid
 from collections.abc import Iterable
+from datetime import datetime
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
@@ -249,12 +251,12 @@ class PasswordResetTokenRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_recent_requests(self, user_id: uuid.UUID, since: Any) -> int:
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
         """Count password reset requests for a user since a given datetime."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete_old_tokens(self, before: Any) -> int:
+    def delete_old_tokens(self, before: datetime) -> int:
         """Delete tokens created before a given datetime. Returns count deleted."""
         raise NotImplementedError
 
@@ -266,6 +268,30 @@ class PasswordResetTokenRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: PasswordResetToken) -> None:
         """Delete a token from the repository."""
+        raise NotImplementedError
+
+
+class EmailConfirmationTokenRepository(AbstractRepository):
+    """Repository interface for EmailConfirmationToken domain objects."""
+
+    @abc.abstractmethod
+    def get_by_token(self, token: str) -> EmailConfirmationToken | None:
+        """Get an email confirmation token by its token string."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
+        """Count email confirmation requests for a user since a given datetime."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_old_tokens(self, before: datetime) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
         raise NotImplementedError
 
 
@@ -301,6 +327,6 @@ class TotpVerificationAttemptRepository(AbstractRepository):
     """Repository interface for TotpVerificationAttempt domain objects."""
 
     @abc.abstractmethod
-    def get_attempts_since(self, user_id: uuid.UUID, since: Any) -> Iterable[TotpVerificationAttempt]:
+    def get_attempts_since(self, user_id: uuid.UUID, since: datetime) -> Iterable[TotpVerificationAttempt]:
         """Get all verification attempts for a user since a given datetime."""
         raise NotImplementedError

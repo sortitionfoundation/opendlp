@@ -26,6 +26,7 @@ class User:
         totp_secret_encrypted: str | None = None,
         totp_enabled: bool = False,
         totp_enabled_at: datetime | None = None,
+        email_confirmed_at: datetime | None = None,
     ):
         validate_email(email)
 
@@ -46,6 +47,7 @@ class User:
         self.totp_secret_encrypted = totp_secret_encrypted
         self.totp_enabled = totp_enabled
         self.totp_enabled_at = totp_enabled_at
+        self.email_confirmed_at = email_confirmed_at
         self.assembly_roles: list[UserAssemblyRole] = []
 
     # couple of things required for flask_login
@@ -148,6 +150,14 @@ class User:
         """Check if user requires 2FA verification (password users with 2FA enabled)."""
         return self.totp_enabled and not self.oauth_provider
 
+    def confirm_email(self) -> None:
+        """Mark email as confirmed."""
+        self.email_confirmed_at = datetime.now(UTC)
+
+    def is_email_confirmed(self) -> bool:
+        """Check if email is confirmed."""
+        return self.email_confirmed_at is not None
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, User):  # pragma: no cover
             return False
@@ -173,6 +183,7 @@ class User:
             totp_secret_encrypted=self.totp_secret_encrypted,
             totp_enabled=self.totp_enabled,
             totp_enabled_at=self.totp_enabled_at,
+            email_confirmed_at=self.email_confirmed_at,
         )
         detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user
