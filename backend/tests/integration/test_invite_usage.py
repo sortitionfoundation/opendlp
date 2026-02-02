@@ -17,7 +17,7 @@ class TestInviteUsage:
         """Test that an invite is properly marked as used after successful user registration."""
         # Create an admin user first to generate invites
         admin_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        admin_user = create_user(
+        admin_user, _ = create_user(
             uow=admin_uow,
             email="admin@test.com",
             password="secure_password123",
@@ -46,7 +46,7 @@ class TestInviteUsage:
 
         # Create a new user using the invite
         user_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        new_user = create_user(
+        new_user, _ = create_user(
             uow=user_uow,
             email="newuser@test.com",
             password="secure_password456",
@@ -74,7 +74,7 @@ class TestInviteUsage:
         """Test that an invite cannot be reused after being marked as used."""
         # Create an admin user first to generate invites
         admin_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        admin_user = create_user(
+        admin_user, _ = create_user(
             uow=admin_uow,
             email="admin2@test.com",
             password="secure_password123",

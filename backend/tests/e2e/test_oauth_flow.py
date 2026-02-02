@@ -39,7 +39,12 @@ def app(temp_env_vars):
 def valid_invite(postgres_session_factory):
     """Create a valid invite in the database."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin_user = create_user(uow, email="admin@example.com", global_role=GlobalRole.ADMIN, password="pass123=jvl")
+        admin_user, _ = create_user(
+            uow,
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password="pass123=jvl",  # pragma: allowlist secret
+        )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = UserInvite(
@@ -59,7 +64,7 @@ def valid_invite(postgres_session_factory):
 def existing_password_user(postgres_session_factory) -> User:
     """Create a user with password authentication only."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"password-user-{uuid.uuid4()}@example.com",
             password="SecureTestPass123!",  # pragma: allowlist secret
@@ -68,14 +73,20 @@ def existing_password_user(postgres_session_factory) -> User:
             global_role=GlobalRole.USER,
             accept_data_agreement=True,
         )
-        return user.create_detached_copy()
+
+    # Confirm email so user can log in
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user_obj = uow.users.get(user.id)
+        user_obj.confirm_email()
+        uow.commit()
+        return user_obj.create_detached_copy()
 
 
 @pytest.fixture
 def existing_oauth_user(postgres_session_factory) -> User:
     """Create a user with OAuth authentication only."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"oauth-user-{uuid.uuid4()}@example.com",
             oauth_provider="google",
@@ -92,7 +103,7 @@ def existing_oauth_user(postgres_session_factory) -> User:
 def existing_dual_auth_user(postgres_session_factory) -> User:
     """Create a user with both password and OAuth authentication."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"dual-user-{uuid.uuid4()}@example.com",
             password="SecureTestPass123!",  # pragma: allowlist secret
@@ -523,7 +534,7 @@ def mock_microsoft_oauth_token():
 def existing_microsoft_oauth_user(postgres_session_factory) -> User:
     """Create a user with Microsoft OAuth authentication only."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"ms-oauth-user-{uuid.uuid4()}@example.com",
             oauth_provider="microsoft",
@@ -540,7 +551,7 @@ def existing_microsoft_oauth_user(postgres_session_factory) -> User:
 def existing_google_oauth_user_for_replacement(postgres_session_factory) -> User:
     """Create a user with Google OAuth for testing provider replacement."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"google-for-replacement-{uuid.uuid4()}@example.com",
             oauth_provider="google",

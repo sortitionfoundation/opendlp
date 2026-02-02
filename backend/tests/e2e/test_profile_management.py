@@ -17,7 +17,7 @@ from tests.e2e.helpers import get_csrf_token
 def oauth_user(postgres_session_factory) -> User:
     """Create a test user with OAuth authentication."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email=f"oauth-{uuid.uuid4()}@example.com",
             first_name="OAuth",

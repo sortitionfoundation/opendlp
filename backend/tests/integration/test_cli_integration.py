@@ -62,7 +62,7 @@ class TestCliUsersIntegration:
         # Create a user first
         user_email = "deactivate-test@example.com"
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            create_user(
+            user, _ = create_user(
                 uow=uow,
                 email=user_email,
                 password="pass123oiua",
@@ -91,7 +91,7 @@ class TestCliUsersIntegration:
 
         # Create a user first
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            user = create_user(
+            user, _ = create_user(
                 uow=uow,
                 email=user_email,
                 password=original_password,
@@ -147,7 +147,9 @@ class TestCliInvitesIntegration:
         # Create an admin user and invite
         admin_email = "revoke-admin@example.com"
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
+            admin_user, _ = create_user(
+                uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
+            )
             uow.flush()  # make sqlalchemy commit enough to get a user ID
             invite = generate_invite(
                 uow=uow, created_by_user_id=admin_user.id, global_role=GlobalRole.USER, expires_in_hours=168
@@ -177,7 +179,9 @@ class TestCliInvitesIntegration:
         non_admin_email = "regular-user@example.com"
         # Create admin user and invite
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            admin_user = create_user(uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
+            admin_user, _ = create_user(
+                uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
+            )
 
             # Create non-admin user
             create_user(uow=uow, email=non_admin_email, password="pass123oiua", global_role=GlobalRole.USER)
@@ -206,7 +210,7 @@ class TestCliInvitesIntegration:
     def test_cleanup_expired_invites(self, sqlite_session_factory, cli_with_session_factory):
         """Test cleanup of expired invites."""
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
-            user = create_user(
+            user, _ = create_user(
                 uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
             )
 

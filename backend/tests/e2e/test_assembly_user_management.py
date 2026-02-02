@@ -18,39 +18,36 @@ def multiple_users(postgres_session_factory):
     """Create multiple users for search testing."""
     users = []
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        users.append(
-            create_user(
-                uow,
-                email="alice@example.com",
-                global_role=GlobalRole.USER,
-                password="SecurePass123!",  # pragma: allowlist secret
-                first_name="Alice",
-                last_name="Anderson",
-                accept_data_agreement=True,
-            )
+        user, _ = create_user(
+            uow,
+            email="alice@example.com",
+            global_role=GlobalRole.USER,
+            password="SecurePass123!",  # pragma: allowlist secret
+            first_name="Alice",
+            last_name="Anderson",
+            accept_data_agreement=True,
         )
-        users.append(
-            create_user(
-                uow,
-                email="bob@example.com",
-                global_role=GlobalRole.USER,
-                password="SecurePass123!",  # pragma: allowlist secret
-                first_name="Bob",
-                last_name="Builder",
-                accept_data_agreement=True,
-            )
+        users.append(user)
+        user, _ = create_user(
+            uow,
+            email="bob@example.com",
+            global_role=GlobalRole.USER,
+            password="SecurePass123!",  # pragma: allowlist secret
+            first_name="Bob",
+            last_name="Builder",
+            accept_data_agreement=True,
         )
-        users.append(
-            create_user(
-                uow,
-                email="charlie@example.com",
-                global_role=GlobalRole.USER,
-                password="SecurePass123!",  # pragma: allowlist secret
-                first_name="Charlie",
-                last_name="Chaplin",
-                accept_data_agreement=True,
-            )
+        users.append(user)
+        user, _ = create_user(
+            uow,
+            email="charlie@example.com",
+            global_role=GlobalRole.USER,
+            password="SecurePass123!",  # pragma: allowlist secret
+            first_name="Charlie",
+            last_name="Chaplin",
+            accept_data_agreement=True,
         )
+        users.append(user)
     return users
 
 
@@ -158,7 +155,7 @@ class TestAddUserToAssembly:
         """Test that regular users cannot add users to assemblies."""
         # Create another user to try to add
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            other_user = create_user(
+            other_user, _ = create_user(
                 uow,
                 email="other@example.com",
                 global_role=GlobalRole.USER,

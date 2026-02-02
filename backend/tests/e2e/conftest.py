@@ -30,7 +30,7 @@ def client(app):
 def admin_user(postgres_session_factory):
     """Create an admin user for testing."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin = create_user(
+        admin, _ = create_user(
             uow=uow,
             email="admin@example.com",
             password="adminpass123",  # pragma: allowlist secret
@@ -39,14 +39,20 @@ def admin_user(postgres_session_factory):
             global_role=GlobalRole.ADMIN,
             accept_data_agreement=True,
         )
-        return admin.create_detached_copy()
+
+    # Confirm email so user can log in
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user = uow.users.get(admin.id)
+        user.confirm_email()
+        uow.commit()
+        return user.create_detached_copy()
 
 
 @pytest.fixture
 def regular_user(postgres_session_factory):
     """Create a regular user for testing."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow=uow,
             email="user@example.com",
             password="userpass123",  # pragma: allowlist secret
@@ -55,7 +61,13 @@ def regular_user(postgres_session_factory):
             global_role=GlobalRole.USER,
             accept_data_agreement=True,
         )
-        return user.create_detached_copy()
+
+    # Confirm email so user can log in
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user_obj = uow.users.get(user.id)
+        user_obj.confirm_email()
+        uow.commit()
+        return user_obj.create_detached_copy()
 
 
 @pytest.fixture

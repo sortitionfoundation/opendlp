@@ -25,7 +25,7 @@ def test_user(postgres_session_factory, temp_env_vars):
     temp_env_vars(TOTP_ENCRYPTION_KEY=test_key)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = create_user(
+        user, _ = create_user(
             uow,
             email="testuser@example.com",
             password="SecurePassword123!",  # pragma: allowlist secret
@@ -33,7 +33,13 @@ def test_user(postgres_session_factory, temp_env_vars):
             last_name="User",
             global_role=GlobalRole.USER,
         )
-    return user
+
+    # Confirm email so user can log in
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user_obj = uow.users.get(user.id)
+        user_obj.confirm_email()
+        uow.commit()
+        return user_obj.create_detached_copy()
 
 
 @pytest.fixture
@@ -138,7 +144,7 @@ class Test2FALoginFlow:
         temp_env_vars(TOTP_ENCRYPTION_KEY=test_key)
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = create_user(
+            user, _ = create_user(
                 uow,
                 email="2fauser@example.com",
                 password="SecurePassword123!",  # pragma: allowlist secret
@@ -147,6 +153,12 @@ class Test2FALoginFlow:
                 global_role=GlobalRole.USER,
             )
             user_id = user.id
+
+        # Confirm email so user can log in
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user_obj = uow.users.get(user_id)
+            user_obj.confirm_email()
+            uow.commit()
 
         # Enable 2FA for the user
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -286,7 +298,7 @@ class Test2FAManagement:
 
         # Create user
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = create_user(
+            user, _ = create_user(
                 uow,
                 email="manageduser@example.com",
                 password="SecurePassword123!",  # pragma: allowlist secret
@@ -295,6 +307,12 @@ class Test2FAManagement:
                 global_role=GlobalRole.USER,
             )
             user_id = user.id
+
+        # Confirm email so user can log in
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user_obj = uow.users.get(user_id)
+            user_obj.confirm_email()
+            uow.commit()
 
         # Enable 2FA
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

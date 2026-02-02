@@ -17,14 +17,19 @@ from tests.e2e.helpers import get_csrf_token
 def admin_user(postgres_session_factory):
     """Create an admin user in the database."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin = create_user(
+        admin, _ = create_user(
             uow,
             email="admin@example.com",
             global_role=GlobalRole.ADMIN,
             password="adminpass123",  # pragma: allowlist secret
         )
+
+    # Confirm email so admin can log in
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user = uow.users.get(admin.id)
+        user.confirm_email()
         uow.commit()
-        return admin
+        return user.create_detached_copy()
 
 
 @pytest.fixture
@@ -35,7 +40,7 @@ def test_users(postgres_session_factory, admin_user):
     # Create regular users
     for i in range(5):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = create_user(
+            user, _ = create_user(
                 uow,
                 email=f"user{i}@example.com",
                 global_role=GlobalRole.USER,
@@ -48,7 +53,7 @@ def test_users(postgres_session_factory, admin_user):
 
     # Create an inactive user
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        inactive_user = create_user(
+        inactive_user, _ = create_user(
             uow,
             email="inactive@example.com",
             global_role=GlobalRole.USER,
@@ -62,7 +67,7 @@ def test_users(postgres_session_factory, admin_user):
 
     # Create a global organiser
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        organiser = create_user(
+        organiser, _ = create_user(
             uow,
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,

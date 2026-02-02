@@ -18,7 +18,12 @@ from tests.e2e.helpers import get_csrf_token
 def valid_invite(postgres_session_factory):
     """Create a valid invite in the database."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin_user = create_user(uow, email="admin@example.com", global_role=GlobalRole.ADMIN, password="pass123=jvl")
+        admin_user, _ = create_user(
+            uow,
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password="pass123=jvl",  # pragma: allowlist secret
+        )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = UserInvite(
@@ -38,7 +43,12 @@ def valid_invite(postgres_session_factory):
 def expired_invite(postgres_session_factory):
     """Create an expired invite in the database."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin_user = create_user(uow, email="admin@example.com", global_role=GlobalRole.ADMIN, password="pass123=jvl")
+        admin_user, _ = create_user(
+            uow,
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password="pass123=jvl",  # pragma: allowlist secret
+        )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = UserInvite(
@@ -82,12 +92,16 @@ class TestAuthenticationFlow:
         )
 
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        # After registration with password, user needs to confirm email before logging in
+        assert response.headers["Location"] == "/auth/login"
 
-        # Verify user is logged in (check session)
+        # Verify user is NOT logged in yet (email not confirmed)
         with client.session_transaction() as session:
-            assert "_user_id" in session
-            assert any("Registration successful" in f[1] for f in session["_flashes"])
+            assert "_user_id" not in session
+            # Should have a flash message about checking email
+            assert any(
+                "check your email" in f[1].lower() or "confirm" in f[1].lower() for f in session.get("_flashes", [])
+            )
 
     def test_register_with_expired_invite_fails(self, client: FlaskClient, expired_invite: UserInvite):
         """Test registration fails with expired invite."""
