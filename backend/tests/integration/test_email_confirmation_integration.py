@@ -197,9 +197,13 @@ class TestEmailConfirmationIntegration:
             )
 
         # Resend confirmation
+        from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
+
         email_adapter = MagicMock()
         email_adapter.send_email.return_value = True
-        resend_confirmation_email(uow, "test@example.com", email_adapter)
+        template_renderer = FakeTemplateRenderer()
+        url_generator = FakeURLGenerator()
+        resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
         # Check that a new token was created
         with uow:
@@ -270,14 +274,18 @@ class TestEmailConfirmationIntegration:
             )
 
         # Request 2 more times (total 3)
+        from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
+
         email_adapter = MagicMock()
         email_adapter.send_email.return_value = True
-        resend_confirmation_email(uow, "test@example.com", email_adapter)
-        resend_confirmation_email(uow, "test@example.com", email_adapter)
+        template_renderer = FakeTemplateRenderer()
+        url_generator = FakeURLGenerator()
+        resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
+        resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
         # 4th request should be rate limited
         with pytest.raises(RateLimitExceeded):
-            resend_confirmation_email(uow, "test@example.com", email_adapter)
+            resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
     def test_used_token_rejected(self, sqlite_session_factory):
         """Used tokens cannot be reused."""

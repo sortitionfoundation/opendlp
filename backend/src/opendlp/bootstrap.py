@@ -1,6 +1,7 @@
 import tempfile
 from pathlib import Path
 
+from flask import Flask
 from sortition_algorithms import adapters
 from sqlalchemy.orm import sessionmaker
 
@@ -8,6 +9,8 @@ from opendlp import config
 from opendlp.adapters import database
 from opendlp.adapters.email import ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.adapters.template_renderer import FlaskTemplateRenderer, TemplateRenderer
+from opendlp.adapters.url_generator import FlaskURLGenerator, URLGenerator
 from opendlp.config import SMTPEmailCfg, get_config, get_db_uri
 from opendlp.service_layer import unit_of_work
 
@@ -98,3 +101,27 @@ def get_email_adapter() -> EmailAdapter:
         )
 
     raise ValueError(f"Unknown email adapter type: '{adapter_type}'. Valid options are: 'console', 'smtp'")
+
+
+def get_template_renderer(app: Flask) -> TemplateRenderer:
+    """Get the template renderer for the Flask application.
+
+    Args:
+        app: Flask application instance
+
+    Returns:
+        TemplateRenderer instance (FlaskTemplateRenderer)
+    """
+    return FlaskTemplateRenderer(app)
+
+
+def get_url_generator(app: Flask) -> URLGenerator:
+    """Get the URL generator for the Flask application.
+
+    Args:
+        app: Flask application instance
+
+    Returns:
+        URLGenerator instance (FlaskURLGenerator)
+    """
+    return FlaskURLGenerator(app)

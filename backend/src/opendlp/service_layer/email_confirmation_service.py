@@ -5,9 +5,9 @@ import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from flask import render_template, url_for
-
 from opendlp.adapters.email import EmailAdapter
+from opendlp.adapters.template_renderer import TemplateRenderer
+from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User
 
@@ -86,6 +86,8 @@ def check_rate_limit(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> None:
 
 def send_confirmation_email(
     email_adapter: EmailAdapter,
+    template_renderer: TemplateRenderer,
+    url_generator: URLGenerator,
     user: User,
     confirmation_token: str,
     expires_in_hours: int = DEFAULT_TOKEN_EXPIRY_HOURS,
@@ -95,6 +97,8 @@ def send_confirmation_email(
 
     Args:
         email_adapter: Email adapter for sending emails
+        template_renderer: Template renderer for rendering email templates
+        url_generator: URL generator for creating confirmation URL
         user: User to send email to
         confirmation_token: Email confirmation token string
         expires_in_hours: Hours until token expires (for email message)
@@ -105,7 +109,7 @@ def send_confirmation_email(
     try:
         # Generate confirmation URL
         # Using _external=True to get full URL with domain
-        confirmation_url = url_for(
+        confirmation_url = url_generator.generate_url(
             "auth.confirm_email",
             token=confirmation_token,
             _external=True,
@@ -120,8 +124,8 @@ def send_confirmation_email(
         }
 
         # Render email templates
-        text_body = render_template("emails/email_confirmation.txt", **context)
-        html_body = render_template("emails/email_confirmation.html", **context)
+        text_body = template_renderer.render_template("emails/email_confirmation.txt", **context)
+        html_body = template_renderer.render_template("emails/email_confirmation.html", **context)
 
         # Send email
         success = email_adapter.send_email(
@@ -259,6 +263,8 @@ def resend_confirmation_email(
     uow: AbstractUnitOfWork,
     email: str,
     email_adapter: EmailAdapter,
+    template_renderer: TemplateRenderer,
+    url_generator: URLGenerator,
 ) -> bool:
     """
     Request resend of confirmation email.
@@ -271,6 +277,8 @@ def resend_confirmation_email(
         uow: Unit of Work for database operations
         email: Email address requesting confirmation resend
         email_adapter: Email adapter for sending emails
+        template_renderer: Template renderer for rendering email templates
+        url_generator: URL generator for creating confirmation URL
 
     Returns:
         Always returns True (anti-enumeration)
@@ -303,7 +311,7 @@ def resend_confirmation_email(
         uow.commit()
 
         # Send confirmation email
-        send_confirmation_email(email_adapter, user, token.token)
+        send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
 
         return True
 

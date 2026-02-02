@@ -5,9 +5,9 @@ import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from flask import render_template, url_for
-
 from opendlp.adapters.email import EmailAdapter
+from opendlp.adapters.template_renderer import TemplateRenderer
+from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.users import User
 
@@ -267,6 +267,8 @@ def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
 
 def send_password_reset_email(
     email_adapter: EmailAdapter,
+    template_renderer: TemplateRenderer,
+    url_generator: URLGenerator,
     user: User,
     reset_token: str,
     expires_in_hours: int = DEFAULT_TOKEN_EXPIRY_HOURS,
@@ -276,6 +278,8 @@ def send_password_reset_email(
 
     Args:
         email_adapter: Email adapter for sending emails
+        template_renderer: Template renderer for rendering email templates
+        url_generator: URL generator for creating reset URL
         user: User to send email to
         reset_token: Password reset token string
         expires_in_hours: Hours until token expires (for email message)
@@ -286,7 +290,7 @@ def send_password_reset_email(
     try:
         # Generate reset URL
         # Using _external=True to get full URL with domain
-        reset_url = url_for(
+        reset_url = url_generator.generate_url(
             "auth.reset_password",
             token=reset_token,
             _external=True,
@@ -301,8 +305,8 @@ def send_password_reset_email(
         }
 
         # Render email templates
-        text_body = render_template("emails/password_reset.txt", **context)
-        html_body = render_template("emails/password_reset.html", **context)
+        text_body = template_renderer.render_template("emails/password_reset.txt", **context)
+        html_body = template_renderer.render_template("emails/password_reset.html", **context)
 
         # Send email
         success = email_adapter.send_email(

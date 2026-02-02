@@ -13,7 +13,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
-from opendlp.bootstrap import get_email_adapter
+from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
@@ -333,7 +333,9 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 
                 # If password user, send confirmation email
                 email_adapter = get_email_adapter()
-                send_confirmation_email(email_adapter, user, token.token)
+                template_renderer = get_template_renderer(current_app)
+                url_generator = get_url_generator(current_app)
+                send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
                 flash(
                     _("Registration successful! Please check your email to confirm your account."),
                     "info",
@@ -380,9 +382,11 @@ def resend_confirmation() -> ResponseReturnValue:
         try:
             uow = bootstrap.bootstrap()
             email_adapter = get_email_adapter()
+            template_renderer = get_template_renderer(current_app)
+            url_generator = get_url_generator(current_app)
 
             # Service layer handles token creation and email sending
-            resend_confirmation_email(uow, email, email_adapter)
+            resend_confirmation_email(uow, email, email_adapter, template_renderer, url_generator)
 
             # Always show success (anti-enumeration)
             flash(
@@ -445,8 +449,12 @@ def forgot_password() -> ResponseReturnValue:
                         if tokens_list:
                             # Send the email
                             email_adapter = get_email_adapter()
+                            template_renderer = get_template_renderer(current_app)
+                            url_generator = get_url_generator(current_app)
                             send_password_reset_email(
                                 email_adapter=email_adapter,
+                                template_renderer=template_renderer,
+                                url_generator=url_generator,
                                 user=user,
                                 reset_token=tokens_list[0].token,
                             )
