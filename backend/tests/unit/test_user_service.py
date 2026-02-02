@@ -140,7 +140,12 @@ class TestAuthenticateUser:
         """Test successful authentication with email."""
         uow = FakeUnitOfWork()
         password_hash = hash_password("testpass")
-        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash=password_hash)
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash=password_hash,
+            email_confirmed_at=datetime.now(UTC),
+        )
         uow.users.add(user)
 
         authenticated_user = user_service.authenticate_user(uow=uow, email="test@example.com", password="testpass")

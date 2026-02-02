@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
@@ -16,6 +17,7 @@ from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
+    EmailConfirmationTokenRepository,
     SelectionRunRecordRepository,
     TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
@@ -392,6 +394,41 @@ class FakeTotpVerificationAttemptRepository(FakeRepository, TotpVerificationAtte
         return user_attempts
 
 
+class FakeEmailConfirmationTokenRepository(FakeRepository, EmailConfirmationTokenRepository):
+    """Fake implementation of EmailConfirmationTokenRepository."""
+
+    def get_by_token(self, token: str) -> EmailConfirmationToken | None:
+        """Get an email confirmation token by its token string."""
+        for item in self._items:
+            if item.token == token:
+                return item
+        return None
+
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
+        """Count email confirmation requests for a user since a given datetime."""
+        count = 0
+        for item in self._items:
+            if item.user_id == user_id and item.created_at >= since:
+                count += 1
+        return count
+
+    def delete_old_tokens(self, before: datetime) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        to_delete = [item for item in self._items if item.created_at < before]
+        for item in to_delete:
+            self._items.remove(item)
+        return len(to_delete)
+
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
+        count = 0
+        for item in self._items:
+            if item.user_id == user_id and item.is_valid():
+                item.use()
+                count += 1
+        return count
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -405,6 +442,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.user_backup_codes = self.fake_user_backup_codes = FakeUserBackupCodeRepository()
         self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
         self.totp_attempts = self.fake_totp_attempts = FakeTotpVerificationAttemptRepository()
+        self.email_confirmation_tokens = self.fake_email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -430,6 +468,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_user_backup_codes._items.clear()
         self.fake_two_factor_audit_logs._items.clear()
         self.fake_totp_attempts._items.clear()
+        self.fake_email_confirmation_tokens._items.clear()
         self.committed = False
 
 
