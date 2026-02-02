@@ -296,7 +296,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                 assert form.email.data is not None
                 assert form.password.data is not None
                 assert form.invite_code.data is not None
-                user = create_user(
+                user, token = create_user(
                     uow=uow,
                     email=form.email.data,
                     password=form.password.data,

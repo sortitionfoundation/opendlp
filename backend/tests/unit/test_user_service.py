@@ -39,7 +39,7 @@ class TestCreateUser:
         )
         uow.user_invites.add(invite)
 
-        user = user_service.create_user(
+        user, token = user_service.create_user(
             uow=uow,
             email="test@example.com",
             password="StrongPass123",
@@ -54,6 +54,7 @@ class TestCreateUser:
         assert user.global_role == GlobalRole.USER
         assert user.password_hash is not None
         assert user.oauth_provider is None
+        assert token is not None  # Password users should get a confirmation token
         assert len(uow.users.all()) == 1
         assert uow.committed
 
@@ -68,7 +69,7 @@ class TestCreateUser:
         )
         uow.user_invites.add(invite)
 
-        user = user_service.create_user(
+        user, token = user_service.create_user(
             uow=uow,
             email="test@example.com",
             first_name="OAuth",
@@ -85,6 +86,8 @@ class TestCreateUser:
         assert user.password_hash is None
         assert user.oauth_provider == "google"
         assert user.oauth_id == "google123"
+        assert token is None  # OAuth users should not get a confirmation token
+        assert user.email_confirmed_at is not None  # OAuth users are auto-confirmed
 
     def test_create_user_email_already_exists(self):
         """Test user creation fails when email exists."""

@@ -12,6 +12,7 @@ from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
+    SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyPasswordResetTokenRepository,
     SqlAlchemySelectionRunRecordRepository,
     SqlAlchemyTotpVerificationAttemptRepository,
@@ -24,6 +25,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
     SelectionRunRecordRepository,
     TotpVerificationAttemptRepository,
@@ -45,6 +47,7 @@ class AbstractUnitOfWork(abc.ABC):
     user_assembly_roles: UserAssemblyRoleRepository
     selection_run_records: SelectionRunRecordRepository
     password_reset_tokens: PasswordResetTokenRepository
+    email_confirmation_tokens: EmailConfirmationTokenRepository
     user_backup_codes: UserBackupCodeRepository
     two_factor_audit_logs: TwoFactorAuditLogRepository
     totp_attempts: TotpVerificationAttemptRepository
@@ -100,6 +103,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
         self.selection_run_records = SqlAlchemySelectionRunRecordRepository(self.session)
         self.password_reset_tokens = SqlAlchemyPasswordResetTokenRepository(self.session)
+        self.email_confirmation_tokens = SqlAlchemyEmailConfirmationTokenRepository(self.session)
         self.user_backup_codes = SqlAlchemyUserBackupCodeRepository(self.session)
         self.two_factor_audit_logs = SqlAlchemyTwoFactorAuditLogRepository(self.session)
         self.totp_attempts = SqlAlchemyTotpVerificationAttemptRepository(self.session)

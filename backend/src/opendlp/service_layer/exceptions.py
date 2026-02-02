@@ -84,6 +84,25 @@ class InvalidResetToken(ServiceLayerError):
         self.reason = reason
 
 
+class EmailNotConfirmed(ServiceLayerError):
+    """Raised when user tries to login without confirming email."""
+
+    def __init__(self) -> None:
+        super().__init__(_("Please confirm your email address before logging in."))
+
+
+class InvalidConfirmationToken(ServiceLayerError):
+    """Raised when email confirmation token is invalid, expired, or already used."""
+
+    def __init__(self, reason: str = "") -> None:
+        if reason:
+            message = _("Invalid or expired confirmation link: %(reason)s", reason=reason)
+        else:
+            message = _("Invalid or expired confirmation link")
+        super().__init__(message)
+        self.reason = reason
+
+
 class RateLimitExceeded(ServiceLayerError):
     """Raised when a user has exceeded rate limits for an operation."""
 

@@ -295,6 +295,7 @@ def send_password_reset_email(
         # Prepare template context
         context = {
             "user_name": user.display_name if user.first_name or user.last_name else None,
+            "email_address": user.email,
             "reset_url": reset_url,
             "expiry_hours": expires_in_hours,
         }

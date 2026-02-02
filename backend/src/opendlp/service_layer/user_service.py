@@ -2,14 +2,18 @@
 ABOUTME: Handles user creation, authentication, role assignment, and invite validation"""
 
 import uuid
+from datetime import UTC, datetime
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
+from .email_confirmation_service import create_confirmation_token
 from .exceptions import (
     AssemblyNotFoundError,
     CannotRemoveLastAuthMethod,
+    EmailNotConfirmed,
     InsufficientPermissions,
     InvalidCredentials,
     InvalidInvite,
@@ -36,7 +40,7 @@ def create_user(
     global_role: GlobalRole | None = None,
     is_active: bool = True,
     accept_data_agreement: bool = False,
-) -> User:
+) -> tuple[User, EmailConfirmationToken | None]:
     """
     Create a new user with proper validation.
 
@@ -53,7 +57,8 @@ def create_user(
         accept_data_agreement: whether user has accepted data agreement
 
     Returns:
-        Created User instance
+        Tuple of (User instance, EmailConfirmationToken or None)
+        Token is None for OAuth users (who are auto-confirmed)
 
     Raises:
         UserAlreadyExists: If email already exists
@@ -88,6 +93,9 @@ def create_user(
         assert isinstance(user_role, GlobalRole)
 
         # Create the user
+        # OAuth users are auto-confirmed
+        email_confirmed_at = datetime.now(UTC) if oauth_provider else None
+
         user = User(
             email=email,
             global_role=user_role,
@@ -97,6 +105,7 @@ def create_user(
             oauth_provider=oauth_provider,
             oauth_id=oauth_id,
             is_active=is_active,
+            email_confirmed_at=email_confirmed_at,
         )
 
         # Mark data agreement as accepted if provided
@@ -109,9 +118,15 @@ def create_user(
         if invite_code:
             use_invite(uow, invite_code, user.id)
 
+        # Create confirmation token for password users only
+        token = None
+        if password and not oauth_provider:
+            token = create_confirmation_token(uow, user.id)
+
         detached_user = user.create_detached_copy()
+        detached_token = token.create_detached_copy() if token else None
         uow.commit()
-        return detached_user
+        return detached_user, detached_token
 
 
 def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> User:
@@ -128,6 +143,7 @@ def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> Use
 
     Raises:
         InvalidCredentials: If authentication fails
+        EmailNotConfirmed: If email is not confirmed
     """
     with uow:
         user = uow.users.get_by_email(email)
@@ -137,6 +153,10 @@ def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> Use
 
         if not user.password_hash or not verify_password(password, user.password_hash):
             raise InvalidCredentials()
+
+        # Check email confirmation for password users
+        if not user.email_confirmed_at:
+            raise EmailNotConfirmed()
 
         return user.create_detached_copy()
 
@@ -323,8 +343,10 @@ def find_or_create_oauth_user(
         # Check for existing user with same email (account linking)
         existing_user = uow.users.get_by_email(email)
         if existing_user:
-            # Link OAuth to existing account
+            # Link OAuth to existing account and auto-confirm email
             existing_user.add_oauth_credentials(provider, oauth_id)
+            if not existing_user.email_confirmed_at:
+                existing_user.confirm_email()
             detached_user = existing_user.create_detached_copy()
             uow.commit()
             return detached_user, False
@@ -333,7 +355,7 @@ def find_or_create_oauth_user(
         if not invite_code:
             raise InvalidInvite(reason="Invite code required for new user registration")
 
-        user = create_user(
+        user, _token = create_user(
             uow=uow,
             email=email,
             first_name=first_name,
@@ -343,6 +365,7 @@ def find_or_create_oauth_user(
             invite_code=invite_code,
             accept_data_agreement=accept_data_agreement,
         )
+        # Token will be None for OAuth users (they're auto-confirmed)
         return user, True
 
 

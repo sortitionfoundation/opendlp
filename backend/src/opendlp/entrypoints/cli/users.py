@@ -35,7 +35,8 @@ def add_user(
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
         with uow:
-            user = create_user(
+            # create_user now returns (user, token) tuple
+            user, _token = create_user(
                 uow=uow,
                 email=email,
                 password=password,
