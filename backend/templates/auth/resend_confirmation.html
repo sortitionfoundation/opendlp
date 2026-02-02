@@ -12,11 +12,22 @@
             </p>
 
             <form method="POST" novalidate>
-                <div class="govuk-form-group">
-                    <label class="govuk-label govuk-label--m" for="email">
-                        {{ _('Email address') }}
-                    </label>
-                    <input class="govuk-input" id="email" name="email" type="email" autocomplete="email" required>
+                {{ form.hidden_tag() }}
+
+                <div class="govuk-form-group{% if form.email.errors %} govuk-form-group--error{% endif %}">
+                    {{ form.email.label(class="govuk-label govuk-label--m") }}
+                    {% if form.email.description %}
+                        <div id="email-hint" class="govuk-hint">{{ form.email.description }}</div>
+                    {% endif %}
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <p id="email-error" class="govuk-error-message">
+                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                    {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else ""),
+                    aria_describedby=("email-hint" if form.email.description else "") + (" email-error" if form.email.errors else "")) }}
                 </div>
 
                 <button type="submit" class="govuk-button" data-module="govuk-button">

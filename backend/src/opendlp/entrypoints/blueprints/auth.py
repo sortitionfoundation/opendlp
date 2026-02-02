@@ -17,7 +17,13 @@ from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.extensions import oauth
-from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
+from opendlp.entrypoints.forms import (
+    LoginForm,
+    PasswordResetForm,
+    PasswordResetRequestForm,
+    RegistrationForm,
+    ResendConfirmationForm,
+)
 from opendlp.service_layer import totp_service
 from opendlp.service_layer.email_confirmation_service import (
     confirm_email_with_token,
@@ -380,16 +386,18 @@ def confirm_email(token: str) -> ResponseReturnValue:
 @auth_bp.route("/resend-confirmation", methods=["GET", "POST"])
 def resend_confirmation() -> ResponseReturnValue:
     """Resend confirmation email."""
-    if request.method == "POST":
-        email = request.form.get("email", "")
+    form = ResendConfirmationForm()
+
+    if form.validate_on_submit():
         try:
+            assert form.email.data is not None
             uow = bootstrap.bootstrap()
             email_adapter = get_email_adapter()
             template_renderer = get_template_renderer(current_app)
             url_generator = get_url_generator(current_app)
 
             # Service layer handles token creation and email sending
-            resend_confirmation_email(uow, email, email_adapter, template_renderer, url_generator)
+            resend_confirmation_email(uow, form.email.data, email_adapter, template_renderer, url_generator)
 
             # Always show success (anti-enumeration)
             flash(
@@ -404,7 +412,7 @@ def resend_confirmation() -> ResponseReturnValue:
             current_app.logger.error(f"Resend confirmation error: {e}")
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/resend_confirmation.html")
+    return render_template("auth/resend_confirmation.html", form=form)
 
 
 @auth_bp.route("/user-data-agreement")

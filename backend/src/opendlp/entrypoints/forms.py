@@ -173,6 +173,17 @@ class PasswordResetRequestForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class ResendConfirmationForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Resend confirmation email form."""
+
+    email = EmailField(
+        _l("Email address"),
+        validators=[DataRequired(), DomainEmailValidator()],
+        description=_l("Enter your email address and we will send you a new confirmation link"),
+        render_kw={"autocomplete": "email"},
+    )
+
+
 class PasswordResetForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Password reset form with new password."""
 
