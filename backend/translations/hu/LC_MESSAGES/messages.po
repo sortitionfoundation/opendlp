@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-16 14:53+0000\n"
+"POT-Creation-Date: 2026-02-02 15:56+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -62,7 +62,8 @@ msgid "Number cannot be negative"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:95 src/opendlp/entrypoints/forms.py:129
-#: src/opendlp/entrypoints/forms.py:169 templates/profile/view.html:10
+#: src/opendlp/entrypoints/forms.py:169
+#: templates/auth/resend_confirmation.html:17 templates/profile/view.html:10
 msgid "Email address"
 msgstr "Email cím"
 
@@ -412,189 +413,287 @@ msgstr "Vezetéknév"
 msgid "Current Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:96
-#: src/opendlp/entrypoints/blueprints/admin.py:122
-#: src/opendlp/entrypoints/blueprints/admin.py:187
-#: src/opendlp/entrypoints/blueprints/admin.py:213
-#: src/opendlp/entrypoints/blueprints/admin.py:297
+#: src/opendlp/entrypoints/blueprints/admin.py:98
+#: src/opendlp/entrypoints/blueprints/admin.py:124
+#: src/opendlp/entrypoints/blueprints/admin.py:189
+#: src/opendlp/entrypoints/blueprints/admin.py:261
+#: src/opendlp/entrypoints/blueprints/admin.py:287
+#: src/opendlp/entrypoints/blueprints/admin.py:371
 #, fuzzy
 msgid "You don't have permission to view this page"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:100
+#: src/opendlp/entrypoints/blueprints/admin.py:102
 #, fuzzy
 msgid "An error occurred while loading the user list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:118
-#: src/opendlp/entrypoints/blueprints/admin.py:166
-#: src/opendlp/entrypoints/blueprints/admin.py:183
+#: src/opendlp/entrypoints/blueprints/admin.py:120
+#: src/opendlp/entrypoints/blueprints/admin.py:168
+#: src/opendlp/entrypoints/blueprints/admin.py:185
+#: src/opendlp/entrypoints/blueprints/admin.py:216
+#: src/opendlp/entrypoints/blueprints/admin.py:257
+#: src/opendlp/service_layer/two_factor_service.py:48
+#: src/opendlp/service_layer/two_factor_service.py:94
+#: src/opendlp/service_layer/two_factor_service.py:152
+#: src/opendlp/service_layer/two_factor_service.py:203
+#: src/opendlp/service_layer/two_factor_service.py:251
+#: src/opendlp/service_layer/two_factor_service.py:296
+#: src/opendlp/service_layer/two_factor_service.py:321
 #, fuzzy
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:126
+#: src/opendlp/entrypoints/blueprints/admin.py:128
 #, fuzzy
 msgid "An error occurred while loading the user details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:159
+#: src/opendlp/entrypoints/blueprints/admin.py:161
 #, fuzzy, python-format
 msgid "User '%(email)s' updated successfully"
 msgstr "A '%(email)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:170
-#: src/opendlp/entrypoints/blueprints/admin.py:265
-#: src/opendlp/entrypoints/blueprints/admin.py:324
+#: src/opendlp/entrypoints/blueprints/admin.py:172
+#: src/opendlp/entrypoints/blueprints/admin.py:220
+#: src/opendlp/entrypoints/blueprints/admin.py:339
+#: src/opendlp/entrypoints/blueprints/admin.py:398
 #, fuzzy
 msgid "You don't have permission to perform this action"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:177
+#: src/opendlp/entrypoints/blueprints/admin.py:179
 #, fuzzy
 msgid "An error occurred while updating the user"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:191
+#: src/opendlp/entrypoints/blueprints/admin.py:193
 #, fuzzy
 msgid "An error occurred while loading the edit page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:217
+#: src/opendlp/entrypoints/blueprints/admin.py:207
+msgid "Two-factor authentication has been disabled for this user"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:224
+#, fuzzy
+msgid "An error occurred while disabling two-factor authentication"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/admin.py:265
+#, fuzzy
+msgid "An error occurred while loading the audit log"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/admin.py:291
 #, fuzzy
 msgid "An error occurred while loading the invite list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:247
+#: src/opendlp/entrypoints/blueprints/admin.py:321
 #, python-format
 msgid "Invite created successfully. Code: %(code)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:254
+#: src/opendlp/entrypoints/blueprints/admin.py:328
 msgid "Email sending not yet implemented. Please share the invite code manually."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:262
-#: src/opendlp/entrypoints/blueprints/admin.py:269
+#: src/opendlp/entrypoints/blueprints/admin.py:336
+#: src/opendlp/entrypoints/blueprints/admin.py:343
 #, fuzzy
 msgid "An error occurred while creating the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:275
+#: src/opendlp/entrypoints/blueprints/admin.py:349
 #, fuzzy
 msgid "An error occurred while loading the page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:293
-#: src/opendlp/entrypoints/blueprints/admin.py:320
+#: src/opendlp/entrypoints/blueprints/admin.py:367
+#: src/opendlp/entrypoints/blueprints/admin.py:394
 #, fuzzy
 msgid "Invite not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:301
+#: src/opendlp/entrypoints/blueprints/admin.py:375
 #, fuzzy
 msgid "An error occurred while loading the invite details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:315
+#: src/opendlp/entrypoints/blueprints/admin.py:389
 #, python-format
 msgid "Invite '%(code)s' has been revoked"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:328
+#: src/opendlp/entrypoints/blueprints/admin.py:402
 #, fuzzy
 msgid "An error occurred while revoking the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:343
+#: src/opendlp/entrypoints/blueprints/admin.py:417
 #, fuzzy
 msgid "No expired invites to clean up"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:345
+#: src/opendlp/entrypoints/blueprints/admin.py:419
 #, fuzzy
 msgid "Cleaned up 1 expired invite"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:347
+#: src/opendlp/entrypoints/blueprints/admin.py:421
 #, python-format
 msgid "Cleaned up %(count)s expired invites"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:353
+#: src/opendlp/entrypoints/blueprints/admin.py:427
 #, fuzzy
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:62
-msgid "Invalid email or password."
-msgstr "Érvénytelen email cím vagy jelszó."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:65
-msgid "An error occurred during login. Please try again."
-msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:75
-msgid "You have been logged out."
-msgstr "Kijelentkeztél."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:112
-msgid "Registration successful! Welcome to OpenDLP."
-msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:120
-#: src/opendlp/entrypoints/blueprints/auth.py:227
-#: src/opendlp/entrypoints/blueprints/profile.py:334
-#, python-format
-msgid "Password is too weak: %(error)s"
-msgstr "A jelszó túl gyenge: %(error)s"
-
-#: src/opendlp/entrypoints/blueprints/auth.py:123
-msgid "An error occurred during registration. Please try again."
-msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:181
-msgid "If an account exists with this email, a password reset link has been sent."
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/auth.py:190
-#: src/opendlp/entrypoints/blueprints/auth.py:230
-#, fuzzy
-msgid "An error occurred. Please try again."
-msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:220
-msgid "Your password has been reset successfully. You can now log in."
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/auth.py:273
-#: src/opendlp/entrypoints/blueprints/profile.py:152
-msgid "Failed to get user information from Google"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/auth.py:298
-#: src/opendlp/entrypoints/blueprints/auth.py:402
-#, fuzzy
-msgid "Account created successfully! Welcome to OpenDLP."
-msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
-
-#: src/opendlp/entrypoints/blueprints/auth.py:300
-#: src/opendlp/entrypoints/blueprints/auth.py:404
+#: src/opendlp/entrypoints/blueprints/auth.py:95
+#: src/opendlp/entrypoints/blueprints/auth.py:208
+#: src/opendlp/entrypoints/blueprints/auth.py:575
+#: src/opendlp/entrypoints/blueprints/auth.py:678
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:314
+#: src/opendlp/entrypoints/blueprints/auth.py:102
+msgid "Invalid email or password."
+msgstr "Érvénytelen email cím vagy jelszó."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:105
+msgid ""
+"Please confirm your email address before logging in. Check your inbox for"
+" the confirmation link."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:110
+#, python-format
+msgid "Didn't receive the email? <a href=\"%(url)s\">Resend confirmation</a>"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:117
+msgid "An error occurred during login. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:130
+msgid "No pending two-factor authentication. Please log in first."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:143
+msgid "Two-factor authentication session expired. Please log in again."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:150
+msgid "Invalid session. Please log in again."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:202
+#, python-format
+msgid ""
+"Backup code used successfully. You have %(remaining)s backup codes "
+"remaining."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:228
+msgid "Please enter a verification code"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:240
+#: src/opendlp/entrypoints/blueprints/auth.py:268
+msgid ""
+"Too many failed attempts. Please try again in 15 minutes or use a backup "
+"code."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:249
+msgid "Two-factor authentication is not enabled for this account."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:263
+#, python-format
+msgid "Invalid verification code. %(attempts)s attempts remaining."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:281
+#, fuzzy
+msgid "An error occurred during verification. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:293
+msgid "You have been logged out."
+msgstr "Kijelentkeztél."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:331
+msgid "Registration successful! Welcome to OpenDLP."
+msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:338
+msgid "Registration successful! Please check your email to confirm your account."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:348
+#: src/opendlp/entrypoints/blueprints/auth.py:502
+#: src/opendlp/entrypoints/blueprints/profile.py:310
+#, python-format
+msgid "Password is too weak: %(error)s"
+msgstr "A jelszó túl gyenge: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/auth.py:351
+msgid "An error occurred during registration. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:362
+msgid "Email confirmed successfully! You can now log in."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:371
+#: src/opendlp/entrypoints/blueprints/auth.py:398
+#: src/opendlp/entrypoints/blueprints/auth.py:465
+#: src/opendlp/entrypoints/blueprints/auth.py:505
+#, fuzzy
+msgid "An error occurred. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:389
+msgid ""
+"If that email is registered and unconfirmed, a confirmation link has been"
+" sent."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:456
+msgid "If an account exists with this email, a password reset link has been sent."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:495
+msgid "Your password has been reset successfully. You can now log in."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:548
+#: src/opendlp/entrypoints/blueprints/profile.py:149
+msgid "Failed to get user information from Google"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:573
+#: src/opendlp/entrypoints/blueprints/auth.py:676
+#, fuzzy
+msgid "Account created successfully! Welcome to OpenDLP."
+msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
+
+#: src/opendlp/entrypoints/blueprints/auth.py:587
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:377
-#: src/opendlp/entrypoints/blueprints/profile.py:220
+#: src/opendlp/entrypoints/blueprints/auth.py:651
+#: src/opendlp/entrypoints/blueprints/profile.py:210
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:418
+#: src/opendlp/entrypoints/blueprints/auth.py:690
 #, fuzzy
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
@@ -865,100 +964,152 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:58
+#: src/opendlp/entrypoints/blueprints/profile.py:57
 #, fuzzy
 msgid "Profile updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:63
+#: src/opendlp/entrypoints/blueprints/profile.py:62
 #, fuzzy
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:74
+#: src/opendlp/entrypoints/blueprints/profile.py:73
 msgid "You need to set a password first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:94
+#: src/opendlp/entrypoints/blueprints/profile.py:93
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:98
+#: src/opendlp/entrypoints/blueprints/profile.py:97
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:100
+#: src/opendlp/entrypoints/blueprints/profile.py:99
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:103
+#: src/opendlp/entrypoints/blueprints/profile.py:102
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:137
-#: src/opendlp/entrypoints/blueprints/profile.py:205
+#: src/opendlp/entrypoints/blueprints/profile.py:134
+#: src/opendlp/entrypoints/blueprints/profile.py:194
 msgid "Invalid OAuth linking request"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:166
+#: src/opendlp/entrypoints/blueprints/profile.py:157
 #, fuzzy
 msgid "Google account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:174
+#: src/opendlp/entrypoints/blueprints/profile.py:165
 #, fuzzy
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:234
+#: src/opendlp/entrypoints/blueprints/profile.py:220
 #, fuzzy
 msgid "Microsoft account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:242
+#: src/opendlp/entrypoints/blueprints/profile.py:228
 #, fuzzy
 msgid "An error occurred while linking your Microsoft account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:257
+#: src/opendlp/entrypoints/blueprints/profile.py:240
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:262
+#: src/opendlp/entrypoints/blueprints/profile.py:245
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:279
+#: src/opendlp/entrypoints/blueprints/profile.py:258
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:284
+#: src/opendlp/entrypoints/blueprints/profile.py:263
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:295
+#: src/opendlp/entrypoints/blueprints/profile.py:274
 msgid "You already have a password. Use 'Change password' instead."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:300
+#: src/opendlp/entrypoints/blueprints/profile.py:279
 msgid "Cannot set password without another authentication method"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:330
+#: src/opendlp/entrypoints/blueprints/profile.py:306
 #, fuzzy
 msgid "Password set successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:337
+#: src/opendlp/entrypoints/blueprints/profile.py:313
 #, fuzzy
 msgid "An error occurred while setting your password"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:333
+#, fuzzy
+msgid "An error occurred while loading 2FA settings"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:362
+#, fuzzy
+msgid "An error occurred while setting up 2FA"
+msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:373
+msgid "Please enter the verification code from your authenticator app"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:381
+msgid "Setup session expired. Please start over."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:392
+#, fuzzy
+msgid "Two-factor authentication has been enabled successfully"
+msgstr "Google táblázat beállításai sikeresen eltávolítva"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:400
+#, fuzzy
+msgid "An error occurred while enabling 2FA"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:411
+#, fuzzy
+msgid "Please enter your verification code to disable 2FA"
+msgstr "Add meg a meghívókódodat a regisztrációhoz"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:418
+msgid "Two-factor authentication has been disabled"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/profile.py:426
+#, fuzzy
+msgid "An error occurred while disabling 2FA"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:437
+#, fuzzy
+msgid "Please enter your verification code to regenerate backup codes"
+msgstr "Add meg a meghívókódodat a regisztrációhoz"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:452
+#, fuzzy
+msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/celery/tasks.py:105
@@ -1195,46 +1346,60 @@ msgstr "A jelszó túl gyenge: %(reason)s"
 msgid "Invalid password reset token"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:93
+#: src/opendlp/service_layer/exceptions.py:91
+msgid "Please confirm your email address before logging in."
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:99
+#, fuzzy, python-format
+msgid "Invalid or expired confirmation link: %(reason)s"
+msgstr "A jelszó túl gyenge: %(reason)s"
+
+#: src/opendlp/service_layer/exceptions.py:101
+#, fuzzy
+msgid "Invalid or expired confirmation link"
+msgstr "Érvénytelen vagy lejárt meghívó kód."
+
+#: src/opendlp/service_layer/exceptions.py:112
 #, python-format
 msgid ""
 "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s "
 "seconds"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:98
+#: src/opendlp/service_layer/exceptions.py:117
 #, python-format
 msgid "Rate limit exceeded for %(operation)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:100
+#: src/opendlp/service_layer/exceptions.py:119
 msgid "Rate limit exceeded. Please try again later"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:139
+#: src/opendlp/service_layer/exceptions.py:158
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:141
+#: src/opendlp/service_layer/exceptions.py:160
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:143
+#: src/opendlp/service_layer/exceptions.py:162
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:145
+#: src/opendlp/service_layer/exceptions.py:164
 msgid "OAuth authentication failed"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:155
+#: src/opendlp/service_layer/exceptions.py:174
 msgid "Invalid OAuth state parameter"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:162
+#: src/opendlp/service_layer/exceptions.py:181
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 
@@ -1266,6 +1431,37 @@ msgstr ""
 msgid "Task stopped unexpectedly"
 msgstr ""
 
+#: src/opendlp/service_layer/two_factor_service.py:51
+#: src/opendlp/service_layer/two_factor_service.py:97
+msgid "Cannot enable 2FA for OAuth users"
+msgstr ""
+
+#: src/opendlp/service_layer/two_factor_service.py:54
+msgid "2FA is already enabled for this user"
+msgstr ""
+
+#: src/opendlp/service_layer/two_factor_service.py:101
+#: src/opendlp/service_layer/two_factor_service.py:160
+#: src/opendlp/service_layer/two_factor_service.py:211
+#, fuzzy
+msgid "Invalid authentication code"
+msgstr "Érvénytelen meghívókód"
+
+#: src/opendlp/service_layer/two_factor_service.py:155
+#: src/opendlp/service_layer/two_factor_service.py:206
+#: src/opendlp/service_layer/two_factor_service.py:258
+msgid "2FA is not enabled for this user"
+msgstr ""
+
+#: src/opendlp/service_layer/two_factor_service.py:255
+#, fuzzy
+msgid "Admin user not found"
+msgstr "Az oldal nem elérhető"
+
+#: src/opendlp/service_layer/two_factor_service.py:261
+msgid "Cannot disable 2FA for OAuth users (they don't use 2FA)"
+msgstr ""
+
 #: templates/base.html:6
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
@@ -1274,19 +1470,19 @@ msgstr "Open Democratic Lottery Platform"
 msgid "Skip to main content"
 msgstr "Ugrás a főoldalra"
 
-#: templates/base.html:31
+#: templates/base.html:39
 msgid "Sortition Foundation Logo"
 msgstr "Sortition Foundation Logo"
 
-#: templates/base.html:40 templates/base.html:76
+#: templates/base.html:48 templates/base.html:84
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:46 templates/base.html:82
+#: templates/base.html:54 templates/base.html:90
 msgid "Close menu"
 msgstr "Menü bezárása"
 
-#: templates/base.html:50 templates/errors/403.html:23
+#: templates/base.html:58 templates/errors/403.html:23
 #: templates/errors/404.html:24 templates/errors/500.html:24
 #: templates/main/create_assembly.html:11 templates/main/dashboard.html:2
 #: templates/main/dashboard.html:7 templates/main/view_assembly_base.html:8
@@ -1294,59 +1490,60 @@ msgid "Dashboard"
 msgstr "Irányító pult"
 
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:10
-#: templates/admin/invites.html:7 templates/admin/user_edit.html:10
-#: templates/admin/user_view.html:10 templates/admin/users.html:7
-#: templates/base.html:54
+#: templates/admin/invites.html:7 templates/admin/user_2fa_audit_log.html:10
+#: templates/admin/user_edit.html:10 templates/admin/user_view.html:10
+#: templates/admin/users.html:7 templates/base.html:62
 msgid "Site Admin"
 msgstr ""
 
-#: templates/base.html:60 templates/base.html:91
+#: templates/base.html:68 templates/base.html:99
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/base.html:63 templates/profile/view.html:2
+#: templates/base.html:71 templates/profile/view.html:2
 #: templates/profile/view.html:6
 #, fuzzy
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/base.html:66
+#: templates/base.html:74
 msgid "Sign out"
 msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:2
 #: templates/auth/login.html:6 templates/auth/login.html:40
 #: templates/auth/register.html:183 templates/auth/register_google.html:80
-#: templates/auth/register_microsoft.html:71 templates/base.html:86
+#: templates/auth/register_microsoft.html:71
+#: templates/auth/resend_confirmation.html:30 templates/base.html:94
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
-#: templates/base.html:106 templates/gsheets/create_config.html:14
+#: templates/base.html:114 templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
 msgid "There is a problem"
 msgstr "Valami probléma van"
 
-#: templates/base.html:119
+#: templates/base.html:127 templates/profile/2fa_backup_codes.html:9
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:121
+#: templates/base.html:129
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/auth/user_data_agreement.html:2 templates/base.html:154
+#: templates/auth/user_data_agreement.html:2 templates/base.html:162
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/base.html:157
+#: templates/base.html:165
 msgid "OpenDLP Version"
 msgstr ""
 
-#: templates/base.html:162
+#: templates/base.html:170
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -1363,9 +1560,10 @@ msgstr "Csapat beállítás"
 msgid "Manage users and invites for the OpenDLP platform."
 msgstr ""
 
-#: templates/admin/index.html:11 templates/admin/user_edit.html:14
-#: templates/admin/user_view.html:14 templates/admin/users.html:2
-#: templates/admin/users.html:9 templates/admin/users.html:12
+#: templates/admin/index.html:11 templates/admin/user_2fa_audit_log.html:14
+#: templates/admin/user_edit.html:14 templates/admin/user_view.html:14
+#: templates/admin/users.html:2 templates/admin/users.html:9
+#: templates/admin/users.html:12
 #, fuzzy
 msgid "User Management"
 msgstr "Felhasználói Adatkezelési Megállapodás"
@@ -1428,6 +1626,7 @@ msgstr ""
 #: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
+#: templates/profile/2fa_setup.html:84
 #: templates/profile/change_password.html:51 templates/profile/edit.html:41
 #: templates/profile/set_password.html:42
 msgid "Cancel"
@@ -1461,32 +1660,33 @@ msgid "Copy URL"
 msgstr ""
 
 #: templates/admin/invite_view.html:44 templates/admin/invites.html:66
-#: templates/admin/users.html:100 templates/main/view_assembly_members.html:12
+#: templates/admin/users.html:114 templates/main/view_assembly_members.html:12
 #: templates/profile/view.html:28
 #, fuzzy
 msgid "Role"
 msgstr "Szereped/jogosultságod"
 
 #: templates/admin/invite_view.html:47 templates/admin/invites.html:81
-#: templates/admin/user_view.html:51 templates/admin/users.html:65
-#: templates/admin/users.html:119
+#: templates/admin/user_view.html:51 templates/admin/users.html:79
+#: templates/admin/users.html:134
 msgid "Admin"
 msgstr ""
 
 #: templates/admin/invite_view.html:49 templates/admin/invites.html:83
-#: templates/admin/user_view.html:53 templates/admin/users.html:63
-#: templates/admin/users.html:121
+#: templates/admin/user_view.html:53 templates/admin/users.html:77
+#: templates/admin/users.html:136
 msgid "Global Organiser"
 msgstr ""
 
 #: templates/admin/invite_view.html:51 templates/admin/invites.html:85
-#: templates/admin/user_view.html:55 templates/admin/users.html:60
-#: templates/admin/users.html:123 templates/main/view_assembly_members.html:10
+#: templates/admin/user_2fa_audit_log.html:65 templates/admin/user_view.html:55
+#: templates/admin/users.html:74 templates/admin/users.html:138
+#: templates/main/view_assembly_members.html:10
 msgid "User"
 msgstr ""
 
 #: templates/admin/invite_view.html:56 templates/admin/invites.html:67
-#: templates/admin/users.html:101 templates/main/view_assembly_data.html:54
+#: templates/admin/users.html:115 templates/main/view_assembly_data.html:54
 #: templates/main/view_assembly_details.html:13
 msgid "Status"
 msgstr "Állapot"
@@ -1496,9 +1696,9 @@ msgid "Used"
 msgstr ""
 
 #: templates/admin/invite_view.html:61 templates/admin/invites.html:92
-#: templates/admin/user_view.html:63 templates/admin/users.html:74
-#: templates/admin/users.html:128 templates/profile/view.html:40
-#: templates/profile/view.html:72 templates/profile/view.html:106
+#: templates/admin/user_view.html:63 templates/admin/users.html:88
+#: templates/admin/users.html:143 templates/profile/view.html:40
+#: templates/profile/view.html:73 templates/profile/view.html:138
 msgid "Active"
 msgstr ""
 
@@ -1531,6 +1731,8 @@ msgstr ""
 
 #: templates/admin/invite_view.html:102 templates/admin/user_edit.html:127
 #: templates/gsheets/components/progress.html:101
+#: templates/profile/2fa_backup_codes.html:19
+#: templates/profile/2fa_setup.html:37
 #, fuzzy
 msgid "Warning"
 msgstr "Folyamatban"
@@ -1600,7 +1802,7 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: templates/admin/invites.html:68 templates/admin/users.html:102
+#: templates/admin/invites.html:68 templates/admin/users.html:117
 #: templates/main/dashboard.html:46
 #: templates/main/view_assembly_details.html:33
 msgid "Created"
@@ -1610,14 +1812,14 @@ msgstr "Létrehozva"
 msgid "Expires"
 msgstr ""
 
-#: templates/admin/invites.html:70 templates/admin/users.html:103
+#: templates/admin/invites.html:70 templates/admin/users.html:118
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #, fuzzy
 msgid "Actions"
 msgstr "Kiválasztás"
 
-#: templates/admin/invites.html:101 templates/admin/users.html:136
+#: templates/admin/invites.html:101 templates/admin/users.html:160
 #: templates/main/view_assembly_data.html:110
 msgid "View"
 msgstr ""
@@ -1634,17 +1836,101 @@ msgstr ""
 msgid "No invites found. Create one to get started."
 msgstr ""
 
-#: templates/admin/invites.html:134 templates/admin/users.html:221
+#: templates/admin/invites.html:134 templates/admin/users.html:245
 msgid "Back to Site Admin"
 msgstr ""
 
+#: templates/admin/user_2fa_audit_log.html:2
+#: templates/admin/user_2fa_audit_log.html:20
+msgid "2FA Audit Log"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:23
+msgid "Two-Factor Authentication Audit Log"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:25
+msgid "Showing audit log for:"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:31
+msgid "Timestamp"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:32
+#, fuzzy
+msgid "Action"
+msgstr "Kiválasztás"
+
+#: templates/admin/user_2fa_audit_log.html:33
+msgid "Performed By"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:34
+#: templates/main/view_assembly_base.html:30
+#, fuzzy
+msgid "Details"
+msgstr "Hiba részletei"
+
+#: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:85
+#: templates/admin/users.html:152 templates/profile/2fa_settings.html:25
+#: templates/profile/view.html:202
+msgid "Enabled"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:96
+#: templates/admin/users.html:154 templates/profile/2fa_settings.html:27
+#: templates/profile/view.html:204
+msgid "Disabled"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:49
+msgid "Admin Disabled"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:51
+#, fuzzy
+msgid "Backup Code Used"
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/admin/user_2fa_audit_log.html:53
+msgid "Backup Codes Regenerated"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:61
+msgid "Self"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:68
+msgid "System"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:75
+#, fuzzy
+msgid "View details"
+msgstr "Meghívó kód"
+
+#: templates/admin/user_2fa_audit_log.html:82
+#: templates/main/view_assembly_data.html:105
+msgid "None"
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:91
+msgid "No 2FA audit log entries found for this user."
+msgstr ""
+
+#: templates/admin/user_2fa_audit_log.html:96
+#, fuzzy
+msgid "Back to User Details"
+msgstr "Vissza a közösségi gyűléshez"
+
 #: templates/admin/user_edit.html:2 templates/admin/user_edit.html:41
-#: templates/admin/user_view.html:98
+#: templates/admin/user_view.html:122
 #, fuzzy
 msgid "Edit User"
 msgstr "Módosítsa a számot."
 
-#: templates/admin/user_edit.html:20 templates/admin/users.html:139
+#: templates/admin/user_edit.html:20 templates/admin/users.html:163
 #: templates/main/edit_assembly.html:3
 msgid "Edit"
 msgstr "Szerkesztés"
@@ -1678,13 +1964,13 @@ msgstr "Módosítások mentése"
 msgid "User Details"
 msgstr "Hiba részletei"
 
-#: templates/admin/user_view.html:22 templates/admin/users.html:99
+#: templates/admin/user_view.html:22 templates/admin/users.html:113
 #: templates/main/view_assembly_members.html:11
 msgid "Email"
 msgstr ""
 
 #: templates/admin/user_view.html:33 templates/admin/user_view.html:43
-#: templates/admin/users.html:113
+#: templates/admin/users.html:128
 msgid "Not provided"
 msgstr ""
 
@@ -1693,8 +1979,8 @@ msgstr ""
 msgid "Account Status"
 msgstr "Feladat állapota"
 
-#: templates/admin/user_view.html:65 templates/admin/users.html:75
-#: templates/admin/users.html:130
+#: templates/admin/user_view.html:65 templates/admin/users.html:89
+#: templates/admin/users.html:145
 msgid "Inactive"
 msgstr ""
 
@@ -1706,26 +1992,55 @@ msgstr ""
 msgid "OAuth"
 msgstr ""
 
-#: templates/admin/user_view.html:80 templates/auth/register.html:97
+#: templates/admin/user_view.html:80 templates/auth/verify_2fa.html:2
+#: templates/auth/verify_2fa.html:6 templates/profile/2fa_settings.html:2
+#: templates/profile/2fa_settings.html:6 templates/profile/2fa_settings.html:22
+#: templates/profile/view.html:195
+msgid "Two-Factor Authentication"
+msgstr ""
+
+#: templates/admin/user_view.html:83
+msgid "Not applicable (OAuth user)"
+msgstr ""
+
+#: templates/admin/user_view.html:89 templates/profile/2fa_settings.html:33
+msgid "Enabled on"
+msgstr ""
+
+#: templates/admin/user_view.html:94 templates/admin/user_view.html:99
+msgid "View 2FA audit log"
+msgstr ""
+
+#: templates/admin/user_view.html:104 templates/auth/register.html:97
 #: templates/auth/register_google.html:31
 #: templates/auth/register_microsoft.html:31
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
-#: templates/admin/user_view.html:83
+#: templates/admin/user_view.html:107
 msgid "Agreed on"
 msgstr ""
 
-#: templates/admin/user_view.html:85
+#: templates/admin/user_view.html:109
 msgid "Not agreed"
 msgstr ""
 
-#: templates/admin/user_view.html:90
+#: templates/admin/user_view.html:114
 #, fuzzy
 msgid "Account Created"
 msgstr "Létrehozva"
 
-#: templates/admin/user_view.html:100
+#: templates/admin/user_view.html:127
+msgid ""
+"Are you sure you want to disable two-factor authentication for this user?"
+" This will remove their TOTP secret and backup codes."
+msgstr ""
+
+#: templates/admin/user_view.html:129
+msgid "Disable 2FA"
+msgstr ""
+
+#: templates/admin/user_view.html:133
 #, fuzzy
 msgid "Back to User List"
 msgstr "Vissza a közösségi gyűléshez"
@@ -1748,67 +2063,84 @@ msgstr ""
 msgid "Organisers"
 msgstr "Regisztráció"
 
-#: templates/admin/users.html:46
+#: templates/admin/users.html:43
+#, fuzzy
+msgid "Password Users"
+msgstr "Új jelszó"
+
+#: templates/admin/users.html:49
+msgid "2FA Enabled"
+msgstr ""
+
+#: templates/admin/users.html:60
 msgid "Search by name or email"
 msgstr ""
 
-#: templates/admin/users.html:52
+#: templates/admin/users.html:66
 msgid "Enter name or email..."
 msgstr ""
 
-#: templates/admin/users.html:57
+#: templates/admin/users.html:71
 msgid "Filter by role"
 msgstr ""
 
-#: templates/admin/users.html:59
+#: templates/admin/users.html:73
 msgid "All roles"
 msgstr ""
 
-#: templates/admin/users.html:71
+#: templates/admin/users.html:85
 msgid "Filter by status"
 msgstr ""
 
-#: templates/admin/users.html:73
+#: templates/admin/users.html:87
 #, fuzzy
 msgid "All statuses"
 msgstr "Feladat állapota"
 
-#: templates/admin/users.html:81
+#: templates/admin/users.html:95
 msgid "Apply Filters"
 msgstr ""
 
-#: templates/admin/users.html:82
+#: templates/admin/users.html:96
 msgid "Clear"
 msgstr ""
 
-#: templates/admin/users.html:88
+#: templates/admin/users.html:102
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(total)s users"
 msgstr ""
 
-#: templates/admin/users.html:98
+#: templates/admin/users.html:112
 #, fuzzy
 msgid "Name"
 msgstr "Vezetéknév"
 
-#: templates/admin/users.html:163 templates/main/view_assembly_data.html:130
+#: templates/admin/users.html:116
+msgid "2FA"
+msgstr ""
+
+#: templates/admin/users.html:150
+msgid "N/A (OAuth)"
+msgstr ""
+
+#: templates/admin/users.html:187 templates/main/view_assembly_data.html:130
 msgid "Previous"
 msgstr ""
 
-#: templates/admin/users.html:192 templates/main/view_assembly_data.html:157
+#: templates/admin/users.html:216 templates/main/view_assembly_data.html:157
 msgid "Next"
 msgstr ""
 
-#: templates/admin/users.html:210
+#: templates/admin/users.html:234
 msgid "No users found matching your criteria."
 msgstr ""
 
-#: templates/admin/users.html:215
+#: templates/admin/users.html:239
 #, fuzzy
 msgid "To create a user,"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/admin/users.html:215
+#: templates/admin/users.html:239
 msgid "create/send them an invite code"
 msgstr ""
 
@@ -1948,7 +2280,31 @@ msgstr ""
 msgid "To register with your Microsoft account, you need a valid invite code."
 msgstr ""
 
-#: templates/auth/reset_password.html:3
+#: templates/auth/resend_confirmation.html:3
+#, fuzzy
+msgid "Resend Confirmation Email"
+msgstr "Google Táblázat beállításainak eltávolítása"
+
+#: templates/auth/resend_confirmation.html:8
+#, fuzzy
+msgid "Resend confirmation email"
+msgstr "Google Táblázat beállításainak eltávolítása"
+
+#: templates/auth/resend_confirmation.html:11
+#, fuzzy
+msgid "Enter your email address and we will send you a new confirmation link."
+msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
+
+#: templates/auth/resend_confirmation.html:23
+#, fuzzy
+msgid "Send confirmation link"
+msgstr "Beállítások mentése"
+
+#: templates/auth/resend_confirmation.html:29
+msgid "Already confirmed your email?"
+msgstr ""
+
+#: templates/auth/reset_password.html:3 templates/emails/password_reset.html:81
 #, fuzzy
 msgid "Reset Password"
 msgstr "Új jelszó"
@@ -1975,6 +2331,144 @@ msgstr "Új jelszó"
 #: templates/auth/user_data_agreement.html:11
 msgid "Back to Registration"
 msgstr "Vissza a regisztrációhoz"
+
+#: templates/auth/verify_2fa.html:7
+msgid "Enter the 6-digit code from your authenticator app to complete sign in."
+msgstr ""
+
+#: templates/auth/verify_2fa.html:11 templates/profile/2fa_settings.html:75
+#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:70
+msgid "Verification code"
+msgstr ""
+
+#: templates/auth/verify_2fa.html:12
+msgid "Six digits or a backup code in the format XXXX-XXXX"
+msgstr ""
+
+#: templates/auth/verify_2fa.html:24
+msgid "Verify"
+msgstr ""
+
+#: templates/auth/verify_2fa.html:28
+msgid "Use a backup code instead"
+msgstr ""
+
+#: templates/auth/verify_2fa.html:32
+msgid ""
+"If you've lost access to your authenticator app, you can use one of your "
+"backup codes. Each backup code can only be used once."
+msgstr ""
+
+#: templates/auth/verify_2fa.html:35
+msgid ""
+"Enter your backup code in the format XXXX-XXXX in the verification code "
+"field above."
+msgstr ""
+
+#: templates/auth/verify_2fa.html:40
+#, fuzzy
+msgid "Back to sign in"
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/emails/email_confirmation.html:6
+msgid "Confirm Your Email - OpenDLP"
+msgstr ""
+
+#: templates/emails/email_confirmation.html:78
+#: templates/emails/email_confirmation.html:88
+#, fuzzy
+msgid "Confirm Your Email Address"
+msgstr "Email cím hiányzik"
+
+#: templates/emails/email_confirmation.html:80
+#: templates/emails/password_reset.html:72
+#, python-format
+msgid "Hi %(name)s,"
+msgstr ""
+
+#: templates/emails/email_confirmation.html:82
+#: templates/emails/password_reset.html:75
+#, fuzzy
+msgid "Email address:"
+msgstr "Email cím"
+
+#: templates/emails/email_confirmation.html:85
+msgid ""
+"Welcome to OpenDLP! Please confirm your email address to complete your "
+"registration and start using your account."
+msgstr ""
+
+#: templates/emails/email_confirmation.html:92
+#: templates/emails/password_reset.html:86
+#, python-format
+msgid "This link will expire in <strong>%(hours)s hours</strong>."
+msgstr ""
+
+#: templates/emails/email_confirmation.html:94
+#: templates/emails/password_reset.html:88
+#, python-format
+msgid "This link will expire in <strong>%(hours)s hour</strong>."
+msgstr ""
+
+#: templates/emails/email_confirmation.html:99
+msgid "ℹ️ Note:"
+msgstr ""
+
+#: templates/emails/email_confirmation.html:102
+msgid ""
+"If you didn't create an OpenDLP account, you can safely ignore this "
+"email. No account will be created without confirmation."
+msgstr ""
+
+#: templates/emails/email_confirmation.html:106
+msgid ""
+"If the button above doesn't work, copy and paste this link into your "
+"browser:"
+msgstr ""
+
+#: templates/emails/email_confirmation.html:111
+#: templates/emails/password_reset.html:102
+msgid "OpenDLP Team"
+msgstr ""
+
+#: templates/emails/email_confirmation.html:114
+#: templates/emails/password_reset.html:103
+msgid ""
+"Need help? Contact us at <a "
+"href=\"mailto:support@opendlp.org\">support@opendlp.org</a>"
+msgstr ""
+
+#: templates/emails/password_reset.html:6
+#, fuzzy
+msgid "Reset Your Password - OpenDLP"
+msgstr "Új jelszó"
+
+#: templates/emails/password_reset.html:69
+#, fuzzy
+msgid "Reset Your Password"
+msgstr "Új jelszó"
+
+#: templates/emails/password_reset.html:72
+msgid "Hi,"
+msgstr ""
+
+#: templates/emails/password_reset.html:78
+msgid "You recently requested to reset your password for your OpenDLP account."
+msgstr ""
+
+#: templates/emails/password_reset.html:93
+msgid "⚠️ Security Note:"
+msgstr ""
+
+#: templates/emails/password_reset.html:94
+msgid ""
+"If you didn't request a password reset, you can safely ignore this email."
+" Your password will remain unchanged."
+msgstr ""
+
+#: templates/emails/password_reset.html:98
+msgid "For security reasons, password reset links can only be used once."
+msgstr ""
 
 #: templates/errors/403.html:2 templates/errors/403.html:11
 msgid "Access Denied"
@@ -2563,11 +3057,6 @@ msgstr "Közösségi gyűlés"
 msgid "Assembly sections"
 msgstr "A gyűlés fő témája"
 
-#: templates/main/view_assembly_base.html:30
-#, fuzzy
-msgid "Details"
-msgstr "Hiba részletei"
-
 #: templates/main/view_assembly_base.html:41
 #: templates/main/view_assembly_members.html:2
 #: templates/main/view_assembly_members.html:4
@@ -2642,10 +3131,6 @@ msgstr "Megszakítás"
 msgid "N/A"
 msgstr ""
 
-#: templates/main/view_assembly_data.html:105
-msgid "None"
-msgstr ""
-
 #: templates/main/view_assembly_data.html:169
 msgid "No selection runs have been performed yet."
 msgstr ""
@@ -2679,6 +3164,189 @@ msgstr "Vissza a közösségi gyűléshez"
 msgid "Type to search by email or name..."
 msgstr ""
 
+#: templates/profile/2fa_backup_codes.html:2
+#: templates/profile/2fa_backup_codes.html:6
+msgid "New Backup Codes"
+msgstr ""
+
+#: templates/profile/2fa_backup_codes.html:12
+msgid "Your backup codes have been regenerated"
+msgstr ""
+
+#: templates/profile/2fa_backup_codes.html:13
+msgid "Your old backup codes are no longer valid."
+msgstr ""
+
+#: templates/profile/2fa_backup_codes.html:20
+msgid ""
+"Save these backup codes in a safe place. Each code can only be used once."
+" This is the only time you'll see these codes."
+msgstr ""
+
+#: templates/profile/2fa_backup_codes.html:40
+#: templates/profile/2fa_setup.html:58
+msgid "Download codes"
+msgstr ""
+
+#: templates/profile/2fa_backup_codes.html:43
+#: templates/profile/2fa_setup.html:61
+#, fuzzy
+msgid "Print codes"
+msgstr "Meghívó kód"
+
+#: templates/profile/2fa_backup_codes.html:44
+msgid "Done"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:11
+#, fuzzy
+msgid "Information"
+msgstr "Google Táblázat beállításainak eltávolítása"
+
+#: templates/profile/2fa_settings.html:12
+msgid ""
+"Two-factor authentication is not available for users who sign in with "
+"Google or Microsoft. Your OAuth provider already provides strong "
+"authentication security."
+msgstr ""
+
+#: templates/profile/2fa_settings.html:16
+#: templates/profile/2fa_settings.html:123
+msgid "Back to profile"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:19
+#, fuzzy
+msgid "Current Status"
+msgstr "Feladat állapota"
+
+#: templates/profile/2fa_settings.html:39
+msgid "Backup codes remaining"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:41
+msgid "of 8"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:47
+msgid "Enable Two-Factor Authentication"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:49
+msgid ""
+"Two-factor authentication adds an extra layer of security to your "
+"account. When enabled, you'll need to enter a code from your "
+"authenticator app in addition to your password."
+msgstr ""
+
+#: templates/profile/2fa_settings.html:51
+msgid "What you'll need:"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:53
+msgid ""
+"An authenticator app such as Google Authenticator, Authy, or Microsoft "
+"Authenticator"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:54
+msgid "A safe place to store backup codes for account recovery"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:60
+msgid "Set up two-factor authentication"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:62
+msgid "Manage Two-Factor Authentication"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:63
+#: templates/profile/2fa_settings.html:69
+msgid "Regenerate backup codes"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:65
+msgid ""
+"If you've used some of your backup codes, you can generate a new set. "
+"This will invalidate all existing backup codes."
+msgstr ""
+
+#: templates/profile/2fa_settings.html:76
+#: templates/profile/2fa_settings.html:106
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:87
+msgid "Regenerate codes"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:91
+#: templates/profile/2fa_settings.html:97
+msgid "Disable two-factor authentication"
+msgstr ""
+
+#: templates/profile/2fa_settings.html:93
+msgid "Disabling two-factor authentication will make your account less secure."
+msgstr ""
+
+#: templates/profile/2fa_settings.html:102
+msgid ""
+"Are you sure you want to disable two-factor authentication? This will "
+"make your account less secure."
+msgstr ""
+
+#: templates/profile/2fa_settings.html:117
+msgid "Disable"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:2 templates/profile/2fa_setup.html:6
+msgid "Set Up Two-Factor Authentication"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:7
+msgid "Step 1: Scan QR Code"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:9
+msgid "Open your authenticator app and scan this QR code:"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:13
+msgid "QR code for two-factor authentication setup"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:21
+msgid "Can't scan the QR code?"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:24
+msgid "You can enter this code manually in your authenticator app:"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:33
+msgid "Step 2: Save Backup Codes"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:38
+msgid ""
+"Save these backup codes in a safe place. Each code can only be used once."
+" If you lose access to your authenticator app, you'll need these codes to"
+" sign in."
+msgstr ""
+
+#: templates/profile/2fa_setup.html:63
+msgid "Step 3: Verify Setup"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:65
+msgid "Enter the 6-digit code from your authenticator app to complete setup:"
+msgstr ""
+
+#: templates/profile/2fa_setup.html:83
+msgid "Verify and enable"
+msgstr ""
+
 #: templates/profile/change_password.html:2
 #: templates/profile/change_password.html:6
 #, fuzzy
@@ -2690,7 +3358,7 @@ msgstr "Új jelszó"
 msgid "Your password must meet the following requirements:"
 msgstr ""
 
-#: templates/profile/change_password.html:50 templates/profile/view.html:144
+#: templates/profile/change_password.html:50 templates/profile/view.html:219
 #, fuzzy
 msgid "Change password"
 msgstr "Új jelszó"
@@ -2740,60 +3408,77 @@ msgstr ""
 msgid "No password set"
 msgstr "Új jelszó"
 
-#: templates/profile/view.html:69
+#: templates/profile/view.html:70
 #, fuzzy
 msgid "Google OAuth"
 msgstr "Google Táblázat teljes linkje"
 
-#: templates/profile/view.html:74 templates/profile/view.html:108
+#: templates/profile/view.html:75 templates/profile/view.html:140
 msgid "Not linked"
 msgstr ""
 
-#: templates/profile/view.html:83
+#: templates/profile/view.html:84
 msgid ""
 "Are you sure you want to unlink your Google account? You will only be "
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:90 templates/profile/view.html:124
+#: templates/profile/view.html:91 templates/profile/view.html:156
 #, fuzzy
 msgid "Unlink"
 msgstr "Folyamatban"
 
-#: templates/profile/view.html:93 templates/profile/view.html:127
+#: templates/profile/view.html:94 templates/profile/view.html:159
 msgid "Only authentication method"
 msgstr ""
 
-#: templates/profile/view.html:96
+#: templates/profile/view.html:121 templates/profile/view.html:122
 #, fuzzy
 msgid "Link Google account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:98 templates/profile/view.html:132
+#: templates/profile/view.html:128 templates/profile/view.html:186
 #, python-format
 msgid "Remove %(provider)s first"
 msgstr ""
 
-#: templates/profile/view.html:103
+#: templates/profile/view.html:135
 msgid "Microsoft OAuth"
 msgstr ""
 
-#: templates/profile/view.html:117
+#: templates/profile/view.html:149
 msgid ""
 "Are you sure you want to unlink your Microsoft account? You will only be "
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:130
+#: templates/profile/view.html:179 templates/profile/view.html:180
 #, fuzzy
 msgid "Link Microsoft account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:140
+#: templates/profile/view.html:192
+msgid "Security"
+msgstr ""
+
+#: templates/profile/view.html:198
+msgid "Not available"
+msgstr ""
+
+#: templates/profile/view.html:200
+msgid "OAuth users rely on their provider's security"
+msgstr ""
+
+#: templates/profile/view.html:208
+#, fuzzy
+msgid "Manage"
+msgstr "Vezetéknév"
+
+#: templates/profile/view.html:215
 msgid "Edit profile"
 msgstr ""
 
-#: templates/profile/view.html:148
+#: templates/profile/view.html:223
 #, fuzzy
 msgid "Back to dashboard"
 msgstr "Vissza az irányító pulthoz"
