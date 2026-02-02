@@ -191,7 +191,7 @@ def admin_user(test_database):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Create admin user
-    admin = create_user(
+    admin, _token = create_user(
         uow=uow,
         email=ADMIN_EMAIL,
         password=ADMIN_PASSWORD,
@@ -200,6 +200,13 @@ def admin_user(test_database):
         global_role=GlobalRole.ADMIN,
         accept_data_agreement=True,
     )
+
+    # Confirm email for test users (they need to login)
+    with uow:
+        user = uow.users.get_by_email(ADMIN_EMAIL)
+        user.confirm_email()
+        uow.commit()
+        admin = user.create_detached_copy()
 
     return admin
 
@@ -210,8 +217,8 @@ def normal_user(test_database):
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
 
-    # Create admin user
-    user = create_user(
+    # Create normal user
+    user, _token = create_user(
         uow=uow,
         email=NORMAL_EMAIL,
         password=NORMAL_PASSWORD,
@@ -220,6 +227,13 @@ def normal_user(test_database):
         global_role=GlobalRole.USER,
         accept_data_agreement=True,
     )
+
+    # Confirm email for test users (they need to login)
+    with uow:
+        fetched_user = uow.users.get_by_email(NORMAL_EMAIL)
+        fetched_user.confirm_email()
+        uow.commit()
+        user = fetched_user.create_detached_copy()
 
     return user
 
@@ -409,3 +423,10 @@ def user_invite(test_database, admin_user) -> str:
     )
 
     return invite.code
+
+
+# Load shared step definitions
+pytest_plugins = [
+    "tests.bdd.shared.ui_shared",
+    "tests.bdd.shared.email_confirmation_steps",
+]

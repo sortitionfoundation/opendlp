@@ -18,7 +18,14 @@ from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import LoginForm, PasswordResetForm, PasswordResetRequestForm, RegistrationForm
 from opendlp.service_layer import totp_service
+from opendlp.service_layer.email_confirmation_service import (
+    confirm_email_with_token,
+    resend_confirmation_email,
+    send_confirmation_email,
+)
 from opendlp.service_layer.exceptions import (
+    EmailNotConfirmed,
+    InvalidConfirmationToken,
     InvalidCredentials,
     InvalidInvite,
     InvalidResetToken,
@@ -93,6 +100,18 @@ def login() -> ResponseReturnValue:
 
         except InvalidCredentials:
             flash(_("Invalid email or password."), "error")
+        except EmailNotConfirmed:
+            flash(
+                _("Please confirm your email address before logging in. Check your inbox for the confirmation link."),
+                "error",
+            )
+            flash(
+                _(
+                    'Didn\'t receive the email? <a href="%(url)s">Resend confirmation</a>',
+                    url=url_for("auth.resend_confirmation"),
+                ),
+                "info",
+            )
         except Exception as e:
             current_app.logger.error(f"Login error: {e}")
             flash(_("An error occurred during login. Please try again."), "error")
@@ -306,10 +325,20 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                     accept_data_agreement=form.accept_data_agreement.data or False,
                 )
 
-                # Log the user in immediately after registration
-                login_user(user)
-                flash(_("Registration successful! Welcome to OpenDLP."), "success")
-                return redirect(url_for("main.dashboard"))
+                # If OAuth user (token is None), auto-login as before
+                if token is None:
+                    login_user(user)
+                    flash(_("Registration successful! Welcome to OpenDLP."), "success")
+                    return redirect(url_for("main.dashboard"))
+
+                # If password user, send confirmation email
+                email_adapter = get_email_adapter()
+                send_confirmation_email(email_adapter, user, token.token)
+                flash(
+                    _("Registration successful! Please check your email to confirm your account."),
+                    "info",
+                )
+                return redirect(url_for("auth.login"))
 
         except UserAlreadyExists as e:
             flash(str(e), "error")
@@ -322,6 +351,53 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             flash(_("An error occurred during registration. Please try again."), "error")
 
     return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())
+
+
+@auth_bp.route("/confirm-email/<token>")
+def confirm_email(token: str) -> ResponseReturnValue:
+    """Confirm email with token."""
+    try:
+        uow = bootstrap.bootstrap()
+        user = confirm_email_with_token(uow, token)
+        flash(_("Email confirmed successfully! You can now log in."), "success")
+        # Auto-login for better UX
+        login_user(user)
+        return redirect(url_for("main.dashboard"))
+    except InvalidConfirmationToken as e:
+        flash(str(e), "error")
+        return redirect(url_for("auth.login"))
+    except Exception as e:
+        current_app.logger.error(f"Email confirmation error: {e}")
+        flash(_("An error occurred. Please try again."), "error")
+        return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/resend-confirmation", methods=["GET", "POST"])
+def resend_confirmation() -> ResponseReturnValue:
+    """Resend confirmation email."""
+    if request.method == "POST":
+        email = request.form.get("email", "")
+        try:
+            uow = bootstrap.bootstrap()
+            email_adapter = get_email_adapter()
+
+            # Service layer handles token creation and email sending
+            resend_confirmation_email(uow, email, email_adapter)
+
+            # Always show success (anti-enumeration)
+            flash(
+                _("If that email is registered and unconfirmed, a confirmation link has been sent."),
+                "info",
+            )
+            return redirect(url_for("auth.login"))
+
+        except RateLimitExceeded as e:
+            flash(str(e), "error")
+        except Exception as e:
+            current_app.logger.error(f"Resend confirmation error: {e}")
+            flash(_("An error occurred. Please try again."), "error")
+
+    return render_template("auth/resend_confirmation.html")
 
 
 @auth_bp.route("/user-data-agreement")

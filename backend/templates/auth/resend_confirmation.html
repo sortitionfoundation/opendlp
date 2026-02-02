@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Resend Confirmation Email') }} - OpenDLP{% endblock %}
+
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _('Resend confirmation email') }}</h1>
+
+            <p class="govuk-body">
+                {{ _('Enter your email address and we will send you a new confirmation link.') }}
+            </p>
+
+            <form method="POST" novalidate>
+                <div class="govuk-form-group">
+                    <label class="govuk-label govuk-label--m" for="email">
+                        {{ _('Email address') }}
+                    </label>
+                    <input class="govuk-input" id="email" name="email" type="email" autocomplete="email" required>
+                </div>
+
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    {{ _('Send confirmation link') }}
+                </button>
+            </form>
+
+            <div class="govuk-inset-text">
+                <p class="govuk-body">
+                    {{ _('Already confirmed your email?') }}
+                    <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _('Sign in') }}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

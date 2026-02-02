@@ -113,11 +113,28 @@ def _(test_database: sessionmaker):
 @then("the user should be registered")
 def _(page: Page, test_database: sessionmaker):
     """the user should be registered."""
-    wait_for_page_with_text(page, "Your Assemblies")  # text from the dashboard page
+    # Check user exists in database
     uow = SqlAlchemyUnitOfWork(test_database)
     with uow:
         user = uow.users.get_by_email(NEWUSER_EMAIL)
         assert user is not None
+
+        # With email confirmation, password users aren't auto-logged in
+        # They need to confirm their email first
+        # For backward compatibility with existing tests, auto-confirm and login
+        if not user.is_email_confirmed():
+            user.confirm_email()
+            uow.commit()
+
+    # If user was redirected to login (password registration), log them in
+    if page.url != Urls.dashboard:
+        page.goto(Urls.login)
+        page.fill('input[name="email"]', NEWUSER_EMAIL)
+        page.fill('input[name="password"]', FRESH_PASSWORD)
+        page.click('button[type="submit"]')
+
+    # Now user should be on dashboard
+    wait_for_page_with_text(page, "Your Assemblies")
 
 
 @then("the user should see the default view for an authorised user")

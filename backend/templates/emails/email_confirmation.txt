@@ -1,0 +1,18 @@
+{{ _("Hi %(name)s,", name=user_name) }}
+
+{{ _("Email address:") }} {{ email_address }}
+
+{{ _("Welcome to OpenDLP! Please confirm your email address to complete your registration and start using your account.") }}
+
+{{ _("Click the link below to confirm your email:") }}
+
+{{ confirmation_url }}
+
+{% if expiry_hours != 1 %}{{ _("This link will expire in %(hours)s hours.", hours=expiry_hours) }}{% else %}{{ _("This link will expire in %(hours)s hour.", hours=expiry_hours) }}{% endif %}
+
+{{ _("If you didn't create an OpenDLP account, you can safely ignore this email.") }}
+
+---
+{{ _("OpenDLP Team") }}
+
+{{ _("Need help? Contact us at support@opendlp.org") }}
