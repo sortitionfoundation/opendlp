@@ -10,6 +10,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from flask.typing import ResponseReturnValue
 from flask_babel import get_locale
 from flask_login import current_user, login_required, login_user, logout_user
+from markupsafe import Markup
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
@@ -106,9 +107,11 @@ def login() -> ResponseReturnValue:
                 "error",
             )
             flash(
-                _(
-                    'Didn\'t receive the email? <a href="%(url)s">Resend confirmation</a>',
-                    url=url_for("auth.resend_confirmation"),
+                Markup(  # noqa: S704
+                    _(
+                        'Didn\'t receive the email? <a href="%(url)s">Resend confirmation</a>',
+                        url=url_for("auth.resend_confirmation"),
+                    )
                 ),
                 "info",
             )
