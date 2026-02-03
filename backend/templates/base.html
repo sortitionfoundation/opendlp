@@ -174,16 +174,21 @@
                 </div>
             </div>
         </footer>
-        <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
+        <script nonce="{{ csp_nonce }}"
+            src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
             integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"
             crossorigin="anonymous"></script>
-        <script src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
-        <script src="{{ url_for('static', filename='js/alpine-components.js', v=alpine_js_hash) }}"></script>
-        <script defer
+        <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
+        <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='js/alpine-components.js', v=alpine_js_hash) }}"></script>
+        <script nonce="{{ csp_nonce }}"
+            defer
             src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
             integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"
             crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+        <script nonce="{{ csp_nonce }}"
+            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
             integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
             crossorigin="anonymous"></script>
         <script nonce="{{ csp_nonce }}">
