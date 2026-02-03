@@ -197,6 +197,7 @@ This approach maintains the separation between domain objects (plain Python) and
 - Store sessions in Redis (flask-session)
 - Werkzeug.security for password hashing
 - Role-based access control throughout
+- **Frontend:** Follow [Frontend Security Guidelines](docs/frontend_security.md) for CSP compliance
 
 ## Further Documentation
 
@@ -211,6 +212,7 @@ This approach maintains the separation between domain objects (plain Python) and
 - [Sortition Error Translations](docs/sortition_error_translations.md) - Translating sortition-algorithms library errors and reports
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
 - [Google Service Account Setup](docs/google_service_account.md) - Google Sheets integration credentials
+- [Frontend Security Guidelines](docs/frontend_security.md) - CSP compliance, JavaScript/Alpine.js/CSS patterns
 - [Project Specification](docs/spec.md) - Original project specification
 
 ### Agent-Specific Documentation
