@@ -51,8 +51,4 @@ class FlaskURLGenerator(URLGenerator):
         Returns:
             Generated URL as a string
         """
-        # Import at runtime to avoid Flask dependency at module level
-        from flask import url_for
-
-        with self.app.test_request_context():
-            return url_for(endpoint, _external=_external, **values)
+        return self.app.url_for(endpoint, _external=_external, **values)
