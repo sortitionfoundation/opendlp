@@ -124,7 +124,7 @@
                         <form method="POST"
                             action="{{ url_for('admin.disable_user_2fa', user_id=user.id) }}"
                             style="display: inline"
-                            onsubmit="return confirm('{{ _("Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.") }}');">
+                            data-confirm="{{ _("Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.") }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable 2FA") }}</button>
                         </form>

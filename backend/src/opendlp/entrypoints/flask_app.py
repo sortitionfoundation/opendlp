@@ -1,10 +1,11 @@
 """ABOUTME: Flask application factory with configuration, blueprints, and error handling
 ABOUTME: Creates and configures Flask app instance with all necessary extensions and routes"""
 
+import secrets
 import uuid
 
 import structlog
-from flask import Config, Flask, Response, render_template, request
+from flask import Config, Flask, Response, g, render_template, request
 from flask_login import current_user
 from secure import Secure, headers
 from werkzeug.exceptions import HTTPException
@@ -13,6 +14,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import opendlp.logging
 from opendlp import config
 from opendlp.entrypoints.extensions import init_extensions
+
+
+def generate_csp_nonce() -> str:
+    """Generate a cryptographically secure nonce for CSP."""
+    return secrets.token_urlsafe(16)
 
 
 def create_app(config_name: str = "") -> Flask:
@@ -68,6 +74,11 @@ def register_context_processors(app: Flask) -> None:
 
     app.context_processor(static_versioning_context_processor)
 
+    @app.context_processor
+    def inject_csp_nonce() -> dict[str, str]:
+        """Inject CSP nonce into all template contexts."""
+        return {"csp_nonce": g.get("csp_nonce", "")}
+
 
 def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
@@ -110,6 +121,11 @@ def register_before_request_handlers(app: Flask) -> None:
     """Register before request handlers."""
 
     @app.before_request
+    def set_csp_nonce() -> None:
+        """Generate and store CSP nonce for this request."""
+        g.csp_nonce = generate_csp_nonce()
+
+    @app.before_request
     def add_context_for_structlog() -> None:
         """
         Add items to structlog for this request:
@@ -133,10 +149,15 @@ def get_secure_headers(config: Config) -> Secure:
         coop=headers.CrossOriginOpenerPolicy().same_origin(),
         csp=headers.ContentSecurityPolicy()
         .default_src("'self'")
-        .script_src("'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net")
-        .style_src("'self' 'unsafe-inline' https://cdn.jsdelivr.net")
-        .font_src("'self' https://cdn.jsdelivr.net")
-        .img_src("'self' data:")
+        .script_src(
+            "'self'",
+            "'nonce-NONCE_PLACEHOLDER'",
+            "'strict-dynamic'",
+            "https://cdn.jsdelivr.net",
+        )
+        .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
+        .font_src("'self'", "https://cdn.jsdelivr.net")
+        .img_src("'self'", "data:")
         .frame_ancestors("'none'")
         .object_src("'none'"),
         permissions=headers.PermissionsPolicy().geolocation().microphone().camera(),
@@ -174,9 +195,17 @@ def register_after_request_handlers(app: Flask) -> None:
         return response
 
     @app.after_request
-    def add_secure_headers(response: Response) -> Response:
+    def add_security_headers(response: Response) -> Response:
         """
-        Add security headers to the response.
+        Add security headers to the response, replacing CSP nonce placeholder with actual nonce.
         """
         secure_headers.set_headers(response)  # type: ignore[arg-type]
+
+        # Replace nonce placeholder with actual nonce for this request
+        nonce = g.get("csp_nonce", "")
+        if nonce and "Content-Security-Policy" in response.headers:
+            response.headers["Content-Security-Policy"] = response.headers["Content-Security-Policy"].replace(
+                "NONCE_PLACEHOLDER", nonce
+            )
+
         return response

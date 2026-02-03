@@ -1,0 +1,53 @@
+// ABOUTME: Utility classes for common inline style patterns
+// ABOUTME: Replaces inline styles to improve CSP compliance
+
+// Form display utilities
+.form-inline {
+    display: inline;
+}
+
+// SVG icon utilities
+.svg-icon {
+    display: block;
+}
+
+// Screen reader only (visually hidden but accessible)
+.sr-only {
+    display: none;
+}
+
+// Button styled as link
+.button-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: $govuk-link-colour;
+    text-decoration: underline;
+    font-size: inherit;
+
+    &:hover {
+        color: $govuk-link-hover-colour;
+    }
+}
+
+// 2FA backup code display
+.code-display {
+    background: #f3f2f1;
+    padding: 20px;
+    border: 1px solid #b1b4b6;
+    margin-bottom: 30px;
+}
+
+.code-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-family: monospace;
+    font-size: 16px;
+}
+
+// Large icon sizing (error pages)
+.icon-lg {
+    font-size: 5rem;
+}

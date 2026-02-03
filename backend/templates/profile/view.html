@@ -47,7 +47,7 @@
                             <form method="POST"
                                 action="{{ url_for('profile.remove_password') }}"
                                 style="display: inline"
-                                onsubmit="return confirm('{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}');">
+                                data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit"
                                     class="govuk-link govuk-!-font-size-19"
@@ -81,7 +81,7 @@
                                     <form method="POST"
                                         action="{{ url_for('profile.remove_oauth') }}"
                                         style="display: inline"
-                                        onsubmit="return confirm('{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}');">
+                                        data-confirm="{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit"
                                             class="govuk-link govuk-!-font-size-19"
@@ -146,7 +146,7 @@
                                     <form method="POST"
                                         action="{{ url_for('profile.remove_oauth') }}"
                                         style="display: inline"
-                                        onsubmit="return confirm('{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}');">
+                                        data-confirm="{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit"
                                             class="govuk-link govuk-!-font-size-19"

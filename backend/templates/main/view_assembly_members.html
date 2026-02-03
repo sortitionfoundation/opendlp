@@ -27,7 +27,7 @@
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit"
                                         class="govuk-button govuk-button--warning"
-                                        onclick="return confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}')">
+                                        data-confirm="{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}">
                                         {{ _("Remove") }}
                                     </button>
                                 </form>

@@ -58,7 +58,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
         app.wsgi_app,
         root="static/",
         prefix=whitenoise_prefix,
-        # max_age=31536000,  # 1 year cache for static files
+        max_age=31536000,  # 1 year cache for static files
         charset="utf-8",  # Explicit charset to prevent encoding issues
     )
 

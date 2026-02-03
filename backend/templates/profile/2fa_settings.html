@@ -99,7 +99,7 @@
                         <div class="govuk-details__text">
                             <form method="POST"
                                 action="{{ url_for('profile.disable_2fa') }}"
-                                onsubmit="return confirm('{{ _("Are you sure you want to disable two-factor authentication? This will make your account less secure.") }}');">
+                                data-confirm="{{ _("Are you sure you want to disable two-factor authentication? This will make your account less secure.") }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <div class="govuk-form-group">
                                     <label class="govuk-label" for="totp_code_disable">{{ _("Verification code") }}</label>

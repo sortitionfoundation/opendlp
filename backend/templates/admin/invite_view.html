@@ -113,7 +113,7 @@
                             <button type="submit"
                                 class="govuk-button govuk-button--warning"
                                 data-module="govuk-button"
-                                onclick="return confirm('{{ _("Are you sure you want to revoke this invite? This action cannot be undone.") }}');">
+                                data-confirm="{{ _("Are you sure you want to revoke this invite? This action cannot be undone.") }}">
                                 {{ _("Revoke Invite") }}
                             </button>
                         </form>
@@ -124,40 +124,4 @@
             </div>
         </div>
     </div>
-    <script>
-        function copyToClipboard(elementId, successMessage) {
-            const element = document.getElementById(elementId);
-            const text = element.textContent;
-
-            // Use the modern clipboard API if available
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(function() {
-                    alert(successMessage);
-                }, function() {
-                    fallbackCopyToClipboard(text, successMessage);
-                });
-            } else {
-                fallbackCopyToClipboard(text, successMessage);
-            }
-        }
-
-        function fallbackCopyToClipboard(text, successMessage) {
-            // Fallback for older browsers
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.select();
-
-            try {
-                document.execCommand('copy');
-                alert(successMessage);
-            } catch (err) {
-                alert('{{ _('Failed to copy. Please copy manually.') }}');
-            }
-
-            document.body.removeChild(textArea);
-        }
-    </script>
 {% endblock %}

@@ -23,7 +23,7 @@
             <button type="submit"
                 class="govuk-button govuk-button--warning"
                 data-module="govuk-button"
-                onclick="return confirm('{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}');">
+                data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
                 {{ _("Clean Up Expired Invites") }}
             </button>
         </form>
@@ -113,7 +113,7 @@
                                             cursor: pointer;
                                             color: #1d70b8;
                                             text-decoration: underline"
-                                        onclick="return confirm('{{ _("Are you sure you want to revoke this invite?") }}');">
+                                        data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
                                         {{ _("Revoke") }}
                                     </button>
                                 </form>

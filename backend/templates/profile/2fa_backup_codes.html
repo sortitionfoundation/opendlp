@@ -24,11 +24,12 @@
                 padding: 20px;
                 border: 1px solid #b1b4b6;
                 margin-bottom: 30px">
-                <div style="display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 10px;
-                    font-family: monospace;
-                    font-size: 16px">
+                <div id="backup-codes"
+                    style="display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                        font-family: monospace;
+                        font-size: 16px">
                     {% for code in backup_codes %}
                         <div>{{ code }}</div>
                     {% endfor %}
@@ -38,28 +39,11 @@
                 <button onclick="downloadBackupCodes()"
                     class="govuk-button govuk-button--secondary"
                     data-module="govuk-button">{{ _("Download codes") }}</button>
-                <button onclick="window.print()"
+                <button data-print
                     class="govuk-button govuk-button--secondary"
                     data-module="govuk-button">{{ _("Print codes") }}</button>
                 <a href="{{ url_for('profile.two_factor_settings') }}" class="govuk-button" data-module="govuk-button">{{ _("Done") }}</a>
             </div>
         </div>
     </div>
-    <script>
-        function downloadBackupCodes() {
-            const codes = {{ backup_codes | tojson }};
-            const text = 'OpenDLP Two-Factor Authentication Backup Codes\n\n' +
-            codes.join('\n') +
-            '\n\nEach code can only be used once. Keep them in a safe place.';
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'opendlp-backup-codes.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
-    </script>
 {% endblock %}

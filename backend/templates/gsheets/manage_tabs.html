@@ -59,7 +59,7 @@
                 <button class="govuk-button govuk-button--warning"
                     type="submit"
                     data-module="govuk-button"
-                    onclick="return confirm('{{ _("Are you sure you want to cancel this task?") }}')">
+                    data-confirm="{{ _("Are you sure you want to cancel this task?") }}">
                     {{ _("Cancel") }}
                 </button>
             </form>
@@ -68,7 +68,7 @@
             {% if tab_names|length > 0 %}
                 <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
                     method="post"
-                    onsubmit="return confirm('{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}');">
+                    data-confirm="{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit" class="govuk-button govuk-button--warning">{{ _("Delete These Tabs") }}</button>
                 </form>

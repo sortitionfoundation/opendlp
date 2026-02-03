@@ -32,7 +32,7 @@
     </p>
     <form method="post"
         novalidate
-        x-data="{ selectedTeam: '{{ form.team.data or 'other' }}' }">
+        x-data="teamSelector('{{ form.team.data or 'other' }}')">
         {{ form.hidden_tag() }}
         <div class="govuk-form-group {% if form.url.errors %}govuk-form-group--error{% endif %}">
             <h1 class="govuk-label-wrapper">

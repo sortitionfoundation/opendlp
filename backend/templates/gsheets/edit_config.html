@@ -30,7 +30,7 @@
     <p class="govuk-body">{{ _("Update the Google Spreadsheet settings for this assembly.") }}</p>
     <form method="post"
         novalidate
-        x-data="{ selectedTeam: '{{ form.team.data or 'other' }}' }">
+        x-data="teamSelector('{{ form.team.data or 'other' }}')">
         {{ form.hidden_tag() }}
         <div class="govuk-form-group {% if form.url.errors %}govuk-form-group--error{% endif %}">
             <h1 class="govuk-label-wrapper">
@@ -245,7 +245,7 @@
                 <button type="submit"
                     class="govuk-button govuk-button--warning"
                     data-module="govuk-button"
-                    onclick="return confirm('{{ _("Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.") }}');">
+                    data-confirm="{{ _("Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.") }}">
                     {{ _("Remove Configuration") }}
                 </button>
             </form>
