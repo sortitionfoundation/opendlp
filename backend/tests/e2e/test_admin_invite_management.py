@@ -195,6 +195,37 @@ class TestCreateInvite:
             assert invites[0].expires_at.date() == date(2025, 1, 8)
             assert invites[0].global_role == GlobalRole.USER
 
+    @pytest.mark.time_machine(datetime(2025, 1, 1))
+    def test_create_invite_with_email(self, client: FlaskClient, admin_user: User, postgres_session_factory, caplog):
+        """Test creating an invite with email sends invitation email."""
+        login_as_admin(client, admin_user)
+
+        response = client.post(
+            "/admin/invites/create",
+            data={
+                "global_role": GlobalRole.USER.name,
+                "email": "newuser@example.com",
+                "expires_in_hours": 72,
+                "csrf_token": get_csrf_token(client, "/admin/invites/create"),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        # Should show success message for invite creation
+        assert b"Invite created successfully" in response.data
+        # Should show success message for email sending (in console mode)
+        assert b"Invitation email sent" in response.data
+
+        # Verify invite was created in database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            invites = list(uow.user_invites.all())
+            assert len(invites) == 1
+            assert invites[0].global_role == GlobalRole.USER
+
+        # Verify email was logged (console adapter logs emails)
+        assert "Invite email sent to newuser@example.com" in caplog.text
+
 
 class TestViewInvite:
     """Test admin view invite details page."""

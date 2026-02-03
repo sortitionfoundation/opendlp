@@ -8,6 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
 from opendlp.service_layer import two_factor_service
@@ -322,12 +323,30 @@ def create_invite() -> ResponseReturnValue:
                     "success",
                 )
 
-                # TODO: If email is provided, send invite email
+                # Send invite email if email is provided
                 if form.email.data:
-                    flash(
-                        _("Email sending not yet implemented. Please share the invite code manually."),
-                        "info",
-                    )
+                    try:
+                        email_sent = _send_invite_email(
+                            email_address=form.email.data,
+                            invite_code=invite.code,
+                            expires_in_hours=expires_in_hours,
+                        )
+                        if email_sent:
+                            flash(
+                                _("Invitation email sent to %(email)s", email=form.email.data),
+                                "success",
+                            )
+                        else:
+                            flash(
+                                _("Failed to send invitation email. Please share the invite code manually."),
+                                "warning",
+                            )
+                    except Exception as e:
+                        current_app.logger.error(f"Error sending invite email to {form.email.data}: {e}")
+                        flash(
+                            _("Error sending invitation email. Please share the invite code manually."),
+                            "warning",
+                        )
 
                 return redirect(url_for("admin.view_invite", invite_id=invite.id))
 
@@ -426,3 +445,64 @@ def cleanup_invites() -> ResponseReturnValue:
         current_app.logger.error(f"Error cleaning up invites by admin {current_user.id}: {e}")
         flash(_("An error occurred while cleaning up invites"), "error")
         return redirect(url_for("admin.list_invites_page"))
+
+
+def _send_invite_email(
+    email_address: str,
+    invite_code: str,
+    expires_in_hours: int,
+) -> bool:
+    """
+    Send invitation email to user.
+
+    Args:
+        email_address: Email address to send invite to
+        invite_code: The invite code to include in registration URL
+        expires_in_hours: Hours until invite expires (for email message)
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    try:
+        # Get dependencies from Flask app
+        email_adapter = get_email_adapter()
+        template_renderer = get_template_renderer(current_app)
+        url_generator = get_url_generator(current_app)
+
+        # Generate registration URL with invite code in path
+        registration_url = url_generator.generate_url(
+            "auth.register",
+            invite_code=invite_code,
+            _external=True,
+        )
+
+        # Prepare template context
+        context = {
+            "recipient_name": None,  # We don't have the recipient's name yet
+            "email_address": email_address,
+            "registration_url": registration_url,
+            "expiry_hours": expires_in_hours,
+        }
+
+        # Render email templates
+        text_body = template_renderer.render_template("emails/user_invite.txt", **context)
+        html_body = template_renderer.render_template("emails/user_invite.html", **context)
+
+        # Send email
+        success = email_adapter.send_email(
+            to=[email_address],
+            subject="You're Invited to Join OpenDLP",
+            text_body=text_body,
+            html_body=html_body,
+        )
+
+        if success:
+            current_app.logger.info(f"Invite email sent to {email_address}")
+        else:
+            current_app.logger.error(f"Failed to send invite email to {email_address}")
+
+        return success
+
+    except Exception as e:
+        current_app.logger.error(f"Error sending invite email to {email_address}: {e}")
+        return False

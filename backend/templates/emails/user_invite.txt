@@ -1,0 +1,20 @@
+{% if recipient_name %}{{ _("Hi %(name)s,", name=recipient_name) }}{% else %}{{ _("Hi,") }}{% endif %}
+
+{{ _("You've been invited to join OpenDLP!") }}
+
+{{ _("Email address:") }} {{ email_address }}
+
+{{ _("OpenDLP is a platform for supporting Citizens' Assemblies through stratified selection processes.") }}
+
+{{ _("Click the link below to register your account:") }}
+
+{{ registration_url }}
+
+{% if expiry_hours == 1 %}{{ _("This invitation will expire in %(hours)s hour.", hours=expiry_hours) }}{% elif expiry_hours < 48 %}{{ _("This invitation will expire in %(hours)s hours.", hours=expiry_hours) }}{% else %}{{ _("This invitation will expire in %(days)s days.", days=(expiry_hours / 24)|int) }}{% endif %}
+
+{{ _("If you weren't expecting this invitation, you can safely ignore this email.") }}
+
+---
+{{ _("OpenDLP Team") }}
+
+{{ _("Need help? Contact us at support@opendlp.org") }}
