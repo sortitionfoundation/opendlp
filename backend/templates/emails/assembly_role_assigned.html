@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ _("Added to Assembly - OpenDLP") }}</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .container {
+                background-color: #f9f9f9;
+                border-radius: 8px;
+                padding: 30px;
+                margin: 20px 0;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .button {
+                display: inline-block;
+                padding: 12px 30px;
+                background-color: #007bff;
+                color: #ffffff !important;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                margin: 20px 0;
+            }
+            .button:hover {
+                background-color: #0056b3;
+            }
+            .button-container {
+                text-align: center;
+                margin: 30px 0;
+            }
+            .info-box {
+                background-color: #e7f3ff;
+                border-left: 4px solid #007bff;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }
+            .role-badge {
+                display: inline-block;
+                padding: 6px 12px;
+                background-color: #28a745;
+                color: white;
+                border-radius: 4px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .footer {
+                text-align: center;
+                color: #666;
+                font-size: 14px;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{{ _("You've Been Added to an Assembly!") }}</h1>
+            </div>
+            <p>
+                {% if user_name %}
+                    {{ _("Hi %(name)s,", name=user_name) }}
+                {% else %}
+                    {{ _("Hi,") }}
+                {% endif %}
+            </p>
+            <div class="info-box">
+                <p style="margin: 0 0 10px 0;">
+                    <strong>{{ _("Assembly:") }}</strong> {{ assembly_title }}
+                </p>
+                <p style="margin: 0;">
+                    <strong>{{ _("Your role:") }}</strong> <span class="role-badge">{{ role_name }}</span>
+                </p>
+                {% if assembly_question %}
+                    <p style="margin: 10px 0 0 0;">
+                        <strong>{{ _("Assembly question:") }}</strong> {{ assembly_question }}
+                    </p>
+                {% endif %}
+            </div>
+            <p>{{ _("You now have access to this assembly and can collaborate with your team.") }}</p>
+            <div class="button-container">
+                <a href="{{ assembly_url }}" class="button">{{ _("View Assembly") }}</a>
+            </div>
+            {% if role == "ASSEMBLY_MANAGER" %}
+                <p style="background-color: #fff3cd;
+                    border-left: 4px solid #ffc107;
+                    padding: 15px;
+                    border-radius: 4px;">
+                    <strong>{{ _("Assembly Manager Permissions:") }}</strong><br>
+                    {{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}
+                </p>
+            {% elif role == "CONFIRMATION_CALLER" %}
+                <p style="background-color: #d1ecf1;
+                    border-left: 4px solid #0c5460;
+                    padding: 15px;
+                    border-radius: 4px;">
+                    <strong>{{ _("Confirmation Caller Permissions:") }}</strong><br>
+                    {{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}
+                </p>
+            {% endif %}
+            <div class="footer">
+                <p>
+                    <strong>{{ _("OpenDLP Team") }}</strong>
+                </p>
+                <p>
+                    {{ _("Need help? Contact us at <a href=\"mailto:support@opendlp.org\">support@opendlp.org</a>") |safe }}
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

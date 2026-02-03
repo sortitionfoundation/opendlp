@@ -1,0 +1,19 @@
+{% if user_name %}{{ _("Hi %(name)s,", name=user_name) }}{% else %}{{ _("Hi,") }}{% endif %}
+
+{{ _("You've been added to an assembly on OpenDLP!") }}
+
+{{ _("Assembly:") }} {{ assembly_title }}
+{{ _("Your role:") }} {{ role_name }}
+
+{% if assembly_question %}{{ _("Assembly question:") }} {{ assembly_question }}
+
+{% endif %}{{ _("Click the link below to view the assembly:") }}
+
+{{ assembly_url }}
+
+{% if role == "ASSEMBLY_MANAGER" %}{{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}{% elif role == "CONFIRMATION_CALLER" %}{{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}{% endif %}
+
+---
+{{ _("OpenDLP Team") }}
+
+{{ _("Need help? Contact us at support@opendlp.org") }}

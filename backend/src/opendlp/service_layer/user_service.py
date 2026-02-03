@@ -1,13 +1,17 @@
 """ABOUTME: User management service layer with business logic for user operations
 ABOUTME: Handles user creation, authentication, role assignment, and invite validation"""
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
+from opendlp.adapters.email import EmailAdapter
+from opendlp.adapters.template_renderer import TemplateRenderer
+from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options
 
 from .email_confirmation_service import create_confirmation_token
 from .exceptions import (
@@ -26,6 +30,8 @@ from .exceptions import (
 from .permissions import can_manage_assembly, has_global_admin
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
+
+logger = logging.getLogger(__name__)
 
 
 def create_user(
@@ -567,6 +573,9 @@ def grant_user_assembly_role(
     assembly_id: uuid.UUID,
     role: AssemblyRole,
     current_user: User,
+    email_adapter: EmailAdapter | None = None,
+    template_renderer: TemplateRenderer | None = None,
+    url_generator: URLGenerator | None = None,
 ) -> UserAssemblyRole:
     """
     Grant or update a user's role on an assembly.
@@ -577,6 +586,9 @@ def grant_user_assembly_role(
         assembly_id: ID of assembly
         role: Role to assign
         current_user: User performing the action (must have permission)
+        email_adapter: Optional email adapter for sending notification emails
+        template_renderer: Optional template renderer for rendering email templates
+        url_generator: Optional URL generator for creating assembly URLs
 
     Returns:
         Created or updated UserAssemblyRole instance
@@ -616,6 +628,8 @@ def grant_user_assembly_role(
             None,
         )
 
+        is_new_role = existing_role is None
+
         if existing_role:
             # Update existing role
             assert isinstance(existing_role, UserAssemblyRole)
@@ -632,6 +646,18 @@ def grant_user_assembly_role(
             target_user.assembly_roles.append(assembly_role)
 
         uow.commit()
+
+        # Send email notification if this is a new role assignment and all adapters are provided
+        if is_new_role and email_adapter and template_renderer and url_generator:
+            send_assembly_role_assigned_email(
+                email_adapter=email_adapter,
+                template_renderer=template_renderer,
+                url_generator=url_generator,
+                user=target_user,
+                assembly=assembly,
+                role=role,
+            )
+
         return assembly_role
 
 
@@ -888,3 +914,71 @@ def remove_oauth_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
         detached_user = user.create_detached_copy()
         uow.commit()
         return detached_user
+
+
+def send_assembly_role_assigned_email(
+    email_adapter: EmailAdapter,
+    template_renderer: TemplateRenderer,
+    url_generator: URLGenerator,
+    user: User,
+    assembly: Assembly,
+    role: AssemblyRole,
+) -> bool:
+    """
+    Send email notification when user is assigned a role on an assembly.
+
+    Args:
+        email_adapter: Email adapter for sending emails
+        template_renderer: Template renderer for rendering email templates
+        url_generator: URL generator for creating assembly URL
+        user: User being assigned the role
+        assembly: Assembly the user is being added to
+        role: Role being assigned to the user
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    try:
+        # Generate assembly URL
+        # Using _external=True to get full URL with domain
+        assembly_url = url_generator.generate_url(
+            "main.view_assembly",
+            assembly_id=assembly.id,
+            _external=True,
+        )
+
+        # Get human-readable role name
+        role_name = assembly_role_options.get(role.name, role.value)
+
+        # Prepare template context
+        context = {
+            "user_name": user.display_name if user.first_name or user.last_name else None,
+            "assembly_title": assembly.title,
+            "assembly_question": assembly.question if assembly.question else None,
+            "assembly_url": assembly_url,
+            "role": role.name,
+            "role_name": role_name,
+        }
+
+        # Render email templates
+        text_body = template_renderer.render_template("emails/assembly_role_assigned.txt", **context)
+        html_body = template_renderer.render_template("emails/assembly_role_assigned.html", **context)
+
+        # Send email
+        success = email_adapter.send_email(
+            to=[user.email],
+            subject=f"Added to Assembly: {assembly.title}",
+            text_body=text_body,
+            html_body=html_body,
+        )
+
+        if success:
+            logger.info(f"Assembly role assigned email sent to {user.email} for assembly {assembly.id}")
+        else:
+            logger.error(f"Failed to send assembly role assigned email to {user.email}")
+
+        return success
+
+    except Exception as e:
+        logger.error(f"Error sending assembly role assigned email to {user.email}: {e}")
+        return False

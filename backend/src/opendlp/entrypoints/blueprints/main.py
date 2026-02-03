@@ -8,6 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import (
     create_assembly,
@@ -289,6 +290,11 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 role = form.role.data
                 assert isinstance(role, AssemblyRole)
 
+                # Get email adapters for sending notification
+                email_adapter = get_email_adapter()
+                template_renderer = get_template_renderer(current_app)
+                url_generator = get_url_generator(current_app)
+
                 # Call service layer to add user to assembly
                 grant_user_assembly_role(
                     uow=uow,
@@ -296,6 +302,9 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     assembly_id=assembly_id,
                     role=role,
                     current_user=current_user,
+                    email_adapter=email_adapter,
+                    template_renderer=template_renderer,
+                    url_generator=url_generator,
                 )
 
                 target_user = uow.users.get(user_id)

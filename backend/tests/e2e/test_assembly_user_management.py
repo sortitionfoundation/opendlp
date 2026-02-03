@@ -234,6 +234,36 @@ class TestAddUserToAssembly:
         # Should fail due to missing CSRF token
         assert response.status_code == 302
 
+    def test_add_user_to_assembly_sends_notification_email(
+        self,
+        client: FlaskClient,
+        admin_user: User,
+        regular_user: User,
+        existing_assembly: Assembly,
+        caplog,
+    ):
+        """Test that adding user to assembly sends notification email."""
+        login_as_admin(client, admin_user)
+
+        response = client.post(
+            f"/assemblies/{existing_assembly.id}/members",
+            data={
+                "user_id": str(regular_user.id),
+                "role": AssemblyRole.ASSEMBLY_MANAGER.name,
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        # Should show success message
+        assert b"added to assembly" in response.data
+
+        # Verify email was logged (console adapter logs emails)
+        assert f"Assembly role assigned email sent to {regular_user.email}" in caplog.text
+        # Verify assembly ID is in the logs
+        assert str(existing_assembly.id) in caplog.text
+
 
 class TestRemoveUserFromAssembly:
     """Test removing users from assemblies."""
