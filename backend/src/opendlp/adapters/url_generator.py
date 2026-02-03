@@ -45,7 +45,7 @@ class FlaskURLGenerator(URLGenerator):
 
         Args:
             endpoint: Flask endpoint name
-            _external: Whether to generate an absolute URL
+            _external: If True generate an absolute URL, otherwise a relative one
             **values: URL parameters
 
         Returns:
