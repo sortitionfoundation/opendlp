@@ -7,7 +7,7 @@ Feature: Backoffice UI
     Given I am on the backoffice showcase page
     Then I should see "Component Showcase"
     And I should see "Alpine.js Interactivity"
-    And I should see "Design Tokens"
+    And I should see "Primitive Tokens"
 
   Scenario: Design tokens are loaded and working
     Given I am on the backoffice showcase page
@@ -44,3 +44,22 @@ Feature: Backoffice UI
     And I should see the card with header
     And I should see the card with actions
     And the card with actions should contain buttons
+
+  # Dashboard Tests (Protected Route)
+
+  Scenario: Unauthenticated user is redirected to login
+    Given I am not logged in
+    When I try to access the backoffice dashboard
+    Then I should be redirected to the login page
+
+  Scenario: Authenticated user can view backoffice dashboard
+    Given I am logged in as an admin user
+    When I visit the backoffice dashboard
+    Then I should see "Dashboard"
+    And I should see "Welcome back"
+
+  Scenario: Dashboard displays assemblies using card components
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the backoffice dashboard
+    Then I should see an assembly card with title "Climate Assembly"

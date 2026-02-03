@@ -2,12 +2,13 @@
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
 import os
+import re
 
 import pytest
 from playwright.sync_api import Page, expect, sync_playwright
-from pytest_bdd import given, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
-from .config import Urls
+from .config import ADMIN_PASSWORD, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
@@ -63,10 +64,10 @@ def see_alpine_interactivity_text(page: Page):
     expect(page.locator("body")).to_contain_text("Alpine.js Interactivity")
 
 
-@then('I should see "Design Tokens"')
-def see_design_tokens_text(page: Page):
-    """Verify the Design Tokens section heading is visible."""
-    expect(page.locator("body")).to_contain_text("Design Tokens")
+@then('I should see "Primitive Tokens"')
+def see_primitive_tokens_text(page: Page):
+    """Verify the Primitive Tokens section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Primitive Tokens")
 
 
 # Design Token Tests
@@ -228,3 +229,81 @@ def card_with_actions_has_buttons(page: Page):
     card = page.locator("#card-actions")
     expect(card.locator("button", has_text="Save")).to_be_visible()
     expect(card.locator("button", has_text="Cancel")).to_be_visible()
+
+
+# Dashboard Tests (Protected Route)
+
+
+def _login_admin(page: Page, admin_user) -> None:
+    """Helper to log in as admin user."""
+    page.context.clear_cookies()
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', admin_user.email)
+    page.fill('input[name="password"]', ADMIN_PASSWORD)
+    page.click('button[type="submit"]')
+    page.wait_for_url(Urls.dashboard)
+
+
+@given("I am not logged in")
+def not_logged_in(page: Page):
+    """Ensure user is not logged in by clearing cookies."""
+    page.context.clear_cookies()
+
+
+@given("I am logged in as an admin user")
+def logged_in_as_admin(page: Page, admin_user):
+    """Log in as admin user."""
+    _login_admin(page, admin_user)
+
+
+@given(parsers.parse('there is an assembly called "{title}"'))
+def create_test_assembly(title: str, admin_user, test_database):
+    """Create a test assembly for the admin user."""
+    from opendlp.service_layer.assembly_service import create_assembly
+    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    create_assembly(
+        uow=uow,
+        title=title,
+        created_by_user_id=admin_user.id,
+    )
+
+
+@when("I try to access the backoffice dashboard")
+def try_access_backoffice_dashboard(page: Page):
+    """Attempt to access the backoffice dashboard."""
+    page.goto(Urls.backoffice_dashboard)
+
+
+@when("I visit the backoffice dashboard")
+def visit_backoffice_dashboard(page: Page):
+    """Navigate to the backoffice dashboard."""
+    page.goto(Urls.backoffice_dashboard)
+
+
+@then("I should be redirected to the login page")
+def redirected_to_login(page: Page):
+    """Verify user was redirected to login page (with optional next parameter)."""
+    expect(page).to_have_url(re.compile(r".*/auth/login.*"), timeout=5000)
+
+
+@then('I should see "Dashboard"')
+def see_dashboard_text(page: Page):
+    """Verify Dashboard heading is visible."""
+    heading = page.locator("h1")
+    expect(heading).to_contain_text("Dashboard")
+
+
+@then('I should see "Welcome back"')
+def see_welcome_back_text(page: Page):
+    """Verify Welcome back text is visible."""
+    expect(page.locator("body")).to_contain_text("Welcome back")
+
+
+@then(parsers.parse('I should see an assembly card with title "{title}"'))
+def see_assembly_card_with_title(page: Page, title: str):
+    """Verify an assembly card with the given title is visible."""
+    card = page.locator(".assembly-card", has_text=title)
+    expect(card).to_be_visible()
