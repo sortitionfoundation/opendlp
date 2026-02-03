@@ -1,0 +1,39 @@
+{% extends "backoffice/base.html" %}
+{% from "backoffice/components/card.html" import card %}
+{% from "backoffice/components/button.html" import button %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <h1 style="color: var(--color-text-primary);" class="text-3xl font-bold mb-2">Dashboard</h1>
+    <p style="color: var(--color-text-muted);" class="mb-8">Welcome back, {{ current_user.display_name }}!</p>
+
+    <!-- Assemblies Section -->
+    <section>
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Your Assemblies</h2>
+
+        {% if assemblies %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for assembly in assemblies %}
+                    {% call card(title=assembly.title, subtitle=assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                        {% if assembly.question %}
+                            <p style="color: var(--color-text-body);" class="mb-4">
+                                {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if assembly.first_assembly_date %}
+                            <p style="color: var(--color-text-muted);" class="text-sm">
+                                Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
+                            </p>
+                        {% endif %}
+                    {% endcall %}
+                {% endfor %}
+            </div>
+        {% else %}
+            {% call card(id="no-assemblies-card") %}
+                <p style="color: var(--color-text-body);" class="mb-2">No assemblies yet</p>
+                <p style="color: var(--color-text-muted);">You don't have access to any assemblies at the moment.</p>
+            {% endcall %}
+        {% endif %}
+    </section>
+{% endblock %}

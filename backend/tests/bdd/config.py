@@ -26,6 +26,7 @@ class Urls:
 
     # Backoffice URLs (Pines UI + Tailwind)
     backoffice_showcase = f"{base}/backoffice/showcase"
+    backoffice_dashboard = f"{base}/backoffice/dashboard"
 
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
