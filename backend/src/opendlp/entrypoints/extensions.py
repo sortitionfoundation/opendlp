@@ -8,7 +8,6 @@ from flask import Flask, request, session
 from flask_babel import Babel
 from flask_login import LoginManager
 from flask_session import Session
-from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect
 from whitenoise import WhiteNoise
 
@@ -20,7 +19,6 @@ from opendlp.translations import gettext
 # Initialize extensions
 login_manager = LoginManager()
 session_store = Session()
-talisman = Talisman()
 babel = Babel()
 csrf = CSRFProtect()
 oauth = OAuth()
@@ -43,21 +41,6 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     # Initialize Flask-Session with Redis
     session_store.init_app(app)
 
-    # Initialize Flask-Talisman for security headers
-    talisman.init_app(
-        app,
-        force_https=app.config.get("FORCE_HTTPS", False),  # False in development
-        strict_transport_security=True,
-        content_security_policy={
-            "default-src": "'self'",
-            "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-            "style-src": "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-            "font-src": "'self' https://cdn.jsdelivr.net",
-            "img-src": "'self' data:",
-            "connect-src": "'self'",
-        },
-    )
-
     # Initialize Flask-Babel for i18n/l10n
     babel.init_app(app, locale_selector=get_locale)
 
@@ -70,7 +53,6 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     else:
         app_root = config.APPLICATION_ROOT.strip("/")
         whitenoise_prefix = f"{app_root}/static/"
-
     # Configure whitenoise with proper settings to prevent file truncation
     app.wsgi_app = WhiteNoise(  # type: ignore[method-assign]
         app.wsgi_app,

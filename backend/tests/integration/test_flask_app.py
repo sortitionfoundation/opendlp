@@ -61,7 +61,7 @@ class TestFlaskApp:
             assert b"Page Not Found" in response.data or b"404" in response.data
 
     def test_security_headers_applied(self) -> None:
-        """Test that Talisman security headers are applied."""
+        """Test that secure security headers are applied."""
         app = create_app("testing")
 
         with app.test_client() as client:

@@ -4,8 +4,9 @@ ABOUTME: Creates and configures Flask app instance with all necessary extensions
 import uuid
 
 import structlog
-from flask import Flask, Response, render_template, request
+from flask import Config, Flask, Response, render_template, request
 from flask_login import current_user
+from secure import Secure, headers
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -126,8 +127,34 @@ def register_before_request_handlers(app: Flask) -> None:
         )
 
 
+def get_secure_headers(config: Config) -> Secure:
+    secure_headers = Secure(
+        cache=headers.CacheControl().no_store(),
+        coop=headers.CrossOriginOpenerPolicy().same_origin(),
+        csp=headers.ContentSecurityPolicy()
+        .default_src("'self'")
+        .script_src("'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net")
+        .style_src("'self' 'unsafe-inline' https://cdn.jsdelivr.net")
+        .font_src("'self' https://cdn.jsdelivr.net")
+        .img_src("'self' data:")
+        .frame_ancestors("'none'")
+        .object_src("'none'"),
+        permissions=headers.PermissionsPolicy().geolocation().microphone().camera(),
+        referrer=headers.ReferrerPolicy().strict_origin_when_cross_origin(),
+        server=headers.Server().set(""),
+        xcto=headers.XContentTypeOptions().nosniff(),
+        xfo=headers.XFrameOptions().deny(),
+    )
+    # for local dev, we skip some headers. But for production we include them
+    if not config.get("DEBUG", False):
+        secure_headers.headers_list.append(headers.StrictTransportSecurity().max_age(31536000))
+    return secure_headers
+
+
 def register_after_request_handlers(app: Flask) -> None:
     """Register after request handlers."""
+
+    secure_headers = get_secure_headers(app.config)
 
     @app.after_request
     def add_cache_headers_for_authenticated_users(response: Response) -> Response:
@@ -144,4 +171,12 @@ def register_after_request_handlers(app: Flask) -> None:
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
+        return response
+
+    @app.after_request
+    def add_secure_headers(response: Response) -> Response:
+        """
+        Add security headers to the response.
+        """
+        secure_headers.set_headers(response)  # type: ignore[arg-type]
         return response
