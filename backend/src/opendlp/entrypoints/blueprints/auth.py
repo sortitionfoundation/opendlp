@@ -608,7 +608,8 @@ def google_callback() -> ResponseReturnValue:
 
 
 @auth_bp.route("/register/google", methods=["GET", "POST"])
-def register_google() -> ResponseReturnValue:
+@auth_bp.route("/register/google/<invite_code>", methods=["GET", "POST"])
+def register_google(invite_code: str = "") -> ResponseReturnValue:
     """Register with Google OAuth (requires invite code)."""
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
@@ -617,6 +618,10 @@ def register_google() -> ResponseReturnValue:
     from opendlp.entrypoints.forms import OAuthRegistrationForm
 
     form = OAuthRegistrationForm()
+
+    # Pre-populate invite code from URL path parameter
+    if invite_code and not form.invite_code.data:
+        form.invite_code.data = invite_code
 
     if form.validate_on_submit():
         # Store invite code and agreement in session
@@ -711,7 +716,8 @@ def microsoft_callback() -> ResponseReturnValue:
 
 
 @auth_bp.route("/register/microsoft", methods=["GET", "POST"])
-def register_microsoft() -> ResponseReturnValue:
+@auth_bp.route("/register/microsoft/<invite_code>", methods=["GET", "POST"])
+def register_microsoft(invite_code: str = "") -> ResponseReturnValue:
     """Register with Microsoft OAuth (requires invite code)."""
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
@@ -720,6 +726,10 @@ def register_microsoft() -> ResponseReturnValue:
     from opendlp.entrypoints.forms import OAuthRegistrationForm
 
     form = OAuthRegistrationForm()
+
+    # Pre-populate invite code from URL path parameter
+    if invite_code and not form.invite_code.data:
+        form.invite_code.data = invite_code
 
     if form.validate_on_submit():
         # Store invite code and agreement in session

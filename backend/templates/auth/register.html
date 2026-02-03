@@ -12,7 +12,7 @@
                     <h2 class="govuk-heading-m">{{ _("You can register with an external account") }}</h2>
                     {% if config.OAUTH_GOOGLE_CLIENT_ID %}
                         <form style="display: inline"
-                            action="{{ url_for('auth.register_google') }}"
+                            action="{% if form.invite_code.data %}{{ url_for('auth.register_google', invite_code=form.invite_code.data) }}{% else %}{{ url_for('auth.register_google') }}{% endif %}"
                             method="get">
                             <div class="govuk-!-margin-top-6">
                                 <button class="gsi-material-button">
@@ -44,7 +44,7 @@
                     {% endif %}
                     {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
                         <form style="display: inline"
-                            action="{{ url_for('auth.register_microsoft') }}"
+                            action="{% if form.invite_code.data %}{{ url_for('auth.register_microsoft', invite_code=form.invite_code.data) }}{% else %}{{ url_for('auth.register_microsoft') }}{% endif %}"
                             method="get">
                             <div class="govuk-!-margin-top-2">
                                 <button class="gsi-material-button">
