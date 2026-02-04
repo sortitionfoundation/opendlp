@@ -231,8 +231,84 @@
         </div>
     </section>
 
+    <!-- Responsive Layout Section -->
+    <section class="mb-24">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Responsive Layout</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">
+            Container max-width: <code class="font-mono bg-gray-100 px-1 rounded">max-w-screen-2xl</code> (1536px).
+            Resize your browser to see the breakpoint indicator change.
+        </p>
+
+        <!-- Breakpoint Indicator -->
+        <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg p-6 mb-6">
+            <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Current Breakpoint</h3>
+            <div class="flex flex-wrap gap-3">
+                <!-- Mobile (default) -->
+                <div class="sm:hidden">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        (&lt;640px) - Mobile
+                    </span>
+                </div>
+                <!-- SM -->
+                <div class="hidden sm:block md:hidden">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        sm (640px+) - Large phone
+                    </span>
+                </div>
+                <!-- MD -->
+                <div class="hidden md:block lg:hidden">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        md (768px+) - Tablet
+                    </span>
+                </div>
+                <!-- LG -->
+                <div class="hidden lg:block xl:hidden">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        lg (1024px+) - Laptop
+                    </span>
+                </div>
+                <!-- XL -->
+                <div class="hidden xl:block 2xl:hidden">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        xl (1280px+) - Desktop
+                    </span>
+                </div>
+                <!-- 2XL -->
+                <div class="hidden 2xl:block">
+                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                        2xl (1536px+) - Large Monitor
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Columns Example -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% call card(classes="") %}
+                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Breakpoints</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">sm</code> - 640px (Large phone)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">md</code> - 768px (Tablet)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">lg</code> - 1024px (Laptop)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">xl</code> - 1280px (Desktop)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">2xl</code> - 1536px (Large monitor)</li>
+                </ul>
+            {% endcall %}
+
+            {% call card(classes="") %}
+                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Recommended Grid Columns</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                    <li>Mobile: <code class="font-mono bg-gray-100 px-1 rounded">grid-cols-1</code></li>
+                    <li>Tablet (md): <code class="font-mono bg-gray-100 px-1 rounded">md:grid-cols-2</code></li>
+                    <li>Laptop (lg): <code class="font-mono bg-gray-100 px-1 rounded">lg:grid-cols-3</code></li>
+                    <li>Desktop (xl): <code class="font-mono bg-gray-100 px-1 rounded">xl:grid-cols-4</code></li>
+                </ul>
+            {% endcall %}
+        </div>
+    </section>
+
     <!-- Button Component Section -->
-    <section class="mb-24 ">
+    <section class="mb-24">
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Button Component</h2>
         <p style="color: var(--color-text-muted);" class="mb-4">Reusable button macro with variant support.</p>
 
