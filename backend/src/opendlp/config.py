@@ -7,6 +7,7 @@ import logging.config
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 
 from cachelib.file import FileSystemCache
@@ -309,6 +310,13 @@ class FlaskProductionConfig(FlaskConfig):
         self.FLASK_ENV = "production"
         # always override the DEBUG option in production
         self.DEBUG = False
+        # cookie settings
+        self.SESSION_COOKIE_SECURE = True
+        self.SESSION_COOKIE_SAMESITE = "Strict"
+        # remember cookie settings - for flask-login "remember me" functionality
+        self.REMEMBER_COOKIE_SECURE = True
+        self.REMEMBER_COOKIE_SAMESITE = "Strict"
+        self.REMEMBER_COOKIE_DURATION = timedelta(days=7)
         # TODO: consider this for all production?
         # self.LOG_TO_STDOUT = True
 
