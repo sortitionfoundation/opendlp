@@ -302,4 +302,22 @@ Spacing uses Tailwind's default scale (base unit: 4px). For visual consistency a
 
 Prefer even multiples (`p-2`, `p-4`, `p-6`, `p-8`) for visual rhythm. When adapting Pines UI components into Jinja macros, normalize spacing to match these conventions.
 
+### Responsive Layout
+
+Container: `max-w-screen-2xl mx-auto px-6` (max 1536px, centered with padding).
+
+| Breakpoint | Width | Columns | Use Case |
+|------------|-------|---------|----------|
+| Default | < 640px | 1 | Mobile |
+| `sm` | ≥ 640px | 1 | Large phone |
+| `md` | ≥ 768px | 2 | Tablet |
+| `lg` | ≥ 1024px | 3 | Laptop |
+| `xl` | ≥ 1280px | 4 | Desktop |
+| `2xl` | ≥ 1536px | 4+ | Large monitor |
+
+Standard responsive grid pattern:
+```html
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+```
+
 See [Frontend Architecture Research](docs/frontend_architecture_research.md) for full design system documentation.

@@ -13,7 +13,7 @@
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Your Assemblies</h2>
 
         {% if assemblies %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for assembly in assemblies %}
                     {% call card(title=assembly.title, subtitle=assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
                         {% if assembly.question %}
