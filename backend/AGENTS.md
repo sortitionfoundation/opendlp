@@ -283,4 +283,23 @@ Use semantic tokens for UI elements:
 - `--color-button-primary-bg`, `--color-button-secondary-bg`
 - `--color-surface`, `--color-border`, `--color-text-body`
 
+### Spacing Conventions
+
+Spacing uses Tailwind's default scale (base unit: 4px). For visual consistency across components:
+
+| Purpose | Tailwind Class | Value |
+|---------|---------------|-------|
+| Card/component padding | `p-6` | 1.5rem (24px) |
+| Section gap (grid/flex) | `gap-6` | 1.5rem (24px) |
+| Heading margin bottom | `mb-2` | 0.5rem (8px) |
+| Paragraph margin bottom | `mb-4` | 1rem (16px) |
+| Section margin bottom | `mb-8` | 2rem (32px) |
+| Large section margin | `mb-24` | 6rem (96px) |
+| Button padding | `px-4 py-2` | 1rem / 0.5rem |
+| Inline element gap | `gap-2` | 0.5rem (8px) |
+| Card header/footer padding | `px-6 py-4` | 1.5rem / 1rem |
+| Card footer (compact) | `px-6 py-3` | 1.5rem / 0.75rem |
+
+Prefer even multiples (`p-2`, `p-4`, `p-6`, `p-8`) for visual rhythm. When adapting Pines UI components into Jinja macros, normalize spacing to match these conventions.
+
 See [Frontend Architecture Research](docs/frontend_architecture_research.md) for full design system documentation.
