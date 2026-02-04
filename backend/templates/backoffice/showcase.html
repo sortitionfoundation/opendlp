@@ -198,6 +198,39 @@
         </div>
     </section>
 
+    <!-- Spacing Conventions Section -->
+    <section class="mb-24">
+        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Spacing Conventions</h2>
+        <p style="color: var(--color-text-muted);" class="mb-4">
+            Consistent spacing using Tailwind's default scale (base unit: 4px).
+            See <a href="https://github.com/sortitionfoundation/opendlp" style="color: var(--color-text-link);">AGENTS.md</a> for the full spacing reference table.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Common Spacing Values -->
+            {% call card(classes="") %}
+                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Key Values</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">p-6</code> / <code class="font-mono bg-gray-100 px-1 rounded">gap-6</code> - Card padding, section gaps (24px)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">mb-4</code> - Paragraph spacing (16px)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">mb-8</code> - Section spacing (32px)</li>
+                    <li><code class="font-mono bg-gray-100 px-1 rounded">gap-2</code> - Inline element gaps (8px)</li>
+                </ul>
+            {% endcall %}
+
+            <!-- Principle -->
+            {% call card(classes="") %}
+                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Principle</h3>
+                <p style="color: var(--color-text-body);" class="text-sm mb-3">
+                    Prefer even multiples for visual rhythm: <code class="font-mono bg-gray-100 px-1 rounded">p-2</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-4</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-6</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-8</code>.
+                </p>
+                <p style="color: var(--color-text-muted);" class="text-sm">
+                    When adapting Pines UI components into Jinja macros, normalize spacing to match these conventions for consistency across the interface.
+                </p>
+            {% endcall %}
+        </div>
+    </section>
+
     <!-- Button Component Section -->
     <section class="mb-24 ">
         <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Button Component</h2>
