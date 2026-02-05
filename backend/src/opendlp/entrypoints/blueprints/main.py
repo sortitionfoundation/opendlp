@@ -34,6 +34,13 @@ def index() -> ResponseReturnValue:
     return render_template("main/index.html"), 200
 
 
+@main_bp.route("/support")
+def support() -> ResponseReturnValue:
+    """Support page with contact information."""
+    support_email = current_app.config.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
+    return render_template("main/support.html", support_email=support_email), 200
+
+
 @main_bp.route("/dashboard")
 @login_required
 def dashboard() -> ResponseReturnValue:

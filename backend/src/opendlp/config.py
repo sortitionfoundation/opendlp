@@ -229,6 +229,9 @@ class FlaskBaseConfig:
         # 168 = 24 * 7 - so 7 days
         self.INVITE_EXPIRY_HOURS: int = int(os.environ.get("INVITE_EXPIRY_HOURS", "168"))
 
+        # Support configuration
+        self.SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
+
         # Deployment configuration
         self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")
         # Server name for URL generation (used when behind a reverse proxy)

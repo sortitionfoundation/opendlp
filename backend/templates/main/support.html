@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Support") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("Support") }}</h1>
+            <p class="govuk-body">
+                {{ _("If you need help with OpenDLP, please contact our support team by email. We aim to respond to all enquiries within 2 business days.") }}
+            </p>
+            <h2 class="govuk-heading-m">{{ _("Contact Support") }}</h2>
+            <p class="govuk-body">
+                <a href="mailto:{{ support_email }}?subject=OpenDLP%20Support%20Request&body=Please%20describe%20your%20issue%20below%3A%0A%0A---%0A%0APlease%20include%20the%20following%20information%20if%20relevant%3A%0A-%20Assembly%20name%20or%20ID%0A-%20Steps%20to%20reproduce%20the%20issue%0A-%20Any%20error%20messages%20you%20saw%0A-%20Browser%20and%20operating%20system"
+                    class="govuk-button">{{ _("Email Support") }}</a>
+            </p>
+            <h2 class="govuk-heading-m">{{ _("What to include in your support request") }}</h2>
+            <p class="govuk-body">{{ _("To help us resolve your issue as quickly as possible, please include:") }}</p>
+            <ul class="govuk-list govuk-list--bullet">
+                <li>{{ _("A clear description of the problem or question") }}</li>
+                <li>{{ _("The assembly name or ID (if applicable)") }}</li>
+                <li>{{ _("Steps to reproduce the issue") }}</li>
+                <li>{{ _("Any error messages you encountered") }}</li>
+                <li>{{ _("The browser and operating system you're using") }}</li>
+                <li>{{ _("Screenshots if they help illustrate the problem") }}</li>
+            </ul>
+            <h2 class="govuk-heading-m">{{ _("Additional Resources") }}</h2>
+            <p class="govuk-body">
+                {{ _("You may also find helpful information at:") }}
+            </p>
+            <ul class="govuk-list govuk-list--bullet">
+                <li>
+                    <a class="govuk-link"
+                        href="https://github.com/sortition-foundation/opendlp"
+                        target="_blank">{{ _("OpenDLP GitHub Repository") }}</a> - {{ _("For technical documentation and known issues") }}
+                </li>
+                <li>
+                    <a class="govuk-link"
+                        href="https://www.sortitionfoundation.org/lab"
+                        target="_blank">{{ _("Sortition Lab") }}</a> - {{ _("For resources about sortition and citizens' assemblies") }}
+                </li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
