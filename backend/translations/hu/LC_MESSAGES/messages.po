@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-05 16:33+0000\n"
+"POT-Creation-Date: 2026-02-05 16:34+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1511,7 +1511,7 @@ msgid "Site Admin"
 msgstr ""
 
 #: templates/base.html:68 templates/base.html:102
-#: templates/main/support.html:38
+#: templates/main/support.html:36
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
@@ -3196,11 +3196,13 @@ msgid "A clear description of the problem or question"
 msgstr ""
 
 #: templates/main/support.html:19
-msgid "The assembly name or ID (if applicable)"
+msgid "The assembly name, URL or ID (if applicable)"
 msgstr ""
 
 #: templates/main/support.html:20
-msgid "Steps to reproduce the issue"
+msgid ""
+"Steps to reproduce the issue, including the URL of the page the issue "
+"occurred on"
 msgstr ""
 
 #: templates/main/support.html:21
@@ -3220,19 +3222,19 @@ msgstr ""
 msgid "Additional Resources"
 msgstr "További beállítások"
 
-#: templates/main/support.html:27
+#: templates/main/support.html:26
 msgid "You may also find helpful information at:"
 msgstr ""
 
-#: templates/main/support.html:33
+#: templates/main/support.html:31
 msgid "OpenDLP GitHub Repository"
 msgstr ""
 
-#: templates/main/support.html:33
+#: templates/main/support.html:31
 msgid "For technical documentation and known issues"
 msgstr ""
 
-#: templates/main/support.html:38
+#: templates/main/support.html:36
 msgid "For resources about sortition and citizens' assemblies"
 msgstr ""
 
@@ -4679,3 +4681,9 @@ msgstr ""
 
 #~ msgid "Or register with"
 #~ msgstr "Regisztrálj itt"
+
+#~ msgid "The assembly name or ID (if applicable)"
+#~ msgstr ""
+
+#~ msgid "Steps to reproduce the issue"
+#~ msgstr ""
