@@ -2,6 +2,7 @@
 ABOUTME: Sets up Flask-Login, Flask-Session, security headers, and database session management"""
 
 import uuid
+from wsgiref.headers import Headers
 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, request, session
@@ -53,6 +54,27 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     else:
         app_root = config.APPLICATION_ROOT.strip("/")
         whitenoise_prefix = f"{app_root}/static/"
+
+    # Create header function that adds security headers to static files
+    def add_security_headers_to_static_files(headers: Headers, path: str, url: str) -> None:
+        """Add security headers to static files served by WhiteNoise.
+
+        Args:
+            headers: wsgiref.headers.Headers object to add headers to
+            path: filesystem path to the static file
+            url: URL path of the request
+        """
+        # Headers appropriate for static assets
+        headers["X-Content-Type-Options"] = "nosniff"
+        headers["X-Frame-Options"] = "DENY"
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        headers["Server"] = ""
+
+        # Only add HSTS in production
+        if not config.DEBUG:
+            headers["Strict-Transport-Security"] = "max-age=31536000"
+
     # Configure whitenoise with proper settings to prevent file truncation
     app.wsgi_app = WhiteNoise(  # type: ignore[method-assign]
         app.wsgi_app,
@@ -60,6 +82,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
         prefix=whitenoise_prefix,
         max_age=31536000,  # 1 year cache for static files
         charset="utf-8",  # Explicit charset to prevent encoding issues
+        add_headers_function=add_security_headers_to_static_files,
     )
 
     # Initialize Authlib OAuth (only if configured)
