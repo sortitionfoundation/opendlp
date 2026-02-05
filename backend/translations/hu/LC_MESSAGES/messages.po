@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-02 15:56+0000\n"
+"POT-Creation-Date: 2026-02-05 16:33+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -62,13 +62,13 @@ msgid "Number cannot be negative"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:95 src/opendlp/entrypoints/forms.py:129
-#: src/opendlp/entrypoints/forms.py:169
-#: templates/auth/resend_confirmation.html:17 templates/profile/view.html:10
+#: src/opendlp/entrypoints/forms.py:169 src/opendlp/entrypoints/forms.py:180
+#: templates/profile/view.html:10
 msgid "Email address"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:99 src/opendlp/entrypoints/forms.py:135
-#: src/opendlp/entrypoints/forms.py:462 templates/admin/user_view.html:75
+#: src/opendlp/entrypoints/forms.py:473 templates/admin/user_view.html:75
 #: templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
@@ -78,18 +78,18 @@ msgstr "Jelszó"
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:476
+#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:487
 #: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:478
+#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:489
 #, fuzzy
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:344
-#: src/opendlp/entrypoints/forms.py:422 templates/admin/user_view.html:28
+#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:355
+#: src/opendlp/entrypoints/forms.py:433 templates/admin/user_view.html:28
 #: templates/profile/view.html:16
 msgid "First Name"
 msgstr "Keresztnév"
@@ -98,8 +98,8 @@ msgstr "Keresztnév"
 msgid "Optional - your first name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:122 src/opendlp/entrypoints/forms.py:351
-#: src/opendlp/entrypoints/forms.py:429 templates/admin/user_view.html:38
+#: src/opendlp/entrypoints/forms.py:122 src/opendlp/entrypoints/forms.py:362
+#: src/opendlp/entrypoints/forms.py:440 templates/admin/user_view.html:38
 #: templates/profile/view.html:22
 msgid "Last Name"
 msgstr "Vezetéknév"
@@ -108,35 +108,35 @@ msgstr "Vezetéknév"
 msgid "Optional - your last name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:139 src/opendlp/entrypoints/forms.py:466
+#: src/opendlp/entrypoints/forms.py:139 src/opendlp/entrypoints/forms.py:477
 #, fuzzy
 msgid "Confirm Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:140 src/opendlp/entrypoints/forms.py:185
-#: src/opendlp/entrypoints/forms.py:453 src/opendlp/entrypoints/forms.py:467
+#: src/opendlp/entrypoints/forms.py:140 src/opendlp/entrypoints/forms.py:196
+#: src/opendlp/entrypoints/forms.py:464 src/opendlp/entrypoints/forms.py:478
 #, fuzzy
 msgid "Passwords must match"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:482
+#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:493
 #, fuzzy
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:483
+#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:494
 #, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:484
+#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:495
 #, fuzzy
 msgid "I agree to the data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:495
+#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:506
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
@@ -145,294 +145,299 @@ msgstr "Érvénytelen vagy lejárt meghívó kód."
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:180 src/opendlp/entrypoints/forms.py:446
+#: src/opendlp/entrypoints/forms.py:182
+#, fuzzy
+msgid "Enter your email address and we will send you a new confirmation link"
+msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
+
+#: src/opendlp/entrypoints/forms.py:191 src/opendlp/entrypoints/forms.py:457
 #, fuzzy
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:184 src/opendlp/entrypoints/forms.py:452
+#: src/opendlp/entrypoints/forms.py:195 src/opendlp/entrypoints/forms.py:463
 #, fuzzy
 msgid "Confirm New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:194
+#: src/opendlp/entrypoints/forms.py:205
 #, fuzzy
 msgid "Assembly Title"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:196
+#: src/opendlp/entrypoints/forms.py:207
 #, fuzzy
 msgid "Enter the title for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/forms.py:200
+#: src/opendlp/entrypoints/forms.py:211
 #: templates/main/view_assembly_details.html:6
 msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
 
-#: src/opendlp/entrypoints/forms.py:202
+#: src/opendlp/entrypoints/forms.py:213
 msgid "Optional - the key question this assembly will address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:207
+#: src/opendlp/entrypoints/forms.py:218
 #: templates/main/view_assembly_details.html:20
 msgid "First Assembly Date"
 msgstr "Első gyűlés időpontja"
 
-#: src/opendlp/entrypoints/forms.py:209
+#: src/opendlp/entrypoints/forms.py:220
 msgid "Optional - when the first assembly meeting will take place"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:213
+#: src/opendlp/entrypoints/forms.py:224
 #: templates/main/view_assembly_details.html:27
 msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/entrypoints/forms.py:215
+#: src/opendlp/entrypoints/forms.py:226
 msgid "The number of participants to select for this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:232
+#: src/opendlp/entrypoints/forms.py:243
 #, fuzzy
 msgid "Google Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
 
-#: src/opendlp/entrypoints/forms.py:234
+#: src/opendlp/entrypoints/forms.py:245
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:240 src/opendlp/entrypoints/forms.py:256
+#: src/opendlp/entrypoints/forms.py:251 src/opendlp/entrypoints/forms.py:267
 #, fuzzy
 msgid "Respondents Tab Name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:242
+#: src/opendlp/entrypoints/forms.py:253
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:248 src/opendlp/entrypoints/forms.py:264
+#: src/opendlp/entrypoints/forms.py:259 src/opendlp/entrypoints/forms.py:275
 #, fuzzy
 msgid "Targets Tab Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:250
+#: src/opendlp/entrypoints/forms.py:261
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:258
+#: src/opendlp/entrypoints/forms.py:269
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:266
+#: src/opendlp/entrypoints/forms.py:277
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:271
+#: src/opendlp/entrypoints/forms.py:282
 msgid "Already Selected Tab Name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:273
+#: src/opendlp/entrypoints/forms.py:284
 msgid "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:278
+#: src/opendlp/entrypoints/forms.py:289
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
 
-#: src/opendlp/entrypoints/forms.py:279
+#: src/opendlp/entrypoints/forms.py:290
 msgid "Enable checking for participants with the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:284
+#: src/opendlp/entrypoints/forms.py:295
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
 
-#: src/opendlp/entrypoints/forms.py:285
+#: src/opendlp/entrypoints/forms.py:296
 msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:290
+#: src/opendlp/entrypoints/forms.py:301
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: src/opendlp/entrypoints/forms.py:292
+#: src/opendlp/entrypoints/forms.py:303
 msgid "UK Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:293
+#: src/opendlp/entrypoints/forms.py:304
 msgid "EU Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:294
+#: src/opendlp/entrypoints/forms.py:305
 msgid "Australia Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:295
+#: src/opendlp/entrypoints/forms.py:306
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Beállítások mentése"
 
-#: src/opendlp/entrypoints/forms.py:300
+#: src/opendlp/entrypoints/forms.py:311
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:305
+#: src/opendlp/entrypoints/forms.py:316
 #: templates/gsheets/components/view_config.html:60
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
 
-#: src/opendlp/entrypoints/forms.py:309
+#: src/opendlp/entrypoints/forms.py:320
 msgid ""
 "Column name containing unique identifiers for respondents. Note will be "
 "overridden if the Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:314
+#: src/opendlp/entrypoints/forms.py:325
 #: templates/gsheets/components/view_config.html:66
 msgid "Address Columns"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:317
+#: src/opendlp/entrypoints/forms.py:328
 msgid ""
 "Comma-separated list of column names used for checking same address "
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:323
+#: src/opendlp/entrypoints/forms.py:334
 #: templates/gsheets/components/view_config.html:72
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:326
+#: src/opendlp/entrypoints/forms.py:337
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name,"
 " last_name, email). Note will be overridden if the Team Configuration is "
 "not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:346
+#: src/opendlp/entrypoints/forms.py:357
 #, fuzzy
 msgid "User's first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:353
+#: src/opendlp/entrypoints/forms.py:364
 #, fuzzy
 msgid "User's last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:358 templates/admin/user_view.html:48
+#: src/opendlp/entrypoints/forms.py:369 templates/admin/user_view.html:48
 #, fuzzy
 msgid "Global Role"
 msgstr "Szereped/jogosultságod"
 
-#: src/opendlp/entrypoints/forms.py:362
+#: src/opendlp/entrypoints/forms.py:373
 msgid "User's global role determines their permissions across the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:366
+#: src/opendlp/entrypoints/forms.py:377
 #, fuzzy
 msgid "Active Account"
 msgstr "Hozzon létre fiókot"
 
-#: src/opendlp/entrypoints/forms.py:367
+#: src/opendlp/entrypoints/forms.py:378
 msgid "Inactive users cannot log in to the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:376
+#: src/opendlp/entrypoints/forms.py:387
 msgid "Role for New User"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:380
+#: src/opendlp/entrypoints/forms.py:391
 msgid "The role that will be granted to the user who uses this invite"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:385
+#: src/opendlp/entrypoints/forms.py:396
 #, fuzzy
 msgid "Email Address (Optional)"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:387
+#: src/opendlp/entrypoints/forms.py:398
 msgid "Optional - if provided, the invite will be emailed to this address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:392
+#: src/opendlp/entrypoints/forms.py:403
 msgid "Expires In (Hours)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:394
+#: src/opendlp/entrypoints/forms.py:405
 msgid ""
 "Optional - number of hours until the invite expires (default: 168 hours /"
 " 7 days)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:403
+#: src/opendlp/entrypoints/forms.py:414
 #, fuzzy
 msgid "User Email"
 msgstr "Hiba részletei"
 
-#: src/opendlp/entrypoints/forms.py:405
+#: src/opendlp/entrypoints/forms.py:416
 #, fuzzy
 msgid "Select a user to add to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/forms.py:409
+#: src/opendlp/entrypoints/forms.py:420
 #, fuzzy
 msgid "Assembly Role"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:413
+#: src/opendlp/entrypoints/forms.py:424
 msgid "Select the role this user will have on the assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:424
+#: src/opendlp/entrypoints/forms.py:435
 #, fuzzy
 msgid "Your first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:431
+#: src/opendlp/entrypoints/forms.py:442
 #, fuzzy
 msgid "Your last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:440
+#: src/opendlp/entrypoints/forms.py:451
 #, fuzzy
 msgid "Current Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:98
-#: src/opendlp/entrypoints/blueprints/admin.py:124
-#: src/opendlp/entrypoints/blueprints/admin.py:189
-#: src/opendlp/entrypoints/blueprints/admin.py:261
-#: src/opendlp/entrypoints/blueprints/admin.py:287
-#: src/opendlp/entrypoints/blueprints/admin.py:371
+#: src/opendlp/entrypoints/blueprints/admin.py:99
+#: src/opendlp/entrypoints/blueprints/admin.py:125
+#: src/opendlp/entrypoints/blueprints/admin.py:190
+#: src/opendlp/entrypoints/blueprints/admin.py:262
+#: src/opendlp/entrypoints/blueprints/admin.py:288
+#: src/opendlp/entrypoints/blueprints/admin.py:390
 #, fuzzy
 msgid "You don't have permission to view this page"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:102
+#: src/opendlp/entrypoints/blueprints/admin.py:103
 #, fuzzy
 msgid "An error occurred while loading the user list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:120
-#: src/opendlp/entrypoints/blueprints/admin.py:168
-#: src/opendlp/entrypoints/blueprints/admin.py:185
-#: src/opendlp/entrypoints/blueprints/admin.py:216
-#: src/opendlp/entrypoints/blueprints/admin.py:257
+#: src/opendlp/entrypoints/blueprints/admin.py:121
+#: src/opendlp/entrypoints/blueprints/admin.py:169
+#: src/opendlp/entrypoints/blueprints/admin.py:186
+#: src/opendlp/entrypoints/blueprints/admin.py:217
+#: src/opendlp/entrypoints/blueprints/admin.py:258
 #: src/opendlp/service_layer/two_factor_service.py:48
 #: src/opendlp/service_layer/two_factor_service.py:94
 #: src/opendlp/service_layer/two_factor_service.py:152
@@ -444,256 +449,265 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:128
+#: src/opendlp/entrypoints/blueprints/admin.py:129
 #, fuzzy
 msgid "An error occurred while loading the user details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:161
+#: src/opendlp/entrypoints/blueprints/admin.py:162
 #, fuzzy, python-format
 msgid "User '%(email)s' updated successfully"
 msgstr "A '%(email)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:172
-#: src/opendlp/entrypoints/blueprints/admin.py:220
-#: src/opendlp/entrypoints/blueprints/admin.py:339
-#: src/opendlp/entrypoints/blueprints/admin.py:398
+#: src/opendlp/entrypoints/blueprints/admin.py:173
+#: src/opendlp/entrypoints/blueprints/admin.py:221
+#: src/opendlp/entrypoints/blueprints/admin.py:358
+#: src/opendlp/entrypoints/blueprints/admin.py:417
 #, fuzzy
 msgid "You don't have permission to perform this action"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:179
+#: src/opendlp/entrypoints/blueprints/admin.py:180
 #, fuzzy
 msgid "An error occurred while updating the user"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:193
+#: src/opendlp/entrypoints/blueprints/admin.py:194
 #, fuzzy
 msgid "An error occurred while loading the edit page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:207
+#: src/opendlp/entrypoints/blueprints/admin.py:208
 msgid "Two-factor authentication has been disabled for this user"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:224
+#: src/opendlp/entrypoints/blueprints/admin.py:225
 #, fuzzy
 msgid "An error occurred while disabling two-factor authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:265
+#: src/opendlp/entrypoints/blueprints/admin.py:266
 #, fuzzy
 msgid "An error occurred while loading the audit log"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:291
+#: src/opendlp/entrypoints/blueprints/admin.py:292
 #, fuzzy
 msgid "An error occurred while loading the invite list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:321
+#: src/opendlp/entrypoints/blueprints/admin.py:322
 #, python-format
 msgid "Invite created successfully. Code: %(code)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:328
-msgid "Email sending not yet implemented. Please share the invite code manually."
+#: src/opendlp/entrypoints/blueprints/admin.py:336
+#, python-format
+msgid "Invitation email sent to %(email)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:336
-#: src/opendlp/entrypoints/blueprints/admin.py:343
+#: src/opendlp/entrypoints/blueprints/admin.py:341
+msgid "Failed to send invitation email. Please share the invite code manually."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:347
+msgid "Error sending invitation email. Please share the invite code manually."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:355
+#: src/opendlp/entrypoints/blueprints/admin.py:362
 #, fuzzy
 msgid "An error occurred while creating the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:349
+#: src/opendlp/entrypoints/blueprints/admin.py:368
 #, fuzzy
 msgid "An error occurred while loading the page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:367
-#: src/opendlp/entrypoints/blueprints/admin.py:394
+#: src/opendlp/entrypoints/blueprints/admin.py:386
+#: src/opendlp/entrypoints/blueprints/admin.py:413
 #, fuzzy
 msgid "Invite not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:375
+#: src/opendlp/entrypoints/blueprints/admin.py:394
 #, fuzzy
 msgid "An error occurred while loading the invite details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:389
+#: src/opendlp/entrypoints/blueprints/admin.py:408
 #, python-format
 msgid "Invite '%(code)s' has been revoked"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:402
+#: src/opendlp/entrypoints/blueprints/admin.py:421
 #, fuzzy
 msgid "An error occurred while revoking the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:417
+#: src/opendlp/entrypoints/blueprints/admin.py:436
 #, fuzzy
 msgid "No expired invites to clean up"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:419
+#: src/opendlp/entrypoints/blueprints/admin.py:438
 #, fuzzy
 msgid "Cleaned up 1 expired invite"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:421
+#: src/opendlp/entrypoints/blueprints/admin.py:440
 #, python-format
 msgid "Cleaned up %(count)s expired invites"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:427
+#: src/opendlp/entrypoints/blueprints/admin.py:446
 #, fuzzy
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:95
-#: src/opendlp/entrypoints/blueprints/auth.py:208
-#: src/opendlp/entrypoints/blueprints/auth.py:575
-#: src/opendlp/entrypoints/blueprints/auth.py:678
+#: src/opendlp/entrypoints/blueprints/auth.py:102
+#: src/opendlp/entrypoints/blueprints/auth.py:217
+#: src/opendlp/entrypoints/blueprints/auth.py:594
+#: src/opendlp/entrypoints/blueprints/auth.py:702
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:102
+#: src/opendlp/entrypoints/blueprints/auth.py:109
 msgid "Invalid email or password."
 msgstr "Érvénytelen email cím vagy jelszó."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:105
+#: src/opendlp/entrypoints/blueprints/auth.py:112
 msgid ""
 "Please confirm your email address before logging in. Check your inbox for"
 " the confirmation link."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:110
+#: src/opendlp/entrypoints/blueprints/auth.py:118
 #, python-format
 msgid "Didn't receive the email? <a href=\"%(url)s\">Resend confirmation</a>"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:117
+#: src/opendlp/entrypoints/blueprints/auth.py:126
 msgid "An error occurred during login. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:130
+#: src/opendlp/entrypoints/blueprints/auth.py:139
 msgid "No pending two-factor authentication. Please log in first."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:143
+#: src/opendlp/entrypoints/blueprints/auth.py:152
 msgid "Two-factor authentication session expired. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:150
+#: src/opendlp/entrypoints/blueprints/auth.py:159
 msgid "Invalid session. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:202
+#: src/opendlp/entrypoints/blueprints/auth.py:211
 #, python-format
 msgid ""
 "Backup code used successfully. You have %(remaining)s backup codes "
 "remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:228
+#: src/opendlp/entrypoints/blueprints/auth.py:237
 msgid "Please enter a verification code"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:240
-#: src/opendlp/entrypoints/blueprints/auth.py:268
+#: src/opendlp/entrypoints/blueprints/auth.py:249
+#: src/opendlp/entrypoints/blueprints/auth.py:277
 msgid ""
 "Too many failed attempts. Please try again in 15 minutes or use a backup "
 "code."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:249
+#: src/opendlp/entrypoints/blueprints/auth.py:258
 msgid "Two-factor authentication is not enabled for this account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:263
+#: src/opendlp/entrypoints/blueprints/auth.py:272
 #, python-format
 msgid "Invalid verification code. %(attempts)s attempts remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:281
+#: src/opendlp/entrypoints/blueprints/auth.py:290
 #, fuzzy
 msgid "An error occurred during verification. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:293
+#: src/opendlp/entrypoints/blueprints/auth.py:302
 msgid "You have been logged out."
 msgstr "Kijelentkeztél."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:331
+#: src/opendlp/entrypoints/blueprints/auth.py:340
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:338
+#: src/opendlp/entrypoints/blueprints/auth.py:349
 msgid "Registration successful! Please check your email to confirm your account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:348
-#: src/opendlp/entrypoints/blueprints/auth.py:502
+#: src/opendlp/entrypoints/blueprints/auth.py:359
+#: src/opendlp/entrypoints/blueprints/auth.py:521
 #: src/opendlp/entrypoints/blueprints/profile.py:310
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:351
+#: src/opendlp/entrypoints/blueprints/auth.py:362
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:362
+#: src/opendlp/entrypoints/blueprints/auth.py:373
 msgid "Email confirmed successfully! You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:371
-#: src/opendlp/entrypoints/blueprints/auth.py:398
-#: src/opendlp/entrypoints/blueprints/auth.py:465
-#: src/opendlp/entrypoints/blueprints/auth.py:505
+#: src/opendlp/entrypoints/blueprints/auth.py:382
+#: src/opendlp/entrypoints/blueprints/auth.py:413
+#: src/opendlp/entrypoints/blueprints/auth.py:484
+#: src/opendlp/entrypoints/blueprints/auth.py:524
 #, fuzzy
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:389
+#: src/opendlp/entrypoints/blueprints/auth.py:404
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:456
+#: src/opendlp/entrypoints/blueprints/auth.py:475
 msgid "If an account exists with this email, a password reset link has been sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:495
+#: src/opendlp/entrypoints/blueprints/auth.py:514
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:548
+#: src/opendlp/entrypoints/blueprints/auth.py:567
 #: src/opendlp/entrypoints/blueprints/profile.py:149
 msgid "Failed to get user information from Google"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:573
-#: src/opendlp/entrypoints/blueprints/auth.py:676
+#: src/opendlp/entrypoints/blueprints/auth.py:592
+#: src/opendlp/entrypoints/blueprints/auth.py:700
 #, fuzzy
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:587
+#: src/opendlp/entrypoints/blueprints/auth.py:606
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:651
+#: src/opendlp/entrypoints/blueprints/auth.py:675
 #: src/opendlp/entrypoints/blueprints/profile.py:210
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:690
+#: src/opendlp/entrypoints/blueprints/auth.py:714
 #, fuzzy
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
@@ -729,10 +743,10 @@ msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 #: src/opendlp/entrypoints/blueprints/gsheets.py:741
 #: src/opendlp/entrypoints/blueprints/gsheets.py:795
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1022
-#: src/opendlp/entrypoints/blueprints/main.py:68
-#: src/opendlp/entrypoints/blueprints/main.py:116
-#: src/opendlp/entrypoints/blueprints/main.py:159
-#: src/opendlp/entrypoints/blueprints/main.py:256
+#: src/opendlp/entrypoints/blueprints/main.py:76
+#: src/opendlp/entrypoints/blueprints/main.py:124
+#: src/opendlp/entrypoints/blueprints/main.py:167
+#: src/opendlp/entrypoints/blueprints/main.py:264
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
@@ -744,10 +758,10 @@ msgstr "A gyűlés oldala  nem elérhető"
 #: src/opendlp/entrypoints/blueprints/gsheets.py:747
 #: src/opendlp/entrypoints/blueprints/gsheets.py:801
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1028
-#: src/opendlp/entrypoints/blueprints/main.py:73
-#: src/opendlp/entrypoints/blueprints/main.py:120
-#: src/opendlp/entrypoints/blueprints/main.py:163
-#: src/opendlp/entrypoints/blueprints/main.py:262
+#: src/opendlp/entrypoints/blueprints/main.py:81
+#: src/opendlp/entrypoints/blueprints/main.py:128
+#: src/opendlp/entrypoints/blueprints/main.py:171
+#: src/opendlp/entrypoints/blueprints/main.py:270
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
@@ -883,83 +897,83 @@ msgstr "Az oldal nem elérhető"
 msgid "Unknown task type"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:191
+#: src/opendlp/entrypoints/blueprints/main.py:199
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:195
+#: src/opendlp/entrypoints/blueprints/main.py:203
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/main.py:199
-#: src/opendlp/entrypoints/blueprints/main.py:202
+#: src/opendlp/entrypoints/blueprints/main.py:207
+#: src/opendlp/entrypoints/blueprints/main.py:210
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:231
+#: src/opendlp/entrypoints/blueprints/main.py:239
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:237
+#: src/opendlp/entrypoints/blueprints/main.py:245
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:243
-#: src/opendlp/entrypoints/blueprints/main.py:246
+#: src/opendlp/entrypoints/blueprints/main.py:251
+#: src/opendlp/entrypoints/blueprints/main.py:254
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:305
+#: src/opendlp/entrypoints/blueprints/main.py:321
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:312
+#: src/opendlp/entrypoints/blueprints/main.py:328
 msgid "User added to assembly successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:314
+#: src/opendlp/entrypoints/blueprints/main.py:330
 #, fuzzy
 msgid "Please check the form and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:320
+#: src/opendlp/entrypoints/blueprints/main.py:336
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/main.py:326
+#: src/opendlp/entrypoints/blueprints/main.py:342
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:332
+#: src/opendlp/entrypoints/blueprints/main.py:348
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:361
+#: src/opendlp/entrypoints/blueprints/main.py:377
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:365
+#: src/opendlp/entrypoints/blueprints/main.py:381
 msgid "User removed from assembly successfully"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:371
+#: src/opendlp/entrypoints/blueprints/main.py:387
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:377
+#: src/opendlp/entrypoints/blueprints/main.py:393
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:383
+#: src/opendlp/entrypoints/blueprints/main.py:399
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -1474,11 +1488,11 @@ msgstr "Ugrás a főoldalra"
 msgid "Sortition Foundation Logo"
 msgstr "Sortition Foundation Logo"
 
-#: templates/base.html:48 templates/base.html:84
+#: templates/base.html:48 templates/base.html:87
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:54 templates/base.html:90
+#: templates/base.html:54 templates/base.html:93
 msgid "Close menu"
 msgstr "Menü bezárása"
 
@@ -1496,54 +1510,59 @@ msgstr "Irányító pult"
 msgid "Site Admin"
 msgstr ""
 
-#: templates/base.html:68 templates/base.html:99
+#: templates/base.html:68 templates/base.html:102
+#: templates/main/support.html:38
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/base.html:71 templates/profile/view.html:2
+#: templates/base.html:71 templates/base.html:105
+msgid "Help"
+msgstr ""
+
+#: templates/base.html:74 templates/profile/view.html:2
 #: templates/profile/view.html:6
 #, fuzzy
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/base.html:74
+#: templates/base.html:77
 msgid "Sign out"
 msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:2
 #: templates/auth/login.html:6 templates/auth/login.html:40
-#: templates/auth/register.html:183 templates/auth/register_google.html:80
+#: templates/auth/register.html:186 templates/auth/register_google.html:80
 #: templates/auth/register_microsoft.html:71
-#: templates/auth/resend_confirmation.html:30 templates/base.html:94
+#: templates/auth/resend_confirmation.html:41 templates/base.html:97
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
-#: templates/base.html:114 templates/gsheets/create_config.html:14
+#: templates/base.html:120 templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
 msgid "There is a problem"
 msgstr "Valami probléma van"
 
-#: templates/base.html:127 templates/profile/2fa_backup_codes.html:9
+#: templates/base.html:133 templates/profile/2fa_backup_codes.html:9
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:129
+#: templates/base.html:135
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/auth/user_data_agreement.html:2 templates/base.html:162
+#: templates/auth/user_data_agreement.html:2 templates/base.html:168
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/base.html:165
+#: templates/base.html:171
 msgid "OpenDLP Version"
 msgstr ""
 
-#: templates/base.html:170
+#: templates/base.html:176
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -1596,7 +1615,7 @@ msgid "Back to Dashboard"
 msgstr "Vissza az irányító pulthoz"
 
 #: templates/admin/invite_create.html:2 templates/admin/invite_create.html:16
-#: templates/admin/invite_create.html:100
+#: templates/admin/invite_create.html:95
 #, fuzzy
 msgid "Create Invite"
 msgstr "Hozzon létre fiókot"
@@ -1611,22 +1630,12 @@ msgstr "Fiók létrehozása"
 msgid "Generate a new invite code for user registration"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: templates/admin/invite_create.html:96 templates/admin/user_edit.html:45
-msgid "Note:"
-msgstr ""
-
-#: templates/admin/invite_create.html:96
-msgid ""
-"Email sending is not yet implemented. After creating the invite, you will"
-" need to share the invite code and registration URL manually."
-msgstr ""
-
-#: templates/admin/invite_create.html:101 templates/admin/user_edit.html:135
+#: templates/admin/invite_create.html:96 templates/admin/user_edit.html:135
 #: templates/gsheets/create_config.html:236
 #: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
-#: templates/profile/2fa_setup.html:84
+#: templates/profile/2fa_setup.html:85
 #: templates/profile/change_password.html:51 templates/profile/edit.html:41
 #: templates/profile/set_password.html:42
 msgid "Cancel"
@@ -1758,10 +1767,6 @@ msgstr ""
 #, fuzzy
 msgid "Back to Invite List"
 msgstr "Vissza a regisztrációhoz"
-
-#: templates/admin/invite_view.html:157
-msgid "Failed to copy. Please copy manually."
-msgstr ""
 
 #: templates/admin/invites.html:13
 msgid "This is to manage invite codes for users of this site."
@@ -1941,6 +1946,10 @@ msgid "Update details for %(email)s"
 msgstr ""
 
 #: templates/admin/user_edit.html:45
+msgid "Note:"
+msgstr ""
+
+#: templates/admin/user_edit.html:45
 msgid "Email addresses cannot be changed for security reasons."
 msgstr ""
 
@@ -2011,7 +2020,7 @@ msgstr ""
 msgid "View 2FA audit log"
 msgstr ""
 
-#: templates/admin/user_view.html:104 templates/auth/register.html:97
+#: templates/admin/user_view.html:104 templates/auth/register.html:160
 #: templates/auth/register_google.html:31
 #: templates/auth/register_microsoft.html:31
 msgid "Data Agreement"
@@ -2217,19 +2226,44 @@ msgstr ""
 "Fiók létrehozásához meghívókódra lesz szükséged. Ha nincs ilyened, lépj "
 "kapcsolatba az adminisztrátorral."
 
-#: templates/auth/register.html:99 templates/auth/register_google.html:33
+#: templates/auth/register.html:12
+msgid "You can register with an external account"
+msgstr ""
+
+#: templates/auth/register.html:38 templates/auth/register.html:39
+#: templates/auth/register_google.html:2 templates/auth/register_google.html:6
+#: templates/auth/register_google.html:74
+#: templates/auth/register_google.html:75
+#, fuzzy
+msgid "Register with Google"
+msgstr "Regisztrálj itt"
+
+#: templates/auth/register.html:63 templates/auth/register.html:64
+#: templates/auth/register_microsoft.html:2
+#: templates/auth/register_microsoft.html:6
+#: templates/auth/register_microsoft.html:65
+#: templates/auth/register_microsoft.html:66
+#, fuzzy
+msgid "Register with Microsoft"
+msgstr "Regisztrálj itt"
+
+#: templates/auth/register.html:70
+msgid "Or you can register with an email and password"
+msgstr ""
+
+#: templates/auth/register.html:162 templates/auth/register_google.html:33
 #: templates/auth/register_microsoft.html:33
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: templates/auth/register.html:103 templates/auth/register_google.html:37
+#: templates/auth/register.html:166 templates/auth/register_google.html:37
 #: templates/auth/register_microsoft.html:37
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: templates/auth/register.html:108 templates/auth/register_google.html:21
+#: templates/auth/register.html:171 templates/auth/register_google.html:21
 #: templates/auth/register_google.html:42
 #: templates/auth/register_microsoft.html:21
 #: templates/auth/register_microsoft.html:42
@@ -2241,33 +2275,11 @@ msgstr "Adatkezelési megállapodás megtekintése"
 msgid "Error"
 msgstr "Hiba történt"
 
-#: templates/auth/register.html:120
+#: templates/auth/register.html:183
 msgid "Create account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/auth/register.html:124
-#, fuzzy
-msgid "Or register with"
-msgstr "Regisztrálj itt"
-
-#: templates/auth/register.html:150 templates/auth/register.html:151
-#: templates/auth/register_google.html:2 templates/auth/register_google.html:6
-#: templates/auth/register_google.html:74
-#: templates/auth/register_google.html:75
-#, fuzzy
-msgid "Register with Google"
-msgstr "Regisztrálj itt"
-
-#: templates/auth/register.html:173 templates/auth/register.html:174
-#: templates/auth/register_microsoft.html:2
-#: templates/auth/register_microsoft.html:6
-#: templates/auth/register_microsoft.html:65
-#: templates/auth/register_microsoft.html:66
-#, fuzzy
-msgid "Register with Microsoft"
-msgstr "Regisztrálj itt"
-
-#: templates/auth/register.html:183 templates/auth/register_google.html:80
+#: templates/auth/register.html:186 templates/auth/register_google.html:80
 #: templates/auth/register_microsoft.html:71
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
@@ -2295,12 +2307,12 @@ msgstr "Google Táblázat beállításainak eltávolítása"
 msgid "Enter your email address and we will send you a new confirmation link."
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: templates/auth/resend_confirmation.html:23
+#: templates/auth/resend_confirmation.html:34
 #, fuzzy
 msgid "Send confirmation link"
 msgstr "Beállítások mentése"
 
-#: templates/auth/resend_confirmation.html:29
+#: templates/auth/resend_confirmation.html:40
 msgid "Already confirmed your email?"
 msgstr ""
 
@@ -2337,7 +2349,7 @@ msgid "Enter the 6-digit code from your authenticator app to complete sign in."
 msgstr ""
 
 #: templates/auth/verify_2fa.html:11 templates/profile/2fa_settings.html:75
-#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:70
+#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:71
 msgid "Verification code"
 msgstr ""
 
@@ -2370,6 +2382,89 @@ msgstr ""
 msgid "Back to sign in"
 msgstr "Vissza a közösségi gyűléshez"
 
+#: templates/emails/assembly_role_assigned.html:6
+#, fuzzy
+msgid "Added to Assembly - OpenDLP"
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/emails/assembly_role_assigned.html:72
+#, fuzzy
+msgid "You've Been Added to an Assembly!"
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/emails/assembly_role_assigned.html:76
+#: templates/emails/email_confirmation.html:80
+#: templates/emails/password_reset.html:72 templates/emails/user_invite.html:73
+#, python-format
+msgid "Hi %(name)s,"
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:78
+#: templates/emails/password_reset.html:72 templates/emails/user_invite.html:75
+msgid "Hi,"
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:83
+#, fuzzy
+msgid "Assembly:"
+msgstr "Közösségi gyűlés"
+
+#: templates/emails/assembly_role_assigned.html:86
+msgid "Your role:"
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:90
+#, fuzzy
+msgid "Assembly question:"
+msgstr "A gyűlés fő témája"
+
+#: templates/emails/assembly_role_assigned.html:94
+msgid "You now have access to this assembly and can collaborate with your team."
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:96
+#, fuzzy
+msgid "View Assembly"
+msgstr "Közösségi gyűlés szerkesztése"
+
+#: templates/emails/assembly_role_assigned.html:103
+#, fuzzy
+msgid "Assembly Manager Permissions:"
+msgstr "A gyűlés fő témája"
+
+#: templates/emails/assembly_role_assigned.html:104
+msgid ""
+"As an Assembly Manager, you can manage the assembly configuration, add "
+"other team members, and perform all assembly operations."
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:111
+#, fuzzy
+msgid "Confirmation Caller Permissions:"
+msgstr "Nincsenek megfelelő jogosultságok"
+
+#: templates/emails/assembly_role_assigned.html:112
+msgid ""
+"As a Confirmation Caller, you can call confirmations for selected "
+"participants."
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:117
+#: templates/emails/email_confirmation.html:111
+#: templates/emails/password_reset.html:102
+#: templates/emails/user_invite.html:107
+msgid "OpenDLP Team"
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:120
+#: templates/emails/email_confirmation.html:114
+#: templates/emails/password_reset.html:103
+#: templates/emails/user_invite.html:110
+msgid ""
+"Need help? Contact us at <a "
+"href=\"mailto:support@opendlp.org\">support@opendlp.org</a>"
+msgstr ""
+
 #: templates/emails/email_confirmation.html:6
 msgid "Confirm Your Email - OpenDLP"
 msgstr ""
@@ -2380,14 +2475,8 @@ msgstr ""
 msgid "Confirm Your Email Address"
 msgstr "Email cím hiányzik"
 
-#: templates/emails/email_confirmation.html:80
-#: templates/emails/password_reset.html:72
-#, python-format
-msgid "Hi %(name)s,"
-msgstr ""
-
 #: templates/emails/email_confirmation.html:82
-#: templates/emails/password_reset.html:75
+#: templates/emails/password_reset.html:75 templates/emails/user_invite.html:82
 #, fuzzy
 msgid "Email address:"
 msgstr "Email cím"
@@ -2426,18 +2515,6 @@ msgid ""
 "browser:"
 msgstr ""
 
-#: templates/emails/email_confirmation.html:111
-#: templates/emails/password_reset.html:102
-msgid "OpenDLP Team"
-msgstr ""
-
-#: templates/emails/email_confirmation.html:114
-#: templates/emails/password_reset.html:103
-msgid ""
-"Need help? Contact us at <a "
-"href=\"mailto:support@opendlp.org\">support@opendlp.org</a>"
-msgstr ""
-
 #: templates/emails/password_reset.html:6
 #, fuzzy
 msgid "Reset Your Password - OpenDLP"
@@ -2447,10 +2524,6 @@ msgstr "Új jelszó"
 #, fuzzy
 msgid "Reset Your Password"
 msgstr "Új jelszó"
-
-#: templates/emails/password_reset.html:72
-msgid "Hi,"
-msgstr ""
 
 #: templates/emails/password_reset.html:78
 msgid "You recently requested to reset your password for your OpenDLP account."
@@ -2468,6 +2541,51 @@ msgstr ""
 
 #: templates/emails/password_reset.html:98
 msgid "For security reasons, password reset links can only be used once."
+msgstr ""
+
+#: templates/emails/user_invite.html:6
+msgid "You're Invited to OpenDLP"
+msgstr ""
+
+#: templates/emails/user_invite.html:69
+#, fuzzy
+msgid "You're Invited to OpenDLP!"
+msgstr "Meghívó kód"
+
+#: templates/emails/user_invite.html:86
+msgid ""
+"OpenDLP is a platform for supporting Citizens' Assemblies through "
+"stratified selection processes."
+msgstr ""
+
+#: templates/emails/user_invite.html:89
+msgid "You've been invited to create an account and join the platform."
+msgstr ""
+
+#: templates/emails/user_invite.html:91
+#, fuzzy
+msgid "Register Your Account"
+msgstr "Hozzon létre fiókot"
+
+#: templates/emails/user_invite.html:95
+#, python-format
+msgid "This invitation will expire in <strong>%(hours)s hour</strong>."
+msgstr ""
+
+#: templates/emails/user_invite.html:97
+#, python-format
+msgid "This invitation will expire in <strong>%(hours)s hours</strong>."
+msgstr ""
+
+#: templates/emails/user_invite.html:99
+#, python-format
+msgid "This invitation will expire in <strong>%(days)s days</strong>."
+msgstr ""
+
+#: templates/emails/user_invite.html:103
+msgid ""
+"If you weren't expecting this invitation, you can safely ignore this "
+"email."
 msgstr ""
 
 #: templates/errors/403.html:2 templates/errors/403.html:11
@@ -3047,6 +3165,77 @@ msgstr ""
 msgid "No users match your search"
 msgstr ""
 
+#: templates/main/support.html:2 templates/main/support.html:6
+msgid "Support"
+msgstr ""
+
+#: templates/main/support.html:8
+msgid ""
+"If you need help with OpenDLP, please contact our support team by email. "
+"We aim to respond to all enquiries within 2 business days."
+msgstr ""
+
+#: templates/main/support.html:10
+msgid "Contact Support"
+msgstr ""
+
+#: templates/main/support.html:13
+msgid "Email Support"
+msgstr ""
+
+#: templates/main/support.html:15
+msgid "What to include in your support request"
+msgstr ""
+
+#: templates/main/support.html:16
+msgid "To help us resolve your issue as quickly as possible, please include:"
+msgstr ""
+
+#: templates/main/support.html:18
+msgid "A clear description of the problem or question"
+msgstr ""
+
+#: templates/main/support.html:19
+msgid "The assembly name or ID (if applicable)"
+msgstr ""
+
+#: templates/main/support.html:20
+msgid "Steps to reproduce the issue"
+msgstr ""
+
+#: templates/main/support.html:21
+msgid "Any error messages you encountered"
+msgstr ""
+
+#: templates/main/support.html:22
+msgid "The browser and operating system you're using"
+msgstr ""
+
+#: templates/main/support.html:23
+msgid "Screenshots if they help illustrate the problem"
+msgstr ""
+
+#: templates/main/support.html:25
+#, fuzzy
+msgid "Additional Resources"
+msgstr "További beállítások"
+
+#: templates/main/support.html:27
+msgid "You may also find helpful information at:"
+msgstr ""
+
+#: templates/main/support.html:33
+msgid "OpenDLP GitHub Repository"
+msgstr ""
+
+#: templates/main/support.html:33
+msgid "For technical documentation and known issues"
+msgstr ""
+
+#: templates/main/support.html:38
+msgid "For resources about sortition and citizens' assemblies"
+msgstr ""
+
 #: templates/main/view_assembly_base.html:11
 #: templates/main/view_assembly_base.html:15
 msgid "Assembly"
@@ -3183,18 +3372,18 @@ msgid ""
 " This is the only time you'll see these codes."
 msgstr ""
 
-#: templates/profile/2fa_backup_codes.html:40
-#: templates/profile/2fa_setup.html:58
+#: templates/profile/2fa_backup_codes.html:41
+#: templates/profile/2fa_setup.html:59
 msgid "Download codes"
 msgstr ""
 
-#: templates/profile/2fa_backup_codes.html:43
-#: templates/profile/2fa_setup.html:61
+#: templates/profile/2fa_backup_codes.html:44
+#: templates/profile/2fa_setup.html:62
 #, fuzzy
 msgid "Print codes"
 msgstr "Meghívó kód"
 
-#: templates/profile/2fa_backup_codes.html:44
+#: templates/profile/2fa_backup_codes.html:45
 msgid "Done"
 msgstr ""
 
@@ -3335,15 +3524,15 @@ msgid ""
 " sign in."
 msgstr ""
 
-#: templates/profile/2fa_setup.html:63
+#: templates/profile/2fa_setup.html:64
 msgid "Step 3: Verify Setup"
 msgstr ""
 
-#: templates/profile/2fa_setup.html:65
+#: templates/profile/2fa_setup.html:66
 msgid "Enter the 6-digit code from your authenticator app to complete setup:"
 msgstr ""
 
-#: templates/profile/2fa_setup.html:83
+#: templates/profile/2fa_setup.html:84
 msgid "Verify and enable"
 msgstr ""
 
@@ -4472,3 +4661,21 @@ msgstr ""
 
 #~ msgid "You already have an OAuth account linked"
 #~ msgstr "Már van fiókod?"
+
+#~ msgid ""
+#~ "Email sending not yet implemented. "
+#~ "Please share the invite code manually."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Email sending is not yet implemented."
+#~ " After creating the invite, you will"
+#~ " need to share the invite code "
+#~ "and registration URL manually."
+#~ msgstr ""
+
+#~ msgid "Failed to copy. Please copy manually."
+#~ msgstr ""
+
+#~ msgid "Or register with"
+#~ msgstr "Regisztrálj itt"
