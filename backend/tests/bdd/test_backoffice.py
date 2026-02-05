@@ -231,6 +231,59 @@ def card_with_actions_has_buttons(page: Page):
     expect(card.locator("button", has_text="Cancel")).to_be_visible()
 
 
+# Typography Tests
+
+
+@then("I should see the typography section")
+def see_typography_section(page: Page):
+    """Verify the Typography section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Typography")
+
+
+@then('I should see "Semantic Tokens"')
+def see_semantic_tokens_text(page: Page):
+    """Verify the Semantic Tokens sub-heading is visible."""
+    expect(page.locator("body")).to_contain_text("Semantic Tokens")
+
+
+@then('I should see "Use Cases"')
+def see_use_cases_text(page: Page):
+    """Verify the Use Cases sub-heading is visible."""
+    expect(page.locator("body")).to_contain_text("Use Cases")
+
+
+@then(parsers.parse("the {token} sample should use the Oswald font"))
+def sample_uses_oswald_font(page: Page, token: str):
+    """Verify a typography sample uses the Oswald font family."""
+    element = page.locator(f"#typo-{token}")
+    font_family = element.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Oswald" in font_family, f"Expected Oswald font for {token}, got {font_family}"
+
+
+@then(parsers.parse("the {token} sample should use the Lato font"))
+def sample_uses_lato_font(page: Page, token: str):
+    """Verify a typography sample uses the Lato font family."""
+    element = page.locator(f"#typo-{token}")
+    font_family = element.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Lato" in font_family, f"Expected Lato font for {token}, got {font_family}"
+
+
+@then(parsers.parse("the {token} sample should have font size {size}"))
+def sample_has_font_size(page: Page, token: str, size: str):
+    """Verify a typography sample has the expected computed font size."""
+    element = page.locator(f"#typo-{token}")
+    font_size = element.evaluate("el => getComputedStyle(el).fontSize")
+    assert font_size == size, f"Expected font size {size} for {token}, got {font_size}"
+
+
+@then("the overline sample should be uppercase")
+def overline_is_uppercase(page: Page):
+    """Verify the overline sample has text-transform: uppercase."""
+    element = page.locator("#typo-overline")
+    text_transform = element.evaluate("el => getComputedStyle(el).textTransform")
+    assert text_transform == "uppercase", f"Expected uppercase, got {text_transform}"
+
+
 # Dashboard Tests (Protected Route)
 
 

@@ -1,0 +1,44 @@
+{#
+  Showcase Table Components
+  Internal macros for rendering reference tables in the showcase.
+  Not intended for use outside of showcase.html.
+#}
+
+{# Table wrapper - use with {% call %} #}
+{% macro showcase_table(classes="") %}
+    <div class="rounded-lg overflow-hidden mb-8 {{ classes }}" style="background-color: var(--color-surface); border: 1px solid var(--color-border);">
+        <table class="w-full text-body-sm">
+            {{ caller() }}
+        </table>
+    </div>
+{% endmacro %}
+
+{# Table header row - pass a list of column names #}
+{% macro showcase_table_header(columns) %}
+    <thead>
+        <tr style="background-color: var(--color-surface-sunken); border-bottom: 1px solid var(--color-border);">
+            {% for col in columns %}
+                <th class="text-left px-6 py-3 text-label-md" style="color: var(--color-text-primary);">{{ col }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+{% endmacro %}
+
+{# Table body wrapper - use with {% call %} #}
+{% macro showcase_table_body() %}
+    <tbody>
+        {{ caller() }}
+    </tbody>
+{% endmacro %}
+
+{# Standard table row with border #}
+{% macro showcase_table_row(is_last=false) %}
+    <tr{% if not is_last %} style="border-bottom: 1px solid var(--color-border);"{% endif %}>
+        {{ caller() }}
+    </tr>
+{% endmacro %}
+
+{# Table cell - standard padding #}
+{% macro showcase_table_cell(classes="") %}
+    <td class="px-6 py-2 {{ classes }}">{{ caller() }}</td>
+{% endmacro %}
