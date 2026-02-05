@@ -5,6 +5,31 @@
  * These are the foundation that semantic tokens reference
  */
 
+/* @font-face declarations - self-hosted via @fontsource */
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url("/static/backoffice/fonts/oswald-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url("/static/backoffice/fonts/lato-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 700;
+    src: url("/static/backoffice/fonts/lato-latin-700-normal.woff2") format("woff2");
+}
+
 :root {
     /* ========================================
      SORTITION FOUNDATION BRAND PALETTE
@@ -94,24 +119,16 @@
     --spacing-16: 4rem;
 
     /* ========================================
-     TYPOGRAPHY
+     TYPOGRAPHY - Font Families (Primitives)
      ======================================== */
 
-    /* Font Sizes */
-    --font-size-xs: 0.75rem;
-    --font-size-sm: 0.875rem;
-    --font-size-base: 1rem;
-    --font-size-lg: 1.125rem;
-    --font-size-xl: 1.25rem;
-    --font-size-2xl: 1.5rem;
-    --font-size-3xl: 1.875rem;
-    --font-size-4xl: 2.25rem;
-
-    /* Font Weights */
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
+    --font-display: "Oswald", sans-serif;
+    --font-heading: "Oswald", sans-serif;
+    --font-body: "Lato", sans-serif;
+    --font-caption: "Lato", sans-serif;
+    --font-overline: "Lato", sans-serif;
+    --font-label: "Lato", sans-serif;
+    --font-button: "Lato", sans-serif;
 
     /* ========================================
      BORDERS & EFFECTS

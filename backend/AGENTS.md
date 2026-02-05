@@ -283,6 +283,59 @@ Use semantic tokens for UI elements:
 - `--color-button-primary-bg`, `--color-button-secondary-bg`
 - `--color-surface`, `--color-border`, `--color-text-body`
 
+### Typography
+
+Fonts are self-hosted via `@fontsource` npm packages (no external Google Fonts CDN calls).
+
+**Primitive layer** — CSS custom properties for font families in `primitive.css`:
+
+```css
+:root {
+  --font-display: "Oswald", sans-serif;
+  --font-heading: "Oswald", sans-serif;
+  --font-body: "Lato", sans-serif;
+  --font-caption: "Lato", sans-serif;
+  --font-overline: "Lato", sans-serif;
+  --font-label: "Lato", sans-serif;
+  --font-button: "Lato", sans-serif;
+}
+```
+
+**Semantic layer** — Tailwind utility classes in `main.css` (not CSS variables, because the `font` shorthand cannot include letter-spacing):
+
+| Class | Weight | Size | Line Height | Family | Letter Spacing | Use Case |
+|-------|--------|------|-------------|--------|----------------|----------|
+| `.text-display-lg` | 500 | 2rem | 2.5rem | display | -0.32px | Page titles |
+| `.text-display-md` | 500 | 1.75rem | 2.25rem | display | -0.28px | Section titles |
+| `.text-display-sm` | 500 | 1.5rem | 2rem | display | -0.12px | Subsections |
+| `.text-heading-lg` | 500 | 1.25rem | 1.75rem | heading | 0 | Card titles |
+| `.text-heading-md` | 500 | 1.125rem | 1.5rem | heading | 0.18px | Panel headers |
+| `.text-heading-sm` | 500 | 1rem | 1.375rem | heading | 0.24px | Group headers |
+| `.text-body-lg` | 400 | 1rem | 1.5rem | body | 0 | Long-form text |
+| `.text-body-md` | 400 | 0.875rem | 1.25rem | body | 0 | Default UI |
+| `.text-body-sm` | 400 | 0.8125rem | 1.125rem | body | 0.13px | Dense UI |
+| `.text-caption` | 400 | 1rem | 1.5rem | caption | 0 | Metadata |
+| `.text-overline` | 500 | 0.6875rem | 0.875rem | overline | 0.88px | Uppercase labels |
+| `.text-label-lg` | 500 | 0.875rem | 1.25rem | label | 0.28px | Form labels |
+| `.text-label-md` | 500 | 0.8125rem | 1.125rem | label | 0.26px | Compact forms |
+| `.text-button-lg` | 700 | 0.875rem | 1rem | button | 0.56px | Primary actions |
+| `.text-button-md` | 700 | 0.8125rem | 1rem | button | 0.65px | Secondary actions |
+| `.text-button-sm` | 700 | 0.75rem | 0.875rem | button | 0.72px | Toolbar buttons |
+
+Example class definition in `main.css`:
+```css
+@layer components {
+  .text-display-lg {
+    font: 500 2rem/2.5rem var(--font-display);
+    letter-spacing: -0.32px;
+  }
+}
+```
+
+Usage: `<h1 class="text-display-lg">Page Title</h1>`
+
+No functional token layer (e.g. `--card-title`). Use semantic classes directly in components.
+
 ### Spacing Conventions
 
 Spacing uses Tailwind's default scale (base unit: 4px). For visual consistency across components:

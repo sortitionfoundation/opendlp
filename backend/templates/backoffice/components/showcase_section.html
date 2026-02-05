@@ -1,0 +1,35 @@
+{#
+  Showcase Section Components
+  Internal macros for structuring the component showcase page.
+  Not intended for use outside of showcase.html.
+#}
+
+{# Section wrapper - use with {% call %} #}
+{% macro showcase_section(id="") %}
+    <section{% if id %} id="{{ id }}"{% endif %} class="mb-24">
+        {{ caller() }}
+    </section>
+{% endmacro %}
+
+{# Section title (h2) - display-sm for major sections #}
+{% macro showcase_title(text) %}
+    <h2 class="text-display-sm" style="color: var(--color-text-primary);">{{ text }}</h2>
+{% endmacro %}
+
+{# Section description - body-md, muted color #}
+{% macro showcase_description(text) %}
+    <p class="text-body-md mt-2 mb-6" style="color: var(--color-text-muted);">{{ text }}</p>
+{% endmacro %}
+
+{# Sub-section title (h3) - heading-sm for groupings within a section #}
+{% macro showcase_subtitle(text) %}
+    <h3 class="text-heading-sm mt-8 mb-3" style="color: var(--color-text-primary);">{{ text }}</h3>
+{% endmacro %}
+
+{# Code example block #}
+{% macro showcase_code() %}
+    <div class="mt-6">
+        <h3 class="text-label-lg mb-2" style="color: var(--color-text-primary);">How to Use</h3>
+        <pre class="text-body-sm p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);"><code>{{ caller() }}</code></pre>
+    </div>
+{% endmacro %}

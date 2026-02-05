@@ -45,6 +45,36 @@ Feature: Backoffice UI
     And I should see the card with actions
     And the card with actions should contain buttons
 
+  # Typography Tests
+
+  Scenario: Typography section is visible in showcase
+    Given I am on the backoffice showcase page
+    Then I should see the typography section
+    And I should see "Semantic Tokens"
+    And I should see "Use Cases"
+
+  Scenario: Display typography uses Oswald font
+    Given I am on the backoffice showcase page
+    Then the display-lg sample should use the Oswald font
+    And the display-lg sample should have font size 32px
+    And the display-md sample should use the Oswald font
+    And the display-md sample should have font size 28px
+
+  Scenario: Heading typography uses Oswald font
+    Given I am on the backoffice showcase page
+    Then the heading-lg sample should use the Oswald font
+    And the heading-lg sample should have font size 20px
+
+  Scenario: Body typography uses Lato font
+    Given I am on the backoffice showcase page
+    Then the body-lg sample should use the Lato font
+    And the body-lg sample should have font size 16px
+
+  Scenario: Overline typography is uppercase with Lato font
+    Given I am on the backoffice showcase page
+    Then the overline sample should use the Lato font
+    And the overline sample should be uppercase
+
   # Dashboard Tests (Protected Route)
 
   Scenario: Unauthenticated user is redirected to login

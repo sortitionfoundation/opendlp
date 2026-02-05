@@ -1,216 +1,200 @@
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card, card_with_actions %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_code %}
+{% from "backoffice/components/showcase_table.html" import showcase_table, showcase_table_header, showcase_table_body, showcase_table_row, showcase_table_cell %}
 
 {% block title %}Component Showcase{% endblock %}
 
 {% block content %}
-    <h1 style="color: var(--color-text-primary);" class="text-3xl font-bold mb-2">Component Showcase</h1>
-    <p style="color: var(--color-text-muted);" class="mb-8">Backoffice design system using Pines UI + Tailwind CSS</p>
+    <h1 class="text-display-lg" style="color: var(--color-text-primary);">Component Showcase</h1>
+    <p class="text-body-lg mt-2 mb-8" style="color: var(--color-text-muted);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
 
-    <!-- Design Tokens Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Primitive Tokens</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">Sortition Foundation brand colors from the design system.</p>
+    {# ==================== PRIMITIVE TOKENS ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Primitive Tokens") }}
+        {{ showcase_description("Sortition Foundation brand colors from the design system.") }}
 
         <div class="flex flex-wrap gap-4">
-            <!-- Burnt Orange (Primary CTA) -->
             <div id="token-primary" style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Burnt Orange</p>
-                <p class="text-sm opacity-90">#FF7043</p>
+                <p class="text-label-lg">Burnt Orange</p>
+                <p class="text-body-sm opacity-90">#FF7043</p>
             </div>
-
-            <!-- Dark Grey (Secondary) -->
             <div id="token-secondary" style="background-color: var(--color-dark-grey); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Dark Grey</p>
-                <p class="text-sm opacity-90">#424242</p>
+                <p class="text-label-lg">Dark Grey</p>
+                <p class="text-body-sm opacity-90">#424242</p>
             </div>
-
-            <!-- Hot Pink (Accent) -->
             <div id="token-accent" style="background-color: var(--color-hot-pink); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Hot Pink</p>
-                <p class="text-sm opacity-90">#E91E63</p>
+                <p class="text-label-lg">Hot Pink</p>
+                <p class="text-body-sm opacity-90">#E91E63</p>
             </div>
-
-            <!-- Woad Blue (Links/Info) -->
             <div style="background-color: var(--color-woad-blue); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Woad Blue</p>
-                <p class="text-sm opacity-90">#3F51B5</p>
+                <p class="text-label-lg">Woad Blue</p>
+                <p class="text-body-sm opacity-90">#3F51B5</p>
             </div>
-
-            <!-- Sap Green (Success) -->
             <div style="background-color: var(--color-sap-green); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Sap Green</p>
-                <p class="text-sm opacity-90">#4CAF50</p>
+                <p class="text-label-lg">Sap Green</p>
+                <p class="text-body-sm opacity-90">#4CAF50</p>
             </div>
-
-            <!-- Scarlet Red (Error) -->
             <div style="background-color: var(--color-scarlet-red); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Scarlet Red</p>
-                <p class="text-sm opacity-90">#F44336</p>
+                <p class="text-label-lg">Scarlet Red</p>
+                <p class="text-body-sm opacity-90">#F44336</p>
             </div>
-
-            <!-- Saffron Yellow (Focus) -->
             <div style="background-color: var(--color-saffron-yellow); color: var(--color-dark-grey);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Saffron Yellow</p>
-                <p class="text-sm opacity-90">#FFEB3B</p>
+                <p class="text-label-lg">Saffron Yellow</p>
+                <p class="text-body-sm opacity-90">#FFEB3B</p>
             </div>
-
-            <!-- Buttermilk (Light BG) -->
             <div style="background-color: var(--color-buttermilk); color: var(--color-dark-grey); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="font-semibold">Buttermilk</p>
-                <p class="text-sm opacity-90">#F5F5DC</p>
+                <p class="text-label-lg">Buttermilk</p>
+                <p class="text-body-sm opacity-90">#F5F5DC</p>
             </div>
         </div>
-    </section>
+    {% endcall %}
 
-    <!-- Semantic Tokens Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Semantic Tokens</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">Purpose-based tokens grouped by usage type.</p>
 
-        <!-- Background Colors -->
-        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Background Colors</h3>
+    {# ==================== SEMANTIC TOKENS ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Semantic Tokens") }}
+        {{ showcase_description("Purpose-based tokens grouped by usage type.") }}
+
+        {{ showcase_subtitle("Background Colors") }}
         <div class="flex flex-wrap gap-4 mb-8">
             <div style="background-color: var(--color-button-primary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-button-primary-bg</p>
-                <p class="text-xs opacity-75 mt-1">→ burnt-orange</p>
+                <p class="text-body-sm font-mono">--color-button-primary-bg</p>
+                <p class="text-caption opacity-75 mt-1">→ burnt-orange</p>
             </div>
             <div style="background-color: var(--color-button-secondary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-button-secondary-bg</p>
-                <p class="text-xs opacity-75 mt-1">→ dark-grey</p>
+                <p class="text-body-sm font-mono">--color-button-secondary-bg</p>
+                <p class="text-caption opacity-75 mt-1">→ dark-grey</p>
             </div>
             <div style="background-color: var(--color-button-disabled-bg); color: var(--color-gray-500);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-button-disabled-bg</p>
-                <p class="text-xs opacity-75 mt-1">→ gray-200</p>
+                <p class="text-body-sm font-mono">--color-button-disabled-bg</p>
+                <p class="text-caption opacity-75 mt-1">→ gray-200</p>
             </div>
             <div style="background-color: var(--color-bg-secondary); color: var(--color-text-body);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-bg-secondary</p>
-                <p class="text-xs opacity-75 mt-1">→ buttermilk</p>
+                <p class="text-body-sm font-mono">--color-bg-secondary</p>
+                <p class="text-caption opacity-75 mt-1">→ buttermilk</p>
             </div>
             <div style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-surface</p>
-                <p class="text-xs opacity-75 mt-1">→ white</p>
+                <p class="text-body-sm font-mono">--color-surface</p>
+                <p class="text-caption opacity-75 mt-1">→ white</p>
             </div>
             <div style="background-color: var(--color-surface-sunken); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-sm font-mono">--color-surface-sunken</p>
-                <p class="text-xs opacity-75 mt-1">→ gray-50</p>
+                <p class="text-body-sm font-mono">--color-surface-sunken</p>
+                <p class="text-caption opacity-75 mt-1">→ gray-50</p>
             </div>
         </div>
 
-        <!-- Border Colors -->
-        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Border Colors</h3>
+        {{ showcase_subtitle("Border Colors") }}
         <div class="flex flex-wrap gap-4 mb-8">
             <div style="background-color: var(--color-surface); border: 3px solid var(--color-button-outline-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-button-outline-border</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ dark-grey</p>
+                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-button-outline-border</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ dark-grey</p>
             </div>
             <div style="background-color: var(--color-surface); border: 3px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-border</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-200</p>
+                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-border</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-200</p>
             </div>
             <div style="background-color: var(--color-surface); border: 3px solid var(--color-input-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-input-border</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-300</p>
+                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-input-border</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-300</p>
             </div>
             <div style="background-color: var(--color-surface); box-shadow: 0 0 0 3px var(--color-focus-ring);" class="p-4 rounded-lg w-56">
-                <p style="color: var(--color-text-body);" class="text-sm font-mono">--color-focus-ring</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ saffron-yellow</p>
+                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-focus-ring</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ saffron-yellow</p>
             </div>
         </div>
 
-        <!-- Text Colors -->
-        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Text Colors</h3>
+        {{ showcase_subtitle("Text Colors") }}
         <div class="flex flex-wrap gap-4 mb-8">
             <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-primary);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-primary</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ dark-grey</p>
+                <p style="color: var(--color-text-primary);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-primary</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ dark-grey</p>
             </div>
             <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-body</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-900</p>
+                <p style="color: var(--color-text-body);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-body</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-900</p>
             </div>
             <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-muted);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-muted</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ gray-500</p>
+                <p style="color: var(--color-text-muted);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-muted</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-500</p>
             </div>
             <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-link);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-sm font-mono">--color-text-link</p>
-                <p style="color: var(--color-text-muted);" class="text-xs mt-1">→ woad-blue</p>
+                <p style="color: var(--color-text-link);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-link</p>
+                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ woad-blue</p>
             </div>
             <div style="background-color: var(--color-button-primary-bg);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-button-primary-text);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-white); opacity: 0.9;" class="text-sm font-mono">--color-button-primary-text</p>
-                <p style="color: var(--color-white); opacity: 0.75;" class="text-xs mt-1">→ white</p>
+                <p style="color: var(--color-button-primary-text);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-white); opacity: 0.9;" class="text-body-sm font-mono">--color-button-primary-text</p>
+                <p style="color: var(--color-white); opacity: 0.75;" class="text-caption mt-1">→ white</p>
             </div>
             <div style="background-color: var(--color-button-disabled-bg);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-button-disabled-text);" class="text-lg font-semibold mb-2">Aa</p>
-                <p style="color: var(--color-gray-500);" class="text-sm font-mono">--color-button-disabled-text</p>
-                <p style="color: var(--color-gray-500);" class="text-xs mt-1">→ gray-400</p>
+                <p style="color: var(--color-button-disabled-text);" class="text-heading-lg mb-2">Aa</p>
+                <p style="color: var(--color-gray-500);" class="text-body-sm font-mono">--color-button-disabled-text</p>
+                <p style="color: var(--color-gray-500);" class="text-caption mt-1">→ gray-400</p>
             </div>
         </div>
 
-        <!-- Feedback Colors -->
-        <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-3">Feedback Colors</h3>
-        <p style="color: var(--color-text-muted);" class="text-sm mb-3">Can be used as background or text color depending on context.</p>
+        {{ showcase_subtitle("Feedback Colors") }}
+        <p class="text-body-sm mb-3" style="color: var(--color-text-muted);">Can be used as background or text color depending on context.</p>
         <div class="flex flex-wrap gap-4">
             <div class="flex flex-col gap-2">
                 <div style="background-color: var(--color-feedback-success); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-sm font-mono">--color-feedback-success</p>
-                    <p class="text-xs opacity-75 mt-1">→ sap-green</p>
+                    <p class="text-body-sm font-mono">--color-feedback-success</p>
+                    <p class="text-caption opacity-75 mt-1">→ sap-green</p>
                 </div>
                 <div style="background-color: var(--color-feedback-success-light); border: 1px solid var(--color-feedback-success);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-success-text);" class="text-sm font-mono">--color-feedback-success-text</p>
+                    <p style="color: var(--color-feedback-success-text);" class="text-body-sm font-mono">--color-feedback-success-text</p>
                 </div>
             </div>
             <div class="flex flex-col gap-2">
                 <div style="background-color: var(--color-feedback-error); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-sm font-mono">--color-feedback-error</p>
-                    <p class="text-xs opacity-75 mt-1">→ scarlet-red</p>
+                    <p class="text-body-sm font-mono">--color-feedback-error</p>
+                    <p class="text-caption opacity-75 mt-1">→ scarlet-red</p>
                 </div>
                 <div style="background-color: var(--color-feedback-error-light); border: 1px solid var(--color-feedback-error);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-error-text);" class="text-sm font-mono">--color-feedback-error-text</p>
+                    <p style="color: var(--color-feedback-error-text);" class="text-body-sm font-mono">--color-feedback-error-text</p>
                 </div>
             </div>
             <div class="flex flex-col gap-2">
                 <div style="background-color: var(--color-feedback-warning); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-sm font-mono">--color-feedback-warning</p>
-                    <p class="text-xs opacity-75 mt-1">→ burnt-orange</p>
+                    <p class="text-body-sm font-mono">--color-feedback-warning</p>
+                    <p class="text-caption opacity-75 mt-1">→ burnt-orange</p>
                 </div>
                 <div style="background-color: var(--color-feedback-warning-light); border: 1px solid var(--color-feedback-warning);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-warning-text);" class="text-sm font-mono">--color-feedback-warning-text</p>
+                    <p style="color: var(--color-feedback-warning-text);" class="text-body-sm font-mono">--color-feedback-warning-text</p>
                 </div>
             </div>
             <div class="flex flex-col gap-2">
                 <div style="background-color: var(--color-feedback-info); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-sm font-mono">--color-feedback-info</p>
-                    <p class="text-xs opacity-75 mt-1">→ woad-blue</p>
+                    <p class="text-body-sm font-mono">--color-feedback-info</p>
+                    <p class="text-caption opacity-75 mt-1">→ woad-blue</p>
                 </div>
                 <div style="background-color: var(--color-feedback-info-light); border: 1px solid var(--color-feedback-info);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-info-text);" class="text-sm font-mono">--color-feedback-info-text</p>
+                    <p style="color: var(--color-feedback-info-text);" class="text-body-sm font-mono">--color-feedback-info-text</p>
                 </div>
             </div>
         </div>
-    </section>
+    {% endcall %}
 
-    <!-- Spacing Conventions Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Spacing Conventions</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">
+
+    {# ==================== SPACING CONVENTIONS ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Spacing Conventions") }}
+        <p class="text-body-md mt-2 mb-6" style="color: var(--color-text-muted);">
             Consistent spacing using Tailwind's default scale (base unit: 4px).
             See <a href="https://github.com/sortitionfoundation/opendlp" style="color: var(--color-text-link);">AGENTS.md</a> for the full spacing reference table.
         </p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Common Spacing Values -->
             {% call card(classes="") %}
-                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Key Values</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Key Values</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
                     <li><code class="font-mono bg-gray-100 px-1 rounded">p-6</code> / <code class="font-mono bg-gray-100 px-1 rounded">gap-6</code> - Card padding, section gaps (24px)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">mb-4</code> - Paragraph spacing (16px)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">mb-8</code> - Section spacing (32px)</li>
@@ -218,75 +202,67 @@
                 </ul>
             {% endcall %}
 
-            <!-- Principle -->
             {% call card(classes="") %}
-                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Principle</h3>
-                <p style="color: var(--color-text-body);" class="text-sm mb-3">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Principle</h3>
+                <p class="text-body-sm mb-3" style="color: var(--color-text-body);">
                     Prefer even multiples for visual rhythm: <code class="font-mono bg-gray-100 px-1 rounded">p-2</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-4</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-6</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-8</code>.
                 </p>
-                <p style="color: var(--color-text-muted);" class="text-sm">
+                <p class="text-body-sm" style="color: var(--color-text-muted);">
                     When adapting Pines UI components into Jinja macros, normalize spacing to match these conventions for consistency across the interface.
                 </p>
             {% endcall %}
         </div>
-    </section>
+    {% endcall %}
 
-    <!-- Responsive Layout Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Responsive Layout</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">
+
+    {# ==================== RESPONSIVE LAYOUT ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Responsive Layout") }}
+        <p class="text-body-md mt-2 mb-6" style="color: var(--color-text-muted);">
             Container max-width: <code class="font-mono bg-gray-100 px-1 rounded">max-w-screen-2xl</code> (1536px).
             Resize your browser to see the breakpoint indicator change.
         </p>
 
-        <!-- Breakpoint Indicator -->
         <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg p-6 mb-6">
-            <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Current Breakpoint</h3>
+            <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Current Breakpoint</h3>
             <div class="flex flex-wrap gap-3">
-                <!-- Mobile (default) -->
                 <div class="sm:hidden">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         (&lt;640px) - Mobile
                     </span>
                 </div>
-                <!-- SM -->
                 <div class="hidden sm:block md:hidden">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         sm (640px+) - Large phone
                     </span>
                 </div>
-                <!-- MD -->
                 <div class="hidden md:block lg:hidden">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         md (768px+) - Tablet
                     </span>
                 </div>
-                <!-- LG -->
                 <div class="hidden lg:block xl:hidden">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         lg (1024px+) - Laptop
                     </span>
                 </div>
-                <!-- XL -->
                 <div class="hidden xl:block 2xl:hidden">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         xl (1280px+) - Desktop
                     </span>
                 </div>
-                <!-- 2XL -->
                 <div class="hidden 2xl:block">
-                    <span style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="px-4 py-2 rounded-lg font-semibold">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
                         2xl (1536px+) - Large Monitor
                     </span>
                 </div>
             </div>
         </div>
 
-        <!-- Grid Columns Example -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {% call card(classes="") %}
-                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Breakpoints</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Breakpoints</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
                     <li><code class="font-mono bg-gray-100 px-1 rounded">sm</code> - 640px (Large phone)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">md</code> - 768px (Tablet)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">lg</code> - 1024px (Laptop)</li>
@@ -296,8 +272,8 @@
             {% endcall %}
 
             {% call card(classes="") %}
-                <h3 style="color: var(--color-text-primary);" class="text-lg font-medium mb-4">Recommended Grid Columns</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Recommended Grid Columns</h3>
+                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
                     <li>Mobile: <code class="font-mono bg-gray-100 px-1 rounded">grid-cols-1</code></li>
                     <li>Tablet (md): <code class="font-mono bg-gray-100 px-1 rounded">md:grid-cols-2</code></li>
                     <li>Laptop (lg): <code class="font-mono bg-gray-100 px-1 rounded">lg:grid-cols-3</code></li>
@@ -305,85 +281,123 @@
                 </ul>
             {% endcall %}
         </div>
-    </section>
+    {% endcall %}
 
-    <!-- Button Component Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Button Component</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">Reusable button macro with variant support.</p>
+
+    {# ==================== TYPOGRAPHY ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Typography") }}
+        {{ showcase_description("Oswald for headings and display text. Lato for body, labels, and buttons. Self-hosted via @fontsource.") }}
+
+        {{ showcase_subtitle("Semantic Tokens") }}
+        {% call showcase_table() %}
+            {{ showcase_table_header(["Class", "Font", "Size", "Weight", "Line Height", "Spacing"]) }}
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.5rem</td><td class="px-6 py-2">-0.32px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.25rem</td><td class="px-6 py-2">-0.28px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">-0.12px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0.18px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.375rem</td><td class="px-6 py-2">0.24px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-sm</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.13px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-caption</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-overline</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.6875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">0.88px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0.28px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.26px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.56px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.65px</td></tr>
+                <tr><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-sm</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.75rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">0.72px</td></tr>
+            </tbody>
+        {% endcall %}
+
+        {{ showcase_subtitle("Use Cases") }}
+        {% call showcase_table() %}
+            {{ showcase_table_header(["Use Case", "Token", "Example"]) }}
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-lg" style="color: var(--color-text-primary);">Page titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-lg</code></td><td class="px-6 py-4"><span id="typo-display-lg" class="text-display-lg" style="color: var(--color-text-primary);">Dashboard</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-md" style="color: var(--color-text-primary);">Section titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-md</code></td><td class="px-6 py-4"><span id="typo-display-md" class="text-display-md" style="color: var(--color-text-primary);">Your Assemblies</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-text-primary);">Subsections</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-sm</code></td><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-text-primary);">Filter Options</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-lg" style="color: var(--color-text-primary);">Card titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-lg</code></td><td class="px-6 py-4"><span id="typo-heading-lg" class="text-heading-lg" style="color: var(--color-text-primary);">Climate Assembly</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-text-primary);">Panel headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-md</code></td><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-text-primary);">Settings</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-text-primary);">Group headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-sm</code></td><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-text-primary);">Contact Details</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-lg" style="color: var(--color-text-body);">Long-form text</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-lg</code></td><td class="px-6 py-4"><span id="typo-body-lg" class="text-body-lg" style="color: var(--color-text-body);">Citizens' assemblies bring together randomly selected people to deliberate on important issues.</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-text-body);">Default UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-md</code></td><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-text-body);">12 members selected from 2,400 applicants</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-text-body);">Dense UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-sm</code></td><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-text-body);">Last updated 3 hours ago</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-text-muted);">Metadata</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-caption</code></td><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-text-muted);">Created Jan 15, 2026</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-overline" style="color: var(--color-text-muted);">Uppercase labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-overline</code></td><td class="px-6 py-4"><span id="typo-overline" class="text-overline" style="color: var(--color-text-muted);">Assembly Status</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-text-primary);">Form labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-label-lg</code></td><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-text-primary);">Email address</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-text-primary);">Primary actions</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-lg</code></td><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-text-primary);">Save Changes</span></td></tr>
+                <tr><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-text-primary);">Toolbar buttons</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-sm</code></td><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-text-primary);">Export</span></td></tr>
+            </tbody>
+        {% endcall %}
+    {% endcall %}
+
+
+    {# ==================== BUTTON COMPONENT ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Button Component") }}
+        {{ showcase_description("Reusable button macro with variant support.") }}
 
         <div class="flex flex-wrap gap-4 items-center">
-            <!-- Primary Button -->
             <div class="flex flex-col items-center gap-2">
                 {{ button("Click me", id="btn-default") }}
-                <span style="color: var(--color-text-muted);" class="text-xs">Default</span>
+                <span class="text-caption" style="color: var(--color-text-muted);">Default</span>
             </div>
-
             <div class="flex flex-col items-center gap-2">
                 {{ button("Submit", variant="primary", id="btn-primary") }}
-                <span style="color: var(--color-text-muted);" class="text-xs">Primary</span>
+                <span class="text-caption" style="color: var(--color-text-muted);">Primary</span>
             </div>
-
-            <!-- Secondary Button -->
             <div class="flex flex-col items-center gap-2">
                 {{ button("Secondary", variant="secondary", id="btn-secondary") }}
-                <span style="color: var(--color-text-muted);" class="text-xs">Secondary</span>
+                <span class="text-caption" style="color: var(--color-text-muted);">Secondary</span>
             </div>
-
-            <!-- Outline Button -->
             <div class="flex flex-col items-center gap-2">
                 {{ button("Cancel", variant="outline", id="btn-outline") }}
-                <span style="color: var(--color-text-muted);" class="text-xs">Outline</span>
+                <span class="text-caption" style="color: var(--color-text-muted);">Outline</span>
             </div>
-
-            <!-- Disabled Button -->
             <div class="flex flex-col items-center gap-2">
                 {{ button("Disabled", disabled=true, id="btn-disabled") }}
-                <span style="color: var(--color-text-muted);" class="text-xs">Disabled</span>
+                <span class="text-caption" style="color: var(--color-text-muted);">Disabled</span>
             </div>
         </div>
 
-        <!-- How to Use -->
-        <div class="mt-6">
-            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
-            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>{% raw %}{% from "backoffice/components/button.html" import button %}
+        {% call showcase_code() %}{% raw %}{% from "backoffice/components/button.html" import button %}
 
 {{ button("Click me") }}
 {{ button("Submit", variant="primary", type="submit") }}
 {{ button("Secondary", variant="secondary") }}
 {{ button("Cancel", variant="outline") }}
-{{ button("Disabled", disabled=true) }}{% endraw %}</code></pre>
-        </div>
-    </section>
+{{ button("Disabled", disabled=true) }}{% endraw %}{% endcall %}
+    {% endcall %}
 
-    <!-- Card Component Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Card Component</h2>
-        <p style="color: var(--color-text-muted);" class="mb-4">Reusable card macro for content containers.</p>
+
+    {# ==================== CARD COMPONENT ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Card Component") }}
+        {{ showcase_description("Reusable card macro for content containers.") }}
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Basic Card -->
             {% call card(id="card-basic", classes="max-w-sm") %}
-                <p style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-text-body);">
                     This is a basic card without a header. It can contain any content.
                 </p>
             {% endcall %}
 
-            <!-- Card with Header -->
             {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header", classes="max-w-sm") %}
-                <p style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-text-body);">
                     This card has a title and subtitle in the header section.
                 </p>
             {% endcall %}
 
-            <!-- Card with Actions -->
             <div id="card-actions" style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg shadow-md overflow-hidden max-w-sm">
                 <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
-                    <h3 style="color: var(--color-text-primary);" class="text-lg font-semibold">Card with Actions</h3>
-                    <p style="color: var(--color-text-muted);" class="text-sm mt-1">Includes button actions</p>
+                    <h3 class="text-heading-lg">Card with Actions</h3>
+                    <p class="text-body-sm mt-1" style="color: var(--color-text-muted);">Includes button actions</p>
                 </div>
                 <div class="px-6 py-4">
-                    <p style="color: var(--color-text-body);">
+                    <p class="text-body-md" style="color: var(--color-text-body);">
                         This card demonstrates composition with the Button component.
                     </p>
                 </div>
@@ -394,10 +408,7 @@
             </div>
         </div>
 
-        <!-- How to Use -->
-        <div class="mt-6">
-            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
-            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>{% raw %}{% from "backoffice/components/card.html" import card %}
+        {% call showcase_code() %}{% raw %}{% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/button.html" import button %}
 
 {# Basic card #}
@@ -414,7 +425,7 @@
 &lt;div style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
      class="rounded-lg shadow-md overflow-hidden"&gt;
   &lt;div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4"&gt;
-    &lt;h3 style="color: var(--color-text-primary);" class="text-lg font-semibold"&gt;Title&lt;/h3&gt;
+    &lt;h3 class="text-heading-lg" style="color: var(--color-text-primary);"&gt;Title&lt;/h3&gt;
   &lt;/div&gt;
   &lt;div class="px-6 py-4"&gt;Content here&lt;/div&gt;
   &lt;div style="border-top: 1px solid var(--color-border); background-color: var(--color-surface-sunken);"
@@ -422,13 +433,13 @@
     {{ button("Cancel", variant="outline") }}
     {{ button("Save", variant="primary") }}
   &lt;/div&gt;
-&lt;/div&gt;{% endraw %}</code></pre>
-        </div>
-    </section>
+&lt;/div&gt;{% endraw %}{% endcall %}
+    {% endcall %}
 
-    <!-- Alpine.js Demo Section -->
-    <section class="mb-24">
-        <h2 style="color: var(--color-text-primary);" class="text-xl font-semibold mb-4">Alpine.js Interactivity</h2>
+
+    {# ==================== ALPINE.JS ==================== #}
+    {% call showcase_section() %}
+        {{ showcase_title("Alpine.js Interactivity") }}
 
         <div x-data="{ open: false }" class="max-w-md">
             {% call button(variant="primary", id="alpine-toggle", attrs='@click="open = !open"') %}
@@ -442,17 +453,13 @@
                 style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
                 class="mt-4 p-4 rounded-lg"
             >
-                <p style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-text-body);">
                     Alpine.js is working! This message toggles on button click.
                 </p>
             </div>
         </div>
 
-        <!-- How to Use -->
-        <div class="mt-6">
-            <h3 style="color: var(--color-text-primary);" class="text-sm font-semibold mb-2">How to Use</h3>
-            <pre style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border); color: var(--color-text-body);" class="p-4 rounded-lg text-sm overflow-x-auto"><code>
-{% raw %}{# Alpine.js toggle pattern with Button macro #}
+        {% call showcase_code() %}{% raw %}{# Alpine.js toggle pattern with Button macro #}
 {% from "backoffice/components/button.html" import button %}
 
 &lt;div x-data="{ open: false }"&gt;
@@ -463,9 +470,7 @@
   &lt;div x-show="open" x-transition&gt;
     Content to toggle
   &lt;/div&gt;
-&lt;/div&gt;{% endraw %}
-        </code></pre>
-        </div>
-    </section>
+&lt;/div&gt;{% endraw %}{% endcall %}
+    {% endcall %}
 
 {% endblock %}

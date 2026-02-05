@@ -4,10 +4,103 @@
 
 /*
  * Design Tokens are loaded separately in templates:
- * - tokens/primitive.css (raw color values)
- * - tokens/semantic.css (purpose-based aliases)
+ * - tokens/primitive.css (raw color values + @font-face + font family primitives)
+ * - tokens/semantic.css (purpose-based color aliases)
  *
- * This keeps the build simple (no postcss-import needed).
+ * Typography semantic tokens are defined below as utility classes,
+ * because the CSS font shorthand cannot include letter-spacing.
  */
 
-/* Backoffice-specific styles will go here */
+/* ========================================
+   TYPOGRAPHY - Semantic Utility Classes
+   ======================================== */
+
+@layer components {
+    /* Display (Oswald) - Page/section titles */
+    .text-display-lg {
+        font: 500 2rem/2.5rem var(--font-display);
+        letter-spacing: -0.32px;
+    }
+
+    .text-display-md {
+        font: 500 1.75rem/2.25rem var(--font-display);
+        letter-spacing: -0.28px;
+    }
+
+    .text-display-sm {
+        font: 500 1.5rem/2rem var(--font-display);
+        letter-spacing: -0.12px;
+    }
+
+    /* Heading (Oswald) - Card/panel/group headers */
+    .text-heading-lg {
+        font: 500 1.25rem/1.75rem var(--font-heading);
+        letter-spacing: 0;
+    }
+
+    .text-heading-md {
+        font: 500 1.125rem/1.5rem var(--font-heading);
+        letter-spacing: 0.18px;
+    }
+
+    .text-heading-sm {
+        font: 500 1rem/1.375rem var(--font-heading);
+        letter-spacing: 0.24px;
+    }
+
+    /* Body (Lato) - Content text */
+    .text-body-lg {
+        font: 400 1rem/1.5rem var(--font-body);
+        letter-spacing: 0;
+    }
+
+    .text-body-md {
+        font: 400 0.875rem/1.25rem var(--font-body);
+        letter-spacing: 0;
+    }
+
+    .text-body-sm {
+        font: 400 0.8125rem/1.125rem var(--font-body);
+        letter-spacing: 0.13px;
+    }
+
+    /* Caption (Lato) - Metadata */
+    .text-caption {
+        font: 400 1rem/1.5rem var(--font-caption);
+        letter-spacing: 0;
+    }
+
+    /* Overline (Lato) - Uppercase labels */
+    .text-overline {
+        font: 500 0.6875rem/0.875rem var(--font-overline);
+        letter-spacing: 0.88px;
+        text-transform: uppercase;
+    }
+
+    /* Label (Lato) - Form labels */
+    .text-label-lg {
+        font: 500 0.875rem/1.25rem var(--font-label);
+        letter-spacing: 0.28px;
+    }
+
+    .text-label-md {
+        font: 500 0.8125rem/1.125rem var(--font-label);
+        letter-spacing: 0.26px;
+    }
+
+    /* Button (Lato) - Action text */
+    .text-button-lg {
+        font: 700 0.875rem/1rem var(--font-button);
+        letter-spacing: 0.56px;
+    }
+
+    .text-button-md {
+        font: 700 0.8125rem/1rem var(--font-button);
+        letter-spacing: 0.65px;
+    }
+
+    .text-button-sm {
+        font: 700 0.75rem/0.875rem var(--font-button);
+        letter-spacing: 0.72px;
+    }
+}
