@@ -42,9 +42,10 @@ runs:
       run: uv sync --frozen
       shell: bash
 
-    - name: Install Node.js dependencies
+    - name: Install Node.js dependencies and build CSS
       working-directory: ${{ inputs.working-directory }}
       run: |
         npm install
         npm run build:sass
+        npm run build:backoffice
       shell: bash
