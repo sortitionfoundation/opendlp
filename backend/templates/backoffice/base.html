@@ -12,8 +12,8 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/semantic.css') }}">
 
         <!-- Alpine.js -->
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script>
+        <script nonce="{{ csp_nonce }}" defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script nonce="{{ csp_nonce }}">
             document.addEventListener('alpine:init', () => {
                 console.log('Alpine.js loaded');
             });
