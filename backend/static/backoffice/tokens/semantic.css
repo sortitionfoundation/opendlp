@@ -1,0 +1,45 @@
+/**
+ * Semantic Design Tokens
+ * Purpose-based tokens that reference primitives
+ * Names derived from the design system usage descriptions
+ */
+
+:root {
+    /* ========================================
+     BRAND SEMANTIC TOKENS
+     ======================================== */
+
+    --color-light-highlights: var(--color-brand-50);
+    --color-selection-background: var(--color-brand-100);
+    --color-subtle-emphasis: var(--color-brand-200);
+    --color-buttons-secondary: var(--color-brand-300);
+    --color-primary-action: var(--color-brand-400);
+    --color-active-states: var(--color-brand-500);
+    --color-hover-dark-ui: var(--color-brand-600);
+    --color-pressed: var(--color-brand-700);
+    --color-dark-accents: var(--color-brand-800);
+
+    /* ========================================
+     NEUTRAL SEMANTIC TOKENS
+     ======================================== */
+
+    --color-page-background: var(--color-neutral-0);
+    --color-subtle-background-panels: var(--color-neutral-50);
+    --color-tables-cards: var(--color-neutral-100);
+    --color-borders-dividers: var(--color-neutral-200);
+    --color-disabled-borders: var(--color-neutral-300);
+    --color-placeholder-text: var(--color-neutral-400);
+    --color-secondary-text: var(--color-neutral-500);
+    --color-body-text: var(--color-neutral-600);
+    --color-headings: var(--color-neutral-700);
+    --color-navigation-bars: var(--color-neutral-800);
+    --color-dark-mode-base: var(--color-neutral-900);
+
+    /* ========================================
+     FOCUS RING
+     ======================================== */
+
+    --color-focus-ring: var(--color-brand-200);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+}

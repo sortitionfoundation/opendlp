@@ -1,0 +1,108 @@
+/**
+ * Primitive Design Tokens
+ * Raw design values - colors, spacing, typography scales
+ * These are the foundation that semantic tokens reference
+ */
+
+/* @font-face declarations - self-hosted via @fontsource */
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url("/static/backoffice/fonts/oswald-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url("/static/backoffice/fonts/lato-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 700;
+    src: url("/static/backoffice/fonts/lato-latin-700-normal.woff2") format("woff2");
+}
+
+:root {
+    /* ========================================
+     BRAND PRIMARY SCALE
+     Pink/Magenta/Crimson palette
+     ======================================== */
+
+    --color-brand-50: #FBE7EF;
+    --color-brand-100: #F4B6CB;
+    --color-brand-200: #E682A4;
+    --color-brand-300: #C70039;
+    --color-brand-400: #90003F;
+    --color-brand-500: #820042;
+    --color-brand-600: #720046;
+    --color-brand-700: #5E003A;
+    --color-brand-800: #46002A;
+
+    /* ========================================
+     CORE NEUTRALS SCALE
+     Cool gray palette
+     ======================================== */
+
+    --color-neutral-0: #FFFFFF;
+    --color-neutral-50: #F7F7F8;
+    --color-neutral-100: #EFEFF1;
+    --color-neutral-200: #E1E2E5;
+    --color-neutral-300: #C8CAD0;
+    --color-neutral-400: #9EA2AC;
+    --color-neutral-500: #6F7482;
+    --color-neutral-600: #4E5361;
+    --color-neutral-700: #2F3442;
+    --color-neutral-800: #1F2330;
+    --color-neutral-900: #12141C;
+
+    /* ========================================
+     SPACING SCALE
+     ======================================== */
+
+    --spacing-0: 0;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+
+    /* ========================================
+     TYPOGRAPHY - Font Families (Primitives)
+     ======================================== */
+
+    --font-display: "Oswald", sans-serif;
+    --font-heading: "Oswald", sans-serif;
+    --font-body: "Lato", sans-serif;
+    --font-caption: "Lato", sans-serif;
+    --font-overline: "Lato", sans-serif;
+    --font-label: "Lato", sans-serif;
+    --font-button: "Lato", sans-serif;
+
+    /* ========================================
+     BORDERS & EFFECTS
+     ======================================== */
+
+    /* Border Radius */
+    --radius-sm: 0.125rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}

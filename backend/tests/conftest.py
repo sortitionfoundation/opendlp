@@ -21,7 +21,10 @@ from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.service_layer import security
 
-pytest_plugins = ["tests.bdd.shared.ui_shared"]
+pytest_plugins = [
+    "tests.bdd.shared.ui_shared",
+    "tests.bdd.shared.email_confirmation_steps",
+]
 
 
 @pytest.fixture(autouse=True)

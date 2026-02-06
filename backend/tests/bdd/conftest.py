@@ -425,8 +425,4 @@ def user_invite(test_database, admin_user) -> str:
     return invite.code
 
 
-# Load shared step definitions
-pytest_plugins = [
-    "tests.bdd.shared.ui_shared",
-    "tests.bdd.shared.email_confirmation_steps",
-]
+# Shared step definitions are loaded via tests/conftest.py pytest_plugins

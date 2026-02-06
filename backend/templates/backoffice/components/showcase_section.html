@@ -1,0 +1,47 @@
+{#
+  Showcase Section Components
+  Internal macros for structuring the component showcase page.
+  Not intended for use outside of showcase.html.
+#}
+
+{# Section wrapper - use with {% call %} #}
+{% macro showcase_section(id="") %}
+    <section{% if id %} id="{{ id }}"{% endif %} class="mb-24">
+        {{ caller() }}
+    </section>
+{% endmacro %}
+
+{# Section title (h2) - display-sm for major sections #}
+{% macro showcase_title(text) %}
+    <h2 class="text-display-sm" style="color: var(--color-headings);">{{ text }}</h2>
+{% endmacro %}
+
+{# Section description - body-md, muted color #}
+{% macro showcase_description(text) %}
+    <p class="text-body-md mt-2 mb-6" style="color: var(--color-secondary-text);">{{ text }}</p>
+{% endmacro %}
+
+{# Sub-section title (h3) - heading-sm for groupings within a section #}
+{% macro showcase_subtitle(text) %}
+    <h3 class="text-heading-sm mt-8 mb-3" style="color: var(--color-headings);">{{ text }}</h3>
+{% endmacro %}
+
+{# Code example block #}
+{% macro showcase_code() %}
+    <div class="mt-6">
+        <h3 class="text-label-lg mb-2" style="color: var(--color-headings);">How to Use</h3>
+        <pre class="text-body-sm p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"><code>{{ caller() }}</code></pre>
+    </div>
+{% endmacro %}
+
+{# Token badge list - shows which semantic tokens a component uses #}
+{% macro showcase_tokens(tokens) %}
+    <div class="mt-4">
+        <h4 class="text-label-md mb-2" style="color: var(--color-secondary-text);">Semantic Tokens Used</h4>
+        <div class="flex flex-wrap gap-2">
+            {% for token in tokens %}
+                <span class="text-body-sm font-mono px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">{{ token }}</span>
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}
