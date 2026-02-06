@@ -254,6 +254,8 @@ def see_use_cases_text(page: Page):
 @then(parsers.parse("the {token} sample should use the Oswald font"))
 def sample_uses_oswald_font(page: Page, token: str):
     """Verify a typography sample uses the Oswald font family."""
+    # Wait for web fonts to load before checking
+    page.evaluate("() => document.fonts.ready")
     element = page.locator(f"#typo-{token}")
     font_family = element.evaluate("el => getComputedStyle(el).fontFamily")
     assert "Oswald" in font_family, f"Expected Oswald font for {token}, got {font_family}"
@@ -262,6 +264,8 @@ def sample_uses_oswald_font(page: Page, token: str):
 @then(parsers.parse("the {token} sample should use the Lato font"))
 def sample_uses_lato_font(page: Page, token: str):
     """Verify a typography sample uses the Lato font family."""
+    # Wait for web fonts to load before checking
+    page.evaluate("() => document.fonts.ready")
     element = page.locator(f"#typo-{token}")
     font_family = element.evaluate("el => getComputedStyle(el).fontFamily")
     assert "Lato" in font_family, f"Expected Lato font for {token}, got {font_family}"
