@@ -73,38 +73,38 @@ def see_primitive_tokens_text(page: Page):
 # Design Token Tests
 
 
-@then("I should see the primary token box")
-def see_primary_token_box(page: Page):
-    """Verify the primary token box is visible."""
-    token_box = page.locator("#token-primary")
+@then("I should see the brand-400 primary action token box")
+def see_brand_400_token_box(page: Page):
+    """Verify the brand-400 primary action token box is visible."""
+    token_box = page.locator("#token-brand-400")
     expect(token_box).to_be_visible()
-    expect(token_box).to_contain_text("Burnt Orange")
+    expect(token_box).to_contain_text("brand-400")
 
 
-@then("the primary token box should have the brand orange background")
-def primary_token_has_orange_background(page: Page):
-    """Verify design token --color-burnt-orange (#FF7043) is applied."""
-    token_box = page.locator("#token-primary")
-    # Burnt orange #FF7043 = rgb(255, 112, 67)
+@then("the brand-400 token box should have the brand crimson background")
+def brand_400_token_has_crimson_background(page: Page):
+    """Verify design token --color-brand-400 (#90003F) is applied."""
+    token_box = page.locator("#token-brand-400")
+    # Brand-400 #90003F = rgb(144, 0, 63)
     background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(255, 112, 67)", f"Expected burnt orange, got {background_color}"
+    assert background_color == "rgb(144, 0, 63)", f"Expected brand crimson, got {background_color}"
 
 
-@then("I should see the secondary token box")
-def see_secondary_token_box(page: Page):
-    """Verify the secondary token box is visible."""
-    token_box = page.locator("#token-secondary")
+@then("I should see the brand-300 secondary token box")
+def see_brand_300_token_box(page: Page):
+    """Verify the brand-300 secondary token box is visible."""
+    token_box = page.locator("#token-brand-300")
     expect(token_box).to_be_visible()
-    expect(token_box).to_contain_text("Dark Grey")
+    expect(token_box).to_contain_text("brand-300")
 
 
-@then("the secondary token box should have the brand plum background")
-def secondary_token_has_plum_background(page: Page):
-    """Verify design token --color-dark-grey (#424242) is applied."""
-    token_box = page.locator("#token-secondary")
-    # Dark grey #424242 = rgb(66, 66, 66)
+@then("the brand-300 token box should have the brand red background")
+def brand_300_token_has_red_background(page: Page):
+    """Verify design token --color-brand-300 (#C70039) is applied."""
+    token_box = page.locator("#token-brand-300")
+    # Brand-300 #C70039 = rgb(199, 0, 57)
     background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(66, 66, 66)", f"Expected dark grey, got {background_color}"
+    assert background_color == "rgb(199, 0, 57)", f"Expected brand red, got {background_color}"
 
 
 # Alpine.js Tests
@@ -172,22 +172,22 @@ def see_disabled_button(page: Page):
     expect(button).to_contain_text("Disabled")
 
 
-@then("the primary button should have the brand orange background")
-def primary_button_has_orange_background(page: Page):
-    """Verify primary button uses --color-button-primary-bg (burnt orange #FF7043)."""
+@then("the primary button should have the brand crimson background")
+def primary_button_has_crimson_background(page: Page):
+    """Verify primary button uses --color-primary-action (brand-400 #90003F)."""
     button = page.locator("#btn-primary")
-    # Burnt orange #FF7043 = rgb(255, 112, 67)
+    # Brand-400 #90003F = rgb(144, 0, 63)
     background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(255, 112, 67)", f"Expected burnt orange, got {background_color}"
+    assert background_color == "rgb(144, 0, 63)", f"Expected brand crimson, got {background_color}"
 
 
-@then("the secondary button should have the brand plum background")
-def secondary_button_has_plum_background(page: Page):
-    """Verify secondary button uses --color-button-secondary-bg (dark grey #424242)."""
+@then("the secondary button should have the brand red background")
+def secondary_button_has_red_background(page: Page):
+    """Verify secondary button uses --color-buttons-secondary (brand-300 #C70039)."""
     button = page.locator("#btn-secondary")
-    # Dark grey #424242 = rgb(66, 66, 66)
+    # Brand-300 #C70039 = rgb(199, 0, 57)
     background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
-    assert background_color == "rgb(66, 66, 66)", f"Expected dark grey, got {background_color}"
+    assert background_color == "rgb(199, 0, 57)", f"Expected brand red, got {background_color}"
 
 
 @then("the disabled button should be disabled")

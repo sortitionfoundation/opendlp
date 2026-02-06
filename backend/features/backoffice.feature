@@ -11,10 +11,10 @@ Feature: Backoffice UI
 
   Scenario: Design tokens are loaded and working
     Given I am on the backoffice showcase page
-    Then I should see the primary token box
-    And the primary token box should have the brand orange background
-    And I should see the secondary token box
-    And the secondary token box should have the brand plum background
+    Then I should see the brand-400 primary action token box
+    And the brand-400 token box should have the brand crimson background
+    And I should see the brand-300 secondary token box
+    And the brand-300 token box should have the brand red background
 
   Scenario: Alpine.js toggle button works
     Given I am on the backoffice showcase page
@@ -34,8 +34,8 @@ Feature: Backoffice UI
 
   Scenario: Button component uses correct design tokens
     Given I am on the backoffice showcase page
-    Then the primary button should have the brand orange background
-    And the secondary button should have the brand plum background
+    Then the primary button should have the brand crimson background
+    And the secondary button should have the brand red background
     And the disabled button should be disabled
 
   Scenario: Card component variants are displayed

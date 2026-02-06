@@ -1,125 +1,45 @@
 /**
  * Semantic Design Tokens
- * Purpose-based tokens that reference Sortition Foundation primitives
- * These create meaningful names for UI contexts
+ * Purpose-based tokens that reference primitives
+ * Names derived from the design system usage descriptions
  */
 
 :root {
     /* ========================================
-     BRAND IDENTITY
+     BRAND SEMANTIC TOKENS
      ======================================== */
 
-    --color-brand-primary: var(--color-burnt-orange);
-    --color-brand-secondary: var(--color-dark-grey);
-    --color-brand-accent: var(--color-hot-pink);
+    --color-light-highlights: var(--color-brand-50);
+    --color-selection-background: var(--color-brand-100);
+    --color-subtle-emphasis: var(--color-brand-200);
+    --color-buttons-secondary: var(--color-brand-300);
+    --color-primary-action: var(--color-brand-400);
+    --color-active-states: var(--color-brand-500);
+    --color-hover-dark-ui: var(--color-brand-600);
+    --color-pressed: var(--color-brand-700);
+    --color-dark-accents: var(--color-brand-800);
 
     /* ========================================
-     TEXT COLORS
+     NEUTRAL SEMANTIC TOKENS
      ======================================== */
 
-    --color-text-primary: var(--color-dark-grey);      /* Headings */
-    --color-text-body: var(--color-gray-900);          /* Body text */
-    --color-text-muted: var(--color-gray-500);         /* Secondary text */
-    --color-text-on-dark: var(--color-white);          /* Text on dark backgrounds */
-    --color-text-on-brand: var(--color-white);         /* Text on brand colors */
-
-    --color-text-link: var(--color-woad-blue);
-    --color-text-link-hover: var(--color-purple-red);
-    --color-text-link-visited: var(--color-purple-red);
+    --color-page-background: var(--color-neutral-0);
+    --color-subtle-background-panels: var(--color-neutral-50);
+    --color-tables-cards: var(--color-neutral-100);
+    --color-borders-dividers: var(--color-neutral-200);
+    --color-disabled-borders: var(--color-neutral-300);
+    --color-placeholder-text: var(--color-neutral-400);
+    --color-secondary-text: var(--color-neutral-500);
+    --color-body-text: var(--color-neutral-600);
+    --color-headings: var(--color-neutral-700);
+    --color-navigation-bars: var(--color-neutral-800);
+    --color-dark-mode-base: var(--color-neutral-900);
 
     /* ========================================
-     BACKGROUNDS
+     FOCUS RING
      ======================================== */
 
-    --color-bg-primary: var(--color-white);
-    --color-bg-secondary: var(--color-buttermilk);     /* Light sections */
-    --color-bg-tertiary: var(--color-hot-pink);        /* Accent sections */
-    --color-bg-dark: var(--color-black);               /* Dark sections, footer */
-    --color-bg-brand: var(--color-dark-grey);          /* Brand sections */
-
-    /* ========================================
-     SURFACES (Cards, Modals, Panels)
-     ======================================== */
-
-    --color-surface: var(--color-white);
-    --color-surface-raised: var(--color-white);
-    --color-surface-overlay: var(--color-white);
-    --color-surface-sunken: var(--color-gray-50);
-
-    /* ========================================
-     INTERACTIVE ELEMENTS
-     ======================================== */
-
-    /* Primary Button (Burnt Orange - for main CTAs) */
-    --color-button-primary-bg: var(--color-burnt-orange);
-    --color-button-primary-bg-hover: #e65100;         /* Darker burnt orange */
-    --color-button-primary-bg-active: #bf360c;        /* Even darker */
-    --color-button-primary-text: var(--color-white);
-
-    /* Secondary Button (Dark Grey - for secondary actions) */
-    --color-button-secondary-bg: var(--color-dark-grey);
-    --color-button-secondary-bg-hover: #303030;       /* Darker grey */
-    --color-button-secondary-bg-active: #212121;      /* Even darker */
-    --color-button-secondary-text: var(--color-white);
-
-    /* Outline Button */
-    --color-button-outline-border: var(--color-dark-grey);
-    --color-button-outline-text: var(--color-dark-grey);
-    --color-button-outline-bg-hover: var(--color-gray-100);
-
-    /* Disabled state */
-    --color-button-disabled-bg: var(--color-gray-200);
-    --color-button-disabled-text: var(--color-gray-400);
-
-    /* ========================================
-     FORM ELEMENTS
-     ======================================== */
-
-    --color-input-bg: var(--color-white);
-    --color-input-border: var(--color-gray-300);
-    --color-input-border-hover: var(--color-gray-400);
-    --color-input-border-focus: var(--color-woad-blue);
-    --color-input-text: var(--color-gray-900);
-    --color-input-placeholder: var(--color-gray-400);
-
-    /* ========================================
-     FEEDBACK / STATUS
-     ======================================== */
-
-    /* Success - Sap Green */
-    --color-feedback-success: var(--color-sap-green);
-    --color-feedback-success-light: #e8f5e9;
-    --color-feedback-success-text: #2e7d32;
-
-    /* Error - Scarlet Red */
-    --color-feedback-error: var(--color-scarlet-red);
-    --color-feedback-error-light: #ffebee;
-    --color-feedback-error-text: #c62828;
-
-    /* Warning - Burnt Orange */
-    --color-feedback-warning: var(--color-burnt-orange);
-    --color-feedback-warning-light: #fff3e0;
-    --color-feedback-warning-text: #e65100;
-
-    /* Info - Woad Blue */
-    --color-feedback-info: var(--color-woad-blue);
-    --color-feedback-info-light: #e8eaf6;
-    --color-feedback-info-text: #303f9f;
-
-    /* ========================================
-     BORDERS & DIVIDERS
-     ======================================== */
-
-    --color-border: var(--color-gray-200);
-    --color-border-light: var(--color-gray-100);
-    --color-border-strong: var(--color-gray-300);
-    --color-divider: var(--color-gray-200);
-
-    /* ========================================
-     FOCUS RING (Saffron Yellow per GOV.UK styling)
-     ======================================== */
-
-    --color-focus-ring: var(--color-saffron-yellow);
+    --color-focus-ring: var(--color-brand-200);
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
 }

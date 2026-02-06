@@ -32,19 +32,19 @@ ABOUTME: Supports primary, secondary, outline variants with proper token styling
     {% set base_classes = "text-button-lg px-4 py-2 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2" %}
 
     {% if disabled %}
-        {% set variant_styles = "background-color: var(--color-button-disabled-bg); color: var(--color-button-disabled-text); cursor: not-allowed;" %}
+        {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed;" %}
         {% set focus_ring = "" %}
     {% elif variant == "primary" %}
-        {% set variant_styles = "background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text);" %}
+        {% set variant_styles = "background-color: var(--color-primary-action); color: var(--color-page-background);" %}
         {% set hover_styles = "hover:opacity-90" %}
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% elif variant == "secondary" %}
-        {% set variant_styles = "background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text);" %}
+        {% set variant_styles = "background-color: var(--color-buttons-secondary); color: var(--color-page-background);" %}
         {% set hover_styles = "hover:opacity-90" %}
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% elif variant == "outline" %}
-        {% set variant_styles = "background-color: transparent; color: var(--color-button-outline-text); border: 2px solid var(--color-button-outline-border);" %}
-        {% set hover_styles = "hover:bg-[var(--color-button-outline-bg-hover)]" %}
+        {% set variant_styles = "background-color: transparent; color: var(--color-headings); border: 2px solid var(--color-headings);" %}
+        {% set hover_styles = "hover:bg-[var(--color-subtle-background-panels)]" %}
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% endif %}
 
