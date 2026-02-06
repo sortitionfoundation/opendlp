@@ -7,47 +7,100 @@
 {% block title %}Component Showcase{% endblock %}
 
 {% block content %}
-    <h1 class="text-display-lg" style="color: var(--color-text-primary);">Component Showcase</h1>
-    <p class="text-body-lg mt-2 mb-8" style="color: var(--color-text-muted);">Backoffice design system using Pines UI + Tailwind CSS</p>
+    <h1 class="text-display-lg" style="color: var(--color-headings);">Component Showcase</h1>
+    <p class="text-body-lg mt-2 mb-8" style="color: var(--color-secondary-text);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
 
     {# ==================== PRIMITIVE TOKENS ==================== #}
     {% call showcase_section() %}
         {{ showcase_title("Primitive Tokens") }}
-        {{ showcase_description("Sortition Foundation brand colors from the design system.") }}
+        {{ showcase_description("Brand primary and neutral color scales.") }}
 
+        {{ showcase_subtitle("Brand Primary Scale") }}
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div id="token-brand-50" style="background-color: var(--color-brand-50); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-50</p>
+                <p class="text-body-sm opacity-90">#FBE7EF</p>
+            </div>
+            <div id="token-brand-100" style="background-color: var(--color-brand-100); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-100</p>
+                <p class="text-body-sm opacity-90">#F4B6CB</p>
+            </div>
+            <div id="token-brand-200" style="background-color: var(--color-brand-200); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-200</p>
+                <p class="text-body-sm opacity-90">#E682A4</p>
+            </div>
+            <div id="token-brand-300" style="background-color: var(--color-brand-300); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-300</p>
+                <p class="text-body-sm opacity-90">#C70039</p>
+            </div>
+            <div id="token-brand-400" style="background-color: var(--color-brand-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-400</p>
+                <p class="text-body-sm opacity-90">#90003F</p>
+            </div>
+            <div id="token-brand-500" style="background-color: var(--color-brand-500); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-500</p>
+                <p class="text-body-sm opacity-90">#820042</p>
+            </div>
+            <div id="token-brand-600" style="background-color: var(--color-brand-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-600</p>
+                <p class="text-body-sm opacity-90">#720046</p>
+            </div>
+            <div id="token-brand-700" style="background-color: var(--color-brand-700); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-700</p>
+                <p class="text-body-sm opacity-90">#0F5389</p>
+            </div>
+            <div id="token-brand-800" style="background-color: var(--color-brand-800); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-800</p>
+                <p class="text-body-sm opacity-90">#46002A</p>
+            </div>
+        </div>
+
+        {{ showcase_subtitle("Core Neutrals Scale") }}
         <div class="flex flex-wrap gap-4">
-            <div id="token-primary" style="background-color: var(--color-burnt-orange); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Burnt Orange</p>
-                <p class="text-body-sm opacity-90">#FF7043</p>
+            <div style="background-color: var(--color-neutral-0); color: var(--color-headings); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-0</p>
+                <p class="text-body-sm opacity-90">#FFFFFF</p>
             </div>
-            <div id="token-secondary" style="background-color: var(--color-dark-grey); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Dark Grey</p>
-                <p class="text-body-sm opacity-90">#424242</p>
+            <div style="background-color: var(--color-neutral-50); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-50</p>
+                <p class="text-body-sm opacity-90">#F7F7F8</p>
             </div>
-            <div id="token-accent" style="background-color: var(--color-hot-pink); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Hot Pink</p>
-                <p class="text-body-sm opacity-90">#E91E63</p>
+            <div style="background-color: var(--color-neutral-100); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-100</p>
+                <p class="text-body-sm opacity-90">#EFEFF1</p>
             </div>
-            <div style="background-color: var(--color-woad-blue); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Woad Blue</p>
-                <p class="text-body-sm opacity-90">#3F51B5</p>
+            <div style="background-color: var(--color-neutral-200); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-200</p>
+                <p class="text-body-sm opacity-90">#E1E2E5</p>
             </div>
-            <div style="background-color: var(--color-sap-green); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Sap Green</p>
-                <p class="text-body-sm opacity-90">#4CAF50</p>
+            <div style="background-color: var(--color-neutral-300); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-300</p>
+                <p class="text-body-sm opacity-90">#C8CAD0</p>
             </div>
-            <div style="background-color: var(--color-scarlet-red); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Scarlet Red</p>
-                <p class="text-body-sm opacity-90">#F44336</p>
+            <div style="background-color: var(--color-neutral-400); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-400</p>
+                <p class="text-body-sm opacity-90">#9EA2AC</p>
             </div>
-            <div style="background-color: var(--color-saffron-yellow); color: var(--color-dark-grey);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Saffron Yellow</p>
-                <p class="text-body-sm opacity-90">#FFEB3B</p>
+            <div style="background-color: var(--color-neutral-500); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-500</p>
+                <p class="text-body-sm opacity-90">#6F7482</p>
             </div>
-            <div style="background-color: var(--color-buttermilk); color: var(--color-dark-grey); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-48">
-                <p class="text-label-lg">Buttermilk</p>
-                <p class="text-body-sm opacity-90">#F5F5DC</p>
+            <div style="background-color: var(--color-neutral-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-600</p>
+                <p class="text-body-sm opacity-90">#4E5361</p>
+            </div>
+            <div style="background-color: var(--color-neutral-700); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-700</p>
+                <p class="text-body-sm opacity-90">#2F3442</p>
+            </div>
+            <div style="background-color: var(--color-neutral-800); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-800</p>
+                <p class="text-body-sm opacity-90">#1F2330</p>
+            </div>
+            <div style="background-color: var(--color-neutral-900); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-900</p>
+                <p class="text-body-sm opacity-90">#12141C</p>
             </div>
         </div>
     {% endcall %}
@@ -56,128 +109,101 @@
     {# ==================== SEMANTIC TOKENS ==================== #}
     {% call showcase_section() %}
         {{ showcase_title("Semantic Tokens") }}
-        {{ showcase_description("Purpose-based tokens grouped by usage type.") }}
+        {{ showcase_description("Purpose-based tokens that reference the primitive scales. Named after their intended usage.") }}
 
-        {{ showcase_subtitle("Background Colors") }}
+        {{ showcase_subtitle("Brand Semantic Tokens") }}
         <div class="flex flex-wrap gap-4 mb-8">
-            <div style="background-color: var(--color-button-primary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-button-primary-bg</p>
-                <p class="text-caption opacity-75 mt-1">→ burnt-orange</p>
+            <div style="background-color: var(--color-light-highlights); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-light-highlights</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-50</p>
             </div>
-            <div style="background-color: var(--color-button-secondary-bg); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-button-secondary-bg</p>
-                <p class="text-caption opacity-75 mt-1">→ dark-grey</p>
+            <div style="background-color: var(--color-selection-background); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-selection-background</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-100</p>
             </div>
-            <div style="background-color: var(--color-button-disabled-bg); color: var(--color-gray-500);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-button-disabled-bg</p>
-                <p class="text-caption opacity-75 mt-1">→ gray-200</p>
+            <div style="background-color: var(--color-subtle-emphasis); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-subtle-emphasis</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-200</p>
             </div>
-            <div style="background-color: var(--color-bg-secondary); color: var(--color-text-body);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-bg-secondary</p>
-                <p class="text-caption opacity-75 mt-1">→ buttermilk</p>
+            <div style="background-color: var(--color-buttons-secondary); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-buttons-secondary</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-300</p>
             </div>
-            <div style="background-color: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-surface</p>
-                <p class="text-caption opacity-75 mt-1">→ white</p>
+            <div style="background-color: var(--color-primary-action); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-primary-action</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-400</p>
             </div>
-            <div style="background-color: var(--color-surface-sunken); color: var(--color-text-body); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p class="text-body-sm font-mono">--color-surface-sunken</p>
-                <p class="text-caption opacity-75 mt-1">→ gray-50</p>
+            <div style="background-color: var(--color-active-states); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-active-states</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-500</p>
+            </div>
+            <div style="background-color: var(--color-hover-dark-ui); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-hover-dark-ui</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-600</p>
+            </div>
+            <div style="background-color: var(--color-pressed); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-pressed</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-700</p>
+            </div>
+            <div style="background-color: var(--color-dark-accents); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-dark-accents</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-800</p>
             </div>
         </div>
 
-        {{ showcase_subtitle("Border Colors") }}
+        {{ showcase_subtitle("Neutral Semantic Tokens") }}
         <div class="flex flex-wrap gap-4 mb-8">
-            <div style="background-color: var(--color-surface); border: 3px solid var(--color-button-outline-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-button-outline-border</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ dark-grey</p>
+            <div style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-page-background</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-0</p>
             </div>
-            <div style="background-color: var(--color-surface); border: 3px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-border</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-200</p>
+            <div style="background-color: var(--color-subtle-background-panels); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-subtle-background-panels</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-50</p>
             </div>
-            <div style="background-color: var(--color-surface); border: 3px solid var(--color-input-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-input-border</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-300</p>
+            <div style="background-color: var(--color-tables-cards); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-tables-cards</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-100</p>
             </div>
-            <div style="background-color: var(--color-surface); box-shadow: 0 0 0 3px var(--color-focus-ring);" class="p-4 rounded-lg w-56">
-                <p style="color: var(--color-text-body);" class="text-body-sm font-mono">--color-focus-ring</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ saffron-yellow</p>
+            <div style="background-color: var(--color-borders-dividerss-dividers); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-borders-dividerss-dividers</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-200</p>
+            </div>
+            <div style="background-color: var(--color-disabled-borders); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-disabled-borders</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-300</p>
+            </div>
+            <div style="background-color: var(--color-placeholder-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-placeholder-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-400</p>
+            </div>
+            <div style="background-color: var(--color-secondary-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-secondary-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-500</p>
+            </div>
+            <div style="background-color: var(--color-body-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-body-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-600</p>
+            </div>
+            <div style="background-color: var(--color-headings); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-headings</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-700</p>
+            </div>
+            <div style="background-color: var(--color-navigation-bars); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-navigation-bars</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-800</p>
+            </div>
+            <div style="background-color: var(--color-dark-mode-base); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-dark-mode-base</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-900</p>
             </div>
         </div>
 
-        {{ showcase_subtitle("Text Colors") }}
-        <div class="flex flex-wrap gap-4 mb-8">
-            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-primary);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-primary</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ dark-grey</p>
-            </div>
-            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-body);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-body</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-900</p>
-            </div>
-            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-muted);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-muted</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ gray-500</p>
-            </div>
-            <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-text-link);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-text-muted);" class="text-body-sm font-mono">--color-text-link</p>
-                <p style="color: var(--color-text-muted);" class="text-caption mt-1">→ woad-blue</p>
-            </div>
-            <div style="background-color: var(--color-button-primary-bg);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-button-primary-text);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-white); opacity: 0.9;" class="text-body-sm font-mono">--color-button-primary-text</p>
-                <p style="color: var(--color-white); opacity: 0.75;" class="text-caption mt-1">→ white</p>
-            </div>
-            <div style="background-color: var(--color-button-disabled-bg);" class="p-4 rounded-lg shadow-md w-56">
-                <p style="color: var(--color-button-disabled-text);" class="text-heading-lg mb-2">Aa</p>
-                <p style="color: var(--color-gray-500);" class="text-body-sm font-mono">--color-button-disabled-text</p>
-                <p style="color: var(--color-gray-500);" class="text-caption mt-1">→ gray-400</p>
-            </div>
-        </div>
-
-        {{ showcase_subtitle("Feedback Colors") }}
-        <p class="text-body-sm mb-3" style="color: var(--color-text-muted);">Can be used as background or text color depending on context.</p>
+        {{ showcase_subtitle("Focus Ring") }}
         <div class="flex flex-wrap gap-4">
-            <div class="flex flex-col gap-2">
-                <div style="background-color: var(--color-feedback-success); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-body-sm font-mono">--color-feedback-success</p>
-                    <p class="text-caption opacity-75 mt-1">→ sap-green</p>
-                </div>
-                <div style="background-color: var(--color-feedback-success-light); border: 1px solid var(--color-feedback-success);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-success-text);" class="text-body-sm font-mono">--color-feedback-success-text</p>
-                </div>
-            </div>
-            <div class="flex flex-col gap-2">
-                <div style="background-color: var(--color-feedback-error); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-body-sm font-mono">--color-feedback-error</p>
-                    <p class="text-caption opacity-75 mt-1">→ scarlet-red</p>
-                </div>
-                <div style="background-color: var(--color-feedback-error-light); border: 1px solid var(--color-feedback-error);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-error-text);" class="text-body-sm font-mono">--color-feedback-error-text</p>
-                </div>
-            </div>
-            <div class="flex flex-col gap-2">
-                <div style="background-color: var(--color-feedback-warning); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-body-sm font-mono">--color-feedback-warning</p>
-                    <p class="text-caption opacity-75 mt-1">→ burnt-orange</p>
-                </div>
-                <div style="background-color: var(--color-feedback-warning-light); border: 1px solid var(--color-feedback-warning);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-warning-text);" class="text-body-sm font-mono">--color-feedback-warning-text</p>
-                </div>
-            </div>
-            <div class="flex flex-col gap-2">
-                <div style="background-color: var(--color-feedback-info); color: var(--color-white);" class="p-4 rounded-lg shadow-md w-56">
-                    <p class="text-body-sm font-mono">--color-feedback-info</p>
-                    <p class="text-caption opacity-75 mt-1">→ woad-blue</p>
-                </div>
-                <div style="background-color: var(--color-feedback-info-light); border: 1px solid var(--color-feedback-info);" class="p-4 rounded-lg w-56">
-                    <p style="color: var(--color-feedback-info-text);" class="text-body-sm font-mono">--color-feedback-info-text</p>
-                </div>
+            <div style="background-color: var(--color-page-background); box-shadow: 0 0 0 3px var(--color-focus-ring); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg w-56">
+                <p style="color: var(--color-body-text);" class="text-body-sm font-mono">--color-focus-ring</p>
+                <p style="color: var(--color-secondary-text);" class="text-caption mt-1">→ brand-200</p>
             </div>
         </div>
     {% endcall %}
@@ -186,15 +212,15 @@
     {# ==================== SPACING CONVENTIONS ==================== #}
     {% call showcase_section() %}
         {{ showcase_title("Spacing Conventions") }}
-        <p class="text-body-md mt-2 mb-6" style="color: var(--color-text-muted);">
+        <p class="text-body-md mt-2 mb-6" style="color: var(--color-secondary-text);">
             Consistent spacing using Tailwind's default scale (base unit: 4px).
-            See <a href="https://github.com/sortitionfoundation/opendlp" style="color: var(--color-text-link);">AGENTS.md</a> for the full spacing reference table.
+            See <a href="https://github.com/sortitionfoundation/opendlp" style="color: var(--color-pressed);">AGENTS.md</a> for the full spacing reference table.
         </p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {% call card(classes="") %}
-                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Key Values</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-headings);">Key Values</h3>
+                <ul style="color: var(--color-body-text);" class="space-y-2 text-body-sm">
                     <li><code class="font-mono bg-gray-100 px-1 rounded">p-6</code> / <code class="font-mono bg-gray-100 px-1 rounded">gap-6</code> - Card padding, section gaps (24px)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">mb-4</code> - Paragraph spacing (16px)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">mb-8</code> - Section spacing (32px)</li>
@@ -203,11 +229,11 @@
             {% endcall %}
 
             {% call card(classes="") %}
-                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Principle</h3>
-                <p class="text-body-sm mb-3" style="color: var(--color-text-body);">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-headings);">Principle</h3>
+                <p class="text-body-sm mb-3" style="color: var(--color-body-text);">
                     Prefer even multiples for visual rhythm: <code class="font-mono bg-gray-100 px-1 rounded">p-2</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-4</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-6</code>, <code class="font-mono bg-gray-100 px-1 rounded">p-8</code>.
                 </p>
-                <p class="text-body-sm" style="color: var(--color-text-muted);">
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
                     When adapting Pines UI components into Jinja macros, normalize spacing to match these conventions for consistency across the interface.
                 </p>
             {% endcall %}
@@ -218,41 +244,41 @@
     {# ==================== RESPONSIVE LAYOUT ==================== #}
     {% call showcase_section() %}
         {{ showcase_title("Responsive Layout") }}
-        <p class="text-body-md mt-2 mb-6" style="color: var(--color-text-muted);">
+        <p class="text-body-md mt-2 mb-6" style="color: var(--color-secondary-text);">
             Container max-width: <code class="font-mono bg-gray-100 px-1 rounded">max-w-screen-2xl</code> (1536px).
             Resize your browser to see the breakpoint indicator change.
         </p>
 
-        <div style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg p-6 mb-6">
-            <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Current Breakpoint</h3>
+        <div style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);" class="rounded-lg p-6 mb-6">
+            <h3 class="text-heading-sm mb-4" style="color: var(--color-headings);">Current Breakpoint</h3>
             <div class="flex flex-wrap gap-3">
                 <div class="sm:hidden">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         (&lt;640px) - Mobile
                     </span>
                 </div>
                 <div class="hidden sm:block md:hidden">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         sm (640px+) - Large phone
                     </span>
                 </div>
                 <div class="hidden md:block lg:hidden">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         md (768px+) - Tablet
                     </span>
                 </div>
                 <div class="hidden lg:block xl:hidden">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         lg (1024px+) - Laptop
                     </span>
                 </div>
                 <div class="hidden xl:block 2xl:hidden">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         xl (1280px+) - Desktop
                     </span>
                 </div>
                 <div class="hidden 2xl:block">
-                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-burnt-orange); color: var(--color-white);">
+                    <span class="text-button-md px-4 py-2 rounded-lg" style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                         2xl (1536px+) - Large Monitor
                     </span>
                 </div>
@@ -261,8 +287,8 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {% call card(classes="") %}
-                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Breakpoints</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-headings);">Breakpoints</h3>
+                <ul style="color: var(--color-body-text);" class="space-y-2 text-body-sm">
                     <li><code class="font-mono bg-gray-100 px-1 rounded">sm</code> - 640px (Large phone)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">md</code> - 768px (Tablet)</li>
                     <li><code class="font-mono bg-gray-100 px-1 rounded">lg</code> - 1024px (Laptop)</li>
@@ -272,8 +298,8 @@
             {% endcall %}
 
             {% call card(classes="") %}
-                <h3 class="text-heading-sm mb-4" style="color: var(--color-text-primary);">Recommended Grid Columns</h3>
-                <ul style="color: var(--color-text-body);" class="space-y-2 text-body-sm">
+                <h3 class="text-heading-sm mb-4" style="color: var(--color-headings);">Recommended Grid Columns</h3>
+                <ul style="color: var(--color-body-text);" class="space-y-2 text-body-sm">
                     <li>Mobile: <code class="font-mono bg-gray-100 px-1 rounded">grid-cols-1</code></li>
                     <li>Tablet (md): <code class="font-mono bg-gray-100 px-1 rounded">md:grid-cols-2</code></li>
                     <li>Laptop (lg): <code class="font-mono bg-gray-100 px-1 rounded">lg:grid-cols-3</code></li>
@@ -293,21 +319,21 @@
         {% call showcase_table() %}
             {{ showcase_table_header(["Class", "Font", "Size", "Weight", "Line Height", "Spacing"]) }}
             <tbody>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.5rem</td><td class="px-6 py-2">-0.32px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.25rem</td><td class="px-6 py-2">-0.28px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">-0.12px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">0</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0.18px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.375rem</td><td class="px-6 py-2">0.24px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-sm</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.13px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-caption</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-overline</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.6875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">0.88px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0.28px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.26px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.56px</td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.65px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.5rem</td><td class="px-6 py-2">-0.32px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2.25rem</td><td class="px-6 py-2">-0.28px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-display-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">2rem</td><td class="px-6 py-2">-0.12px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-lg</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.75rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-md</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0.18px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-heading-sm</code></td><td class="px-6 py-2">Oswald</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.375rem</td><td class="px-6 py-2">0.24px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-body-sm</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.13px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-caption</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">400</td><td class="px-6 py-2">1.5rem</td><td class="px-6 py-2">0</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-overline</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.6875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">0.88px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.25rem</td><td class="px-6 py-2">0.28px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-label-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">500</td><td class="px-6 py-2">1.125rem</td><td class="px-6 py-2">0.26px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-lg</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.56px</td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-md</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.8125rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">1rem</td><td class="px-6 py-2">0.65px</td></tr>
                 <tr><td class="px-6 py-2"><code class="font-mono bg-gray-100 px-1 rounded">.text-button-sm</code></td><td class="px-6 py-2">Lato</td><td class="px-6 py-2">0.75rem</td><td class="px-6 py-2">700</td><td class="px-6 py-2">0.875rem</td><td class="px-6 py-2">0.72px</td></tr>
             </tbody>
         {% endcall %}
@@ -316,20 +342,20 @@
         {% call showcase_table() %}
             {{ showcase_table_header(["Use Case", "Token", "Example"]) }}
             <tbody>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-lg" style="color: var(--color-text-primary);">Page titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-lg</code></td><td class="px-6 py-4"><span id="typo-display-lg" class="text-display-lg" style="color: var(--color-text-primary);">Dashboard</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-md" style="color: var(--color-text-primary);">Section titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-md</code></td><td class="px-6 py-4"><span id="typo-display-md" class="text-display-md" style="color: var(--color-text-primary);">Your Assemblies</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-text-primary);">Subsections</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-sm</code></td><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-text-primary);">Filter Options</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-lg" style="color: var(--color-text-primary);">Card titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-lg</code></td><td class="px-6 py-4"><span id="typo-heading-lg" class="text-heading-lg" style="color: var(--color-text-primary);">Climate Assembly</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-text-primary);">Panel headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-md</code></td><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-text-primary);">Settings</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-text-primary);">Group headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-sm</code></td><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-text-primary);">Contact Details</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-lg" style="color: var(--color-text-body);">Long-form text</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-lg</code></td><td class="px-6 py-4"><span id="typo-body-lg" class="text-body-lg" style="color: var(--color-text-body);">Citizens' assemblies bring together randomly selected people to deliberate on important issues.</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-text-body);">Default UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-md</code></td><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-text-body);">12 members selected from 2,400 applicants</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-text-body);">Dense UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-sm</code></td><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-text-body);">Last updated 3 hours ago</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-text-muted);">Metadata</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-caption</code></td><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-text-muted);">Created Jan 15, 2026</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-overline" style="color: var(--color-text-muted);">Uppercase labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-overline</code></td><td class="px-6 py-4"><span id="typo-overline" class="text-overline" style="color: var(--color-text-muted);">Assembly Status</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-text-primary);">Form labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-label-lg</code></td><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-text-primary);">Email address</span></td></tr>
-                <tr style="border-bottom: 1px solid var(--color-border);"><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-text-primary);">Primary actions</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-lg</code></td><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-text-primary);">Save Changes</span></td></tr>
-                <tr><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-text-primary);">Toolbar buttons</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-sm</code></td><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-text-primary);">Export</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-display-lg" style="color: var(--color-headings);">Page titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-lg</code></td><td class="px-6 py-4"><span id="typo-display-lg" class="text-display-lg" style="color: var(--color-headings);">Dashboard</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-display-md" style="color: var(--color-headings);">Section titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-md</code></td><td class="px-6 py-4"><span id="typo-display-md" class="text-display-md" style="color: var(--color-headings);">Your Assemblies</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-headings);">Subsections</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-display-sm</code></td><td class="px-6 py-4"><span class="text-display-sm" style="color: var(--color-headings);">Filter Options</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-heading-lg" style="color: var(--color-headings);">Card titles</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-lg</code></td><td class="px-6 py-4"><span id="typo-heading-lg" class="text-heading-lg" style="color: var(--color-headings);">Climate Assembly</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-headings);">Panel headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-md</code></td><td class="px-6 py-4"><span class="text-heading-md" style="color: var(--color-headings);">Settings</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-headings);">Group headers</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-heading-sm</code></td><td class="px-6 py-4"><span class="text-heading-sm" style="color: var(--color-headings);">Contact Details</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-body-lg" style="color: var(--color-body-text);">Long-form text</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-lg</code></td><td class="px-6 py-4"><span id="typo-body-lg" class="text-body-lg" style="color: var(--color-body-text);">Citizens' assemblies bring together randomly selected people to deliberate on important issues.</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-body-text);">Default UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-md</code></td><td class="px-6 py-4"><span class="text-body-md" style="color: var(--color-body-text);">12 members selected from 2,400 applicants</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-body-text);">Dense UI</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-body-sm</code></td><td class="px-6 py-4"><span class="text-body-sm" style="color: var(--color-body-text);">Last updated 3 hours ago</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-secondary-text);">Metadata</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-caption</code></td><td class="px-6 py-4"><span class="text-caption" style="color: var(--color-secondary-text);">Created Jan 15, 2026</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-overline" style="color: var(--color-secondary-text);">Uppercase labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-overline</code></td><td class="px-6 py-4"><span id="typo-overline" class="text-overline" style="color: var(--color-secondary-text);">Assembly Status</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-headings);">Form labels</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-label-lg</code></td><td class="px-6 py-4"><span class="text-label-lg" style="color: var(--color-headings);">Email address</span></td></tr>
+                <tr style="border-bottom: 1px solid var(--color-borders-dividers);"><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-headings);">Primary actions</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-lg</code></td><td class="px-6 py-4"><span class="text-button-lg" style="color: var(--color-headings);">Save Changes</span></td></tr>
+                <tr><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-headings);">Toolbar buttons</span></td><td class="px-6 py-4"><code class="font-mono bg-gray-100 px-1 rounded text-body-sm">.text-button-sm</code></td><td class="px-6 py-4"><span class="text-button-sm" style="color: var(--color-headings);">Export</span></td></tr>
             </tbody>
         {% endcall %}
     {% endcall %}
@@ -343,23 +369,23 @@
         <div class="flex flex-wrap gap-4 items-center">
             <div class="flex flex-col items-center gap-2">
                 {{ button("Click me", id="btn-default") }}
-                <span class="text-caption" style="color: var(--color-text-muted);">Default</span>
+                <span class="text-caption" style="color: var(--color-secondary-text);">Default</span>
             </div>
             <div class="flex flex-col items-center gap-2">
                 {{ button("Submit", variant="primary", id="btn-primary") }}
-                <span class="text-caption" style="color: var(--color-text-muted);">Primary</span>
+                <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
             </div>
             <div class="flex flex-col items-center gap-2">
                 {{ button("Secondary", variant="secondary", id="btn-secondary") }}
-                <span class="text-caption" style="color: var(--color-text-muted);">Secondary</span>
+                <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
             </div>
             <div class="flex flex-col items-center gap-2">
                 {{ button("Cancel", variant="outline", id="btn-outline") }}
-                <span class="text-caption" style="color: var(--color-text-muted);">Outline</span>
+                <span class="text-caption" style="color: var(--color-secondary-text);">Outline</span>
             </div>
             <div class="flex flex-col items-center gap-2">
                 {{ button("Disabled", disabled=true, id="btn-disabled") }}
-                <span class="text-caption" style="color: var(--color-text-muted);">Disabled</span>
+                <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
             </div>
         </div>
 
@@ -380,28 +406,28 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             {% call card(id="card-basic", classes="max-w-sm") %}
-                <p class="text-body-md" style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-body-text);">
                     This is a basic card without a header. It can contain any content.
                 </p>
             {% endcall %}
 
             {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header", classes="max-w-sm") %}
-                <p class="text-body-md" style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-body-text);">
                     This card has a title and subtitle in the header section.
                 </p>
             {% endcall %}
 
-            <div id="card-actions" style="background-color: var(--color-surface); border: 1px solid var(--color-border);" class="rounded-lg shadow-md overflow-hidden max-w-sm">
-                <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
+            <div id="card-actions" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);" class="rounded-lg shadow-md overflow-hidden max-w-sm">
+                <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4">
                     <h3 class="text-heading-lg">Card with Actions</h3>
-                    <p class="text-body-sm mt-1" style="color: var(--color-text-muted);">Includes button actions</p>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">Includes button actions</p>
                 </div>
                 <div class="px-6 py-4">
-                    <p class="text-body-md" style="color: var(--color-text-body);">
+                    <p class="text-body-md" style="color: var(--color-body-text);">
                         This card demonstrates composition with the Button component.
                     </p>
                 </div>
-                <div style="border-top: 1px solid var(--color-border); background-color: var(--color-surface-sunken);" class="px-6 py-3 flex gap-2 justify-end">
+                <div style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-subtle-background-panels);" class="px-6 py-3 flex gap-2 justify-end">
                     {{ button("Cancel", variant="outline") }}
                     {{ button("Save", variant="primary") }}
                 </div>
@@ -422,13 +448,13 @@
 {% endcall %}
 
 {# Card with actions (compose card + buttons manually) #}
-&lt;div style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+&lt;div style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
      class="rounded-lg shadow-md overflow-hidden"&gt;
-  &lt;div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4"&gt;
-    &lt;h3 class="text-heading-lg" style="color: var(--color-text-primary);"&gt;Title&lt;/h3&gt;
+  &lt;div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4"&gt;
+    &lt;h3 class="text-heading-lg" style="color: var(--color-headings);"&gt;Title&lt;/h3&gt;
   &lt;/div&gt;
   &lt;div class="px-6 py-4"&gt;Content here&lt;/div&gt;
-  &lt;div style="border-top: 1px solid var(--color-border); background-color: var(--color-surface-sunken);"
+  &lt;div style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-subtle-background-panels);"
        class="px-6 py-3 flex gap-2 justify-end"&gt;
     {{ button("Cancel", variant="outline") }}
     {{ button("Save", variant="primary") }}
@@ -441,7 +467,7 @@
     {% call showcase_section() %}
         {{ showcase_title("Alpine.js Interactivity") }}
 
-        <div x-data="{ open: false }" class="max-w-md">
+        <div x-data="{ open: false }" class="max-w-md mt-4">
             {% call button(variant="primary", id="alpine-toggle", attrs='@click="open = !open"') %}
                 <span x-text="open ? 'Hide Message' : 'Show Message'">Show Message</span>
             {% endcall %}
@@ -450,10 +476,10 @@
                 id="alpine-message"
                 x-show="open"
                 x-transition
-                style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+                style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
                 class="mt-4 p-4 rounded-lg"
             >
-                <p class="text-body-md" style="color: var(--color-text-body);">
+                <p class="text-body-md" style="color: var(--color-body-text);">
                     Alpine.js is working! This message toggles on button click.
                 </p>
             </div>

@@ -20,14 +20,14 @@ ABOUTME: Supports basic, header, and actions variants using semantic tokens
     #}
     <div
         {% if id %}id="{{ id }}"{% endif %}
-        style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+        style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
         class="rounded-lg shadow-md overflow-hidden {{ classes }}"
     >
         {% if title %}
-            <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
-                <h3 style="color: var(--color-text-primary);" class="text-heading-lg">{{ title }}</h3>
+            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4">
+                <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
                 {% if subtitle %}
-                    <p style="color: var(--color-text-muted);" class="text-body-sm mt-1">{{ subtitle }}</p>
+                    <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
                 {% endif %}
             </div>
         {% endif %}
@@ -63,14 +63,14 @@ ABOUTME: Supports basic, header, and actions variants using semantic tokens
     #}
     <div
         {% if id %}id="{{ id }}"{% endif %}
-        style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
+        style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
         class="rounded-lg shadow-md overflow-hidden {{ classes }}"
     >
         {% if title %}
-            <div style="border-bottom: 1px solid var(--color-border);" class="px-6 py-4">
-                <h3 style="color: var(--color-text-primary);" class="text-lg font-semibold">{{ title }}</h3>
+            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4">
+                <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
                 {% if subtitle %}
-                    <p style="color: var(--color-text-muted);" class="text-sm mt-1">{{ subtitle }}</p>
+                    <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
                 {% endif %}
             </div>
         {% endif %}

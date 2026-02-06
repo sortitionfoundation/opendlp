@@ -6,7 +6,7 @@
 
 {# Table wrapper - use with {% call %} #}
 {% macro showcase_table(classes="") %}
-    <div class="rounded-lg overflow-hidden mb-8 {{ classes }}" style="background-color: var(--color-surface); border: 1px solid var(--color-border);">
+    <div class="rounded-lg overflow-hidden mb-8 {{ classes }}" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
         <table class="w-full text-body-sm">
             {{ caller() }}
         </table>
@@ -16,9 +16,9 @@
 {# Table header row - pass a list of column names #}
 {% macro showcase_table_header(columns) %}
     <thead>
-        <tr style="background-color: var(--color-surface-sunken); border-bottom: 1px solid var(--color-border);">
+        <tr style="background-color: var(--color-subtle-background-panels); border-bottom: 1px solid var(--color-borders-dividers);">
             {% for col in columns %}
-                <th class="text-left px-6 py-3 text-label-md" style="color: var(--color-text-primary);">{{ col }}</th>
+                <th class="text-left px-6 py-3 text-label-md" style="color: var(--color-headings);">{{ col }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -33,7 +33,7 @@
 
 {# Standard table row with border #}
 {% macro showcase_table_row(is_last=false) %}
-    <tr{% if not is_last %} style="border-bottom: 1px solid var(--color-border);"{% endif %}>
+    <tr{% if not is_last %} style="border-bottom: 1px solid var(--color-borders-dividers);"{% endif %}>
         {{ caller() }}
     </tr>
 {% endmacro %}
