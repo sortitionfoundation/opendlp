@@ -1,7 +1,7 @@
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card, card_with_actions %}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_code %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_code, showcase_tokens %}
 {% from "backoffice/components/showcase_table.html" import showcase_table, showcase_table_header, showcase_table_body, showcase_table_row, showcase_table_cell %}
 
 {% block title %}Component Showcase{% endblock %}
@@ -396,6 +396,17 @@
 {{ button("Secondary", variant="secondary") }}
 {{ button("Cancel", variant="outline") }}
 {{ button("Disabled", disabled=true) }}{% endraw %}{% endcall %}
+
+        {{ showcase_tokens([
+        "--color-primary-action",
+        "--color-buttons-secondary",
+        "--color-page-background",
+        "--color-headings",
+        "--color-subtle-background-panels",
+        "--color-disabled-borders",
+        "--color-placeholder-text",
+        "--color-focus-ring"
+        ]) }}
     {% endcall %}
 
 
@@ -460,6 +471,13 @@
     {{ button("Save", variant="primary") }}
   &lt;/div&gt;
 &lt;/div&gt;{% endraw %}{% endcall %}
+
+        {{ showcase_tokens([
+        "--color-tables-cards",
+        "--color-borders-dividers",
+        "--color-headings",
+        "--color-secondary-text"
+        ]) }}
     {% endcall %}
 
 
