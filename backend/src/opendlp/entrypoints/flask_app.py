@@ -160,6 +160,7 @@ def get_secure_headers(config: Config) -> Secure:
         .img_src("'self'", "data:")
         .frame_ancestors("'none'")
         .form_action("'self'")
+        .base_uri("'self'")
         .object_src("'none'"),
         permissions=headers.PermissionsPolicy().geolocation().microphone().camera(),
         referrer=headers.ReferrerPolicy().strict_origin_when_cross_origin(),
