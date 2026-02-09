@@ -8,12 +8,12 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-01-27T21:49:13.259131969Z"
+exclude-newer = "2026-02-02T01:57:00.693041788Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-02-03T21:49:13.25913785Z", span = "PT0S" }
-django = { timestamp = "2026-02-03T21:49:13.259151075Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-02-09T01:57:00.693050835Z", span = "PT0S" }
+django = { timestamp = "2026-02-09T01:57:00.693058098Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -1569,14 +1569,14 @@ wheels = [
 
 [[package]]
 name = "types-authlib"
-version = "1.6.6.20260116"
+version = "1.6.6.20260130"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/63/53dfe3b69d6f192842b27f66b747635523ef14e4853bc245b7bc6f9e52df/types_authlib-1.6.6.20260116.tar.gz", hash = "sha256:caf37903d7bd083874b4b39687edf36ccf11c652bf01d85628f2afa1d0b01e63", size = 46209, upload-time = "2026-01-16T03:21:54.896Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/b6/f8a5bd7693afbbca40a9572272535152906ff2c3e6ce047240b2b63875de/types_authlib-1.6.6.20260130.tar.gz", hash = "sha256:f3eae21a62ac3ae81123cd17b12c486b3bff0339bc4305ef7d9651c4051ec342", size = 46296, upload-time = "2026-01-30T03:58:21.45Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/ba/df293fd2e3a29dc6e749b93e2fba198db73f9f79c70bb15ca9aff85028ee/types_authlib-1.6.6.20260116-py3-none-any.whl", hash = "sha256:036b5972cf49062d60f846f1ad9e401e031bf81059b433534ccd3cd4303e6390", size = 103895, upload-time = "2026-01-16T03:21:53.444Z" },
+    { url = "https://files.pythonhosted.org/packages/99/24/5eed9ab2e9aed536969b38cda09dcadf91433758c72ece7c47eabe2ffedb/types_authlib-1.6.6.20260130-py3-none-any.whl", hash = "sha256:002640323a8d7512458b4fd597aa351d5914ff8997153766b5ac0200fba42956", size = 103894, upload-time = "2026-01-30T03:58:20.434Z" },
 ]
 
 [[package]]
