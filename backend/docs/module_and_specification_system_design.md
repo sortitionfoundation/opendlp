@@ -15,7 +15,7 @@ Implement a flexible module and specification system for OpenDLP assemblies usin
 1. **Assembly is the aggregate root** with enhanced specification fields:
    - Timeline dates, event details, enabled modules tracked directly on Assembly
    - **Columns**: Timeline dates, event details (queryable, type-safe)
-   - **Separate tables**: Target categories (normalized for reporting), Module configs (flexible per-module storage)
+   - **Separate tables**: Target categories (normalized for reporting), Module configs (flexible per-module storage), Respondents (selection pool)
    - **JSON fields**: enabled_modules list, custom fields for extensibility
 
 2. **Modules are domain concepts** (not database entities):
@@ -30,20 +30,28 @@ Implement a flexible module and specification system for OpenDLP assemblies usin
    - Queryable: "which assemblies use module X?"
    - No empty/unused config fields on Assembly
 
-4. **Module families** handle variants:
+4. **Target categories and Respondents integrate with sortition-algorithms**:
+   - Target categories define selection goals (min/max per demographic value)
+   - Respondents are people in the selection pool with demographic attributes
+   - Both convert directly to sortition-algorithms FeatureCollection and People objects
+   - CSV import/export supported using sortition-algorithms parsers
+
+5. **Module families** handle variants:
    - Family constraint: only one module per family (e.g., one invitation type)
    - Registry filtering enables "get all invitation modules"
 
-5. **Permissions** via module metadata:
+6. **Permissions** via module metadata:
    - Each module declares `required_global_role`
    - Enable/disable checks permissions automatically
 
 ### Terminology
 
-- **Target Categories**: Not just demographics (Gender, Age), but any categorization used for selection targets (e.g., "Attitude to EU: Positive/Neutral/Negative")
+- **Target Categories**: Not just demographics (Gender, Age), but any categorization used for selection targets (e.g., "Attitude to EU: Positive/Neutral/Negative"). Each category has target values with min/max selection goals.
+- **Respondents**: People in the selection pool (whether from registration form, CSV import, or external sync). Most respondents won't be selected to participate in the assembly.
 - **Registration Page**: Never use "RSVP" - always "registration page/form"
 - **Modules**: Code-level domain concepts defining available features
 - **Templates**: Preset combinations of modules + default specification values
+- **Selection**: The sortition process of randomly selecting participants from the respondent pool, stratified by target categories
 
 ### Domain Model Structure
 
@@ -88,6 +96,24 @@ TargetCategory (entity, owned by Assembly)
         ├── min, max (required selection targets)
         ├── min_flex, max_flex (flexibility bounds, defaults: 0, -1)
         └── percentage_target, description (optional UI helpers)
+
+Respondent (entity, owned by Assembly)
+  ├── respondent_id (UUID, internal ID)
+  ├── assembly_id (FK to Assembly)
+  ├── external_id (string, from external systems like NationBuilder)
+  ├── selection_status (enum: POOL, SELECTED, CONFIRMED, WITHDRAWN, PARTICIPATED, EXCLUDED)
+  ├── selection_run_id (UUID, FK to SelectionRunRecord, nullable)
+  ├── Core fields
+  │     ├── consent (boolean, nullable)
+  │     ├── stay_on_db (boolean, nullable)
+  │     ├── eligible (boolean, nullable)
+  │     ├── can_attend (boolean, nullable)
+  │     └── email (string, nullable)
+  ├── Source tracking
+  │     ├── source_type (enum: REGISTRATION_FORM, CSV_IMPORT, NATIONBUILDER_SYNC, MANUAL_ENTRY)
+  │     └── source_reference (string, nullable - e.g., filename, sync timestamp)
+  ├── attributes (JSON - demographic/feature data matching target categories)
+  └── created_at, updated_at (timestamps)
 
 ModuleRegistry (domain service, not persisted)
   └── ModuleProtocol implementations
@@ -218,6 +244,62 @@ CREATE TABLE target_values (
 - `min_flex`, `max_flex`: Soft constraints allowing algorithm flexibility (default: min_flex=0, max_flex=-1 which means "calculate safe default")
 - `percentage_target`: Optional guide for UI - percentage of wider population demographics, used to suggest min/max values
 - `description`: Optional help text for values that aren't self-explanatory (e.g., "Level 4 and above = Bachelor's degree or higher")
+
+#### `respondents`
+
+```sql
+CREATE TABLE respondents (
+    respondent_id UUID PRIMARY KEY,
+    assembly_id UUID NOT NULL REFERENCES assemblies(id) ON DELETE CASCADE,
+    external_id VARCHAR(255) NOT NULL,
+
+    -- Selection tracking
+    selection_status VARCHAR(20) NOT NULL DEFAULT 'POOL',
+    selection_run_id UUID REFERENCES selection_run_records(task_id) ON DELETE SET NULL,
+
+    -- Core fields (all nullable - not all data sources provide these)
+    consent BOOLEAN,
+    stay_on_db BOOLEAN,
+    eligible BOOLEAN,
+    can_attend BOOLEAN,
+    email VARCHAR(255),
+
+    -- Source tracking
+    source_type VARCHAR(50) NOT NULL,  -- REGISTRATION_FORM, CSV_IMPORT, NATIONBUILDER_SYNC, MANUAL_ENTRY
+    source_reference VARCHAR(500),  -- e.g., CSV filename, sync timestamp
+
+    -- Demographic/feature data (matches target categories)
+    attributes JSON NOT NULL DEFAULT '{}',
+
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    INDEX idx_respondent_assembly_id (assembly_id),
+    INDEX idx_respondent_external_id (external_id),
+    INDEX idx_respondent_status (assembly_id, selection_status),
+    INDEX idx_respondent_selection_run (selection_run_id),
+    INDEX idx_respondent_email (email),
+
+    UNIQUE (assembly_id, external_id),
+
+    -- Validation: selection_status must be valid value
+    CHECK (selection_status IN ('POOL', 'SELECTED', 'CONFIRMED', 'WITHDRAWN', 'PARTICIPATED', 'EXCLUDED'))
+);
+```
+
+**Design notes:**
+- `external_id` is NOT globally unique, only unique per assembly (allows same person in multiple assemblies with same external ID)
+- `attributes` JSON stores demographic/feature data that will be used for selection (e.g., `{"Gender": "Female", "Age": "30-44", "Postcode": "EH1 1AA"}`)
+- All core fields nullable because different data sources provide different information
+- `selection_run_id` can be NULL if respondent not yet selected, or links to the SelectionRunRecord they were selected in
+- Address data stored in `attributes` JSON (too variable to normalize into columns)
+
+**selection_status lifecycle:**
+```
+POOL → SELECTED → CONFIRMED → PARTICIPATED
+  ↓       ↓           ↓
+EXCLUDED  WITHDRAWN   WITHDRAWN
+```
 
 ## Implementation Phases
 
@@ -488,55 +570,149 @@ CREATE TABLE target_values (
     - Step 3: Module selection (new) - shows enabled modules from template, can customize
     - Step 4: Review and create
 
-### Phase 6: Permissions Enhancement
+### Phase 6: Respondent Entity and Selection Pool
+
+**Objective:** Implement Respondent entity for managing the pool of people available for selection
+
+#### New Files
+
+26. **`src/opendlp/domain/respondent.py`**
+    - `RespondentStatus` enum: POOL, SELECTED, CONFIRMED, WITHDRAWN, PARTICIPATED, EXCLUDED
+    - `RespondentSourceType` enum: REGISTRATION_FORM, CSV_IMPORT, NATIONBUILDER_SYNC, MANUAL_ENTRY
+    - `Respondent` class:
+      - Fields: respondent_id, assembly_id, external_id, selection_status, selection_run_id
+      - Core fields: consent, stay_on_db, eligible, can_attend, email (all optional)
+      - Source: source_type, source_reference
+      - attributes (dict): demographic/feature data
+      - created_at, updated_at
+      - Methods:
+        - `validate_attributes_against_targets(target_categories) -> list[str]` - check attributes match target categories
+        - `to_person_dict() -> dict[str, Any]` - convert to format for sortition-algorithms People object
+        - `update_status(new_status) -> None` - transition to new selection status
+        - `mark_selected(selection_run_id) -> None` - mark as selected in a run
+        - `get_attribute(key, default) -> Any` - safely get attribute value
+
+27. **`src/opendlp/domain/validation.py`** (new file)
+    - `RespondentValidationResult` dataclass:
+      - `errors: list[dict]` - critical errors preventing selection
+      - `warnings: list[dict]` - non-critical issues
+      - `is_valid: bool` - can selection proceed?
+    - `validate_respondents_for_selection(respondents, target_categories, assembly) -> RespondentValidationResult`
+      - Check all respondents have required target category attributes
+      - Check attribute values match defined target values
+      - Warn about extra attributes not in target categories
+      - Check eligibility flags (eligible=True, can_attend=True)
+      - Validate against number_to_select
+      - Return rich validation result for user feedback
+
+#### Modified Files
+
+28. **`src/opendlp/adapters/orm.py`**
+    - Add `respondents` table definition
+    - Use existing patterns: CrossDatabaseUUID, TZAwareDatetime, JSON columns
+
+29. **`src/opendlp/adapters/database.py`**
+    - Add imperative mapping for Respondent
+    - Relationship: `Assembly.respondents` (one-to-many, cascade delete)
+    - Relationship: `Respondent.selection_run` (many-to-one, nullable)
+
+30. **`src/opendlp/service_layer/repositories.py`**
+    - Add `RespondentRepository` abstract interface
+
+31. **`src/opendlp/adapters/sql_repository.py`**
+    - Implement `SqlAlchemyRespondentRepository`
+    - Methods:
+      - `add()`, `get(respondent_id)`, `delete()`
+      - `get_by_external_id(assembly_id, external_id)`
+      - `list_by_assembly(assembly_id, status=None)`
+      - `list_by_selection_run(selection_run_id)`
+      - `count_by_status(assembly_id)`
+
+32. **Migration: `migrations/versions/XXXX_add_respondents.py`**
+    - Create respondents table
+    - Add foreign key from respondents to selection_run_records
+
+#### Service Layer
+
+33. **`src/opendlp/service_layer/respondent_service.py`** (new file)
+    - `import_respondents_from_csv(uow, user_id, assembly_id, csv_file, source_reference) -> tuple[list[Respondent], RespondentValidationResult]`
+      - Parse CSV rows
+      - Create/update Respondent records
+      - Return validation result with warnings
+      - Set source_type=CSV_IMPORT
+    - `create_respondent(uow, user_id, assembly_id, external_id, attributes, **kwargs) -> Respondent`
+      - Create single respondent (from registration form)
+      - Set source_type=REGISTRATION_FORM
+    - `update_respondent(uow, user_id, assembly_id, respondent_id, updates) -> Respondent`
+    - `delete_respondent(uow, user_id, assembly_id, respondent_id) -> None`
+    - `validate_for_selection(uow, user_id, assembly_id) -> RespondentValidationResult`
+      - Validate all respondents against target categories
+      - Check eligibility, can_attend flags
+      - Return rich validation result
+      - Selection cannot proceed if errors exist
+    - `get_people_object(uow, user_id, assembly_id) -> People`
+      - Convert respondents to sortition-algorithms People object
+      - Filter to eligible, can_attend respondents in POOL status
+      - Validate first (raise error if validation fails)
+    - `anonymize_respondent(uow, user_id, respondent_id) -> None`
+      - Blank PII fields (email, attributes)
+      - Future enhancement: selective anonymization
+    - All methods check `can_manage_assembly` permission
+
+### Phase 7: Permissions Enhancement
 
 **Objective:** Integrate module permissions with existing system
 
 #### Modified Files
 
-23. **`src/opendlp/domain/value_objects.py`**
+34. **`src/opendlp/domain/value_objects.py`**
     - No changes needed (existing GlobalRole sufficient)
 
-24. **Module metadata** (in each module implementation)
+35. **Module metadata** (in each module implementation)
     - Set `required_global_role` appropriately:
       - `invitation_uk_address`: `GlobalRole.ADMIN` (requires payment)
       - `invitation_database`: `GlobalRole.ADMIN` (privacy concerns)
       - Most others: `GlobalRole.GLOBAL_ORGANISER` or None
 
-25. **Service layer** (already handled in Phase 1)
+36. **Service layer** (already handled in Phase 1)
     - `enable_module()` in assembly_service checks `module.metadata.required_global_role`
     - Raises PermissionError if user lacks required role
 
 ## Critical Files to Create/Modify
 
-### New Files (16 files)
+### New Files (21 files)
 
 1. `src/opendlp/domain/module_config.py` - ModuleConfig domain entity
 2. `src/opendlp/domain/targets.py` - TargetCategory and TargetValue entities
-3. `src/opendlp/domain/modules/__init__.py` - Module package
-4. `src/opendlp/domain/modules/base.py` - Module protocol and metadata
-5. `src/opendlp/domain/modules/registry.py` - Module registry
-6. `src/opendlp/domain/modules/assembly_module.py` - Mandatory core module
-7. `src/opendlp/domain/modules/registration/__init__.py`
-8. `src/opendlp/domain/modules/registration/registration_page_module.py` - Registration module
-9. `src/opendlp/domain/modules/selection/__init__.py`
-10. `src/opendlp/domain/modules/selection/participants_module.py` - Selection module
-11. `src/opendlp/domain/templates/__init__.py` - Template package
-12. `src/opendlp/domain/templates/registry.py` - Template registry
-13. `templates/assembly/timeline.html` - Timeline/event details UI
-14. `templates/assembly/modules.html` - Module management UI
-15. `templates/assembly/targets.html` - Target categories UI
-16. `migrations/versions/XXXX_add_module_system.py` - Database migration
+3. `src/opendlp/domain/respondent.py` - Respondent domain entity
+4. `src/opendlp/domain/validation.py` - Respondent validation logic
+5. `src/opendlp/domain/modules/__init__.py` - Module package
+6. `src/opendlp/domain/modules/base.py` - Module protocol and metadata
+7. `src/opendlp/domain/modules/registry.py` - Module registry
+8. `src/opendlp/domain/modules/assembly_module.py` - Mandatory core module
+9. `src/opendlp/domain/modules/registration/__init__.py`
+10. `src/opendlp/domain/modules/registration/registration_page_module.py` - Registration module
+11. `src/opendlp/domain/modules/selection/__init__.py`
+12. `src/opendlp/domain/modules/selection/participants_module.py` - Selection module
+13. `src/opendlp/domain/templates/__init__.py` - Template package
+14. `src/opendlp/domain/templates/registry.py` - Template registry
+15. `src/opendlp/service_layer/respondent_service.py` - Respondent management services
+16. `templates/assembly/timeline.html` - Timeline/event details UI
+17. `templates/assembly/modules.html` - Module management UI
+18. `templates/assembly/targets.html` - Target categories UI
+19. `templates/assembly/respondents.html` - Respondent management UI
+20. `migrations/versions/XXXX_add_module_system.py` - Database migration (assemblies, module_configs, targets)
+21. `migrations/versions/XXXX_add_respondents.py` - Database migration (respondents table)
 
 ### Modified Files (8 files)
 
 1. `src/opendlp/domain/assembly.py` - Add timeline, event, module fields and methods
-2. `src/opendlp/adapters/orm.py` - Add columns to assemblies table, add module_configs/target tables
-3. `src/opendlp/adapters/database.py` - Update Assembly mapping, add ModuleConfig/TargetCategory mappings
-4. `src/opendlp/service_layer/repositories.py` - Add ModuleConfigRepository interface
-5. `src/opendlp/adapters/sql_repository.py` - Implement ModuleConfigRepository
+2. `src/opendlp/adapters/orm.py` - Add columns to assemblies, add module_configs/targets/respondents tables
+3. `src/opendlp/adapters/database.py` - Update Assembly mapping, add ModuleConfig/TargetCategory/Respondent mappings
+4. `src/opendlp/service_layer/repositories.py` - Add ModuleConfigRepository, RespondentRepository interfaces
+5. `src/opendlp/adapters/sql_repository.py` - Implement ModuleConfigRepository, RespondentRepository
 6. `src/opendlp/service_layer/assembly_service.py` - Add module/target/timeline management methods
-7. `src/opendlp/entrypoints/forms.py` - Add timeline/module/target forms
+7. `src/opendlp/entrypoints/forms.py` - Add timeline/module/target/respondent forms
 8. `src/opendlp/entrypoints/blueprints/assemblies.py` - Add new routes, enhance creation wizard
 
 ## Data Migration Strategy
@@ -712,26 +888,78 @@ CREATE TABLE target_values (
    assert fc["Gender"]["Male"].max == 15
    ```
 
-8. **Run Tests:**
+8. **Respondent Management:**
 
-   ```bash
-   just test  # All tests including new ones
-   just check  # Linting and type checking
+   ```python
+   # Import respondents from CSV
+   csv_content = """external_id,Gender,Age,Postcode,email,eligible,can_attend
+   NB001,Female,30-44,EH1,alice@example.com,true,true
+   NB002,Male,16-29,EH2,bob@example.com,true,true
+   NB003,Female,45-59,EH3,carol@example.com,true,false
+   """
+   respondents, validation = respondent_service.import_respondents_from_csv(
+       uow, user_id, assembly.id, csv_content, source_reference="test_import.csv"
+   )
+   assert len(respondents) == 3
+   if validation.warnings:
+       print("Warnings:", validation.warnings)
+
+   # Validate before selection
+   validation = respondent_service.validate_for_selection(uow, user_id, assembly.id)
+   assert validation.is_valid, f"Validation errors: {validation.errors}"
+
+   # Get People object for sortition
+   people = respondent_service.get_people_object(uow, user_id, assembly.id)
+   assert len(people.data) == 2  # Only 2 can_attend
    ```
 
-9. **Test UI Flow:**
-   - Create new assembly via web interface
-   - Select "UK Standard" template
-   - Verify modules are pre-enabled
-   - Navigate to timeline page
-   - Fill in timeline dates and event details
-   - Navigate to targets page
-   - Either: Add Gender category with values manually, OR
-   - Import targets from CSV file
-   - Verify percentage_target calculates suggested min/max
-   - Navigate to modules page
-   - Enable/configure additional modules
-   - Try to enable a module requiring admin (should fail if not admin)
+9. **Run Complete Selection:**
+
+   ```python
+   # Run selection (assumes assembly, targets, respondents all configured)
+   from opendlp.service_layer import selection_service
+
+   run_record = selection_service.run_selection(
+       uow, user_id, assembly.id, comment="First selection run"
+   )
+
+   assert run_record.status == SelectionRunStatus.COMPLETED
+   assert len(run_record.selected_ids[0]) == assembly.number_to_select
+
+   # Check respondents updated
+   selected_respondents = respondent_service.list_by_assembly(
+       uow, user_id, assembly.id, status=RespondentStatus.SELECTED
+   )
+   assert len(selected_respondents) == assembly.number_to_select
+   ```
+
+10. **Run Tests:**
+
+    ```bash
+    just test  # All tests including new ones
+    just check  # Linting and type checking
+    ```
+
+11. **Test UI Flow:**
+    - Create new assembly via web interface
+    - Select "UK Standard" template
+    - Verify modules are pre-enabled
+    - Navigate to timeline page
+    - Fill in timeline dates and event details
+    - Navigate to targets page
+    - Either: Add Gender category with values manually, OR
+    - Import targets from CSV file
+    - Verify percentage_target calculates suggested min/max
+    - Navigate to respondents page
+    - Import respondents from CSV
+    - View validation warnings/errors
+    - Fix any validation issues
+    - Navigate to selection page
+    - Run selection
+    - View selected respondents
+    - Navigate to modules page
+    - Enable/configure additional modules
+    - Try to enable a module requiring admin (should fail if not admin)
 
 ## Integration with Sortition-Algorithms Library
 
@@ -805,7 +1033,7 @@ OpenDLP's target categories/values map directly to sortition-algorithms' Feature
 
 ### Export to FeatureCollection
 
-When running selection, convert domain models back to FeatureCollection:
+When running selection, convert target categories to FeatureCollection:
 
 ```python
 def get_feature_collection(assembly: Assembly) -> FeatureCollection:
@@ -826,6 +1054,272 @@ def get_feature_collection(assembly: Assembly) -> FeatureCollection:
     check_min_max(fc, number_to_select=assembly.number_to_select)
 
     return fc
+```
+
+### Convert Respondents to People Object
+
+When running selection, convert respondents to sortition-algorithms `People` object:
+
+```python
+def get_people_object(assembly: Assembly, respondents: list[Respondent]) -> People:
+    from sortition_algorithms.people import People
+
+    # First validate respondents
+    validation = validate_respondents_for_selection(
+        respondents, assembly.target_categories, assembly
+    )
+    if not validation.is_valid:
+        raise ValueError(f"Cannot run selection: {validation.errors}")
+
+    # Filter to eligible pool
+    pool = [r for r in respondents
+            if r.selection_status == RespondentStatus.POOL
+            and r.eligible
+            and r.can_attend]
+
+    # Convert to People data structure
+    people_data = []
+    for respondent in pool:
+        # attributes dict should have keys matching target category names
+        # e.g., {"Gender": "Female", "Age": "30-44", "Postcode": "EH1"}
+        row = {
+            "id": respondent.external_id,  # Required by sortition-algorithms
+            **respondent.attributes  # Spread demographic/feature data
+        }
+        people_data.append(row)
+
+    # Create People object
+    people = People()
+    for row in people_data:
+        people.add_person(row)
+
+    return people
+```
+
+**Validation before selection:**
+
+```python
+def validate_respondents_for_selection(
+    respondents: list[Respondent],
+    target_categories: list[TargetCategory],
+    assembly: Assembly
+) -> RespondentValidationResult:
+    errors = []
+    warnings = []
+
+    # Get eligible pool
+    pool = [r for r in respondents
+            if r.selection_status == RespondentStatus.POOL]
+
+    # Check we have enough people
+    eligible_count = len([r for r in pool if r.eligible and r.can_attend])
+    if eligible_count < assembly.number_to_select:
+        errors.append({
+            "type": "insufficient_pool",
+            "message": f"Only {eligible_count} eligible respondents, need {assembly.number_to_select}"
+        })
+
+    # Check all target categories are present in attributes
+    required_categories = {cat.name for cat in target_categories}
+    for respondent in pool:
+        missing_categories = required_categories - set(respondent.attributes.keys())
+        if missing_categories:
+            errors.append({
+                "type": "missing_category",
+                "respondent_id": respondent.external_id,
+                "missing": list(missing_categories),
+                "message": f"Respondent {respondent.external_id} missing categories: {missing_categories}"
+            })
+
+        # Check attribute values match defined target values
+        for cat_name, cat_value in respondent.attributes.items():
+            category = next((c for c in target_categories if c.name == cat_name), None)
+            if category:
+                valid_values = {v.value for v in category.values}
+                if cat_value not in valid_values:
+                    errors.append({
+                        "type": "invalid_value",
+                        "respondent_id": respondent.external_id,
+                        "category": cat_name,
+                        "value": cat_value,
+                        "valid_values": list(valid_values),
+                        "message": f"Invalid value '{cat_value}' for category '{cat_name}'"
+                    })
+
+        # Warn about extra attributes not in target categories
+        extra_attrs = set(respondent.attributes.keys()) - required_categories
+        if extra_attrs:
+            warnings.append({
+                "type": "extra_attributes",
+                "respondent_id": respondent.external_id,
+                "extra": list(extra_attrs),
+                "message": f"Respondent has extra attributes that won't be used in selection: {extra_attrs}"
+            })
+
+        # Check eligibility flags
+        if not respondent.eligible:
+            warnings.append({
+                "type": "ineligible",
+                "respondent_id": respondent.external_id,
+                "message": f"Respondent {respondent.external_id} marked as ineligible"
+            })
+        if not respondent.can_attend:
+            warnings.append({
+                "type": "cannot_attend",
+                "respondent_id": respondent.external_id,
+                "message": f"Respondent {respondent.external_id} cannot attend"
+            })
+
+    return RespondentValidationResult(
+        errors=errors,
+        warnings=warnings,
+        is_valid=len(errors) == 0
+    )
+```
+
+## Complete Selection Workflow
+
+This section shows how all pieces (Assembly, TargetCategories, Respondents, ModuleConfigs) work together for selection by sortition.
+
+### Prerequisites for Running Selection
+
+1. **Assembly configured**:
+   - `number_to_select` set
+   - `selection_date` set (timeline)
+
+2. **Target categories defined**:
+   - At least one TargetCategory with TargetValues
+   - Min/max/flex values set appropriately
+   - Validates via `check_min_max()`
+
+3. **Respondents imported/created**:
+   - Sufficient pool size (≥ number_to_select)
+   - All have required target category attributes
+   - Marked as eligible and can_attend
+   - Status = POOL
+
+4. **Selection module enabled**:
+   - `selection_participants` module enabled
+   - Module config contains algorithm choice, settings
+
+### Selection Service Flow
+
+```python
+def run_selection(
+    uow: UnitOfWork,
+    user_id: UUID,
+    assembly_id: UUID,
+    comment: str = ""
+) -> SelectionRunRecord:
+    """Run sortition selection for an assembly."""
+
+    # 1. Load assembly and validate permissions
+    assembly = assembly_service.get_assembly(uow, user_id, assembly_id)
+    check_permission(user_id, "can_manage_assembly", assembly_id)
+
+    # 2. Validate assembly configuration
+    if not assembly.number_to_select:
+        raise ValueError("number_to_select not set")
+    if not assembly.selection_date:
+        raise ValueError("selection_date not set")
+    if not assembly.is_module_enabled("selection_participants"):
+        raise ValueError("Selection module not enabled")
+
+    # 3. Get target categories and convert to FeatureCollection
+    if not assembly.target_categories:
+        raise ValueError("No target categories defined")
+    feature_collection = assembly_service.get_feature_collection(
+        uow, user_id, assembly_id
+    )
+
+    # 4. Get respondents and validate
+    respondents = respondent_service.list_by_assembly(
+        uow, user_id, assembly_id, status=RespondentStatus.POOL
+    )
+    validation = respondent_service.validate_for_selection(
+        uow, user_id, assembly_id
+    )
+    if not validation.is_valid:
+        raise ValueError(f"Validation failed: {validation.errors}")
+
+    # 5. Convert to People object
+    people = respondent_service.get_people_object(
+        uow, user_id, assembly_id
+    )
+
+    # 6. Get selection algorithm settings from module config
+    selection_config = assembly_service.get_module_config(
+        uow, user_id, assembly_id, "selection_participants"
+    )
+    algorithm = selection_config.config.get("algorithm", "maximin")
+    check_same_address = selection_config.config.get("check_same_address", False)
+    address_columns = selection_config.config.get("address_columns", [])
+
+    # 7. Create SelectionRunRecord
+    run_record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=uuid.uuid4(),
+        status=SelectionRunStatus.RUNNING,
+        task_type=SelectionTaskType.SELECTION,
+        user_id=user_id,
+        comment=comment,
+        settings_used={
+            "algorithm": algorithm,
+            "number_to_select": assembly.number_to_select,
+            "check_same_address": check_same_address,
+        }
+    )
+    uow.selection_runs.add(run_record)
+    uow.commit()
+
+    # 8. Run sortition-algorithms selection
+    from sortition_algorithms.run import run_stratified_selection
+
+    settings = Settings(
+        selection_algorithm=algorithm,
+        id_column="id",
+        check_same_address=check_same_address,
+        check_same_address_columns=address_columns,
+    )
+
+    result = run_stratified_selection(
+        people=people,
+        features=feature_collection,
+        number_to_select=assembly.number_to_select,
+        settings=settings
+    )
+
+    # 9. Update run record with results
+    run_record.status = SelectionRunStatus.COMPLETED
+    run_record.selected_ids = [result.selected_ids]  # List of one panel
+    run_record.run_report = result.report
+    run_record.completed_at = datetime.now(UTC)
+
+    # 10. Update respondent statuses
+    for external_id in result.selected_ids:
+        respondent = uow.respondents.get_by_external_id(assembly_id, external_id)
+        respondent.mark_selected(run_record.task_id)
+
+    uow.commit()
+
+    return run_record
+```
+
+### Data Flow Diagram
+
+```
+Assembly
+  ├─> TargetCategories → FeatureCollection (sortition-algorithms)
+  ├─> Respondents → People (sortition-algorithms)
+  ├─> ModuleConfig[selection] → Settings (sortition-algorithms)
+  └─> number_to_select → number_to_select (sortition-algorithms)
+
+                    ↓
+            run_stratified_selection()
+                    ↓
+              SelectionRunRecord
+                    ↓
+       Update Respondent.selection_status
 ```
 
 ## Open Questions / Future Considerations
@@ -1049,3 +1543,58 @@ This document was revised based on architectural review. Key changes:
 - CSV import/export for bulk target management
 - Percentage helpers make target-setting more intuitive
 - Field constraints enforced at database level (CHECK constraints)
+
+### Change 4: Respondent Entity for Selection Pool
+
+**Date of addition:** 2026-02-06
+
+**Design decisions for respondent management:**
+
+1. **Entity naming: Respondent** (not Registrant/Participant):
+   - Most people in the pool won't be selected
+   - "Respondent" is neutral and accurate
+
+2. **Flexible data model**:
+   - `attributes` JSON field stores demographic/feature data
+   - Core fields (consent, email, eligible, can_attend) as nullable columns
+   - Address data in `attributes` (too variable to normalize)
+   - Supports diverse data sources (CSV, registration form, NationBuilder)
+
+3. **Selection status lifecycle**:
+   - POOL → SELECTED → CONFIRMED → PARTICIPATED
+   - WITHDRAWN (covers both decline and withdrawal)
+   - EXCLUDED (manually excluded from pool)
+   - No separate RESERVE status (can add later if needed)
+
+4. **Validation strategy**:
+   - Import without strict validation (show warnings)
+   - Strict validation required before selection can run
+   - Rich validation result for user feedback
+   - MVP: list of problems, user fixes externally
+
+5. **Source tracking**:
+   - `source_type`: REGISTRATION_FORM, CSV_IMPORT, NATIONBUILDER_SYNC, MANUAL_ENTRY
+   - `source_reference`: e.g., CSV filename, helpful for debugging
+
+6. **External ID strategy**:
+   - `external_id` from source systems (NationBuilder ID, etc.)
+   - Unique per assembly (same person can be in multiple assemblies)
+   - Used in SelectionRunRecord.selected_ids (matches current code)
+   - `selection_run_id` FK for easier queries
+
+7. **Privacy considerations**:
+   - `stay_on_db` flag for retention preferences
+   - Anonymization to be implemented later (initially manual)
+   - Defaults to blanking both PII and demographics
+
+**Integration with sortition-algorithms:**
+- Respondent.attributes → People data rows
+- Validation ensures attributes match TargetCategories
+- Filters to eligible, can_attend, POOL status before selection
+- Updates status to SELECTED and links to SelectionRunRecord after selection
+
+**Benefits:**
+- Flexible enough for diverse data sources
+- Direct conversion to sortition-algorithms People object
+- Complete selection workflow from import to results
+- Audit trail via source tracking and selection_run_id
