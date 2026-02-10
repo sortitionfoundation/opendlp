@@ -1,6 +1,6 @@
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/card.html" import card, card_with_actions %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_code, showcase_tokens %}
 {% from "backoffice/components/showcase_table.html" import showcase_table, showcase_table_header, showcase_table_body, showcase_table_row, showcase_table_cell %}
 
@@ -429,49 +429,42 @@
                 </p>
             {% endcall %}
 
-            <div id="card-actions" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);" class="rounded-lg shadow-md overflow-hidden max-w-sm">
-                <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4">
-                    <h3 class="text-heading-lg">Card with Actions</h3>
-                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">Includes button actions</p>
-                </div>
-                <div class="px-6 py-4">
+            {% call card(title="Card with Actions", subtitle="Includes button actions", id="card-actions", classes="max-w-sm", composed=true) %}
+                {% call card_body() %}
                     <p class="text-body-md" style="color: var(--color-body-text);">
-                        This card demonstrates composition with the Button component.
+                        This card demonstrates composition with card_body and card_footer macros.
                     </p>
-                </div>
-                <div style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-subtle-background-panels);" class="px-6 py-3 flex gap-2 justify-end">
+                {% endcall %}
+                {% call card_footer() %}
                     {{ button("Cancel", variant="outline") }}
                     {{ button("Save", variant="primary") }}
-                </div>
-            </div>
+                {% endcall %}
+            {% endcall %}
         </div>
 
-        {% call showcase_code() %}{% raw %}{% from "backoffice/components/card.html" import card %}
+        {% call showcase_code() %}{% raw %}{% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/button.html" import button %}
 
-{# Basic card #}
+{# Basic card (auto body) #}
 {% call card() %}
   Card content here
 {% endcall %}
 
-{# Card with header #}
+{# Card with header (auto body) #}
 {% call card(title="Title", subtitle="Subtitle") %}
   Card content here
 {% endcall %}
 
-{# Card with actions (compose card + buttons manually) #}
-&lt;div style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
-     class="rounded-lg shadow-md overflow-hidden"&gt;
-  &lt;div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4"&gt;
-    &lt;h3 class="text-heading-lg" style="color: var(--color-headings);"&gt;Title&lt;/h3&gt;
-  &lt;/div&gt;
-  &lt;div class="px-6 py-4"&gt;Content here&lt;/div&gt;
-  &lt;div style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-subtle-background-panels);"
-       class="px-6 py-3 flex gap-2 justify-end"&gt;
+{# Card with actions (composed mode) #}
+{% call card(title="Title", subtitle="Subtitle", composed=true) %}
+  {% call card_body() %}
+    Content here
+  {% endcall %}
+  {% call card_footer() %}
     {{ button("Cancel", variant="outline") }}
     {{ button("Save", variant="primary") }}
-  &lt;/div&gt;
-&lt;/div&gt;{% endraw %}{% endcall %}
+  {% endcall %}
+{% endcall %}{% endraw %}{% endcall %}
 
         {{ showcase_tokens([
         "--color-tables-cards",
