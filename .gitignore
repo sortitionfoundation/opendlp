@@ -342,3 +342,6 @@ backend/celerybeat-schedule.db
 backend/thirdparty/
 # this is a place for temporary files
 backend/scratchpad/
+
+# this file is generated, so we will not commit it
+backend/static/css/application.css
