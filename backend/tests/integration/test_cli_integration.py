@@ -3,6 +3,7 @@ ABOUTME: Tests actual user creation, invite generation, and database operations"
 
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -332,3 +333,225 @@ class TestCliDatabaseIntegration:
         with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
             user = uow.users.get_by_email("before-reset@example.com")
             assert user is None  # Should be gone after reset
+
+
+class TestCliCeleryIntegration:
+    """Integration tests for Celery management CLI commands."""
+
+    # list-tasks command tests
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_list_tasks_no_workers(self, mock_celery_app, cli_with_session_factory):
+        """Test list-tasks when no Celery workers are running."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = None
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "list-tasks"])
+
+        assert result.exit_code == 0, f"Expected exit code 0 but got {result.exit_code}. Output: {result.output}"
+        assert "⚠️  Warning: No Celery workers are running" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_list_tasks_no_active_tasks(self, mock_celery_app, cli_with_session_factory):
+        """Test list-tasks when workers are running but no tasks are active."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {"celery@worker1": []}
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "list-tasks"])
+
+        assert result.exit_code == 0, f"Expected exit code 0 but got {result.exit_code}. Output: {result.output}"
+        assert "✓ No tasks currently running" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_list_tasks_with_active_tasks(self, mock_celery_app, cli_with_session_factory):
+        """Test list-tasks shows tasks but always exits 0."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {
+            "celery@worker1": [
+                {
+                    "id": "def456-task-id-0987654321",
+                    "name": "opendlp.entrypoints.celery.tasks.load_gsheet",
+                    "args": [],
+                    "kwargs": {},
+                }
+            ]
+        }
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "list-tasks"])
+
+        assert result.exit_code == 0, f"Expected exit code 0 but got {result.exit_code}. Output: {result.output}"
+        assert "⚙  1 task(s) currently running:" in result.output
+        assert "load_gsheet" in result.output
+
+    # check-tasks command tests
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_check_tasks_no_workers(self, mock_celery_app, cli_with_session_factory):
+        """Test check-tasks when no Celery workers are running."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = None
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "check-tasks"])
+
+        assert result.exit_code == 2, f"Expected exit code 2 but got {result.exit_code}. Output: {result.output}"
+        assert "⚠️  Warning: No Celery workers are running" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_check_tasks_no_active_tasks(self, mock_celery_app, cli_with_session_factory):
+        """Test check-tasks when workers are running but no tasks are active."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {"celery@worker1": []}
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "check-tasks"])
+
+        assert result.exit_code == 0, f"Expected exit code 0 but got {result.exit_code}. Output: {result.output}"
+        assert "✓ No tasks currently running" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_check_tasks_with_active_tasks(self, mock_celery_app, cli_with_session_factory):
+        """Test check-tasks when tasks are actively running."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {
+            "celery@worker1": [
+                {
+                    "id": "abc123-task-id-1234567890",
+                    "name": "opendlp.entrypoints.celery.tasks.run_select",
+                    "args": [],
+                    "kwargs": {},
+                }
+            ]
+        }
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "check-tasks"])
+
+        assert result.exit_code == 1, f"Expected exit code 1 but got {result.exit_code}. Output: {result.output}"
+        assert "✗ Tasks are running (deployment blocked)" in result.output
+        assert "⚙  1 task(s) currently running:" in result.output
+        assert "Worker: celery@worker1" in result.output
+        assert "run_select" in result.output
+        assert "abc123-t" in result.output  # First 8 chars of task ID
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_check_tasks_multiple_workers(self, mock_celery_app, cli_with_session_factory):
+        """Test check-tasks with multiple workers each running multiple tasks."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {
+            "celery@worker1": [
+                {
+                    "id": "task1-aaaa-bbbb",
+                    "name": "opendlp.entrypoints.celery.tasks.run_select",
+                    "args": [],
+                    "kwargs": {},
+                },
+                {
+                    "id": "task2-cccc-dddd",
+                    "name": "opendlp.entrypoints.celery.tasks.load_gsheet",
+                    "args": [],
+                    "kwargs": {},
+                },
+            ],
+            "celery@worker2": [
+                {
+                    "id": "task3-eeee-ffff",
+                    "name": "opendlp.entrypoints.celery.tasks.manage_old_tabs",
+                    "args": [],
+                    "kwargs": {},
+                }
+            ],
+        }
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "check-tasks"])
+
+        assert result.exit_code == 1, f"Expected exit code 1 but got {result.exit_code}. Output: {result.output}"
+        assert "⚙  3 task(s) currently running:" in result.output
+        assert "Worker: celery@worker1" in result.output
+        assert "Worker: celery@worker2" in result.output
+        assert "run_select" in result.output
+        assert "load_gsheet" in result.output
+        assert "manage_old_tabs" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_check_tasks_connection_error(self, mock_celery_app, cli_with_session_factory):
+        """Test check-tasks handles connection errors gracefully."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.side_effect = Exception("Connection refused to Redis")
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "check-tasks"])
+
+        assert result.exit_code == 2, f"Expected exit code 2 but got {result.exit_code}. Output: {result.output}"
+        assert "✗ Error connecting to Celery:" in result.output
+        assert "Connection refused to Redis" in result.output
+        assert "Make sure Redis is accessible and Celery is configured correctly" in result.output
+
+    # wait-tasks command tests
+    @patch("opendlp.entrypoints.cli.celery.time")
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_wait_tasks_completes(self, mock_celery_app, mock_time, cli_with_session_factory):
+        """Test wait-tasks that waits for tasks to complete."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.side_effect = [
+            # First check: task running
+            {
+                "celery@worker1": [
+                    {
+                        "id": "ghi789-task-id-1111111111",
+                        "name": "opendlp.entrypoints.celery.tasks.manage_old_tabs",
+                        "args": [],
+                        "kwargs": {},
+                    }
+                ]
+            },
+            # Second check: task completed
+            {"celery@worker1": []},
+        ]
+        mock_celery_app.control.inspect.return_value = mock_inspect
+        mock_time.sleep = MagicMock()
+
+        result = cli_with_session_factory(cli, ["celery", "wait-tasks", "--timeout", "30"])
+
+        assert result.exit_code == 0, f"Expected exit code 0 but got {result.exit_code}. Output: {result.output}"
+        assert "✓ All tasks completed" in result.output
+        assert "Waiting up to 30s for tasks to complete" in result.output
+        assert mock_time.sleep.call_count == 1
+        mock_time.sleep.assert_called_with(5)  # 5 second poll interval
+
+    @patch("opendlp.entrypoints.cli.celery.time")
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_wait_tasks_timeout(self, mock_celery_app, mock_time, cli_with_session_factory):
+        """Test wait-tasks times out if tasks don't complete."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = {
+            "celery@worker1": [
+                {
+                    "id": "jkl012-task-id-2222222222",
+                    "name": "opendlp.entrypoints.celery.tasks.run_select",
+                    "args": [],
+                    "kwargs": {},
+                }
+            ]
+        }
+        mock_celery_app.control.inspect.return_value = mock_inspect
+        mock_time.sleep = MagicMock()
+
+        result = cli_with_session_factory(cli, ["celery", "wait-tasks", "--timeout", "10"])
+
+        assert result.exit_code == 1, f"Expected exit code 1 but got {result.exit_code}. Output: {result.output}"
+        assert "✗ Tasks still running after 10s timeout (deployment blocked)" in result.output
+
+    @patch("opendlp.entrypoints.cli.celery.celery_app")
+    def test_wait_tasks_no_workers(self, mock_celery_app, cli_with_session_factory):
+        """Test wait-tasks when no Celery workers are running."""
+        mock_inspect = MagicMock()
+        mock_inspect.active.return_value = None
+        mock_celery_app.control.inspect.return_value = mock_inspect
+
+        result = cli_with_session_factory(cli, ["celery", "wait-tasks"])
+
+        assert result.exit_code == 2, f"Expected exit code 2 but got {result.exit_code}. Output: {result.output}"
+        assert "⚠️  Warning: No Celery workers are running" in result.output
