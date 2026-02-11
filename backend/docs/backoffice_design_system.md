@@ -160,3 +160,13 @@ Standard responsive grid pattern:
 ```html
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 ```
+
+### Alpine.js
+
+The backoffice uses Alpine.js (CSP-compatible build) for interactivity, loaded from jsdelivr CDN with an SRI integrity hash in `base.html`.
+
+**TODO:** Consider self-hosting Alpine.js instead of using CDN + integrity hash:
+- The SRI hash is error-prone (a single character typo silently breaks Alpine.js)
+- Hash must be manually updated when upgrading Alpine.js version
+- Self-hosting would eliminate CDN dependency and SRI maintenance burden
+- Download from npm (`@alpinejs/csp`) and serve from `static/backoffice/js/`
