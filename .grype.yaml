@@ -6,4 +6,4 @@ ignore:
   # See https://github.com/sortitionfoundation/sortition-algorithms/issues/1#issuecomment-3883969804 for more
   # I have reviewed the changelog and we are not affected by this particular vulnerability.
   # We can remove this if we drop python-mip or python-mip releases a proper release at some point.
-  - GHSA-r6ph-v2qm-q3c2-cryptography
+  - GHSA-r6ph-v2qm-q3c2
