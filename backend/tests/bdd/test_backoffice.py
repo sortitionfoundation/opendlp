@@ -230,6 +230,62 @@ def card_with_actions_has_buttons(page: Page):
     expect(card.locator("button", has_text="Cancel")).to_be_visible()
 
 
+# Navigation Component Tests
+
+
+@then("I should see the navigation component")
+def see_navigation_component(page: Page):
+    """Verify the navigation component section is visible."""
+    # The navigation is inside a showcase section with a wrapper div
+    navigation = page.locator("section:has-text('Navigation Component')")
+    expect(navigation).to_be_visible()
+
+
+@then("the navigation should contain the logo")
+def navigation_has_logo(page: Page):
+    """Verify the navigation contains the Sortition logo SVG."""
+    # The logo is an SVG inside the navigation demo section
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    logo = nav_section.locator("svg").first
+    expect(logo).to_be_visible()
+
+
+@then("the navigation should contain nav links")
+def navigation_has_nav_links(page: Page):
+    """Verify the navigation contains nav links (Dashboard, Assemblies, etc.)."""
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    # Check for at least one nav link from the showcase example
+    expect(nav_section.locator("a", has_text="Dashboard")).to_be_visible()
+    expect(nav_section.locator("a", has_text="Assemblies")).to_be_visible()
+
+
+@then("the navigation should contain the CTA button")
+def navigation_has_cta_button(page: Page):
+    """Verify the navigation contains the CTA button (Sign out)."""
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    cta = nav_section.locator("a", has_text="Sign out")
+    expect(cta).to_be_visible()
+
+
+# Button Link Variant Tests
+
+
+@then("I should see the link button")
+def see_link_button(page: Page):
+    """Verify the link button is visible."""
+    button = page.locator("#btn-link")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Link Button")
+
+
+@then("the link button should be an anchor tag")
+def link_button_is_anchor(page: Page):
+    """Verify the link button renders as an <a> tag, not <button>."""
+    link_button = page.locator("#btn-link")
+    tag_name = link_button.evaluate("el => el.tagName.toLowerCase()")
+    assert tag_name == "a", f"Expected <a> tag for link button, got <{tag_name}>"
+
+
 # Typography Tests
 
 
