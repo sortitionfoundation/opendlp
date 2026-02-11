@@ -9,13 +9,13 @@
     {{ navigation(
     logo_href=url_for('backoffice.dashboard'),
     nav_items=[
-    {"label": "Dashboard", "href": url_for('backoffice.dashboard')},
-    {"label": "Assemblies", "href": "#"},
-    {"label": "Users", "href": "#"},
-    {"label": "Help", "href": "#"}
+    {"label": _("Dashboard"), "href": url_for('backoffice.dashboard') },
+    {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser'] },
+    {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank" },
+    {"label": _("Help"), "href": url_for('main.support') },
     ],
     account_items=[
-    {"label": "My Account", "href": "#"}
+    {"label": _("My Account"), "href": url_for('profile.view') },
     ],
     cta_text="Sign out",
     cta_href=url_for('auth.logout')
@@ -31,7 +31,7 @@
             {% if assemblies %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {% for assembly in assemblies %}
-                        {% call card(title=assembly.title, subtitle=assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                        {% call card(title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
                             {% if assembly.question %}
                                 <p style="color: var(--color-body-text);" class="text-body-md mb-4">
                                     {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
