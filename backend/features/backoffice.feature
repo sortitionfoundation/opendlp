@@ -120,3 +120,38 @@ Feature: Backoffice UI
     And the footer should contain Sortition Foundation link
     And the footer should contain User Data Agreement link
     And the footer should display the version
+
+  # Assembly Details Page Tests
+
+  Scenario: User can navigate to assembly details from dashboard
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the backoffice dashboard
+    And I click the "Go to Assembly" button for "Climate Assembly"
+    Then I should see the assembly details page
+    And I should see "Climate Assembly" as the page heading
+
+  Scenario: Assembly details page displays breadcrumbs
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Climate Assembly"
+
+  Scenario: Assembly details page displays assembly information
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the assembly question section
+    And I should see "How should we address climate change?"
+    And I should see the assembly details summary
+    And I should see "Status"
+    And I should see "Number to Select"
+    And I should see "Created"
+
+  Scenario: Assembly details page has edit button
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the "Edit Assembly" button

@@ -44,7 +44,7 @@
                                 </p>
                             {% endif %}
                             <br />
-                            {{ button("Go to Assembly", href="assembiles/" ~ assembly.id, variant="outline" ) }}
+                            {{ button(_("Go to Assembly"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
                         {% endcall %}
                     {% endfor %}
                 </div>

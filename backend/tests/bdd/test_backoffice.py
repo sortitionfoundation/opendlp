@@ -460,3 +460,109 @@ def footer_has_version(page: Page):
     footer = page.locator("footer")
     # Version text should be visible (format: "Version YYYY-MM-DD hash" or "Version UNKNOWN")
     expect(footer).to_contain_text("Version")
+
+
+# Assembly Details Page Tests
+
+# Store assembly data between steps
+_test_assemblies: dict[str, str] = {}
+
+
+@given(parsers.parse('there is an assembly called "{title}" with question "{question}"'))
+def create_test_assembly_with_question(title: str, question: str, admin_user, test_database):
+    """Create a test assembly with a question for the admin user."""
+    from opendlp.service_layer.assembly_service import create_assembly
+    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly = create_assembly(
+        uow=uow,
+        title=title,
+        question=question,
+        created_by_user_id=admin_user.id,
+    )
+    _test_assemblies[title] = str(assembly.id)
+
+
+@when(parsers.parse('I click the "Go to Assembly" button for "{title}"'))
+def click_go_to_assembly_button(page: Page, title: str):
+    """Click the Go to Assembly button for a specific assembly card."""
+    card = page.locator(".assembly-card", has_text=title)
+    button = card.locator("a", has_text="Go to Assembly")
+    button.click()
+
+
+@when(parsers.parse('I visit the assembly details page for "{title}"'))
+def visit_assembly_details_page(page: Page, title: str, admin_user, test_database):
+    """Navigate directly to the assembly details page."""
+    # Get the assembly ID from the database if not already stored
+    if title not in _test_assemblies:
+        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.get_all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    _test_assemblies[title] = str(assembly.id)
+                    break
+
+    assembly_id = _test_assemblies.get(title)
+    if assembly_id:
+        page.goto(Urls.backoffice_assembly_url(assembly_id))
+
+
+@then("I should see the assembly details page")
+def see_assembly_details_page(page: Page):
+    """Verify we're on the assembly details page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*"))
+
+
+@then(parsers.parse('I should see "{title}" as the page heading'))
+def see_page_heading(page: Page, title: str):
+    """Verify the page heading contains the expected title."""
+    heading = page.locator("h1")
+    expect(heading).to_contain_text(title)
+
+
+@then("I should see the breadcrumbs")
+def see_breadcrumbs(page: Page):
+    """Verify the breadcrumbs navigation is visible."""
+    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
+    expect(breadcrumbs).to_be_visible()
+
+
+@then(parsers.parse('the breadcrumbs should contain "{text}"'))
+def breadcrumbs_contain_text(page: Page, text: str):
+    """Verify the breadcrumbs contain specific text."""
+    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
+    expect(breadcrumbs).to_contain_text(text)
+
+
+@then("I should see the assembly question section")
+def see_assembly_question_section(page: Page):
+    """Verify the assembly question section is visible."""
+    section = page.locator("section", has_text="Assembly Question")
+    expect(section).to_be_visible()
+
+
+@then("I should see the assembly details summary")
+def see_assembly_details_summary(page: Page):
+    """Verify the assembly details summary (dl/dd section) is visible."""
+    details_section = page.locator("section", has_text="Details").locator("dl")
+    expect(details_section).to_be_visible()
+
+
+@then(parsers.parse('I should see "{text}"'))
+def see_text_on_page(page: Page, text: str):
+    """Verify specific text is visible on the page."""
+    expect(page.locator("body")).to_contain_text(text)
+
+
+@then(parsers.parse('I should see the "{button_text}" button'))
+def see_button_with_text(page: Page, button_text: str):
+    """Verify a button with specific text is visible."""
+    button = page.locator("a, button", has_text=button_text)
+    expect(button).to_be_visible()
