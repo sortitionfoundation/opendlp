@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-05 16:34+0000\n"
+"POT-Creation-Date: 2026-02-11 16:07+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 #: src/opendlp/domain/value_objects.py:20
 msgid "User - Basic access to assigned assemblies"
@@ -3805,99 +3805,105 @@ msgstr ""
 msgid "selection_algorithm %(algorithm)s is not one of: %(valid_algorithms)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:76
+msgid ""
+"Diversimax algorithm requires the optional 'diversimax' dependencies, "
+"which are not available"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:78
 msgid "Leximin algorithm requires Gurobi solver which is not available"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:80
-#, python-format
-msgid "There is no %(field)s value set"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
-#, python-format
-msgid "'%(value)s' is not a number"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
-#, python-format
-msgid "Empty %(value_column_name)s in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:83
 #, python-format
-msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
+msgid "There is no %(field)s value set"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:84
 #, python-format
-msgid "min_flex (%(min_flex)s) should not be greater than min (%(min)s)"
+msgid "'%(value)s' is not a number"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
 #, python-format
-msgid "max_flex (%(max_flex)s) should not be less than max (%(max)s)"
+msgid "Empty %(value_column_name)s in %(feature_column_name)s %(feature_name)s"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:86
+#, python-format
+msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:87
 #, python-format
-msgid "Value '%(value)s' not in %(feature_column_name)s %(feature_name)s"
+msgid "min_flex (%(min_flex)s) should not be greater than min (%(min)s)"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:88
 #, python-format
+msgid "max_flex (%(max_flex)s) should not be less than max (%(max)s)"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:90
+#, python-format
+msgid "Value '%(value)s' not in %(feature_column_name)s %(feature_name)s"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:91
+#, python-format
 msgid "Empty value in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:92
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:95
 #, python-format
 msgid "%(msg)s: for row %(row)s, column header %(key)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:96
 #, python-format
 msgid "%(msg)s: for row %(row)s, column headers %(keys)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
 #, python-format
 msgid "Parser error(s) while reading features from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:98
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:99
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:102
 #, python-format
 msgid "Parser error(s) while reading people from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:103
 #, python-format
 msgid "%(msg)s - see cell %(cell_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:104
 #, python-format
 msgid "%(msg)s - see cells %(cell_names)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
 #, python-format
 msgid "Found %(count)s IDs that have more than one row with different data"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:106
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:109
 #, python-format
 msgid "For ID '%(person_id)s' one row of data is: %(row_data)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:111
 #, python-format
 msgid ""
 "Not enough people with the value '%(feature_value)s' in category "
 "'%(feature_name)s' - the minimum is %(min)s but we only have %(count)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:112
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:115
 #, python-format
 msgid ""
 "The number of people to select (%(desired)s) is out of the range of the "
@@ -3905,30 +3911,32 @@ msgid ""
 "[%(min)s, %(max)s]."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
-msgid "The quotas are infeasible:"
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
+msgid ""
+"It is not possible to hit all the targets with the current set of people."
+" I suggest the following steps:"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:119
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:124
 #, python-format
 msgid "Inconsistent numbers in min and max in the %(feature_column_name)s input:"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:125
 #, python-format
 msgid ""
 "The smallest maximum is %(max_val)s for %(feature_column_name)s "
 "'%(max_feature)s'"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:126
 #, python-format
 msgid ""
 "The largest minimum is %(min_val)s for %(feature_column_name)s "
 "'%(min_feature)s'"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:123
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:128
 #, python-format
 msgid ""
 "You need to reduce the minimums for %(min_feature)s or increase the "
@@ -4129,69 +4137,71 @@ msgstr ""
 msgid "Writing remaining people to tab: %(tab_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:98
-msgid "Finished writing selected (only)"
-msgstr ""
-
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:99
+msgid ""
+"Finished writing selected (only, because writing remaining is deselected "
+"in the configuration)"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:101
 msgid "Finished writing both selected and remaining"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:103
-#, python-format
-msgid "WARNING: blank cell found in ID column in row %(row)s - skipped that line!"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:104
-msgid "WARNING: Duplicate people found:"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:105
 #, python-format
-msgid "Person with ID '%(person_id)s' appears %(count)s times in rows: %(rows)s"
+msgid "WARNING: blank cell found in ID column in row %(row)s - skipped that line!"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:106
-#, python-format
-msgid "Found %(count)s IDs that have more than one row"
+msgid "WARNING: Duplicate people found:"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:107
 #, python-format
-msgid "Duplicated IDs are: %(ids)s"
+msgid "Person with ID '%(person_id)s' appears %(count)s times in rows: %(rows)s"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:108
-msgid "All duplicate rows have identical data - processing continuing."
+#, python-format
+msgid "Found %(count)s IDs that have more than one row"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:109
-msgid "All agents are contained in some feasible committee."
+#, python-format
+msgid "Duplicated IDs are: %(ids)s"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:110
+msgid "All duplicate rows have identical data - processing continuing."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:111
+msgid "All agents are contained in some feasible committee."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:112
 #, python-format
 msgid "Heuristic successfully generated %(count)s additional committees."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:114
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:116
 #, python-format
 msgid "Using these settings: %(settings)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:115
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
 #, python-format
 msgid "Random seed set to: %(seed)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:119
 #, python-format
 msgid ""
 "Wrote default settings to '%(file_path)s' - if editing is required, "
 "restart this app."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:122
 msgid ""
 "WARNING: Settings file is such that we do NOT check if respondents have "
 "same address."
@@ -4686,4 +4696,10 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Steps to reproduce the issue"
+#~ msgstr ""
+
+#~ msgid "The quotas are infeasible:"
+#~ msgstr ""
+
+#~ msgid "Finished writing selected (only)"
 #~ msgstr ""
