@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for card component
 ABOUTME: Displays card variants and composition patterns
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/button.html" import button %}
 
@@ -37,29 +37,29 @@ ABOUTME: Displays card variants and composition patterns
             {% endcall %}
         </div>
 
-        {% call showcase_code() %}{% raw %}{% from "backoffice/components/card.html" import card, card_body, card_footer %}
-{% from "backoffice/components/button.html" import button %}
+        {{ showcase_code_example('{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+        {% from "backoffice/components/button.html" import button %}
 
-{# Basic card (auto body) #}
-{% call card() %}
-  Card content here
-{% endcall %}
+        {# Basic card (auto body) #}
+        {% call card() %}
+            Card content here
+        {% endcall %}
 
-{# Card with header (auto body) #}
-{% call card(title="Title", subtitle="Subtitle") %}
-  Card content here
-{% endcall %}
+        {# Card with header (auto body) #}
+        {% call card(title="Title", subtitle="Subtitle") %}
+            Card content here
+        {% endcall %}
 
-{# Card with actions (composed mode) #}
-{% call card(title="Title", subtitle="Subtitle", composed=true) %}
-  {% call card_body() %}
-    Content here
-  {% endcall %}
-  {% call card_footer() %}
-    {{ button("Cancel", variant="outline") }}
-    {{ button("Save", variant="primary") }}
-  {% endcall %}
-{% endcall %}{% endraw %}{% endcall %}
+        {# Card with actions (composed mode) #}
+        {% call card(title="Title", subtitle="Subtitle", composed=true) %}
+            {% call card_body() %}
+                Content here
+            {% endcall %}
+            {% call card_footer() %}
+                {{ button("Cancel", variant="outline") }}
+                {{ button("Save", variant="primary") }}
+            {% endcall %}
+        {% endcall %}') }}
 
         {{ showcase_tokens([
         "--color-tables-cards",

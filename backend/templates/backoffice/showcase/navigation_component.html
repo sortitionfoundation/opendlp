@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for navigation component
 ABOUTME: Displays navigation bar with logo, links, and actions
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
 {% from "backoffice/components/navigation.html" import navigation %}
 
 {% macro navigation_section() %}
@@ -27,22 +27,22 @@ ABOUTME: Displays navigation bar with logo, links, and actions
             ) }}
         </div>
 
-        {% call showcase_code() %}{% raw %}{% from "backoffice/components/navigation.html" import navigation %}
+        {{ showcase_code_example('{% from "backoffice/components/navigation.html" import navigation %}
 
-{{ navigation(
-    logo_href="/backoffice",
-    nav_items=[
+        {{ navigation(
+        logo_href="/backoffice",
+        nav_items=[
         {"label": "Dashboard", "href": "/dashboard"},
         {"label": "Assemblies", "href": "/assemblies"},
         {"label": "Users", "href": "/users"},
         {"label": "Help", "href": "/help"}
-    ],
-    account_items=[
+        ],
+        account_items=[
         {"label": "My Account", "href": "/account"}
-    ],
-    cta_text="Sign out",
-    cta_href="/logout"
-) }}{% endraw %}{% endcall %}
+        ],
+        cta_text="Sign out",
+        cta_href="/logout"
+        ) }}') }}
 
         {{ showcase_tokens([
         "--color-tables-cards",

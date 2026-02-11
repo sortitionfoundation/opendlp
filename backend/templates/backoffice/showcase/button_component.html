@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for button component
 ABOUTME: Displays button variants and usage examples
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
 
 {% macro button_section() %}
@@ -37,6 +37,17 @@ ABOUTME: Displays button variants and usage examples
             </div>
         </div>
 
+        {{ showcase_code_example('{% from "backoffice/components/button.html" import button %}
+
+        {{ button("Click me") }}
+        {{ button("Submit", variant="primary", type="submit") }}
+        {{ button("Secondary", variant="secondary") }}
+        {{ button("Cancel", variant="outline") }}
+        {{ button("Disabled", disabled=true) }}
+
+        {# Button as link (renders as <a> instead of <button>) #}
+        {{ button("Go to Dashboard", href="/dashboard") }}
+        {{ button("External Link", href="https://example.com", variant="outline") }}') }}
 
         {{ showcase_tokens([
         "--color-primary-action",

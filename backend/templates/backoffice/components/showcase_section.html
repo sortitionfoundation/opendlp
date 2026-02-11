@@ -26,11 +26,11 @@
     <h3 class="text-heading-sm mt-8 mb-3" style="color: var(--color-headings);">{{ text }}</h3>
 {% endmacro %}
 
-{# Code example block #}
-{% macro showcase_code() %}
+{# Code example block - accepts code as parameter for safe escaping #}
+{% macro showcase_code_example(code, title="How to Use") %}
     <div class="mt-6">
-        <h3 class="text-label-lg mb-2" style="color: var(--color-headings);">How to Use</h3>
-        <pre class="text-body-sm p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"><code>{{ caller() }}</code></pre>
+        <h3 class="text-label-lg mb-2" style="color: var(--color-headings);">{{ title }}</h3>
+        <pre class="text-body-sm p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"><code>{{ code | e }}</code></pre>
     </div>
 {% endmacro %}
 
