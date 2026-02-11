@@ -2,6 +2,7 @@
 {% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/footer.html" import footer %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -20,7 +21,7 @@
     cta_text="Sign out",
     cta_href=url_for('auth.logout')
     ) }}
-    <main class="max-w-screen-2xl mx-auto px-6 py-8">
+    <main class="max-w-screen-2xl mx-auto px-6 py-8 min-h-screen">
         <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">Dashboard</h1>
         <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">Welcome back, {{ current_user.display_name }}!</p>
 
@@ -42,6 +43,8 @@
                                     Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
                                 </p>
                             {% endif %}
+                            <br />
+                            {{ button("Go to Assembly", href="assembiles/" ~ assembly.id, variant="outline" ) }}
                         {% endcall %}
                     {% endfor %}
                 </div>
@@ -53,4 +56,5 @@
             {% endif %}
         </section>
     </main>
+    {{ footer() }}
 {% endblock %}

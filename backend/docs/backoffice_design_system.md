@@ -170,3 +170,8 @@ The backoffice uses Alpine.js (CSP-compatible build) for interactivity, loaded f
 - Hash must be manually updated when upgrading Alpine.js version
 - Self-hosting would eliminate CDN dependency and SRI maintenance burden
 - Download from npm (`@alpinejs/csp`) and serve from `static/backoffice/js/`
+
+**TODO:** Footer version display needs investigation:
+- The footer displays `{{ opendlp_version }}` which is provided by `static_versioning_context_processor`
+- Verify the version renders correctly in the backoffice dashboard
+- The context processor is registered at app level, so it should be available to all templates

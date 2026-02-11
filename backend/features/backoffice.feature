@@ -109,3 +109,14 @@ Feature: Backoffice UI
     Given I am on the backoffice showcase page
     Then I should see the link button
     And the link button should be an anchor tag
+
+  # Footer Component Tests
+
+  Scenario: Dashboard displays footer with links and version
+    Given I am logged in as an admin user
+    When I visit the backoffice dashboard
+    Then I should see the footer
+    And the footer should contain GitHub link
+    And the footer should contain Sortition Foundation link
+    And the footer should contain User Data Agreement link
+    And the footer should display the version

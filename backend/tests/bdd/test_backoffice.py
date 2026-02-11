@@ -412,3 +412,51 @@ def see_assembly_card_with_title(page: Page, title: str):
     """Verify an assembly card with the given title is visible."""
     card = page.locator(".assembly-card", has_text=title)
     expect(card).to_be_visible()
+
+
+# Footer Component Tests
+
+
+@then("I should see the footer")
+def see_footer(page: Page):
+    """Verify the footer is visible."""
+    footer = page.locator("footer")
+    expect(footer).to_be_visible()
+
+
+@then("the footer should contain GitHub link")
+def footer_has_github_link(page: Page):
+    """Verify the footer contains a GitHub link."""
+    footer = page.locator("footer")
+    github_link = footer.locator("a", has_text="GitHub")
+    expect(github_link).to_be_visible()
+    expect(github_link).to_have_attribute("href", "https://github.com/sortition-foundation/opendlp")
+    expect(github_link).to_have_attribute("target", "_blank")
+
+
+@then("the footer should contain Sortition Foundation link")
+def footer_has_sortition_link(page: Page):
+    """Verify the footer contains a Sortition Foundation link."""
+    footer = page.locator("footer")
+    sf_link = footer.locator("a", has_text="Sortition Foundation")
+    expect(sf_link).to_be_visible()
+    expect(sf_link).to_have_attribute("href", "https://www.sortitionfoundation.org")
+    expect(sf_link).to_have_attribute("target", "_blank")
+
+
+@then("the footer should contain User Data Agreement link")
+def footer_has_user_data_agreement_link(page: Page):
+    """Verify the footer contains a User Data Agreement link."""
+    footer = page.locator("footer")
+    uda_link = footer.locator("a", has_text="User Data Agreement")
+    expect(uda_link).to_be_visible()
+    # The href should contain the user_data_agreement route
+    expect(uda_link).to_have_attribute("href", re.compile(r".*/auth/user-data-agreement"))
+
+
+@then("the footer should display the version")
+def footer_has_version(page: Page):
+    """Verify the footer displays the OpenDLP version."""
+    footer = page.locator("footer")
+    # Version text should be visible (format: "Version YYYY-MM-DD hash" or "Version UNKNOWN")
+    expect(footer).to_contain_text("Version")
