@@ -1,7 +1,6 @@
 """ABOUTME: BDD tests for backoffice UI (Pines UI + Tailwind CSS)
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
-import os
 import re
 
 import pytest
@@ -12,10 +11,6 @@ from .config import ADMIN_PASSWORD, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
-
-# Alpine.js tests are skipped in CI due to CSP nonce timing issues
-# TODO: Fix CSP nonce propagation in test server for Alpine.js
-SKIP_ALPINE_IN_CI = os.getenv("CI", "false").lower() == "true"
 
 
 # Override context fixture for backoffice tests - no Celery needed for static pages
@@ -109,8 +104,6 @@ def brand_300_token_has_red_background(page: Page):
 @then("the Alpine message should be hidden")
 def alpine_message_hidden(page: Page):
     """Verify the Alpine.js toggle message is hidden."""
-    if SKIP_ALPINE_IN_CI:
-        pytest.skip("Alpine.js tests skipped in CI due to CSP nonce timing issues")
     message = page.locator("#alpine-message")
     # Wait for Alpine.js to initialize and hide the element
     expect(message).to_be_hidden(timeout=10000)
