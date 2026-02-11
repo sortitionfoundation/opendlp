@@ -205,6 +205,7 @@ This approach maintains the separation between domain objects (plain Python) and
 
 - [Testing Strategy](docs/testing.md) - Unit, integration, e2e, and BDD testing
 - [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes
+- [Command Line Interface](docs/cli.md) - System administration CLI commands
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
