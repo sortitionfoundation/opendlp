@@ -3,37 +3,43 @@ ABOUTME: Button component macro for backoffice design system
 ABOUTME: Supports primary, secondary, outline variants with proper token styling
 #}
 
-{% macro button(text="", variant="primary", disabled=false, type="button", id="", classes="", attrs="") %}
-
+{% macro button(text="", variant="primary", disabled=false, type="button", href="", id="", classes="", attrs="") %}
     {#
-  Button component using semantic design tokens.
+    Button component using semantic design tokens.
+    Renders as <a> when href is provided, otherwise <button>.
 
-  Args:
-    text: Button label text (or use {% call button() %}content{% endcall %} for custom inner content)
-    variant: "primary" | "secondary" | "outline" (default: "primary")
-    disabled: boolean to disable the button
-    type: button type attribute (default: "button")
-    id: optional id attribute
-    classes: additional CSS classes to append
-    attrs: additional HTML attributes (e.g., '@click="open = !open"' for Alpine.js)
+    Args:
+        text: Button label text (or use {% call button() %}content{% endcall %} for custom inner content)
+        variant: "primary" | "secondary" | "outline" (default: "primary")
+        disabled: boolean to disable the button
+        type: button type attribute (default: "button")
+        href: if provided, renders as <a> instead of <button>
+        id: optional id attribute
+        classes: additional CSS classes to append
+        attrs: additional HTML attributes (e.g., '@click="open = !open"' for Alpine.js)
 
-  Usage:
-    {{ button("Click me") }}
-    {{ button("Submit", variant="primary", type="submit") }}
-    {{ button("Cancel", variant="outline") }}
-    {{ button("Disabled", disabled=true) }}
+    Usage:
+        {{ button("Click me") }}
+        {{ button("Submit", variant="primary", type="submit") }}
+        {{ button("Cancel", variant="outline") }}
+        {{ button("Disabled", disabled=true) }}
 
-  With Alpine.js:
-    {% call button(variant="primary", id="my-btn", attrs='@click="open = !open"') %}
-      <span x-text="open ? 'Hide' : 'Show'">Show</span>
-    {% endcall %}
+    As a link:
+        {{ button("Go to Dashboard", href="/dashboard") }}
+        {{ button("External Link", href="https://example.com", variant="outline") }}
+
+    With Alpine.js:
+        {% call button(variant="primary", id="my-btn", attrs='@click="open = !open"') %}
+            <span x-text="open ? 'Hide' : 'Show'">Show</span>
+        {% endcall %}
     #}
-
-    {% set base_classes = "text-button-lg px-4 py-2 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2" %}
+    {% set base_classes = "text-button-lg px-4 py-2 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 inline-block" %}
+    {% set hover_styles = "" %}
+    {% set focus_ring = "" %}
+    {% set variant_styles = "" %}
 
     {% if disabled %}
         {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed;" %}
-        {% set focus_ring = "" %}
     {% elif variant == "primary" %}
         {% set variant_styles = "background-color: var(--color-primary-action); color: var(--color-page-background);" %}
         {% set hover_styles = "hover:opacity-90" %}
@@ -48,14 +54,22 @@ ABOUTME: Supports primary, secondary, outline variants with proper token styling
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% endif %}
 
-    <button
-        type="{{ type }}"
-        {% if id %}id="{{ id }}"{% endif %}
-        {% if disabled %}disabled{% endif %}
-        {% if attrs %}{{ attrs | safe }}{% endif %}
-        style="{{ variant_styles }}"
-        class="{{ base_classes }} {{ hover_styles if not disabled else '' }} {{ focus_ring }} {{ classes }}"
-    >
-        {%- if caller %}{{ caller() }}{% else %}{{ text }}{% endif -%}
-    </button>
+    {% if href and not disabled %}
+        <a
+            href="{{ href }}"
+            {% if id %}id="{{ id }}"{% endif %}
+            {% if attrs %}{{ attrs | safe }}{% endif %}
+            style="{{ variant_styles }} text-decoration: none;"
+            class="{{ base_classes }} {{ hover_styles }} {{ focus_ring }} {{ classes }}"
+        >{%- if caller %}{{ caller() }}{% else %}{{ text }}{% endif -%}</a>
+    {% else %}
+        <button
+            type="{{ type }}"
+            {% if id %}id="{{ id }}"{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if attrs %}{{ attrs | safe }}{% endif %}
+            style="{{ variant_styles }}"
+            class="{{ base_classes }} {{ hover_styles }} {{ focus_ring }} {{ classes }}"
+        >{%- if caller %}{{ caller() }}{% else %}{{ text }}{% endif -%}</button>
+    {% endif %}
 {% endmacro %}

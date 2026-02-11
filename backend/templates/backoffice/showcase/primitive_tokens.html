@@ -1,0 +1,100 @@
+{#
+ABOUTME: Showcase section for primitive design tokens
+ABOUTME: Displays brand primary and neutral color scales
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
+
+{% macro primitive_tokens_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Primitive Tokens") }}
+        {{ showcase_description("Brand primary and neutral color scales.") }}
+
+        {{ showcase_subtitle("Brand Primary Scale") }}
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div id="token-brand-50" style="background-color: var(--color-brand-50); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-50</p>
+                <p class="text-body-sm opacity-90">#FBE7EF</p>
+            </div>
+            <div id="token-brand-100" style="background-color: var(--color-brand-100); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-100</p>
+                <p class="text-body-sm opacity-90">#F4B6CB</p>
+            </div>
+            <div id="token-brand-200" style="background-color: var(--color-brand-200); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-200</p>
+                <p class="text-body-sm opacity-90">#E682A4</p>
+            </div>
+            <div id="token-brand-300" style="background-color: var(--color-brand-300); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-300</p>
+                <p class="text-body-sm opacity-90">#C70039</p>
+            </div>
+            <div id="token-brand-400" style="background-color: var(--color-brand-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-400</p>
+                <p class="text-body-sm opacity-90">#90003F</p>
+            </div>
+            <div id="token-brand-500" style="background-color: var(--color-brand-500); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-500</p>
+                <p class="text-body-sm opacity-90">#820042</p>
+            </div>
+            <div id="token-brand-600" style="background-color: var(--color-brand-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-600</p>
+                <p class="text-body-sm opacity-90">#720046</p>
+            </div>
+            <div id="token-brand-700" style="background-color: var(--color-brand-700); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-700</p>
+                <p class="text-body-sm opacity-90">#0F5389</p>
+            </div>
+            <div id="token-brand-800" style="background-color: var(--color-brand-800); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">brand-800</p>
+                <p class="text-body-sm opacity-90">#46002A</p>
+            </div>
+        </div>
+
+        {{ showcase_subtitle("Core Neutrals Scale") }}
+        <div class="flex flex-wrap gap-4">
+            <div style="background-color: var(--color-neutral-0); color: var(--color-headings); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-0</p>
+                <p class="text-body-sm opacity-90">#FFFFFF</p>
+            </div>
+            <div style="background-color: var(--color-neutral-50); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-50</p>
+                <p class="text-body-sm opacity-90">#F7F7F8</p>
+            </div>
+            <div style="background-color: var(--color-neutral-100); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-100</p>
+                <p class="text-body-sm opacity-90">#EFEFF1</p>
+            </div>
+            <div style="background-color: var(--color-neutral-200); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-200</p>
+                <p class="text-body-sm opacity-90">#E1E2E5</p>
+            </div>
+            <div style="background-color: var(--color-neutral-300); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-300</p>
+                <p class="text-body-sm opacity-90">#C8CAD0</p>
+            </div>
+            <div style="background-color: var(--color-neutral-400); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-400</p>
+                <p class="text-body-sm opacity-90">#9EA2AC</p>
+            </div>
+            <div style="background-color: var(--color-neutral-500); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-500</p>
+                <p class="text-body-sm opacity-90">#6F7482</p>
+            </div>
+            <div style="background-color: var(--color-neutral-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-600</p>
+                <p class="text-body-sm opacity-90">#4E5361</p>
+            </div>
+            <div style="background-color: var(--color-neutral-700); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-700</p>
+                <p class="text-body-sm opacity-90">#2F3442</p>
+            </div>
+            <div style="background-color: var(--color-neutral-800); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-800</p>
+                <p class="text-body-sm opacity-90">#1F2330</p>
+            </div>
+            <div style="background-color: var(--color-neutral-900); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-48">
+                <p class="text-label-lg">neutral-900</p>
+                <p class="text-body-sm opacity-90">#12141C</p>
+            </div>
+        </div>
+    {% endcall %}
+{% endmacro %}

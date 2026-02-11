@@ -1,0 +1,29 @@
+{#
+ABOUTME: Footer component macro for backoffice design system
+ABOUTME: Site-wide footer with support links and version info
+#}
+{% macro footer() %}
+    <footer class="w-full px-8 py-4" style="background-color: var(--color-tables-cards); border-top: 1px solid var(--color-borders-dividers);">
+        <div class="container flex flex-col justify-center items-center px-8 py-4 mx-auto max-w-screen-2xl sm:flex-row">
+            <span class="inline-flex justify-center mt-4 space-x-5 sm:mt-0 sm:justify-start gap-2">
+                <a href="https://github.com/sortition-foundation/opendlp" target="_blank" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
+                    GitHub
+                </a>
+                <a href="https://www.sortitionfoundation.org" target="_blank" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
+                    Sortition Foundation
+                </a>
+                <a href="{{ url_for('auth.user_data_agreement') }}" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
+                    {{ _("User Data Agreement") }}
+                </a>
+                <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Version") }} {{ opendlp_version }}
+                </span>
+            </span>
+        </div>
+        <div class="container flex flex-col justify-center items-center py-4 mx-auto max-w-screen-2xl sm:flex-row">
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                {{ _("OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management.") }}
+            </p>
+        </div>
+    </footer>
+{% endmacro %}

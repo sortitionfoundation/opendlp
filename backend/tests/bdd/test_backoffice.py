@@ -1,7 +1,6 @@
 """ABOUTME: BDD tests for backoffice UI (Pines UI + Tailwind CSS)
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
-import os
 import re
 
 import pytest
@@ -12,10 +11,6 @@ from .config import ADMIN_PASSWORD, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
-
-# Alpine.js tests are skipped in CI due to CSP nonce timing issues
-# TODO: Fix CSP nonce propagation in test server for Alpine.js
-SKIP_ALPINE_IN_CI = os.getenv("CI", "false").lower() == "true"
 
 
 # Override context fixture for backoffice tests - no Celery needed for static pages
@@ -109,8 +104,6 @@ def brand_300_token_has_red_background(page: Page):
 @then("the Alpine message should be hidden")
 def alpine_message_hidden(page: Page):
     """Verify the Alpine.js toggle message is hidden."""
-    if SKIP_ALPINE_IN_CI:
-        pytest.skip("Alpine.js tests skipped in CI due to CSP nonce timing issues")
     message = page.locator("#alpine-message")
     # Wait for Alpine.js to initialize and hide the element
     expect(message).to_be_hidden(timeout=10000)
@@ -228,6 +221,62 @@ def card_with_actions_has_buttons(page: Page):
     card = page.locator("#card-actions")
     expect(card.locator("button", has_text="Save")).to_be_visible()
     expect(card.locator("button", has_text="Cancel")).to_be_visible()
+
+
+# Navigation Component Tests
+
+
+@then("I should see the navigation component")
+def see_navigation_component(page: Page):
+    """Verify the navigation component section is visible."""
+    # The navigation is inside a showcase section with a wrapper div
+    navigation = page.locator("section:has-text('Navigation Component')")
+    expect(navigation).to_be_visible()
+
+
+@then("the navigation should contain the logo")
+def navigation_has_logo(page: Page):
+    """Verify the navigation contains the Sortition logo SVG."""
+    # The logo is an SVG inside the navigation demo section
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    logo = nav_section.locator("svg").first
+    expect(logo).to_be_visible()
+
+
+@then("the navigation should contain nav links")
+def navigation_has_nav_links(page: Page):
+    """Verify the navigation contains nav links (Dashboard, Assemblies, etc.)."""
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    # Check for at least one nav link from the showcase example
+    expect(nav_section.locator("a", has_text="Dashboard")).to_be_visible()
+    expect(nav_section.locator("a", has_text="Assemblies")).to_be_visible()
+
+
+@then("the navigation should contain the CTA button")
+def navigation_has_cta_button(page: Page):
+    """Verify the navigation contains the CTA button (Sign out)."""
+    nav_section = page.locator("section:has-text('Navigation Component')")
+    cta = nav_section.locator("a", has_text="Sign out")
+    expect(cta).to_be_visible()
+
+
+# Button Link Variant Tests
+
+
+@then("I should see the link button")
+def see_link_button(page: Page):
+    """Verify the link button is visible."""
+    button = page.locator("#btn-link")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Link Button")
+
+
+@then("the link button should be an anchor tag")
+def link_button_is_anchor(page: Page):
+    """Verify the link button renders as an <a> tag, not <button>."""
+    link_button = page.locator("#btn-link")
+    tag_name = link_button.evaluate("el => el.tagName.toLowerCase()")
+    assert tag_name == "a", f"Expected <a> tag for link button, got <{tag_name}>"
 
 
 # Typography Tests
@@ -363,3 +412,51 @@ def see_assembly_card_with_title(page: Page, title: str):
     """Verify an assembly card with the given title is visible."""
     card = page.locator(".assembly-card", has_text=title)
     expect(card).to_be_visible()
+
+
+# Footer Component Tests
+
+
+@then("I should see the footer")
+def see_footer(page: Page):
+    """Verify the footer is visible."""
+    footer = page.locator("footer")
+    expect(footer).to_be_visible()
+
+
+@then("the footer should contain GitHub link")
+def footer_has_github_link(page: Page):
+    """Verify the footer contains a GitHub link."""
+    footer = page.locator("footer")
+    github_link = footer.locator("a", has_text="GitHub")
+    expect(github_link).to_be_visible()
+    expect(github_link).to_have_attribute("href", "https://github.com/sortition-foundation/opendlp")
+    expect(github_link).to_have_attribute("target", "_blank")
+
+
+@then("the footer should contain Sortition Foundation link")
+def footer_has_sortition_link(page: Page):
+    """Verify the footer contains a Sortition Foundation link."""
+    footer = page.locator("footer")
+    sf_link = footer.locator("a", has_text="Sortition Foundation")
+    expect(sf_link).to_be_visible()
+    expect(sf_link).to_have_attribute("href", "https://www.sortitionfoundation.org")
+    expect(sf_link).to_have_attribute("target", "_blank")
+
+
+@then("the footer should contain User Data Agreement link")
+def footer_has_user_data_agreement_link(page: Page):
+    """Verify the footer contains a User Data Agreement link."""
+    footer = page.locator("footer")
+    uda_link = footer.locator("a", has_text="User Data Agreement")
+    expect(uda_link).to_be_visible()
+    # The href should contain the user_data_agreement route
+    expect(uda_link).to_have_attribute("href", re.compile(r".*/auth/user-data-agreement"))
+
+
+@then("the footer should display the version")
+def footer_has_version(page: Page):
+    """Verify the footer displays the OpenDLP version."""
+    footer = page.locator("footer")
+    # Version text should be visible (format: "Version YYYY-MM-DD hash" or "Version UNKNOWN")
+    expect(footer).to_contain_text("Version")

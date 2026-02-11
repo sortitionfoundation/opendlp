@@ -1,0 +1,50 @@
+{#
+ABOUTME: Showcase section for Alpine.js interactivity
+ABOUTME: Demonstrates toggle pattern with button component
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/button.html" import button %}
+
+{% macro interactivity_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Alpine.js Interactivity") }}
+        {{ showcase_description("Interactive components using Alpine.js with CSP-compatible build.") }}
+
+        <div x-data="{ open: false }" class="max-w-md mt-4">
+            {% call button(variant="primary", id="alpine-toggle", attrs='@click="open = !open"') %}
+                <span x-text="open ? 'Hide Message' : 'Show Message'">Show Message</span>
+            {% endcall %}
+
+            <div
+                id="alpine-message"
+                x-show="open"
+                x-transition
+                style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
+                class="mt-4 p-4 rounded-lg"
+            >
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    Alpine.js is working! This message toggles on button click.
+                </p>
+            </div>
+        </div>
+
+        {{ showcase_code_example('{# Alpine.js toggle pattern with Button macro #}
+        {% from "backoffice/components/button.html" import button %}
+
+        <div x-data="{ open: false }">
+            {% call button(variant="primary", id="my-btn", attrs=\'@click="open = !open"\') %}
+                <span x-text="open ? \'Hide\' : \'Show\'">Show</span>
+            {% endcall %}
+
+            <div x-show="open" x-transition>
+                Content to toggle
+            </div>
+        </div>') }}
+
+        {{ showcase_tokens([
+        "--color-tables-cards",
+        "--color-borders-dividers",
+        "--color-body-text"
+        ]) }}
+    {% endcall %}
+{% endmacro %}
