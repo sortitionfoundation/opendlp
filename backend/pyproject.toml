@@ -75,6 +75,8 @@ exclude-newer = "1 week"
 sortition-algorithms = "0 days"
 # for security update cryptography 46.0.5, released 2026-02-10 - so can remove after 2026-02-17
 cryptography = "0 days"
+# for security update pillow 12.1.1 released 2026-02-11 - so can remove after 2026-02-18
+pillow = "0 days"
 
 [tool.mypy]
 files = ["src"]
