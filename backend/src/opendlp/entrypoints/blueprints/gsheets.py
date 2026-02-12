@@ -42,7 +42,7 @@ gsheets_bp = Blueprint("gsheets", __name__)
 
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet", methods=["GET", "POST"])
 @login_required
-def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Create or edit Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.bootstrap()
@@ -98,6 +98,17 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         columns_to_keep_string=form.columns_to_keep_string.data,
                     )
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
+
+                # Soft validation warning - check if columns_to_keep is empty
+                if not form.columns_to_keep_string.data or not form.columns_to_keep_string.data.strip():
+                    flash(
+                        _(
+                            "Warning: No columns to keep specified. "
+                            "This means the output will only include participant data columns "
+                            "used for the targets and address checking. Is this intentional?"
+                        ),
+                        "warning",
+                    )
 
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except InsufficientPermissions as e:
