@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 import structlog
 from celery.result import AsyncResult
 from sortition_algorithms import RunReport
+from sortition_algorithms.errors import SortitionBaseError
 from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
 from sqlalchemy.orm.attributes import flag_modified
@@ -71,10 +72,16 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     # Submit Celery task
     # TODO: should this be behind another adapter? That comes from bootstrap?
     # would be handy for unit tests
+    try:
+        data_source = gsheet.to_data_source(for_replacements=False)
+        settings_obj = gsheet.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     result = tasks.load_gsheet.delay(
         task_id=task_id,
-        data_source=gsheet.to_data_source(for_replacements=False),
-        settings=gsheet.to_settings(),
+        data_source=data_source,
+        settings=settings_obj,
     )
     record.celery_task_id = str(result.id)
     uow.selection_run_records.add(record)
@@ -124,11 +131,17 @@ def start_gsheet_select_task(
     # Submit Celery task
     # TODO: should this be behind another adapter? That comes from bootstrap?
     # would be handy for unit tests
+    try:
+        data_source = gsheet.to_data_source(for_replacements=False)
+        settings_obj = gsheet.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     result = tasks.run_select.delay(
         task_id=task_id,
-        data_source=gsheet.to_data_source(for_replacements=False),
+        data_source=data_source,
         number_people_wanted=assembly.number_to_select,
-        settings=gsheet.to_settings(),
+        settings=settings_obj,
         test_selection=test_selection,
         gen_rem_tab=gsheet.generate_remaining_tab,
     )
@@ -183,10 +196,16 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
     uow.commit()
 
     # Submit Celery task
+    try:
+        data_source = gsheet.to_data_source(for_replacements=True)
+        settings_obj = gsheet.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     result = tasks.load_gsheet.delay(
         task_id=task_id,
-        data_source=gsheet.to_data_source(for_replacements=True),
-        settings=gsheet.to_settings(),
+        data_source=data_source,
+        settings=settings_obj,
     )
     record.celery_task_id = str(result.id)
     uow.selection_run_records.add(record)
@@ -242,11 +261,17 @@ def start_gsheet_replace_task(
     uow.commit()
 
     # Submit Celery task
+    try:
+        data_source = gsheet.to_data_source(for_replacements=True)
+        settings_obj = gsheet.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     result = tasks.run_select.delay(
         task_id=task_id,
-        data_source=gsheet.to_data_source(for_replacements=True),
+        data_source=data_source,
         number_people_wanted=number_to_select,
-        settings=gsheet.to_settings(),
+        settings=settings_obj,
         test_selection=False,
         gen_rem_tab=gsheet.generate_remaining_tab,
         for_replacements=True,
@@ -307,9 +332,14 @@ def start_gsheet_manage_tabs_task(
     uow.commit()
 
     # Submit Celery task
+    try:
+        data_source = gsheet.to_data_source(for_replacements=False)
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     result = tasks.manage_old_tabs.delay(
         task_id=task_id,
-        data_source=gsheet.to_data_source(for_replacements=False),
+        data_source=data_source,
         dry_run=dry_run,
     )
     record.celery_task_id = str(result.id)
