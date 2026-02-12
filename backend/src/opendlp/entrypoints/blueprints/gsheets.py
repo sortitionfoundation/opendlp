@@ -357,6 +357,11 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
 
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid Selection attempted with gsheet load for assembly {assembly_id}: {e}")
+        flash(_("Could not start load spreadsheet task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
@@ -617,6 +622,13 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
         return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(
+            f"Invalid Selection attempted with gsheet replace load for assembly {assembly_id}: {e}"
+        )
+        flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")
