@@ -54,6 +54,9 @@ def _(page: Page):
     """I can configure the options for selection in "manual gsheet setup"."""
     generate_remaining = page.get_by_label("Generate remaining tab")
     expect(generate_remaining).to_be_visible()
+    check_same_address = page.get_by_label("Check Same Address")
+    expect(check_same_address).to_be_visible()
+    check_same_address.set_checked(False)
 
 
 @then("I can specify the categories and targets")
