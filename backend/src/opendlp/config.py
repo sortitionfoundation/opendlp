@@ -315,10 +315,10 @@ class FlaskProductionConfig(FlaskConfig):
         self.DEBUG = False
         # cookie settings
         self.SESSION_COOKIE_SECURE = True
-        self.SESSION_COOKIE_SAMESITE = "Strict"
+        self.SESSION_COOKIE_SAMESITE = "Lax"  # Lax required for OAuth flows (allows cookies on top-level navigation)
         # remember cookie settings - for flask-login "remember me" functionality
         self.REMEMBER_COOKIE_SECURE = True
-        self.REMEMBER_COOKIE_SAMESITE = "Strict"
+        self.REMEMBER_COOKIE_SAMESITE = "Lax"  # Lax required for OAuth flows
         self.REMEMBER_COOKIE_DURATION = timedelta(days=7)
         # TODO: consider this for all production?
         # self.LOG_TO_STDOUT = True
