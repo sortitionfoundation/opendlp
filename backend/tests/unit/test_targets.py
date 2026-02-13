@@ -37,7 +37,7 @@ class TestTargetValue:
 
     def test_validate_percentage_target_type(self):
         with pytest.raises(TypeError, match="percentage_target must be a number"):
-            TargetValue(value="Male", min=10, max=15, percentage_target=50)
+            TargetValue(value="Male", min=10, max=15, percentage_target="50")  # type: ignore[arg-type]
 
     def test_validate_percentage_target_range(self):
         with pytest.raises(ValueError, match="percentage_target must be between 0 and 100"):
