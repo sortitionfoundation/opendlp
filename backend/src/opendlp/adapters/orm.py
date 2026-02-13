@@ -19,6 +19,8 @@ from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
     GlobalRole,
+    RespondentSourceType,
+    RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
 )
@@ -159,6 +161,52 @@ class RunReportJSON(TypeDecorator):
                 return RunReport()
 
 
+class TargetValueListJSON(TypeDecorator):
+    """Custom type for storing list of TargetValue dataclasses as JSON"""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
+        """Convert list of TargetValue to JSON for storage"""
+        if value is None:
+            return []
+
+        if isinstance(value, list):
+            from opendlp.domain.targets import TargetValue
+
+            dict_list = []
+            for v in value:
+                if isinstance(v, TargetValue):
+                    d = vars(v).copy()
+                    # Convert UUID to string
+                    if isinstance(d.get("value_id"), uuid.UUID):
+                        d["value_id"] = str(d["value_id"])
+                    dict_list.append(d)
+                else:
+                    dict_list.append(v)
+            return dict_list
+        return value
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> list[Any]:
+        """Convert JSON back to list of TargetValue dataclasses"""
+        if not value:
+            return []
+
+        from opendlp.domain.targets import TargetValue
+
+        result = []
+        for item in value:
+            if isinstance(item, dict):
+                # Convert UUID string back to UUID
+                if "value_id" in item and isinstance(item["value_id"], str):
+                    item["value_id"] = uuid.UUID(item["value_id"])
+                result.append(TargetValue(**item))
+            else:
+                result.append(item)
+        return result
+
+
 # Create a registry for imperative mapping
 mapper_registry = registry()
 metadata = mapper_registry.metadata
@@ -277,6 +325,30 @@ assembly_gsheets = Table(
     Column("selection_algorithm", String(50), nullable=False, default="maximin"),
 )
 
+# Assembly CSV table
+assembly_csv = Table(
+    "assembly_csv",
+    metadata,
+    Column("assembly_csv_id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        CrossDatabaseUUID(),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        unique=True,  # One-to-one relationship
+    ),
+    Column("last_import_filename", String(500), nullable=False, default=""),
+    Column("last_import_timestamp", TZAwareDatetime(), nullable=True),
+    Column("id_column", String(100), nullable=False, default="external_id"),
+    Column("check_same_address", Boolean, nullable=False, default=True),
+    Column("check_same_address_cols", JSON, nullable=False, default=list),
+    Column("columns_to_keep", JSON, nullable=False, default=list),
+    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
 # Selection run records table
 selection_run_records = Table(
     "selection_run_records",
@@ -331,4 +403,64 @@ two_factor_audit_log = Table(
     Column("performed_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
     Column("timestamp", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("metadata", JSON, nullable=True),
+)
+
+# Target categories table
+target_categories = Table(
+    "target_categories",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        CrossDatabaseUUID(),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("name", String(255), nullable=False),
+    Column("description", Text, nullable=False, default=""),
+    Column("sort_order", Integer, nullable=False, default=0),
+    Column("values", TargetValueListJSON, nullable=False, default=list),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Index("ix_target_categories_assembly_sort", "assembly_id", "sort_order"),
+    # Ensure category names are unique per assembly
+    Index("ix_target_categories_assembly_name", "assembly_id", "name", unique=True),
+)
+
+# Respondents table
+respondents = Table(
+    "respondents",
+    metadata,
+    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        CrossDatabaseUUID(),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("external_id", String(255), nullable=False),
+    Column("selection_status", EnumAsString(RespondentStatus, 50), nullable=False, index=True),
+    Column(
+        "selection_run_id",
+        CrossDatabaseUUID(),
+        ForeignKey("selection_run_records.task_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    ),
+    Column("consent", Boolean, nullable=True),
+    Column("stay_on_db", Boolean, nullable=True),
+    Column("eligible", Boolean, nullable=True),
+    Column("can_attend", Boolean, nullable=True),
+    Column("email", String(255), nullable=False, default="", index=True),
+    Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
+    Column("source_reference", String(500), nullable=False, default=""),
+    Column("attributes", JSON, nullable=False, default=dict),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    # Unique constraint: external_id per assembly
+    Index("ix_respondents_assembly_external", "assembly_id", "external_id", unique=True),
+    # Composite index for selection queries
+    Index("ix_respondents_selection", "assembly_id", "selection_status", "eligible", "can_attend"),
 )

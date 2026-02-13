@@ -14,7 +14,9 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRespondentRepository,
     SqlAlchemySelectionRunRecordRepository,
+    SqlAlchemyTargetCategoryRepository,
     SqlAlchemyTotpVerificationAttemptRepository,
     SqlAlchemyTwoFactorAuditLogRepository,
     SqlAlchemyUserAssemblyRoleRepository,
@@ -27,7 +29,9 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RespondentRepository,
     SelectionRunRecordRepository,
+    TargetCategoryRepository,
     TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
@@ -51,6 +55,8 @@ class AbstractUnitOfWork(abc.ABC):
     user_backup_codes: UserBackupCodeRepository
     two_factor_audit_logs: TwoFactorAuditLogRepository
     totp_attempts: TotpVerificationAttemptRepository
+    target_categories: TargetCategoryRepository
+    respondents: RespondentRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -107,6 +113,8 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.user_backup_codes = SqlAlchemyUserBackupCodeRepository(self.session)
         self.two_factor_audit_logs = SqlAlchemyTwoFactorAuditLogRepository(self.session)
         self.totp_attempts = SqlAlchemyTotpVerificationAttemptRepository(self.session)
+        self.target_categories = SqlAlchemyTargetCategoryRepository(self.session)
+        self.respondents = SqlAlchemyRespondentRepository(self.session)
 
         return self
 

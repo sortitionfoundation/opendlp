@@ -14,18 +14,22 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, SelectionRunStatus
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus, SelectionRunStatus
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RespondentRepository,
     SelectionRunRecordRepository,
+    TargetCategoryRepository,
     TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
@@ -768,3 +772,100 @@ class SqlAlchemyTotpVerificationAttemptRepository(SqlAlchemyRepository, TotpVeri
             .order_by(orm.totp_verification_attempts.c.attempted_at.desc())
             .all()
         )
+
+
+class SqlAlchemyTargetCategoryRepository(SqlAlchemyRepository, TargetCategoryRepository):
+    """SQLAlchemy implementation of TargetCategoryRepository."""
+
+    def add(self, item: TargetCategory) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> TargetCategory | None:
+        return self.session.query(TargetCategory).filter(orm.target_categories.c.id == item_id).first()
+
+    def all(self) -> Iterable[TargetCategory]:
+        return self.session.query(TargetCategory).order_by(orm.target_categories.c.sort_order).all()
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
+        return (
+            self.session.query(TargetCategory)
+            .filter(orm.target_categories.c.assembly_id == assembly_id)
+            .order_by(orm.target_categories.c.sort_order)
+            .all()
+        )
+
+    def delete(self, item: TargetCategory) -> None:
+        self.session.delete(item)
+
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        categories = self.get_by_assembly_id(assembly_id)
+        count = len(categories)
+        for category in categories:
+            self.session.delete(category)
+        return count
+
+
+class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository):
+    """SQLAlchemy implementation of RespondentRepository."""
+
+    def add(self, item: Respondent) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> Respondent | None:
+        return self.session.query(Respondent).filter(orm.respondents.c.id == item_id).first()
+
+    def all(self) -> Iterable[Respondent]:
+        return self.session.query(Respondent).all()
+
+    def get_by_assembly_id(
+        self,
+        assembly_id: uuid.UUID,
+        status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+    ) -> list[Respondent]:
+        query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
+
+        if status:
+            query = query.filter(orm.respondents.c.selection_status == status)
+
+        if eligible_only:
+            query = query.filter(
+                and_(
+                    orm.respondents.c.eligible == True,  # noqa: E712
+                    orm.respondents.c.can_attend == True,  # noqa: E712
+                )
+            )
+
+        return query.order_by(orm.respondents.c.created_at.desc()).all()
+
+    def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
+        return (
+            self.session.query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.external_id == external_id,
+                )
+            )
+            .first()
+        )
+
+    def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
+        return (
+            self.session.query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.selection_status == RespondentStatus.POOL,
+                    orm.respondents.c.eligible == True,  # noqa: E712
+                    orm.respondents.c.can_attend == True,  # noqa: E712
+                )
+            )
+            .count()
+        )
+
+    def delete(self, item: Respondent) -> None:
+        self.session.delete(item)
+
+    def bulk_add(self, items: list[Respondent]) -> None:
+        self.session.bulk_save_objects(items)
