@@ -102,6 +102,26 @@ class SelectionTaskType(Enum):
     DELETE_OLD_TABS = "delete_old_tabs"
 
 
+class RespondentStatus(Enum):
+    """Status of a respondent in the selection process"""
+
+    POOL = "POOL"
+    SELECTED = "SELECTED"
+    CONFIRMED = "CONFIRMED"
+    WITHDRAWN = "WITHDRAWN"
+    PARTICIPATED = "PARTICIPATED"
+    EXCLUDED = "EXCLUDED"
+
+
+class RespondentSourceType(Enum):
+    """Source of respondent data"""
+
+    REGISTRATION_FORM = "REGISTRATION_FORM"
+    CSV_IMPORT = "CSV_IMPORT"
+    NATIONBUILDER_SYNC = "NATIONBUILDER_SYNC"
+    MANUAL_ENTRY = "MANUAL_ENTRY"
+
+
 def validate_email(email: str) -> None:
     """Basic email validation."""
     # we use the well-tested and maintained Django EmailValidator

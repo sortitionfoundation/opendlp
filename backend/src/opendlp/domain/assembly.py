@@ -4,7 +4,7 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 from sortition_algorithms import adapters, settings
 from sortition_algorithms.utils import RunReport
@@ -13,6 +13,10 @@ from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
+
+if TYPE_CHECKING:
+    from opendlp.domain.respondents import Respondent
+    from opendlp.domain.targets import TargetCategory
 
 
 class Assembly:
@@ -27,6 +31,8 @@ class Assembly:
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
+        target_categories: list["TargetCategory"] | None = None,
+        respondents: list["Respondent"] | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
@@ -41,6 +47,8 @@ class Assembly:
         self.number_to_select = number_to_select
         self.status = status
         self.gsheet = gsheet
+        self.target_categories = target_categories or []
+        self.respondents = respondents or []
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
@@ -105,6 +113,8 @@ class Assembly:
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
+        detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
+        detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]
         return detached_assembly
 
 
