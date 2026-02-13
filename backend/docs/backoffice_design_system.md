@@ -6,7 +6,7 @@ The backoffice uses a separate design system (Pines UI + Tailwind CSS) from the 
 
 - **Routes:** `src/opendlp/entrypoints/backoffice/routes.py`
 - **Templates:** `templates/backoffice/`
-- **Components:** `templates/backoffice/components/` (Button, Card macros)
+- **Components:** `templates/backoffice/components/` (Button, Card, Input, Navigation, Breadcrumbs, Footer macros)
 - **Design Tokens:** `static/backoffice/tokens/` (primitive.css, semantic.css)
 - **Tailwind CSS:** `static/backoffice/src/main.css` → `static/backoffice/dist/main.css`
 
@@ -48,6 +48,13 @@ Visit `/backoffice/showcase` to see all available components with usage examples
     {{ button("Save", variant="primary") }}
   {% endcall %}
 {% endcall %}
+
+{# Import and use Input/Textarea #}
+{% from "backoffice/components/input.html" import input, textarea %}
+{{ input("email", label="Email Address", type="email", placeholder="you@example.com") }}
+{{ input("title", label="Title", required=true, hint="A descriptive title for the assembly.") }}
+{{ input("title", label="Title", value=form.title, error=errors.title) }}
+{{ textarea("question", label="Assembly Question", rows=6, placeholder="What question will the assembly address?") }}
 ```
 
 ### Design Tokens
