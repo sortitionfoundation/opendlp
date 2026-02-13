@@ -325,6 +325,30 @@ assembly_gsheets = Table(
     Column("selection_algorithm", String(50), nullable=False, default="maximin"),
 )
 
+# Assembly CSV table
+assembly_csv = Table(
+    "assembly_csv",
+    metadata,
+    Column("assembly_csv_id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        CrossDatabaseUUID(),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        unique=True,  # One-to-one relationship
+    ),
+    Column("last_import_filename", String(500), nullable=False, default=""),
+    Column("last_import_timestamp", TZAwareDatetime(), nullable=True),
+    Column("id_column", String(100), nullable=False, default="external_id"),
+    Column("check_same_address", Boolean, nullable=False, default=True),
+    Column("check_same_address_cols", JSON, nullable=False, default=list),
+    Column("columns_to_keep", JSON, nullable=False, default=list),
+    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
 # Selection run records table
 selection_run_records = Table(
     "selection_run_records",

@@ -2,7 +2,7 @@
 ABOUTME: Provides functions for assembly creation, updates, permissions, and lifecycle management"""
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from io import StringIO
 from typing import Any, cast
 
@@ -11,6 +11,7 @@ from sortition_algorithms.features import FeatureCollection, read_in_features
 
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import VALID_TEAMS, Assembly, AssemblyGSheet, Teams
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyStatus
 
@@ -598,3 +599,71 @@ def get_feature_collection_for_assembly(
         features, report = select_data.load_features(assembly.number_to_select)
 
         return features, report.as_text()
+
+
+def get_or_create_csv_config(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> AssemblyCSV:
+    """Get or create CSV configuration for an assembly."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view CSV configuration",
+                required_role="assembly role or global privileges",
+            )
+
+        # Create default config if doesn't exist
+        if assembly.csv is None:
+            assembly.csv = AssemblyCSV(assembly_id=assembly_id)
+            uow.commit()
+
+        csv_config = cast(AssemblyCSV, assembly.csv)
+        return csv_config.create_detached_copy()
+
+
+def update_csv_config(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    **settings: Any,
+) -> AssemblyCSV:
+    """Update CSV configuration for an assembly."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="update CSV configuration",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        # Create if doesn't exist
+        if assembly.csv is None:
+            assembly.csv = AssemblyCSV(assembly_id=assembly_id)
+
+        # Update settings
+        csv_config = cast(AssemblyCSV, assembly.csv)
+        for key, value in settings.items():
+            if hasattr(csv_config, key):
+                setattr(csv_config, key, value)
+
+        csv_config.updated_at = datetime.now(UTC)
+        uow.commit()
+
+        return csv_config.create_detached_copy()

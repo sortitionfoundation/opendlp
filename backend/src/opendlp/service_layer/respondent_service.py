@@ -6,6 +6,7 @@ import uuid
 from io import StringIO
 from typing import Any
 
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
@@ -60,17 +61,18 @@ def create_respondent(
         return respondent.create_detached_copy()
 
 
-def import_respondents_from_csv(
+def import_respondents_from_csv(  # noqa: C901
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     csv_content: str,
     replace_existing: bool = False,
+    id_column: str | None = None,
 ) -> tuple[list[Respondent], list[str]]:
     """
     Import respondents from CSV.
 
-    CSV format: external_id column is required, all other columns become attributes.
+    CSV format: id_column is required (default from assembly.csv.id_column), all other columns become attributes.
     Returns: (list of created respondents, list of error messages)
     """
     with uow:
@@ -88,12 +90,20 @@ def import_respondents_from_csv(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
+        # Get id_column from assembly CSV config if not provided
+        if id_column is None:
+            if assembly.csv is None:
+                # Auto-create default CSV config if needed
+                assembly.csv = AssemblyCSV(assembly_id=assembly_id)
+                uow.assemblies.add(assembly)  # Ensure it's tracked
+            id_column = assembly.csv.id_column
+
         # Parse CSV
         csv_file = StringIO(csv_content)
         reader = csv.DictReader(csv_file)
 
-        if not reader.fieldnames or "external_id" not in reader.fieldnames:
-            raise InvalidSelection("CSV must have 'external_id' column")
+        if not reader.fieldnames or id_column not in reader.fieldnames:
+            raise InvalidSelection(f"CSV must have '{id_column}' column")
 
         errors = []
 
@@ -106,19 +116,19 @@ def import_respondents_from_csv(
         # Create respondents
         respondents = []
         for row in reader:
-            external_id = row.get("external_id", "").strip()
+            external_id = row.get(id_column, "").strip()
             if not external_id:
-                errors.append("Skipped row with empty external_id")
+                errors.append(f"Skipped row with empty {id_column}")
                 continue
 
             # Check for duplicate
             existing = uow.respondents.get_by_external_id(assembly_id, external_id)
             if existing:
-                errors.append(f"Skipped duplicate external_id: {external_id}")
+                errors.append(f"Skipped duplicate {id_column}: {external_id}")
                 continue
 
-            # All columns except external_id become attributes
-            attributes = {k: v for k, v in row.items() if k != "external_id"}
+            # All columns except id_column become attributes
+            attributes = {k: v for k, v in row.items() if k != id_column}
 
             # Extract boolean flags if present (leave as None if not in CSV)
             consent_str = attributes.pop("consent", None)

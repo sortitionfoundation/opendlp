@@ -9,6 +9,7 @@ from opendlp.adapters import orm
 from opendlp.config import bool_environ_get, get_db_uri
 from opendlp.domain import (
     assembly,
+    assembly_csv,
     email_confirmation,
     password_reset,
     respondents,
@@ -96,6 +97,12 @@ def start_mappers() -> None:
                     cascade="all, delete-orphan",
                     uselist=False,  # Makes this a one-to-one relationship
                 ),
+                "csv": relationship(
+                    assembly_csv.AssemblyCSV,
+                    back_populates="assembly",
+                    cascade="all, delete-orphan",
+                    uselist=False,  # Makes this a one-to-one relationship
+                ),
                 "target_categories": relationship(
                     targets.TargetCategory,
                     cascade="all, delete-orphan",
@@ -126,6 +133,18 @@ def start_mappers() -> None:
                 "assembly": relationship(
                     assembly.Assembly,
                     back_populates="gsheet",
+                ),
+            },
+        )
+
+        # Map AssemblyCSV domain object to assembly_csv table
+        orm.mapper_registry.map_imperatively(
+            assembly_csv.AssemblyCSV,
+            orm.assembly_csv,
+            properties={
+                "assembly": relationship(
+                    assembly.Assembly,
+                    back_populates="csv",
                 ),
             },
         )

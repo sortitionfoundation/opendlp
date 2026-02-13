@@ -15,6 +15,7 @@ from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
 
 if TYPE_CHECKING:
+    from opendlp.domain.assembly_csv import AssemblyCSV
     from opendlp.domain.respondents import Respondent
     from opendlp.domain.targets import TargetCategory
 
@@ -31,6 +32,7 @@ class Assembly:
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
+        csv: "AssemblyCSV | None" = None,
         target_categories: list["TargetCategory"] | None = None,
         respondents: list["Respondent"] | None = None,
         created_at: datetime | None = None,
@@ -47,6 +49,7 @@ class Assembly:
         self.number_to_select = number_to_select
         self.status = status
         self.gsheet = gsheet
+        self.csv = csv
         self.target_categories = target_categories or []
         self.respondents = respondents or []
         self.created_at = created_at or datetime.now(UTC)
@@ -109,7 +112,8 @@ class Assembly:
             number_to_select=self.number_to_select,
             assembly_id=self.id,
             status=self.status,
-            gsheet=self.gsheet,
+            gsheet=self.gsheet.create_detached_copy() if self.gsheet else None,
+            csv=self.csv.create_detached_copy() if self.csv else None,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
