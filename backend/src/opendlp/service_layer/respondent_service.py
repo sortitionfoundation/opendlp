@@ -115,17 +115,24 @@ def import_respondents_from_csv(  # noqa: C901
 
         # Create respondents
         respondents = []
+        seen_ids = set()  # Track IDs within this CSV to catch duplicates
         for row in reader:
             external_id = row.get(id_column, "").strip()
             if not external_id:
                 errors.append(f"Skipped row with empty {id_column}")
                 continue
 
-            # Check for duplicate
+            # Check for duplicate in database
             existing = uow.respondents.get_by_external_id(assembly_id, external_id)
             if existing:
                 errors.append(f"Skipped duplicate {id_column}: {external_id}")
                 continue
+
+            # Check for duplicate within this CSV
+            if external_id in seen_ids:
+                errors.append(f"Skipped duplicate {id_column}: {external_id}")
+                continue
+            seen_ids.add(external_id)
 
             # All columns except id_column become attributes
             attributes = {k: v for k, v in row.items() if k != id_column}

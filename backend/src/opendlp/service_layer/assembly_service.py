@@ -1,6 +1,7 @@
 """ABOUTME: Assembly management service layer for handling assembly operations
 ABOUTME: Provides functions for assembly creation, updates, permissions, and lifecycle management"""
 
+import csv as csv_module
 import uuid
 from datetime import UTC, date, datetime
 from io import StringIO
@@ -528,8 +529,16 @@ def import_targets_from_csv(
         # Parse and validate CSV using sortition-algorithms
         # Note: read_in_features() already calls set_default_max_flex() and check_min_max()
         csv_file = StringIO(csv_content)
+        reader = csv_module.DictReader(csv_file)
+
+        if not reader.fieldnames:
+            raise InvalidSelection("CSV file is empty or malformed")
+
+        headers = list(reader.fieldnames)
+        body = list(reader)
+
         try:
-            feature_collection, _, __ = read_in_features(csv_file, assembly.number_to_select)
+            feature_collection, _, __ = read_in_features(headers, body, assembly.number_to_select)
         except Exception as e:
             raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
 

@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 from sortition_algorithms.adapters import AbstractDataSource
 from sortition_algorithms.errors import ParseTableMultiError, SelectionMultilineError
+from sortition_algorithms.features import MAX_FLEX_UNSET
 from sortition_algorithms.utils import RunReport
 
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -32,24 +33,37 @@ class OpenDLPDataAdapter(AbstractDataSource):
         self, report: RunReport
     ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
         """Load target categories from database as feature data."""
-        report.add_message("loading_features_from_opendlp_db")
+        # Note: We don't add a message here as custom codes aren't supported
 
         categories = self.uow.target_categories.get_by_assembly_id(self.assembly_id)
 
         # Convert to CSV-like format expected by sortition-algorithms
-        headers = ["feature", "value", "min", "max", "min_flex", "max_flex"]
-        rows = []
+        # Check if any category uses flex values
+        has_flex = any(
+            value.min_flex != 0 or value.max_flex != MAX_FLEX_UNSET
+            for category in categories
+            for value in category.values
+        )
 
+        if has_flex:
+            headers = ["feature", "value", "min", "max", "min_flex", "max_flex"]
+        else:
+            headers = ["feature", "value", "min", "max"]
+
+        rows = []
         for category in categories:
             for value in category.values:
-                rows.append({
+                row = {
                     "feature": category.name,
                     "value": value.value,
                     "min": str(value.min),
                     "max": str(value.max),
-                    "min_flex": str(value.min_flex),
-                    "max_flex": str(value.max_flex),
-                })
+                }
+                if has_flex:
+                    row["min_flex"] = str(value.min_flex)
+                    # If max_flex is unset, use empty string to let library calculate default
+                    row["max_flex"] = str(value.max_flex) if value.max_flex != MAX_FLEX_UNSET else ""
+                rows.append(row)
 
         yield headers, rows
 
@@ -58,7 +72,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
         self, report: RunReport
     ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
         """Load respondents from database as people data."""
-        report.add_message("loading_people_from_opendlp_db")
+        # Note: We don't add a message here as custom codes aren't supported
 
         respondents = self.uow.respondents.get_by_assembly_id(
             self.assembly_id,
@@ -87,16 +101,18 @@ class OpenDLPDataAdapter(AbstractDataSource):
         self, report: RunReport
     ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
         """Load already selected respondents - stub for now."""
-        report.add_message("no_already_selected_data")
+        # Note: We don't add a message here as custom codes aren't supported
         yield [], []
 
     def write_selected(self, selected: list[list[str]], report: RunReport) -> None:
         """Write selected people - stub for now (will update respondent status in future)."""
-        report.add_message("opendlp_write_selected_stub")
+        # Note: We don't add a message here as custom codes aren't supported
+        pass
 
     def write_remaining(self, remaining: list[list[str]], report: RunReport) -> None:
         """Write remaining people - stub for now."""
-        report.add_message("opendlp_write_remaining_stub")
+        # Note: We don't add a message here as custom codes aren't supported
+        pass
 
     def highlight_dupes(self, dupes: list[int]) -> None:
         """Highlight duplicates - not applicable for database."""
