@@ -27,7 +27,10 @@
 
         <!-- Assemblies Section -->
         <section>
-            <h2 style="color: var(--color-headings);" class="text-heading-lg mb-4">Your Assemblies</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
+                {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+            </div>
 
             {% if assemblies %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -50,8 +53,9 @@
                 </div>
             {% else %}
                 {% call card(id="no-assemblies-card") %}
-                    <p style="color: var(--color-body-text);" class="text-body-md mb-2">No assemblies yet</p>
-                    <p style="color: var(--color-secondary-text);" class="text-body-md">You don't have access to any assemblies at the moment.</p>
+                    <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
+                    {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
                 {% endcall %}
             {% endif %}
         </section>

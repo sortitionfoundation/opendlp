@@ -42,11 +42,11 @@ def visit_backoffice_showcase(page: Page):
     page.goto(Urls.backoffice_showcase)
 
 
-@then('I should see "Component Showcase"')
-def see_component_showcase_text(page: Page):
-    """Verify the Component Showcase heading is visible."""
+@then('I should see "Design System"')
+def see_design_system_text(page: Page):
+    """Verify the Design System heading is visible."""
     heading = page.locator("h1")
-    expect(heading).to_contain_text("Component Showcase")
+    expect(heading).to_contain_text("Design System")
 
 
 @then('I should see "Alpine.js Interactivity"')
@@ -655,3 +655,48 @@ def fill_in_title(page: Page, new_title: str):
     """Fill in the title input with a new value."""
     title_input = page.locator("input[name='title']")
     title_input.fill(new_title)
+
+
+# Create Assembly Page Tests
+
+
+@when("I visit the create assembly page")
+def visit_create_assembly_page(page: Page):
+    """Navigate to the create assembly page."""
+    page.goto(Urls.backoffice_create_assembly)
+
+
+@then("I should see the create assembly page")
+def see_create_assembly_page(page: Page):
+    """Verify we're on the create assembly page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/new"))
+
+
+@when(parsers.parse('I fill in the question with "{question}"'))
+def fill_in_question(page: Page, question: str):
+    """Fill in the question textarea with a value."""
+    question_textarea = page.locator("textarea[name='question']")
+    question_textarea.fill(question)
+
+
+@when(parsers.parse('I fill in the number to select with "{number}"'))
+def fill_in_number_to_select(page: Page, number: str):
+    """Fill in the number to select input with a value."""
+    number_input = page.locator("input[name='number_to_select']")
+    number_input.fill(number)
+
+
+@given("there are no assemblies")
+def ensure_no_assemblies(test_database):
+    """Ensure there are no assemblies in the database."""
+    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        # Delete all assemblies
+        assemblies = list(uow.assemblies.all())
+        for assembly in assemblies:
+            uow.session.delete(assembly)
+        uow.commit()
+    _test_assemblies.clear()
