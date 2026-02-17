@@ -13,23 +13,58 @@
 {% from "backoffice/showcase/alert_component.html" import alert_section %}
 {% from "backoffice/showcase/interactivity.html" import interactivity_section %}
 
-{% block title %}Component Showcase{% endblock %}
+{% block title %}Design System{% endblock %}
 
 {% block content %}
-    <h1 class="text-display-lg" style="color: var(--color-headings);">Component Showcase</h1>
+    <h1 class="text-display-lg" style="color: var(--color-headings);">Design System</h1>
     <p class="text-body-lg mt-2 mb-8" style="color: var(--color-secondary-text);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
-    {{ primitive_tokens_section() }}
-    {{ semantic_tokens_section() }}
-    {{ spacing_section() }}
-    {{ responsive_section() }}
-    {{ typography_section() }}
-    {{ button_section() }}
-    {{ input_section() }}
-    {{ card_section() }}
-    {{ navigation_section() }}
-    {{ breadcrumb_section() }}
-    {{ alert_section() }}
-    {{ interactivity_section() }}
+    <div x-data="{ tab: 'components' }">
+        {# Tab navigation #}
+        <div class="flex gap-1 mb-8 border-b" style="border-color: var(--color-borders-dividers);">
+            <button
+                type="button"
+                class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                :class="tab === 'foundations' ? 'font-semibold' : ''"
+                :style="tab === 'foundations'
+                    ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                    : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                @click="tab = 'foundations'"
+            >
+                Foundations
+            </button>
+            <button
+                type="button"
+                class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                :class="tab === 'components' ? 'font-semibold' : ''"
+                :style="tab === 'components'
+                    ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                    : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                @click="tab = 'components'"
+            >
+                Components
+            </button>
+        </div>
+
+        {# Foundations tab content #}
+        <div x-show="tab === 'foundations'" x-cloak>
+            {{ primitive_tokens_section() }}
+            {{ semantic_tokens_section() }}
+            {{ spacing_section() }}
+            {{ responsive_section() }}
+            {{ typography_section() }}
+        </div>
+
+        {# Components tab content #}
+        <div x-show="tab === 'components'" x-cloak>
+            {{ button_section() }}
+            {{ input_section() }}
+            {{ card_section() }}
+            {{ navigation_section() }}
+            {{ breadcrumb_section() }}
+            {{ alert_section() }}
+            {{ interactivity_section() }}
+        </div>
+    </div>
 
 {% endblock %}
