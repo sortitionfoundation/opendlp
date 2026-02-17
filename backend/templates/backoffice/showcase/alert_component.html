@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for alert component
 ABOUTME: Displays alert variants and flash message helper
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/alert.html" import alert %}
 
 {% macro alert_section() %}
@@ -10,42 +10,42 @@ ABOUTME: Displays alert variants and flash message helper
         {{ showcase_title("Alert Component") }}
         {{ showcase_description("Alerts for displaying feedback messages. Includes a flash_messages() helper for Flask flash messages.") }}
 
-        <div class="space-y-4">
-            <div>
-                <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Success</span>
-                {{ alert("Changes saved successfully!", variant="success", id="alert-success") }}
-            </div>
-            <div>
-                <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Warning</span>
-                {{ alert("Please review the warnings below before continuing.", variant="warning", id="alert-warning") }}
-            </div>
-            <div>
-                <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Error</span>
-                {{ alert("Something went wrong. Please try again.", variant="error", id="alert-error") }}
-            </div>
-            <div>
-                <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Info</span>
-                {{ alert("A new version is available.", variant="info", id="alert-info") }}
-            </div>
-            <div>
-                <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Dismissible (click X to close)</span>
-                {{ alert("This alert can be dismissed.", variant="info", dismissible=true, id="alert-dismissible") }}
-            </div>
-        </div>
+        {% call showcase_example('{% from "backoffice/components/alert.html" import alert, flash_messages %}
 
-        {{ showcase_code_example('{% from "backoffice/components/alert.html" import alert, flash_messages %}
+            {# Individual alerts #}
+            {{ alert("Success message", variant="success") }}
+            {{ alert("Warning message", variant="warning") }}
+            {{ alert("Error message", variant="error") }}
+            {{ alert("Info message", variant="info") }}
 
-        {# Individual alerts #}
-        {{ alert("Success message", variant="success") }}
-        {{ alert("Warning message", variant="warning") }}
-        {{ alert("Error message", variant="error") }}
-        {{ alert("Info message", variant="info") }}
+            {# Dismissible alert (requires Alpine.js) #}
+            {{ alert("Can be closed", variant="info", dismissible=true) }}
 
-        {# Dismissible alert (requires Alpine.js) #}
-        {{ alert("Can be closed", variant="info", dismissible=true) }}
-
-        {# Render all Flask flash messages automatically #}
-        {{ flash_messages() }}') }}
+            {# Render all Flask flash messages automatically #}
+            {{ flash_messages() }}') %}
+            <div class="space-y-4">
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Success</span>
+                    {{ alert("Changes saved successfully!", variant="success", id="alert-success") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Warning</span>
+                    {{ alert("Please review the warnings below before continuing.", variant="warning", id="alert-warning") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Error</span>
+                    {{ alert("Something went wrong. Please try again.", variant="error", id="alert-error") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Info</span>
+                    {{ alert("A new version is available.", variant="info", id="alert-info") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Dismissible (click X to close)</span>
+                    {{ alert("This alert can be dismissed.", variant="info", dismissible=true, id="alert-dismissible") }}
+                </div>
+            </div>
+        {% endcall %}
 
         {{ showcase_tokens([
         "--color-success-100 (background)",

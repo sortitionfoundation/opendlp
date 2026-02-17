@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for input component
 ABOUTME: Displays text input and textarea variants with usage examples
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/input.html" import input, textarea %}
 
 {% macro input_section() %}
@@ -10,79 +10,79 @@ ABOUTME: Displays text input and textarea variants with usage examples
         {{ showcase_title("Input Component") }}
         {{ showcase_description("Text inputs and textareas with labels, hints, and error states.") }}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {# Basic Input #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Input</span>
-                {{ input("demo-basic", label="Assembly Title", placeholder="Enter title...") }}
+        {% call showcase_example('{% from "backoffice/components/input.html" import input, textarea %}
+
+            {# Basic text input #}
+            {{ input("title", label="Assembly Title", placeholder="Enter title...") }}
+
+            {# Required email input with hint #}
+            {{ input("email", label="Email", type="email", required=true,
+            hint="We will send confirmation to this address.") }}
+
+            {# Input with error state #}
+            {{ input("title", label="Title", value=form.title, error=errors.title) }}
+
+            {# Textarea #}
+            {{ textarea("question", label="Assembly Question", rows=6,
+            placeholder="What question will the assembly address?") }}
+
+            {# Disabled input #}
+            {{ input("id", label="Assembly ID", value=assembly.id, disabled=true) }}') %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {# Basic Input #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Input</span>
+                    {{ input("demo-basic", label="Assembly Title", placeholder="Enter title...") }}
+                </div>
+
+                {# Required Input #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Required Field</span>
+                    {{ input("demo-required", label="Email Address", type="email", placeholder="you@example.com", required=true) }}
+                </div>
+
+                {# Input with Hint #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint Text</span>
+                    {{ input("demo-hint", label="Number to Select", type="number", value="50", hint="The target number of participants to select for the assembly.") }}
+                </div>
+
+                {# Input with Error #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Error State</span>
+                    {{ input("demo-error", label="Assembly Title", value="", error="Title is required") }}
+                </div>
+
+                {# Disabled Input #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Disabled</span>
+                    {{ input("demo-disabled", label="Assembly ID", value="readonly-value", disabled=true) }}
+                </div>
+
+                {# Password Input #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Password</span>
+                    {{ input("demo-password", label="Password", type="password", placeholder="Enter password...") }}
+                </div>
             </div>
 
-            {# Required Input #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Required Field</span>
-                {{ input("demo-required", label="Email Address", type="email", placeholder="you@example.com", required=true) }}
+            {# Textarea Section #}
+            <h3 class="text-heading-md mt-8 mb-4" style="color: var(--color-headings);">Textarea</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {# Basic Textarea #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Textarea</span>
+                    {{ textarea("demo-textarea", label="Assembly Question", placeholder="What question will the assembly address?") }}
+                </div>
+
+                {# Textarea with Value #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With Content</span>
+                    {{ textarea("demo-textarea-value", label="Description", value="This is some pre-filled content that demonstrates how the textarea handles existing text.", rows=4) }}
+                </div>
             </div>
-
-            {# Input with Hint #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint Text</span>
-                {{ input("demo-hint", label="Number to Select", type="number", value="50", hint="The target number of participants to select for the assembly.") }}
-            </div>
-
-            {# Input with Error #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Error State</span>
-                {{ input("demo-error", label="Assembly Title", value="", error="Title is required") }}
-            </div>
-
-            {# Disabled Input #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Disabled</span>
-                {{ input("demo-disabled", label="Assembly ID", value="readonly-value", disabled=true) }}
-            </div>
-
-            {# Password Input #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Password</span>
-                {{ input("demo-password", label="Password", type="password", placeholder="Enter password...") }}
-            </div>
-        </div>
-
-        {# Textarea Section #}
-        <h3 class="text-heading-md mt-8 mb-4" style="color: var(--color-headings);">Textarea</h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {# Basic Textarea #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Textarea</span>
-                {{ textarea("demo-textarea", label="Assembly Question", placeholder="What question will the assembly address?") }}
-            </div>
-
-            {# Textarea with Value #}
-            <div class="flex flex-col gap-2">
-                <span class="text-label-md" style="color: var(--color-secondary-text);">With Content</span>
-                {{ textarea("demo-textarea-value", label="Description", value="This is some pre-filled content that demonstrates how the textarea handles existing text.", rows=4) }}
-            </div>
-        </div>
-
-        {{ showcase_code_example('{% from "backoffice/components/input.html" import input, textarea %}
-
-        {# Basic text input #}
-        {{ input("title", label="Assembly Title", placeholder="Enter title...") }}
-
-        {# Required email input with hint #}
-        {{ input("email", label="Email", type="email", required=true,
-        hint="We will send confirmation to this address.") }}
-
-        {# Input with error state #}
-        {{ input("title", label="Title", value=form.title, error=errors.title) }}
-
-        {# Textarea #}
-        {{ textarea("question", label="Assembly Question", rows=6,
-        placeholder="What question will the assembly address?") }}
-
-        {# Disabled input #}
-        {{ input("id", label="Assembly ID", value=assembly.id, disabled=true) }}') }}
+        {% endcall %}
 
         {{ showcase_tokens([
         "--color-page-background",

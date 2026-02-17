@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for card component
 ABOUTME: Displays card variants and composition patterns
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/button.html" import button %}
 
@@ -11,55 +11,55 @@ ABOUTME: Displays card variants and composition patterns
         {{ showcase_title("Card Component") }}
         {{ showcase_description("Reusable card macro for content containers.") }}
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {% call card(id="card-basic", classes="max-w-sm") %}
-                <p class="text-body-md" style="color: var(--color-body-text);">
-                    This is a basic card without a header. It can contain any content.
-                </p>
+        {% call showcase_example('{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+            {% from "backoffice/components/button.html" import button %}
+
+            {# Basic card (auto body) #}
+            {% call card() %}
+                Card content here
             {% endcall %}
 
-            {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header", classes="max-w-sm") %}
-                <p class="text-body-md" style="color: var(--color-body-text);">
-                    This card has a title and subtitle in the header section.
-                </p>
+            {# Card with header (auto body) #}
+            {% call card(title="Title", subtitle="Subtitle") %}
+                Card content here
             {% endcall %}
 
-            {% call card(title="Card with Actions", subtitle="Includes button actions", id="card-actions", classes="max-w-sm", composed=true) %}
+            {# Card with actions (composed mode) #}
+            {% call card(title="Title", subtitle="Subtitle", composed=true) %}
                 {% call card_body() %}
-                    <p class="text-body-md" style="color: var(--color-body-text);">
-                        This card demonstrates composition with card_body and card_footer macros.
-                    </p>
+                    Content here
                 {% endcall %}
                 {% call card_footer() %}
                     {{ button("Cancel", variant="outline") }}
                     {{ button("Save", variant="primary") }}
                 {% endcall %}
-            {% endcall %}
-        </div>
+            {% endcall %}') %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% call card(id="card-basic", classes="max-w-sm") %}
+                    <p class="text-body-md" style="color: var(--color-body-text);">
+                        This is a basic card without a header. It can contain any content.
+                    </p>
+                {% endcall %}
 
-        {{ showcase_code_example('{% from "backoffice/components/card.html" import card, card_body, card_footer %}
-        {% from "backoffice/components/button.html" import button %}
+                {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header", classes="max-w-sm") %}
+                    <p class="text-body-md" style="color: var(--color-body-text);">
+                        This card has a title and subtitle in the header section.
+                    </p>
+                {% endcall %}
 
-        {# Basic card (auto body) #}
-        {% call card() %}
-            Card content here
+                {% call card(title="Card with Actions", subtitle="Includes button actions", id="card-actions", classes="max-w-sm", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md" style="color: var(--color-body-text);">
+                            This card demonstrates composition with card_body and card_footer macros.
+                        </p>
+                    {% endcall %}
+                    {% call card_footer() %}
+                        {{ button("Cancel", variant="outline") }}
+                        {{ button("Save", variant="primary") }}
+                    {% endcall %}
+                {% endcall %}
+            </div>
         {% endcall %}
-
-        {# Card with header (auto body) #}
-        {% call card(title="Title", subtitle="Subtitle") %}
-            Card content here
-        {% endcall %}
-
-        {# Card with actions (composed mode) #}
-        {% call card(title="Title", subtitle="Subtitle", composed=true) %}
-            {% call card_body() %}
-                Content here
-            {% endcall %}
-            {% call card_footer() %}
-                {{ button("Cancel", variant="outline") }}
-                {{ button("Save", variant="primary") }}
-            {% endcall %}
-        {% endcall %}') }}
 
         {{ showcase_tokens([
         "--color-tables-cards",

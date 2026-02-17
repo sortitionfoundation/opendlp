@@ -34,6 +34,57 @@
     </div>
 {% endmacro %}
 
+{#
+  Showcase example with tab toggle between Preview and Code
+  Use with {% call %} - the caller content is the preview, code param is the code example
+#}
+{% macro showcase_example(code) %}
+    <div class="mt-6" x-data="{ tab: 'preview' }">
+        {# Tab buttons #}
+        <div class="flex gap-1 mb-3">
+            <button
+                type="button"
+                class="text-label-md px-3 py-1.5 rounded-t-md transition-colors"
+                :class="tab === 'preview'
+                    ? 'font-semibold'
+                    : ''"
+                :style="tab === 'preview'
+                    ? 'background-color: var(--color-subtle-background-panels); color: var(--color-headings); border: 1px solid var(--color-borders-dividers); border-bottom: none;'
+                    : 'background-color: transparent; color: var(--color-secondary-text); border: 1px solid transparent;'"
+                @click="tab = 'preview'"
+            >
+                Preview
+            </button>
+            <button
+                type="button"
+                class="text-label-md px-3 py-1.5 rounded-t-md transition-colors"
+                :class="tab === 'code'
+                    ? 'font-semibold'
+                    : ''"
+                :style="tab === 'code'
+                    ? 'background-color: var(--color-subtle-background-panels); color: var(--color-headings); border: 1px solid var(--color-borders-dividers); border-bottom: none;'
+                    : 'background-color: transparent; color: var(--color-secondary-text); border: 1px solid transparent;'"
+                @click="tab = 'code'"
+            >
+                Code
+            </button>
+        </div>
+
+        {# Tab content #}
+        <div class="p-4 rounded-lg rounded-tl-none" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+            {# Preview panel #}
+            <div x-show="tab === 'preview'" x-cloak>
+                {{ caller() }}
+            </div>
+
+            {# Code panel #}
+            <div x-show="tab === 'code'" x-cloak>
+                <pre class="text-body-sm overflow-x-auto" style="color: var(--color-body-text);"><code>{{ code | e }}</code></pre>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
 {# Token badge list - shows which semantic tokens a component uses #}
 {% macro showcase_tokens(tokens) %}
     <div class="mt-4">

@@ -50,7 +50,7 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
     <div
         {% if id %}id="{{ id }}"{% endif %}
         {% if dismissible %}x-data="{ show: true }" x-show="show" x-transition{% endif %}
-        class="mb-6 rounded-lg p-4 flex items-start gap-3"
+        class="mb-6 rounded-lg p-4 flex items-center gap-3"
         style="background-color: {{ styles.bg }}; border: 1px solid {{ styles.border }};"
         role="alert"
     >

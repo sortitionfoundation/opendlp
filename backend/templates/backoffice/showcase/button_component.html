@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for button component
 ABOUTME: Displays button variants and usage examples
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
 
 {% macro button_section() %}
@@ -10,44 +10,44 @@ ABOUTME: Displays button variants and usage examples
         {{ showcase_title("Button Component") }}
         {{ showcase_description("Reusable button macro with variant support.") }}
 
-        <div class="flex flex-wrap gap-4 items-center">
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Click me", id="btn-default") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Default</span>
-            </div>
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Submit", variant="primary", id="btn-primary") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
-            </div>
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Secondary", variant="secondary", id="btn-secondary") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
-            </div>
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Cancel", variant="outline", id="btn-outline") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Outline</span>
-            </div>
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Disabled", disabled=true, id="btn-disabled") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
-            </div>
-            <div class="flex flex-col items-center gap-2">
-                {{ button("Link Button", href="#", id="btn-link") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Link (href)</span>
-            </div>
-        </div>
+        {% call showcase_example('{% from "backoffice/components/button.html" import button %}
 
-        {{ showcase_code_example('{% from "backoffice/components/button.html" import button %}
+            {{ button("Click me") }}
+            {{ button("Submit", variant="primary", type="submit") }}
+            {{ button("Secondary", variant="secondary") }}
+            {{ button("Cancel", variant="outline") }}
+            {{ button("Disabled", disabled=true) }}
 
-        {{ button("Click me") }}
-        {{ button("Submit", variant="primary", type="submit") }}
-        {{ button("Secondary", variant="secondary") }}
-        {{ button("Cancel", variant="outline") }}
-        {{ button("Disabled", disabled=true) }}
-
-        {# Button as link (renders as <a> instead of <button>) #}
-        {{ button("Go to Dashboard", href="/dashboard") }}
-        {{ button("External Link", href="https://example.com", variant="outline") }}') }}
+            {# Button as link (renders as <a> instead of <button>) #}
+            {{ button("Go to Dashboard", href="/dashboard") }}
+            {{ button("External Link", href="https://example.com", variant="outline") }}') %}
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Click me", id="btn-default") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Default</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Submit", variant="primary", id="btn-primary") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Secondary", variant="secondary", id="btn-secondary") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Cancel", variant="outline", id="btn-outline") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Outline</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Disabled", disabled=true, id="btn-disabled") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Link Button", href="#", id="btn-link") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Link (href)</span>
+                </div>
+            </div>
+        {% endcall %}
 
         {{ showcase_tokens([
         "--color-primary-action",

@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for navigation component
 ABOUTME: Displays navigation bar with logo, links, and actions
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_code_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/navigation.html" import navigation %}
 
 {% macro navigation_section() %}
@@ -10,39 +10,39 @@ ABOUTME: Displays navigation bar with logo, links, and actions
         {{ showcase_title("Navigation Component") }}
         {{ showcase_description("Horizontal navigation bar with logo, nav links, and account actions.") }}
 
-        <div class="rounded-lg overflow-hidden shadow-md" style="border: 1px solid var(--color-borders-dividers);">
+        {% call showcase_example('{% from "backoffice/components/navigation.html" import navigation %}
+
             {{ navigation(
-            logo_href="#",
+            logo_href="/backoffice",
             nav_items=[
-            {"label": "Dashboard", "href": "#"},
-            {"label": "Assemblies", "href": "#"},
-            {"label": "Users", "href": "#"},
-            {"label": "Help", "href": "#", "isVisible": false}
+            {"label": "Dashboard", "href": "/dashboard"},
+            {"label": "Assemblies", "href": "/assemblies"},
+            {"label": "Users", "href": "/users"},
+            {"label": "Help", "href": "/help"}
             ],
             account_items=[
-            {"label": "My Account", "href": "#"}
+            {"label": "My Account", "href": "/account"}
             ],
             cta_text="Sign out",
-            cta_href="#"
-            ) }}
-        </div>
-
-        {{ showcase_code_example('{% from "backoffice/components/navigation.html" import navigation %}
-
-        {{ navigation(
-        logo_href="/backoffice",
-        nav_items=[
-        {"label": "Dashboard", "href": "/dashboard"},
-        {"label": "Assemblies", "href": "/assemblies"},
-        {"label": "Users", "href": "/users"},
-        {"label": "Help", "href": "/help"}
-        ],
-        account_items=[
-        {"label": "My Account", "href": "/account"}
-        ],
-        cta_text="Sign out",
-        cta_href="/logout"
-        ) }}') }}
+            cta_href="/logout"
+            ) }}') %}
+            <div class="rounded-lg overflow-hidden shadow-md" style="border: 1px solid var(--color-borders-dividers);">
+                {{ navigation(
+                logo_href="#",
+                nav_items=[
+                {"label": "Dashboard", "href": "#"},
+                {"label": "Assemblies", "href": "#"},
+                {"label": "Users", "href": "#"},
+                {"label": "Help", "href": "#", "isVisible": false}
+                ],
+                account_items=[
+                {"label": "My Account", "href": "#"}
+                ],
+                cta_text="Sign out",
+                cta_href="#"
+                ) }}
+            </div>
+        {% endcall %}
 
         {{ showcase_tokens([
         "--color-tables-cards",
