@@ -369,11 +369,12 @@ def create_test_assembly(title: str, admin_user, test_database):
 
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    create_assembly(
+    assembly = create_assembly(
         uow=uow,
         title=title,
         created_by_user_id=admin_user.id,
     )
+    _test_assemblies[title] = str(assembly.id)
 
 
 @when("I try to access the backoffice dashboard")
@@ -503,7 +504,7 @@ def visit_assembly_details_page(page: Page, title: str, admin_user, test_databas
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
         with uow:
-            assemblies = list(uow.assemblies.get_all())
+            assemblies = list(uow.assemblies.all())
             for assembly in assemblies:
                 if assembly.title == title:
                     _test_assemblies[title] = str(assembly.id)
@@ -566,3 +567,91 @@ def see_button_with_text(page: Page, button_text: str):
     """Verify a button with specific text is visible."""
     button = page.locator("a, button", has_text=button_text)
     expect(button).to_be_visible()
+
+
+# Edit Assembly Page Tests
+
+
+@when(parsers.parse('I click the "{button_text}" button'))
+def click_button_with_text(page: Page, button_text: str):
+    """Click a button with specific text."""
+    button = page.locator("a, button", has_text=button_text)
+    button.click()
+    # Wait for navigation if the button triggers a form submission or link
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I visit the edit assembly page for "{title}"'))
+def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
+    """Navigate directly to the edit assembly page."""
+    # Get the assembly ID from the database if not already stored
+    if title not in _test_assemblies:
+        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    _test_assemblies[title] = str(assembly.id)
+                    break
+
+    assembly_id = _test_assemblies.get(title)
+    if assembly_id:
+        page.goto(Urls.backoffice_edit_assembly_url(assembly_id))
+
+
+@then("I should see the edit assembly page")
+def see_edit_assembly_page(page: Page):
+    """Verify we're on the edit assembly page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/edit"))
+
+
+@then("I should see the title input field")
+def see_title_input_field(page: Page):
+    """Verify the title input field is visible."""
+    title_input = page.locator("input[name='title']")
+    expect(title_input).to_be_visible()
+
+
+@then("I should see the question textarea field")
+def see_question_textarea_field(page: Page):
+    """Verify the question textarea field is visible."""
+    question_textarea = page.locator("textarea[name='question']")
+    expect(question_textarea).to_be_visible()
+
+
+@then("I should see the first assembly date field")
+def see_first_assembly_date_field(page: Page):
+    """Verify the first assembly date field is visible."""
+    date_input = page.locator("input[name='first_assembly_date']")
+    expect(date_input).to_be_visible()
+
+
+@then("I should see the number to select field")
+def see_number_to_select_field(page: Page):
+    """Verify the number to select field is visible."""
+    number_input = page.locator("input[name='number_to_select']")
+    expect(number_input).to_be_visible()
+
+
+@then(parsers.parse('the title input should contain "{expected_value}"'))
+def title_input_contains_value(page: Page, expected_value: str):
+    """Verify the title input contains the expected value."""
+    title_input = page.locator("input[name='title']")
+    expect(title_input).to_have_value(expected_value)
+
+
+@then(parsers.parse('the question textarea should contain "{expected_value}"'))
+def question_textarea_contains_value(page: Page, expected_value: str):
+    """Verify the question textarea contains the expected value."""
+    question_textarea = page.locator("textarea[name='question']")
+    expect(question_textarea).to_have_value(expected_value)
+
+
+@when(parsers.parse('I fill in the title with "{new_title}"'))
+def fill_in_title(page: Page, new_title: str):
+    """Fill in the title input with a new value."""
+    title_input = page.locator("input[name='title']")
+    title_input.fill(new_title)

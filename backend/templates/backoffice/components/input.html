@@ -48,7 +48,7 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             type="{{ type }}"
             name="{{ name }}"
             id="{{ input_id }}"
-            {% if value %}value="{{ value }}"{% endif %}
+            {% if value is not none and value != "" %}value="{{ value }}"{% endif %}
             {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
