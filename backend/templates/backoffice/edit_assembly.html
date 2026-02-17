@@ -2,11 +2,12 @@
 ABOUTME: Backoffice edit assembly page
 ABOUTME: Form for updating assembly details using the backoffice design system
 #}
-{% extends "backoffice/base.html" %}
-{% from "backoffice/components/navigation.html" import navigation %}
+{% extends "backoffice/base.html" %} {# TOUR: 2.1 Extends backoffice base (not GOV.UK base) #}
+{% from "backoffice/components/navigation.html" import navigation %} {# TOUR: 2.1 Import component macros #}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, textarea %}
+{% from "backoffice/components/alert.html" import flash_messages %}
 {% from "backoffice/components/footer.html" import footer %}
 
 {% block title %}{{ _("Edit Assembly") }} - {{ assembly.title }}{% endblock %}
@@ -29,7 +30,9 @@ ABOUTME: Form for updating assembly details using the backoffice design system
         ) }}
 
         <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
-            {# Breadcrumbs #}
+            {{ flash_messages() }}
+
+            {# TOUR: 2.3 Breadcrumbs - 3 levels, last one has no href (current page) #}
             <div class="mb-6">
                 {{ breadcrumbs([
                 {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},

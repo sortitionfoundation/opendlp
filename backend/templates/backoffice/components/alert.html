@@ -1,0 +1,107 @@
+{#
+ABOUTME: Alert/flash message component macro for backoffice design system
+ABOUTME: Supports success, warning, error, info variants with semantic styling
+#}
+
+{% macro alert(message, variant="info", dismissible=false, id="") %}
+    {#
+    Alert component for displaying messages/notifications.
+
+    Args:
+        message: The alert message text
+        variant: "success" | "warning" | "error" | "info" (default: "info")
+        dismissible: Boolean to show close button (requires Alpine.js)
+        id: Optional id attribute
+
+    Usage:
+        {{ alert("Changes saved successfully", variant="success") }}
+        {{ alert("Please review the warnings below", variant="warning") }}
+        {{ alert("Something went wrong", variant="error") }}
+        {{ alert("New feature available", variant="info", dismissible=true) }}
+    #}
+    {% set variant_styles = {
+    "success": {
+    "bg": "var(--color-success-100)",
+    "border": "var(--color-success-400)",
+    "text": "var(--color-success-600)",
+    "icon": "✓"
+    },
+    "warning": {
+    "bg": "var(--color-warning-100)",
+    "border": "var(--color-warning-400)",
+    "text": "var(--color-warning-600)",
+    "icon": "⚠"
+    },
+    "error": {
+    "bg": "var(--color-error-100)",
+    "border": "var(--color-error-400)",
+    "text": "var(--color-error-600)",
+    "icon": "✕"
+    },
+    "info": {
+    "bg": "var(--color-info-100)",
+    "border": "var(--color-info-400)",
+    "text": "var(--color-info-600)",
+    "icon": "ℹ"
+    }
+    } %}
+    {% set styles = variant_styles[variant] if variant in variant_styles else variant_styles["info"] %}
+
+    <div
+        {% if id %}id="{{ id }}"{% endif %}
+        {% if dismissible %}x-data="{ show: true }" x-show="show" x-transition{% endif %}
+        class="mb-6 rounded-lg p-4 flex items-start gap-3"
+        style="background-color: {{ styles.bg }}; border: 1px solid {{ styles.border }};"
+        role="alert"
+    >
+        {# Icon #}
+        <span class="text-body-lg flex-shrink-0" style="color: {{ styles.text }};" aria-hidden="true">
+            {{ styles.icon }}
+        </span>
+
+        {# Message #}
+        <p class="text-body-md flex-1" style="color: {{ styles.text }};">
+            {{ message }}
+        </p>
+
+        {# Dismiss button #}
+        {% if dismissible %}
+            <button
+                type="button"
+                @click="show = false"
+                class="flex-shrink-0 p-1 rounded hover:opacity-70 focus:outline-none focus:ring-2"
+                style="color: {{ styles.text }}; --tw-ring-color: {{ styles.border }};"
+                aria-label="{{ _('Dismiss') }}"
+            >
+                <span aria-hidden="true">✕</span>
+            </button>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{% macro flash_messages() %}
+    {#
+    Renders all Flask flash messages using the alert component.
+
+    Automatically maps Flask flash categories to alert variants:
+        - "success" -> success
+        - "error" -> error
+        - "warning" -> warning
+        - anything else -> info
+
+    Usage:
+        {{ flash_messages() }}
+    #}
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        {% if category == "success" %}
+            {{ alert(message, variant="success") }}
+        {% elif category == "error" %}
+            {{ alert(message, variant="error") }}
+        {% elif category == "warning" %}
+            {{ alert(message, variant="warning") }}
+        {% else %}
+            {{ alert(message, variant="info") }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
