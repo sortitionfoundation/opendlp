@@ -1,0 +1,119 @@
+{#
+ABOUTME: Search dropdown component with autocomplete for backoffice design system
+ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying results
+#}
+
+{% macro search_dropdown(name, label="", fetch_url="", placeholder="", hint="", error="", required=false, id="", min_chars=2, debounce_ms=300, param_name="q") %}
+    {#
+    Search dropdown component with autocomplete functionality.
+
+    Uses the Alpine.js 'autocomplete' data component defined in alpine-components.js.
+
+    Args:
+        name: Hidden input name for the selected ID (required)
+        label: Label text displayed above the input
+        fetch_url: URL to fetch search results from (required, must return JSON array)
+        placeholder: Placeholder text for the search input
+        hint: Help text displayed below the label
+        error: Error message (displays input in error state)
+        required: Boolean to mark field as required
+        id: Optional id attribute (defaults to name)
+        min_chars: Minimum characters before searching (default: 2)
+        debounce_ms: Debounce delay in milliseconds (default: 300)
+        param_name: Query parameter name for search term (default: 'q')
+
+    The fetch_url should return JSON array: [{ id, label, sublabel? }, ...]
+
+    Usage:
+        {{ search_dropdown(
+            name="user_id",
+            label="Select User",
+            fetch_url=url_for('backoffice.search_users', assembly_id=assembly.id),
+            placeholder="Type to search...",
+            hint="Search by email or name"
+        ) }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5"
+        x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: {{ min_chars }}, debounceMs: {{ debounce_ms }}, paramName: '{{ param_name }}' })">
+
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}_search" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# Search input with dropdown #}
+        <div class="relative">
+            <input type="text"
+                id="{{ input_id }}_search"
+                x-model="query"
+                @input="onInput()"
+                @keydown="onKeydown($event)"
+                @click.outside="close()"
+                {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+                {% if required %}required{% endif %}
+                autocomplete="off"
+                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                style="
+                    background-color: var(--color-page-background);
+                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                    color: var(--color-body-text);
+                    --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                ">
+
+            {# Hidden input for form submission #}
+            <input type="hidden" name="{{ name }}" id="{{ input_id }}" x-bind:value="selectedId">
+
+            {# Loading indicator #}
+            <div x-show="isLoading" class="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg class="animate-spin h-5 w-5" style="color: var(--color-secondary-text);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+
+            {# Dropdown results #}
+            <div x-show="isOpen"
+                x-cloak
+                class="absolute z-20 w-full mt-1 rounded-lg shadow-lg overflow-hidden"
+                style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <ul class="max-h-60 overflow-auto">
+                    <template x-for="(item, index) in results" x-bind:key="item.id">
+                        <li>
+                            <button type="button"
+                                @click="selectItem(item)"
+                                class="w-full px-4 py-3 text-left transition-colors"
+                                x-bind:style="index === highlightedIndex ? 'background-color: var(--color-subtle-background-panels);' : ''"
+                                @mouseenter="highlightedIndex = index">
+                                <span class="text-body-md block" style="color: var(--color-body-text);" x-text="item.label"></span>
+                                <span x-show="item.sublabel" class="text-body-sm block" style="color: var(--color-secondary-text);" x-text="item.sublabel"></span>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+
+                {# No results message #}
+                <div x-show="results.length === 0 && !isLoading && query.length >= {{ min_chars }}"
+                    class="px-4 py-3 text-body-sm"
+                    style="color: var(--color-secondary-text);">
+                    {{ _("No results found") }}
+                </div>
+            </div>
+        </div>
+
+        {# Error message #}
+        {% if has_error %}
+            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}

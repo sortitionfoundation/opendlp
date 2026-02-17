@@ -1,0 +1,122 @@
+{#
+ABOUTME: Showcase section for search dropdown component
+ABOUTME: Displays autocomplete search with Alpine.js data component
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/search_dropdown.html" import search_dropdown %}
+
+{% macro search_dropdown_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Search Dropdown Component") }}
+        {{ showcase_description("Autocomplete search input with dropdown results. Uses Alpine.js for state management and fetches results from a JSON API endpoint.") }}
+
+        {% call showcase_example('{% from "backoffice/components/search_dropdown.html" import search_dropdown %}
+
+            {# Basic search dropdown #}
+            {{ search_dropdown(
+            name="user_id",
+            label="Select User",
+            fetch_url=url_for("backoffice.search_demo"),
+            placeholder="Type to search..."
+            ) }}
+
+            {# With hint text #}
+            {{ search_dropdown(
+            name="member_id",
+            label="Team Member",
+            fetch_url=url_for("backoffice.search_demo"),
+            placeholder="Search by name or email...",
+            hint="Start typing to see matching users"
+            ) }}
+
+            {# Required field with error #}
+            {{ search_dropdown(
+            name="required_user",
+            label="Required User",
+            fetch_url=url_for("backoffice.search_demo"),
+            required=true,
+            error="Please select a user"
+            ) }}
+
+            {# Custom parameters #}
+            {{ search_dropdown(
+            name="custom_search",
+            label="Custom Search",
+            fetch_url="/api/custom",
+            min_chars=3,
+            debounce_ms=500,
+            param_name="search"
+            ) }}') %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {# Basic search dropdown #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Search</span>
+                    {{ search_dropdown(
+                    name="demo-basic",
+                    label="Select User",
+                    fetch_url=url_for("backoffice.search_demo"),
+                    placeholder="Type to search..."
+                    ) }}
+                </div>
+
+                {# With hint text #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint</span>
+                    {{ search_dropdown(
+                    name="demo-hint",
+                    label="Team Member",
+                    fetch_url=url_for("backoffice.search_demo"),
+                    placeholder="Search by name or email...",
+                    hint="Start typing to see matching users"
+                    ) }}
+                </div>
+
+                {# Required field #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Required Field</span>
+                    {{ search_dropdown(
+                    name="demo-required",
+                    label="Required Selection",
+                    fetch_url=url_for("backoffice.search_demo"),
+                    placeholder="Type to search...",
+                    required=true
+                    ) }}
+                </div>
+
+                {# Error state #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Error State</span>
+                    {{ search_dropdown(
+                    name="demo-error",
+                    label="User Selection",
+                    fetch_url=url_for("backoffice.search_demo"),
+                    placeholder="Type to search...",
+                    error="Please select a valid user"
+                    ) }}
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    <strong>Hint:</strong> Start typing "example.com" to see demo results. <br>
+                    <strong>Note:</strong> The search endpoint must return JSON array: <code>[{ "id": "...", "label": "...", "sublabel": "..." }, ...]</code>
+                </p>
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-page-background",
+        "--color-borders-dividers",
+        "--color-body-text",
+        "--color-headings",
+        "--color-secondary-text",
+        "--color-primary-action",
+        "--color-focus-ring",
+        "--color-tables-cards",
+        "--color-subtle-background-panels",
+        ".text-label-lg",
+        ".text-body-md",
+        ".text-body-sm"
+        ]) }}
+    {% endcall %}
+{% endmacro %}
