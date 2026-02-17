@@ -35,7 +35,7 @@
             {% if assemblies %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {% for assembly in assemblies %}
-                        {% call card(title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                        {% call card(title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card", container_classes="flex flex-col h-full", body_classes="flex-1 flex flex-col") %}
                             {% if assembly.question %}
                                 <p style="color: var(--color-body-text);" class="text-body-md mb-4">
                                     {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
@@ -46,8 +46,9 @@
                                     Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
                                 </p>
                             {% endif %}
-                            <br />
-                            {{ button(_("Go to Assembly"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
+                            <div class="mt-auto pt-4">
+                                {{ button(_("Go to Assembly"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
+                            </div>
                         {% endcall %}
                     {% endfor %}
                 </div>
