@@ -2,11 +2,15 @@
 
 The backoffice uses a separate design system (Pines UI + Tailwind CSS) from the public-facing GOV.UK pages.
 
+For feature-specific documentation showing these patterns in practice, see:
+- [Assembly Module](backoffice_assembly.md) - CRUD, team members, access control
+
 ### Key Files
 
 - **Routes:** `src/opendlp/entrypoints/backoffice/routes.py`
 - **Templates:** `templates/backoffice/`
-- **Components:** `templates/backoffice/components/` (Button, Card, Input, Navigation, Breadcrumbs, Footer macros)
+- **Components:** `templates/backoffice/components/` (Button, Card, Input, Navigation, Breadcrumbs, Footer, SearchDropdown macros)
+- **Alpine.js Components:** `static/backoffice/js/alpine-components.js`
 - **Design Tokens:** `static/backoffice/tokens/` (primitive.css, semantic.css)
 - **Tailwind CSS:** `static/backoffice/src/main.css` → `static/backoffice/dist/main.css`
 
@@ -172,13 +176,53 @@ Standard responsive grid pattern:
 
 The backoffice uses Alpine.js (CSP-compatible build) for interactivity, loaded from jsdelivr CDN with an SRI integrity hash in `base.html`.
 
+#### Reusable Components
+
+Custom Alpine.js data components are defined in `static/backoffice/js/alpine-components.js` and registered on `alpine:init`. This separates logic (JavaScript) from presentation (Jinja macros).
+
+| Component | Purpose | Jinja Macro |
+|-----------|---------|-------------|
+| `autocomplete` | Search dropdown with debounce, keyboard nav | `search_dropdown.html` |
+
+**Pattern for adding new components:**
+
+1. Add `Alpine.data("componentName", ...)` in `alpine-components.js`
+2. Create Jinja macro in `templates/backoffice/components/`
+3. Macro uses `x-data="componentName({options})"` to initialize
+4. Add showcase section in `templates/backoffice/showcase/`
+
+**Example - Autocomplete:**
+
+```javascript
+// alpine-components.js
+Alpine.data("autocomplete", function(options) {
+    return {
+        query: "",
+        results: [],
+        isOpen: false,
+        onInput: function() { /* debounced fetch */ },
+        selectItem: function(item) { /* handle selection */ }
+    };
+});
+```
+
+```jinja
+{# search_dropdown.html macro #}
+<div x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: 2 })">
+    <input x-model="query" @input="onInput()">
+    <ul x-show="isOpen">
+        <template x-for="item in results">
+            <li @click="selectItem(item)" x-text="item.label"></li>
+        </template>
+    </ul>
+    <input type="hidden" name="{{ name }}" :value="selectedId">
+</div>
+```
+
+See [Assembly Module](backoffice_assembly.md#alpinejs-patterns) for detailed usage examples.
+
 **TODO:** Consider self-hosting Alpine.js instead of using CDN + integrity hash:
 - The SRI hash is error-prone (a single character typo silently breaks Alpine.js)
 - Hash must be manually updated when upgrading Alpine.js version
 - Self-hosting would eliminate CDN dependency and SRI maintenance burden
 - Download from npm (`@alpinejs/csp`) and serve from `static/backoffice/js/`
-
-**TODO:** Footer version display needs investigation:
-- The footer displays `{{ opendlp_version }}` which is provided by `static_versioning_context_processor`
-- Verify the version renders correctly in the backoffice dashboard
-- The context processor is registered at app level, so it should be available to all templates
