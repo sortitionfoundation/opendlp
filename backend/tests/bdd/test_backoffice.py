@@ -7,7 +7,12 @@ import pytest
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from .config import ADMIN_PASSWORD, Urls
+from opendlp.domain.value_objects import AssemblyRole
+from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from opendlp.service_layer.user_service import grant_user_assembly_role
+
+from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
@@ -689,8 +694,6 @@ def fill_in_number_to_select(page: Page, number: str):
 @given("there are no assemblies")
 def ensure_no_assemblies(test_database):
     """Ensure there are no assemblies in the database."""
-    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
     with uow:
@@ -700,3 +703,243 @@ def ensure_no_assemblies(test_database):
             uow.session.delete(assembly)
         uow.commit()
     _test_assemblies.clear()
+
+
+# Assembly Members Page Tests
+
+
+def _login_normal(page: Page, normal_user) -> None:
+    """Helper to log in as normal user."""
+    page.context.clear_cookies()
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', normal_user.email)
+    page.fill('input[name="password"]', NORMAL_PASSWORD)
+    page.click('button[type="submit"]')
+    page.wait_for_url(Urls.dashboard)
+
+
+@given("I am logged in as a normal user")
+def logged_in_as_normal(page: Page, normal_user):
+    """Log in as normal user."""
+    _login_normal(page, normal_user)
+
+
+@given(parsers.parse('there is an assembly called "{title}" created by admin'))
+def create_test_assembly_by_admin(title: str, admin_user, test_database):
+    """Create a test assembly owned by the admin user."""
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly = create_assembly(
+        uow=uow,
+        title=title,
+        created_by_user_id=admin_user.id,
+    )
+    _test_assemblies[title] = str(assembly.id)
+
+
+@given(parsers.parse('I am assigned to "{title}" as "{role}"'))
+def assign_current_user_to_assembly(title: str, role: str, normal_user, admin_user, test_database):
+    """Assign the current (normal) user to an assembly with a specific role."""
+    assembly_id = _test_assemblies.get(title)
+    if not assembly_id:
+        raise ValueError(f"Assembly '{title}' not found in test assemblies")
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly_role = AssemblyRole(role)
+    grant_user_assembly_role(
+        uow=uow,
+        user_id=normal_user.id,
+        assembly_id=assembly_id,
+        role=assembly_role,
+        current_user=admin_user,
+    )
+
+
+@given(parsers.parse('"{email}" is assigned to "{title}" as "{role}"'))
+def assign_user_to_assembly(email: str, title: str, role: str, admin_user, normal_user, test_database):
+    """Assign a specific user to an assembly with a specific role."""
+    assembly_id = _test_assemblies.get(title)
+    if not assembly_id:
+        raise ValueError(f"Assembly '{title}' not found in test assemblies")
+
+    # Determine which user to assign based on email
+    user_to_assign = normal_user if email == normal_user.email else admin_user
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly_role = AssemblyRole(role)
+    grant_user_assembly_role(
+        uow=uow,
+        user_id=user_to_assign.id,
+        assembly_id=assembly_id,
+        role=assembly_role,
+        current_user=admin_user,
+    )
+
+
+@when(parsers.parse('I click the "{tab_name}" tab'))
+def click_tab(page: Page, tab_name: str):
+    """Click a tab in the tab navigation."""
+    tab = page.locator("nav[aria-label='Assembly sections'] a", has_text=tab_name)
+    tab.click()
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I visit the assembly members page for "{title}"'))
+def visit_assembly_members_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly members page."""
+    if title not in _test_assemblies:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    _test_assemblies[title] = str(assembly.id)
+                    break
+
+    assembly_id = _test_assemblies.get(title)
+    if assembly_id:
+        page.goto(Urls.backoffice_members_assembly_url(assembly_id))
+
+
+@when(parsers.parse('I type "{text}" into the user search dropdown'))
+def type_into_search_dropdown(page: Page, text: str):
+    """Type text into the user search dropdown."""
+    search_input = page.locator("#user_id_search")
+    search_input.fill(text)
+    # Wait for debounce and potential API response
+    page.wait_for_timeout(500)
+
+
+@then("I should see the assembly members page")
+def see_assembly_members_page(page: Page):
+    """Verify we're on the assembly members page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/members"))
+
+
+@then(parsers.parse('I should see "{text}" as a section heading'))
+def see_section_heading(page: Page, text: str):
+    """Verify a section heading with specific text is visible."""
+    heading = page.locator("h2", has_text=text)
+    expect(heading).to_be_visible()
+
+
+@then("I should see the user search dropdown")
+def see_user_search_dropdown(page: Page):
+    """Verify the user search dropdown is visible."""
+    search_input = page.locator("#user_id_search")
+    expect(search_input).to_be_visible()
+
+
+@then("I should see the role selection radio buttons")
+def see_role_selection_radio_buttons(page: Page):
+    """Verify the role selection radio buttons are visible."""
+    fieldset = page.locator("fieldset", has_text="Role")
+    expect(fieldset).to_be_visible()
+    # Check that radio buttons exist
+    radios = fieldset.locator("input[type='radio']")
+    expect(radios.first).to_be_visible()
+
+
+@then("I should see the team members table")
+def see_team_members_table(page: Page):
+    """Verify the team members table is visible."""
+    table = page.locator("table")
+    expect(table).to_be_visible()
+
+
+@then(parsers.parse('the team members table should show "{email}"'))
+def team_members_table_shows_email(page: Page, email: str):
+    """Verify the team members table shows a specific email."""
+    table = page.locator("table")
+    expect(table).to_contain_text(email)
+
+
+@then(parsers.parse('the team members table should show role "{role}"'))
+def team_members_table_shows_role(page: Page, role: str):
+    """Verify the team members table shows a specific role."""
+    table = page.locator("table")
+    expect(table).to_contain_text(role)
+
+
+@then("I should see remove buttons in the team members table")
+def see_remove_buttons_in_table(page: Page):
+    """Verify remove buttons are visible in the team members table."""
+    table = page.locator("table")
+    remove_button = table.locator("button", has_text="Remove")
+    expect(remove_button.first).to_be_visible()
+
+
+@then("I should not see the user search dropdown")
+def not_see_user_search_dropdown(page: Page):
+    """Verify the user search dropdown is not visible."""
+    search_input = page.locator("#user_id_search")
+    expect(search_input).to_be_hidden()
+
+
+@then("I should not see remove buttons in the team members table")
+def not_see_remove_buttons_in_table(page: Page):
+    """Verify remove buttons are not visible in the team members table."""
+    table = page.locator("table")
+    remove_button = table.locator("button", has_text="Remove")
+    expect(remove_button).to_have_count(0)
+
+
+@then(parsers.parse('I should not see "{text}"'))
+def not_see_text_on_page(page: Page, text: str):
+    """Verify specific text is not visible on the page."""
+    expect(page.locator("body")).not_to_contain_text(text)
+
+
+@then(parsers.parse('I should see "{text}" after searching'))
+def see_text_after_searching(page: Page, text: str):
+    """Verify specific text is visible after searching."""
+    # Wait for search results to load
+    page.wait_for_timeout(500)
+    expect(page.locator("body")).to_contain_text(text)
+
+
+@when(parsers.parse('I try to access the assembly details page for "{title}"'))
+def try_access_assembly_details_page(page: Page, title: str, test_database):
+    """Try to navigate directly to the assembly details page (may be unauthorized)."""
+    if title not in _test_assemblies:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    _test_assemblies[title] = str(assembly.id)
+                    break
+
+    assembly_id = _test_assemblies.get(title)
+    if assembly_id:
+        page.goto(Urls.backoffice_assembly_url(assembly_id))
+        page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I try to access the assembly members page for "{title}"'))
+def try_access_assembly_members_page(page: Page, title: str, test_database):
+    """Try to navigate directly to the assembly members page (may be unauthorized)."""
+    if title not in _test_assemblies:
+        session_factory = test_database
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    _test_assemblies[title] = str(assembly.id)
+                    break
+
+    assembly_id = _test_assemblies.get(title)
+    if assembly_id:
+        page.goto(Urls.backoffice_members_assembly_url(assembly_id))
+        page.wait_for_load_state("networkidle")
+
+
+@then("I should be redirected to the dashboard")
+def redirected_to_dashboard(page: Page):
+    """Verify user was redirected to the backoffice dashboard."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/dashboard"))
