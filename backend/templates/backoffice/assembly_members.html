@@ -2,205 +2,180 @@
 ABOUTME: Backoffice assembly team members page
 ABOUTME: Displays team members table with add/remove functionality for admins
 #}
-{% extends "backoffice/base.html" %}
-{% from "backoffice/components/navigation.html" import navigation %}
+{% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/alert.html" import flash_messages %}
-{% from "backoffice/components/footer.html" import footer %}
 {% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/search_dropdown.html" import search_dropdown %}
 
 {% block title %}{{ _("Team Members") }} - {{ assembly.title }}{% endblock %}
 
-{% block body %}
-    <div class="min-h-screen flex flex-col">
-        {{ navigation(
-        logo_href=url_for('backoffice.dashboard'),
-        nav_items=[
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
-        {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
-        {"label": _("Help"), "href": url_for('main.support')}
-        ],
-        account_items=[
-        {"label": _("My Account"), "href": url_for('profile.view')}
-        ],
-        cta_text=_("Sign out"),
-        cta_href=url_for('auth.logout')
-        ) }}
-
-        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
-            {{ flash_messages() }}
-
-            {# Breadcrumbs #}
-            <div class="mb-6">
-                {{ breadcrumbs([
-                {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-                {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-                {"label": _("Team Members")}
-                ]) }}
-            </div>
-
-            {# Page Heading #}
-            <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-            <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Manage team members for this assembly") }}
-            </p>
-
-            {# TODO: Extract tab navigation into a reusable component in the design system #}
-            {# Inline Tab Navigation #}
-            <nav class="mb-8" aria-label="{{ _('Assembly sections') }}">
-                <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
-                    <li>
-                        <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                            onmouseover="this.style.color='var(--color-headings)'"
-                            onmouseout="this.style.color='var(--color-secondary-text)'">
-                            {{ _("Details") }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                            onmouseover="this.style.color='var(--color-headings)'"
-                            onmouseout="this.style.color='var(--color-secondary-text)'">
-                            {{ _("Data & Selection") }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('backoffice.view_assembly_members', assembly_id=assembly.id) }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
-                            style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);">
-                            {{ _("Team Members") }}
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            {# Team Members Section #}
-            <section class="mb-8">
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Team Members") }}</h2>
-
-                {% if assembly_users %}
-                    {# Members Table #}
-                    <div class="rounded-lg overflow-hidden" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                        <table class="w-full">
-                            <thead>
-                                <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                    <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("User") }}</th>
-                                    <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("Email") }}</th>
-                                    <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("Role") }}</th>
-                                    {% if can_manage_assembly_users %}
-                                        <th class="px-6 py-4 text-right text-label-lg" style="color: var(--color-headings);">{{ _("Actions") }}</th>
-                                    {% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user, role in assembly_users %}
-                                    <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                        <td class="px-6 py-4 text-body-md" style="color: var(--color-body-text);">{{ user.display_name }}</td>
-                                        <td class="px-6 py-4 text-body-md" style="color: var(--color-body-text);">{{ user.email }}</td>
-                                        <td class="px-6 py-4 text-body-md">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm"
-                                                style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">
-                                                {{ role.role.value }}
-                                            </span>
-                                        </td>
-                                        {% if can_manage_assembly_users %}
-                                            <td class="px-6 py-4 text-right">
-                                                <form method="post"
-                                                    action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
-                                                    class="inline"
-                                                    onsubmit="return confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}');">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                                    {# TODO: Add danger variant and size parameter to button component in design system #}
-                                                    <button type="submit"
-                                                        class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
-                                                        style="background-color: var(--color-primary-action); color: var(--color-page-background);">
-                                                        {{ _("Remove") }}
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    {% call card(id="no-members-card") %}
-                        <p class="text-body-md mb-2" style="color: var(--color-body-text);">{{ _("No team members have been added to this assembly yet.") }}</p>
-                        <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Admin users can still manage this assembly.") }}</p>
-                    {% endcall %}
-                {% endif %}
-            </section>
-
-            {# Add User Form - Only shown to admins #}
-            {% if can_manage_assembly_users %}
-                <section class="mb-8">
-                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Add User to Assembly") }}</h2>
-
-                    {% call card(id="add-user-card") %}
-                        <form method="post" action="{{ url_for('backoffice.add_user_to_assembly', assembly_id=assembly.id) }}">
-                            {{ add_user_form.hidden_tag() }}
-
-                            {# User Search with Autocomplete #}
-                            <div class="mb-6">
-                                {{ search_dropdown(
-                                name="user_id",
-                                label=add_user_form.user_id.label.text,
-                                fetch_url=url_for('backoffice.search_users', assembly_id=assembly.id),
-                                placeholder=_("Type to search by email or name..."),
-                                hint=add_user_form.user_id.description,
-                                error=add_user_form.user_id.errors|join(", ") if add_user_form.user_id.errors else ""
-                                ) }}
-                            </div>
-
-                            {# TODO: Extract radio button group into a reusable component in the design system #}
-                            {# Role Selection Radio Buttons #}
-                            <fieldset class="mb-6">
-                                <legend class="text-label-lg block mb-3" style="color: var(--color-headings);">
-                                    {{ add_user_form.role.label.text }}
-                                </legend>
-                                {% if add_user_form.role.description %}
-                                    <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">{{ add_user_form.role.description }}</p>
-                                {% endif %}
-                                <div class="flex flex-col gap-3">
-                                    {% for value, label in add_user_form.role.choices %}
-                                        <label class="flex items-center gap-3 cursor-pointer group">
-                                            <input type="radio"
-                                                id="role_{{ loop.index }}"
-                                                name="{{ add_user_form.role.name }}"
-                                                value="{{ value }}"
-                                                {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}
-                                                class="w-5 h-5 rounded-full cursor-pointer"
-                                                style="accent-color: var(--color-primary-action);">
-                                            <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">{{ label }}</span>
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                                {% if add_user_form.role.errors %}
-                                    <p class="text-body-sm mt-1.5" style="color: var(--color-primary-action);">
-                                        {% for error in add_user_form.role.errors %}{{ error }}{% endfor %}
-                                    </p>
-                                {% endif %}
-                            </fieldset>
-
-                            {{ button(_("Add User to Assembly"), type="submit", variant="primary") }}
-                        </form>
-                    {% endcall %}
-                </section>
-            {% endif %}
-
-            {# Actions #}
-            <section class="flex gap-4">
-                {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
-            </section>
-        </main>
-
-        {{ footer() }}
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Team Members")}
+        ]) }}
     </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Manage team members for this assembly") }}
+    </p>
+
+    {# TODO: Extract tab navigation into a reusable component in the design system #}
+    {# Inline Tab Navigation #}
+    <nav class="mb-8" aria-label="{{ _('Assembly sections') }}">
+        <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
+            <li>
+                <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}"
+                    class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
+                    style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
+                    onmouseover="this.style.color='var(--color-headings)'"
+                    onmouseout="this.style.color='var(--color-secondary-text)'">
+                    {{ _("Details") }}
+                </a>
+            </li>
+            <li>
+                <a href="#"
+                    class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
+                    style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
+                    onmouseover="this.style.color='var(--color-headings)'"
+                    onmouseout="this.style.color='var(--color-secondary-text)'">
+                    {{ _("Data & Selection") }}
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('backoffice.view_assembly_members', assembly_id=assembly.id) }}"
+                    class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
+                    style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);">
+                    {{ _("Team Members") }}
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    {# Team Members Section #}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Team Members") }}</h2>
+
+        {% if assembly_users %}
+            {# Members Table #}
+            <div class="rounded-lg overflow-hidden" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <table class="w-full">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                            <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("User") }}</th>
+                            <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("Email") }}</th>
+                            <th class="px-6 py-4 text-left text-label-lg" style="color: var(--color-headings);">{{ _("Role") }}</th>
+                            {% if can_manage_assembly_users %}
+                                <th class="px-6 py-4 text-right text-label-lg" style="color: var(--color-headings);">{{ _("Actions") }}</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user, role in assembly_users %}
+                            <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <td class="px-6 py-4 text-body-md" style="color: var(--color-body-text);">{{ user.display_name }}</td>
+                                <td class="px-6 py-4 text-body-md" style="color: var(--color-body-text);">{{ user.email }}</td>
+                                <td class="px-6 py-4 text-body-md">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm"
+                                        style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">
+                                        {{ role.role.value }}
+                                    </span>
+                                </td>
+                                {% if can_manage_assembly_users %}
+                                    <td class="px-6 py-4 text-right">
+                                        <form method="post"
+                                            action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
+                                            class="inline"
+                                            onsubmit="return confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            {# TODO: Add danger variant and size parameter to button component in design system #}
+                                            <button type="submit"
+                                                class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
+                                                style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                                {{ _("Remove") }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            {% call card(id="no-members-card") %}
+                <p class="text-body-md mb-2" style="color: var(--color-body-text);">{{ _("No team members have been added to this assembly yet.") }}</p>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Admin users can still manage this assembly.") }}</p>
+            {% endcall %}
+        {% endif %}
+    </section>
+
+    {# Add User Form - Only shown to admins #}
+    {% if can_manage_assembly_users %}
+        <section class="mb-8">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Add User to Assembly") }}</h2>
+
+            {% call card(id="add-user-card") %}
+                <form method="post" action="{{ url_for('backoffice.add_user_to_assembly', assembly_id=assembly.id) }}">
+                    {{ add_user_form.hidden_tag() }}
+
+                    {# User Search with Autocomplete #}
+                    <div class="mb-6">
+                        {{ search_dropdown(
+                        name="user_id",
+                        label=add_user_form.user_id.label.text,
+                        fetch_url=url_for('backoffice.search_users', assembly_id=assembly.id),
+                        placeholder=_("Type to search by email or name..."),
+                        hint=add_user_form.user_id.description,
+                        error=add_user_form.user_id.errors|join(", ") if add_user_form.user_id.errors else ""
+                        ) }}
+                    </div>
+
+                    {# TODO: Extract radio button group into a reusable component in the design system #}
+                    {# Role Selection Radio Buttons #}
+                    <fieldset class="mb-6">
+                        <legend class="text-label-lg block mb-3" style="color: var(--color-headings);">
+                            {{ add_user_form.role.label.text }}
+                        </legend>
+                        {% if add_user_form.role.description %}
+                            <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">{{ add_user_form.role.description }}</p>
+                        {% endif %}
+                        <div class="flex flex-col gap-3">
+                            {% for value, label in add_user_form.role.choices %}
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="radio"
+                                        id="role_{{ loop.index }}"
+                                        name="{{ add_user_form.role.name }}"
+                                        value="{{ value }}"
+                                        {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}
+                                        class="w-5 h-5 rounded-full cursor-pointer"
+                                        style="accent-color: var(--color-primary-action);">
+                                    <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">{{ label }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if add_user_form.role.errors %}
+                            <p class="text-body-sm mt-1.5" style="color: var(--color-primary-action);">
+                                {% for error in add_user_form.role.errors %}{{ error }}{% endfor %}
+                            </p>
+                        {% endif %}
+                    </fieldset>
+
+                    {{ button(_("Add User to Assembly"), type="submit", variant="primary") }}
+                </form>
+            {% endcall %}
+        </section>
+    {% endif %}
+
+    {# Actions #}
+    <section class="flex gap-4">
+        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+    </section>
 {% endblock %}

@@ -2,22 +2,32 @@
 ABOUTME: Backoffice edit assembly page
 ABOUTME: Uses assembly_form macro for editing assembly details
 #}
-{% extends "backoffice/base.html" %}
-{% from "backoffice/assembly_form.html" import assembly_form_page with context %}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/assembly_form.html" import assembly_form %}
 
 {% block title %}{{ _("Edit Assembly") }} - {{ assembly.title }}{% endblock %}
 
-{% block body %}
-    {{ assembly_form_page(
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Edit")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Edit Assembly") }}</h1>
+    <p class="text-body-lg mb-8" style="color: var(--color-secondary-text);">
+        {{ _("Update the details for this citizens' assembly.") }}
+    </p>
+
+    {{ assembly_form(
     form=form,
-    title=_("Edit Assembly"),
-    subtitle=_("Update the details for this citizens' assembly."),
     submit_label=_("Save Changes"),
-    cancel_url=url_for('backoffice.view_assembly', assembly_id=assembly.id),
-    breadcrumb_items=[
-    {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-    {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-    {"label": _("Edit")}
-    ]
+    cancel_url=url_for('backoffice.view_assembly', assembly_id=assembly.id)
     ) }}
 {% endblock %}
