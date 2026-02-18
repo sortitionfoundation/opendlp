@@ -115,6 +115,14 @@ def see_primitive_tokens_text(page: Page):
 # Design Token Tests
 
 
+@when(parsers.parse('I click the "{tab_name}" showcase tab'))
+def click_showcase_tab(page: Page, tab_name: str):
+    """Click a tab in the showcase page tab navigation."""
+    tab_button = page.locator("button", has_text=tab_name)
+    tab_button.click()
+    page.wait_for_timeout(100)  # Allow Alpine.js to update
+
+
 @then("I should see the brand-400 primary action token box")
 def see_brand_400_token_box(page: Page):
     """Verify the brand-400 primary action token box is visible."""
