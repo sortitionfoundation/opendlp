@@ -101,6 +101,10 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         current_app.logger.error(f"Backoffice assembly error for user {current_user.id}: {e}")
         flash(_("An error occurred while loading the assembly"), "error")
