@@ -171,6 +171,30 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
+@login_required
+def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice assembly data page."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        return render_template("backoffice/assembly_data.html", assembly=assembly), 200
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"View assembly data error for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("An error occurred while loading assembly data"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:

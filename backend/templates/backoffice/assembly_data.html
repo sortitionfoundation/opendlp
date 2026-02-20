@@ -1,0 +1,62 @@
+{#
+ABOUTME: Backoffice assembly data page
+ABOUTME: Displays data source selection and data management for assemblies
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tabs.html" import tabs %}
+{% from "backoffice/components/input.html" import select %}
+
+{% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Data")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Manage data for this assembly") }}
+    </p>
+
+    {{ tabs(
+    items=[
+    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id), "active": true},
+    {"label": _("Selection"), "href": "#"},
+    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+    ],
+    aria_label=_("Assembly sections")
+    ) }}
+
+    {# Data Source Section #}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Data Source") }}</h2>
+
+        <div class="max-w-md">
+            {{ select(
+            name="data_source",
+            label=_("Data Source"),
+            options=[
+            {"value": "gsheet", "label": _("Google Spreadsheet")},
+            {"value": "csv", "label": _("CSV file")}
+            ],
+            value="gsheet",
+            hint=_("Choose how you want to import participant data for this assembly.")
+            ) }}
+        </div>
+    </section>
+
+    {# Actions #}
+    <section class="flex gap-4">
+        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+    </section>
+{% endblock %}
