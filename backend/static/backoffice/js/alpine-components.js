@@ -214,7 +214,11 @@ document.addEventListener("alpine:init", function () {
             selected: initialValue,
 
             navigate: function (event) {
-                var url = baseUrl + "?" + paramName + "=" + encodeURIComponent(this.selected);
+                // Build URL - skip query param if value is empty
+                var url = baseUrl;
+                if (this.selected) {
+                    url += "?" + paramName + "=" + encodeURIComponent(this.selected);
+                }
 
                 // Add focus hash if element has focus (keyboard navigation)
                 // Use event.target to get the actual element (not the x-data root)
