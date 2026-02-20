@@ -5,6 +5,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, checkbox, radio_group %}
 {% from "backoffice/components/tabs.html" import tabs %}
 
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
@@ -84,12 +85,177 @@ ABOUTME: Displays data source selection and data management for assemblies
 
 {# Google Spreadsheet content macro #}
 {% macro render_gsheet_content() %}
+    {% set readonly = gsheet_mode == "view" %}
+    {% set is_edit = gsheet_mode == "edit" %}
+    {% set is_new = gsheet_mode == "new" or not gsheet %}
+
     <section class="mb-8">
-        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Google Spreadsheet") }}</h2>
-        <p class="text-body-md" style="color: var(--color-secondary-text);">
-            {{ _("Connect a Google Spreadsheet to import participant data.") }}
-        </p>
-        {# TODO: Add Google Spreadsheet connection UI #}
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Spreadsheet Configuration") }}</h2>
+            {% if readonly %}
+                {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline", size="sm") }}
+            {% endif %}
+        </div>
+
+        {% if is_new %}
+            <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+                {{ _("Configure a Google Spreadsheet to import and manage participant data for this assembly.") }}
+            </p>
+        {% endif %}
+
+        {# Configuration Form / View #}
+        <div class="rounded-lg p-6 mb-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <form method="post" action="{{ url_for('backoffice.save_gsheet_config', assembly_id=assembly.id) }}" class="flex flex-col gap-6">
+                {% if not readonly %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />{% endif %}
+
+                {# Spreadsheet URL #}
+                {{ input(
+                name="url",
+                label=_("Spreadsheet URL"),
+                type="url",
+                value=gsheet.url if gsheet else "",
+                placeholder="https://docs.google.com/spreadsheets/d/...",
+                hint=_("Enter the full URL of your Google Spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
+                required=true,
+                readonly=readonly,
+                link_url=gsheet.url if gsheet and readonly else "",
+                link_text=_("View Spreadsheet")
+                ) }}
+
+                {# Initial/Test Selection Fieldset #}
+                <fieldset class="flex flex-col gap-4">
+                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Initial/Test Selection") }}</legend>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                        {{ _("Configure the tabs used for the initial selection process.") }}
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{ input(
+                        name="select_registrants_tab",
+                        label=_("Respondents Tab"),
+                        value=gsheet.select_registrants_tab if gsheet else "",
+                        placeholder=_("e.g., Respondents"),
+                        hint=_("Tab containing respondent data for selection."),
+                        readonly=readonly
+                        ) }}
+                        {{ input(
+                        name="select_targets_tab",
+                        label=_("Categories Tab"),
+                        value=gsheet.select_targets_tab if gsheet else "",
+                        placeholder=_("e.g., Categories"),
+                        hint=_("Tab containing selection categories/targets."),
+                        readonly=readonly
+                        ) }}
+                    </div>
+                </fieldset>
+
+                {# Replacement Fieldset #}
+                <fieldset class="flex flex-col gap-4">
+                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Replacement") }}</legend>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                        {{ _("Configure the tabs used for replacement selections.") }}
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{ input(
+                        name="replace_registrants_tab",
+                        label=_("Respondents Tab"),
+                        value=gsheet.replace_registrants_tab if gsheet else "",
+                        placeholder=_("e.g., Respondents"),
+                        hint=_("Tab containing respondent data for replacements."),
+                        readonly=readonly
+                        ) }}
+                        {{ input(
+                        name="replace_targets_tab",
+                        label=_("Categories Tab"),
+                        value=gsheet.replace_targets_tab if gsheet else "",
+                        placeholder=_("e.g., Categories"),
+                        hint=_("Tab containing replacement categories/targets."),
+                        readonly=readonly
+                        ) }}
+                    </div>
+                    {{ input(
+                    name="already_selected_tab",
+                    label=_("Already Selected Tab"),
+                    value=gsheet.already_selected_tab if gsheet else "",
+                    placeholder=_("e.g., Selected"),
+                    hint=_("Tab containing previously selected participants (for exclusion during replacement)."),
+                    readonly=readonly
+                    ) }}
+                </fieldset>
+
+                {# Options #}
+                <fieldset class="flex flex-col gap-4">
+                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
+                    {{ checkbox(
+                    name="check_same_address",
+                    label=_("Check Same Address"),
+                    checked=gsheet.check_same_address if gsheet else false,
+                    hint=_("Prevent selecting multiple participants from the same address."),
+                    readonly=readonly
+                    ) }}
+                    {{ checkbox(
+                    name="generate_remaining_tab",
+                    label=_("Generate Remaining Tab"),
+                    checked=gsheet.generate_remaining_tab if gsheet else false,
+                    hint=_("Automatically generate a tab with remaining (unselected) participants."),
+                    readonly=readonly
+                    ) }}
+                </fieldset>
+
+                {# Team Selection #}
+                <div x-data="{ selectedTeam: '{{ gsheet.team if gsheet else 'sf' }}' }">
+                    {{ radio_group(
+                    name="team",
+                    label=_("Configuration Preset"),
+                    options=[
+                    {"value": "sf", "label": _("Sortition Foundation (default settings)")},
+                    {"value": "other", "label": _("Custom configuration")}
+                    ],
+                    value=gsheet.team if gsheet else "sf",
+                    hint=_("Choose a preset or configure custom column settings."),
+                    readonly=readonly,
+                    attrs='x-model="selectedTeam"'
+                    ) }}
+
+                    {# Custom Configuration Fields (shown when team="other") #}
+                    <div x-show="selectedTeam === 'other'" x-cloak class="mt-4 flex flex-col gap-4 pl-8" style="border-left: 2px solid var(--color-borders-dividers);">
+                        {{ input(
+                        name="id_column",
+                        label=_("ID Column"),
+                        value=gsheet.id_column if gsheet else "",
+                        placeholder=_("e.g., ID"),
+                        hint=_("Column name containing unique participant identifiers."),
+                        readonly=readonly
+                        ) }}
+                        {{ input(
+                        name="check_same_address_cols_string",
+                        label=_("Address Columns"),
+                        value=gsheet.check_same_address_cols_string if gsheet else "",
+                        placeholder=_("e.g., Street, City, PostCode"),
+                        hint=_("Comma-separated column names used for address matching."),
+                        readonly=readonly
+                        ) }}
+                        {{ input(
+                        name="columns_to_keep_string",
+                        label=_("Columns to Keep"),
+                        value=gsheet.columns_to_keep_string if gsheet else "",
+                        placeholder=_("e.g., Name, Email, Phone"),
+                        hint=_("Comma-separated column names to include in output."),
+                        readonly=readonly
+                        ) }}
+                    </div>
+                </div>
+
+                {# Form Actions #}
+                {% if not readonly %}
+                    <div class="flex gap-4 pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                        {{ button(_("Save Configuration"), type="submit", variant="primary") }}
+                        {% if is_edit %}
+                            {{ button(_("Cancel"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </form>
+        </div>
     </section>
 {% endmacro %}
 

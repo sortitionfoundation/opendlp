@@ -185,7 +185,28 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if data_source not in ("gsheet", "csv", ""):
             data_source = ""
 
-        return render_template("backoffice/assembly_data.html", assembly=assembly, data_source=data_source), 200
+        # Initialize gsheet-related context
+        gsheet = None
+        gsheet_mode = "new"
+        google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
+
+        if data_source == "gsheet":
+            # TODO: Load existing gsheet config from service layer
+            # gsheet = services.get_gsheet_config(uow, assembly_id)
+
+            # Determine mode based on query param and whether config exists
+            mode_param = request.args.get("mode", "")
+            # Config exists: default to view, allow edit. No config: always show new form
+            gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
+
+        return render_template(
+            "backoffice/assembly_data.html",
+            assembly=assembly,
+            data_source=data_source,
+            gsheet=gsheet,
+            gsheet_mode=gsheet_mode,
+            google_service_account_email=google_service_account_email,
+        ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
@@ -198,6 +219,15 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"View assembly data error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while loading assembly data"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/gsheet/save", methods=["POST"])
+@login_required
+def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Save Google Spreadsheet configuration for an assembly."""
+    # TODO: Implement actual save logic with service layer
+    flash(_("Google Spreadsheet configuration saved (placeholder)"), "success")
+    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
