@@ -1,7 +1,30 @@
 /**
  * ABOUTME: Alpine.js data components for backoffice design system
- * ABOUTME: Registers reusable Alpine.data() components like autocomplete
+ * ABOUTME: Registers reusable Alpine.data() components like autocomplete and focus restoration
  */
+
+/**
+ * Focus restoration for keyboard navigation
+ *
+ * When a component navigates to a new URL with keyboard focus, it can add
+ * #focus=<focusId> to the URL. On page load, this handler finds the element
+ * with data-focus-id="<focusId>" and restores focus to it.
+ *
+ * Usage:
+ *   1. Add data-focus-id="myElement" to any focusable element
+ *   2. When navigating, append #focus=myElement to the URL (if element had focus)
+ *   3. On page load, focus is automatically restored
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    var hash = window.location.hash;
+    if (hash.startsWith("#focus=")) {
+        var focusId = hash.substring(7);
+        var el = document.querySelector('[data-focus-id="' + focusId + '"]');
+        if (el) {
+            el.focus();
+        }
+    }
+});
 
 document.addEventListener("alpine:init", function () {
     /**
@@ -162,18 +185,25 @@ document.addEventListener("alpine:init", function () {
     /**
    * URL-based select navigation component
    *
+   * Navigates to a URL when selection changes. Supports focus restoration
+   * for keyboard users via the data-focus-id attribute.
+   *
    * Usage:
-   *   <select x-data="urlSelect({ baseUrl: '/page', paramName: 'source' })"
-   *           x-model="selected"
-   *           @change="navigate()">
-   *     <option value="option1">Option 1</option>
-   *     <option value="option2">Option 2</option>
-   *   </select>
+   *   <div x-data="urlSelect({ baseUrl: '/page', paramName: 'source', initialValue: 'option1' })">
+   *     <select x-model="selected" @change="navigate($event)" data-focus-id="my-select">
+   *       <option value="option1">Option 1</option>
+   *       <option value="option2">Option 2</option>
+   *     </select>
+   *   </div>
    *
    * Options:
    *   - baseUrl: Base URL to navigate to (required)
    *   - paramName: Query parameter name (default: 'value')
    *   - initialValue: Initial selected value (optional)
+   *
+   * Focus restoration:
+   *   If the element has data-focus-id and has keyboard focus when navigating,
+   *   the URL will include #focus=<focusId> to restore focus after page load.
    */
     Alpine.data("urlSelect", function (options) {
         var baseUrl = options.baseUrl || "";
@@ -183,8 +213,18 @@ document.addEventListener("alpine:init", function () {
         return {
             selected: initialValue,
 
-            navigate: function () {
-                window.location.href = baseUrl + "?" + paramName + "=" + encodeURIComponent(this.selected);
+            navigate: function (event) {
+                var url = baseUrl + "?" + paramName + "=" + encodeURIComponent(this.selected);
+
+                // Add focus hash if element has focus (keyboard navigation)
+                // Use event.target to get the actual element (not the x-data root)
+                var el = event ? event.target : this.$el;
+                var focusId = el.dataset.focusId;
+                if (focusId && document.activeElement === el) {
+                    url += "#focus=" + focusId;
+                }
+
+                window.location.href = url;
             },
         };
     });

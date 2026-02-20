@@ -51,7 +51,8 @@ ABOUTME: Displays data source selection and data management for assemblies
                     name="data_source"
                     id="data_source"
                     x-model="selected"
-                    @change="navigate()"
+                    @change="navigate($event)"
+                    data-focus-id="data-source"
                     class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
                     style="
                         background-color: var(--color-page-background);
