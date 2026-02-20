@@ -5,6 +5,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tabs.html" import tabs %}
 
 {% block title %}{{ assembly.title }} - Assembly{% endblock %}
 
@@ -24,37 +25,14 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
         {{ _("Assembly Details") }}
     </p>
 
-    {# TODO: Extract tab navigation into a reusable component in the design system #}
-    {# Inline Tab Navigation #}
-    <nav class="mb-8" aria-label="{{ _('Assembly sections') }}">
-        <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
-            <li>
-                <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}"
-                    class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
-                    style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);">
-                    {{ _("Details") }}
-                </a>
-            </li>
-            <li>
-                <a href="#"
-                    class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                    style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                    onmouseover="this.style.color='var(--color-headings)'"
-                    onmouseout="this.style.color='var(--color-secondary-text)'">
-                    {{ _("Data & Selection") }}
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('backoffice.view_assembly_members', assembly_id=assembly.id) }}"
-                    class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                    style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                    onmouseover="this.style.color='var(--color-headings)'"
-                    onmouseout="this.style.color='var(--color-secondary-text)'">
-                    {{ _("Team Members") }}
-                </a>
-            </li>
-        </ul>
-    </nav>
+    {{ tabs(
+    items=[
+    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
+    {"label": _("Data & Selection"), "href": "#"},
+    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+    ],
+    aria_label=_("Assembly sections")
+    ) }}
 
     {# Assembly Question Section #}
     {% if assembly.question %}
