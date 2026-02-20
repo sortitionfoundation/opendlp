@@ -8,52 +8,45 @@ ABOUTME: Displays horizontal tab navigation with usage examples
 {% macro tabs_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Tabs Component") }}
-        {{ showcase_description("Horizontal tab navigation for switching between page sections. Active tab is highlighted with primary action color.") }}
+        {{ showcase_description("Horizontal tab navigation for switching between page sections. Active tab is highlighted with primary action color. Additional attributes (like data-proto) are passed through to the anchor element.") }}
 
         {% call showcase_example('{% from "backoffice/components/tabs.html" import tabs %}
 
             {{ tabs(
             items=[
-            {"label": _("Details"), "href": url_for(\'backoffice.view_assembly\', assembly_id=assembly.id), "active": true},
-            {"label": _("Data & Selection"), "href": "#"},
-            {"label": _("Team Members"), "href": url_for(\'backoffice.view_assembly_members\', assembly_id=assembly.id)}
+            {"label": _("Details"), "href": url_for(\'...\'), "active": true},
+            {"label": _("Data"), "href": "#", "data-proto": "click:show:data-panel"},
+            {"label": _("Selection"), "href": "#"},
+            {"label": _("Team Members"), "href": url_for(\'...\')}
             ],
             aria_label=_("Assembly sections")
-            ) }}') %}
+            ) }}
+
+            {# Extra attributes like data-proto are passed through to the <a> element #}') %}
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-2">
-                    <span class="text-label-md" style="color: var(--color-secondary-text);">First tab active</span>
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Four tabs (first active)</span>
                     {{ tabs(
                     items=[
                     {"label": "Details", "href": "#", "active": true},
-                    {"label": "Data & Selection", "href": "#"},
+                    {"label": "Data", "href": "#"},
+                    {"label": "Selection", "href": "#"},
                     {"label": "Team Members", "href": "#"}
                     ],
-                    aria_label="Example tabs - first active"
+                    aria_label="Example tabs - four items"
                     ) }}
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <span class="text-label-md" style="color: var(--color-secondary-text);">Middle tab active</span>
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With custom attributes (inspect HTML)</span>
                     {{ tabs(
                     items=[
-                    {"label": "Details", "href": "#"},
-                    {"label": "Data & Selection", "href": "#", "active": true},
+                    {"label": "Details", "href": "#", "active": true},
+                    {"label": "Data", "href": "#", "data-proto": "click:show:data-panel"},
+                    {"label": "Selection", "href": "#", "data-custom": "example-value"},
                     {"label": "Team Members", "href": "#"}
                     ],
-                    aria_label="Example tabs - middle active"
-                    ) }}
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <span class="text-label-md" style="color: var(--color-secondary-text);">Last tab active</span>
-                    {{ tabs(
-                    items=[
-                    {"label": "Details", "href": "#"},
-                    {"label": "Data & Selection", "href": "#"},
-                    {"label": "Team Members", "href": "#", "active": true}
-                    ],
-                    aria_label="Example tabs - last active"
+                    aria_label="Example tabs - with custom attributes"
                     ) }}
                 </div>
 
