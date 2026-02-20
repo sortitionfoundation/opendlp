@@ -158,4 +158,34 @@ document.addEventListener("alpine:init", function () {
             },
         };
     });
+
+    /**
+   * URL-based select navigation component
+   *
+   * Usage:
+   *   <select x-data="urlSelect({ baseUrl: '/page', paramName: 'source' })"
+   *           x-model="selected"
+   *           @change="navigate()">
+   *     <option value="option1">Option 1</option>
+   *     <option value="option2">Option 2</option>
+   *   </select>
+   *
+   * Options:
+   *   - baseUrl: Base URL to navigate to (required)
+   *   - paramName: Query parameter name (default: 'value')
+   *   - initialValue: Initial selected value (optional)
+   */
+    Alpine.data("urlSelect", function (options) {
+        var baseUrl = options.baseUrl || "";
+        var paramName = options.paramName || "value";
+        var initialValue = options.initialValue || "";
+
+        return {
+            selected: initialValue,
+
+            navigate: function () {
+                window.location.href = baseUrl + "?" + paramName + "=" + encodeURIComponent(this.selected);
+            },
+        };
+    });
 });

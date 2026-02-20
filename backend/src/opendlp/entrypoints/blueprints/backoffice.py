@@ -180,7 +180,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        return render_template("backoffice/assembly_data.html", assembly=assembly), 200
+        # Get data source from query param, default to gsheet
+        data_source = request.args.get("source", "gsheet")
+        if data_source not in ("gsheet", "csv"):
+            data_source = "gsheet"
+
+        return render_template("backoffice/assembly_data.html", assembly=assembly, data_source=data_source), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")

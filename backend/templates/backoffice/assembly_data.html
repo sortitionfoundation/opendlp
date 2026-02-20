@@ -6,7 +6,6 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/tabs.html" import tabs %}
-{% from "backoffice/components/input.html" import select %}
 
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
 
@@ -37,26 +36,69 @@ ABOUTME: Displays data source selection and data management for assemblies
     aria_label=_("Assembly sections")
     ) }}
 
-    {# Data Source Section #}
+    {# Data Source Selector #}
     <section class="mb-8">
-        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Data Source") }}</h2>
-
         <div class="max-w-md">
-            {{ select(
-            name="data_source",
-            label=_("Data Source"),
-            options=[
-            {"value": "gsheet", "label": _("Google Spreadsheet")},
-            {"value": "csv", "label": _("CSV file")}
-            ],
-            value="gsheet",
-            hint=_("Choose how you want to import participant data for this assembly.")
-            ) }}
+            <div class="flex flex-col gap-1.5"
+                x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id) }}', paramName: 'source', initialValue: '{{ data_source }}' })">
+                <label for="data_source" class="text-label-lg" style="color: var(--color-headings);">
+                    {{ _("Data Source") }}
+                </label>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Choose how you want to import participant data for this assembly.") }}
+                </p>
+                <select
+                    name="data_source"
+                    id="data_source"
+                    x-model="selected"
+                    @change="navigate()"
+                    class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
+                    style="
+                        background-color: var(--color-page-background);
+                        border: 1px solid var(--color-borders-dividers);
+                        color: var(--color-body-text);
+                        --tw-ring-color: var(--color-focus-ring);
+                    ">
+                    <option value="gsheet">{{ _("Google Spreadsheet") }}</option>
+                    <option value="csv">{{ _("CSV file") }}</option>
+                </select>
+            </div>
         </div>
     </section>
+
+    {# Data Source Content #}
+    {% if data_source == "gsheet" %}
+        {{ render_gsheet_content() }}
+    {% elif data_source == "csv" %}
+        {{ render_csv_content() }}
+    {% endif %}
 
     {# Actions #}
     <section class="flex gap-4">
         {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
     </section>
 {% endblock %}
+
+
+{# Google Spreadsheet content macro #}
+{% macro render_gsheet_content() %}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Google Spreadsheet") }}</h2>
+        <p class="text-body-md" style="color: var(--color-secondary-text);">
+            {{ _("Connect a Google Spreadsheet to import participant data.") }}
+        </p>
+        {# TODO: Add Google Spreadsheet connection UI #}
+    </section>
+{% endmacro %}
+
+
+{# CSV file content macro #}
+{% macro render_csv_content() %}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("CSV File") }}</h2>
+        <p class="text-body-md" style="color: var(--color-secondary-text);">
+            {{ _("Upload a CSV file to import participant data.") }}
+        </p>
+        {# TODO: Add CSV upload UI #}
+    </section>
+{% endmacro %}
