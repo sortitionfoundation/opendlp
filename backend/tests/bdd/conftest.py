@@ -423,9 +423,3 @@ def user_invite(test_database, admin_user) -> str:
     )
 
     return invite.code
-
-
-pytest_plugins = [
-    "tests.bdd.shared.ui_shared",
-    "tests.bdd.shared.email_confirmation_steps",
-]
