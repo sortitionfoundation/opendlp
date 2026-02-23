@@ -1,14 +1,12 @@
 {% extends "backoffice/base.html" %}
-{% from "backoffice/components/card.html" import card %}
+{% from "backoffice/components/alert.html" import flash_messages %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/footer.html" import footer %}
-
 {% block title %}Dashboard{% endblock %}
-
 {% block body %}
-    {{ navigation(
-    logo_href=url_for('backoffice.dashboard'),
+    {{ navigation(logo_href=url_for('backoffice.dashboard') ,
     nav_items=[
     {"label": _("Dashboard"), "href": url_for('backoffice.dashboard') },
     {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser'] },
@@ -22,23 +20,25 @@
     cta_href=url_for('auth.logout')
     ) }}
     <main class="max-w-screen-2xl mx-auto px-6 py-8 min-h-screen">
+        {{ flash_messages() }}
         <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">Dashboard</h1>
-        <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">Welcome back, {{ current_user.display_name }}!</p>
-
+        <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">
+            Welcome back, {{ current_user.display_name }}!
+        </p>
         <!-- Assemblies Section -->
         <section>
             <div class="flex justify-between items-center mb-6">
                 <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
-                {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                {{ button(_("Create New Assembly") , href=url_for('backoffice.new_assembly'), variant="primary") }}
             </div>
-
             {% if assemblies %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {% for assembly in assemblies %}
                         {% call card(title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card", container_classes="flex flex-col h-full", body_classes="flex-1 flex flex-col") %}
                             {% if assembly.question %}
                                 <p style="color: var(--color-body-text);" class="text-body-md mb-4">
-                                    {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
+                                    {{ assembly.question[:100] }}
+                                    {% if assembly.question|length > 100 %}...{% endif %}
                                 </p>
                             {% endif %}
                             {% if assembly.first_assembly_date %}
@@ -47,7 +47,7 @@
                                 </p>
                             {% endif %}
                             <div class="mt-auto pt-4">
-                                {{ button(_("Go to Assembly"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
+                                {{ button(_("Go to Assembly") , href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
                             </div>
                         {% endcall %}
                     {% endfor %}
@@ -55,8 +55,10 @@
             {% else %}
                 {% call card(id="no-assemblies-card") %}
                     <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
-                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
-                    {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">
+                        {{ _("Create your first citizens' assembly to get started.") }}
+                    </p>
+                    {{ button(_("Create Your First Assembly") , href=url_for('backoffice.new_assembly'), variant="primary") }}
                 {% endcall %}
             {% endif %}
         </section>

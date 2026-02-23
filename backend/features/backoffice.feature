@@ -330,7 +330,7 @@ Feature: Backoffice UI
     And there is an assembly called "Climate Assembly" created by admin
     When I try to access the assembly details page for "Climate Assembly"
     Then I should be redirected to the dashboard
-    And I should see "Assembly not found"
+    And I should see "You don't have permission to view this assembly"
 
   Scenario: Non-admin user without assembly role cannot access assembly members page
     Given I am logged in as a normal user
