@@ -7,6 +7,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -16,6 +17,45 @@ from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
+
+
+# Store assembly data between steps
+class TestAssemblyCache:
+    """Cache of assembly title to (string of) UUID"""
+
+    def __init__(self) -> None:
+        self._cache: dict[str, str] = {}
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+    def get(self, title: str) -> str | None:
+        return self._cache.get(title)
+
+    def add_existing(self, title: str, assembly: str | Assembly) -> None:
+        assembly_id = str(assembly.id) if isinstance(assembly, Assembly) else assembly
+        self._cache[title] = assembly_id
+
+    def find_title(self, title: str, session_factory) -> str:
+        """
+        Find the title in the assemblies that have already been created and add to the cache.
+
+        Return the ID if the title is now in the cache, or empty string if not.
+        """
+        if title in self._cache:
+            return self._cache[title]
+        uow = SqlAlchemyUnitOfWork(session_factory)
+        with uow:
+            assemblies = list(uow.assemblies.all())
+            for assembly in assemblies:
+                if assembly.title == title:
+                    self._cache[title] = str(assembly.id)
+                    return self._cache[title]
+        return ""
+
+
+_test_assemblies = TestAssemblyCache()
+# _test_assemblies: dict[str, str] = {}
 
 
 # Override context fixture for backoffice tests - no Celery needed for static pages
@@ -375,9 +415,6 @@ def logged_in_as_admin(page: Page, admin_user):
 @given(parsers.parse('there is an assembly called "{title}"'))
 def create_test_assembly(title: str, admin_user, test_database):
     """Create a test assembly for the admin user."""
-    from opendlp.service_layer.assembly_service import create_assembly
-    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
     assembly = create_assembly(
@@ -385,7 +422,7 @@ def create_test_assembly(title: str, admin_user, test_database):
         title=title,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies[title] = str(assembly.id)
+    _test_assemblies.add_existing(title, assembly)
 
 
 @when("I try to access the backoffice dashboard")
@@ -476,16 +513,10 @@ def footer_has_version(page: Page):
 
 # Assembly Details Page Tests
 
-# Store assembly data between steps
-_test_assemblies: dict[str, str] = {}
-
 
 @given(parsers.parse('there is an assembly called "{title}" with question "{question}"'))
 def create_test_assembly_with_question(title: str, question: str, admin_user, test_database):
     """Create a test assembly with a question for the admin user."""
-    from opendlp.service_layer.assembly_service import create_assembly
-    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
     assembly = create_assembly(
@@ -494,7 +525,7 @@ def create_test_assembly_with_question(title: str, question: str, admin_user, te
         question=question,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies[title] = str(assembly.id)
+    _test_assemblies.add_existing(title, assembly)
 
 
 @when(parsers.parse('I click the "Go to Assembly" button for "{title}"'))
@@ -509,19 +540,7 @@ def click_go_to_assembly_button(page: Page, title: str):
 def visit_assembly_details_page(page: Page, title: str, admin_user, test_database):
     """Navigate directly to the assembly details page."""
     # Get the assembly ID from the database if not already stored
-    if title not in _test_assemblies:
-        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
-        session_factory = test_database
-        uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow:
-            assemblies = list(uow.assemblies.all())
-            for assembly in assemblies:
-                if assembly.title == title:
-                    _test_assemblies[title] = str(assembly.id)
-                    break
-
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _test_assemblies.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_assembly_url(assembly_id))
 
@@ -596,19 +615,7 @@ def click_button_with_text(page: Page, button_text: str):
 def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
     """Navigate directly to the edit assembly page."""
     # Get the assembly ID from the database if not already stored
-    if title not in _test_assemblies:
-        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
-        session_factory = test_database
-        uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow:
-            assemblies = list(uow.assemblies.all())
-            for assembly in assemblies:
-                if assembly.title == title:
-                    _test_assemblies[title] = str(assembly.id)
-                    break
-
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _test_assemblies.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_edit_assembly_url(assembly_id))
 
@@ -740,7 +747,7 @@ def create_test_assembly_by_admin(title: str, admin_user, test_database):
         title=title,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies[title] = str(assembly.id)
+    _test_assemblies.add_existing(title, assembly)
 
 
 @given(parsers.parse('I am assigned to "{title}" as "{role}"'))
@@ -795,17 +802,7 @@ def click_tab(page: Page, tab_name: str):
 @when(parsers.parse('I visit the assembly members page for "{title}"'))
 def visit_assembly_members_page(page: Page, title: str, test_database):
     """Navigate directly to the assembly members page."""
-    if title not in _test_assemblies:
-        session_factory = test_database
-        uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow:
-            assemblies = list(uow.assemblies.all())
-            for assembly in assemblies:
-                if assembly.title == title:
-                    _test_assemblies[title] = str(assembly.id)
-                    break
-
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _test_assemblies.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_members_assembly_url(assembly_id))
 
@@ -910,17 +907,7 @@ def see_text_after_searching(page: Page, text: str):
 @when(parsers.parse('I try to access the assembly details page for "{title}"'))
 def try_access_assembly_details_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly details page (may be unauthorized)."""
-    if title not in _test_assemblies:
-        session_factory = test_database
-        uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow:
-            assemblies = list(uow.assemblies.all())
-            for assembly in assemblies:
-                if assembly.title == title:
-                    _test_assemblies[title] = str(assembly.id)
-                    break
-
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _test_assemblies.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_assembly_url(assembly_id))
         page.wait_for_load_state("networkidle")
@@ -929,17 +916,7 @@ def try_access_assembly_details_page(page: Page, title: str, test_database):
 @when(parsers.parse('I try to access the assembly members page for "{title}"'))
 def try_access_assembly_members_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly members page (may be unauthorized)."""
-    if title not in _test_assemblies:
-        session_factory = test_database
-        uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow:
-            assemblies = list(uow.assemblies.all())
-            for assembly in assemblies:
-                if assembly.title == title:
-                    _test_assemblies[title] = str(assembly.id)
-                    break
-
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _test_assemblies.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_members_assembly_url(assembly_id))
         page.wait_for_load_state("networkidle")
