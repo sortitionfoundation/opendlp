@@ -825,3 +825,112 @@ class TestCancelTask:
 
         assert record.has_finished is True
         assert record.is_cancelled is True
+
+
+class TestSortitionErrorHandling:
+    """Test that sortition-algorithms library errors are properly converted to service layer exceptions."""
+
+    def test_start_gsheet_load_task_invalid_settings_raises_invalid_selection(self):
+        """Test that ConfigurationError from to_settings() is converted to InvalidSelection."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create gsheet configuration with invalid settings
+        # check_same_address=True but no check_same_address_cols will cause ConfigurationError
+        gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            check_same_address=True,
+            check_same_address_cols=[],  # Empty - will cause ConfigurationError
+            columns_to_keep=["first_name", "last_name"],
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Should raise InvalidSelection, not ConfigurationError
+        with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
+            sortition.start_gsheet_load_task(uow, admin_user.id, assembly.id)
+
+    def test_start_gsheet_select_task_invalid_settings_raises_invalid_selection(self):
+        """Test that ConfigurationError from to_settings() is converted to InvalidSelection in select task."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly with valid number_to_select
+        assembly = Assembly(title="Test Assembly", number_to_select=10)
+        uow.assemblies.add(assembly)
+
+        # Create gsheet configuration with invalid settings
+        gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            check_same_address=True,
+            check_same_address_cols=[],  # Empty - will cause ConfigurationError
+            columns_to_keep=["first_name", "last_name"],
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Should raise InvalidSelection, not ConfigurationError
+        with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
+            sortition.start_gsheet_select_task(uow, admin_user.id, assembly.id)
+
+    def test_start_gsheet_replace_load_task_invalid_settings_raises_invalid_selection(self):
+        """Test that ConfigurationError from to_settings() is converted to InvalidSelection in replace load."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create gsheet configuration with invalid settings
+        gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            check_same_address=True,
+            check_same_address_cols=[],  # Empty - will cause ConfigurationError
+            columns_to_keep=["first_name", "last_name"],
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Should raise InvalidSelection, not ConfigurationError
+        with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
+            sortition.start_gsheet_replace_load_task(uow, admin_user.id, assembly.id)
+
+    def test_start_gsheet_replace_task_invalid_settings_raises_invalid_selection(self):
+        """Test that ConfigurationError from to_settings() is converted to InvalidSelection in replace task."""
+        uow = FakeUnitOfWork()
+
+        # Create admin user
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        # Create assembly
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+
+        # Create gsheet configuration with invalid settings
+        gsheet = AssemblyGSheet(
+            assembly_id=assembly.id,
+            url=VALID_GSHEET_URL,
+            check_same_address=True,
+            check_same_address_cols=[],  # Empty - will cause ConfigurationError
+            columns_to_keep=["first_name", "last_name"],
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Should raise InvalidSelection, not ConfigurationError
+        with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
+            sortition.start_gsheet_replace_task(uow, admin_user.id, assembly.id, number_to_select=5)

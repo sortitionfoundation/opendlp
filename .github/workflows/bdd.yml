@@ -5,6 +5,7 @@ on:
     paths:
       - "backend/**"
       - ".github/**"
+      - ".grype.yaml"
     branches:
       - main
   pull_request:

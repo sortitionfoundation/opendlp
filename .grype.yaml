@@ -2,3 +2,8 @@
 # Docs at https://oss.anchore.com/docs/guides/vulnerability/filter-results/#ignore-specific-vulnerabilities-or-packages
 
 ignore:
+  # GHSA-r6ph-v2qm-q3c2-cryptography is ignored as we can't upgrade to it while using python-mip 1.15.0
+  # See https://github.com/sortitionfoundation/sortition-algorithms/issues/1#issuecomment-3883969804 for more
+  # I have reviewed the changelog and we are not affected by this particular vulnerability.
+  # We can remove this if we drop python-mip or python-mip releases a proper release at some point.
+  - vulnerability: GHSA-r6ph-v2qm-q3c2

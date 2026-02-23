@@ -72,7 +72,7 @@ COPY . /src
 # Build the sass files fresh
 # Need the sass files copied in before we run this of course
 RUN --mount=type=cache,target=/root/.cache \
-  npm run build:sass
+  npm run build
 
 # Create the .mo files from the .po files
 # Note that .mo files are in the .gitignore

@@ -42,7 +42,7 @@ gsheets_bp = Blueprint("gsheets", __name__)
 
 @gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet", methods=["GET", "POST"])
 @login_required
-def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Create or edit Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.bootstrap()
@@ -98,6 +98,17 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         columns_to_keep_string=form.columns_to_keep_string.data,
                     )
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
+
+                # Soft validation warning - check if columns_to_keep is empty
+                if not form.columns_to_keep_string.data or not form.columns_to_keep_string.data.strip():
+                    flash(
+                        _(
+                            "Warning: No columns to keep specified. "
+                            "This means the output will only include participant data columns "
+                            "used for the targets and address checking. Is this intentional?"
+                        ),
+                        "warning",
+                    )
 
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except InsufficientPermissions as e:
@@ -345,6 +356,11 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
 
         return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid Selection attempted with gsheet load for assembly {assembly_id}: {e}")
+        flash(_("Could not start load spreadsheet task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
@@ -606,6 +622,13 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
         return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(
+            f"Invalid Selection attempted with gsheet replace load for assembly {assembly_id}: {e}"
+        )
+        flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")

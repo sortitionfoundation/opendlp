@@ -360,6 +360,8 @@ class TestAssemblyGSheetWorkflowIntegration:
                 "select_registrants_tab": "WorkflowRespondents",
                 "select_targets_tab": "WorkflowCategories",
                 "id_column": "workflow_id",
+                # check_same_address defaults to True in the form, but team='uk' will set address columns
+                "check_same_address_cols_string": "primary_address1, zip_royal_mail",  # Provide columns for validation
                 "check_same_address": True,
                 "generate_remaining_tab": False,
                 "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
@@ -535,3 +537,154 @@ class TestAssemblyGSheetPermissions:
             # Should return form with validation error
             assert response.status_code == 200
             assert b"error" in response.data or b"Invalid" in response.data or b"required" in response.data
+
+
+class TestAssemblyGSheetValidation:
+    """Test gsheet-specific validation rules."""
+
+    def test_create_gsheet_hard_validation_check_address_without_columns(self, logged_in_admin, existing_assembly):
+        """Test hard validation: check_same_address=True requires address columns."""
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation123456789/edit",
+                "team": "other",  # Custom config to avoid team defaults
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty - should fail validation
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
+            },
+        )
+
+        # Should return form with validation error (not redirect)
+        assert response.status_code == 200
+        # Check for validation error message
+        assert b"address columns" in response.data.lower() or b"must specify" in response.data.lower()
+
+    def test_create_gsheet_hard_validation_passes_when_check_address_disabled(self, logged_in_admin, existing_assembly):
+        """Test hard validation: check_same_address=False allows empty address columns."""
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation_pass123456789/edit",
+                "team": "other",  # Custom config
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                # check_same_address not set - defaults to False
+                "check_same_address_cols_string": "",  # Empty - should be OK since check_same_address is False
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
+            },
+            follow_redirects=False,
+        )
+
+        # Should succeed and redirect
+        assert response.status_code == 302
+        assert f"/assemblies/{existing_assembly.id}/data" in response.location
+
+    def test_create_gsheet_soft_validation_empty_columns_to_keep_shows_warning(
+        self, logged_in_admin, existing_assembly
+    ):
+        """Test soft validation: empty columns_to_keep shows warning but allows save."""
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/warning123456789/edit",
+                "team": "other",  # Custom config
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",
+                "check_same_address_cols_string": "address1, postcode",
+                "columns_to_keep_string": "",  # Empty - should show warning
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
+            },
+            follow_redirects=True,  # Follow redirects to check flash messages
+        )
+
+        # Should succeed (redirect was followed, so status is 200)
+        assert response.status_code == 200
+
+        # Check for both success and warning flash messages in the response
+        assert b"configuration created successfully" in response.data or b"success" in response.data.lower()
+        assert (
+            b"Warning" in response.data
+            or b"No columns to keep" in response.data
+            or b"participant data columns" in response.data
+        )
+
+    def test_edit_gsheet_hard_validation_check_address_without_columns(self, logged_in_admin, assembly_with_gsheet):
+        """Test hard validation on edit: check_same_address=True requires address columns."""
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/edit_validation123456789/edit",
+                "team": "other",  # Custom config
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty - should fail validation
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+            },
+        )
+
+        # Should return form with validation error (not redirect)
+        assert response.status_code == 200
+        # Check for validation error message
+        assert b"address columns" in response.data.lower() or b"must specify" in response.data.lower()
+
+    def test_edit_gsheet_soft_validation_empty_columns_to_keep_shows_warning(
+        self, logged_in_admin, assembly_with_gsheet
+    ):
+        """Test soft validation on edit: empty columns_to_keep shows warning but allows save."""
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/edit_warning123456789/edit",
+                "team": "other",  # Custom config
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",
+                "check_same_address_cols_string": "address1, postcode",
+                "columns_to_keep_string": "",  # Empty - should show warning
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{assembly.id}/gsheet"),
+            },
+            follow_redirects=True,  # Follow redirects to check flash messages
+        )
+
+        # Should succeed (redirect was followed, so status is 200)
+        assert response.status_code == 200
+
+        # Check for both success and warning flash messages in the response
+        assert b"configuration updated successfully" in response.data or b"success" in response.data.lower()
+        assert (
+            b"Warning" in response.data
+            or b"No columns to keep" in response.data
+            or b"participant data columns" in response.data
+        )

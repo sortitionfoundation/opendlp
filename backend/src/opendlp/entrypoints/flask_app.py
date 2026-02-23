@@ -161,7 +161,7 @@ def get_secure_headers(config: Config) -> Secure:
         .font_src("'self'", "https://cdn.jsdelivr.net")
         .img_src("'self'", "data:")
         .frame_ancestors("'none'")
-        .form_action("'self'")
+        .form_action("'self'", "https://accounts.google.com", "https://login.microsoftonline.com")
         .base_uri("'self'")
         .object_src("'none'"),
         permissions=headers.PermissionsPolicy().geolocation().microphone().camera(),

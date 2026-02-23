@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-05 16:34+0000\n"
+"POT-Creation-Date: 2026-02-12 15:53+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 #: src/opendlp/domain/value_objects.py:20
 msgid "User - Basic access to assigned assemblies"
@@ -68,7 +68,7 @@ msgid "Email address"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:99 src/opendlp/entrypoints/forms.py:135
-#: src/opendlp/entrypoints/forms.py:473 templates/admin/user_view.html:75
+#: src/opendlp/entrypoints/forms.py:495 templates/admin/user_view.html:75
 #: templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
@@ -78,18 +78,18 @@ msgstr "Jelszó"
 msgid "Remember me"
 msgstr "Maradjak bejelentkezve"
 
-#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:487
+#: src/opendlp/entrypoints/forms.py:109 src/opendlp/entrypoints/forms.py:509
 #: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:489
+#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:511
 #, fuzzy
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:355
-#: src/opendlp/entrypoints/forms.py:433 templates/admin/user_view.html:28
+#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:377
+#: src/opendlp/entrypoints/forms.py:455 templates/admin/user_view.html:28
 #: templates/profile/view.html:16
 msgid "First Name"
 msgstr "Keresztnév"
@@ -98,8 +98,8 @@ msgstr "Keresztnév"
 msgid "Optional - your first name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:122 src/opendlp/entrypoints/forms.py:362
-#: src/opendlp/entrypoints/forms.py:440 templates/admin/user_view.html:38
+#: src/opendlp/entrypoints/forms.py:122 src/opendlp/entrypoints/forms.py:384
+#: src/opendlp/entrypoints/forms.py:462 templates/admin/user_view.html:38
 #: templates/profile/view.html:22
 msgid "Last Name"
 msgstr "Vezetéknév"
@@ -108,35 +108,35 @@ msgstr "Vezetéknév"
 msgid "Optional - your last name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:139 src/opendlp/entrypoints/forms.py:477
+#: src/opendlp/entrypoints/forms.py:139 src/opendlp/entrypoints/forms.py:499
 #, fuzzy
 msgid "Confirm Password"
 msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py:140 src/opendlp/entrypoints/forms.py:196
-#: src/opendlp/entrypoints/forms.py:464 src/opendlp/entrypoints/forms.py:478
+#: src/opendlp/entrypoints/forms.py:486 src/opendlp/entrypoints/forms.py:500
 #, fuzzy
 msgid "Passwords must match"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:493
+#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:515
 #, fuzzy
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:494
+#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:516
 #, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:495
+#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:517
 #, fuzzy
 msgid "I agree to the data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:506
+#: src/opendlp/entrypoints/forms.py:158 src/opendlp/entrypoints/forms.py:528
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
@@ -150,12 +150,12 @@ msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 msgid "Enter your email address and we will send you a new confirmation link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:191 src/opendlp/entrypoints/forms.py:457
+#: src/opendlp/entrypoints/forms.py:191 src/opendlp/entrypoints/forms.py:479
 #, fuzzy
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:195 src/opendlp/entrypoints/forms.py:463
+#: src/opendlp/entrypoints/forms.py:195 src/opendlp/entrypoints/forms.py:485
 #, fuzzy
 msgid "Confirm New Password"
 msgstr "Új jelszó"
@@ -206,214 +206,220 @@ msgstr "Google Táblázat teljes linkje"
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:251 src/opendlp/entrypoints/forms.py:267
+#: src/opendlp/entrypoints/forms.py:262
+msgid ""
+"You must specify address columns when 'Check Same Address' is enabled. "
+"Please enter column names or disable 'Check Same Address'."
+msgstr ""
+
+#: src/opendlp/entrypoints/forms.py:273 src/opendlp/entrypoints/forms.py:289
 #, fuzzy
 msgid "Respondents Tab Name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:253
+#: src/opendlp/entrypoints/forms.py:275
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:259 src/opendlp/entrypoints/forms.py:275
+#: src/opendlp/entrypoints/forms.py:281 src/opendlp/entrypoints/forms.py:297
 #, fuzzy
 msgid "Targets Tab Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:261
+#: src/opendlp/entrypoints/forms.py:283
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:269
+#: src/opendlp/entrypoints/forms.py:291
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:277
+#: src/opendlp/entrypoints/forms.py:299
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:282
+#: src/opendlp/entrypoints/forms.py:304
 msgid "Already Selected Tab Name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:284
+#: src/opendlp/entrypoints/forms.py:306
 msgid "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:289
+#: src/opendlp/entrypoints/forms.py:311
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
 
-#: src/opendlp/entrypoints/forms.py:290
+#: src/opendlp/entrypoints/forms.py:312
 msgid "Enable checking for participants with the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:295
+#: src/opendlp/entrypoints/forms.py:317
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
 
-#: src/opendlp/entrypoints/forms.py:296
+#: src/opendlp/entrypoints/forms.py:318
 msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:301
+#: src/opendlp/entrypoints/forms.py:323
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: src/opendlp/entrypoints/forms.py:303
+#: src/opendlp/entrypoints/forms.py:325
 msgid "UK Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:304
+#: src/opendlp/entrypoints/forms.py:326
 msgid "EU Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:305
+#: src/opendlp/entrypoints/forms.py:327
 msgid "Australia Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:306
+#: src/opendlp/entrypoints/forms.py:328
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Beállítások mentése"
 
-#: src/opendlp/entrypoints/forms.py:311
+#: src/opendlp/entrypoints/forms.py:333
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:316
+#: src/opendlp/entrypoints/forms.py:338
 #: templates/gsheets/components/view_config.html:60
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
 
-#: src/opendlp/entrypoints/forms.py:320
+#: src/opendlp/entrypoints/forms.py:342
 msgid ""
 "Column name containing unique identifiers for respondents. Note will be "
 "overridden if the Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:325
+#: src/opendlp/entrypoints/forms.py:347
 #: templates/gsheets/components/view_config.html:66
 msgid "Address Columns"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:328
+#: src/opendlp/entrypoints/forms.py:350
 msgid ""
 "Comma-separated list of column names used for checking same address "
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:334
+#: src/opendlp/entrypoints/forms.py:356
 #: templates/gsheets/components/view_config.html:72
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:337
+#: src/opendlp/entrypoints/forms.py:359
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name,"
 " last_name, email). Note will be overridden if the Team Configuration is "
 "not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:357
+#: src/opendlp/entrypoints/forms.py:379
 #, fuzzy
 msgid "User's first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:364
+#: src/opendlp/entrypoints/forms.py:386
 #, fuzzy
 msgid "User's last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:369 templates/admin/user_view.html:48
+#: src/opendlp/entrypoints/forms.py:391 templates/admin/user_view.html:48
 #, fuzzy
 msgid "Global Role"
 msgstr "Szereped/jogosultságod"
 
-#: src/opendlp/entrypoints/forms.py:373
+#: src/opendlp/entrypoints/forms.py:395
 msgid "User's global role determines their permissions across the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:377
+#: src/opendlp/entrypoints/forms.py:399
 #, fuzzy
 msgid "Active Account"
 msgstr "Hozzon létre fiókot"
 
-#: src/opendlp/entrypoints/forms.py:378
+#: src/opendlp/entrypoints/forms.py:400
 msgid "Inactive users cannot log in to the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:387
+#: src/opendlp/entrypoints/forms.py:409
 msgid "Role for New User"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:391
+#: src/opendlp/entrypoints/forms.py:413
 msgid "The role that will be granted to the user who uses this invite"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:396
+#: src/opendlp/entrypoints/forms.py:418
 #, fuzzy
 msgid "Email Address (Optional)"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:398
+#: src/opendlp/entrypoints/forms.py:420
 msgid "Optional - if provided, the invite will be emailed to this address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:403
+#: src/opendlp/entrypoints/forms.py:425
 msgid "Expires In (Hours)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:405
+#: src/opendlp/entrypoints/forms.py:427
 msgid ""
 "Optional - number of hours until the invite expires (default: 168 hours /"
 " 7 days)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:414
+#: src/opendlp/entrypoints/forms.py:436
 #, fuzzy
 msgid "User Email"
 msgstr "Hiba részletei"
 
-#: src/opendlp/entrypoints/forms.py:416
+#: src/opendlp/entrypoints/forms.py:438
 #, fuzzy
 msgid "Select a user to add to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/forms.py:420
+#: src/opendlp/entrypoints/forms.py:442
 #, fuzzy
 msgid "Assembly Role"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:424
+#: src/opendlp/entrypoints/forms.py:446
 msgid "Select the role this user will have on the assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:435
+#: src/opendlp/entrypoints/forms.py:457
 #, fuzzy
 msgid "Your first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:442
+#: src/opendlp/entrypoints/forms.py:464
 #, fuzzy
 msgid "Your last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:451
+#: src/opendlp/entrypoints/forms.py:473
 #, fuzzy
 msgid "Current Password"
 msgstr "Új jelszó"
@@ -720,29 +726,36 @@ msgstr "Google táblázat beállításai sikeresen létrehozva"
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:107
-#: src/opendlp/entrypoints/blueprints/gsheets.py:157
+#: src/opendlp/entrypoints/blueprints/gsheets.py:106
+msgid ""
+"Warning: No columns to keep specified. This means the output will only "
+"include participant data columns used for the targets and address "
+"checking. Is this intentional?"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:118
+#: src/opendlp/entrypoints/blueprints/gsheets.py:168
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr ""
 "Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
 "megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:113
+#: src/opendlp/entrypoints/blueprints/gsheets.py:124
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:118
+#: src/opendlp/entrypoints/blueprints/gsheets.py:129
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:125
-#: src/opendlp/entrypoints/blueprints/gsheets.py:179
-#: src/opendlp/entrypoints/blueprints/gsheets.py:225
-#: src/opendlp/entrypoints/blueprints/gsheets.py:417
-#: src/opendlp/entrypoints/blueprints/gsheets.py:503
-#: src/opendlp/entrypoints/blueprints/gsheets.py:741
-#: src/opendlp/entrypoints/blueprints/gsheets.py:795
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1022
+#: src/opendlp/entrypoints/blueprints/gsheets.py:136
+#: src/opendlp/entrypoints/blueprints/gsheets.py:190
+#: src/opendlp/entrypoints/blueprints/gsheets.py:236
+#: src/opendlp/entrypoints/blueprints/gsheets.py:433
+#: src/opendlp/entrypoints/blueprints/gsheets.py:519
+#: src/opendlp/entrypoints/blueprints/gsheets.py:764
+#: src/opendlp/entrypoints/blueprints/gsheets.py:818
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1045
 #: src/opendlp/entrypoints/blueprints/main.py:76
 #: src/opendlp/entrypoints/blueprints/main.py:124
 #: src/opendlp/entrypoints/blueprints/main.py:167
@@ -750,14 +763,14 @@ msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:131
-#: src/opendlp/entrypoints/blueprints/gsheets.py:185
-#: src/opendlp/entrypoints/blueprints/gsheets.py:231
-#: src/opendlp/entrypoints/blueprints/gsheets.py:423
-#: src/opendlp/entrypoints/blueprints/gsheets.py:509
-#: src/opendlp/entrypoints/blueprints/gsheets.py:747
-#: src/opendlp/entrypoints/blueprints/gsheets.py:801
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1028
+#: src/opendlp/entrypoints/blueprints/gsheets.py:142
+#: src/opendlp/entrypoints/blueprints/gsheets.py:196
+#: src/opendlp/entrypoints/blueprints/gsheets.py:242
+#: src/opendlp/entrypoints/blueprints/gsheets.py:439
+#: src/opendlp/entrypoints/blueprints/gsheets.py:525
+#: src/opendlp/entrypoints/blueprints/gsheets.py:770
+#: src/opendlp/entrypoints/blueprints/gsheets.py:824
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1051
 #: src/opendlp/entrypoints/blueprints/main.py:81
 #: src/opendlp/entrypoints/blueprints/main.py:128
 #: src/opendlp/entrypoints/blueprints/main.py:171
@@ -765,135 +778,145 @@ msgstr "A gyűlés oldala  nem elérhető"
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:147
+#: src/opendlp/entrypoints/blueprints/gsheets.py:158
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:151
+#: src/opendlp/entrypoints/blueprints/gsheets.py:162
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:161
+#: src/opendlp/entrypoints/blueprints/gsheets.py:172
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:209
-#: src/opendlp/entrypoints/blueprints/gsheets.py:449
-#: src/opendlp/entrypoints/blueprints/gsheets.py:771
-#: src/opendlp/entrypoints/blueprints/gsheets.py:994
+#: src/opendlp/entrypoints/blueprints/gsheets.py:220
+#: src/opendlp/entrypoints/blueprints/gsheets.py:465
+#: src/opendlp/entrypoints/blueprints/gsheets.py:794
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1017
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:317
+#: src/opendlp/entrypoints/blueprints/gsheets.py:328
 #, fuzzy, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:321
+#: src/opendlp/entrypoints/blueprints/gsheets.py:332
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:328
-#: src/opendlp/entrypoints/blueprints/gsheets.py:358
-#: src/opendlp/entrypoints/blueprints/gsheets.py:619
-#: src/opendlp/entrypoints/blueprints/gsheets.py:676
-#: src/opendlp/entrypoints/blueprints/gsheets.py:899
-#: src/opendlp/entrypoints/blueprints/gsheets.py:931
+#: src/opendlp/entrypoints/blueprints/gsheets.py:339
+#: src/opendlp/entrypoints/blueprints/gsheets.py:374
+#: src/opendlp/entrypoints/blueprints/gsheets.py:642
+#: src/opendlp/entrypoints/blueprints/gsheets.py:699
+#: src/opendlp/entrypoints/blueprints/gsheets.py:922
+#: src/opendlp/entrypoints/blueprints/gsheets.py:954
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:333
+#: src/opendlp/entrypoints/blueprints/gsheets.py:344
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:351
-#: src/opendlp/entrypoints/blueprints/gsheets.py:612
+#: src/opendlp/entrypoints/blueprints/gsheets.py:362
+#, fuzzy, python-format
+msgid "Could not start load spreadsheet task: %(error)s"
+msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:367
+#: src/opendlp/entrypoints/blueprints/gsheets.py:635
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:363
-#: src/opendlp/entrypoints/blueprints/gsheets.py:624
+#: src/opendlp/entrypoints/blueprints/gsheets.py:379
+#: src/opendlp/entrypoints/blueprints/gsheets.py:647
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:377
-#: src/opendlp/entrypoints/blueprints/gsheets.py:695
-#: src/opendlp/entrypoints/blueprints/gsheets.py:950
+#: src/opendlp/entrypoints/blueprints/gsheets.py:393
+#: src/opendlp/entrypoints/blueprints/gsheets.py:718
+#: src/opendlp/entrypoints/blueprints/gsheets.py:973
 msgid "Task has been cancelled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:382
-#: src/opendlp/entrypoints/blueprints/gsheets.py:700
-#: src/opendlp/entrypoints/blueprints/gsheets.py:955
-#: src/opendlp/service_layer/sortition.py:460
+#: src/opendlp/entrypoints/blueprints/gsheets.py:398
+#: src/opendlp/entrypoints/blueprints/gsheets.py:723
+#: src/opendlp/entrypoints/blueprints/gsheets.py:978
+#: src/opendlp/service_layer/sortition.py:490
 #, fuzzy
 msgid "Task not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:392
-#: src/opendlp/entrypoints/blueprints/gsheets.py:710
-#: src/opendlp/entrypoints/blueprints/gsheets.py:965
+#: src/opendlp/entrypoints/blueprints/gsheets.py:408
+#: src/opendlp/entrypoints/blueprints/gsheets.py:733
+#: src/opendlp/entrypoints/blueprints/gsheets.py:988
 #, fuzzy
 msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:397
-#: src/opendlp/entrypoints/blueprints/gsheets.py:715
-#: src/opendlp/entrypoints/blueprints/gsheets.py:970
+#: src/opendlp/entrypoints/blueprints/gsheets.py:413
+#: src/opendlp/entrypoints/blueprints/gsheets.py:738
+#: src/opendlp/entrypoints/blueprints/gsheets.py:993
 #, fuzzy
 msgid "An error occurred while cancelling the task"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:640
+#: src/opendlp/entrypoints/blueprints/gsheets.py:630
+#, fuzzy, python-format
+msgid "Could not start task to read gsheet: %(error)s"
+msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/gsheets.py:663
 msgid "Number of people to select is required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:646
+#: src/opendlp/entrypoints/blueprints/gsheets.py:669
 msgid "Number of people to select must be greater than zero"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:649
+#: src/opendlp/entrypoints/blueprints/gsheets.py:672
 msgid "Number of people to select must be a valid integer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:669
+#: src/opendlp/entrypoints/blueprints/gsheets.py:692
 #, fuzzy, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:681
+#: src/opendlp/entrypoints/blueprints/gsheets.py:704
 #, fuzzy
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:892
+#: src/opendlp/entrypoints/blueprints/gsheets.py:915
 #, fuzzy, python-format
 msgid "Failed to start listing task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:904
+#: src/opendlp/entrypoints/blueprints/gsheets.py:927
 #, fuzzy
 msgid "An unexpected error occurred while starting the listing task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:924
+#: src/opendlp/entrypoints/blueprints/gsheets.py:947
 #, fuzzy, python-format
 msgid "Failed to start deletion task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:936
+#: src/opendlp/entrypoints/blueprints/gsheets.py:959
 #, fuzzy
 msgid "An unexpected error occurred while starting the deletion task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:986
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1009
 #, fuzzy
 msgid "Task run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1017
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1040
 msgid "Unknown task type"
 msgstr ""
 
@@ -1127,7 +1150,7 @@ msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/celery/tasks.py:105
-#: src/opendlp/service_layer/sortition.py:571
+#: src/opendlp/service_layer/sortition.py:601
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -1417,31 +1440,31 @@ msgstr ""
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:96
+#: src/opendlp/service_layer/sortition.py:103
 msgid ""
 "The assembly needs to have a non-zero number to select before we can do "
 "selection"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:464
+#: src/opendlp/service_layer/sortition.py:494
 msgid "Cannot cancel task - it has already finished"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:481
+#: src/opendlp/service_layer/sortition.py:511
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:640
+#: src/opendlp/service_layer/sortition.py:670
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:667
+#: src/opendlp/service_layer/sortition.py:697
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:679
-#: src/opendlp/service_layer/sortition.py:690
+#: src/opendlp/service_layer/sortition.py:709
+#: src/opendlp/service_layer/sortition.py:720
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -3743,161 +3766,183 @@ msgid ""
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:56
+msgid ""
+"The diversimax algorithm does not support generating multiple committees,"
+" so `number_selections` must be set to 1."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:60
 #, python-format
 msgid ""
 "Unknown selection algorithm %(algorithm)r, must be either 'legacy', "
-"'leximin', 'maximin', or 'nash'."
+"'leximin', 'maximin', 'diversimax', or 'nash'."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:58
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:62
+#, python-format
+msgid "solver_backend %(backend)s is not one of: %(valid_backends)s"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:63
+#, python-format
+msgid "Unknown solver backend: %(backend)s"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:64
 #, python-format
 msgid "Could not find feature column, looked for column headers: %(column_names)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:60
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:66
 #, python-format
 msgid ""
 "Could not find feature value column, looked for column headers: "
 "%(column_names)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:62
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:68
 #, python-format
 msgid "Did not find required column name '%(field_name)s' in the input"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:63
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
 #, python-format
 msgid ""
 "Found MORE THAN 1 column named '%(field_name)s' in the input (found "
 "%(count)s)"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:64
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:70
 #, python-format
 msgid "Unexpected error in set of column names: %(headers)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:66
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:72
 msgid "check_same_address_columns must be a LIST of strings"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:67
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:73
 msgid "check_same_address_columns must be a list of STRINGS"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
 msgid ""
 "check_same_address is TRUE but there are no columns listed to check! FIX "
 "THIS and RESTART this program!"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:71
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:77
 msgid "columns_to_keep must be a LIST of strings"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:72
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:78
 msgid "columns_to_keep must be a list of STRINGS"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:73
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:79
 #, python-format
 msgid "selection_algorithm %(algorithm)s is not one of: %(valid_algorithms)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
+msgid ""
+"Diversimax algorithm requires the optional 'diversimax' dependencies, "
+"which are not available"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:84
 msgid "Leximin algorithm requires Gurobi solver which is not available"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:80
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:89
 #, python-format
 msgid "There is no %(field)s value set"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:90
 #, python-format
 msgid "'%(value)s' is not a number"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:91
 #, python-format
 msgid "Empty %(value_column_name)s in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:83
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:92
 #, python-format
 msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:84
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
 #, python-format
 msgid "min_flex (%(min_flex)s) should not be greater than min (%(min)s)"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:94
 #, python-format
 msgid "max_flex (%(max_flex)s) should not be less than max (%(max)s)"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:87
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:96
 #, python-format
 msgid "Value '%(value)s' not in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:88
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
 #, python-format
 msgid "Empty value in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:92
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
 #, python-format
 msgid "%(msg)s: for row %(row)s, column header %(key)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:102
 #, python-format
 msgid "%(msg)s: for row %(row)s, column headers %(keys)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:106
 #, python-format
 msgid "Parser error(s) while reading features from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:98
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:99
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:107
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
 #, python-format
 msgid "Parser error(s) while reading people from '%(tab_name)s' worksheet"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:109
 #, python-format
 msgid "%(msg)s - see cell %(cell_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:110
 #, python-format
 msgid "%(msg)s - see cells %(cell_names)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:114
 #, python-format
 msgid "Found %(count)s IDs that have more than one row with different data"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:106
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:115
 #, python-format
 msgid "For ID '%(person_id)s' one row of data is: %(row_data)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
 #, python-format
 msgid ""
 "Not enough people with the value '%(feature_value)s' in category "
 "'%(feature_name)s' - the minimum is %(min)s but we only have %(count)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:112
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
 #, python-format
 msgid ""
 "The number of people to select (%(desired)s) is out of the range of the "
@@ -3905,30 +3950,32 @@ msgid ""
 "[%(min)s, %(max)s]."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
-msgid "The quotas are infeasible:"
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:127
+msgid ""
+"It is not possible to hit all the targets with the current set of people."
+" I suggest the following steps:"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:119
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:130
 #, python-format
 msgid "Inconsistent numbers in min and max in the %(feature_column_name)s input:"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:131
 #, python-format
 msgid ""
 "The smallest maximum is %(max_val)s for %(feature_column_name)s "
 "'%(max_feature)s'"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:132
 #, python-format
 msgid ""
 "The largest minimum is %(min_val)s for %(feature_column_name)s "
 "'%(min_feature)s'"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:123
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:134
 #, python-format
 msgid ""
 "You need to reduce the minimums for %(min_feature)s or increase the "
@@ -4129,69 +4176,71 @@ msgstr ""
 msgid "Writing remaining people to tab: %(tab_name)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:98
-msgid "Finished writing selected (only)"
-msgstr ""
-
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:99
+msgid ""
+"Finished writing selected (only, because writing remaining is deselected "
+"in the configuration)"
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:101
 msgid "Finished writing both selected and remaining"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:103
-#, python-format
-msgid "WARNING: blank cell found in ID column in row %(row)s - skipped that line!"
-msgstr ""
-
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:104
-msgid "WARNING: Duplicate people found:"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:105
 #, python-format
-msgid "Person with ID '%(person_id)s' appears %(count)s times in rows: %(rows)s"
+msgid "WARNING: blank cell found in ID column in row %(row)s - skipped that line!"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:106
-#, python-format
-msgid "Found %(count)s IDs that have more than one row"
+msgid "WARNING: Duplicate people found:"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:107
 #, python-format
-msgid "Duplicated IDs are: %(ids)s"
+msgid "Person with ID '%(person_id)s' appears %(count)s times in rows: %(rows)s"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:108
-msgid "All duplicate rows have identical data - processing continuing."
+#, python-format
+msgid "Found %(count)s IDs that have more than one row"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:109
-msgid "All agents are contained in some feasible committee."
+#, python-format
+msgid "Duplicated IDs are: %(ids)s"
 msgstr ""
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:110
+msgid "All duplicate rows have identical data - processing continuing."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:111
+msgid "All agents are contained in some feasible committee."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:112
 #, python-format
 msgid "Heuristic successfully generated %(count)s additional committees."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:114
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:116
 #, python-format
 msgid "Using these settings: %(settings)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:115
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
 #, python-format
 msgid "Random seed set to: %(seed)s"
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:117
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:119
 #, python-format
 msgid ""
 "Wrote default settings to '%(file_path)s' - if editing is required, "
 "restart this app."
 msgstr ""
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:122
 msgid ""
 "WARNING: Settings file is such that we do NOT check if respondents have "
 "same address."
@@ -4686,4 +4735,16 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Steps to reproduce the issue"
+#~ msgstr ""
+
+#~ msgid "The quotas are infeasible:"
+#~ msgstr ""
+
+#~ msgid "Finished writing selected (only)"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Unknown selection algorithm %(algorithm)r, "
+#~ "must be either 'legacy', 'leximin', "
+#~ "'maximin', or 'nash'."
 #~ msgstr ""

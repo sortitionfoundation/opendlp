@@ -246,6 +246,28 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
+    def validate(self, **kwargs: Any) -> bool:
+        """Override validate to add cross-field validation."""
+        # First run standard field validation
+        if not super().validate(**kwargs):
+            return False
+
+        # Cross-field validation: check_same_address requires address columns
+        if self.check_same_address.data and (
+            not self.check_same_address_cols_string.data or not self.check_same_address_cols_string.data.strip()
+        ):
+            self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
+                str(
+                    _l(
+                        "You must specify address columns when 'Check Same Address' is enabled. "
+                        "Please enter column names or disable 'Check Same Address'."
+                    )
+                )
+            )
+            return False
+
+        return True
+
     select_registrants_tab = StringField(
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
