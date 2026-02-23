@@ -73,8 +73,10 @@ exclude-newer = "1 week"
 [tool.uv.exclude-newer-package]
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
-# for security update pillow 12.1.1 released 2026-02-11 - so can remove after 2026-02-18
-# pillow = "0 days"
+# for security update flask 3.1.3 released 2026-02-23 - so can remove after 2026-03-02
+flask = "0 days"
+# for security update werkzeug 3.1.6 released 2026-02-23 - so can remove after 2026-03-02
+werkzeug = "0 days"
 
 [tool.mypy]
 files = ["src"]
