@@ -47,6 +47,12 @@ def visit_backoffice_showcase(page: Page):
     page.goto(Urls.backoffice_showcase)
 
 
+@given('I select the "Foundations" tab')
+def _(page: Page):
+    """I select the "Foundations" tab."""
+    page.locator("button", has_text="Foundations").click()
+
+
 @then('I should see "Design System"')
 def see_design_system_text(page: Page):
     """Verify the Design System heading is visible."""

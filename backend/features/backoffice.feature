@@ -11,6 +11,7 @@ Feature: Backoffice UI
 
   Scenario: Design tokens are loaded and working
     Given I am on the backoffice showcase page
+    And I select the "Foundations" tab
     Then I should see the brand-400 primary action token box
     And the brand-400 token box should have the brand crimson background
     And I should see the brand-300 secondary token box
