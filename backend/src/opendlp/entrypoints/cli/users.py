@@ -23,7 +23,7 @@ def users(ctx: click.Context) -> None:
 @click.option(
     "--role",
     type=click.Choice([r.value for r in GlobalRole], case_sensitive=False),
-    default=GlobalRole.USER.value,
+    default=GlobalRole.ADMIN.value,
     help="Global role for the user (default: user)",
 )
 @click.pass_context
