@@ -97,6 +97,9 @@ See [docs/docker.md](docs/docker.md) for complete Docker setup and deployment gu
 ```bash
 # Connect to PostgreSQL (password: abc123)
 just psql
+
+# Manual connection (use port 54321 for local Docker PostgreSQL)
+PGPASSWORD=abc123 psql -h localhost -p 54321 -U opendlp -d opendlp
 ```
 
 ## Configuration

@@ -12,11 +12,14 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.value_objects import RespondentStatus
 
 
 class AbstractRepository(abc.ABC):
@@ -329,4 +332,57 @@ class TotpVerificationAttemptRepository(AbstractRepository):
     @abc.abstractmethod
     def get_attempts_since(self, user_id: uuid.UUID, since: datetime) -> Iterable[TotpVerificationAttempt]:
         """Get all verification attempts for a user since a given datetime."""
+        raise NotImplementedError
+
+
+class TargetCategoryRepository(AbstractRepository):
+    """Repository interface for TargetCategory domain objects."""
+
+    @abc.abstractmethod
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
+        """Get all target categories for an assembly, ordered by sort_order."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: TargetCategory) -> None:
+        """Delete a target category from the repository."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        """Delete all target categories for an assembly. Returns count deleted."""
+        raise NotImplementedError
+
+
+class RespondentRepository(AbstractRepository):
+    """Repository interface for Respondent domain objects."""
+
+    @abc.abstractmethod
+    def get_by_assembly_id(
+        self,
+        assembly_id: uuid.UUID,
+        status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+    ) -> list[Respondent]:
+        """Get respondents for an assembly, optionally filtered."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
+        """Get a respondent by assembly and external ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
+        """Count respondents available for selection."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: Respondent) -> None:
+        """Delete a respondent."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def bulk_add(self, items: list[Respondent]) -> None:
+        """Add multiple respondents in bulk."""
         raise NotImplementedError

@@ -9,8 +9,11 @@ from opendlp.adapters import orm
 from opendlp.config import bool_environ_get, get_db_uri
 from opendlp.domain import (
     assembly,
+    assembly_csv,
     email_confirmation,
     password_reset,
+    respondents,
+    targets,
     totp_attempts,
     two_factor_audit,
     user_backup_codes,
@@ -94,6 +97,22 @@ def start_mappers() -> None:
                     cascade="all, delete-orphan",
                     uselist=False,  # Makes this a one-to-one relationship
                 ),
+                "csv": relationship(
+                    assembly_csv.AssemblyCSV,
+                    back_populates="assembly",
+                    cascade="all, delete-orphan",
+                    uselist=False,  # Makes this a one-to-one relationship
+                ),
+                "target_categories": relationship(
+                    targets.TargetCategory,
+                    cascade="all, delete-orphan",
+                    order_by=orm.target_categories.c.sort_order,
+                ),
+                "respondents": relationship(
+                    respondents.Respondent,
+                    cascade="all, delete-orphan",
+                    order_by=orm.respondents.c.created_at.desc(),
+                ),
             },
         )
 
@@ -118,6 +137,18 @@ def start_mappers() -> None:
             },
         )
 
+        # Map AssemblyCSV domain object to assembly_csv table
+        orm.mapper_registry.map_imperatively(
+            assembly_csv.AssemblyCSV,
+            orm.assembly_csv,
+            properties={
+                "assembly": relationship(
+                    assembly.Assembly,
+                    back_populates="csv",
+                ),
+            },
+        )
+
         # Map SelectionRunRecord domain object to selection_run_records table
         orm.mapper_registry.map_imperatively(assembly.SelectionRunRecord, orm.selection_run_records)
 
@@ -129,6 +160,18 @@ def start_mappers() -> None:
 
         # Map TotpVerificationAttempt domain object to totp_verification_attempts table
         orm.mapper_registry.map_imperatively(totp_attempts.TotpVerificationAttempt, orm.totp_verification_attempts)
+
+        # Map TargetCategory domain object to target_categories table
+        orm.mapper_registry.map_imperatively(
+            targets.TargetCategory,
+            orm.target_categories,
+        )
+
+        # Map Respondent domain object to respondents table
+        orm.mapper_registry.map_imperatively(
+            respondents.Respondent,
+            orm.respondents,
+        )
 
         _mappers_started = True
 
