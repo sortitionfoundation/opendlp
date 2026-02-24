@@ -142,9 +142,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     f"Assembly or user not found while editing assembly {assembly_id} user {current_user.id}: {e}"
                 )
                 flash(_("An error occurred while updating the assembly"), "error")
+                return redirect(url_for("backoffice.dashboard"))
             except Exception as e:
                 current_app.logger.error(f"Edit assembly error for assembly {assembly_id} user {current_user.id}: {e}")
                 flash(_("An error occurred while updating the assembly"), "error")
+                return redirect(url_for("backoffice.dashboard"))
 
         return render_template(
             "backoffice/edit_assembly.html",
