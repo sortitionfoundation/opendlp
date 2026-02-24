@@ -93,7 +93,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Spreadsheet Configuration") }}</h2>
             {% if readonly %}
-                {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline", size="sm") }}
+                {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
             {% endif %}
         </div>
 
@@ -205,9 +205,11 @@ ABOUTME: Displays data source selection and data management for assemblies
                 <div x-data="{ selectedTeam: '{{ gsheet.team if gsheet else 'sf' }}' }">
                     {{ radio_group(
                     name="team",
-                    label=_("Configuration Preset"),
+                    label=_("Team Configuration"),
                     options=[
-                    {"value": "sf", "label": _("Sortition Foundation (default settings)")},
+                    {"value": "uk", "label": _("UK Team")},
+                    {"value": "eu", "label": _("EU Team")},
+                    {"value": "aus", "label": _("Australia Team")},
                     {"value": "other", "label": _("Custom configuration")}
                     ],
                     value=gsheet.team if gsheet else "sf",

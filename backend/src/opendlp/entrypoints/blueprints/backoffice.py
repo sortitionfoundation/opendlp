@@ -13,6 +13,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.entrypoints.forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    get_assembly_gsheet,
     get_assembly_with_permissions,
     update_assembly,
 )
@@ -172,10 +173,6 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
     try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
         # Get data source from query param, empty string means no selection
         data_source = request.args.get("source", "")
         if data_source not in ("gsheet", "csv", ""):
@@ -186,9 +183,23 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         gsheet_mode = "new"
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
+        # Get assembly with permissions
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Load gsheet config if gsheet source is selected (separate UoW to avoid nested context)
         if data_source == "gsheet":
-            # TODO: Load existing gsheet config from service layer
-            # gsheet = services.get_gsheet_config(uow, assembly_id)
+            try:
+                uow_gsheet = bootstrap.bootstrap()
+                current_app.logger.info(f"Calling get_assembly_gsheet for assembly {assembly_id}")
+                gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+                current_app.logger.info(f"get_assembly_gsheet returned: {gsheet}")
+            except Exception as gsheet_error:
+                current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
+                current_app.logger.exception("Gsheet loading stacktrace:")
+                # Continue without gsheet - show the new form
+                gsheet = None
 
             # Determine mode based on query param and whether config exists
             mode_param = request.args.get("mode", "")
@@ -213,6 +224,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         current_app.logger.error(f"View assembly data error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly data"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
