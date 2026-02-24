@@ -82,9 +82,9 @@ def register_context_processors(app: Flask) -> None:
 
 def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
-    from .backoffice.routes import backoffice_bp
     from .blueprints.admin import admin_bp
     from .blueprints.auth import auth_bp
+    from .blueprints.backoffice import backoffice_bp
     from .blueprints.gsheets import gsheets_bp
     from .blueprints.health import health_bp
     from .blueprints.main import main_bp

@@ -21,7 +21,7 @@ from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
 
-backoffice_bp = Blueprint("backoffice", __name__, template_folder="backoffice")
+backoffice_bp = Blueprint("backoffice", __name__)
 
 
 @backoffice_bp.route("/showcase")
