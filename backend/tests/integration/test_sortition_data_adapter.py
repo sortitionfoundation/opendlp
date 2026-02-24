@@ -78,7 +78,6 @@ class TestOpenDLPDataAdapter:
 
         # Test adapter reading people
         with uow:
-            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
             # Need features to load people
             cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
             cat.add_value(TargetValue(value="Male", min=1, max=1))
