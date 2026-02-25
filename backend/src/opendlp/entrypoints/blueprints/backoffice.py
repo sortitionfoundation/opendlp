@@ -73,9 +73,11 @@ def new_assembly() -> ResponseReturnValue:
         except NotFoundError as e:
             current_app.logger.error(f"User not found during assembly creation for user {current_user.id}: {e}")
             flash(_("An error occurred while creating the assembly"), "error")
+            return redirect(url_for("backoffice.dashboard"))
         except Exception as e:
             current_app.logger.error(f"Create assembly error for user {current_user.id}: {e}")
             flash(_("An error occurred while creating the assembly"), "error")
+            return redirect(url_for("backoffice.dashboard"))
 
     return render_template("backoffice/create_assembly.html", form=form), 200
 
