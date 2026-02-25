@@ -567,10 +567,12 @@ def create_test_assembly_with_question(title: str, question: str, admin_user, te
 
 @when(parsers.parse('I click the "Go to Assembly" button for "{title}"'))
 def click_go_to_assembly_button(page: Page, title: str):
-    """Click the Go to Assembly button for a specific assembly card."""
+    """Click the assembly card to navigate to the assembly details page.
+
+    The card itself is a clickable link (link_card component).
+    """
     card = page.locator(".assembly-card", has_text=title)
-    button = card.locator("a", has_text="Go to Assembly")
-    button.click()
+    card.click()
 
 
 @when(parsers.parse('I visit the assembly details page for "{title}"'))
