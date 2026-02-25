@@ -68,6 +68,28 @@ class TestBackofficeGSheetConfigForm:
         # Options
         assert b"check_same_address" in response.data
 
+    def test_gsheet_form_shows_view_mode_when_config_exists(self, logged_in_admin, assembly_with_gsheet):
+        """Test that readonly view mode is shown when gsheet config exists (no mode param)."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        assert response.status_code == 200
+        # Should be in "view" mode - form fields should be readonly/disabled
+        # The Edit button should be present to switch to edit mode
+        assert b"Edit" in response.data or b"edit" in response.data.lower()
+        # URL should be displayed (possibly as link or readonly field)
+        assert b"docs.google.com/spreadsheets" in response.data
+
+    def test_gsheet_form_shows_edit_mode_with_mode_param(self, logged_in_admin, assembly_with_gsheet):
+        """Test that editable form is shown when mode=edit param is present."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
+        assert response.status_code == 200
+        # Should be in "edit" mode - form should be editable with save button
+        assert b'name="url"' in response.data
+        assert b"Save" in response.data or b"submit" in response.data.lower()
+        # Should show cancel button to go back to view mode
+        assert b"Cancel" in response.data or b"cancel" in response.data.lower()
+
     def test_gsheet_save_endpoint_exists(self, logged_in_admin, existing_assembly):
         """Test that the gsheet save endpoint responds."""
         # This will fail validation but should not 404
