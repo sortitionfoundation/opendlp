@@ -3,7 +3,7 @@ ABOUTME: Card component macros for backoffice design system
 ABOUTME: Supports simple cards and composed cards with body/footer sections
 #}
 
-{% macro card(title="", subtitle="", id="", classes="", composed=false) %}
+{% macro card(title="", subtitle="", id="", classes="", container_classes="", header_classes="", body_classes="", composed=false) %}
     {#
 Card component using semantic design tokens.
 
@@ -11,12 +11,21 @@ Args:
   title: Optional card title
   subtitle: Optional card subtitle
   id: Optional id attribute
-  classes: Additional CSS classes to append
+  classes: Additional CSS classes for the card (alias for container_classes)
+  container_classes: Additional CSS classes for the outer container
+  header_classes: Additional CSS classes for the header section
+  body_classes: Additional CSS classes for the body section
   composed: If true, disables auto body wrapping for explicit composition
 
 Simple usage (auto body):
   {% call card(title="Card Title") %}
     Card content here
+  {% endcall %}
+
+With custom classes for alignment in grids:
+  {% call card(title="Card Title", container_classes="flex flex-col h-full", body_classes="flex-1 flex flex-col") %}
+    <p>Content</p>
+    <div class="mt-auto">Bottom-aligned content</div>
   {% endcall %}
 
 Composed usage (with card_body and card_footer):
@@ -32,10 +41,10 @@ Composed usage (with card_body and card_footer):
     <div
         {% if id %}id="{{ id }}"{% endif %}
         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
-        class="rounded-lg shadow-md overflow-hidden {{ classes }}"
+        class="rounded-lg shadow-md overflow-hidden {{ classes }} {{ container_classes }}"
     >
         {% if title %}
-            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4">
+            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4 {{ header_classes }}">
                 <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
                 {% if subtitle %}
                     <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
@@ -45,7 +54,7 @@ Composed usage (with card_body and card_footer):
         {% if composed %}
             {{ caller() }}
         {% else %}
-            <div class="px-6 py-4">
+            <div class="px-6 py-4 {{ body_classes }}">
                 {{ caller() }}
             </div>
         {% endif %}

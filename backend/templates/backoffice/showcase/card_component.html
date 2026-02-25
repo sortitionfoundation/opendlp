@@ -1,0 +1,95 @@
+{#
+ABOUTME: Showcase section for card component
+ABOUTME: Displays card variants and composition patterns
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+{% from "backoffice/components/button.html" import button %}
+
+{% macro card_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Card Component") }}
+        {{ showcase_description("Reusable card macro for content containers.") }}
+
+        {% call showcase_example('{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+            {% from "backoffice/components/button.html" import button %}
+
+            {# Basic card (auto body) #}
+            {% call card() %}
+                Card content here
+            {% endcall %}
+
+            {# Card with header (auto body) #}
+            {% call card(title="Title", subtitle="Subtitle") %}
+                Card content here
+            {% endcall %}
+
+            {# Card with custom classes for grid alignment #}
+            {# Use container_classes and body_classes to align buttons at bottom #}
+            {% call card(
+            title="Title",
+            container_classes="flex flex-col h-full",
+            body_classes="flex-1 flex flex-col"
+            ) %}
+            <p>Variable height content</p>
+            <div class="mt-auto pt-4">
+                {{ button("Action", variant="outline") }}
+            </div>
+        {% endcall %}
+
+        {# Card with actions (composed mode) #}
+        {% call card(title="Title", subtitle="Subtitle", composed=true) %}
+            {% call card_body() %}
+                Content here
+            {% endcall %}
+            {% call card_footer() %}
+                {{ button("Cancel", variant="outline") }}
+                {{ button("Save", variant="primary") }}
+            {% endcall %}
+        {% endcall %}') %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% call card(id="card-basic") %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    This is a basic card without a header. It can contain any content.
+                </p>
+            {% endcall %}
+
+            {% call card(title="Card with Header", subtitle="Optional subtitle text", id="card-header") %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    This card has a title and subtitle in the header section.
+                </p>
+            {% endcall %}
+
+            {% call card(title="Grid Aligned", subtitle="Button at bottom", id="card-aligned", container_classes="flex flex-col h-full", body_classes="flex-1 flex flex-col") %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    This card uses container_classes and body_classes to align the button at the bottom.
+                </p>
+                <div class="mt-auto pt-4">
+                    {{ button("Action", variant="outline") }}
+                </div>
+            {% endcall %}
+
+            {% call card(title="Card with Actions", subtitle="Composed mode", id="card-actions", composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md" style="color: var(--color-body-text);">
+                        This card uses card_body and card_footer macros.
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button("Cancel", variant="outline") }}
+                    {{ button("Save", variant="primary") }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+    {% endcall %}
+
+    {{ showcase_tokens([
+    "--color-tables-cards",
+    "--color-borders-dividers",
+    "--color-headings",
+    "--color-secondary-text",
+    ".text-heading-lg",
+    ".text-body-sm"
+    ]) }}
+{% endcall %}
+{% endmacro %}

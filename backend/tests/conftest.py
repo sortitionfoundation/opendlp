@@ -21,6 +21,13 @@ from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.service_layer import security
 
+# the plugins have to be defined at the top level, even though they only apply to the BDD tests.
+# https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
+pytest_plugins = [
+    "tests.bdd.shared.ui_shared",
+    "tests.bdd.shared.email_confirmation_steps",
+]
+
 
 @pytest.fixture(autouse=True)
 def reset_logging_handlers():

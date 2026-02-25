@@ -1,0 +1,179 @@
+{#
+ABOUTME: Showcase section for semantic design tokens
+ABOUTME: Displays purpose-based tokens that reference primitive scales
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
+
+{% macro semantic_tokens_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Semantic Tokens") }}
+        {{ showcase_description("Purpose-based tokens that reference the primitive scales. Named after their intended usage.") }}
+
+        {{ showcase_subtitle("Brand Semantic Tokens") }}
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-light-highlights); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-light-highlights</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-50</p>
+            </div>
+            <div style="background-color: var(--color-selection-background); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-selection-background</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-100</p>
+            </div>
+            <div style="background-color: var(--color-subtle-emphasis); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-subtle-emphasis</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-200</p>
+            </div>
+            <div style="background-color: var(--color-buttons-secondary); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-buttons-secondary</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-300</p>
+            </div>
+            <div style="background-color: var(--color-primary-action); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-primary-action</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-400</p>
+            </div>
+            <div style="background-color: var(--color-active-states); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-active-states</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-500</p>
+            </div>
+            <div style="background-color: var(--color-hover-dark-ui); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-hover-dark-ui</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-600</p>
+            </div>
+            <div style="background-color: var(--color-pressed); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-pressed</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-700</p>
+            </div>
+            <div style="background-color: var(--color-dark-accents); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-dark-accents</p>
+                <p class="text-caption opacity-75 mt-1">→ brand-800</p>
+            </div>
+        </div>
+
+        {{ showcase_subtitle("Neutral Semantic Tokens") }}
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-page-background</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-0</p>
+            </div>
+            <div style="background-color: var(--color-subtle-background-panels); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-subtle-background-panels</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-50</p>
+            </div>
+            <div style="background-color: var(--color-tables-cards); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-tables-cards</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-100</p>
+            </div>
+            <div style="background-color: var(--color-borders-dividerss-dividers); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-borders-dividerss-dividers</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-200</p>
+            </div>
+            <div style="background-color: var(--color-disabled-borders); color: var(--color-headings);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-disabled-borders</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-300</p>
+            </div>
+            <div style="background-color: var(--color-placeholder-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-placeholder-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-400</p>
+            </div>
+            <div style="background-color: var(--color-secondary-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-secondary-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-500</p>
+            </div>
+            <div style="background-color: var(--color-body-text); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-body-text</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-600</p>
+            </div>
+            <div style="background-color: var(--color-headings); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-headings</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-700</p>
+            </div>
+            <div style="background-color: var(--color-navigation-bars); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-navigation-bars</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-800</p>
+            </div>
+            <div style="background-color: var(--color-dark-mode-base); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-56">
+                <p class="text-body-sm font-mono">--color-dark-mode-base</p>
+                <p class="text-caption opacity-75 mt-1">→ neutral-900</p>
+            </div>
+        </div>
+
+        {{ showcase_subtitle("Focus Ring") }}
+        <div class="flex flex-wrap gap-4 mb-8">
+            <div style="background-color: var(--color-page-background); box-shadow: 0 0 0 3px var(--color-focus-ring); border: 1px solid var(--color-borders-dividerss-dividers);" class="p-4 rounded-lg w-56">
+                <p style="color: var(--color-body-text);" class="text-body-sm font-mono">--color-focus-ring</p>
+                <p style="color: var(--color-secondary-text);" class="text-caption mt-1">→ brand-200</p>
+            </div>
+        </div>
+
+        {{ showcase_subtitle("Alert / Status Colors") }}
+        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">100 = background, 400 = border, 600 = text</p>
+
+        {# Success #}
+        <p class="text-body-sm font-medium mb-2" style="color: var(--color-headings);">Success</p>
+        <div class="flex flex-wrap gap-4 mb-6">
+            <div style="background-color: var(--color-success-100); color: var(--color-success-600);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-success-100</p>
+                <p class="text-caption opacity-75 mt-1">#E6F4EA</p>
+            </div>
+            <div style="background-color: var(--color-success-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-success-400</p>
+                <p class="text-caption opacity-75 mt-1">#2E8B57</p>
+            </div>
+            <div style="background-color: var(--color-success-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-success-600</p>
+                <p class="text-caption opacity-75 mt-1">#1F6A42</p>
+            </div>
+        </div>
+
+        {# Warning #}
+        <p class="text-body-sm font-medium mb-2" style="color: var(--color-headings);">Warning</p>
+        <div class="flex flex-wrap gap-4 mb-6">
+            <div style="background-color: var(--color-warning-100); color: var(--color-warning-600);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-warning-100</p>
+                <p class="text-caption opacity-75 mt-1">#FFF4E5</p>
+            </div>
+            <div style="background-color: var(--color-warning-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-warning-400</p>
+                <p class="text-caption opacity-75 mt-1">#D9822B</p>
+            </div>
+            <div style="background-color: var(--color-warning-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-warning-600</p>
+                <p class="text-caption opacity-75 mt-1">#A6631E</p>
+            </div>
+        </div>
+
+        {# Error #}
+        <p class="text-body-sm font-medium mb-2" style="color: var(--color-headings);">Error</p>
+        <div class="flex flex-wrap gap-4 mb-6">
+            <div style="background-color: var(--color-error-100); color: var(--color-error-600);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-error-100</p>
+                <p class="text-caption opacity-75 mt-1">#FDEBEC</p>
+            </div>
+            <div style="background-color: var(--color-error-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-error-400</p>
+                <p class="text-caption opacity-75 mt-1">#C70039</p>
+            </div>
+            <div style="background-color: var(--color-error-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-error-600</p>
+                <p class="text-caption opacity-75 mt-1">#90003F</p>
+            </div>
+        </div>
+
+        {# Info #}
+        <p class="text-body-sm font-medium mb-2" style="color: var(--color-headings);">Info</p>
+        <div class="flex flex-wrap gap-4">
+            <div style="background-color: var(--color-info-100); color: var(--color-info-600);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-info-100</p>
+                <p class="text-caption opacity-75 mt-1">#E8F1FA</p>
+            </div>
+            <div style="background-color: var(--color-info-400); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-info-400</p>
+                <p class="text-caption opacity-75 mt-1">#3A7BD5</p>
+            </div>
+            <div style="background-color: var(--color-info-600); color: var(--color-page-background);" class="p-4 rounded-lg shadow-md w-44">
+                <p class="text-body-sm font-mono">--color-info-600</p>
+                <p class="text-caption opacity-75 mt-1">#2B5FA6</p>
+            </div>
+        </div>
+    {% endcall %}
+{% endmacro %}

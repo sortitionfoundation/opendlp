@@ -1,0 +1,45 @@
+{#
+ABOUTME: Breadcrumbs component macro for backoffice design system
+ABOUTME: Navigation trail showing current page location in hierarchy
+#}
+{% macro breadcrumbs(items=[]) %}
+    {#
+    items: Array of breadcrumb items, each with:
+        - label: Display text (required)
+        - href: Link URL (optional, last item should not have href)
+
+    Example:
+        {{ breadcrumbs([
+            {"label": "Dashboard", "href": url_for('backoffice.dashboard')},
+            {"label": "Assemblies", "href": url_for('backoffice.assemblies')},
+            {"label": "Climate Assembly"}
+        ]) }}
+    #}
+    <nav class="flex items-center px-4 py-2 rounded-md" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-2">
+            {% for item in items %}
+                {% if not loop.last %}
+                    {# Clickable breadcrumb item #}
+                    <li class="flex items-center">
+                        <a href="{{ item.href }}" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
+                            {{ item.label }}
+                        </a>
+                    </li>
+                    {# Chevron separator #}
+                    <li aria-hidden="true">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 6l6 6-6 6" stroke="var(--color-body-text)" />
+                        </svg>
+                    </li>
+                {% else %}
+                    {# Current page (non-clickable) #}
+                    <li class="flex items-center">
+                        <span class="text-body-sm font-medium" style="color: var(--color-body-text);" aria-current="page">
+                            {{ item.label }}
+                        </span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+{% endmacro %}

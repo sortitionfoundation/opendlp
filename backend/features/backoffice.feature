@@ -5,12 +5,13 @@ Feature: Backoffice UI
 
   Scenario: View component showcase page
     Given I am on the backoffice showcase page
-    Then I should see "Component Showcase"
+    Then I should see "Design System"
     And I should see "Alpine.js Interactivity"
     And I should see "Primitive Tokens"
 
   Scenario: Design tokens are loaded and working
     Given I am on the backoffice showcase page
+    And I select the "Foundations" tab
     Then I should see the brand-400 primary action token box
     And the brand-400 token box should have the brand crimson background
     And I should see the brand-300 secondary token box
@@ -93,3 +94,247 @@ Feature: Backoffice UI
     And there is an assembly called "Climate Assembly"
     When I visit the backoffice dashboard
     Then I should see an assembly card with title "Climate Assembly"
+
+  # Navigation Component Tests
+
+  Scenario: Navigation component is displayed
+    Given I am on the backoffice showcase page
+    Then I should see the navigation component
+    And the navigation should contain the logo
+    And the navigation should contain nav links
+    And the navigation should contain the CTA button
+
+  # Button Link Variant Tests
+
+  Scenario: Button with href renders as anchor tag
+    Given I am on the backoffice showcase page
+    Then I should see the link button
+    And the link button should be an anchor tag
+
+  # Footer Component Tests
+
+  Scenario: Dashboard displays footer with links and version
+    Given I am logged in as an admin user
+    When I visit the backoffice dashboard
+    Then I should see the footer
+    And the footer should contain GitHub link
+    And the footer should contain Sortition Foundation link
+    And the footer should contain User Data Agreement link
+    And the footer should display the version
+
+  # Assembly Details Page Tests
+
+  Scenario: User can navigate to assembly details from dashboard
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the backoffice dashboard
+    And I click the "Go to Assembly" button for "Climate Assembly"
+    Then I should see the assembly details page
+    And I should see "Climate Assembly" as the page heading
+
+  Scenario: Assembly details page displays breadcrumbs
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Climate Assembly"
+
+  Scenario: Assembly details page displays assembly information
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the assembly question section
+    And I should see "How should we address climate change?"
+    And I should see the assembly details summary
+    And I should see "Status"
+    And I should see "Number to Select"
+    And I should see "Created"
+
+  Scenario: Assembly details page has edit button
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    Then I should see the "Edit Assembly" button
+
+  # Edit Assembly Page Tests
+
+  Scenario: User can navigate to edit assembly from details page
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    And I click the "Edit Assembly" button
+    Then I should see the edit assembly page
+    And I should see "Edit Assembly" as the page heading
+
+  Scenario: Edit assembly page displays breadcrumbs
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the edit assembly page for "Climate Assembly"
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Climate Assembly"
+    And the breadcrumbs should contain "Edit"
+
+  Scenario: Edit assembly page displays form fields
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
+    When I visit the edit assembly page for "Climate Assembly"
+    Then I should see the title input field
+    And I should see the question textarea field
+    And I should see the first assembly date field
+    And I should see the number to select field
+    And the title input should contain "Climate Assembly"
+    And the question textarea should contain "How should we address climate change?"
+
+  Scenario: Edit assembly page has save and cancel buttons
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the edit assembly page for "Climate Assembly"
+    Then I should see the "Save Changes" button
+    And I should see the "Cancel" button
+
+  Scenario: User can update assembly details
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the edit assembly page for "Climate Assembly"
+    And I fill in the title with "Updated Climate Assembly"
+    And I click the "Save Changes" button
+    Then I should see the assembly details page
+    And I should see "Updated Climate Assembly" as the page heading
+    And I should see "updated successfully"
+
+  # Create Assembly Page Tests
+
+  Scenario: Dashboard displays create assembly button
+    Given I am logged in as an admin user
+    When I visit the backoffice dashboard
+    Then I should see the "Create New Assembly" button
+
+  Scenario: User can navigate to create assembly page from dashboard
+    Given I am logged in as an admin user
+    When I visit the backoffice dashboard
+    And I click the "Create New Assembly" button
+    Then I should see the create assembly page
+    And I should see "Create Assembly" as the page heading
+
+  Scenario: Create assembly page displays breadcrumbs
+    Given I am logged in as an admin user
+    When I visit the create assembly page
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Create Assembly"
+
+  Scenario: Create assembly page displays form fields
+    Given I am logged in as an admin user
+    When I visit the create assembly page
+    Then I should see the title input field
+    And I should see the question textarea field
+    And I should see the first assembly date field
+    And I should see the number to select field
+
+  Scenario: Create assembly page has create and cancel buttons
+    Given I am logged in as an admin user
+    When I visit the create assembly page
+    Then I should see the "Create Assembly" button
+    And I should see the "Cancel" button
+
+  Scenario: User can create a new assembly
+    Given I am logged in as an admin user
+    When I visit the create assembly page
+    And I fill in the title with "New Test Assembly"
+    And I fill in the question with "What should we discuss?"
+    And I fill in the number to select with "50"
+    And I click the "Create Assembly" button
+    Then I should see the assembly details page
+    And I should see "New Test Assembly" as the page heading
+    And I should see "created successfully"
+
+  Scenario: Empty state shows create assembly button
+    Given I am logged in as an admin user
+    And there are no assemblies
+    When I visit the backoffice dashboard
+    Then I should see "No assemblies yet"
+    And I should see the "Create Your First Assembly" button
+
+  # Assembly Members Page Tests
+
+  Scenario: Admin can navigate to assembly members from details page
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly details page for "Climate Assembly"
+    And I click the "Team Members" tab
+    Then I should see the assembly members page
+    And I should see "Team Members" as a section heading
+
+  Scenario: Assembly members page displays breadcrumbs
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Climate Assembly"
+    And the breadcrumbs should contain "Team Members"
+
+  Scenario: Admin can see add user form on members page
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should see "Add User to Assembly"
+    And I should see the user search dropdown
+    And I should see the role selection radio buttons
+    And I should see the "Add User to Assembly" button
+
+  Scenario: Admin can see team members table when members exist
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    And "normal@opendlp.example" is assigned to "Climate Assembly" as "assembly-manager"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should see the team members table
+    And the team members table should show "normal@opendlp.example"
+    And the team members table should show role "assembly-manager"
+    And I should see remove buttons in the team members table
+
+  Scenario: Non-admin member can view members page
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    And I am assigned to "Climate Assembly" as "assembly-manager"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should see "Team Members" as a section heading
+    And I should see the team members table
+
+  Scenario: Non-admin member cannot see add user form
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    And I am assigned to "Climate Assembly" as "assembly-manager"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should not see "Add User to Assembly"
+    And I should not see the user search dropdown
+    And I should not see remove buttons in the team members table
+
+  Scenario: Search dropdown shows no results message when typing
+    Given I am logged in as an admin user
+    And there is an assembly called "Climate Assembly"
+    When I visit the assembly members page for "Climate Assembly"
+    And I type "nonexistent" into the user search dropdown
+    Then I should see "No results found" after searching
+
+  Scenario: Non-admin user without assembly role cannot see assembly in dashboard
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    When I visit the backoffice dashboard
+    Then I should not see "Climate Assembly"
+
+  Scenario: Non-admin user without assembly role cannot access assembly details page
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    When I try to access the assembly details page for "Climate Assembly"
+    Then I should be redirected to the dashboard
+    And I should see "You don't have permission to view this assembly"
+
+  Scenario: Non-admin user without assembly role cannot access assembly members page
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    When I try to access the assembly members page for "Climate Assembly"
+    Then I should be redirected to the dashboard
+    And I should see "You don't have permission to view this assembly"

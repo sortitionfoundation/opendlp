@@ -1,0 +1,23 @@
+{#
+ABOUTME: Backoffice edit assembly page
+ABOUTME: Uses assembly_form macro for editing assembly details
+#}
+{% extends "backoffice/base.html" %}
+{% from "backoffice/assembly_form.html" import assembly_form_page with context %}
+
+{% block title %}{{ _("Edit Assembly") }} - {{ assembly.title }}{% endblock %}
+
+{% block body %}
+    {{ assembly_form_page(
+    form=form,
+    title=_("Edit Assembly"),
+    subtitle=_("Update the details for this citizens' assembly."),
+    submit_label=_("Save Changes"),
+    cancel_url=url_for('backoffice.view_assembly', assembly_id=assembly.id),
+    breadcrumb_items=[
+    {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+    {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+    {"label": _("Edit")}
+    ]
+    ) }}
+{% endblock %}

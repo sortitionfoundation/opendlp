@@ -1,0 +1,145 @@
+{#
+ABOUTME: Text input component macro for backoffice design system
+ABOUTME: Supports text, email, password, number inputs with label and optional hint/error
+#}
+
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, id="", classes="", attrs="") %}
+    {#
+    Text input component using semantic design tokens.
+
+    Args:
+        name: Input name attribute (required)
+        label: Label text displayed above the input
+        type: Input type - "text" | "email" | "password" | "number" | "tel" | "url" (default: "text")
+        value: Initial input value
+        placeholder: Placeholder text
+        hint: Help text displayed below the label
+        error: Error message (displays input in error state)
+        required: Boolean to mark field as required
+        disabled: Boolean to disable the input
+        id: Optional id attribute (defaults to name)
+        classes: Additional CSS classes for the input
+        attrs: Additional HTML attributes
+
+    Usage:
+        {{ input("email", label="Email Address", type="email", placeholder="you@example.com") }}
+        {{ input("password", label="Password", type="password", required=true) }}
+        {{ input("title", label="Assembly Title", value=assembly.title, error=errors.title) }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5">
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# Input field #}
+        <input
+            type="{{ type }}"
+            name="{{ name }}"
+            id="{{ input_id }}"
+            {% if value is not none and value != "" %}value="{{ value }}"{% endif %}
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if attrs %}{{ attrs | safe }}{% endif %}
+            class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ classes }}"
+            style="
+                background-color: var(--color-page-background);
+                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                color: var(--color-body-text);
+                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                {% if disabled %}
+                    background-color: var(--color-subtle-background-panels);
+                    color: var(--color-placeholder-text);
+                    cursor: not-allowed;
+                {% endif %}
+            "
+        />
+
+        {# Error message #}
+        {% if has_error %}
+            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="") %}
+    {#
+    Textarea component using semantic design tokens.
+
+    Args:
+        name: Textarea name attribute (required)
+        label: Label text displayed above the textarea
+        value: Initial textarea value
+        placeholder: Placeholder text
+        hint: Help text displayed below the label
+        error: Error message (displays textarea in error state)
+        required: Boolean to mark field as required
+        disabled: Boolean to disable the textarea
+        rows: Number of visible text rows (default: 4)
+        id: Optional id attribute (defaults to name)
+        classes: Additional CSS classes
+        attrs: Additional HTML attributes
+
+    Usage:
+        {{ textarea("description", label="Description", placeholder="Enter description...") }}
+        {{ textarea("question", label="Assembly Question", value=assembly.question, rows=6) }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5">
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# Textarea field #}
+        <textarea
+            name="{{ name }}"
+            id="{{ input_id }}"
+            rows="{{ rows }}"
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if attrs %}{{ attrs | safe }}{% endif %}
+            class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 resize-y {{ classes }}"
+            style="
+                background-color: var(--color-page-background);
+                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                color: var(--color-body-text);
+                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                {% if disabled %}
+                    background-color: var(--color-subtle-background-panels);
+                    color: var(--color-placeholder-text);
+                    cursor: not-allowed;
+                {% endif %}
+            "
+        >{{ value }}</textarea>
+
+        {# Error message #}
+        {% if has_error %}
+            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}

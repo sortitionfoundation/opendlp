@@ -42,4 +42,29 @@
     --color-focus-ring: var(--color-brand-200);
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
+
+    /* ========================================
+     ALERT / STATUS COLORS
+     100 = background, 400 = border, 600 = text
+     ======================================== */
+
+    /* Success - Green */
+    --color-success-100: #E6F4EA;
+    --color-success-400: #2E8B57;
+    --color-success-600: #1F6A42;
+
+    /* Warning - Amber */
+    --color-warning-100: #FFF4E5;
+    --color-warning-400: #D9822B;
+    --color-warning-600: #A6631E;
+
+    /* Error - Red */
+    --color-error-100: #FDEBEC;
+    --color-error-400: #C70039;
+    --color-error-600: #90003F;
+
+    /* Info - Blue */
+    --color-info-100: #E8F1FA;
+    --color-info-400: #3A7BD5;
+    --color-info-600: #2B5FA6;
 }

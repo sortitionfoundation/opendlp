@@ -1,0 +1,135 @@
+{#
+ABOUTME: Backoffice assembly form macro (create/edit)
+ABOUTME: Reusable form layout for creating and editing assemblies
+#}
+{% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, textarea %}
+{% from "backoffice/components/alert.html" import flash_messages %}
+{% from "backoffice/components/footer.html" import footer %}
+
+{#
+  Assembly form macro - used for both create and edit pages
+
+  Parameters:
+    - form: The WTForms form object (CreateAssemblyForm or EditAssemblyForm)
+    - title: Page heading (e.g., "Create Assembly" or "Edit Assembly")
+    - subtitle: Description text below the heading
+    - submit_label: Text for the submit button
+    - cancel_url: URL for the cancel button
+    - breadcrumb_items: List of breadcrumb items (dicts with label and optional href)
+    - page_title: Browser tab title (optional, defaults to title)
+#}
+{% macro assembly_form_page(form, title, subtitle, submit_label, cancel_url, breadcrumb_items, page_title=none) %}
+    <div class="min-h-screen flex flex-col">
+        {{ navigation(
+        logo_href=url_for('backoffice.dashboard'),
+        nav_items=[
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
+        {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
+        {"label": _("Help"), "href": url_for('main.support')}
+        ],
+        account_items=[
+        {"label": _("My Account"), "href": url_for('profile.view')}
+        ],
+        cta_text=_("Sign out"),
+        cta_href=url_for('auth.logout')
+        ) }}
+
+        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
+            {{ flash_messages() }}
+
+            {# Breadcrumbs #}
+            <div class="mb-6">
+                {{ breadcrumbs(breadcrumb_items) }}
+            </div>
+
+            {# Page Heading #}
+            <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ title }}</h1>
+            <p class="text-body-lg mb-8" style="color: var(--color-secondary-text);">
+                {{ subtitle }}
+            </p>
+
+            {# Error Summary #}
+            {% if form.errors %}
+                <div class="rounded-lg p-6 mb-8" style="background-color: var(--color-error-background, #fef2f2); border: 1px solid var(--color-primary-action);">
+                    <h2 class="text-heading-md mb-4" style="color: var(--color-primary-action);">{{ _("There is a problem") }}</h2>
+                    <ul class="list-disc pl-6 space-y-1">
+                        {% for field_name, errors in form.errors.items() %}
+                            {% for error in errors %}
+                                <li>
+                                    <a href="#{{ form[field_name].id }}" class="text-body-md underline" style="color: var(--color-primary-action);">{{ error }}</a>
+                                </li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {# Assembly Form #}
+            <form method="post" novalidate class="max-w-2xl">
+                {{ form.hidden_tag() }}
+
+                <div class="space-y-6">
+                    {# Title Field #}
+                    {{ input(
+                    name="title",
+                    label=form.title.label.text,
+                    value=form.title.data or "",
+                    hint=form.title.description,
+                    error=form.title.errors[0] if form.title.errors else "",
+                    required=true,
+                    id=form.title.id
+                    ) }}
+
+                    {# Question Field #}
+                    {{ textarea(
+                    name="question",
+                    label=form.question.label.text,
+                    value=form.question.data or "",
+                    hint=form.question.description,
+                    error=form.question.errors[0] if form.question.errors else "",
+                    rows=3,
+                    id=form.question.id
+                    ) }}
+
+                    {# First Assembly Date Field #}
+                    {{ input(
+                    name="first_assembly_date",
+                    label=form.first_assembly_date.label.text,
+                    type="date",
+                    value=form.first_assembly_date.data.isoformat() if form.first_assembly_date.data else "",
+                    hint=form.first_assembly_date.description,
+                    error=form.first_assembly_date.errors[0] if form.first_assembly_date.errors else "",
+                    id=form.first_assembly_date.id,
+                    classes="max-w-xs"
+                    ) }}
+
+                    {# Number to Select Field #}
+                    {{ input(
+                    name="number_to_select",
+                    label=form.number_to_select.label.text,
+                    type="number",
+                    value=form.number_to_select.data if form.number_to_select.data is not none else "",
+                    hint=form.number_to_select.description,
+                    error=form.number_to_select.errors[0] if form.number_to_select.errors else "",
+                    required=true,
+                    id=form.number_to_select.id,
+                    classes="max-w-xs",
+                    attrs='min="0"'
+                    ) }}
+                </div>
+
+                {# Form Actions #}
+                <div class="flex gap-4 mt-8">
+                    {{ button(submit_label, type="submit", variant="primary") }}
+                    {{ button(_("Cancel"), href=cancel_url, variant="outline") }}
+                </div>
+            </form>
+        </main>
+
+        {{ footer() }}
+    </div>
+{% endmacro %}

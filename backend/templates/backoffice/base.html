@@ -11,13 +11,16 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/primitive.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='backoffice/tokens/semantic.css') }}">
 
-        <!-- Alpine.js -->
-        <script nonce="{{ csp_nonce }}" defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script nonce="{{ csp_nonce }}">
-            document.addEventListener('alpine:init', () => {
-                console.log('Alpine.js loaded');
-            });
-        </script>
+        <!-- Alpine.js components (must load before Alpine.js) -->
+        <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='backoffice/js/alpine-components.js') }}"></script>
+
+        <!-- Alpine.js (CSP-compatible build) -->
+        <script nonce="{{ csp_nonce }}"
+            defer
+            src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
+            integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"{# pragma: allowlist secret #}
+            crossorigin="anonymous"></script>
 
         {% block head %}{% endblock %}
     </head>

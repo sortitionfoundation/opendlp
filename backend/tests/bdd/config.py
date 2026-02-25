@@ -27,6 +27,10 @@ class Urls:
     # Backoffice URLs (Pines UI + Tailwind)
     backoffice_showcase = f"{base}/backoffice/showcase"
     backoffice_dashboard = f"{base}/backoffice/dashboard"
+    backoffice_create_assembly = f"{base}/backoffice/assembly/new"
+    backoffice_assembly = "{base}/backoffice/assembly/{assembly_id}"
+    backoffice_edit_assembly = "{base}/backoffice/assembly/{assembly_id}/edit"
+    backoffice_members_assembly = "{base}/backoffice/assembly/{assembly_id}/members"
 
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
@@ -41,3 +45,15 @@ class Urls:
     @classmethod
     def for_assembly(cls, url_name: str, assembly_id: str) -> str:
         return cls.assembly_urls[url_name].format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def backoffice_assembly_url(cls, assembly_id: str) -> str:
+        return cls.backoffice_assembly.format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def backoffice_edit_assembly_url(cls, assembly_id: str) -> str:
+        return cls.backoffice_edit_assembly.format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def backoffice_members_assembly_url(cls, assembly_id: str) -> str:
+        return cls.backoffice_members_assembly.format(base=cls.base, assembly_id=assembly_id)

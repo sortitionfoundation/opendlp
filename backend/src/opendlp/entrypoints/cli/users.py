@@ -20,17 +20,27 @@ def users(ctx: click.Context) -> None:
 @users.command("add")
 @click.option("--email", required=True, help="User email address")
 @click.option("--password", help="Password (will prompt if not provided)")
+@click.option(
+    "--role",
+    type=click.Choice([r.value for r in GlobalRole], case_sensitive=False),
+    default=GlobalRole.ADMIN.value,
+    help="Global role for the user (default: user)",
+)
 @click.pass_context
 def add_user(
     ctx: click.Context,
     email: str,
     password: str | None,
+    role: str,
 ) -> None:
     """Add a new user to the system."""
     try:
         # Prompt for password if not provided
         if not password:
             password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+
+        # Convert role string to GlobalRole enum
+        global_role = GlobalRole(role)
 
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
@@ -40,7 +50,7 @@ def add_user(
                 uow=uow,
                 email=email,
                 password=password,
-                global_role=GlobalRole.ADMIN,
+                global_role=global_role,
             )
 
             click.echo(click.style("✓ User created successfully:", "green"))
