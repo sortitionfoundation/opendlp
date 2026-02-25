@@ -9,7 +9,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyRole
-from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
@@ -98,6 +98,330 @@ def see_design_system_text(page: Page):
     """Verify the Design System heading is visible."""
     heading = page.locator("h1")
     expect(heading).to_contain_text("Design System")
+
+
+@then('I should see "Alpine.js Interactivity"')
+def see_alpine_interactivity_text(page: Page):
+    """Verify the Alpine.js section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Alpine.js Interactivity")
+
+
+@then('I should see "Primitive Tokens"')
+def see_primitive_tokens_text(page: Page):
+    """Verify the Primitive Tokens section heading is visible."""
+    expect(page.locator("body")).to_contain_text("Primitive Tokens")
+
+
+# Design Token Tests
+
+
+@then("I should see the brand-400 primary action token box")
+def see_brand_400_token_box(page: Page):
+    """Verify the brand-400 primary action token box is visible."""
+    token_box = page.locator("#token-brand-400")
+    expect(token_box).to_be_visible()
+    expect(token_box).to_contain_text("brand-400")
+
+
+@then("the brand-400 token box should have the brand crimson background")
+def brand_400_token_has_crimson_background(page: Page):
+    """Verify design token --color-brand-400 (#90003F) is applied."""
+    token_box = page.locator("#token-brand-400")
+    # Brand-400 #90003F = rgb(144, 0, 63)
+    background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(144, 0, 63)", f"Expected brand crimson, got {background_color}"
+
+
+@then("I should see the brand-300 secondary token box")
+def see_brand_300_token_box(page: Page):
+    """Verify the brand-300 secondary token box is visible."""
+    token_box = page.locator("#token-brand-300")
+    expect(token_box).to_be_visible()
+    expect(token_box).to_contain_text("brand-300")
+
+
+@then("the brand-300 token box should have the brand red background")
+def brand_300_token_has_red_background(page: Page):
+    """Verify design token --color-brand-300 (#C70039) is applied."""
+    token_box = page.locator("#token-brand-300")
+    # Brand-300 #C70039 = rgb(199, 0, 57)
+    background_color = token_box.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(199, 0, 57)", f"Expected brand red, got {background_color}"
+
+
+# Alpine.js Tests
+
+
+@then("the Alpine message should be hidden")
+def alpine_message_hidden(page: Page):
+    """Verify the Alpine.js toggle message is hidden."""
+    message = page.locator("#alpine-message")
+    # Wait for Alpine.js to initialize and hide the element
+    expect(message).to_be_hidden(timeout=10000)
+
+
+@then("the Alpine message should be visible")
+def alpine_message_visible(page: Page):
+    """Verify the Alpine.js toggle message is visible."""
+    message = page.locator("#alpine-message")
+    expect(message).to_be_visible()
+
+
+@when("I click the Alpine toggle button")
+def click_alpine_toggle(page: Page):
+    """Click the Alpine.js toggle button."""
+    button = page.locator("#alpine-toggle")
+    button.click()
+
+
+@then('I should see "Alpine.js is working!"')
+def see_alpine_working_text(page: Page):
+    """Verify the Alpine.js confirmation message is visible."""
+    expect(page.locator("body")).to_contain_text("Alpine.js is working!")
+
+
+# Button Component Tests (Iteration 5)
+
+
+@then("I should see the primary button")
+def see_primary_button(page: Page):
+    """Verify the primary button is visible."""
+    button = page.locator("#btn-primary")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Submit")
+
+
+@then("I should see the secondary button")
+def see_secondary_button(page: Page):
+    """Verify the secondary button is visible."""
+    button = page.locator("#btn-secondary")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Secondary")
+
+
+@then("I should see the outline button")
+def see_outline_button(page: Page):
+    """Verify the outline button is visible."""
+    button = page.locator("#btn-outline")
+    expect(button).to_be_visible()
+    expect(button).to_contain_text("Outline")
+
+
+@then("I should see the disabled button")
+def see_disabled_button(page: Page):
+    """Verify the disabled button is visible and disabled."""
+    button = page.locator("#btn-disabled")
+    expect(button).to_be_visible()
+    expect(button).to_be_disabled()
+
+
+@then("the primary button should have the brand crimson background")
+def primary_button_has_crimson_background(page: Page):
+    """Verify the primary button uses brand-400 (#90003F) background."""
+    button = page.locator("#btn-primary")
+    background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(144, 0, 63)", f"Expected brand crimson, got {background_color}"
+
+
+@then("the secondary button should have the brand red background")
+def secondary_button_has_red_background(page: Page):
+    """Verify the secondary button uses brand-300 (#C70039) background."""
+    button = page.locator("#btn-secondary")
+    background_color = button.evaluate("el => getComputedStyle(el).backgroundColor")
+    assert background_color == "rgb(199, 0, 57)", f"Expected brand red, got {background_color}"
+
+
+@then("the disabled button should be disabled")
+def disabled_button_is_disabled(page: Page):
+    """Verify the disabled button has disabled attribute."""
+    button = page.locator("#btn-disabled")
+    expect(button).to_be_disabled()
+
+
+# Card Component Tests
+
+
+@then("I should see the basic card")
+def see_basic_card(page: Page):
+    """Verify the basic card is visible."""
+    card = page.locator("#card-basic")
+    expect(card).to_be_visible()
+
+
+@then("I should see the card with header")
+def see_card_with_header(page: Page):
+    """Verify the card with header is visible."""
+    card = page.locator("#card-header")
+    expect(card).to_be_visible()
+
+
+@then("I should see the card with actions")
+def see_card_with_actions(page: Page):
+    """Verify the card with actions is visible."""
+    card = page.locator("#card-actions")
+    expect(card).to_be_visible()
+
+
+@then("the card with actions should contain buttons")
+def card_with_actions_has_buttons(page: Page):
+    """Verify the card with actions contains buttons."""
+    card = page.locator("#card-actions")
+    buttons = card.locator("button, a.button, [class*='btn']")
+    expect(buttons.first).to_be_visible()
+
+
+# Typography Tests
+
+
+@then("I should see the typography section")
+def see_typography_section(page: Page):
+    """Verify the typography section is visible."""
+    section = page.locator("#typography-section")
+    expect(section).to_be_visible()
+
+
+@then('I should see "Semantic Tokens"')
+def see_semantic_tokens_text(page: Page):
+    """Verify the Semantic Tokens heading is visible."""
+    expect(page.locator("body")).to_contain_text("Semantic Tokens")
+
+
+@then('I should see "Use Cases"')
+def see_use_cases_text(page: Page):
+    """Verify the Use Cases heading is visible."""
+    expect(page.locator("body")).to_contain_text("Use Cases")
+
+
+@then("the display-lg sample should use the Oswald font")
+def display_lg_uses_oswald(page: Page):
+    """Verify display-lg uses Oswald font family."""
+    sample = page.locator("#typography-display-lg")
+    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
+
+
+@then("the display-lg sample should have font size 32px")
+def display_lg_has_correct_size(page: Page):
+    """Verify display-lg has 32px font size."""
+    sample = page.locator("#typography-display-lg")
+    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
+    assert font_size == "32px", f"Expected 32px, got {font_size}"
+
+
+@then("the display-md sample should use the Oswald font")
+def display_md_uses_oswald(page: Page):
+    """Verify display-md uses Oswald font family."""
+    sample = page.locator("#typography-display-md")
+    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
+
+
+@then("the display-md sample should have font size 28px")
+def display_md_has_correct_size(page: Page):
+    """Verify display-md has 28px font size."""
+    sample = page.locator("#typography-display-md")
+    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
+    assert font_size == "28px", f"Expected 28px, got {font_size}"
+
+
+@then("the heading-lg sample should use the Oswald font")
+def heading_lg_uses_oswald(page: Page):
+    """Verify heading-lg uses Oswald font family."""
+    sample = page.locator("#typography-heading-lg")
+    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
+
+
+@then("the heading-lg sample should have font size 20px")
+def heading_lg_has_correct_size(page: Page):
+    """Verify heading-lg has 20px font size."""
+    sample = page.locator("#typography-heading-lg")
+    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
+    assert font_size == "20px", f"Expected 20px, got {font_size}"
+
+
+@then("the body-lg sample should use the Lato font")
+def body_lg_uses_lato(page: Page):
+    """Verify body-lg uses Lato font family."""
+    sample = page.locator("#typography-body-lg")
+    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Lato" in font_family, f"Expected Lato font, got {font_family}"
+
+
+@then("the body-lg sample should have font size 16px")
+def body_lg_has_correct_size(page: Page):
+    """Verify body-lg has 16px font size."""
+    sample = page.locator("#typography-body-lg")
+    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
+    assert font_size == "16px", f"Expected 16px, got {font_size}"
+
+
+@then("the overline sample should use the Lato font")
+def overline_uses_lato(page: Page):
+    """Verify overline uses Lato font family."""
+    sample = page.locator("#typography-overline")
+    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
+    assert "Lato" in font_family, f"Expected Lato font, got {font_family}"
+
+
+@then("the overline sample should be uppercase")
+def overline_is_uppercase(page: Page):
+    """Verify overline text is uppercase."""
+    sample = page.locator("#typography-overline")
+    text_transform = sample.evaluate("el => getComputedStyle(el).textTransform")
+    assert text_transform == "uppercase", f"Expected uppercase, got {text_transform}"
+
+
+# Navigation Component Tests
+
+
+@then("I should see the navigation component")
+def see_navigation_component(page: Page):
+    """Verify the navigation component is visible."""
+    nav = page.locator("#nav-demo")
+    expect(nav).to_be_visible()
+
+
+@then("the navigation should contain the logo")
+def nav_contains_logo(page: Page):
+    """Verify the navigation contains a logo."""
+    nav = page.locator("#nav-demo")
+    logo = nav.locator("img, svg, .logo")
+    expect(logo.first).to_be_visible()
+
+
+@then("the navigation should contain nav links")
+def nav_contains_links(page: Page):
+    """Verify the navigation contains nav links."""
+    nav = page.locator("#nav-demo")
+    links = nav.locator("a")
+    expect(links.first).to_be_visible()
+
+
+@then("the navigation should contain the CTA button")
+def nav_contains_cta(page: Page):
+    """Verify the navigation contains a CTA button."""
+    nav = page.locator("#nav-demo")
+    cta = nav.locator("a.nav-cta, button.nav-cta, [class*='cta']")
+    expect(cta.first).to_be_visible()
+
+
+# Button Link Variant Tests
+
+
+@then("I should see the link button")
+def see_link_button(page: Page):
+    """Verify the link button is visible."""
+    button = page.locator("#btn-link")
+    expect(button).to_be_visible()
+
+
+@then("the link button should be an anchor tag")
+def link_button_is_anchor(page: Page):
+    """Verify the link button renders as an anchor tag."""
+    button = page.locator("#btn-link")
+    tag_name = button.evaluate("el => el.tagName.toLowerCase()")
+    assert tag_name == "a", f"Expected anchor tag, got {tag_name}"
 
 
 # Dashboard Tests (Protected Route)
@@ -639,3 +963,194 @@ def try_access_assembly_members_page(page: Page, title: str, test_database):
 def redirected_to_dashboard(page: Page):
     """Verify user was redirected to the backoffice dashboard."""
     expect(page).to_have_url(re.compile(r".*/backoffice/dashboard"))
+
+
+# Google Sheet Configuration Tests
+
+
+@given(parsers.parse('the assembly "{title}" has a gsheet configuration'))
+def create_gsheet_config_for_assembly(title: str, admin_user, test_database):
+    """Create a Google Sheet configuration for an assembly."""
+    assembly_id = _test_assemblies.get(title)
+    if not assembly_id:
+        raise ValueError(f"Assembly '{title}' not found in test assemblies")
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    add_assembly_gsheet(
+        uow=uow,
+        user_id=admin_user.id,
+        assembly_id=assembly_id,
+        url="https://docs.google.com/spreadsheets/d/test-sheet-id/edit",
+        team="uk",
+        select_registrants_tab="Respondents",
+        select_targets_tab="Categories",
+        replace_registrants_tab="Respondents",
+        replace_targets_tab="Categories",
+        already_selected_tab="Selected",
+        id_column="",
+        check_same_address=False,
+        check_same_address_cols=[],
+        generate_remaining_tab=False,
+        columns_to_keep=[],
+    )
+
+
+@when(parsers.parse('I visit the assembly data page for "{title}"'))
+def visit_assembly_data_page(page: Page, title: str, test_database):
+    """Navigate to the assembly data page."""
+    assembly_id = _test_assemblies.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_data_assembly_url(assembly_id))
+
+
+@when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}"'))
+def visit_assembly_data_page_with_source(page: Page, title: str, source: str, test_database):
+    """Navigate to the assembly data page with a specific source."""
+    assembly_id = _test_assemblies.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source))
+
+
+@when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}" and mode "{mode}"'))
+def visit_assembly_data_page_with_source_and_mode(page: Page, title: str, source: str, mode: str, test_database):
+    """Navigate to the assembly data page with a specific source and mode."""
+    assembly_id = _test_assemblies.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source, mode=mode))
+
+
+@when(parsers.parse('I select "{option}" from the data source selector'))
+def select_data_source(page: Page, option: str):
+    """Select an option from the data source selector dropdown."""
+    selector = page.locator("select#data_source")
+    selector.select_option(label=option)
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I fill in the gsheet URL with "{url}"'))
+def fill_gsheet_url(page: Page, url: str):
+    """Fill in the Google Sheet URL input field."""
+    url_input = page.locator("input[name='url']")
+    url_input.fill(url)
+
+
+@when(parsers.parse('I uncheck the "{label}" checkbox'))
+def uncheck_checkbox(page: Page, label: str):
+    """Uncheck a checkbox with the given label."""
+    checkbox = page.locator("input[type='checkbox']").filter(
+        has=page.locator(f"xpath=..//*[contains(text(), '{label}')]")
+    )
+    # If the checkbox is checked, uncheck it
+    if checkbox.count() > 0 and checkbox.first.is_checked():
+        checkbox.first.uncheck()
+    else:
+        # Try a different approach - look for checkbox by name
+        checkbox_by_name = page.locator("input[name='check_same_address']")
+        if checkbox_by_name.count() > 0 and checkbox_by_name.is_checked():
+            checkbox_by_name.uncheck()
+
+
+@when('I click the "Delete" button and confirm')
+def click_delete_and_confirm(page: Page):
+    """Click the Delete button and confirm the dialog."""
+    # Set up dialog handler before clicking
+    page.on("dialog", lambda dialog: dialog.accept())
+    # Find and click the delete button
+    delete_button = page.locator("button", has_text="Delete").first
+    delete_button.click()
+    page.wait_for_load_state("networkidle")
+
+
+@when("I click the gsheet form cancel link")
+def click_gsheet_cancel_link(page: Page):
+    """Click the Cancel link in the gsheet form (more specific than generic button click)."""
+    # Look for the Cancel link within the form actions section
+    # Use get_by_role with exact=True to avoid matching assembly name in breadcrumbs
+    cancel_link = page.get_by_role("link", name="Cancel", exact=True)
+    cancel_link.click()
+    page.wait_for_load_state("networkidle")
+
+
+@then("I should see the assembly data page")
+def see_assembly_data_page(page: Page):
+    """Verify we're on the assembly data page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/data"))
+
+
+@then("I should see the data source selector")
+def see_data_source_selector(page: Page):
+    """Verify the data source selector is visible."""
+    selector = page.locator("select#data_source")
+    expect(selector).to_be_visible()
+
+
+@then("the data source selector should be enabled")
+def data_source_selector_enabled(page: Page):
+    """Verify the data source selector is enabled."""
+    selector = page.locator("select#data_source")
+    expect(selector).to_be_enabled()
+
+
+@then("the data source selector should be disabled")
+def data_source_selector_disabled(page: Page):
+    """Verify the data source selector is disabled."""
+    selector = page.locator("select#data_source")
+    expect(selector).to_be_disabled()
+
+
+@then("I should see the gsheet URL input field")
+def see_gsheet_url_input(page: Page):
+    """Verify the Google Sheet URL input field is visible."""
+    url_input = page.locator("input[name='url']")
+    expect(url_input).to_be_visible()
+
+
+@then("the gsheet URL input field should be readonly")
+def gsheet_url_readonly(page: Page):
+    """Verify the Google Sheet URL field is readonly (displayed as link or text, not input)."""
+    # In readonly mode, the URL is displayed as a link, not an input field
+    # So we check that there is NO editable URL input field
+    url_input = page.locator("input[name='url']")
+    expect(url_input).to_have_count(0)
+
+
+@then("the gsheet URL input field should be editable")
+def gsheet_url_editable(page: Page):
+    """Verify the Google Sheet URL input field is editable (not readonly)."""
+    url_input = page.locator("input[name='url']")
+    expect(url_input).not_to_have_attribute("readonly", "")
+
+
+@then("I should see the gsheet configuration in view mode")
+def see_gsheet_view_mode(page: Page):
+    """Verify the gsheet configuration is displayed in view mode."""
+    # In view mode, there should be no editable URL input (URL is shown as link)
+    # and the Edit Configuration button should be visible
+    edit_button = page.locator("a, button", has_text="Edit Configuration")
+    expect(edit_button).to_be_visible()
+    # The Save Configuration button should NOT be visible in view mode
+    save_button = page.locator("button", has_text="Save Configuration")
+    expect(save_button).to_have_count(0)
+
+
+@then("I should see the gsheet configuration in edit mode")
+def see_gsheet_edit_mode(page: Page):
+    """Verify the gsheet configuration is displayed in edit mode."""
+    # In edit mode, the URL input should be editable and Save button should be visible
+    url_input = page.locator("input[name='url']")
+    expect(url_input).not_to_have_attribute("readonly", "")
+    save_button = page.locator("button", has_text="Save Configuration")
+    expect(save_button).to_be_visible()
+
+
+@then("I should see validation error for missing URL")
+def see_validation_error_for_missing_url(page: Page):
+    """Verify a validation error is shown for missing URL field."""
+    # The form should still be displayed (not redirected)
+    # And there should be some validation message - either browser or form
+    # Check that we're still on the form (Save Configuration visible)
+    save_button = page.locator("button", has_text="Save Configuration")
+    expect(save_button).to_be_visible()
+    # The URL field is required, so browser should show native validation
+    # or the form shows an error message

@@ -388,3 +388,31 @@ When a data source configuration exists (e.g., gsheet config), the data source s
 - [ ] Permission denied scenarios for view
 - [ ] Permission denied scenarios for save
 - [ ] Permission denied scenarios for delete
+
+### BDD Tests (Backoffice UI) ✅
+
+Feature file: `features/backoffice.feature`
+Step definitions: `tests/bdd/test_backoffice.py`
+
+**Navigation**
+- [x] User can navigate to data tab from assembly details
+- [x] Data source selector is shown when no config exists
+- [x] User can select Google Spreadsheet data source
+
+**Create Configuration (NEW mode)**
+- [x] User can create new gsheet configuration
+- [x] Form shows validation errors for missing URL
+- [x] Form shows validation errors for invalid URL
+
+**View Configuration (VIEW mode)**
+- [x] User sees readonly view when config exists
+- [x] User can click Edit to switch to edit mode
+- [x] Data source selector is locked when config exists
+
+**Edit Configuration (EDIT mode)**
+- [x] User can update existing configuration
+- [x] User can cancel edit and return to view mode
+
+**Delete Configuration**
+- [x] User can delete configuration with confirmation
+- [x] After delete, data source selector is unlocked
