@@ -211,6 +211,15 @@ flowchart TD
 
 ## UI States
 
+### Data Source Locking ✅
+
+When a data source configuration exists (e.g., gsheet config), the data source selector is locked:
+
+- ✅ Selector is disabled and shows locked message
+- ✅ Data source auto-selects to the configured type (ignores query param)
+- ✅ After deleting configuration, selector is unlocked
+- ✅ Delete redirects without source param to show unlocked state
+
 ### 1. NEW Mode (No existing configuration) ✅
 
 **Condition:** `gsheet_mode == "new"` (no gsheet config exists)
@@ -223,6 +232,7 @@ flowchart TD
 - ✅ All form fields editable
 - ✅ Submit button: "Save Configuration"
 - ✅ No Cancel or Delete buttons
+- ✅ Data source selector is enabled (unlocked)
 
 ### 2. VIEW Mode (Existing configuration, readonly) ✅
 
@@ -366,6 +376,13 @@ flowchart TD
 - [x] Delete button shown in VIEW mode
 - [x] Delete button shown in EDIT mode
 - [x] Delete button NOT shown in NEW mode
+
+**Data Source Locking ✅**
+- [x] Selector locked when config exists
+- [x] Data source auto-selects when config exists
+- [x] Selector unlocked when no config exists
+- [x] Selector unlocked after delete
+- [x] Gsheet option selected in dropdown when locked
 
 **Permissions ⬜**
 - [ ] Permission denied scenarios for view

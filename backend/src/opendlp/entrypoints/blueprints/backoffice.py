@@ -183,15 +183,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
     try:
-        # Get data source from query param, empty string means no selection
-        data_source = request.args.get("source", "")
-        if data_source not in ("gsheet", "csv", ""):
-            data_source = ""
-
-        # Initialize gsheet-related context
+        # Initialize context
         gsheet = None
         gsheet_mode = "new"
         gsheet_form = None
+        data_source_locked = False
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
         # Get assembly with permissions
@@ -199,22 +195,30 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        # Load gsheet config if gsheet source is selected (separate UoW to avoid nested context)
-        if data_source == "gsheet":
-            try:
-                uow_gsheet = bootstrap.bootstrap()
-                gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-            except Exception as gsheet_error:
-                current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
-                current_app.logger.exception("Gsheet loading stacktrace:")
-                # Continue without gsheet - show the new form
-                gsheet = None
+        # Always check if gsheet config exists - if so, lock to gsheet source
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception as gsheet_error:
+            current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
+            current_app.logger.exception("Gsheet loading stacktrace:")
+            gsheet = None
 
-            # Determine mode based on query param and whether config exists
+        # If gsheet config exists, force gsheet source and lock the selector
+        if gsheet:
+            data_source = "gsheet"
+            data_source_locked = True
+        else:
+            # No config exists - allow user to choose source from query param
+            data_source = request.args.get("source", "")
+            if data_source not in ("gsheet", "csv", ""):
+                data_source = ""
+
+        # Set up gsheet form if gsheet source is selected
+        if data_source == "gsheet":
             mode_param = request.args.get("mode", "")
             # Config exists: default to view, allow edit. No config: always show new form
             gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
-
             # Create form based on mode - form has defaults built in
             gsheet_form = EditAssemblyGSheetForm(obj=gsheet) if gsheet else CreateAssemblyGSheetForm()
 
@@ -222,6 +226,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "backoffice/assembly_data.html",
             assembly=assembly,
             data_source=data_source,
+            data_source_locked=data_source_locked,
             gsheet=gsheet,
             gsheet_mode=gsheet_mode,
             gsheet_form=gsheet_form,
@@ -323,6 +328,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "backoffice/assembly_data.html",
             assembly=assembly,
             data_source="gsheet",
+            data_source_locked=is_update,  # Locked if updating existing config
             gsheet=existing_gsheet,
             gsheet_mode="edit" if is_update else "new",
             gsheet_form=form,
@@ -352,12 +358,13 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+        # Redirect without source param - selector will be unlocked allowing user to choose again
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Gsheet config not found for delete: {e}")
         flash(_("Google Spreadsheet configuration not found"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions to delete gsheet for assembly {assembly_id}: {e}")
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
@@ -366,7 +373,7 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Gsheet delete error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")

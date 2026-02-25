@@ -280,17 +280,17 @@ class TestBackofficeGSheetDelete:
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
-        # Should redirect to data page on success
+        # Should redirect to data page on success (without source param - selector unlocked)
         assert response.status_code == 302
-        assert "source=gsheet" in response.location
+        assert "/data" in response.location
 
         # Follow redirect and verify success message
         response = logged_in_admin.get(response.location)
         assert response.status_code == 200
         assert b"removed successfully" in response.data
 
-        # Should now be in NEW mode (no config exists)
-        assert b'name="url"' in response.data  # Form should be editable
+        # Selector should now be unlocked (no config exists)
+        assert b"urlSelect" in response.data
 
     def test_delete_gsheet_config_not_found(self, logged_in_admin, existing_assembly):
         """Test deleting a non-existent gsheet configuration."""
@@ -302,9 +302,9 @@ class TestBackofficeGSheetDelete:
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
-        # Should redirect with error
+        # Should redirect with error (without source param)
         assert response.status_code == 302
-        assert "source=gsheet" in response.location
+        assert "/data" in response.location
 
         # Follow redirect and verify error message
         response = logged_in_admin.get(response.location)
@@ -337,3 +337,69 @@ class TestBackofficeGSheetDelete:
         assert response.status_code == 200
         # Should NOT show delete button (no config to delete)
         assert b"gsheet/delete" not in response.data
+
+
+class TestBackofficeDataSourceLocking:
+    """Test data source selector locking behavior."""
+
+    def test_data_source_locked_when_gsheet_config_exists(self, logged_in_admin, assembly_with_gsheet):
+        """Test that data source selector is disabled when gsheet config exists."""
+        assembly, gsheet = assembly_with_gsheet
+        # Access data page without source param - should auto-select gsheet and lock
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
+        assert response.status_code == 200
+        # Selector should be disabled
+        assert b"disabled" in response.data
+        # Should show gsheet content (auto-selected)
+        assert b"Google Spreadsheet Configuration" in response.data
+        # Should show locked message
+        assert b"locked" in response.data.lower()
+
+    def test_data_source_auto_selects_gsheet_when_config_exists(self, logged_in_admin, assembly_with_gsheet):
+        """Test that data source auto-selects gsheet when config exists, ignoring source param."""
+        assembly, gsheet = assembly_with_gsheet
+        # Try to access with csv source - should still show gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        assert response.status_code == 200
+        # Should show gsheet content, not csv
+        assert b"Google Spreadsheet Configuration" in response.data
+        # Should NOT show csv content
+        assert b"Upload a CSV file" not in response.data
+
+    def test_data_source_unlocked_when_no_config_exists(self, logged_in_admin, existing_assembly):
+        """Test that data source selector is enabled when no config exists."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+        assert response.status_code == 200
+        # Selector should NOT be disabled (no config exists)
+        # Check that the x-data urlSelect attribute is present (indicates interactivity)
+        assert b"urlSelect" in response.data
+        # Should show standard message, not locked message
+        assert b"Choose how you want to import" in response.data
+
+    def test_data_source_unlocked_after_delete(self, logged_in_admin, assembly_with_gsheet):
+        """Test that data source selector is unlocked after deleting config."""
+        assembly, gsheet = assembly_with_gsheet
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data")
+
+        # Delete the config
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            data={"csrf_token": csrf_token},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+        # Selector should now be enabled (unlocked)
+        assert b"urlSelect" in response.data
+        # Should show standard message
+        assert b"Choose how you want to import" in response.data
+        # Should NOT show locked message
+        assert b"locked" not in response.data.lower() or b"Data source is locked" not in response.data
+
+    def test_gsheet_selected_shows_in_dropdown_when_locked(self, logged_in_admin, assembly_with_gsheet):
+        """Test that gsheet option is selected in dropdown when config exists."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
+        assert response.status_code == 200
+        # The gsheet option should be selected
+        assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data

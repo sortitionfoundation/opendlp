@@ -41,20 +41,29 @@ ABOUTME: Displays data source selection and data management for assemblies
     <section class="mb-8">
         <div class="max-w-md">
             <div class="flex flex-col gap-1.5"
-                x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id) }}', paramName: 'source', initialValue: '{{ data_source }}' })">
+                {% if not data_source_locked %}
+                    x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id) }}', paramName: 'source', initialValue: '{{ data_source }}' })"
+                {% endif %}>
                 <label for="data_source" class="text-label-lg" style="color: var(--color-headings);">
                     {{ _("Data Source") }}
                 </label>
                 <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Choose how you want to import participant data for this assembly.") }}
+                    {% if data_source_locked %}
+                        {{ _("Data source is locked because a configuration already exists. Delete the configuration to change the data source.") }}
+                    {% else %}
+                        {{ _("Choose how you want to import participant data for this assembly.") }}
+                    {% endif %}
                 </p>
                 <select
                     name="data_source"
                     id="data_source"
-                    x-model="selected"
-                    @change="navigate($event)"
+                    {% if not data_source_locked %}
+                        x-model="selected"
+                        @change="navigate($event)"
+                    {% endif %}
+                    {% if data_source_locked %}disabled{% endif %}
                     data-focus-id="data-source"
-                    class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
+                    class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {% if data_source_locked %}cursor-not-allowed opacity-60{% else %}cursor-pointer{% endif %}"
                     style="
                         background-color: var(--color-page-background);
                         border: 1px solid var(--color-borders-dividers);
@@ -62,8 +71,8 @@ ABOUTME: Displays data source selection and data management for assemblies
                         --tw-ring-color: var(--color-focus-ring);
                     ">
                     <option value="">{{ _("Select Data Source") }}</option>
-                    <option value="gsheet">{{ _("Google Spreadsheet") }}</option>
-                    <option value="csv">{{ _("CSV file") }}</option>
+                    <option value="gsheet" {% if data_source == 'gsheet' %}selected{% endif %}>{{ _("Google Spreadsheet") }}</option>
+                    <option value="csv" {% if data_source == 'csv' %}selected{% endif %}>{{ _("CSV file") }}</option>
                 </select>
             </div>
         </div>
