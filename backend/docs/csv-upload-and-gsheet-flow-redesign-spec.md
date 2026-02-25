@@ -20,9 +20,9 @@ In flowcharts: **Green nodes** = implemented, **White nodes** = not yet implemen
 ## TODO
 
 - ✅ Add view mode with edit button
-- ⬜ Add form integration for CSRF and validation (backoffice)
-- ⬜ Update `save_gsheet_config` route with full service layer integration
-- ⬜ Add tests for save functionality
+- ✅ Add form integration for CSRF and validation (backoffice)
+- ✅ Update `save_gsheet_config` route with full service layer integration
+- ✅ Add tests for save functionality
 - ⬜ Implement delete gsheet configuration
 
 ---
@@ -152,6 +152,22 @@ flowchart TD
     style ShowEditForm fill:#90EE90,color:#000
     style UserClicksEdit fill:#90EE90,color:#000
     style RedirectEdit fill:#90EE90,color:#000
+    style UserSubmits fill:#90EE90,color:#000
+    style ValidateForm fill:#90EE90,color:#000
+    style ShowErrors fill:#90EE90,color:#000
+    style CallService fill:#90EE90,color:#000
+    style CreateGSheet fill:#90EE90,color:#000
+    style UpdateGSheet fill:#90EE90,color:#000
+    style ServiceResult fill:#90EE90,color:#000
+    style FlashCreate fill:#90EE90,color:#000
+    style FlashUpdate fill:#90EE90,color:#000
+    style FlashExists fill:#90EE90,color:#000
+    style FlashPerm fill:#90EE90,color:#000
+    style FlashNotFound fill:#90EE90,color:#000
+    style FlashError fill:#90EE90,color:#000
+    style CheckColumnsWarning fill:#90EE90,color:#000
+    style FlashWarning fill:#90EE90,color:#000
+    style RedirectView fill:#90EE90,color:#000
 ```
 
 ### Delete GSheet Configuration Flow
@@ -264,7 +280,8 @@ flowchart TD
 
 - [x] Route `view_assembly_data` loads gsheet config via `get_assembly_gsheet`
 - [x] Template displays form in NEW/VIEW/EDIT modes
-- [ ] Route `save_gsheet_config` is a placeholder
+- [x] Route `save_gsheet_config` fully implemented with service layer integration
+- [ ] Route for delete gsheet configuration not yet implemented
 
 ### Next Steps
 
@@ -321,11 +338,14 @@ flowchart TD
 - [x] VIEW mode shows Edit button and gsheet URL
 - [x] EDIT mode form is editable with Save and Cancel buttons
 
-**Form Submission (Increment 2) ⬜**
-- [ ] Submit create form - success
-- [ ] Submit create form - validation error
-- [ ] Submit edit form - success
-- [ ] Submit edit form - validation error
+**Form Submission (Increment 2) ✅**
+- [x] Submit create form - success
+- [x] Submit create form - validation error (missing URL)
+- [x] Submit create form - validation error (invalid URL)
+- [x] Submit edit form - success
+- [x] Submit edit form - validation error
+- [x] Warning shown for empty columns_to_keep
+- [x] Form defaults shown in NEW mode (Respondents, Categories, Selected)
 
 **Delete (Increment 3) ⬜**
 - [ ] Delete config - success

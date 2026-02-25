@@ -10,15 +10,24 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
-from opendlp.entrypoints.forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
+from opendlp.entrypoints.forms import (
+    AddUserToAssemblyForm,
+    CreateAssemblyForm,
+    CreateAssemblyGSheetForm,
+    EditAssemblyForm,
+    EditAssemblyGSheetForm,
+)
 from opendlp.service_layer.assembly_service import (
+    add_assembly_gsheet,
     create_assembly,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     update_assembly,
+    update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
 
@@ -181,6 +190,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Initialize gsheet-related context
         gsheet = None
         gsheet_mode = "new"
+        gsheet_form = None
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
         # Get assembly with permissions
@@ -192,9 +202,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if data_source == "gsheet":
             try:
                 uow_gsheet = bootstrap.bootstrap()
-                current_app.logger.info(f"Calling get_assembly_gsheet for assembly {assembly_id}")
                 gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-                current_app.logger.info(f"get_assembly_gsheet returned: {gsheet}")
             except Exception as gsheet_error:
                 current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
                 current_app.logger.exception("Gsheet loading stacktrace:")
@@ -206,12 +214,16 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Config exists: default to view, allow edit. No config: always show new form
             gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
 
+            # Create form based on mode - form has defaults built in
+            gsheet_form = EditAssemblyGSheetForm(obj=gsheet) if gsheet else CreateAssemblyGSheetForm()
+
         return render_template(
             "backoffice/assembly_data.html",
             assembly=assembly,
             data_source=data_source,
             gsheet=gsheet,
             gsheet_mode=gsheet_mode,
+            gsheet_form=gsheet_form,
             google_service_account_email=google_service_account_email,
         ), 200
     except NotFoundError as e:
@@ -229,13 +241,106 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _get_gsheet_form_data(form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm) -> dict:
+    """Extract gsheet configuration data from form."""
+    return {
+        "url": form.url.data,
+        "team": form.team.data,
+        "select_registrants_tab": form.select_registrants_tab.data,
+        "select_targets_tab": form.select_targets_tab.data,
+        "replace_registrants_tab": form.replace_registrants_tab.data,
+        "replace_targets_tab": form.replace_targets_tab.data,
+        "already_selected_tab": form.already_selected_tab.data,
+        "id_column": form.id_column.data,
+        "check_same_address": form.check_same_address.data,
+        "generate_remaining_tab": form.generate_remaining_tab.data,
+        "check_same_address_cols_string": form.check_same_address_cols_string.data,
+        "columns_to_keep_string": form.columns_to_keep_string.data,
+    }
+
+
+def _handle_gsheet_save_success(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm,
+    is_update: bool,
+) -> ResponseReturnValue:
+    """Handle successful gsheet form validation and save to service layer."""
+    form_data = _get_gsheet_form_data(form)
+
+    if is_update:
+        update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
+        flash(_("Google Spreadsheet configuration updated successfully"), "success")
+    else:
+        add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
+        flash(_("Google Spreadsheet configuration created successfully"), "success")
+
+    # Soft validation warning - check if columns_to_keep is empty
+    if not form.columns_to_keep_string.data or not form.columns_to_keep_string.data.strip():
+        flash(
+            _(
+                "Warning: No columns to keep specified. "
+                "This means the output will only include participant data columns "
+                "used for the targets and address checking. Is this intentional?"
+            ),
+            "warning",
+        )
+
+    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/gsheet/save", methods=["POST"])
 @login_required
 def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save Google Spreadsheet configuration for an assembly."""
-    # TODO: Implement actual save logic with service layer
-    flash(_("Google Spreadsheet configuration saved (placeholder)"), "success")
-    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+    try:
+        uow = bootstrap.bootstrap()
+        existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        is_update = existing_gsheet is not None
+        form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
+
+        if form.validate_on_submit():
+            try:
+                return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
+            except InsufficientPermissions as e:
+                current_app.logger.warning(f"Insufficient permissions for gsheet save: {e}")
+                flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+                return redirect(url_for("backoffice.dashboard"))
+            except NotFoundError as e:
+                current_app.logger.error(f"Gsheet save validation error for assembly {assembly_id}: {e}")
+                flash(_("Please check your input and try again"), "error")
+            except Exception as e:
+                current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
+                flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+
+        # Form validation failed or service error - re-render the page with errors
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        return render_template(
+            "backoffice/assembly_data.html",
+            assembly=assembly,
+            data_source="gsheet",
+            gsheet=existing_gsheet,
+            gsheet_mode="edit" if is_update else "new",
+            gsheet_form=form,
+            google_service_account_email=current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN"),
+        ), 200
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for gsheet save: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to save gsheet for assembly {assembly_id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
