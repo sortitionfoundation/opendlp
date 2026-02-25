@@ -265,3 +265,75 @@ class TestBackofficeGSheetFormSubmission:
         assert response.status_code == 200
         # Should show warning about empty columns_to_keep
         assert b"Warning" in response.data or b"columns to keep" in response.data.lower()
+
+
+class TestBackofficeGSheetDelete:
+    """Test gsheet configuration deletion."""
+
+    def test_delete_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
+        """Test successfully deleting a gsheet configuration."""
+        assembly, gsheet = assembly_with_gsheet
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            data={"csrf_token": csrf_token},
+            follow_redirects=False,
+        )
+        # Should redirect to data page on success
+        assert response.status_code == 302
+        assert "source=gsheet" in response.location
+
+        # Follow redirect and verify success message
+        response = logged_in_admin.get(response.location)
+        assert response.status_code == 200
+        assert b"removed successfully" in response.data
+
+        # Should now be in NEW mode (no config exists)
+        assert b'name="url"' in response.data  # Form should be editable
+
+    def test_delete_gsheet_config_not_found(self, logged_in_admin, existing_assembly):
+        """Test deleting a non-existent gsheet configuration."""
+        # Get CSRF token from new gsheet form
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/gsheet/delete",
+            data={"csrf_token": csrf_token},
+            follow_redirects=False,
+        )
+        # Should redirect with error
+        assert response.status_code == 302
+        assert "source=gsheet" in response.location
+
+        # Follow redirect and verify error message
+        response = logged_in_admin.get(response.location)
+        assert response.status_code == 200
+        assert b"not found" in response.data
+
+    def test_delete_button_shown_in_view_mode(self, logged_in_admin, assembly_with_gsheet):
+        """Test that delete button is shown in VIEW mode when config exists."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        assert response.status_code == 200
+        # Should show Delete button
+        assert b"Delete" in response.data
+        # Should have form action pointing to delete endpoint
+        assert b"gsheet/delete" in response.data
+
+    def test_delete_button_shown_in_edit_mode(self, logged_in_admin, assembly_with_gsheet):
+        """Test that delete button is shown in EDIT mode when config exists."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
+        assert response.status_code == 200
+        # Should show Delete Configuration button
+        assert b"Delete" in response.data
+        # Should have form action pointing to delete endpoint
+        assert b"gsheet/delete" in response.data
+
+    def test_delete_button_not_shown_in_new_mode(self, logged_in_admin, existing_assembly):
+        """Test that delete button is NOT shown in NEW mode when no config exists."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        assert response.status_code == 200
+        # Should NOT show delete button (no config to delete)
+        assert b"gsheet/delete" not in response.data

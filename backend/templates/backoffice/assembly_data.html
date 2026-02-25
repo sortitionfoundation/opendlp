@@ -93,7 +93,14 @@ ABOUTME: Displays data source selection and data management for assemblies
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Spreadsheet Configuration") }}</h2>
             {% if readonly %}
-                {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
+                <div class="flex gap-2">
+                    {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
+                    <form method="post" action="{{ url_for('backoffice.delete_gsheet_config', assembly_id=assembly.id) }}" class="inline"
+                        onsubmit="return confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}');">
+                        {{ gsheet_form.hidden_tag() }}
+                        {{ button(_("Delete"), type="submit", variant="danger") }}
+                    </form>
+                </div>
             {% endif %}
         </div>
 
@@ -266,6 +273,16 @@ ABOUTME: Displays data source selection and data management for assemblies
                     </div>
                 {% endif %}
             </form>
+            {# Delete button in edit mode - separate form outside the save form #}
+            {% if is_edit %}
+                <div class="flex justify-end mt-4 pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                    <form method="post" action="{{ url_for('backoffice.delete_gsheet_config', assembly_id=assembly.id) }}"
+                        onsubmit="return confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}');">
+                        {{ gsheet_form.hidden_tag() }}
+                        {{ button(_("Delete Configuration"), type="submit", variant="danger") }}
+                    </form>
+                </div>
+            {% endif %}
         </div>
     </section>
 {% endmacro %}

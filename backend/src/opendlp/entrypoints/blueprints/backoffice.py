@@ -22,6 +22,7 @@ from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_gsheet,
     get_assembly_with_permissions,
+    remove_assembly_gsheet,
     update_assembly,
     update_assembly_gsheet,
 )
@@ -340,6 +341,31 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
+@login_required
+def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Delete Google Spreadsheet configuration for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        remove_assembly_gsheet(uow, assembly_id, current_user.id)
+        flash(_("Google Spreadsheet configuration removed successfully"), "success")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Gsheet config not found for delete: {e}")
+        flash(_("Google Spreadsheet configuration not found"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to delete gsheet for assembly {assembly_id}: {e}")
+        flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Gsheet delete error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
 

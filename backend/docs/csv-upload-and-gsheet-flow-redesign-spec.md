@@ -23,7 +23,7 @@ In flowcharts: **Green nodes** = implemented, **White nodes** = not yet implemen
 - ✅ Add form integration for CSRF and validation (backoffice)
 - ✅ Update `save_gsheet_config` route with full service layer integration
 - ✅ Add tests for save functionality
-- ⬜ Implement delete gsheet configuration
+- ✅ Implement delete gsheet configuration
 
 ---
 
@@ -192,6 +192,19 @@ flowchart TD
     FlashNotFound --> RedirectData
     FlashPerm --> RedirectData
     FlashError --> RedirectData
+
+    %% Styling: Green = implemented, White = not yet implemented
+    style Start fill:#90EE90,color:#000
+    style ConfirmDelete fill:#90EE90,color:#000
+    style Cancel fill:#90EE90,color:#000
+    style SubmitDelete fill:#90EE90,color:#000
+    style CallRemove fill:#90EE90,color:#000
+    style RemoveResult fill:#90EE90,color:#000
+    style FlashSuccess fill:#90EE90,color:#000
+    style FlashNotFound fill:#90EE90,color:#000
+    style FlashPerm fill:#90EE90,color:#000
+    style FlashError fill:#90EE90,color:#000
+    style RedirectData fill:#90EE90,color:#000
 ```
 
 ---
@@ -223,7 +236,7 @@ flowchart TD
 - ✅ All form fields readonly/disabled
 - ✅ URL field shows as clickable link
 - ✅ No Submit button
-- ⬜ Delete button (with confirmation)
+- ✅ Delete button (with confirmation)
 
 ### 3. EDIT Mode (Existing configuration, editable) ✅
 
@@ -236,7 +249,7 @@ flowchart TD
 - ✅ All form fields editable, pre-populated with existing values
 - ✅ Submit button: "Save Configuration"
 - ✅ Cancel button (links back to view mode)
-- ⬜ Delete button (with confirmation)
+- ✅ Delete button (with confirmation)
 
 ---
 
@@ -281,7 +294,7 @@ flowchart TD
 - [x] Route `view_assembly_data` loads gsheet config via `get_assembly_gsheet`
 - [x] Template displays form in NEW/VIEW/EDIT modes
 - [x] Route `save_gsheet_config` fully implemented with service layer integration
-- [ ] Route for delete gsheet configuration not yet implemented
+- [x] Route `delete_gsheet_config` fully implemented with service layer integration
 
 ### Next Steps
 
@@ -347,10 +360,12 @@ flowchart TD
 - [x] Warning shown for empty columns_to_keep
 - [x] Form defaults shown in NEW mode (Respondents, Categories, Selected)
 
-**Delete (Increment 3) ⬜**
-- [ ] Delete config - success
-- [ ] Delete config - not found error
-- [ ] Delete config - permission denied
+**Delete (Increment 3) ✅**
+- [x] Delete config - success
+- [x] Delete config - not found error
+- [x] Delete button shown in VIEW mode
+- [x] Delete button shown in EDIT mode
+- [x] Delete button NOT shown in NEW mode
 
 **Permissions ⬜**
 - [ ] Permission denied scenarios for view
