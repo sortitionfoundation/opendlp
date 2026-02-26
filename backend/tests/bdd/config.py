@@ -62,11 +62,11 @@ class Urls:
     @classmethod
     def backoffice_data_assembly_url(cls, assembly_id: str, source: str = "", mode: str = "") -> str:
         url = cls.backoffice_data_assembly.format(base=cls.base, assembly_id=assembly_id)
-        params = []
+        params = {}
         if source:
-            params.append(f"source={source}")
+            params["source"] = source
         if mode:
-            params.append(f"mode={mode}")
+            params["mode"] = mode
         if params:
-            url += "?" + "&".join(params)
+            url += "?" + urllib.parse.urlencode(params)
         return url
