@@ -487,6 +487,16 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
     def bulk_add(self, items: list[Respondent]) -> None:
         self._items.extend(items)
 
+    def bulk_mark_as_selected(
+        self,
+        assembly_id: uuid.UUID,
+        external_ids: list[str],
+        selection_run_id: uuid.UUID,
+    ) -> None:
+        for r in self._items:
+            if r.assembly_id == assembly_id and r.external_id in external_ids:
+                r.mark_as_selected(selection_run_id)
+
 
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""

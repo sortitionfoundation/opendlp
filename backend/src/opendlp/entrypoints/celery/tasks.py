@@ -655,11 +655,7 @@ def _internal_write_db_results(
         remaining_count = len(remaining_ext_ids)
 
         with bootstrap(session_factory=session_factory) as uow:
-            for external_id in selected_ext_ids:
-                respondent = uow.respondents.get_by_external_id(assembly_id, external_id)
-                if respondent:
-                    respondent.mark_as_selected(task_id)
-                    uow.respondents.add(respondent)
+            uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id)
             uow.commit()
 
         _update_selection_record(

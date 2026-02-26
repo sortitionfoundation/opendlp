@@ -386,3 +386,13 @@ class RespondentRepository(AbstractRepository):
     def bulk_add(self, items: list[Respondent]) -> None:
         """Add multiple respondents in bulk."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def bulk_mark_as_selected(
+        self,
+        assembly_id: uuid.UUID,
+        external_ids: list[str],
+        selection_run_id: uuid.UUID,
+    ) -> None:
+        """Mark multiple respondents as selected in a single query."""
+        raise NotImplementedError
