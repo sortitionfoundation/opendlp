@@ -2,28 +2,47 @@
 ABOUTME: Provides high-level functions for starting and monitoring Celery-based selection workflows"""
 
 import contextlib
+import csv
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from io import StringIO
 
 import structlog
 from celery.result import AsyncResult
-from sortition_algorithms import RunReport
+from sortition_algorithms import RunReport, adapters
+from sortition_algorithms import settings as sa_settings
+from sortition_algorithms.core import person_list_to_table
 from sortition_algorithms.errors import SortitionBaseError
 from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp import config
+from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
-from opendlp.service_layer.exceptions import AssemblyNotFoundError, GoogleSheetConfigNotFoundError, InvalidSelection
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    GoogleSheetConfigNotFoundError,
+    InvalidSelection,
+    SelectionRunRecordNotFoundError,
+)
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 logger = structlog.get_logger(__name__)
+
+
+def _table_to_csv(table: list[list[str]]) -> str:
+    output = StringIO()
+    writer = csv.writer(output, lineterminator="\n")
+    for row in table:
+        writer.writerow(row)
+    return output.getvalue()
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -349,6 +368,96 @@ def start_gsheet_manage_tabs_task(
     return task_id
 
 
+@require_assembly_permission(can_manage_assembly)
+def start_db_select_task(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    test_selection: bool = False,
+) -> uuid.UUID:
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if assembly.number_to_select < 1:
+        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
+
+    csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
+    settings_obj = csv_config.to_settings()
+
+    task_id = uuid.uuid4()
+    task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test_selection else SelectionTaskType.SELECT_FROM_DB
+    log_msg = (
+        "Task submitted for database TEST selection" if test_selection else "Task submitted for database selection"
+    )
+
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=task_id,
+        task_type=task_type,
+        status=SelectionRunStatus.PENDING,
+        log_messages=[log_msg],
+        settings_used={
+            "id_column": settings_obj.id_column,
+            "selection_algorithm": settings_obj.selection_algorithm,
+            "check_same_address": settings_obj.check_same_address,
+            "check_same_address_columns": settings_obj.check_same_address_columns,
+            "columns_to_keep": settings_obj.columns_to_keep,
+        },
+        user_id=user_id,
+    )
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    result = tasks.run_select_from_db.delay(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        number_people_wanted=assembly.number_to_select,
+        settings=settings_obj,
+        test_selection=test_selection,
+    )
+    record.celery_task_id = str(result.id)
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    return task_id
+
+
+def generate_selection_csvs(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    task_id: uuid.UUID,
+) -> tuple[str, str]:
+    record = uow.selection_run_records.get_by_task_id(task_id)
+    if not record:
+        raise SelectionRunRecordNotFoundError(f"SelectionRunRecord {task_id} not found")
+    if not record.selected_ids or record.remaining_ids is None:
+        raise InvalidSelection(_("Selection has not completed — no results to download"))
+
+    selected_ext_ids = record.selected_ids[0]
+    remaining_ext_ids = record.remaining_ids
+
+    # Reconstruct settings from what was stored at selection time
+    stored = record.settings_used
+    settings_obj = sa_settings.Settings(
+        id_column=stored.get("id_column", "external_id"),
+        selection_algorithm=stored.get("selection_algorithm", "maximin"),
+        check_same_address=stored.get("check_same_address", False),
+        check_same_address_columns=stored.get("check_same_address_columns", []),
+        columns_to_keep=stored.get("columns_to_keep", []),
+    )
+
+    data_source = OpenDLPDataAdapter(uow, assembly_id)
+    select_data = adapters.SelectionData(data_source)
+    features, _feat_report = select_data.load_features()
+    full_people, _ppl_report = select_data.load_people(settings_obj, features)
+
+    selected_table = person_list_to_table(selected_ext_ids, full_people, features, settings_obj)
+    remaining_table = person_list_to_table(remaining_ext_ids, full_people, features, settings_obj)
+
+    return _table_to_csv(selected_table), _table_to_csv(remaining_table)
+
+
 @dataclass
 class RunResult:
     run_record: SelectionRunRecord | None
@@ -393,6 +502,8 @@ def _process_celery_final_result(celery_result: AsyncResult, run_record: Selecti
         SelectionTaskType.SELECT_GSHEET,
         SelectionTaskType.TEST_SELECT_GSHEET,
         SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+        SelectionTaskType.SELECT_FROM_DB,
+        SelectionTaskType.TEST_SELECT_FROM_DB,
     ):
         success, selected_ids, run_report = final_result
         return SelectionRunResult(
