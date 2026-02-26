@@ -121,6 +121,7 @@ def _update_selection_record(
     completed_at: datetime | None = None,
     run_report: RunReport | None = None,
     selected_ids: list[list[str]] | None = None,
+    remaining_ids: list[str] | None = None,
     session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
@@ -150,6 +151,9 @@ def _update_selection_record(
         if selected_ids is not None:
             record.selected_ids = selected_ids
             flag_modified(record, "selected_ids")
+        if remaining_ids is not None:
+            record.remaining_ids = remaining_ids
+            flag_modified(record, "remaining_ids")
 
         uow.commit()
 
