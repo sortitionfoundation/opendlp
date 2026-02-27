@@ -397,6 +397,106 @@ After testing, clean up:
 
 ---
 
+## Selection Tab Test Cases (Phase 1)
+
+**Related Spec:** [selection-tab-spec.md](selection-tab-spec.md)
+
+### TC-S01: Selection Tab Navigation
+
+**Precondition:** Assembly exists
+
+**Steps:**
+1. Navigate to assembly Details tab
+2. Click the "Selection" tab in the navigation
+
+**Expected Results:**
+- [ ] Selection tab loads without errors
+- [ ] Page shows assembly title in heading
+- [ ] Breadcrumbs show: Dashboard > [Assembly Title] > Selection
+- [ ] All four tabs are visible (Details, Data, Selection, Team Members)
+- [ ] Selection tab is marked as active
+
+---
+
+### TC-S02: Selection Tab - No GSheet Configured
+
+**Precondition:** Assembly exists WITHOUT gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+
+**Expected Results:**
+- [ ] Warning alert displayed: "Please configure a Google Spreadsheet in the Data tab before running selection."
+- [ ] "Configure Data Source" button visible and links to Data tab
+- [ ] "Back to Dashboard" button visible
+- [ ] No selection cards visible (Initial Selection, Replacement, Manage Tabs)
+
+---
+
+### TC-S03: Selection Tab - GSheet Configured
+
+**Precondition:** Assembly exists WITH gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+
+**Expected Results:**
+- [ ] No warning alert displayed
+- [ ] "Initial Selection" card visible with:
+  - [ ] Description text about sortition algorithm
+  - [ ] "Number to select: X" info box showing assembly's number_to_select value
+  - [ ] "Check Spreadsheet", "Run Test Selection", "Run Selection" buttons (disabled in Phase 1)
+- [ ] "Replacement Selection" card visible with:
+  - [ ] Description text about replacement participants
+  - [ ] "Check Spreadsheet", "Run Replacements" buttons (disabled in Phase 1)
+- [ ] "Manage Generated Tabs" card visible with:
+  - [ ] Description text about cleaning up old tabs
+  - [ ] "List Old Tabs" button (disabled in Phase 1)
+- [ ] "Back to Dashboard" button visible
+
+---
+
+### TC-S04: Selection Tab - Tab Navigation Consistency
+
+**Precondition:** Assembly exists with gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Details tab, verify Selection tab link
+2. Navigate to assembly Data tab, verify Selection tab link
+3. Navigate to assembly Selection tab, verify all tabs work
+4. Navigate to assembly Team Members tab, verify Selection tab link
+
+**Expected Results:**
+- [ ] Selection tab link is functional from all assembly pages
+- [ ] Selection tab links to `/backoffice/assembly/<id>/selection`
+- [ ] Selection tab is not a placeholder (`#`) anymore
+
+---
+
+### TC-S05: Selection Tab - Unauthorized Access
+
+**Precondition:** User without assembly access
+
+**Steps:**
+1. Attempt to access `/backoffice/assembly/<assembly_id>/selection` directly
+
+**Expected Results:**
+- [ ] Redirected to dashboard
+- [ ] Error flash message: "You don't have permission to view this assembly"
+
+---
+
+### TC-S06: Selection Tab - Nonexistent Assembly
+
+**Steps:**
+1. Attempt to access `/backoffice/assembly/<invalid_uuid>/selection`
+
+**Expected Results:**
+- [ ] Redirected to dashboard
+- [ ] Error flash message: "Assembly not found"
+
+---
+
 ## Related Documentation
 
 - [Google Sheet Configuration Flow Spec](csv-upload-and-gsheet-flow-redesign-spec.md)
