@@ -9,6 +9,7 @@ import pytest
 from sortition_algorithms import GSheetDataSource, RunReport
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
@@ -934,3 +935,94 @@ class TestSortitionErrorHandling:
         # Should raise InvalidSelection, not ConfigurationError
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
             sortition.start_gsheet_replace_task(uow, admin_user.id, assembly.id, number_to_select=5)
+
+
+class TestStartDbSelectTask:
+    """Test starting database-based selection tasks."""
+
+    def test_start_db_select_task_success(self):
+        """Test successful task start by admin user."""
+        uow = FakeUnitOfWork()
+
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=2)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+        uow.assemblies.add(assembly)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_celery.return_value = mock_result
+
+            task_id = sortition.start_db_select_task(uow, admin_user.id, assembly.id)
+
+        assert isinstance(task_id, uuid.UUID)
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.assembly_id == assembly.id
+        assert record.task_id == task_id
+        assert record.status == SelectionRunStatus.PENDING
+        assert record.task_type == SelectionTaskType.SELECT_FROM_DB
+        assert "database selection" in record.log_messages[0]
+
+        mock_celery.assert_called_once()
+        call_kwargs = mock_celery.call_args[1]
+        assert call_kwargs["task_id"] == task_id
+        assert call_kwargs["assembly_id"] == assembly.id
+        assert call_kwargs["number_people_wanted"] == 2
+
+        assert uow.committed
+
+    def test_start_db_select_task_zero_number_to_select_raises(self):
+        """Test that InvalidSelection is raised when number_to_select is zero."""
+        uow = FakeUnitOfWork()
+
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=0)
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(InvalidSelection):
+            sortition.start_db_select_task(uow, admin_user.id, assembly.id)
+
+    def test_start_db_test_select_task_uses_correct_task_type(self):
+        """Test that test selection uses TEST_SELECT_FROM_DB task type."""
+        uow = FakeUnitOfWork()
+
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=2)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+        uow.assemblies.add(assembly)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_celery.return_value = mock_result
+
+            task_id = sortition.start_db_select_task(uow, admin_user.id, assembly.id, test_selection=True)
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.task_type == SelectionTaskType.TEST_SELECT_FROM_DB
+        assert "TEST" in record.log_messages[0]
+
+        call_kwargs = mock_celery.call_args[1]
+        assert call_kwargs["test_selection"] is True
+
+    def test_start_db_select_task_assembly_not_found_raises(self):
+        """Test that AssemblyNotFoundError is raised for non-existent assembly."""
+        uow = FakeUnitOfWork()
+
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        non_existent_id = uuid.uuid4()
+
+        with pytest.raises(AssemblyNotFoundError, match=f"Assembly {non_existent_id} not found"):
+            sortition.start_db_select_task(uow, admin_user.id, non_existent_id)

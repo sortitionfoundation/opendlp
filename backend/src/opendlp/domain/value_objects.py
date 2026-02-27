@@ -100,6 +100,8 @@ class SelectionTaskType(Enum):
     SELECT_REPLACEMENT_GSHEET = "select_replacement_gsheet"
     LIST_OLD_TABS = "list_old_tabs"
     DELETE_OLD_TABS = "delete_old_tabs"
+    SELECT_FROM_DB = "select_from_db"
+    TEST_SELECT_FROM_DB = "test_select_from_db"
 
 
 class RespondentStatus(Enum):

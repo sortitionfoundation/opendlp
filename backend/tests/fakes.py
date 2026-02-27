@@ -8,17 +8,22 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    RespondentRepository,
     SelectionRunRecordRepository,
+    TargetCategoryRepository,
     TotpVerificationAttemptRepository,
     TwoFactorAuditLogRepository,
     UserAssemblyRoleRepository,
@@ -429,6 +434,70 @@ class FakeEmailConfirmationTokenRepository(FakeRepository, EmailConfirmationToke
         return count
 
 
+class FakeTargetCategoryRepository(FakeRepository, TargetCategoryRepository):
+    """Fake in-memory TargetCategoryRepository."""
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
+        return [c for c in self._items if c.assembly_id == assembly_id]
+
+    def delete(self, item: TargetCategory) -> None:
+        self._items = [c for c in self._items if c.id != item.id]
+
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        before = len(self._items)
+        self._items = [c for c in self._items if c.assembly_id != assembly_id]
+        return before - len(self._items)
+
+
+class FakeRespondentRepository(FakeRepository, RespondentRepository):
+    """Fake in-memory RespondentRepository."""
+
+    def get_by_assembly_id(
+        self,
+        assembly_id: uuid.UUID,
+        status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+    ) -> list[Respondent]:
+        results = [r for r in self._items if r.assembly_id == assembly_id]
+        if status:
+            results = [r for r in results if r.selection_status == status]
+        if eligible_only:
+            results = [r for r in results if r.eligible is True and r.can_attend is True]
+        return results
+
+    def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
+        for r in self._items:
+            if r.assembly_id == assembly_id and r.external_id == external_id:
+                return r
+        return None
+
+    def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
+        return sum(
+            1
+            for r in self._items
+            if r.assembly_id == assembly_id
+            and r.selection_status == RespondentStatus.POOL
+            and r.eligible is True
+            and r.can_attend is True
+        )
+
+    def delete(self, item: Respondent) -> None:
+        self._items = [r for r in self._items if r.id != item.id]
+
+    def bulk_add(self, items: list[Respondent]) -> None:
+        self._items.extend(items)
+
+    def bulk_mark_as_selected(
+        self,
+        assembly_id: uuid.UUID,
+        external_ids: list[str],
+        selection_run_id: uuid.UUID,
+    ) -> None:
+        for r in self._items:
+            if r.assembly_id == assembly_id and r.external_id in external_ids:
+                r.mark_as_selected(selection_run_id)
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -443,6 +512,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
         self.totp_attempts = self.fake_totp_attempts = FakeTotpVerificationAttemptRepository()
         self.email_confirmation_tokens = self.fake_email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
+        self.target_categories = self.fake_target_categories = FakeTargetCategoryRepository()
+        self.respondents = self.fake_respondents = FakeRespondentRepository()
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -469,6 +540,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_two_factor_audit_logs._items.clear()
         self.fake_totp_attempts._items.clear()
         self.fake_email_confirmation_tokens._items.clear()
+        self.fake_target_categories._items.clear()
+        self.fake_respondents._items.clear()
         self.committed = False
 
 

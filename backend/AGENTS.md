@@ -179,6 +179,8 @@ See [docs/sortition_error_translations.md](docs/sortition_error_translations.md)
 - Foreign keys are regular UUID columns (not SQLAlchemy relationships in domain)
 - Standard fields as columns, variable data as JSON
 - Use imperative SQLAlchemy mapping in adapters
+- Database migrations used via Alembic, see [Deployment Guide](docs/deploy.md) for details.
+  - Always create migrations with the alembic command, eg: `uv run alembic revision --autogenerate -m "description of changes"`
 
 **Important:** When using imperative SQLAlchemy mapping for mypy compatibility, use ORM table column references in repository implementations instead of domain object attributes:
 
@@ -201,6 +203,12 @@ This approach maintains the separation between domain objects (plain Python) and
 - Werkzeug.security for password hashing
 - Role-based access control throughout
 - **Frontend:** Follow [Frontend Security Guidelines](docs/frontend_security.md) for CSP compliance
+
+### GDPR and the right to be forgotten
+
+We need to support people asking for their details to be deleted. So we should be able to find all persistent copies of someones details easily. Our strategy is to blank the details but keep a row with a unique ID - so anything that refers to that ID will not have a broken reference, but instead will know that the details have been deleted.
+
+This requirement also means that we MUST NOT have copies of details in long term storage that cannot be easily found and blanked. In particular, we should not keep long term copies of uploaded or generated files (eg. CSV or Excel files) in the database or on disk. Such files can be held in memory, written to a data attribute in an HTML file sent to a user, be a file available for download in a directory which regularly has old files deleted, cached in Redis or similar.
 
 ## Further Documentation
 

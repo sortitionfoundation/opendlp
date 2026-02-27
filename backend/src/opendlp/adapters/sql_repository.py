@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
@@ -869,3 +869,26 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
     def bulk_add(self, items: list[Respondent]) -> None:
         self.session.bulk_save_objects(items)
+
+    def bulk_mark_as_selected(
+        self,
+        assembly_id: uuid.UUID,
+        external_ids: list[str],
+        selection_run_id: uuid.UUID,
+    ) -> None:
+        if not external_ids:
+            return
+        self.session.execute(
+            update(orm.respondents)
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.external_id.in_(external_ids),
+                )
+            )
+            .values(
+                selection_status=RespondentStatus.SELECTED,
+                selection_run_id=selection_run_id,
+                updated_at=datetime.now(UTC),
+            )
+        )

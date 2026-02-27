@@ -23,6 +23,7 @@ from sqlalchemy.orm.attributes import flag_modified
 import opendlp.logging
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
@@ -121,6 +122,7 @@ def _update_selection_record(
     completed_at: datetime | None = None,
     run_report: RunReport | None = None,
     selected_ids: list[list[str]] | None = None,
+    remaining_ids: list[str] | None = None,
     session_factory: sessionmaker | None = None,
 ) -> None:
     """Update an existing SelectionRunRecord with progress information."""
@@ -150,6 +152,9 @@ def _update_selection_record(
         if selected_ids is not None:
             record.selected_ids = selected_ids
             flag_modified(record, "selected_ids")
+        if remaining_ids is not None:
+            record.remaining_ids = remaining_ids
+            flag_modified(record, "remaining_ids")
 
         uow.commit()
 
@@ -531,6 +536,213 @@ def _internal_write_selected(
             session_factory=session_factory,
         )
         return report
+
+
+def _internal_load_db(
+    task_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    settings: settings.Settings,
+    final_task: bool = True,
+    session_factory: sessionmaker | None = None,
+) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+    report = RunReport()
+    _update_selection_record(
+        task_id=task_id,
+        status=SelectionRunStatus.RUNNING,
+        log_message=_("Starting database data load"),
+        session_factory=session_factory,
+    )
+    try:
+        with bootstrap(session_factory=session_factory) as uow:
+            data_source = OpenDLPDataAdapter(uow, assembly_id)
+            select_data = adapters.SelectionData(data_source)
+
+            features, f_report = select_data.load_features()
+            report.add_report(f_report)
+
+            num_features = len(features)
+            num_values = sum(len(v) for v in features.values())
+            min_select, max_select = minimum_selection(features), maximum_selection(features)
+            _append_run_log(
+                task_id,
+                [
+                    _(
+                        "Found %(num_features)s categories with %(num_values)s values.",
+                        num_features=num_features,
+                        num_values=num_values,
+                    ),
+                    _(
+                        "Minimum selection for targets is %(min_select)s, maximum is %(max_select)s.",
+                        min_select=min_select,
+                        max_select=max_select,
+                    ),
+                    _("Loading respondents from database"),
+                ],
+                session_factory=session_factory,
+            )
+
+            loaded_people, p_report = select_data.load_people(settings, features)
+            report.add_report(p_report)
+
+            _append_run_log(
+                task_id,
+                [_("Loaded %(count)s respondents.", count=loaded_people.count)],
+                session_factory=session_factory,
+            )
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED if final_task else SelectionRunStatus.RUNNING,
+            log_messages=[_("Database load completed successfully.")],
+            completed_at=datetime.now(UTC) if final_task else None,
+            run_report=report,
+            session_factory=session_factory,
+        )
+        return True, features, loaded_people, report
+
+    except errors.SortitionBaseError as error:
+        translated_msg = translate_sortition_error(error)
+        translated_html = translate_sortition_error_to_html(error)
+        report.add_line(translated_msg)
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=translated_msg,
+            error_message=translated_html,
+            completed_at=datetime.now(UTC),
+            run_report=report,
+            session_factory=session_factory,
+        )
+        return False, None, None, report
+
+    except Exception as err:
+        import traceback
+
+        error_msg = _("Failed to load data from database: %(error)s", error=str(err))
+        traceback_msg = traceback.format_exc()
+        report.add_line(error_msg)
+        report.add_lines(traceback_msg.split("\n"))
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            run_report=report,
+            session_factory=session_factory,
+        )
+        return False, None, None, report
+
+
+def _internal_write_db_results(
+    task_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    full_people: people.People,
+    selected_panels: list[frozenset[str]],
+    session_factory: sessionmaker | None = None,
+) -> RunReport:
+    report = RunReport()
+    _append_run_log(
+        task_id,
+        [_("Writing selection results to database")],
+        session_factory=session_factory,
+    )
+    try:
+        selected_ext_ids = list(selected_panels[0])
+        remaining_ext_ids = [key for key in full_people if key not in selected_panels[0]]
+
+        selected_count = len(selected_ext_ids)
+        remaining_count = len(remaining_ext_ids)
+
+        with bootstrap(session_factory=session_factory) as uow:
+            uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id)
+            uow.commit()
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            log_message=_(
+                "Successfully selected %(selected_count)s people. %(remaining_count)s remain in pool.",
+                selected_count=selected_count,
+                remaining_count=remaining_count,
+            ),
+            completed_at=datetime.now(UTC),
+            run_report=report,
+            remaining_ids=remaining_ext_ids,
+            session_factory=session_factory,
+        )
+        return report
+
+    except Exception as err:
+        import traceback
+
+        error_msg = _("Writing results to database failed: %(error)s", error=str(err))
+        traceback_msg = traceback.format_exc()
+        report.add_line(error_msg, ReportLevel.IMPORTANT)
+        report.add_lines(traceback_msg.split("\n"))
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            run_report=report,
+            session_factory=session_factory,
+        )
+        return report
+
+
+@app.task(bind=True, on_failure=_on_task_failure)
+def run_select_from_db(
+    self: Task,
+    task_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    number_people_wanted: int,
+    settings: settings.Settings,
+    test_selection: bool = False,
+    session_factory: sessionmaker | None = None,
+) -> tuple[bool, list[frozenset[str]], RunReport]:
+    _set_up_celery_logging(task_id, session_factory=session_factory)
+    report = RunReport()
+
+    success, features, loaded_people, load_report = _internal_load_db(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        settings=settings,
+        final_task=False,
+        session_factory=session_factory,
+    )
+    report.add_report(load_report)
+    if not success:
+        return False, [], report
+    assert features is not None
+    assert loaded_people is not None
+
+    success, selected_panels, select_report = _internal_run_select(
+        task_id=task_id,
+        features=features,
+        people=loaded_people,
+        settings=settings,
+        number_people_wanted=number_people_wanted,
+        test_selection=test_selection,
+        already_selected=None,
+        final_task=False,
+        session_factory=session_factory,
+    )
+    report.add_report(select_report)
+    if not success:
+        return False, [], report
+
+    write_report = _internal_write_db_results(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        full_people=loaded_people,
+        selected_panels=selected_panels,
+        session_factory=session_factory,
+    )
+    report.add_report(write_report)
+
+    return success, selected_panels, report
 
 
 @app.task(bind=True, on_failure=_on_task_failure)

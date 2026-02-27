@@ -18,6 +18,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
 
+from opendlp.domain.assembly import OTHER_TEAM
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
@@ -253,8 +254,10 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
             return False
 
         # Cross-field validation: check_same_address requires address columns
-        if self.check_same_address.data and (
-            not self.check_same_address_cols_string.data or not self.check_same_address_cols_string.data.strip()
+        if (
+            self.check_same_address.data
+            and self.team.data == OTHER_TEAM
+            and (not self.check_same_address_cols_string.data or not self.check_same_address_cols_string.data.strip())
         ):
             self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
                 str(
