@@ -101,13 +101,17 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   @uv run flask run --debug
 
-# run flask for BDD tests - they will use this server if it exists
-flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $FLASK_ENV="testing_postgres":
+# run flask for BDD tests - the BDD tests will use this server if it exists
+flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $REDIS_PORT="63792" $USE_CSV_DATA_SOURCE="true" $FLASK_ENV="testing_postgres":
   @uv run flask run --port=5002 --host=127.0.0.1 --debug
 
 # run a celery worker (for local dev)
 celery:
   @uv run celery --app opendlp.entrypoints.celery.tasks worker --loglevel=info
+
+# run celery for BDD tests - the BDD tests will use this server if it exists
+celery-bdd $DB_PORT="54322" $REDIS_PORT="63792" $USE_CSV_DATA_SOURCE="true" $FLASK_ENV="testing_postgres":
+  @uv run celery --app opendlp.entrypoints.celery.tasks worker --loglevel=debug
 
 # run celery beat, to kick off occasional
 celerybeat:
