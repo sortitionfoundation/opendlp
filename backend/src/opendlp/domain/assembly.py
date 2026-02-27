@@ -124,6 +124,8 @@ class Assembly:
 
 Teams = Literal["aus", "eu", "uk", "other"]
 VALID_TEAMS = get_args(Teams)
+OTHER_TEAM = VALID_TEAMS[-1]
+assert OTHER_TEAM == "other"
 DEFAULT_ID_COLUMN = {
     "uk": "nationbuilder_id",
     "eu": "unique_id",
@@ -244,7 +246,7 @@ class AssemblyGSheet:
             new_kwargs[field_name] = value
         return new_kwargs
 
-    def update_values(self, url: str = "", team: Teams = "other", **kwargs: str | bool | list[str]) -> None:
+    def update_values(self, url: str = "", team: Teams = OTHER_TEAM, **kwargs: str | bool | list[str]) -> None:
         """Update values of the object."""
         if url:
             self.url = self._validate_url(url)
@@ -253,11 +255,11 @@ class AssemblyGSheet:
                 raise ValueError(f"Cannot update field {field_name} in AssemblyGSheet")
             setattr(self, field_name, value)
         # do this last so it will override anything else set
-        if team != "other":
+        if team != OTHER_TEAM:
             self.update_team_settings(team)
 
     def update_team_settings(self, team: Teams) -> None:
-        if team != "other":
+        if team != OTHER_TEAM:
             self.id_column = DEFAULT_ID_COLUMN[team]
             self.check_same_address_cols = DEFAULT_ADDRESS_COLS[team]
             self.columns_to_keep = DEFAULT_COLS_TO_KEEP[team]
