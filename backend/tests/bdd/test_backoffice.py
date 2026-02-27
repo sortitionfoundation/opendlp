@@ -20,7 +20,7 @@ scenarios("../../features/backoffice.feature")
 
 
 # Store assembly data between steps
-class TestAssemblyCache:
+class AssemblyNameIdCache:
     """Cache of assembly title to (string of) UUID"""
 
     def __init__(self) -> None:
@@ -54,8 +54,7 @@ class TestAssemblyCache:
         return ""
 
 
-_test_assemblies = TestAssemblyCache()
-# _test_assemblies: dict[str, str] = {}
+_assembly_name_id_cache = AssemblyNameIdCache()
 
 
 # Override context fixture for backoffice tests - no Celery needed for static pages
@@ -459,7 +458,7 @@ def create_test_assembly(title: str, admin_user, test_database):
         title=title,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies.add_existing(title, assembly)
+    _assembly_name_id_cache.add_existing(title, assembly)
 
 
 @when("I try to access the backoffice dashboard")
@@ -562,7 +561,7 @@ def create_test_assembly_with_question(title: str, question: str, admin_user, te
         question=question,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies.add_existing(title, assembly)
+    _assembly_name_id_cache.add_existing(title, assembly)
 
 
 @when(parsers.parse('I click the "Go to Assembly" button for "{title}"'))
@@ -579,7 +578,7 @@ def click_go_to_assembly_button(page: Page, title: str):
 def visit_assembly_details_page(page: Page, title: str, admin_user, test_database):
     """Navigate directly to the assembly details page."""
     # Get the assembly ID from the database if not already stored
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_assembly_url(assembly_id))
 
@@ -654,7 +653,7 @@ def click_button_with_text(page: Page, button_text: str):
 def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
     """Navigate directly to the edit assembly page."""
     # Get the assembly ID from the database if not already stored
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_edit_assembly_url(assembly_id))
 
@@ -754,7 +753,7 @@ def ensure_no_assemblies(test_database):
         for assembly in assemblies:
             uow.session.delete(assembly)
         uow.commit()
-    _test_assemblies.clear()
+    _assembly_name_id_cache.clear()
 
 
 # Assembly Members Page Tests
@@ -786,13 +785,13 @@ def create_test_assembly_by_admin(title: str, admin_user, test_database):
         title=title,
         created_by_user_id=admin_user.id,
     )
-    _test_assemblies.add_existing(title, assembly)
+    _assembly_name_id_cache.add_existing(title, assembly)
 
 
 @given(parsers.parse('I am assigned to "{title}" as "{role}"'))
 def assign_current_user_to_assembly(title: str, role: str, normal_user, admin_user, test_database):
     """Assign the current (normal) user to an assembly with a specific role."""
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _assembly_name_id_cache.get(title)
     if not assembly_id:
         raise ValueError(f"Assembly '{title}' not found in test assemblies")
 
@@ -811,7 +810,7 @@ def assign_current_user_to_assembly(title: str, role: str, normal_user, admin_us
 @given(parsers.parse('"{email}" is assigned to "{title}" as "{role}"'))
 def assign_user_to_assembly(email: str, title: str, role: str, admin_user, normal_user, test_database):
     """Assign a specific user to an assembly with a specific role."""
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _assembly_name_id_cache.get(title)
     if not assembly_id:
         raise ValueError(f"Assembly '{title}' not found in test assemblies")
 
@@ -841,7 +840,7 @@ def click_tab(page: Page, tab_name: str):
 @when(parsers.parse('I visit the assembly members page for "{title}"'))
 def visit_assembly_members_page(page: Page, title: str, test_database):
     """Navigate directly to the assembly members page."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_members_assembly_url(assembly_id))
 
@@ -946,7 +945,7 @@ def see_text_after_searching(page: Page, text: str):
 @when(parsers.parse('I try to access the assembly details page for "{title}"'))
 def try_access_assembly_details_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly details page (may be unauthorized)."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_assembly_url(assembly_id))
         page.wait_for_load_state("networkidle")
@@ -955,7 +954,7 @@ def try_access_assembly_details_page(page: Page, title: str, test_database):
 @when(parsers.parse('I try to access the assembly members page for "{title}"'))
 def try_access_assembly_members_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly members page (may be unauthorized)."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_members_assembly_url(assembly_id))
         page.wait_for_load_state("networkidle")
@@ -973,7 +972,7 @@ def redirected_to_dashboard(page: Page):
 @given(parsers.parse('the assembly "{title}" has a gsheet configuration'))
 def create_gsheet_config_for_assembly(title: str, admin_user, test_database):
     """Create a Google Sheet configuration for an assembly."""
-    assembly_id = _test_assemblies.get(title)
+    assembly_id = _assembly_name_id_cache.get(title)
     if not assembly_id:
         raise ValueError(f"Assembly '{title}' not found in test assemblies")
 
@@ -1001,7 +1000,7 @@ def create_gsheet_config_for_assembly(title: str, admin_user, test_database):
 @when(parsers.parse('I visit the assembly data page for "{title}"'))
 def visit_assembly_data_page(page: Page, title: str, test_database):
     """Navigate to the assembly data page."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_data_assembly_url(assembly_id))
 
@@ -1009,7 +1008,7 @@ def visit_assembly_data_page(page: Page, title: str, test_database):
 @when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}"'))
 def visit_assembly_data_page_with_source(page: Page, title: str, source: str, test_database):
     """Navigate to the assembly data page with a specific source."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source))
 
@@ -1017,7 +1016,7 @@ def visit_assembly_data_page_with_source(page: Page, title: str, source: str, te
 @when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}" and mode "{mode}"'))
 def visit_assembly_data_page_with_source_and_mode(page: Page, title: str, source: str, mode: str, test_database):
     """Navigate to the assembly data page with a specific source and mode."""
-    assembly_id = _test_assemblies.find_title(title, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source, mode=mode))
 
