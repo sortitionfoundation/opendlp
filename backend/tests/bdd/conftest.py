@@ -387,9 +387,17 @@ def normal_logged_in_page(page: Page, normal_user):
 
 def delete_all_except_standard_users(session: Session) -> None:
     # Clean up test data (keep admin user)
+    # Delete in order respecting foreign key constraints
+    # First delete tables that reference other tables
+    session.execute(orm.selection_run_records.delete())
+    session.execute(orm.respondents.delete())
+    session.execute(orm.target_categories.delete())
+    session.execute(orm.assembly_gsheets.delete())
+    session.execute(orm.assembly_csv.delete())
     session.execute(orm.user_invites.delete())
-    session.execute(orm.assemblies.delete())
     session.execute(orm.user_assembly_roles.delete())
+    # Now delete assemblies (children are already deleted)
+    session.execute(orm.assemblies.delete())
     # Keep admin user, clean others
     session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
     session.commit()

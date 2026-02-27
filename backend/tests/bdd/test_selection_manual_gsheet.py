@@ -22,6 +22,14 @@ multiple implementations that use the exact same feature file.
 # TODO: Investigate why these tests hang in CI after adding new ORM relationships
 # for target_categories, respondents, and assembly_csv. The server becomes
 # unresponsive during selection tests. See csv-upload-and-gsheet-flow-redesign branch.
+#
+# Investigation findings (Feb 2026):
+# - Tests pass when run alone: test_configure_selection, test_initialise_selection
+# - Tests that run Celery tasks fail: test_do_full_selection, test_do_replacement_selection
+#   (they wait for "Successfully selected" which never appears)
+# - The cleanup function was improved to explicitly delete all related tables
+# - The issue appears to be with the Celery task not completing, not test interference
+# - Need to investigate: Celery task logs, CSV data source adapter, task timeout
 pytestmark = pytest.mark.skip(reason="Selection tests hang in CI - needs investigation")
 
 scenarios("../../features/selection.feature")

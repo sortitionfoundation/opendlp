@@ -2,6 +2,10 @@
 
 OpenDLP uses Flask-Babel for internationalization and localization.
 
+## Current Status
+
+Currently only **Hungarian (`hu`)** translation is available. The default configuration lists `en,es,fr,de` as supported languages, but those translation files have not been created yet.
+
 ## Quick Start
 
 1. **Configure languages** in `env` file:
@@ -64,6 +68,8 @@ In Jinja2 templates:
 2. **Update PO files**: Run `pybabel update` to merge new strings into existing translations
 3. **Translate**: Edit `.po` files in `translations/[locale]/LC_MESSAGES/messages.po`
 4. **Compile**: Run `pybabel compile` to generate `.mo` files for production
+
+**Important:** The `.mo` (compiled) files must be regenerated after any `.po` file changes for translations to take effect. The application reads from `.mo` files, not `.po` files.
 
 ### Directory Structure
 
