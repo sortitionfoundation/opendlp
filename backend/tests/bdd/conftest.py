@@ -162,7 +162,7 @@ def test_celery_worker(test_database, test_csv_data_dir):
     env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
-        ["uv", "run", "celery", "-A", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
+        ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
         cwd=BACKEND_PATH,
         env=env,
         stdout=subprocess.PIPE,
