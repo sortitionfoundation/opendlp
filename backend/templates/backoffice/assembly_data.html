@@ -223,54 +223,82 @@ ABOUTME: Displays data source selection and data management for assemblies
                     ) }}
                 </fieldset>
 
-                {# Team Selection #}
-                <div x-data="{ selectedTeam: '{{ gsheet_form.team.data or 'other' }}' }">
-                    {{ radio_group(
-                    name="team",
-                    label=_("Team Configuration"),
-                    options=[
-                    {"value": "uk", "label": _("UK Team")},
-                    {"value": "eu", "label": _("EU Team")},
-                    {"value": "aus", "label": _("Australia Team")},
-                    {"value": "other", "label": _("Custom configuration")}
-                    ],
-                    value=gsheet_form.team.data or "other",
-                    hint=_("Choose a preset or configure custom column settings."),
-                    readonly=readonly,
-                    attrs='x-model="selectedTeam"'
-                    ) }}
+                {# Team Selection - only show in edit mode as it's a form helper for autofilling, not a stored value #}
+                {% if not readonly %}
+                    <div x-data="{ selectedTeam: '{{ gsheet_form.team.data or 'other' }}' }">
+                        {{ radio_group(
+                        name="team",
+                        label=_("Team Configuration"),
+                        options=[
+                        {"value": "uk", "label": _("UK Team")},
+                        {"value": "eu", "label": _("EU Team")},
+                        {"value": "aus", "label": _("Australia Team")},
+                        {"value": "other", "label": _("Custom configuration")}
+                        ],
+                        value=gsheet_form.team.data or "other",
+                        hint=_("Choose a preset or configure custom column settings."),
+                        readonly=readonly,
+                        attrs='x-model="selectedTeam"'
+                        ) }}
 
-                    {# Custom Configuration Fields (shown when team="other") #}
-                    <div x-show="selectedTeam === 'other'" x-cloak class="mt-4 flex flex-col gap-4 pl-8" style="border-left: 2px solid var(--color-borders-dividers);">
+                        {# Custom Configuration Fields (shown when team="other") #}
+                        <div x-show="selectedTeam === 'other'" x-cloak class="mt-4 flex flex-col gap-4 pl-8" style="border-left: 2px solid var(--color-borders-dividers);">
+                            {{ input(
+                            name="id_column",
+                            label=_("ID Column"),
+                            value=gsheet_form.id_column.data or "",
+                            placeholder=_("e.g., ID"),
+                            hint=_("Column name containing unique participant identifiers."),
+                            readonly=readonly,
+                            error=gsheet_form.id_column.errors[0] if gsheet_form.id_column.errors else ""
+                            ) }}
+                            {{ input(
+                            name="check_same_address_cols_string",
+                            label=_("Address Columns"),
+                            value=gsheet_form.check_same_address_cols_string.data or "",
+                            placeholder=_("e.g., Street, City, PostCode"),
+                            hint=_("Comma-separated column names used for address matching."),
+                            readonly=readonly,
+                            error=gsheet_form.check_same_address_cols_string.errors[0] if gsheet_form.check_same_address_cols_string.errors else ""
+                            ) }}
+                            {{ input(
+                            name="columns_to_keep_string",
+                            label=_("Columns to Keep"),
+                            value=gsheet_form.columns_to_keep_string.data or "",
+                            placeholder=_("e.g., Name, Email, Phone"),
+                            hint=_("Comma-separated column names to include in output."),
+                            readonly=readonly,
+                            error=gsheet_form.columns_to_keep_string.errors[0] if gsheet_form.columns_to_keep_string.errors else ""
+                            ) }}
+                        </div>
+                    </div>
+                {% else %}
+                    {# In view mode, show the actual saved column configuration values directly #}
+                    <fieldset class="flex flex-col gap-4">
+                        <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Column Configuration") }}</legend>
                         {{ input(
                         name="id_column",
                         label=_("ID Column"),
                         value=gsheet_form.id_column.data or "",
-                        placeholder=_("e.g., ID"),
                         hint=_("Column name containing unique participant identifiers."),
-                        readonly=readonly,
-                        error=gsheet_form.id_column.errors[0] if gsheet_form.id_column.errors else ""
+                        readonly=readonly
                         ) }}
                         {{ input(
                         name="check_same_address_cols_string",
                         label=_("Address Columns"),
                         value=gsheet_form.check_same_address_cols_string.data or "",
-                        placeholder=_("e.g., Street, City, PostCode"),
                         hint=_("Comma-separated column names used for address matching."),
-                        readonly=readonly,
-                        error=gsheet_form.check_same_address_cols_string.errors[0] if gsheet_form.check_same_address_cols_string.errors else ""
+                        readonly=readonly
                         ) }}
                         {{ input(
                         name="columns_to_keep_string",
                         label=_("Columns to Keep"),
                         value=gsheet_form.columns_to_keep_string.data or "",
-                        placeholder=_("e.g., Name, Email, Phone"),
                         hint=_("Comma-separated column names to include in output."),
-                        readonly=readonly,
-                        error=gsheet_form.columns_to_keep_string.errors[0] if gsheet_form.columns_to_keep_string.errors else ""
+                        readonly=readonly
                         ) }}
-                    </div>
-                </div>
+                    </fieldset>
+                {% endif %}
 
                 {# Form Actions #}
                 {% if not readonly %}
