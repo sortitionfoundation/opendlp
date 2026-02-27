@@ -29,7 +29,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
     items=[
     {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
     {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
-    {"label": _("Selection"), "href": "#"},
+    {"label": _("Selection"), "href": url_for('backoffice.view_assembly_selection', assembly_id=assembly.id)},
     {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
     ],
     aria_label=_("Assembly sections")

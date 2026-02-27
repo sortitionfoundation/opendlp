@@ -1,6 +1,6 @@
 # Selection Tab Specification
 
-**Branch:** `csv-upload-and-gsheet-flow-redesign`
+**Branch:** `ghseet-selection-redesign`
 **Last Updated:** 2026-02-25
 
 ## Overview
@@ -157,6 +157,13 @@ flowchart TD
     CancelTask --> RevokeTask[Revoke Celery task]
     RevokeTask --> UpdateStatus[Update status to CANCELLED]
     UpdateStatus --> ShowCancelled
+
+    %% Phase 1 Complete: Basic page structure
+    style Start fill:#90EE90,color:#000000
+    style CheckGSheet fill:#90EE90,color:#000000
+    style ShowNoConfig fill:#90EE90,color:#000000
+    style ShowSelectionPage fill:#90EE90,color:#000000
+    style UserAction fill:#90EE90,color:#000000
 ```
 
 ### Replacement Selection Flow
@@ -402,6 +409,100 @@ ERROR            - Task failed
 
 ---
 
+## Frontend Polling Approach
+
+The backoffice uses Alpine.js components for task progress monitoring. Progress endpoints return JSON, and Alpine handles polling and state updates.
+
+### Alpine Polling Component Pattern
+
+```javascript
+// Task progress polling component
+function taskPoller(config) {
+  return {
+    status: 'PENDING',
+    logMessages: [],
+    report: null,
+    errorMessage: null,
+    pollInterval: null,
+
+    init() {
+      if (config.runId) {
+        this.startPolling();
+      }
+    },
+
+    startPolling() {
+      this.pollInterval = setInterval(() => this.fetchProgress(), 2000);
+      this.fetchProgress(); // immediate first fetch
+    },
+
+    async fetchProgress() {
+      try {
+        const response = await fetch(config.progressUrl);
+        const data = await response.json();
+
+        this.status = data.status;
+        this.logMessages = data.log_messages || [];
+        this.report = data.report;
+        this.errorMessage = data.error_message;
+
+        // Stop polling on terminal states
+        if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(data.status)) {
+          this.stopPolling();
+        }
+      } catch (error) {
+        console.error('Progress fetch failed:', error);
+      }
+    },
+
+    stopPolling() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+    },
+
+    destroy() {
+      this.stopPolling();
+    }
+  };
+}
+```
+
+### JSON Progress Endpoint Response
+
+Progress endpoints return JSON:
+
+```json
+{
+  "status": "RUNNING",
+  "log_messages": [
+    {"level": "info", "message": "Loading spreadsheet data..."},
+    {"level": "info", "message": "Found 150 participants"}
+  ],
+  "report": null,
+  "error_message": null,
+  "completed_at": null
+}
+```
+
+Terminal state example:
+```json
+{
+  "status": "COMPLETED",
+  "log_messages": [...],
+  "report": {
+    "selected_count": 30,
+    "total_participants": 150,
+    "selection_report_url": "/backoffice/assembly/.../selection/abc123/report"
+  },
+  "error_message": null,
+  "completed_at": "2026-02-25T14:30:00Z"
+}
+```
+
+---
+
 ## New Backoffice Routes
 
 For the new backoffice implementation, the routes will be under `/backoffice/assembly/<id>/`:
@@ -431,20 +532,39 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 
 ## Implementation Plan
 
-### Phase 1: Selection Tab - Basic Structure ⬜
+### Phase 1: Selection Tab - Basic Structure ✅
 
-1. Add "Selection" tab to assembly data page navigation
-2. Create selection page template with three sections
-3. Implement basic routes (without task functionality)
+1. ✅ Add "Selection" tab to assembly data page navigation
+2. ✅ Create selection page template with three sections
+3. ✅ Implement basic routes (without task functionality)
 
 ### Phase 2: Initial Selection ⬜
 
-1. Implement `view_selection` route
-2. Implement `start_selection_load` route
-3. Implement `start_selection_run` route
-4. Add HTMX progress polling
-5. Add cancel functionality
-6. Add tests
+**Phase 2a: Progress Endpoint & Alpine Polling**
+1. Add `/selection/<run_id>` GET route (view with run status)
+2. Add `/selection/<run_id>/progress` GET route (JSON for Alpine polling)
+3. Create Alpine polling component
+4. Update template to conditionally show progress UI
+
+**Phase 2b: Check Spreadsheet (Load)**
+1. Add `/selection/load` POST route (starts LOAD_GSHEET task)
+2. Enable "Check Spreadsheet" button
+3. Display load results (participant count, validation errors)
+
+**Phase 2c: Run Selection**
+1. Add `/selection/run` POST route (starts SELECT_GSHEET task)
+2. Support `test=1` query param for test selection
+3. Enable "Run Selection" and "Run Test Selection" buttons
+4. Display selection results with report
+
+**Phase 2d: Cancel & Error Handling**
+1. Add `/selection/<run_id>/cancel` POST route
+2. Add cancel button during task execution
+3. Handle error states gracefully
+
+**Phase 2e: Testing**
+1. Add BDD tests for selection functionality
+2. Add manual test cases
 
 ### Phase 3: Replacement Selection ⬜
 

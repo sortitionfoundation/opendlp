@@ -397,6 +397,307 @@ After testing, clean up:
 
 ---
 
+## Selection Tab Test Cases (Phase 1)
+
+**Related Spec:** [selection-tab-spec.md](selection-tab-spec.md)
+
+### TC-S01: Selection Tab Navigation
+
+**Precondition:** Assembly exists
+
+**Steps:**
+1. Navigate to assembly Details tab
+2. Click the "Selection" tab in the navigation
+
+**Expected Results:**
+- [ ] Selection tab loads without errors
+- [ ] Page shows assembly title in heading
+- [ ] Breadcrumbs show: Dashboard > [Assembly Title] > Selection
+- [ ] All four tabs are visible (Details, Data, Selection, Team Members)
+- [ ] Selection tab is marked as active
+
+---
+
+### TC-S02: Selection Tab - No GSheet Configured
+
+**Precondition:** Assembly exists WITHOUT gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+
+**Expected Results:**
+- [ ] Warning alert displayed: "Please configure a Google Spreadsheet in the Data tab before running selection."
+- [ ] "Configure Data Source" button visible and links to Data tab
+- [ ] "Back to Dashboard" button visible
+- [ ] No selection cards visible (Initial Selection, Replacement, Manage Tabs)
+
+---
+
+### TC-S03: Selection Tab - GSheet Configured
+
+**Precondition:** Assembly exists WITH gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+
+**Expected Results:**
+- [ ] No warning alert displayed
+- [ ] "Initial Selection" card visible with:
+  - [ ] Description text about sortition algorithm
+  - [ ] "Number to select: X" info box showing assembly's number_to_select value
+  - [ ] "Check Spreadsheet", "Run Test Selection", "Run Selection" buttons (disabled in Phase 1)
+- [ ] "Replacement Selection" card visible with:
+  - [ ] Description text about replacement participants
+  - [ ] "Check Spreadsheet", "Run Replacements" buttons (disabled in Phase 1)
+- [ ] "Manage Generated Tabs" card visible with:
+  - [ ] Description text about cleaning up old tabs
+  - [ ] "List Old Tabs" button (disabled in Phase 1)
+- [ ] "Back to Dashboard" button visible
+
+---
+
+### TC-S04: Selection Tab - Tab Navigation Consistency
+
+**Precondition:** Assembly exists with gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Details tab, verify Selection tab link
+2. Navigate to assembly Data tab, verify Selection tab link
+3. Navigate to assembly Selection tab, verify all tabs work
+4. Navigate to assembly Team Members tab, verify Selection tab link
+
+**Expected Results:**
+- [ ] Selection tab link is functional from all assembly pages
+- [ ] Selection tab links to `/backoffice/assembly/<id>/selection`
+- [ ] Selection tab is not a placeholder (`#`) anymore
+
+---
+
+### TC-S05: Selection Tab - Unauthorized Access
+
+**Precondition:** User without assembly access
+
+**Steps:**
+1. Attempt to access `/backoffice/assembly/<assembly_id>/selection` directly
+
+**Expected Results:**
+- [ ] Redirected to dashboard
+- [ ] Error flash message: "You don't have permission to view this assembly"
+
+---
+
+### TC-S06: Selection Tab - Nonexistent Assembly
+
+**Steps:**
+1. Attempt to access `/backoffice/assembly/<invalid_uuid>/selection`
+
+**Expected Results:**
+- [ ] Redirected to dashboard
+- [ ] Error flash message: "Assembly not found"
+
+---
+
+## Selection Tab Test Cases (Phase 2) - Initial Selection
+
+**Status:** Pending implementation
+
+### TC-S07: Check Spreadsheet - Happy Path
+
+**Precondition:** Assembly with valid gsheet configuration pointing to Sheet A
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Check Spreadsheet" button in Initial Selection card
+
+**Expected Results:**
+- [ ] Button shows loading state while task runs
+- [ ] Progress indicator appears with log messages
+- [ ] Task completes successfully
+- [ ] Success message shows: "Found X participants"
+- [ ] Participant count and feature summary displayed
+
+---
+
+### TC-S08: Check Spreadsheet - Invalid Sheet
+
+**Precondition:** Assembly with gsheet configuration pointing to non-existent spreadsheet
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Check Spreadsheet" button
+
+**Expected Results:**
+- [ ] Task starts and shows progress
+- [ ] Task fails with error message
+- [ ] Error displayed: "Could not access the spreadsheet"
+- [ ] User can retry after fixing configuration
+
+---
+
+### TC-S09: Check Spreadsheet - Missing Tab
+
+**Precondition:** Assembly with gsheet configuration where Respondents tab doesn't exist
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Check Spreadsheet" button
+
+**Expected Results:**
+- [ ] Task fails with error
+- [ ] Error message indicates which tab is missing
+- [ ] User-friendly error displayed
+
+---
+
+### TC-S10: Run Test Selection - Happy Path
+
+**Precondition:** Assembly with valid gsheet configuration, "Check Spreadsheet" previously successful
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Run Test Selection" button
+
+**Expected Results:**
+- [ ] Task starts with progress indicator
+- [ ] Log messages show selection progress
+- [ ] Task completes successfully
+- [ ] Results show selected participants (test mode - no writes to sheet)
+- [ ] Selection report summary displayed
+- [ ] "View Full Report" link available
+
+---
+
+### TC-S11: Run Selection - Happy Path
+
+**Precondition:** Assembly with valid gsheet configuration, sheet is shared with edit access
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Run Selection" button
+
+**Expected Results:**
+- [ ] Task starts with progress indicator
+- [ ] Log messages show selection progress
+- [ ] Task completes successfully
+- [ ] Results written to Google Sheet
+- [ ] Selection report summary displayed
+- [ ] "View Full Report" link available
+
+---
+
+### TC-S12: Run Selection - Cancel During Execution
+
+**Precondition:** Assembly with gsheet configuration, selection task started
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Run Selection" button
+3. While task is running (PENDING or RUNNING), click "Cancel" button
+
+**Expected Results:**
+- [ ] Cancel confirmation (if applicable)
+- [ ] Task status changes to CANCELLED
+- [ ] Message displayed: "Task cancelled by [user]"
+- [ ] Can start new task after cancellation
+
+---
+
+### TC-S13: Progress Polling - Automatic Updates
+
+**Precondition:** Assembly with gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Check Spreadsheet" button
+3. Observe progress updates without refreshing page
+
+**Expected Results:**
+- [ ] Progress updates appear every 2 seconds
+- [ ] Log messages accumulate in display
+- [ ] Status transitions: PENDING → RUNNING → COMPLETED/FAILED
+- [ ] Polling stops when task reaches terminal state
+
+---
+
+### TC-S14: Progress Polling - Page Refresh Preserves State
+
+**Precondition:** Task is running
+
+**Steps:**
+1. Start a selection task
+2. While task is running, refresh the browser page
+
+**Expected Results:**
+- [ ] Page reloads with current task state
+- [ ] Polling resumes automatically
+- [ ] Log messages preserved from task
+- [ ] No duplicate tasks created
+
+---
+
+### TC-S15: Run Selection - Write Permission Error
+
+**Precondition:** Assembly with gsheet configuration, sheet shared with view-only access
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Run Selection" button (not test)
+
+**Expected Results:**
+- [ ] Task starts normally
+- [ ] Task fails when attempting to write results
+- [ ] Error message indicates permission issue
+- [ ] Helpful message about sharing with edit access
+
+---
+
+### TC-S16: Concurrent Task Prevention
+
+**Precondition:** Assembly with gsheet configuration
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Run Selection" button
+3. While task is running, try to click "Check Spreadsheet" or "Run Test Selection"
+
+**Expected Results:**
+- [ ] Buttons disabled while task is running
+- [ ] Only Cancel button available during execution
+- [ ] Cannot start multiple concurrent tasks for same assembly
+
+---
+
+### TC-S17: Error State - Celery Connection Failure
+
+**Precondition:** Celery worker not running (simulate by stopping worker)
+
+**Steps:**
+1. Navigate to assembly Selection tab
+2. Click "Check Spreadsheet" button
+
+**Expected Results:**
+- [ ] Error message displayed: "Could not connect to task queue"
+- [ ] User-friendly guidance to contact admin
+- [ ] Buttons remain functional for retry
+
+---
+
+### TC-S18: Selection Results - Report Display
+
+**Precondition:** Selection task completed successfully
+
+**Steps:**
+1. Navigate to assembly Selection tab with completed run
+2. Review the displayed report
+
+**Expected Results:**
+- [ ] Summary shows: selected count, total participants
+- [ ] Feature breakdown visible (demographics)
+- [ ] "View Full Report" link works
+- [ ] Can start new selection if needed
+
+---
+
 ## Related Documentation
 
 - [Google Sheet Configuration Flow Spec](csv-upload-and-gsheet-flow-redesign-spec.md)

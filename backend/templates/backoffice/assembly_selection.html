@@ -1,0 +1,119 @@
+{#
+ABOUTME: Backoffice assembly selection page
+ABOUTME: Displays selection operations: initial selection, replacement, and tab management
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/tabs.html" import tabs %}
+
+{% block title %}{{ _("Selection") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Selection")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Run selection and manage generated outputs") }}
+    </p>
+
+    {{ tabs(
+    items=[
+    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
+    {"label": _("Selection"), "href": url_for('backoffice.view_assembly_selection', assembly_id=assembly.id), "active": true},
+    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+    ],
+    aria_label=_("Assembly sections")
+    ) }}
+
+    {% if not gsheet %}
+        {# No Google Sheet configured - show configuration prompt #}
+        {{ alert(_("Please configure a Google Spreadsheet in the Data tab before running selection."), variant="warning") }}
+
+        <section class="flex gap-4">
+            {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+            {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+        </section>
+    {% else %}
+        {# Google Sheet configured - show selection options #}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {# Initial Selection Card #}
+            {% call card(title=_("Initial Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Run the sortition algorithm to select participants from the initial pool based on demographic targets.") }}
+                    </p>
+
+                    {# Number to select info #}
+                    <div class="rounded-lg p-4 mb-4" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                        <div class="flex items-center gap-2">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Number to select:") }}</span>
+                            <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
+                        </div>
+                    </div>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Use 'Check Spreadsheet' to validate your data before running the actual selection.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
+                    {{ button(_("Run Test Selection"), variant="secondary", disabled=true) }}
+                    {{ button(_("Run Selection"), variant="primary", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+
+            {# Replacement Selection Card #}
+            {% call card(title=_("Replacement Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                    </p>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("First check the spreadsheet to see how many replacement participants are available, then specify how many to select.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
+                    {{ button(_("Run Replacements"), variant="primary", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Manage Generated Tabs Card - Full Width #}
+        <div class="mb-8">
+            {% call card(title=_("Manage Generated Tabs"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("View and delete old selection output tabs from your Google Spreadsheet.") }}
+                    </p>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Each selection run creates new tabs in your spreadsheet. Use this to clean up old tabs that are no longer needed.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("List Old Tabs"), variant="outline", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Actions #}
+        <section class="flex gap-4">
+            {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+        </section>
+    {% endif %}
+{% endblock %}

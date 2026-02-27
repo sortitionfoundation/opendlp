@@ -178,6 +178,44 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection")
+@login_required
+def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice assembly selection page."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Check if gsheet is configured
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception as gsheet_error:
+            current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
+            gsheet = None
+
+        return render_template(
+            "backoffice/assembly_selection.html",
+            assembly=assembly,
+            gsheet=gsheet,
+        ), 200
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} selection: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"View assembly selection error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while loading the selection page"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
