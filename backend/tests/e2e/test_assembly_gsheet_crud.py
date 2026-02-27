@@ -567,6 +567,35 @@ class TestAssemblyGSheetValidation:
         # Check for validation error message
         assert b"address columns" in response.data.lower() or b"must specify" in response.data.lower()
 
+    def test_create_gsheet_hard_validation_passes_when_team_not_other(self, logged_in_admin, existing_assembly):
+        """
+        Test hard validation:
+        - check_same_address=True requires address columns.
+        - team="uk" will auto generate address columns after the form validation.
+        - so overall we should succeed.
+        """
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation123456789/edit",
+                "team": "uk",  # uk config to create team defaults
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty - should fail validation
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
+            },
+        )
+
+        # Should succeed and redirect
+        assert response.status_code == 302
+        assert f"/assemblies/{existing_assembly.id}/data" in response.location
+
     def test_create_gsheet_hard_validation_passes_when_check_address_disabled(self, logged_in_admin, existing_assembly):
         """Test hard validation: check_same_address=False allows empty address columns."""
         response = logged_in_admin.post(
@@ -624,6 +653,44 @@ class TestAssemblyGSheetValidation:
             b"Warning" in response.data
             or b"No columns to keep" in response.data
             or b"participant data columns" in response.data
+        )
+
+    def test_create_gsheet_soft_validation_empty_columns_to_keep_with_team_does_not_show_warning(
+        self, logged_in_admin, existing_assembly
+    ):
+        """
+        Test soft validation:
+        - empty columns_to_keep would normally show warning but allows save.
+        - team "uk" means the columns_to_keep will be filled in after form validation.
+        """
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/gsheet",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/warning123456789/edit",
+                "team": "uk",  # Custom config
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",
+                "check_same_address_cols_string": "address1, postcode",
+                "columns_to_keep_string": "",  # Empty - should show warning
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/gsheet"),
+            },
+            follow_redirects=True,  # Follow redirects to check flash messages
+        )
+
+        # Should succeed (redirect was followed, so status is 200)
+        assert response.status_code == 200
+
+        # Check for both success and warning flash messages in the response
+        assert b"configuration created successfully" in response.data or b"success" in response.data.lower()
+        assert (
+            b"Warning" not in response.data
+            and b"No columns to keep" not in response.data
+            and b"participant data columns" not in response.data
         )
 
     def test_edit_gsheet_hard_validation_check_address_without_columns(self, logged_in_admin, assembly_with_gsheet):

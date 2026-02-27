@@ -63,7 +63,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
         if form.validate_on_submit():
             try:
                 if action == "create":
-                    add_assembly_gsheet(
+                    final_gsheet = add_assembly_gsheet(
                         uow=uow,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
@@ -81,7 +81,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                     )
                     flash(_("Google Spreadsheet configuration created successfully"), "success")
                 else:
-                    update_assembly_gsheet(
+                    final_gsheet = update_assembly_gsheet(
                         uow=uow,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
@@ -100,7 +100,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
                 # Soft validation warning - check if columns_to_keep is empty
-                if not form.columns_to_keep_string.data or not form.columns_to_keep_string.data.strip():
+                if not final_gsheet.columns_to_keep:
                     flash(
                         _(
                             "Warning: No columns to keep specified. "
