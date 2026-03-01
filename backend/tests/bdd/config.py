@@ -33,6 +33,7 @@ class Urls:
     backoffice_edit_assembly = "{base}/backoffice/assembly/{assembly_id}/edit"
     backoffice_members_assembly = "{base}/backoffice/assembly/{assembly_id}/members"
     backoffice_data_assembly = "{base}/backoffice/assembly/{assembly_id}/data"
+    backoffice_selection_assembly = "{base}/backoffice/assembly/{assembly_id}/selection"
 
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
@@ -71,3 +72,7 @@ class Urls:
         if params:
             url += "?" + urllib.parse.urlencode(params)
         return url
+
+    @classmethod
+    def backoffice_selection_assembly_url(cls, assembly_id: str) -> str:
+        return cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id)

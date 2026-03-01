@@ -1,6 +1,6 @@
 # Selection Tab Specification
 
-**Branch:** `csv-upload-and-gsheet-flow-redesign`
+**Branch:** `ghseet-selection-redesign`
 **Last Updated:** 2026-02-25
 
 ## Overview
@@ -402,6 +402,100 @@ ERROR            - Task failed
 
 ---
 
+## Frontend Polling Approach
+
+The backoffice uses Alpine.js components for task progress monitoring. Progress endpoints return JSON, and Alpine handles polling and state updates.
+
+### Alpine Polling Component Pattern
+
+```javascript
+// Task progress polling component
+function taskPoller(config) {
+  return {
+    status: 'PENDING',
+    logMessages: [],
+    report: null,
+    errorMessage: null,
+    pollInterval: null,
+
+    init() {
+      if (config.runId) {
+        this.startPolling();
+      }
+    },
+
+    startPolling() {
+      this.pollInterval = setInterval(() => this.fetchProgress(), 2000);
+      this.fetchProgress(); // immediate first fetch
+    },
+
+    async fetchProgress() {
+      try {
+        const response = await fetch(config.progressUrl);
+        const data = await response.json();
+
+        this.status = data.status;
+        this.logMessages = data.log_messages || [];
+        this.report = data.report;
+        this.errorMessage = data.error_message;
+
+        // Stop polling on terminal states
+        if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(data.status)) {
+          this.stopPolling();
+        }
+      } catch (error) {
+        console.error('Progress fetch failed:', error);
+      }
+    },
+
+    stopPolling() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+    },
+
+    destroy() {
+      this.stopPolling();
+    }
+  };
+}
+```
+
+### JSON Progress Endpoint Response
+
+Progress endpoints return JSON:
+
+```json
+{
+  "status": "RUNNING",
+  "log_messages": [
+    {"level": "info", "message": "Loading spreadsheet data..."},
+    {"level": "info", "message": "Found 150 participants"}
+  ],
+  "report": null,
+  "error_message": null,
+  "completed_at": null
+}
+```
+
+Terminal state example:
+```json
+{
+  "status": "COMPLETED",
+  "log_messages": [...],
+  "report": {
+    "selected_count": 30,
+    "total_participants": 150,
+    "selection_report_url": "/backoffice/assembly/.../selection/abc123/report"
+  },
+  "error_message": null,
+  "completed_at": "2026-02-25T14:30:00Z"
+}
+```
+
+---
+
 ## New Backoffice Routes
 
 For the new backoffice implementation, the routes will be under `/backoffice/assembly/<id>/`:
@@ -431,11 +525,11 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 
 ## Implementation Plan
 
-### Phase 1: Selection Tab - Basic Structure ⬜
+### Phase 1: Selection Tab - Basic Structure 🔄
 
-1. Add "Selection" tab to assembly data page navigation
-2. Create selection page template with three sections
-3. Implement basic routes (without task functionality)
+1. ✅ Add "Selection" tab to assembly data page navigation
+2. ✅ Create selection page template with three sections
+3. ✅ Implement basic routes (without task functionality)
 
 ### Phase 2: Initial Selection ⬜
 

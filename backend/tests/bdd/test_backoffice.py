@@ -1155,3 +1155,29 @@ def see_validation_error_for_missing_url(page: Page):
     expect(save_button).to_be_visible()
     # The URL field is required, so browser should show native validation
     # or the form shows an error message
+
+
+# Selection Tab Tests
+
+
+@when(parsers.parse('I visit the assembly selection page for "{title}"'))
+def visit_assembly_selection_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly selection page."""
+    assembly_id = _test_assemblies.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_selection_assembly_url(assembly_id))
+
+
+@when(parsers.parse('I try to access the assembly selection page for "{title}"'))
+def try_access_assembly_selection_page(page: Page, title: str, test_database):
+    """Try to navigate directly to the assembly selection page (may be unauthorized)."""
+    assembly_id = _test_assemblies.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_selection_assembly_url(assembly_id))
+        page.wait_for_load_state("networkidle")
+
+
+@then("I should see the assembly selection page")
+def see_assembly_selection_page(page: Page):
+    """Verify we're on the assembly selection page."""
+    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/selection"))

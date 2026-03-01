@@ -362,3 +362,54 @@ Feature: Backoffice UI
     And I click the "Delete" button and confirm
     Then the data source selector should be enabled
     And I should see "Select Data Source"
+
+  # Selection Tab Tests
+
+  Scenario: User can navigate to selection tab from assembly details
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection Test Assembly"
+    When I visit the assembly details page for "Selection Test Assembly"
+    And I click the "Selection" tab
+    Then I should see the assembly selection page
+    And I should see "Selection Test Assembly" as the page heading
+
+  Scenario: Selection tab displays breadcrumbs
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection Test Assembly"
+    When I visit the assembly selection page for "Selection Test Assembly"
+    Then I should see the breadcrumbs
+    And the breadcrumbs should contain "Dashboard"
+    And the breadcrumbs should contain "Selection Test Assembly"
+    And the breadcrumbs should contain "Selection"
+
+  Scenario: Selection tab shows warning when no gsheet configured
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection No GSheet Assembly"
+    When I visit the assembly selection page for "Selection No GSheet Assembly"
+    Then I should see "Please configure a Google Spreadsheet"
+    And I should see the "Configure Data Source" button
+    And I should not see "Initial Selection"
+
+  Scenario: Selection tab shows selection cards when gsheet configured
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection With GSheet Assembly"
+    And the assembly "Selection With GSheet Assembly" has a gsheet configuration
+    When I visit the assembly selection page for "Selection With GSheet Assembly"
+    Then I should see "Initial Selection"
+    And I should see "Replacement Selection"
+    And I should see "Manage Generated Tabs"
+    And I should see "Number to select:"
+
+  Scenario: Selection tab is accessible from all assembly tabs
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection Tab Navigation Assembly"
+    When I visit the assembly data page for "Selection Tab Navigation Assembly"
+    And I click the "Selection" tab
+    Then I should see the assembly selection page
+
+  Scenario: Non-admin user without assembly role cannot access selection page
+    Given I am logged in as a normal user
+    And there is an assembly called "Selection Unauthorized Assembly" created by admin
+    When I try to access the assembly selection page for "Selection Unauthorized Assembly"
+    Then I should be redirected to the dashboard
+    And I should see "You don't have permission to view this assembly"
