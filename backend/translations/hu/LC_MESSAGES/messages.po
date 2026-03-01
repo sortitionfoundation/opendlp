@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-12 15:53+0000\n"
+"POT-Creation-Date: 2026-02-27 17:03+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -171,6 +171,7 @@ msgid "Enter the title for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
 #: src/opendlp/entrypoints/forms.py:211
+#: templates/backoffice/assembly_details.html:41
 #: templates/main/view_assembly_details.html:6
 msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
@@ -180,6 +181,7 @@ msgid "Optional - the key question this assembly will address"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:218
+#: templates/backoffice/assembly_details.html:63
 #: templates/main/view_assembly_details.html:20
 msgid "First Assembly Date"
 msgstr "Első gyűlés időpontja"
@@ -189,6 +191,7 @@ msgid "Optional - when the first assembly meeting will take place"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:224
+#: templates/backoffice/assembly_details.html:72
 #: templates/main/view_assembly_details.html:27
 msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
@@ -255,6 +258,7 @@ msgid "Name of the tab containing already selected people (used for Replacements
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:311
+#: templates/backoffice/assembly_data.html:212
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
@@ -264,6 +268,7 @@ msgid "Enable checking for participants with the same address"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:317
+#: templates/backoffice/assembly_data.html:219
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
@@ -273,23 +278,28 @@ msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:323
+#: templates/backoffice/assembly_data.html:231
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
 #: src/opendlp/entrypoints/forms.py:325
+#: templates/backoffice/assembly_data.html:233
 msgid "UK Team"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:326
+#: templates/backoffice/assembly_data.html:234
 msgid "EU Team"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:327
+#: templates/backoffice/assembly_data.html:235
 msgid "Australia Team"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:328
+#: templates/backoffice/assembly_data.html:236
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Beállítások mentése"
@@ -301,6 +311,8 @@ msgid ""
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:338
+#: templates/backoffice/assembly_data.html:248
+#: templates/backoffice/assembly_data.html:281
 #: templates/gsheets/components/view_config.html:60
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
@@ -312,6 +324,8 @@ msgid ""
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:347
+#: templates/backoffice/assembly_data.html:257
+#: templates/backoffice/assembly_data.html:288
 #: templates/gsheets/components/view_config.html:66
 msgid "Address Columns"
 msgstr "Cím oszlopok"
@@ -324,6 +338,8 @@ msgid ""
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:356
+#: templates/backoffice/assembly_data.html:266
+#: templates/backoffice/assembly_data.html:295
 #: templates/gsheets/components/view_config.html:72
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
@@ -718,51 +734,28 @@ msgstr ""
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:82
-msgid "Google Spreadsheet configuration created successfully"
-msgstr "Google táblázat beállításai sikeresen létrehozva"
+#: src/opendlp/entrypoints/blueprints/backoffice.py:78
+#: src/opendlp/entrypoints/blueprints/main.py:199
+#, python-format
+msgid "Assembly '%(title)s' created successfully"
+msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:100
-msgid "Google Spreadsheet configuration updated successfully"
-msgstr "Google táblázat beállításai sikeresen frissítve"
+#: src/opendlp/entrypoints/blueprints/backoffice.py:82
+#: src/opendlp/entrypoints/blueprints/main.py:203
+msgid "You don't have permission to create assemblies"
+msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:106
-msgid ""
-"Warning: No columns to keep specified. This means the output will only "
-"include participant data columns used for the targets and address "
-"checking. Is this intentional?"
-msgstr ""
+#: src/opendlp/entrypoints/blueprints/backoffice.py:86
+#: src/opendlp/entrypoints/blueprints/backoffice.py:90
+#: src/opendlp/entrypoints/blueprints/main.py:207
+#: src/opendlp/entrypoints/blueprints/main.py:210
+msgid "An error occurred while creating the assembly"
+msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:118
-#: src/opendlp/entrypoints/blueprints/gsheets.py:168
-msgid "You don't have permission to manage Google Spreadsheet for this assembly"
-msgstr ""
-"Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
-"megtekintéséhez"
-
-#: src/opendlp/entrypoints/blueprints/gsheets.py:124
-msgid "Please check your input and try again"
-msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
-
-#: src/opendlp/entrypoints/blueprints/gsheets.py:129
-msgid "An error occurred while saving the Google Spreadsheet configuration"
-msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
-
-#: src/opendlp/entrypoints/blueprints/gsheets.py:136
-#: src/opendlp/entrypoints/blueprints/gsheets.py:190
-#: src/opendlp/entrypoints/blueprints/gsheets.py:236
-#: src/opendlp/entrypoints/blueprints/gsheets.py:433
-#: src/opendlp/entrypoints/blueprints/gsheets.py:519
-#: src/opendlp/entrypoints/blueprints/gsheets.py:764
-#: src/opendlp/entrypoints/blueprints/gsheets.py:818
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1045
-#: src/opendlp/entrypoints/blueprints/main.py:76
-#: src/opendlp/entrypoints/blueprints/main.py:124
-#: src/opendlp/entrypoints/blueprints/main.py:167
-#: src/opendlp/entrypoints/blueprints/main.py:264
-msgid "Assembly not found"
-msgstr "A gyűlés oldala  nem elérhető"
-
+#: src/opendlp/entrypoints/blueprints/backoffice.py:109
+#: src/opendlp/entrypoints/blueprints/backoffice.py:241
+#: src/opendlp/entrypoints/blueprints/backoffice.py:344
+#: src/opendlp/entrypoints/blueprints/backoffice.py:410
 #: src/opendlp/entrypoints/blueprints/gsheets.py:142
 #: src/opendlp/entrypoints/blueprints/gsheets.py:196
 #: src/opendlp/entrypoints/blueprints/gsheets.py:242
@@ -778,17 +771,173 @@ msgstr "A gyűlés oldala  nem elérhető"
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
+#: src/opendlp/entrypoints/blueprints/backoffice.py:113
+#: src/opendlp/entrypoints/blueprints/backoffice.py:171
+#: src/opendlp/entrypoints/blueprints/backoffice.py:237
+#: src/opendlp/entrypoints/blueprints/backoffice.py:340
+#: src/opendlp/entrypoints/blueprints/backoffice.py:406
+#: src/opendlp/entrypoints/blueprints/gsheets.py:136
+#: src/opendlp/entrypoints/blueprints/gsheets.py:190
+#: src/opendlp/entrypoints/blueprints/gsheets.py:236
+#: src/opendlp/entrypoints/blueprints/gsheets.py:433
+#: src/opendlp/entrypoints/blueprints/gsheets.py:519
+#: src/opendlp/entrypoints/blueprints/gsheets.py:764
+#: src/opendlp/entrypoints/blueprints/gsheets.py:818
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1045
+#: src/opendlp/entrypoints/blueprints/main.py:76
+#: src/opendlp/entrypoints/blueprints/main.py:124
+#: src/opendlp/entrypoints/blueprints/main.py:167
+#: src/opendlp/entrypoints/blueprints/main.py:264
+msgid "Assembly not found"
+msgstr "A gyűlés oldala  nem elérhető"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:117
+#, fuzzy
+msgid "An error occurred while loading the assembly"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:145
+#: src/opendlp/entrypoints/blueprints/main.py:239
+#, python-format
+msgid "Assembly '%(title)s' updated successfully"
+msgstr "A '%(title)s' gyűlés sikeresen frissült"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:151
+#: src/opendlp/entrypoints/blueprints/backoffice.py:177
+#: src/opendlp/entrypoints/blueprints/main.py:245
+msgid "You don't have permission to edit this assembly"
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:157
+#: src/opendlp/entrypoints/blueprints/backoffice.py:161
+#: src/opendlp/entrypoints/blueprints/main.py:251
+#: src/opendlp/entrypoints/blueprints/main.py:254
+msgid "An error occurred while updating the assembly"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:246
+#, fuzzy
+msgid "An error occurred while loading assembly data"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:280
+#: src/opendlp/entrypoints/blueprints/gsheets.py:100
+msgid "Google Spreadsheet configuration updated successfully"
+msgstr "Google táblázat beállításai sikeresen frissítve"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:283
+#: src/opendlp/entrypoints/blueprints/gsheets.py:82
+msgid "Google Spreadsheet configuration created successfully"
+msgstr "Google táblázat beállításai sikeresen létrehozva"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:289
+#: src/opendlp/entrypoints/blueprints/gsheets.py:106
+msgid ""
+"Warning: No columns to keep specified. This means the output will only "
+"include participant data columns used for the targets and address "
+"checking. Is this intentional?"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:314
+#: src/opendlp/entrypoints/blueprints/backoffice.py:370
+#: src/opendlp/entrypoints/blueprints/gsheets.py:118
+#: src/opendlp/entrypoints/blueprints/gsheets.py:168
+msgid "You don't have permission to manage Google Spreadsheet for this assembly"
+msgstr ""
+"Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
+"megtekintéséhez"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:318
+#: src/opendlp/entrypoints/blueprints/gsheets.py:124
+msgid "Please check your input and try again"
+msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:321
+#: src/opendlp/entrypoints/blueprints/backoffice.py:349
+#: src/opendlp/entrypoints/blueprints/gsheets.py:129
+msgid "An error occurred while saving the Google Spreadsheet configuration"
+msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:360
 #: src/opendlp/entrypoints/blueprints/gsheets.py:158
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
+#: src/opendlp/entrypoints/blueprints/backoffice.py:366
 #: src/opendlp/entrypoints/blueprints/gsheets.py:162
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázat beállításai nem találhatóak"
 
+#: src/opendlp/entrypoints/blueprints/backoffice.py:375
 #: src/opendlp/entrypoints/blueprints/gsheets.py:172
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:415
+#, fuzzy
+msgid "An error occurred while loading team members"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:463
+#: src/opendlp/entrypoints/blueprints/main.py:321
+#, python-format
+msgid "%(user)s added to assembly with role %(role)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:470
+#: src/opendlp/entrypoints/blueprints/main.py:328
+msgid "User added to assembly successfully"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:472
+msgid "Please select a user and role"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:478
+#, fuzzy, python-format
+msgid "Could not add user to assembly: %(error)s"
+msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:484
+#: src/opendlp/entrypoints/blueprints/main.py:342
+#, fuzzy
+msgid "You don't have permission to add users to this assembly"
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:490
+#: src/opendlp/entrypoints/blueprints/main.py:348
+#, fuzzy
+msgid "An error occurred while adding the user to the assembly"
+msgstr "Hiba történt a gyűlés frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:519
+#: src/opendlp/entrypoints/blueprints/main.py:377
+#, python-format
+msgid "%(user)s removed from assembly"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:523
+#: src/opendlp/entrypoints/blueprints/main.py:381
+msgid "User removed from assembly successfully"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:529
+#: src/opendlp/entrypoints/blueprints/main.py:387
+#, python-format
+msgid "Could not remove user from assembly: %(error)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:535
+#: src/opendlp/entrypoints/blueprints/main.py:393
+#, fuzzy
+msgid "You don't have permission to remove users from this assembly"
+msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:541
+#: src/opendlp/entrypoints/blueprints/main.py:399
+#, fuzzy
+msgid "An error occurred while removing the user from the assembly"
+msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:220
 #: src/opendlp/entrypoints/blueprints/gsheets.py:465
@@ -920,43 +1069,6 @@ msgstr "Az oldal nem elérhető"
 msgid "Unknown task type"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:199
-#, python-format
-msgid "Assembly '%(title)s' created successfully"
-msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
-
-#: src/opendlp/entrypoints/blueprints/main.py:203
-msgid "You don't have permission to create assemblies"
-msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
-
-#: src/opendlp/entrypoints/blueprints/main.py:207
-#: src/opendlp/entrypoints/blueprints/main.py:210
-msgid "An error occurred while creating the assembly"
-msgstr "Hiba történt a gyűlés létrehozásakor"
-
-#: src/opendlp/entrypoints/blueprints/main.py:239
-#, python-format
-msgid "Assembly '%(title)s' updated successfully"
-msgstr "A '%(title)s' gyűlés sikeresen frissült"
-
-#: src/opendlp/entrypoints/blueprints/main.py:245
-msgid "You don't have permission to edit this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
-
-#: src/opendlp/entrypoints/blueprints/main.py:251
-#: src/opendlp/entrypoints/blueprints/main.py:254
-msgid "An error occurred while updating the assembly"
-msgstr "Hiba történt a gyűlés frissítése közben"
-
-#: src/opendlp/entrypoints/blueprints/main.py:321
-#, python-format
-msgid "%(user)s added to assembly with role %(role)s"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/main.py:328
-msgid "User added to assembly successfully"
-msgstr ""
-
 #: src/opendlp/entrypoints/blueprints/main.py:330
 #, fuzzy
 msgid "Please check the form and try again"
@@ -966,40 +1078,6 @@ msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
-
-#: src/opendlp/entrypoints/blueprints/main.py:342
-#, fuzzy
-msgid "You don't have permission to add users to this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
-
-#: src/opendlp/entrypoints/blueprints/main.py:348
-#, fuzzy
-msgid "An error occurred while adding the user to the assembly"
-msgstr "Hiba történt a gyűlés frissítése közben"
-
-#: src/opendlp/entrypoints/blueprints/main.py:377
-#, python-format
-msgid "%(user)s removed from assembly"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/main.py:381
-msgid "User removed from assembly successfully"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/main.py:387
-#, python-format
-msgid "Could not remove user from assembly: %(error)s"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/main.py:393
-#, fuzzy
-msgid "You don't have permission to remove users from this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
-
-#: src/opendlp/entrypoints/blueprints/main.py:399
-#, fuzzy
-msgid "An error occurred while removing the user from the assembly"
-msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/profile.py:57
 #, fuzzy
@@ -1519,36 +1597,44 @@ msgstr "Menü"
 msgid "Close menu"
 msgstr "Menü bezárása"
 
-#: templates/base.html:58 templates/errors/403.html:23
-#: templates/errors/404.html:24 templates/errors/500.html:24
-#: templates/main/create_assembly.html:11 templates/main/dashboard.html:2
-#: templates/main/dashboard.html:7 templates/main/view_assembly_base.html:8
+#: templates/backoffice/assembly_data.html:16
+#: templates/backoffice/assembly_details.html:15
+#: templates/backoffice/assembly_members.html:17
+#: templates/backoffice/base_page.html:16
+#: templates/backoffice/create_assembly.html:14
+#: templates/backoffice/edit_assembly.html:14 templates/base.html:58
+#: templates/errors/403.html:23 templates/errors/404.html:24
+#: templates/errors/500.html:24 templates/main/create_assembly.html:11
+#: templates/main/dashboard.html:2 templates/main/dashboard.html:7
+#: templates/main/view_assembly_base.html:8
 msgid "Dashboard"
 msgstr "Irányító pult"
 
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:10
 #: templates/admin/invites.html:7 templates/admin/user_2fa_audit_log.html:10
 #: templates/admin/user_edit.html:10 templates/admin/user_view.html:10
-#: templates/admin/users.html:7 templates/base.html:62
+#: templates/admin/users.html:7 templates/backoffice/base_page.html:17
+#: templates/base.html:62
 msgid "Site Admin"
 msgstr ""
 
-#: templates/base.html:68 templates/base.html:102
-#: templates/main/support.html:36
+#: templates/backoffice/base_page.html:18 templates/base.html:68
+#: templates/base.html:102 templates/main/support.html:36
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/base.html:71 templates/base.html:105
+#: templates/backoffice/base_page.html:19 templates/base.html:71
+#: templates/base.html:105
 msgid "Help"
 msgstr ""
 
-#: templates/base.html:74 templates/profile/view.html:2
-#: templates/profile/view.html:6
+#: templates/backoffice/base_page.html:22 templates/base.html:74
+#: templates/profile/view.html:2 templates/profile/view.html:6
 #, fuzzy
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/base.html:77
+#: templates/backoffice/base_page.html:24 templates/base.html:77
 msgid "Sign out"
 msgstr "Kilépés"
 
@@ -1563,7 +1649,8 @@ msgid "Sign in"
 msgstr "Jelentkezzen be"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
-#: templates/base.html:120 templates/gsheets/create_config.html:14
+#: templates/backoffice/assembly_form.html:20 templates/base.html:120
+#: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
 msgid "There is a problem"
@@ -1577,7 +1664,8 @@ msgstr "Sikerült"
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/auth/user_data_agreement.html:2 templates/base.html:168
+#: templates/auth/user_data_agreement.html:2
+#: templates/backoffice/components/footer.html:16 templates/base.html:168
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
@@ -1585,7 +1673,7 @@ msgstr "Felhasználói Adatkezelési Megállapodás"
 msgid "OpenDLP Version"
 msgstr ""
 
-#: templates/base.html:176
+#: templates/backoffice/components/footer.html:25 templates/base.html:176
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -1633,7 +1721,10 @@ msgstr ""
 msgid "Manage Invites"
 msgstr ""
 
-#: templates/admin/index.html:30 templates/main/view_assembly_base.html:52
+#: templates/admin/index.html:30 templates/backoffice/assembly_data.html:90
+#: templates/backoffice/assembly_details.html:98
+#: templates/backoffice/assembly_members.html:158
+#: templates/main/view_assembly_base.html:52
 msgid "Back to Dashboard"
 msgstr "Vissza az irányító pulthoz"
 
@@ -1654,6 +1745,8 @@ msgid "Generate a new invite code for user registration"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
 #: templates/admin/invite_create.html:96 templates/admin/user_edit.html:135
+#: templates/backoffice/assembly_data.html:308
+#: templates/backoffice/assembly_form.html:90
 #: templates/gsheets/create_config.html:236
 #: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
@@ -1692,8 +1785,8 @@ msgid "Copy URL"
 msgstr ""
 
 #: templates/admin/invite_view.html:44 templates/admin/invites.html:66
-#: templates/admin/users.html:114 templates/main/view_assembly_members.html:12
-#: templates/profile/view.html:28
+#: templates/admin/users.html:114 templates/backoffice/assembly_members.html:53
+#: templates/main/view_assembly_members.html:12 templates/profile/view.html:28
 #, fuzzy
 msgid "Role"
 msgstr "Szereped/jogosultságod"
@@ -1713,12 +1806,14 @@ msgstr ""
 #: templates/admin/invite_view.html:51 templates/admin/invites.html:85
 #: templates/admin/user_2fa_audit_log.html:65 templates/admin/user_view.html:55
 #: templates/admin/users.html:74 templates/admin/users.html:138
+#: templates/backoffice/assembly_members.html:51
 #: templates/main/view_assembly_members.html:10
 msgid "User"
 msgstr ""
 
 #: templates/admin/invite_view.html:56 templates/admin/invites.html:67
-#: templates/admin/users.html:115 templates/main/view_assembly_data.html:54
+#: templates/admin/users.html:115 templates/backoffice/assembly_details.html:52
+#: templates/main/view_assembly_data.html:54
 #: templates/main/view_assembly_details.html:13
 msgid "Status"
 msgstr "Állapot"
@@ -1831,6 +1926,7 @@ msgid "Code"
 msgstr ""
 
 #: templates/admin/invites.html:68 templates/admin/users.html:117
+#: templates/backoffice/assembly_details.html:80
 #: templates/main/dashboard.html:46
 #: templates/main/view_assembly_details.html:33
 msgid "Created"
@@ -1841,6 +1937,7 @@ msgid "Expires"
 msgstr ""
 
 #: templates/admin/invites.html:70 templates/admin/users.html:118
+#: templates/backoffice/assembly_members.html:55
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #, fuzzy
@@ -1895,6 +1992,10 @@ msgid "Performed By"
 msgstr ""
 
 #: templates/admin/user_2fa_audit_log.html:34
+#: templates/backoffice/assembly_data.html:32
+#: templates/backoffice/assembly_details.html:30
+#: templates/backoffice/assembly_details.html:48
+#: templates/backoffice/assembly_members.html:33
 #: templates/main/view_assembly_base.html:30
 #, fuzzy
 msgid "Details"
@@ -1959,6 +2060,7 @@ msgid "Edit User"
 msgstr "Módosítsa a számot."
 
 #: templates/admin/user_edit.html:20 templates/admin/users.html:163
+#: templates/backoffice/edit_assembly.html:16
 #: templates/main/edit_assembly.html:3
 msgid "Edit"
 msgstr "Szerkesztés"
@@ -1986,8 +2088,9 @@ msgid ""
 "deactivate your own account."
 msgstr ""
 
-#: templates/admin/user_edit.html:133 templates/gsheets/edit_config.html:232
-#: templates/main/edit_assembly.html:80
+#: templates/admin/user_edit.html:133
+#: templates/backoffice/edit_assembly.html:30
+#: templates/gsheets/edit_config.html:232 templates/main/edit_assembly.html:80
 msgid "Save Changes"
 msgstr "Módosítások mentése"
 
@@ -1997,6 +2100,7 @@ msgid "User Details"
 msgstr "Hiba részletei"
 
 #: templates/admin/user_view.html:22 templates/admin/users.html:113
+#: templates/backoffice/assembly_members.html:52
 #: templates/main/view_assembly_members.html:11
 msgid "Email"
 msgstr ""
@@ -2405,6 +2509,400 @@ msgstr ""
 msgid "Back to sign in"
 msgstr "Vissza a közösségi gyűléshez"
 
+#: templates/backoffice/assembly_data.html:11
+#: templates/backoffice/assembly_data.html:18
+#: templates/backoffice/assembly_data.html:33
+#: templates/backoffice/assembly_details.html:31
+#: templates/backoffice/assembly_members.html:34
+msgid "Data"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:27
+#, fuzzy
+msgid "Manage data for this assembly"
+msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
+
+#: templates/backoffice/assembly_data.html:34
+#: templates/backoffice/assembly_details.html:32
+#: templates/backoffice/assembly_members.html:35
+#: templates/gsheets/select.html:2 templates/gsheets/select.html:8
+#: templates/gsheets/select.html:11 templates/main/view_assembly_data.html:13
+#: templates/main/view_assembly_data.html:23
+msgid "Selection"
+msgstr "Kiválasztás"
+
+#: templates/backoffice/assembly_data.html:35
+#: templates/backoffice/assembly_details.html:33
+#: templates/backoffice/assembly_members.html:12
+#: templates/backoffice/assembly_members.html:19
+#: templates/backoffice/assembly_members.html:36
+#: templates/backoffice/assembly_members.html:43
+#: templates/main/view_assembly_base.html:41
+#: templates/main/view_assembly_members.html:2
+#: templates/main/view_assembly_members.html:4
+#, fuzzy
+msgid "Team Members"
+msgstr "Maradjak bejelentkezve"
+
+#: templates/backoffice/assembly_data.html:37
+#: templates/backoffice/assembly_details.html:35
+#: templates/backoffice/assembly_members.html:38
+#: templates/main/view_assembly_base.html:26
+#, fuzzy
+msgid "Assembly sections"
+msgstr "A gyűlés fő témája"
+
+#: templates/backoffice/assembly_data.html:48
+#, fuzzy
+msgid "Data Source"
+msgstr "További beállítások"
+
+#: templates/backoffice/assembly_data.html:52
+msgid ""
+"Data source is locked because a configuration already exists. Delete the "
+"configuration to change the data source."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:54
+msgid "Choose how you want to import participant data for this assembly."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:73
+msgid "Select Data Source"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:74
+#: templates/main/view_assembly_data.html:4
+#, fuzzy
+msgid "Google Spreadsheet"
+msgstr "Google Táblázat teljes linkje"
+
+#: templates/backoffice/assembly_data.html:75
+msgid "CSV file"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:103
+#: templates/gsheets/components/view_config_collapsed.html:4
+msgid "Google Spreadsheet Configuration"
+msgstr "Google táblázat beállításai"
+
+#: templates/backoffice/assembly_data.html:106
+#, fuzzy
+msgid "Edit Configuration"
+msgstr "Google Táblázat beállításainak eltávolítása"
+
+#: templates/backoffice/assembly_data.html:108
+#: templates/backoffice/assembly_data.html:317
+#, fuzzy
+msgid ""
+"Are you sure you want to delete this Google Spreadsheet configuration? "
+"This action cannot be undone."
+msgstr ""
+"Biztos, hogy el akarja távolítani ehhez a Google Táblázathoz tartozó "
+"beállításokat? Ez a művelet nem vonható vissza."
+
+#: templates/backoffice/assembly_data.html:110
+#, fuzzy
+msgid "Delete"
+msgstr "Kiválasztás"
+
+#: templates/backoffice/assembly_data.html:118
+#, fuzzy
+msgid ""
+"Configure a Google Spreadsheet to import and manage participant data for "
+"this assembly."
+msgstr "Frissítse a közösségi gyűléshez tartozó Google Táblázat beállításait."
+
+#: templates/backoffice/assembly_data.html:130
+#: templates/gsheets/components/view_config.html:3
+msgid "Spreadsheet URL"
+msgstr "Google Táblázat teljes linkje"
+
+#: templates/backoffice/assembly_data.html:134
+#, fuzzy
+msgid "Enter the full URL of your Google Spreadsheet."
+msgstr "Adja meg a Google táblázat beállításait"
+
+#: templates/backoffice/assembly_data.html:134
+#: templates/gsheets/components/view_config.html:11
+#: templates/gsheets/create_config.html:46
+#: templates/gsheets/edit_config.html:44
+msgid "Ensure it is shared with:"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:138
+#: templates/gsheets/components/view_config.html:8
+msgid "View Spreadsheet"
+msgstr "Táblázat megtekintése"
+
+#: templates/backoffice/assembly_data.html:144
+#: templates/gsheets/components/view_config.html:21
+#: templates/gsheets/create_config.html:60
+#: templates/gsheets/edit_config.html:58
+msgid "Initial/Test Selection"
+msgstr "Kezdeti/Teszt kiválasztás"
+
+#: templates/backoffice/assembly_data.html:146
+msgid "Configure the tabs used for the initial selection process."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:151
+#: templates/backoffice/assembly_data.html:179
+#: templates/gsheets/components/view_config.html:27
+msgid "Respondents Tab"
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/backoffice/assembly_data.html:153
+#: templates/backoffice/assembly_data.html:181
+#, fuzzy
+msgid "e.g., Respondents"
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/backoffice/assembly_data.html:154
+msgid "Tab containing respondent data for selection."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:160
+#: templates/backoffice/assembly_data.html:188
+#: templates/gsheets/components/view_config.html:32
+msgid "Categories Tab"
+msgstr "Kategóriákat tartalmazó lapful neve"
+
+#: templates/backoffice/assembly_data.html:162
+#: templates/backoffice/assembly_data.html:190
+#, fuzzy
+msgid "e.g., Categories"
+msgstr "Kategóriákat tartalmazó lapful neve"
+
+#: templates/backoffice/assembly_data.html:163
+msgid "Tab containing selection categories/targets."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:172
+#: templates/gsheets/components/view_config.html:22
+#: templates/gsheets/create_config.html:93
+#: templates/gsheets/edit_config.html:91
+msgid "Replacement"
+msgstr "Kieső emberek pótlása új kiválasztással"
+
+#: templates/backoffice/assembly_data.html:174
+#, fuzzy
+msgid "Configure the tabs used for replacement selections."
+msgstr "Kieső emberek pótlása új kiválasztással"
+
+#: templates/backoffice/assembly_data.html:182
+msgid "Tab containing respondent data for replacements."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:191
+msgid "Tab containing replacement categories/targets."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:198
+#, fuzzy
+msgid "Already Selected Tab"
+msgstr "Táblázat lapfülei"
+
+#: templates/backoffice/assembly_data.html:200
+msgid "e.g., Selected"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:201
+msgid ""
+"Tab containing previously selected participants (for exclusion during "
+"replacement)."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:209
+#, fuzzy
+msgid "Options"
+msgstr "Kiválasztás"
+
+#: templates/backoffice/assembly_data.html:214
+msgid "Prevent selecting multiple participants from the same address."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:221
+msgid "Automatically generate a tab with remaining (unselected) participants."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:239
+msgid "Choose a preset or configure custom column settings."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:250
+msgid "e.g., ID"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:251
+#: templates/backoffice/assembly_data.html:283
+msgid "Column name containing unique participant identifiers."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:259
+msgid "e.g., Street, City, PostCode"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:260
+#: templates/backoffice/assembly_data.html:290
+msgid "Comma-separated column names used for address matching."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:268
+msgid "e.g., Name, Email, Phone"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:269
+#: templates/backoffice/assembly_data.html:297
+msgid "Comma-separated column names to include in output."
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:278
+#, fuzzy
+msgid "Column Configuration"
+msgstr "Beállítások mentése"
+
+#: templates/backoffice/assembly_data.html:306
+#: templates/gsheets/create_config.html:234
+msgid "Save Configuration"
+msgstr "Beállítások mentése"
+
+#: templates/backoffice/assembly_data.html:319
+#, fuzzy
+msgid "Delete Configuration"
+msgstr "Google Táblázat beállításainak eltávolítása"
+
+#: templates/backoffice/assembly_data.html:331
+msgid "CSV File"
+msgstr ""
+
+#: templates/backoffice/assembly_data.html:333
+msgid "Upload a CSV file to import participant data."
+msgstr ""
+
+#: templates/backoffice/assembly_details.html:25
+#, fuzzy
+msgid "Assembly Details"
+msgstr "Közösségi gyűlés"
+
+#: templates/backoffice/assembly_details.html:88
+#: templates/main/view_assembly_details.html:39
+msgid "Last Updated"
+msgstr "Utoljára módosítva"
+
+#: templates/backoffice/assembly_details.html:99
+#: templates/backoffice/edit_assembly.html:9
+#: templates/backoffice/edit_assembly.html:23
+#: templates/main/edit_assembly.html:2 templates/main/edit_assembly.html:23
+#: templates/main/view_assembly_details.html:48
+msgid "Edit Assembly"
+msgstr "Közösségi gyűlés szerkesztése"
+
+#: templates/backoffice/assembly_members.html:28
+#, fuzzy
+msgid "Manage team members for this assembly"
+msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
+
+#: templates/backoffice/assembly_members.html:75
+#: templates/main/view_assembly_members.html:30
+#, python-format
+msgid "Are you sure you want to remove %(user)s from this assembly?"
+msgstr ""
+
+#: templates/backoffice/assembly_members.html:81
+#: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
+msgid "Remove"
+msgstr ""
+
+#: templates/backoffice/assembly_members.html:93
+#, fuzzy
+msgid "No team members have been added to this assembly yet."
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/backoffice/assembly_members.html:94
+#, fuzzy
+msgid "Admin users can still manage this assembly."
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+
+#: templates/backoffice/assembly_members.html:102
+#: templates/backoffice/assembly_members.html:150
+#: templates/main/view_assembly_members.html:48
+#: templates/main/view_assembly_members.html:95
+#, fuzzy
+msgid "Add User to Assembly"
+msgstr "Vissza a közösségi gyűléshez"
+
+#: templates/backoffice/assembly_members.html:114
+#: templates/main/view_assembly_members.html:61
+msgid "Type to search by email or name..."
+msgstr ""
+
+#: templates/backoffice/create_assembly.html:9
+#: templates/backoffice/create_assembly.html:15
+#: templates/backoffice/create_assembly.html:22
+#: templates/backoffice/create_assembly.html:29
+#: templates/main/create_assembly.html:2 templates/main/create_assembly.html:13
+#: templates/main/create_assembly.html:34
+#: templates/main/create_assembly.html:95 templates/main/dashboard.html:24
+msgid "Create Assembly"
+msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/backoffice/create_assembly.html:24
+#, fuzzy
+msgid "Set up a new citizens' assembly."
+msgstr "Közösségi gyűlések"
+
+#: templates/backoffice/dashboard.html:18 templates/main/dashboard.html:17
+msgid "Your Assemblies"
+msgstr "Gyűléseid"
+
+#: templates/backoffice/dashboard.html:19
+#, fuzzy
+msgid "Create New Assembly"
+msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/backoffice/dashboard.html:41 templates/main/dashboard.html:67
+msgid "No assemblies yet"
+msgstr "Még nincsenek gyűlések"
+
+#: templates/backoffice/dashboard.html:42
+#, fuzzy
+msgid "Create your first citizens' assembly to get started."
+msgstr ""
+"Hozzon létre egy új  közösségi gyűlést a kiválasztási és mérlegelési "
+"folyamat megkezdésére."
+
+#: templates/backoffice/dashboard.html:43
+#, fuzzy
+msgid "Create Your First Assembly"
+msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/backoffice/edit_assembly.html:25
+#: templates/main/edit_assembly.html:24
+msgid "Update the details for this citizens' assembly."
+msgstr "Frissítse a közösségi gyűlés részleteit."
+
+#: templates/backoffice/components/alert.html:74
+msgid "Dismiss"
+msgstr ""
+
+#: templates/backoffice/components/footer.html:19
+msgid "Version"
+msgstr ""
+
+#: templates/backoffice/components/input.html:277
+msgid "Yes"
+msgstr ""
+
+#: templates/backoffice/components/input.html:277
+msgid "No"
+msgstr ""
+
+#: templates/backoffice/components/search_dropdown.html:109
+#, fuzzy
+msgid "No results found"
+msgstr "Az oldal nem elérhető"
+
 #: templates/emails/assembly_role_assigned.html:6
 #, fuzzy
 msgid "Added to Assembly - OpenDLP"
@@ -2699,28 +3197,6 @@ msgstr ""
 "Állítsa be a Google Táblázat integrációt ehhez a gyűléshez a válaszadók "
 "adatainak és a kiválasztási eredményeknek a kezelésére."
 
-#: templates/gsheets/components/view_config.html:11
-#: templates/gsheets/create_config.html:46
-#: templates/gsheets/edit_config.html:44
-msgid "Ensure it is shared with:"
-msgstr ""
-
-#: templates/gsheets/components/view_config.html:21
-#: templates/gsheets/create_config.html:60
-#: templates/gsheets/edit_config.html:58
-msgid "Initial/Test Selection"
-msgstr "Kezdeti/Teszt kiválasztás"
-
-#: templates/gsheets/components/view_config.html:22
-#: templates/gsheets/create_config.html:93
-#: templates/gsheets/edit_config.html:91
-msgid "Replacement"
-msgstr "Kieső emberek pótlása új kiválasztással"
-
-#: templates/gsheets/create_config.html:234
-msgid "Save Configuration"
-msgstr "Beállítások mentése"
-
 #: templates/gsheets/edit_config.html:2 templates/gsheets/edit_config.html:29
 msgid "Edit Google Spreadsheet Configuration"
 msgstr "Módosítsa a közösségi gyűléshez tartozó Google Táblázat beállításait."
@@ -2894,12 +3370,6 @@ msgstr ""
 msgid "Run Replacements"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/gsheets/select.html:2 templates/gsheets/select.html:8
-#: templates/gsheets/select.html:11 templates/main/view_assembly_data.html:13
-#: templates/main/view_assembly_data.html:23
-msgid "Selection"
-msgstr "Kiválasztás"
-
 #: templates/gsheets/select.html:13
 msgid ""
 "Run the democratic lottery selection for this assembly using Google "
@@ -3006,25 +3476,9 @@ msgstr "Kész"
 msgid "This task was cancelled."
 msgstr ""
 
-#: templates/gsheets/components/view_config.html:3
-msgid "Spreadsheet URL"
-msgstr "Google Táblázat teljes linkje"
-
-#: templates/gsheets/components/view_config.html:8
-msgid "View Spreadsheet"
-msgstr "Táblázat megtekintése"
-
 #: templates/gsheets/components/view_config.html:20
 msgid "Spreadsheet Tabs"
 msgstr "Táblázat lapfülei"
-
-#: templates/gsheets/components/view_config.html:27
-msgid "Respondents Tab"
-msgstr "Válaszadókat tartalmazó lapful neve"
-
-#: templates/gsheets/components/view_config.html:32
-msgid "Categories Tab"
-msgstr "Kategóriákat tartalmazó lapful neve"
 
 #: templates/gsheets/components/view_config.html:37
 msgid "Selected Tab"
@@ -3048,16 +3502,6 @@ msgstr "További beállítások"
 msgid "Change Configuration"
 msgstr "Beállítások megváltoztatása"
 
-#: templates/gsheets/components/view_config_collapsed.html:4
-msgid "Google Spreadsheet Configuration"
-msgstr "Google táblázat beállításai"
-
-#: templates/main/create_assembly.html:2 templates/main/create_assembly.html:13
-#: templates/main/create_assembly.html:34
-#: templates/main/create_assembly.html:95 templates/main/dashboard.html:24
-msgid "Create Assembly"
-msgstr "Hozzon létre közösségi gyűlést"
-
 #: templates/main/create_assembly.html:35
 #, fuzzy
 msgid "Create a new citizens' assembly to begin the democratic lottery process."
@@ -3069,17 +3513,9 @@ msgstr ""
 msgid "Welcome back"
 msgstr "Üdvözlünk újra az OpenDLP-ben"
 
-#: templates/main/dashboard.html:17
-msgid "Your Assemblies"
-msgstr "Gyűléseid"
-
 #: templates/main/dashboard.html:53
 msgid "Starts"
 msgstr "Kezdés dátuma"
-
-#: templates/main/dashboard.html:67
-msgid "No assemblies yet"
-msgstr "Még nincsenek gyűlések"
 
 #: templates/main/dashboard.html:68
 msgid "You don't have access to any assemblies at the moment."
@@ -3089,15 +3525,6 @@ msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 #, python-format
 msgid "As a %(role)s, you can create new assemblies."
 msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
-
-#: templates/main/edit_assembly.html:2 templates/main/edit_assembly.html:23
-#: templates/main/view_assembly_details.html:48
-msgid "Edit Assembly"
-msgstr "Közösségi gyűlés szerkesztése"
-
-#: templates/main/edit_assembly.html:24
-msgid "Update the details for this citizens' assembly."
-msgstr "Frissítse a közösségi gyűlés részleteit."
 
 #: templates/main/index.html:2
 msgid "Welcome"
@@ -3266,23 +3693,6 @@ msgstr ""
 msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
-#: templates/main/view_assembly_base.html:26
-#, fuzzy
-msgid "Assembly sections"
-msgstr "A gyűlés fő témája"
-
-#: templates/main/view_assembly_base.html:41
-#: templates/main/view_assembly_members.html:2
-#: templates/main/view_assembly_members.html:4
-#, fuzzy
-msgid "Team Members"
-msgstr "Maradjak bejelentkezve"
-
-#: templates/main/view_assembly_data.html:4
-#, fuzzy
-msgid "Google Spreadsheet"
-msgstr "Google Táblázat teljes linkje"
-
 #: templates/main/view_assembly_data.html:31
 #, fuzzy
 msgid "To enable selection and replacement:"
@@ -3349,33 +3759,10 @@ msgstr ""
 msgid "No selection runs have been performed yet."
 msgstr ""
 
-#: templates/main/view_assembly_details.html:39
-msgid "Last Updated"
-msgstr "Utoljára módosítva"
-
-#: templates/main/view_assembly_members.html:30
-#, python-format
-msgid "Are you sure you want to remove %(user)s from this assembly?"
-msgstr ""
-
-#: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
-msgid "Remove"
-msgstr ""
-
 #: templates/main/view_assembly_members.html:42
 msgid ""
 "No team members have been added to this assembly yet. Admin users can "
 "still manage this assembly."
-msgstr ""
-
-#: templates/main/view_assembly_members.html:48
-#: templates/main/view_assembly_members.html:95
-#, fuzzy
-msgid "Add User to Assembly"
-msgstr "Vissza a közösségi gyűléshez"
-
-#: templates/main/view_assembly_members.html:61
-msgid "Type to search by email or name..."
 msgstr ""
 
 #: templates/profile/2fa_backup_codes.html:2
@@ -4747,4 +5134,1947 @@ msgstr ""
 #~ "Unknown selection algorithm %(algorithm)r, "
 #~ "must be either 'legacy', 'leximin', "
 #~ "'maximin', or 'nash'."
+#~ msgstr ""
+
+#~ msgid "{editor}: Editing failed"
+#~ msgstr ""
+
+#~ msgid "{editor}: Editing failed: {e}"
+#~ msgstr ""
+
+#~ msgid "{text} {deprecated_message}"
+#~ msgstr ""
+
+#~ msgid "Got unexpected extra argument ({args})"
+#~ msgid_plural "Got unexpected extra arguments ({args})"
+#~ msgstr[0] ""
+
+#~ msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+#~ msgstr ""
+
+#~ msgid "Aborted!"
+#~ msgstr ""
+
+#~ msgid "Commands"
+#~ msgstr ""
+
+#~ msgid "Missing command."
+#~ msgstr ""
+
+#~ msgid "No such command {name!r}."
+#~ msgstr ""
+
+#~ msgid "Value must be an iterable."
+#~ msgstr ""
+
+#~ msgid "Takes {nargs} values but 1 was given."
+#~ msgid_plural "Takes {nargs} values but {len} were given."
+#~ msgstr[0] ""
+
+#~ msgid ""
+#~ "DeprecationWarning: The {param_type} {name!r} "
+#~ "is deprecated.{extra_message}"
+#~ msgstr ""
+
+#~ msgid "env var: {var}"
+#~ msgstr ""
+
+#~ msgid "default: {default}"
+#~ msgstr ""
+
+#~ msgid "required"
+#~ msgstr ""
+
+#~ msgid "(dynamic)"
+#~ msgstr ""
+
+#~ msgid "%(prog)s, version %(version)s"
+#~ msgstr ""
+
+#~ msgid "Show the version and exit."
+#~ msgstr ""
+
+#~ msgid "Show this message and exit."
+#~ msgstr ""
+
+#~ msgid "Error: {message}"
+#~ msgstr "Jelentések a folyamatról"
+
+#~ msgid "Try '{command} {option}' for help."
+#~ msgstr ""
+
+#~ msgid "Invalid value: {message}"
+#~ msgstr ""
+
+#~ msgid "Invalid value for {param_hint}: {message}"
+#~ msgstr ""
+
+#~ msgid "Missing argument"
+#~ msgstr ""
+
+#~ msgid "Missing option"
+#~ msgstr ""
+
+#~ msgid "Missing parameter"
+#~ msgstr ""
+
+#~ msgid "Missing {param_type}"
+#~ msgstr ""
+
+#~ msgid "Missing parameter: {param_name}"
+#~ msgstr ""
+
+#~ msgid "No such option: {name}"
+#~ msgstr ""
+
+#~ msgid "Did you mean {possibility}?"
+#~ msgid_plural "(Possible options: {possibilities})"
+#~ msgstr[0] ""
+
+#~ msgid "unknown error"
+#~ msgstr ""
+
+#~ msgid "Could not open file {filename!r}: {message}"
+#~ msgstr ""
+
+#~ msgid "Usage:"
+#~ msgstr ""
+
+#~ msgid "Argument {name!r} takes {nargs} values."
+#~ msgstr ""
+
+#~ msgid "Option {name!r} does not take a value."
+#~ msgstr ""
+
+#~ msgid "Option {name!r} requires an argument."
+#~ msgid_plural "Option {name!r} requires {nargs} arguments."
+#~ msgstr[0] ""
+
+#~ msgid "Shell completion is not supported for Bash versions older than 4.4."
+#~ msgstr ""
+
+#~ msgid "Couldn't detect Bash version, shell completion is not supported."
+#~ msgstr ""
+
+#~ msgid "Repeat for confirmation"
+#~ msgstr "Google Táblázat beállításainak eltávolítása"
+
+#~ msgid "Error: The value you entered was invalid."
+#~ msgstr ""
+
+#~ msgid "Error: {e.message}"
+#~ msgstr "Jelentések a folyamatról"
+
+#~ msgid "Error: The two entered values do not match."
+#~ msgstr ""
+
+#~ msgid "Error: invalid input"
+#~ msgstr ""
+
+#~ msgid "Press any key to continue..."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Choose from:\n"
+#~ "\t{choices}"
+#~ msgstr ""
+
+#~ msgid "{value!r} is not {choice}."
+#~ msgid_plural "{value!r} is not one of {choices}."
+#~ msgstr[0] ""
+
+#~ msgid "{value!r} does not match the format {format}."
+#~ msgid_plural "{value!r} does not match the formats {formats}."
+#~ msgstr[0] ""
+
+#~ msgid "{value!r} is not a valid {number_type}."
+#~ msgstr ""
+
+#~ msgid "{value} is not in the range {range}."
+#~ msgstr ""
+
+#~ msgid "{value!r} is not a valid boolean. Recognized values: {states}"
+#~ msgstr ""
+
+#~ msgid "{value!r} is not a valid UUID."
+#~ msgstr ""
+
+#~ msgid "file"
+#~ msgstr ""
+
+#~ msgid "directory"
+#~ msgstr ""
+
+#~ msgid "path"
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} does not exist."
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} is a file."
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} is a directory."
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} is not readable."
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} is not writable."
+#~ msgstr ""
+
+#~ msgid "{name} {filename!r} is not executable."
+#~ msgstr ""
+
+#~ msgid "{len_type} values are required, but {len_value} was given."
+#~ msgid_plural "{len_type} values are required, but {len_value} were given."
+#~ msgstr[0] ""
+
+#~ msgid "Successfully deleted %(count)d %(items)s."
+#~ msgstr ""
+
+#~ msgid "Cannot delete %(name)s"
+#~ msgstr ""
+
+#~ msgid "Delete multiple objects"
+#~ msgstr ""
+
+#~ msgid "Administration"
+#~ msgstr "Csapat beállítás"
+
+#~ msgid "All"
+#~ msgstr ""
+
+#~ msgid "Any date"
+#~ msgstr "Utoljára módosítva"
+
+#~ msgid "Today"
+#~ msgstr ""
+
+#~ msgid "Past 7 days"
+#~ msgstr ""
+
+#~ msgid "This month"
+#~ msgstr ""
+
+#~ msgid "This year"
+#~ msgstr ""
+
+#~ msgid "No date"
+#~ msgstr ""
+
+#~ msgid "Has date"
+#~ msgstr "Utoljára módosítva"
+
+#~ msgid "Empty"
+#~ msgstr ""
+
+#~ msgid "Not empty"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Please enter the correct %(username)s "
+#~ "and password for a staff account. "
+#~ "Note that both fields may be "
+#~ "case-sensitive."
+#~ msgstr ""
+
+#~ msgid "Action:"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "Add another %(verbose_name)s"
+#~ msgstr ""
+
+#~ msgid "Addition"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "Change"
+#~ msgstr "Módosítások mentése"
+
+#~ msgid "Deletion"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "action time"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "user"
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid "content type"
+#~ msgstr ""
+
+#~ msgid "object id"
+#~ msgstr ""
+
+#~ msgid "object repr"
+#~ msgstr ""
+
+#~ msgid "action flag"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "change message"
+#~ msgstr "Jelentések a folyamatról"
+
+#~ msgid "log entry"
+#~ msgstr ""
+
+#~ msgid "log entries"
+#~ msgstr ""
+
+#~ msgid "Added “%(object)s”."
+#~ msgstr ""
+
+#~ msgid "Changed “%(object)s” — %(changes)s"
+#~ msgstr ""
+
+#~ msgid "Deleted “%(object)s.”"
+#~ msgstr ""
+
+#~ msgid "LogEntry Object"
+#~ msgstr ""
+
+#~ msgid "addedname"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "Added {name} “{object}”."
+#~ msgstr ""
+
+#~ msgid "Added."
+#~ msgstr ""
+
+#~ msgid "and"
+#~ msgstr ""
+
+#~ msgid "changedname"
+#~ msgstr ""
+
+#~ msgid "Changed {fields} for {name} “{object}”."
+#~ msgstr ""
+
+#~ msgid "Changed {fields}."
+#~ msgstr ""
+
+#~ msgid "deletedname"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "Deleted {name} “{object}”."
+#~ msgstr ""
+
+#~ msgid "No fields changed."
+#~ msgstr ""
+
+#~ msgid "Hold down “Control”, or “Command” on a Mac, to select more than one."
+#~ msgstr ""
+
+#~ msgid "Select this object for an action - {}"
+#~ msgstr ""
+
+#~ msgid "The {name} “{obj}” was added successfully."
+#~ msgstr ""
+
+#~ msgid "You may edit it again below."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The {name} “{obj}” was added "
+#~ "successfully. You may add another {name}"
+#~ " below."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The {name} “{obj}” was changed "
+#~ "successfully. You may edit it again "
+#~ "below."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The {name} “{obj}” was changed "
+#~ "successfully. You may add another {name}"
+#~ " below."
+#~ msgstr ""
+
+#~ msgid "The {name} “{obj}” was changed successfully."
+#~ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid ""
+#~ "Items must be selected in order to"
+#~ " perform actions on them. No items"
+#~ " have been changed."
+#~ msgstr ""
+
+#~ msgid "No action selected."
+#~ msgstr "Kiválasztandó emberek száma"
+
+#~ msgid "The %(name)s “%(obj)s” was deleted successfully."
+#~ msgstr "Google táblázat beállításai sikeresen frissítve"
+
+#~ msgid "%(name)s with ID “%(key)s” doesn’t exist. Perhaps it was deleted?"
+#~ msgstr ""
+
+#~ msgid "Add %s"
+#~ msgstr ""
+
+#~ msgid "Change %s"
+#~ msgstr "Módosítások mentése"
+
+#~ msgid "View %s"
+#~ msgstr "Meghívó kód"
+
+#~ msgid "Database error"
+#~ msgstr "Szerver hiba"
+
+#~ msgid "%(count)s %(name)s was changed successfully."
+#~ msgid_plural "%(count)s %(name)s were changed successfully."
+#~ msgstr[0] "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid "%(total_count)s selected"
+#~ msgid_plural "All %(total_count)s selected"
+#~ msgstr[0] ""
+
+#~ msgid "0 of %(cnt)s selected"
+#~ msgstr ""
+
+#~ msgid "Change history: %s"
+#~ msgstr "Új jelszó"
+
+#~ msgid "%(class_name)s %(instance)s"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Deleting %(class_name)s %(instance)s would "
+#~ "require deleting the following protected "
+#~ "related objects: %(related_objects)s"
+#~ msgstr ""
+
+#~ msgid "Log in"
+#~ msgstr "Bejelentkezés"
+
+#~ msgid "%(app)s administration"
+#~ msgstr "Csapat beállítás"
+
+#~ msgid "Date:"
+#~ msgstr ""
+
+#~ msgid "Time:"
+#~ msgstr ""
+
+#~ msgid "Lookup"
+#~ msgstr ""
+
+#~ msgid "Currently:"
+#~ msgstr ""
+
+#~ msgid "Change:"
+#~ msgstr "Módosítások mentése"
+
+#~ msgid "Select all objects on this page for an action"
+#~ msgstr ""
+
+#~ msgid "All dates"
+#~ msgstr "Feladat állapota"
+
+#~ msgid "Select %s"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "Select %s to change"
+#~ msgstr ""
+
+#~ msgid "Select %s to view"
+#~ msgstr ""
+
+#~ msgid "Administrative Documentation"
+#~ msgstr ""
+
+#~ msgid "tag:"
+#~ msgstr ""
+
+#~ msgid "filter:"
+#~ msgstr ""
+
+#~ msgid "view:"
+#~ msgstr ""
+
+#~ msgid "App %(app_label)r not found"
+#~ msgstr "Az oldal nem elérhető"
+
+#~ msgid "Model %(model_name)r not found in app %(app_label)r"
+#~ msgstr ""
+
+#~ msgid "model:"
+#~ msgstr ""
+
+#~ msgid "the related `%(app_label)s.%(data_type)s` object"
+#~ msgstr ""
+
+#~ msgid "related `%(app_label)s.%(object_name)s` objects"
+#~ msgstr ""
+
+#~ msgid "all %s"
+#~ msgstr ""
+
+#~ msgid "number of %s"
+#~ msgstr "Kiválasztandó emberek száma"
+
+#~ msgid "%s does not appear to be a urlpattern object"
+#~ msgstr ""
+
+#~ msgid "Personal info"
+#~ msgstr ""
+
+#~ msgid "Permissions"
+#~ msgstr "Nincsenek megfelelő jogosultságok"
+
+#~ msgid "Important dates"
+#~ msgstr "Fontos"
+
+#~ msgid "%(name)s object with primary key %(key)r does not exist."
+#~ msgstr ""
+
+#~ msgid "Conflicting form data submitted. Please try again."
+#~ msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#~ msgid "Password changed successfully."
+#~ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid "Password-based authentication was disabled."
+#~ msgstr ""
+
+#~ msgid "Change password: %s"
+#~ msgstr "Új jelszó"
+
+#~ msgid "Set password: %s"
+#~ msgstr "Új jelszó"
+
+#~ msgid "Authentication and Authorization"
+#~ msgstr ""
+
+#~ msgid "password"
+#~ msgstr "Jelszó"
+
+#~ msgid "last login"
+#~ msgstr "Bejelentkezés"
+
+#~ msgid "The two password fields didn’t match."
+#~ msgstr ""
+
+#~ msgid "Password confirmation"
+#~ msgstr "Beállítások mentése"
+
+#~ msgid "Enter the same password as before, for verification."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Whether the user will be able to"
+#~ " authenticate using a password or "
+#~ "not. If disabled, they may still "
+#~ "be able to authenticate using other "
+#~ "backends, such as Single Sign-On "
+#~ "or LDAP."
+#~ msgstr ""
+
+#~ msgid "Password-based authentication"
+#~ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid ""
+#~ "Raw passwords are not stored, so "
+#~ "there is no way to see the "
+#~ "user’s password."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Enable password-based authentication for "
+#~ "this user by setting a password."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Please enter a correct %(username)s and"
+#~ " password. Note that both fields may"
+#~ " be case-sensitive."
+#~ msgstr ""
+
+#~ msgid "This account is inactive."
+#~ msgstr ""
+
+#~ msgid "New password"
+#~ msgstr "Új jelszó"
+
+#~ msgid "New password confirmation"
+#~ msgstr "Google Táblázat beállításainak eltávolítása"
+
+#~ msgid "Your old password was entered incorrectly. Please enter it again."
+#~ msgstr ""
+
+#~ msgid "Old password"
+#~ msgstr "Jelszó"
+
+#~ msgid "algorithm"
+#~ msgstr ""
+
+#~ msgid "iterations"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "salt"
+#~ msgstr ""
+
+#~ msgid "hash"
+#~ msgstr ""
+
+#~ msgid "variety"
+#~ msgstr ""
+
+#~ msgid "version"
+#~ msgstr ""
+
+#~ msgid "memory cost"
+#~ msgstr ""
+
+#~ msgid "time cost"
+#~ msgstr "Hozzon létre fiókot"
+
+#~ msgid "parallelism"
+#~ msgstr ""
+
+#~ msgid "work factor"
+#~ msgstr ""
+
+#~ msgid "checksum"
+#~ msgstr ""
+
+#~ msgid "block size"
+#~ msgstr ""
+
+#~ msgid "name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "codename"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "permission"
+#~ msgstr ""
+
+#~ msgid "permissions"
+#~ msgstr "Nincsenek megfelelő jogosultságok"
+
+#~ msgid "group"
+#~ msgstr ""
+
+#~ msgid "groups"
+#~ msgstr ""
+
+#~ msgid "superuser status"
+#~ msgstr "Feladat állapota"
+
+#~ msgid ""
+#~ "Designates that this user has all "
+#~ "permissions without explicitly assigning them."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The groups this user belongs to. A"
+#~ " user will get all permissions "
+#~ "granted to each of their groups."
+#~ msgstr ""
+
+#~ msgid "user permissions"
+#~ msgstr "Nincsenek megfelelő jogosultságok"
+
+#~ msgid "Specific permissions for this user."
+#~ msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
+
+#~ msgid "username"
+#~ msgstr "Felhasználói Adatkezelési Megállapodás"
+
+#~ msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+#~ msgstr ""
+
+#~ msgid "A user with that username already exists."
+#~ msgstr "A(z) %(username)s felhasználónévvel már létezik felhasználó"
+
+#~ msgid "first name"
+#~ msgstr "Keresztnév"
+
+#~ msgid "last name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "email address"
+#~ msgstr "Email cím"
+
+#~ msgid "staff status"
+#~ msgstr "Állapot"
+
+#~ msgid "Designates whether the user can log into this admin site."
+#~ msgstr ""
+
+#~ msgid "active"
+#~ msgstr "Aktív gyűlések"
+
+#~ msgid ""
+#~ "Designates whether this user should be"
+#~ " treated as active. Unselect this "
+#~ "instead of deleting accounts."
+#~ msgstr ""
+
+#~ msgid "date joined"
+#~ msgstr ""
+
+#~ msgid "users"
+#~ msgstr ""
+
+#~ msgid "This password is too short. It must contain at least %d character."
+#~ msgid_plural "This password is too short. It must contain at least %d characters."
+#~ msgstr[0] ""
+
+#~ msgid "Your password must contain at least %(min_length)d character."
+#~ msgid_plural "Your password must contain at least %(min_length)d characters."
+#~ msgstr[0] ""
+
+#~ msgid "The password is too similar to the %(verbose_name)s."
+#~ msgstr "A jelszó túl gyenge: %(error)s"
+
+#~ msgid "Your password can’t be too similar to your other personal information."
+#~ msgstr ""
+
+#~ msgid "This password is too common."
+#~ msgstr ""
+
+#~ msgid "Your password can’t be a commonly used password."
+#~ msgstr ""
+
+#~ msgid "This password is entirely numeric."
+#~ msgstr ""
+
+#~ msgid "Your password can’t be entirely numeric."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Enter a valid username. This value "
+#~ "may contain only unaccented lowercase "
+#~ "a-z and uppercase A-Z letters, numbers,"
+#~ " and @/./+/-/_ characters."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Enter a valid username. This value "
+#~ "may contain only letters, numbers, and"
+#~ " @/./+/-/_ characters."
+#~ msgstr ""
+
+#~ msgid "Logged out"
+#~ msgstr "Google Táblázat teljes linkje"
+
+#~ msgid "Password reset"
+#~ msgstr "Új jelszó"
+
+#~ msgid "Password reset sent"
+#~ msgstr "Új jelszó"
+
+#~ msgid "Enter new password"
+#~ msgstr "Új jelszó"
+
+#~ msgid "Password reset unsuccessful"
+#~ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid "Password reset complete"
+#~ msgstr "Érvénytelen e-mail cím vagy jelszó"
+
+#~ msgid "Password change"
+#~ msgstr "Jelszó"
+
+#~ msgid "Password change successful"
+#~ msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
+
+#~ msgid "No password set."
+#~ msgstr "Új jelszó"
+
+#~ msgid "Invalid password format or unknown hashing algorithm."
+#~ msgstr ""
+
+#~ msgid "Content Types"
+#~ msgstr ""
+
+#~ msgid "python model class name"
+#~ msgstr ""
+
+#~ msgid "content types"
+#~ msgstr ""
+
+#~ msgid "Content type %(ct_id)s object has no associated model"
+#~ msgstr ""
+
+#~ msgid "Content type %(ct_id)s object %(obj_id)s doesn’t exist"
+#~ msgstr ""
+
+#~ msgid "%(ct_name)s objects don’t have a get_absolute_url() method"
+#~ msgstr ""
+
+#~ msgid "Advanced options"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "Flat Pages"
+#~ msgstr "Utoljára módosítva"
+
+#~ msgid "URL"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Example: “/about/contact/”. Make sure to "
+#~ "have leading and trailing slashes."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "This value must contain only letters,"
+#~ " numbers, dots, underscores, dashes, "
+#~ "slashes or tildes."
+#~ msgstr ""
+
+#~ msgid "Example: “/about/contact”. Make sure to have a leading slash."
+#~ msgstr ""
+
+#~ msgid "URL is missing a leading slash."
+#~ msgstr ""
+
+#~ msgid "URL is missing a trailing slash."
+#~ msgstr ""
+
+#~ msgid "Flatpage with url %(url)s already exists for site %(site)s"
+#~ msgstr ""
+
+#~ msgid "title"
+#~ msgstr ""
+
+#~ msgid "content"
+#~ msgstr ""
+
+#~ msgid "enable comments"
+#~ msgstr ""
+
+#~ msgid "template name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid ""
+#~ "Example: “flatpages/contact_page.html”. If this "
+#~ "isn’t provided, the system will use "
+#~ "“flatpages/default.html”."
+#~ msgstr ""
+
+#~ msgid "registration required"
+#~ msgstr "Vissza a regisztrációhoz"
+
+#~ msgid "If this is checked, only logged-in users will be able to view the page."
+#~ msgstr ""
+
+#~ msgid "sites"
+#~ msgstr ""
+
+#~ msgid "flat page"
+#~ msgstr "Utoljára módosítva"
+
+#~ msgid "flat pages"
+#~ msgstr "Utoljára módosítva"
+
+#~ msgid "GIS"
+#~ msgstr ""
+
+#~ msgid "No feeds are registered."
+#~ msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
+
+#~ msgid "Slug %r isn’t registered."
+#~ msgstr ""
+
+#~ msgid "The base GIS field."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The base Geometry field — maps to"
+#~ " the OpenGIS Specification Geometry type."
+#~ msgstr ""
+
+#~ msgid "Point"
+#~ msgstr "Bejelentkezés"
+
+#~ msgid "Line string"
+#~ msgstr ""
+
+#~ msgid "Polygon"
+#~ msgstr ""
+
+#~ msgid "Multi-point"
+#~ msgstr ""
+
+#~ msgid "Multi-line string"
+#~ msgstr ""
+
+#~ msgid "Multi polygon"
+#~ msgstr ""
+
+#~ msgid "Geometry collection"
+#~ msgstr ""
+
+#~ msgid "Extent Aggregate Field"
+#~ msgstr ""
+
+#~ msgid "Raster Field"
+#~ msgstr ""
+
+#~ msgid "No geometry value provided."
+#~ msgstr ""
+
+#~ msgid "Invalid geometry value."
+#~ msgstr ""
+
+#~ msgid "Invalid geometry type."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "An error occurred when transforming the"
+#~ " geometry to the SRID of the "
+#~ "geometry form field."
+#~ msgstr "Hiba történt a gyűlés frissítése közben"
+
+#~ msgid "Humanize"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 11, 12, 13"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 0"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 1"
+#~ msgid "{}st"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 2"
+#~ msgid "{}nd"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 3"
+#~ msgid "{}rd"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 4"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 5"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 6"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 7"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 8"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgctxt "ordinal 9"
+#~ msgid "{}th"
+#~ msgstr ""
+
+#~ msgid "%(value)s million"
+#~ msgid_plural "%(value)s million"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s billion"
+#~ msgid_plural "%(value)s billion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s trillion"
+#~ msgid_plural "%(value)s trillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s quadrillion"
+#~ msgid_plural "%(value)s quadrillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s quintillion"
+#~ msgid_plural "%(value)s quintillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s sextillion"
+#~ msgid_plural "%(value)s sextillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s septillion"
+#~ msgid_plural "%(value)s septillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s octillion"
+#~ msgid_plural "%(value)s octillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s nonillion"
+#~ msgid_plural "%(value)s nonillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s decillion"
+#~ msgid_plural "%(value)s decillion"
+#~ msgstr[0] ""
+
+#~ msgid "%(value)s googol"
+#~ msgid_plural "%(value)s googol"
+#~ msgstr[0] ""
+
+#~ msgid "one"
+#~ msgstr ""
+
+#~ msgid "two"
+#~ msgstr ""
+
+#~ msgid "three"
+#~ msgstr ""
+
+#~ msgid "four"
+#~ msgstr ""
+
+#~ msgid "five"
+#~ msgstr ""
+
+#~ msgid "six"
+#~ msgstr ""
+
+#~ msgid "seven"
+#~ msgstr ""
+
+#~ msgid "eight"
+#~ msgstr "Szerkesztés"
+
+#~ msgid "nine"
+#~ msgstr "Folyamatban"
+
+#~ msgid "today"
+#~ msgstr ""
+
+#~ msgid "tomorrow"
+#~ msgstr ""
+
+#~ msgid "yesterday"
+#~ msgstr ""
+
+#~ msgid "Messages"
+#~ msgstr "Jelentések a folyamatról"
+
+#~ msgid "PostgreSQL extensions"
+#~ msgstr ""
+
+#~ msgid "Some keys were missing: %(keys)s"
+#~ msgstr ""
+
+#~ msgid "Some unknown keys were provided: %(keys)s"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Ensure that the upper bound of the"
+#~ " range is not greater than "
+#~ "%(limit_value)s."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Ensure that the lower bound of the"
+#~ " range is not less than "
+#~ "%(limit_value)s."
+#~ msgstr ""
+
+#~ msgid "Item %(nth)s in the array did not validate:"
+#~ msgstr ""
+
+#~ msgid "Nested arrays must have the same length."
+#~ msgstr ""
+
+#~ msgid "Map of strings to strings/nulls"
+#~ msgstr ""
+
+#~ msgid "The value of “%(key)s” is not a string or null."
+#~ msgstr ""
+
+#~ msgid "Could not load JSON data."
+#~ msgstr ""
+
+#~ msgid "Input must be a JSON dictionary."
+#~ msgstr ""
+
+#~ msgid "Enter two valid values."
+#~ msgstr ""
+
+#~ msgid "The start of the range must not exceed the end of the range."
+#~ msgstr ""
+
+#~ msgid "Enter two whole numbers."
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid "Enter two numbers."
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid "Enter two valid date/times."
+#~ msgstr ""
+
+#~ msgid "Enter two valid dates."
+#~ msgstr ""
+
+#~ msgid "Redirects"
+#~ msgstr "Szerkesztés"
+
+#~ msgid "site"
+#~ msgstr ""
+
+#~ msgid "redirect from"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "This should be an absolute path, "
+#~ "excluding the domain name. Example: "
+#~ "“/events/search/”."
+#~ msgstr ""
+
+#~ msgid "redirect to"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "This can be either an absolute "
+#~ "path (as above) or a full URL "
+#~ "starting with a scheme such as "
+#~ "“https://”."
+#~ msgstr ""
+
+#~ msgid "redirect"
+#~ msgstr "Szerkesztés"
+
+#~ msgid "redirects"
+#~ msgstr "Szerkesztés"
+
+#~ msgid "Sessions"
+#~ msgstr ""
+
+#~ msgid "session key"
+#~ msgstr ""
+
+#~ msgid "session data"
+#~ msgstr ""
+
+#~ msgid "expire date"
+#~ msgstr ""
+
+#~ msgid "session"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "sessions"
+#~ msgstr ""
+
+#~ msgid "Site Maps"
+#~ msgstr ""
+
+#~ msgid "Sites"
+#~ msgstr ""
+
+#~ msgid "The domain name cannot contain any spaces or tabs."
+#~ msgstr ""
+
+#~ msgid "domain name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "display name"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "Static Files"
+#~ msgstr ""
+
+#~ msgid "Syndication"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "…"
+#~ msgstr ""
+
+#~ msgid "That page number is not an integer"
+#~ msgstr ""
+
+#~ msgid "That page number is less than 1"
+#~ msgstr ""
+
+#~ msgid "That page contains no results"
+#~ msgstr ""
+
+#~ msgid "Enter a valid value."
+#~ msgstr ""
+
+#~ msgid "Enter a valid domain name."
+#~ msgstr ""
+
+#~ msgid "Enter a valid URL."
+#~ msgstr ""
+
+#~ msgid "Enter a valid integer."
+#~ msgstr ""
+
+#~ msgid "Enter a valid email address."
+#~ msgstr "Érvénytelen email cím"
+
+#~ msgid ""
+#~ "Enter a valid “slug” consisting of "
+#~ "letters, numbers, underscores or hyphens."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Enter a valid “slug” consisting of "
+#~ "Unicode letters, numbers, underscores, or "
+#~ "hyphens."
+#~ msgstr ""
+
+#~ msgid "Enter a valid %(protocol)s address."
+#~ msgstr ""
+
+#~ msgid "IPv4"
+#~ msgstr ""
+
+#~ msgid "IPv6"
+#~ msgstr ""
+
+#~ msgid "IPv4 or IPv6"
+#~ msgstr ""
+
+#~ msgid "Enter only digits separated by commas."
+#~ msgstr ""
+
+#~ msgid "Ensure this value is %(limit_value)s (it is %(show_value)s)."
+#~ msgstr ""
+
+#~ msgid "Ensure this value is less than or equal to %(limit_value)s."
+#~ msgstr ""
+
+#~ msgid "Ensure this value is greater than or equal to %(limit_value)s."
+#~ msgstr ""
+
+#~ msgid "Ensure this value is a multiple of step size %(limit_value)s."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Ensure this value is a multiple of"
+#~ " step size %(limit_value)s, starting from"
+#~ " %(offset)s, e.g. %(offset)s, %(valid_value1)s,"
+#~ " %(valid_value2)s, and so on."
+#~ msgstr ""
+
+#~ msgid "Enter a number."
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid ""
+#~ "File extension “%(extension)s” is not "
+#~ "allowed. Allowed extensions are: "
+#~ "%(allowed_extensions)s."
+#~ msgstr ""
+
+#~ msgid "Null characters are not allowed."
+#~ msgstr ""
+
+#~ msgid "%(model_name)s with this %(field_labels)s already exists."
+#~ msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
+
+#~ msgid "Constraint “%(name)s” is violated."
+#~ msgstr ""
+
+#~ msgid "Value %(value)r is not a valid choice."
+#~ msgstr ""
+
+#~ msgid "This field cannot be null."
+#~ msgstr ""
+
+#~ msgid "This field cannot be blank."
+#~ msgstr ""
+
+#~ msgid "%(model_name)s with this %(field_label)s already exists."
+#~ msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
+
+#~ msgid ""
+#~ "%(field_label)s must be unique for "
+#~ "%(date_field_label)s %(lookup_type)s."
+#~ msgstr ""
+
+#~ msgid "Field of type: %(field_type)s"
+#~ msgstr ""
+
+#~ msgid "“%(value)s” value must be either True or False."
+#~ msgstr ""
+
+#~ msgid "“%(value)s” value must be either True, False, or None."
+#~ msgstr ""
+
+#~ msgid "Boolean (Either True or False)"
+#~ msgstr ""
+
+#~ msgid "String (up to %(max_length)s)"
+#~ msgstr ""
+
+#~ msgid "String (unlimited)"
+#~ msgstr ""
+
+#~ msgid "Comma-separated integers"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has an invalid date"
+#~ " format. It must be in YYYY-"
+#~ "MM-DD format."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has the correct format"
+#~ " (YYYY-MM-DD) but it is an "
+#~ "invalid date."
+#~ msgstr ""
+
+#~ msgid "Date (without time)"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has an invalid format."
+#~ " It must be in YYYY-MM-DD "
+#~ "HH:MM[:ss[.uuuuuu]][TZ] format."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has the correct format"
+#~ " (YYYY-MM-DD HH:MM[:ss[.uuuuuu]][TZ]) but"
+#~ " it is an invalid date/time."
+#~ msgstr ""
+
+#~ msgid "Date (with time)"
+#~ msgstr ""
+
+#~ msgid "“%(value)s” value must be a decimal number."
+#~ msgstr ""
+
+#~ msgid "Decimal number"
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid ""
+#~ "“%(value)s” value has an invalid format."
+#~ " It must be in [DD] "
+#~ "[[HH:]MM:]ss[.uuuuuu] format."
+#~ msgstr ""
+
+#~ msgid "Duration"
+#~ msgstr "Kiválasztás"
+
+#~ msgid "File path"
+#~ msgstr ""
+
+#~ msgid "“%(value)s” value must be a float."
+#~ msgstr ""
+
+#~ msgid "Floating point number"
+#~ msgstr ""
+
+#~ msgid "“%(value)s” value must be an integer."
+#~ msgstr ""
+
+#~ msgid "Integer"
+#~ msgstr ""
+
+#~ msgid "Big (8 byte) integer"
+#~ msgstr ""
+
+#~ msgid "Small integer"
+#~ msgstr ""
+
+#~ msgid "IPv4 address"
+#~ msgstr "Email cím"
+
+#~ msgid "IP address"
+#~ msgstr "Email cím"
+
+#~ msgid "“%(value)s” value must be either None, True or False."
+#~ msgstr ""
+
+#~ msgid "Boolean (Either True, False or None)"
+#~ msgstr ""
+
+#~ msgid "Positive big integer"
+#~ msgstr ""
+
+#~ msgid "Positive integer"
+#~ msgstr "Aktív gyűlések"
+
+#~ msgid "Positive small integer"
+#~ msgstr ""
+
+#~ msgid "Slug (up to %(max_length)s)"
+#~ msgstr ""
+
+#~ msgid "Text"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has an invalid format."
+#~ " It must be in HH:MM[:ss[.uuuuuu]] "
+#~ "format."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "“%(value)s” value has the correct format"
+#~ " (HH:MM[:ss[.uuuuuu]]) but it is an "
+#~ "invalid time."
+#~ msgstr ""
+
+#~ msgid "Time"
+#~ msgstr ""
+
+#~ msgid "Raw binary data"
+#~ msgstr ""
+
+#~ msgid "“%(value)s” is not a valid UUID."
+#~ msgstr ""
+
+#~ msgid "Universally unique identifier"
+#~ msgstr ""
+
+#~ msgid "File"
+#~ msgstr ""
+
+#~ msgid "Image"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "A JSON object"
+#~ msgstr ""
+
+#~ msgid "Value must be valid JSON."
+#~ msgstr ""
+
+#~ msgid "%(model)s instance with %(field)s %(value)r is not a valid choice."
+#~ msgstr ""
+
+#~ msgid "Foreign Key (type determined by related field)"
+#~ msgstr ""
+
+#~ msgid "One-to-one relationship"
+#~ msgstr ""
+
+#~ msgid "%(from)s-%(to)s relationship"
+#~ msgstr ""
+
+#~ msgid "%(from)s-%(to)s relationships"
+#~ msgstr ""
+
+#~ msgid "Many-to-many relationship"
+#~ msgstr ""
+
+#~ msgid ":?.!"
+#~ msgstr ""
+
+#~ msgid "This field is required."
+#~ msgstr ""
+
+#~ msgid "Enter a whole number."
+#~ msgstr "Módosítsa a számot."
+
+#~ msgid "Enter a valid date."
+#~ msgstr ""
+
+#~ msgid "Enter a valid time."
+#~ msgstr ""
+
+#~ msgid "Enter a valid date/time."
+#~ msgstr ""
+
+#~ msgid "Enter a valid duration."
+#~ msgstr ""
+
+#~ msgid "The number of days must be between {min_days} and {max_days}."
+#~ msgstr ""
+
+#~ msgid "No file was submitted. Check the encoding type on the form."
+#~ msgstr ""
+
+#~ msgid "No file was submitted."
+#~ msgstr ""
+
+#~ msgid "The submitted file is empty."
+#~ msgstr ""
+
+#~ msgid "Please either submit a file or check the clear checkbox, not both."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Upload a valid image. The file you"
+#~ " uploaded was either not an image "
+#~ "or a corrupted image."
+#~ msgstr ""
+
+#~ msgid "Select a valid choice. %(value)s is not one of the available choices."
+#~ msgstr ""
+
+#~ msgid "Enter a list of values."
+#~ msgstr ""
+
+#~ msgid "Enter a complete value."
+#~ msgstr ""
+
+#~ msgid "Enter a valid UUID."
+#~ msgstr ""
+
+#~ msgid "Enter a valid JSON."
+#~ msgstr ""
+
+#~ msgid ":"
+#~ msgstr ""
+
+#~ msgid "(Hidden field %(name)s) %(error)s"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "ManagementForm data is missing or has"
+#~ " been tampered with. Missing fields: "
+#~ "%(field_names)s. You may need to file"
+#~ " a bug report if the issue "
+#~ "persists."
+#~ msgstr ""
+
+#~ msgid "Order"
+#~ msgstr ""
+
+#~ msgid "Please correct the duplicate data for %(field)s."
+#~ msgstr ""
+
+#~ msgid "Please correct the duplicate data for %(field)s, which must be unique."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Please correct the duplicate data for"
+#~ " %(field_name)s which must be unique "
+#~ "for the %(lookup)s in %(date_field)s."
+#~ msgstr ""
+
+#~ msgid "Please correct the duplicate values below."
+#~ msgstr ""
+
+#~ msgid "The inline value did not match the parent instance."
+#~ msgstr ""
+
+#~ msgid "Select a valid choice. That choice is not one of the available choices."
+#~ msgstr ""
+
+#~ msgid "“%(pk)s” is not a valid value."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "%(datetime)s couldn’t be interpreted in "
+#~ "time zone %(current_timezone)s; it may "
+#~ "be ambiguous or it may not exist."
+#~ msgstr ""
+
+#~ msgid "Currently"
+#~ msgstr "Feladat állapota"
+
+#~ msgid "yes,no,maybe"
+#~ msgstr ""
+
+#~ msgid "%(size)d byte"
+#~ msgid_plural "%(size)d bytes"
+#~ msgstr[0] ""
+
+#~ msgid "%s KB"
+#~ msgstr ""
+
+#~ msgid "%s MB"
+#~ msgstr ""
+
+#~ msgid "%s GB"
+#~ msgstr ""
+
+#~ msgid "%s TB"
+#~ msgstr ""
+
+#~ msgid "%s PB"
+#~ msgstr ""
+
+#~ msgid "p.m."
+#~ msgstr ""
+
+#~ msgid "a.m."
+#~ msgstr ""
+
+#~ msgid "PM"
+#~ msgstr ""
+
+#~ msgid "AM"
+#~ msgstr "Vezetéknév"
+
+#~ msgid "midnight"
+#~ msgstr ""
+
+#~ msgid "noon"
+#~ msgstr ""
+
+#~ msgid "Monday"
+#~ msgstr ""
+
+#~ msgid "Tuesday"
+#~ msgstr ""
+
+#~ msgid "Wednesday"
+#~ msgstr ""
+
+#~ msgid "Thursday"
+#~ msgstr ""
+
+#~ msgid "Friday"
+#~ msgstr ""
+
+#~ msgid "Saturday"
+#~ msgstr ""
+
+#~ msgid "Sunday"
+#~ msgstr ""
+
+#~ msgid "Mon"
+#~ msgstr ""
+
+#~ msgid "Tue"
+#~ msgstr ""
+
+#~ msgid "Wed"
+#~ msgstr ""
+
+#~ msgid "Thu"
+#~ msgstr ""
+
+#~ msgid "Fri"
+#~ msgstr ""
+
+#~ msgid "Sat"
+#~ msgstr "Állapot"
+
+#~ msgid "Sun"
+#~ msgstr ""
+
+#~ msgid "January"
+#~ msgstr ""
+
+#~ msgid "February"
+#~ msgstr ""
+
+#~ msgid "March"
+#~ msgstr ""
+
+#~ msgid "April"
+#~ msgstr ""
+
+#~ msgid "May"
+#~ msgstr ""
+
+#~ msgid "June"
+#~ msgstr ""
+
+#~ msgid "July"
+#~ msgstr ""
+
+#~ msgid "August"
+#~ msgstr ""
+
+#~ msgid "September"
+#~ msgstr "Maradjak bejelentkezve"
+
+#~ msgid "October"
+#~ msgstr ""
+
+#~ msgid "November"
+#~ msgstr ""
+
+#~ msgid "December"
+#~ msgstr "Maradjak bejelentkezve"
+
+#~ msgid "jan"
+#~ msgstr ""
+
+#~ msgid "feb"
+#~ msgstr ""
+
+#~ msgid "mar"
+#~ msgstr ""
+
+#~ msgid "apr"
+#~ msgstr ""
+
+#~ msgid "may"
+#~ msgstr ""
+
+#~ msgid "jun"
+#~ msgstr ""
+
+#~ msgid "jul"
+#~ msgstr ""
+
+#~ msgid "aug"
+#~ msgstr ""
+
+#~ msgid "sep"
+#~ msgstr ""
+
+#~ msgid "oct"
+#~ msgstr ""
+
+#~ msgid "nov"
+#~ msgstr ""
+
+#~ msgid "dec"
+#~ msgstr ""
+
+#~ msgid "This is not a valid IPv6 address."
+#~ msgstr "Érvénytelen email cím"
+
+#~ msgctxt "String to return when truncating text"
+#~ msgid "%(truncated_text)s…"
+#~ msgstr ""
+
+#~ msgid ", "
+#~ msgstr ""
+
+#~ msgid "Forbidden"
+#~ msgstr ""
+
+#~ msgid "CSRF verification failed. Request aborted."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "You are seeing this message because "
+#~ "this HTTPS site requires a “Referer "
+#~ "header” to be sent by your web "
+#~ "browser, but none was sent. This "
+#~ "header is required for security reasons,"
+#~ " to ensure that your browser is "
+#~ "not being hijacked by third parties."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If you have configured your browser "
+#~ "to disable “Referer” headers, please "
+#~ "re-enable them, at least for this "
+#~ "site, or for HTTPS connections, or "
+#~ "for “same-origin” requests."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If you are using the <meta "
+#~ "name=\"referrer\" content=\"no-referrer\"> tag "
+#~ "or including the “Referrer-Policy: "
+#~ "no-referrer” header, please remove them."
+#~ " The CSRF protection requires the "
+#~ "“Referer” header to do strict referer"
+#~ " checking. If you’re concerned about "
+#~ "privacy, use alternatives like <a "
+#~ "rel=\"noreferrer\" …> for links to "
+#~ "third-party sites."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "You are seeing this message because "
+#~ "this site requires a CSRF cookie "
+#~ "when submitting forms. This cookie is"
+#~ " required for security reasons, to "
+#~ "ensure that your browser is not "
+#~ "being hijacked by third parties."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If you have configured your browser "
+#~ "to disable cookies, please re-enable "
+#~ "them, at least for this site, or"
+#~ " for “same-origin” requests."
+#~ msgstr ""
+
+#~ msgid "More information is available with DEBUG=True."
+#~ msgstr ""
+
+#~ msgid "Directory indexes are not allowed here."
+#~ msgstr ""
+
+#~ msgid "“%(path)s” does not exist"
+#~ msgstr ""
+
+#~ msgid "No year specified"
+#~ msgstr ""
+
+#~ msgid "Date out of range"
+#~ msgstr ""
+
+#~ msgid "No month specified"
+#~ msgstr ""
+
+#~ msgid "No day specified"
+#~ msgstr ""
+
+#~ msgid "No week specified"
+#~ msgstr ""
+
+#~ msgid "No %(verbose_name_plural)s available"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Future %(verbose_name_plural)s not available "
+#~ "because %(class_name)s.allow_future is False."
+#~ msgstr ""
+
+#~ msgid "Invalid date string “%(datestr)s” given format “%(format)s”"
+#~ msgstr ""
+
+#~ msgid "No %(verbose_name)s found matching the query"
+#~ msgstr ""
+
+#~ msgid "Page is not “last”, nor can it be converted to an int."
+#~ msgstr ""
+
+#~ msgid "Invalid page (%(page_number)s): %(message)s"
+#~ msgstr ""
+
+#~ msgid "Empty list and “%(class_name)s.allow_empty” is False."
+#~ msgstr ""
+
+#~ msgid "File does not have an approved extension: {extensions}"
+#~ msgstr ""
+
+#~ msgid "File does not have an approved extension."
+#~ msgstr ""
+
+#~ msgid "Content purported to be compressed with %s but failed to decompress."
+#~ msgstr ""
+
+#~ msgid "Unsupported value for qop: %s."
+#~ msgstr ""
+
+#~ msgid "Unsupported value for algorithm: %s.algorithm"
+#~ msgstr ""
+
+#~ msgid "The challenge doesn't contain a server nonce, or this one is empty."
+#~ msgstr ""
+
+#~ msgid "Unsupported value for pw-algorithm: %s.pw-algorithm"
+#~ msgstr ""
+
+#~ msgid "Redirected but the response is missing a Location: header."
+#~ msgstr ""
+
+#~ msgid "Attempting to connect to qpid with SASL mechanism %s"
+#~ msgstr ""
+
+#~ msgid "Connected to qpid with SASL mechanism %s"
+#~ msgstr ""
+
+#~ msgid "Unable to connect to qpid with SASL mechanism %s"
+#~ msgstr ""
+
+#~ msgid "%(prog)s: error: %(message)s\n"
+#~ msgstr "Jelentések a folyamatról"
+
+#~ msgid "Invalid field name '%s'."
+#~ msgstr ""
+
+#~ msgid "Field must be equal to %(other_name)s."
+#~ msgstr ""
+
+#~ msgid "Field must be at least %(min)d character long."
+#~ msgid_plural "Field must be at least %(min)d characters long."
+#~ msgstr[0] ""
+
+#~ msgid "Field cannot be longer than %(max)d character."
+#~ msgid_plural "Field cannot be longer than %(max)d characters."
+#~ msgstr[0] ""
+
+#~ msgid "Field must be exactly %(max)d character long."
+#~ msgid_plural "Field must be exactly %(max)d characters long."
+#~ msgstr[0] ""
+
+#~ msgid "Field must be between %(min)d and %(max)d characters long."
+#~ msgstr ""
+
+#~ msgid "Number must be at least %(min)s."
+#~ msgstr ""
+
+#~ msgid "Number must be at most %(max)s."
+#~ msgstr ""
+
+#~ msgid "Number must be between %(min)s and %(max)s."
+#~ msgstr ""
+
+#~ msgid "Invalid input."
+#~ msgstr "Érvénytelen meghívókód"
+
+#~ msgid "Invalid email address."
+#~ msgstr "Érvénytelen email cím"
+
+#~ msgid "Invalid IP address."
+#~ msgstr "Érvénytelen email cím"
+
+#~ msgid "Invalid Mac address."
+#~ msgstr "Érvénytelen email cím"
+
+#~ msgid "Invalid URL."
+#~ msgstr "Kezdeti/Teszt kiválasztás"
+
+#~ msgid "Invalid UUID."
+#~ msgstr "Érvénytelen meghívókód"
+
+#~ msgid "Invalid value, must be one of: %(values)s."
+#~ msgstr "Érvénytelen meghívókód: %(reason)s"
+
+#~ msgid "Invalid value, can't be any of: %(values)s."
+#~ msgstr ""
+
+#~ msgid "This field cannot be edited."
+#~ msgstr ""
+
+#~ msgid "This field is disabled and cannot have a value."
+#~ msgstr ""
+
+#~ msgid "Invalid CSRF Token."
+#~ msgstr "Érvénytelen e-mail cím vagy jelszó"
+
+#~ msgid "CSRF token missing."
+#~ msgstr ""
+
+#~ msgid "CSRF failed."
+#~ msgstr ""
+
+#~ msgid "CSRF token expired."
+#~ msgstr ""
+
+#~ msgid "Invalid Choice: could not coerce."
+#~ msgstr ""
+
+#~ msgid "Choices cannot be None."
+#~ msgstr ""
+
+#~ msgid "Not a valid choice."
+#~ msgstr ""
+
+#~ msgid "Invalid choice(s): one or more data inputs could not be coerced."
+#~ msgstr ""
+
+#~ msgid "'%(value)s' is not a valid choice for this field."
+#~ msgid_plural "'%(value)s' are not valid choices for this field."
+#~ msgstr[0] ""
+
+#~ msgid "Not a valid datetime value."
+#~ msgstr ""
+
+#~ msgid "Not a valid date value."
+#~ msgstr ""
+
+#~ msgid "Not a valid time value."
+#~ msgstr ""
+
+#~ msgid "Not a valid week value."
+#~ msgstr ""
+
+#~ msgid "Not a valid integer value."
+#~ msgstr ""
+
+#~ msgid "Not a valid decimal value."
+#~ msgstr ""
+
+#~ msgid "Not a valid float value."
 #~ msgstr ""

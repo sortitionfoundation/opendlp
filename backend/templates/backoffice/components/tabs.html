@@ -1,0 +1,61 @@
+{#
+ABOUTME: Tabs component macro for backoffice design system
+ABOUTME: Horizontal tab navigation for switching between page sections
+#}
+{% macro tabs(items=[], aria_label="") %}
+    {#
+    items: Array of tab items, each with:
+        - label: Display text (required)
+        - href: Link URL (required)
+        - active: Whether this tab is currently active (optional, default false)
+        - Any additional attributes are passed through to the anchor element (e.g., data-proto)
+
+    aria_label: Accessible label for the navigation (required)
+
+    Example:
+        {{ tabs(
+            items=[
+                {"label": "Details", "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
+                {"label": "Data", "href": "#", "data-proto": "click:show:data-panel"},
+                {"label": "Selection", "href": "#"},
+                {"label": "Team Members", "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+            ],
+            aria_label=_("Assembly sections")
+        ) }}
+    #}
+    <nav class="mb-8" aria-label="{{ aria_label }}">
+        <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
+            {% for item in items %}
+                {# Build extra attributes string from non-standard keys #}
+                {% set extra_attrs = [] %}
+                {% for key, value in item.items() %}
+                    {% if key not in ['label', 'href', 'active'] %}
+                        {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
+                    {% endif %}
+                {% endfor %}
+                <li>
+                    {% if item.active %}
+                        {# Active tab #}
+                        <a href="{{ item.href }}"
+                            class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
+                            style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);"
+                            aria-current="page"
+                            {{ extra_attrs | join(' ') | safe }}>
+                            {{ item.label }}
+                        </a>
+                    {% else %}
+                        {# Inactive tab #}
+                        <a href="{{ item.href }}"
+                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
+                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
+                            onmouseover="this.style.color='var(--color-headings)'"
+                            onmouseout="this.style.color='var(--color-secondary-text)'"
+                            {{ extra_attrs | join(' ') | safe }}>
+                            {{ item.label }}
+                        </a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+{% endmacro %}

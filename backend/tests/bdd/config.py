@@ -1,4 +1,5 @@
 import typing
+import urllib.parse
 
 BDD_PORT = 5002  # Test server on 5002 to avoid conflict with dev server
 ADMIN_EMAIL = "admin@opendlp.example"
@@ -31,6 +32,7 @@ class Urls:
     backoffice_assembly = "{base}/backoffice/assembly/{assembly_id}"
     backoffice_edit_assembly = "{base}/backoffice/assembly/{assembly_id}/edit"
     backoffice_members_assembly = "{base}/backoffice/assembly/{assembly_id}/members"
+    backoffice_data_assembly = "{base}/backoffice/assembly/{assembly_id}/data"
 
     assembly_urls: typing.ClassVar = {
         "view_assembly": "{base}/assemblies/{assembly_id}",
@@ -57,3 +59,15 @@ class Urls:
     @classmethod
     def backoffice_members_assembly_url(cls, assembly_id: str) -> str:
         return cls.backoffice_members_assembly.format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def backoffice_data_assembly_url(cls, assembly_id: str, source: str = "", mode: str = "") -> str:
+        url = cls.backoffice_data_assembly.format(base=cls.base, assembly_id=assembly_id)
+        params = {}
+        if source:
+            params["source"] = source
+        if mode:
+            params["mode"] = mode
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        return url

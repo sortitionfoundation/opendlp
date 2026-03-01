@@ -3,7 +3,7 @@ ABOUTME: Text input component macro for backoffice design system
 ABOUTME: Supports text, email, password, number inputs with label and optional hint/error
 #}
 
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, id="", classes="", attrs="") %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -17,14 +17,18 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
         error: Error message (displays input in error state)
         required: Boolean to mark field as required
         disabled: Boolean to disable the input
+        readonly: Boolean to render as static text instead of input
         id: Optional id attribute (defaults to name)
         classes: Additional CSS classes for the input
         attrs: Additional HTML attributes
+        link_url: If provided with readonly, renders value as a link
+        link_text: Text for the link (defaults to value if not provided)
 
     Usage:
         {{ input("email", label="Email Address", type="email", placeholder="you@example.com") }}
         {{ input("password", label="Password", type="password", required=true) }}
         {{ input("title", label="Assembly Title", value=assembly.title, error=errors.title) }}
+        {{ input("url", label="Spreadsheet URL", value=gsheet.url, readonly=true, link_url=gsheet.url, link_text="View Spreadsheet") }}
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
@@ -34,7 +38,7 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
         {% if label %}
             <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
                 {{ label }}
-                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+                {% if required and not readonly %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
             </label>
         {% endif %}
 
@@ -43,29 +47,46 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
         {% endif %}
 
-        {# Input field #}
-        <input
-            type="{{ type }}"
-            name="{{ name }}"
-            id="{{ input_id }}"
-            {% if value is not none and value != "" %}value="{{ value }}"{% endif %}
-            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-            {% if required %}required{% endif %}
-            {% if disabled %}disabled{% endif %}
-            {% if attrs %}{{ attrs | safe }}{% endif %}
-            class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ classes }}"
-            style="
-                background-color: var(--color-page-background);
-                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                color: var(--color-body-text);
-                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
-                {% if disabled %}
-                    background-color: var(--color-subtle-background-panels);
-                    color: var(--color-placeholder-text);
-                    cursor: not-allowed;
-                {% endif %}
-            "
-        />
+        {% if readonly %}
+            {# Read-only display #}
+            {% if link_url %}
+                <a href="{{ link_url }}"
+                    class="text-body-md underline"
+                    style="color: var(--color-links);"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    {{ link_text or value or "-" }}
+                </a>
+            {% else %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    {{ value if value is not none and value != "" else "-" }}
+                </p>
+            {% endif %}
+        {% else %}
+            {# Input field #}
+            <input
+                type="{{ type }}"
+                name="{{ name }}"
+                id="{{ input_id }}"
+                {% if value is not none and value != "" %}value="{{ value }}"{% endif %}
+                {% if placeholder %}placeholder="{{ placeholder }}"{%endif %}
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+                {% if attrs %}{{ attrs | safe }}{% endif %}
+                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ classes }}"
+                style="
+                    background-color: var(--color-page-background);
+                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                    color: var(--color-body-text);
+                    --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                    {% if disabled %}
+                        background-color: var(--color-subtle-background-panels);
+                        color: var(--color-placeholder-text);
+                        cursor: not-allowed;
+                    {% endif %}
+                "
+            />
+        {% endif %}
 
         {# Error message #}
         {% if has_error %}
@@ -142,4 +163,224 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
         {% endif %}
     </div>
+{% endmacro %}
+
+
+{% macro select(name, label="", options=[], value="", hint="", error="", required=false, disabled=false, id="", classes="", attrs="") %}
+    {#
+    Select dropdown component using semantic design tokens.
+
+    Args:
+        name: Select name attribute (required)
+        label: Label text displayed above the select
+        options: List of options, each with "value" and "label" keys
+        value: Currently selected value
+        hint: Help text displayed below the label
+        error: Error message (displays select in error state)
+        required: Boolean to mark field as required
+        disabled: Boolean to disable the select
+        id: Optional id attribute (defaults to name)
+        classes: Additional CSS classes for the select
+        attrs: Additional HTML attributes
+
+    Usage:
+        {{ select(
+            name="data_source",
+            label="Data Source",
+            options=[
+                {"value": "gsheet", "label": "Google Spreadsheet"},
+                {"value": "csv", "label": "CSV file"}
+            ],
+            value="gsheet"
+        ) }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5">
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# Select field #}
+        <select
+            name="{{ name }}"
+            id="{{ input_id }}"
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if attrs %}{{ attrs | safe }}{% endif %}
+            class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer {{ classes }}"
+            style="
+                background-color: var(--color-page-background);
+                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                color: var(--color-body-text);
+                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                {% if disabled %}
+                    background-color: var(--color-subtle-background-panels);
+                    color: var(--color-placeholder-text);
+                    cursor: not-allowed;
+                {% endif %}
+            "
+        >
+            {% for option in options %}
+                <option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>
+                    {{ option.label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        {# Error message #}
+        {% if has_error %}
+            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{% macro checkbox(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
+    {#
+    Checkbox component using semantic design tokens.
+
+    Args:
+        name: Checkbox name attribute (required)
+        label: Label text displayed next to the checkbox
+        checked: Boolean for checked state
+        hint: Help text displayed below the label
+        error: Error message (displays in error state)
+        disabled: Boolean to disable the checkbox
+        readonly: Boolean to show as read-only text instead of checkbox
+        id: Optional id attribute (defaults to name)
+        attrs: Additional HTML attributes
+
+    Usage:
+        {{ checkbox("agree", label="I agree to the terms", checked=true) }}
+        {{ checkbox("notify", label="Send notifications", hint="You'll receive email updates") }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5">
+        {% if readonly %}
+            {# Read-only display #}
+            <div class="flex items-center gap-3">
+                <span class="text-label-lg" style="color: var(--color-headings);">{{ label }}</span>
+                <span class="text-body-md" style="color: var(--color-body-text);">
+                    {{ _("Yes") if checked else _("No") }}
+                </span>
+            </div>
+            {% if hint %}
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+            {% endif %}
+        {% else %}
+            {# Editable checkbox #}
+            <label class="flex items-start gap-3 cursor-pointer group">
+                <input
+                    type="checkbox"
+                    name="{{ name }}"
+                    id="{{ input_id }}"
+                    {% if checked %}checked{% endif %}
+                    {% if disabled %}disabled{% endif %}
+                    {% if attrs %}{{ attrs | safe }}{% endif %}
+                    class="mt-0.5 w-5 h-5 rounded cursor-pointer"
+                    style="accent-color: var(--color-primary-action);"
+                />
+                <div class="flex flex-col gap-1">
+                    <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">
+                        {{ label }}
+                    </span>
+                    {% if hint %}
+                        <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</span>
+                    {% endif %}
+                </div>
+            </label>
+            {% if has_error %}
+                <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
+    {#
+    Radio button group component using semantic design tokens.
+
+    Args:
+        name: Radio group name attribute (required)
+        label: Legend text displayed above the radio group
+        options: List of options, each with "value" and "label" keys
+        value: Currently selected value
+        hint: Help text displayed below the legend
+        error: Error message (displays in error state)
+        disabled: Boolean to disable all radio buttons
+        readonly: Boolean to show as read-only text instead of radios
+        id: Optional id prefix (defaults to name)
+        attrs: Additional HTML attributes for each radio
+
+    Usage:
+        {{ radio_group(
+            name="team",
+            label="Select Team",
+            options=[
+                {"value": "sf", "label": "Sortition Foundation"},
+                {"value": "other", "label": "Other"}
+            ],
+            value="sf"
+        ) }}
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <fieldset class="flex flex-col gap-3">
+        {% if label %}
+            <legend class="text-label-lg" style="color: var(--color-headings);">{{ label }}</legend>
+        {% endif %}
+
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {% if readonly %}
+            {# Read-only display - show selected option #}
+            {% for option in options %}
+                {% if option.value == value %}
+                    <p class="text-body-md" style="color: var(--color-body-text);">{{ option.label }}</p>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {# Editable radio buttons #}
+            <div class="flex flex-col gap-2">
+                {% for option in options %}
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input
+                            type="radio"
+                            name="{{ name }}"
+                            id="{{ input_id }}_{{ loop.index }}"
+                            value="{{ option.value }}"
+                            {% if option.value == value %}checked{% endif %}
+                            {% if disabled %}disabled{% endif %}
+                            {% if attrs %}{{ attrs | safe }}{% endif %}
+                            class="w-5 h-5 cursor-pointer"
+                            style="accent-color: var(--color-primary-action);"
+                        />
+                        <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">
+                            {{ option.label }}
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+            {% if has_error %}
+                <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+            {% endif %}
+        {% endif %}
+    </fieldset>
 {% endmacro %}

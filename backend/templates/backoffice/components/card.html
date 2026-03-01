@@ -90,3 +90,45 @@ Usage:
         {{ caller() }}
     </div>
 {% endmacro %}
+
+
+{% macro link_card(href, title="", subtitle="", id="", classes="", container_classes="", header_classes="", body_classes="") %}
+    {#
+Clickable card component that navigates to a URL when clicked.
+
+Args:
+  href: URL to navigate to when clicked (required)
+  title: Optional card title
+  subtitle: Optional card subtitle
+  id: Optional id attribute
+  classes: Additional CSS classes for the card
+  container_classes: Additional CSS classes for the outer container
+  header_classes: Additional CSS classes for the header section
+  body_classes: Additional CSS classes for the body section
+
+Usage:
+  {% call link_card(href="/some-page", title="Card Title") %}
+    Card content here
+  {% endcall %}
+    #}
+    <a
+        href="{{ href }}"
+        {% if id %}id="{{ id }}"{% endif %}
+        style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); display: block; text-decoration: none; color: inherit; transition: box-shadow 0.2s ease, border-color 0.2s ease;"
+        class="rounded-lg shadow-md overflow-hidden hover:shadow-lg {{ classes }} {{ container_classes }}"
+        onmouseover="this.style.borderColor='var(--color-primary-button)'"
+        onmouseout="this.style.borderColor='var(--color-borders-dividers)'"
+    >
+        {% if title %}
+            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4 {{ header_classes }}">
+                <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
+                {% if subtitle %}
+                    <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="px-6 py-4 {{ body_classes }}">
+            {{ caller() }}
+        </div>
+    </a>
+{% endmacro %}

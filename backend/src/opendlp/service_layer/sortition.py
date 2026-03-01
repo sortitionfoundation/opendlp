@@ -23,7 +23,15 @@ from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
-from opendlp.entrypoints.celery import app, tasks
+
+# Use mock tasks for testing when USE_MOCK_CELERY_TASKS is set
+# The mock provides the same interface as real Celery tasks, so type errors are suppressed
+if config.bool_environ_get("USE_MOCK_CELERY_TASKS"):
+    from opendlp.entrypoints.celery import mock_tasks as tasks
+    from opendlp.entrypoints.celery.mock_tasks import app
+else:
+    from opendlp.entrypoints.celery import app, tasks
+
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,

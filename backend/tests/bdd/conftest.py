@@ -71,7 +71,7 @@ def _reset_csv_files(csv_file_dir: Path) -> None:
 
 
 @pytest.fixture(scope="session")
-def test_csv_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
+def csv_test_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
     """
     Create a temporary directory with the original CSV files in
     """
@@ -81,19 +81,19 @@ def test_csv_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def reset_csv_data_dir(test_csv_data_dir: Path) -> Generator[Path, None, None]:
+def reset_csv_data_dir(csv_test_data_dir: Path) -> Generator[Path, None, None]:
     """
     A per-test fixture which re-copies the CSV files in to reset
     the state after a test - so that an individual test could put
     different CSV files in that directory to test non-standard behaviour
     and then subsequent tests have the expected files there.
     """
-    yield test_csv_data_dir
-    _reset_csv_files(test_csv_data_dir)
+    yield csv_test_data_dir
+    _reset_csv_files(csv_test_data_dir)
 
 
 @pytest.fixture(scope="session")
-def test_server(test_database, test_csv_data_dir):
+def test_server(test_database, csv_test_data_dir):
     """Start Flask test server in background"""
     # Check if server is already running
     try:
@@ -112,7 +112,9 @@ def test_server(test_database, test_csv_data_dir):
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
-    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
+    env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
+    # Use mock Celery tasks for faster, more reliable tests (no worker needed)
+    env["USE_MOCK_CELERY_TASKS"] = "true"
 
     process = subprocess.Popen(  # noqa: S603
         ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
@@ -139,7 +141,7 @@ def test_server(test_database, test_csv_data_dir):
 
 
 @pytest.fixture(scope="session")
-def test_celery_worker(test_database, test_csv_data_dir):
+def test_celery_worker(test_database, csv_test_data_dir):
     """Start celery worker in the background"""
     # create celery app with correct configuration
     celery_app = get_celery_app(redis_port=63792)
@@ -159,10 +161,10 @@ def test_celery_worker(test_database, test_csv_data_dir):
     env["REDIS_PORT"] = "63792"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
-    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
+    env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
-        ["uv", "run", "celery", "-A", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
+        ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
         cwd=BACKEND_PATH,
         env=env,
         stdout=subprocess.PIPE,
@@ -312,8 +314,12 @@ def browser():
 
 
 @pytest.fixture(scope="session")
-def context(browser, test_server, test_celery_worker):
-    """Browser context that waits for server to be ready"""
+def context(browser, test_server):
+    """Browser context that waits for server to be ready.
+
+    Note: Mock Celery tasks are used (USE_MOCK_CELERY_TASKS=true), so no
+    celery worker is needed for the BDD tests.
+    """
     context = browser.new_context()
     context.set_default_navigation_timeout(PLAYWRIGHT_TIMEOUT)
     context.set_default_timeout(PLAYWRIGHT_TIMEOUT)
@@ -387,9 +393,17 @@ def normal_logged_in_page(page: Page, normal_user):
 
 def delete_all_except_standard_users(session: Session) -> None:
     # Clean up test data (keep admin user)
+    # Delete in order respecting foreign key constraints
+    # First delete tables that reference other tables
+    session.execute(orm.selection_run_records.delete())
+    session.execute(orm.respondents.delete())
+    session.execute(orm.target_categories.delete())
+    session.execute(orm.assembly_gsheets.delete())
+    session.execute(orm.assembly_csv.delete())
     session.execute(orm.user_invites.delete())
-    session.execute(orm.assemblies.delete())
     session.execute(orm.user_assembly_roles.delete())
+    # Now delete assemblies (children are already deleted)
+    session.execute(orm.assemblies.delete())
     # Keep admin user, clean others
     session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
     session.commit()

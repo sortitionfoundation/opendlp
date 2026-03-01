@@ -2,146 +2,100 @@
 ABOUTME: Backoffice assembly details page
 ABOUTME: Displays assembly information with question, metadata, and edit action
 #}
-{% extends "backoffice/base.html" %}
-{% from "backoffice/components/navigation.html" import navigation %}
+{% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/alert.html" import flash_messages %}
-{% from "backoffice/components/footer.html" import footer %}
+{% from "backoffice/components/tabs.html" import tabs %}
 
 {% block title %}{{ assembly.title }} - Assembly{% endblock %}
 
-{% block body %}
-    <div class="min-h-screen flex flex-col">
-        {{ navigation(
-        logo_href=url_for('backoffice.dashboard'),
-        nav_items=[
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
-        {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
-        {"label": _("Help"), "href": url_for('main.support')}
-        ],
-        account_items=[
-        {"label": _("My Account"), "href": url_for('profile.view')}
-        ],
-        cta_text=_("Sign out"),
-        cta_href=url_for('auth.logout')
-        ) }}
+        {"label": assembly.title}
+        ]) }}
+    </div>
+{% endblock %}
 
-        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
-            {{ flash_messages() }}
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Assembly Details") }}
+    </p>
 
-            {# Breadcrumbs #}
-            <div class="mb-6">
-                {{ breadcrumbs([
-                {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-                {"label": assembly.title}
-                ]) }}
+    {{ tabs(
+    items=[
+    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
+    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
+    {"label": _("Selection"), "href": "#"},
+    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+    ],
+    aria_label=_("Assembly sections")
+    ) }}
+
+    {# Assembly Question Section #}
+    {% if assembly.question %}
+        <section class="mb-8">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assembly Question") }}</h2>
+            <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
+        </section>
+    {% endif %}
+
+    {# Assembly Details Summary #}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
+        <dl class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            {# Status #}
+            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
+                        {{ assembly.status.value }}
+                    </span>
+                </dd>
             </div>
 
-            {# Page Heading #}
-            <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-            <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Assembly Details") }}
-            </p>
-
-            {# TODO: Extract tab navigation into a reusable component in the design system #}
-            {# Inline Tab Navigation #}
-            <nav class="mb-8" aria-label="{{ _('Assembly sections') }}">
-                <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
-                    <li>
-                        <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
-                            style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);">
-                            {{ _("Details") }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                            onmouseover="this.style.color='var(--color-headings)'"
-                            onmouseout="this.style.color='var(--color-secondary-text)'">
-                            {{ _("Data & Selection") }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('backoffice.view_assembly_members', assembly_id=assembly.id) }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                            onmouseover="this.style.color='var(--color-headings)'"
-                            onmouseout="this.style.color='var(--color-secondary-text)'">
-                            {{ _("Team Members") }}
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            {# Assembly Question Section #}
-            {% if assembly.question %}
-                <section class="mb-8">
-                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assembly Question") }}</h2>
-                    <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
-                </section>
+            {# First Assembly Date #}
+            {% if assembly.first_assembly_date %}
+                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        {{ assembly.first_assembly_date.strftime("%d %B %Y") }}
+                    </dd>
+                </div>
             {% endif %}
 
-            {# Assembly Details Summary #}
-            <section class="mb-8">
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
-                <dl class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                    {# Status #}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                                {{ assembly.status.value }}
-                            </span>
-                        </dd>
-                    </div>
+            {# Number to Select #}
+            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Number to Select") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">
+                    {{ assembly.number_to_select }}
+                </dd>
+            </div>
 
-                    {# First Assembly Date #}
-                    {% if assembly.first_assembly_date %}
-                        <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                            <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
-                            <dd class="text-body-md" style="color: var(--color-body-text);">
-                                {{ assembly.first_assembly_date.strftime("%d %B %Y") }}
-                            </dd>
-                        </div>
-                    {% endif %}
+            {# Created #}
+            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">
+                    {{ assembly.created_at.strftime("%d %B %Y") }}
+                </dd>
+            </div>
 
-                    {# Number to Select #}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Number to Select") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            {{ assembly.number_to_select }}
-                        </dd>
-                    </div>
+            {# Last Updated #}
+            <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
+                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">
+                    {{ assembly.updated_at.strftime("%d %B %Y at %H:%M") }}
+                </dd>
+            </div>
+        </dl>
+    </section>
 
-                    {# Created #}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            {{ assembly.created_at.strftime("%d %B %Y") }}
-                        </dd>
-                    </div>
-
-                    {# Last Updated #}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
-                        <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            {{ assembly.updated_at.strftime("%d %B %Y at %H:%M") }}
-                        </dd>
-                    </div>
-                </dl>
-            </section>
-
-            {# Actions #}
-            <section class="flex gap-4">
-                {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
-                {{ button(_("Edit Assembly"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
-            </section>
-        </main>
-
-        {{ footer() }}
-    </div>
+    {# Actions #}
+    <section class="flex gap-4">
+        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+        {{ button(_("Edit Assembly"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
+    </section>
 {% endblock %}

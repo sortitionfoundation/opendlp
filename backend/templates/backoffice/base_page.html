@@ -1,0 +1,38 @@
+{#
+ABOUTME: Base page template for backoffice with standard layout elements
+ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, and footer
+#}
+{% extends "backoffice/base.html" %}
+{% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/alert.html" import flash_messages %}
+{% from "backoffice/components/footer.html" import footer %}
+
+{% block body %}
+    <div class="min-h-screen flex flex-col">
+        {{ navigation(
+        logo_href=url_for('backoffice.dashboard'),
+        nav_items=[
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
+        {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
+        {"label": _("Help"), "href": url_for('main.support')}
+        ],
+        account_items=[
+        {"label": _("My Account"), "href": url_for('profile.view')}
+        ],
+        cta_text=_("Sign out"),
+        cta_href=url_for('auth.logout')
+        ) }}
+
+        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
+            {{ flash_messages() }}
+
+            {% block breadcrumb_section %}{% endblock %}
+
+            {% block page_content %}{% endblock %}
+        </main>
+
+        {{ footer() }}
+    </div>
+{% endblock %}
