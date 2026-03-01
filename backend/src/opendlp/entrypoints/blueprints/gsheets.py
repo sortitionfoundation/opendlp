@@ -470,7 +470,6 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
         max_select: int | None = None
         num_to_select: int | None = None
 
-        # Check if we already have min_select and max_select in query params
         # Check if this is a completed load task with features - if so, redirect with min/max params
         if (
             "min_select" not in request.args
