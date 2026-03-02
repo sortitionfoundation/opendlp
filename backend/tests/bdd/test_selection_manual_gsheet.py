@@ -140,7 +140,8 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
 @then("I am told the number of categories and category values")
 def _(page: Page):
     """I am told the number of categories and category values."""
-    page.get_by_text("Full Run Report", exact=True).click()
+    expect(page.get_by_text("Full Run Report", exact=True).first).to_be_visible(timeout=30_000)
+    page.get_by_text("Full Run Report", exact=True).first.click()
     expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
 
 
