@@ -113,8 +113,6 @@ def test_server(test_database, csv_test_data_dir):
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
-    # Use mock Celery tasks for faster, more reliable tests (no worker needed)
-    env["USE_MOCK_CELERY_TASKS"] = "true"
 
     process = subprocess.Popen(  # noqa: S603
         ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
@@ -314,12 +312,8 @@ def browser():
 
 
 @pytest.fixture(scope="session")
-def context(browser, test_server):
-    """Browser context that waits for server to be ready.
-
-    Note: Mock Celery tasks are used (USE_MOCK_CELERY_TASKS=true), so no
-    celery worker is needed for the BDD tests.
-    """
+def context(browser, test_server, test_celery_worker):
+    """Browser context that waits for server to be ready"""
     context = browser.new_context()
     context.set_default_navigation_timeout(PLAYWRIGHT_TIMEOUT)
     context.set_default_timeout(PLAYWRIGHT_TIMEOUT)
