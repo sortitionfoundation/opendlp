@@ -1,7 +1,13 @@
 import typing
 import urllib.parse
 
+# The value is milliseconds - so 5000 is 5 seconds
+# The default is 30 seconds - which means if a page fails to load
+# then the tests take a long time to fail.
+PLAYWRIGHT_TIMEOUT = 5_000
+
 BDD_PORT = 5002  # Test server on 5002 to avoid conflict with dev server
+
 ADMIN_EMAIL = "admin@opendlp.example"
 ADMIN_PASSWORD = "admin8d2wpass"
 NORMAL_EMAIL = "normal@opendlp.example"

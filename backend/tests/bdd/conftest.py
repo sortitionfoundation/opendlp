@@ -26,15 +26,11 @@ from tests.conftest import (
 )
 from tests.data import VALID_GSHEET_URL
 
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, Urls
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
 BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
 
-# The value is milliseconds - so 5000 is 5 seconds
-# The default is 30 seconds - which means if a page fails to load
-# then the tests take a long time to fail.
-PLAYWRIGHT_TIMEOUT = 5_000
 expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
 
 

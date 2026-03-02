@@ -13,7 +13,7 @@ from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_a
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
-from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, Urls
+from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
 # Load all scenarios from the feature file
 scenarios("../../features/backoffice.feature")
@@ -63,8 +63,8 @@ _assembly_name_id_cache = AssemblyNameIdCache()
 def backoffice_context(browser, test_server):
     """Browser context without Celery dependency."""
     context = browser.new_context()
-    context.set_default_navigation_timeout(5000)
-    context.set_default_timeout(5000)
+    context.set_default_navigation_timeout(PLAYWRIGHT_TIMEOUT)
+    context.set_default_timeout(PLAYWRIGHT_TIMEOUT)
     yield context
     context.close()
 
@@ -476,7 +476,7 @@ def visit_backoffice_dashboard(page: Page):
 @then("I should be redirected to the login page")
 def redirected_to_login(page: Page):
     """Verify user was redirected to login page (with optional next parameter)."""
-    expect(page).to_have_url(re.compile(r".*/auth/login.*"), timeout=5000)
+    expect(page).to_have_url(re.compile(r".*/auth/login.*"), timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then('I should see "Dashboard"')
