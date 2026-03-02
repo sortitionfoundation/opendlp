@@ -114,8 +114,6 @@ def test_server(test_database, csv_test_data_dir):
         ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
         cwd=BACKEND_PATH,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
 
     # Wait for server to start
@@ -161,8 +159,6 @@ def test_celery_worker(test_database, csv_test_data_dir):
         ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
         cwd=BACKEND_PATH,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
     # wait for celery worker
     wait_for_celery_worker_to_come_up(celery_app)
