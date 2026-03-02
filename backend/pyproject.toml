@@ -240,8 +240,8 @@ extend-exclude = [
   # this is somewhere I dump stuff for LLM to read
   "thirdparty",
   # translation files contain multi-language strings that trigger false positives
-  "**/*.po",
-  "**/*.pot",
+  "*.po",
+  "*.pot",
 ]
 
 [tool.typos.default]
