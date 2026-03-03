@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly form macro (create/edit)
 ABOUTME: Reusable form content for creating and editing assemblies
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, textarea %}
+{% from "backoffice/components/input.html" import input, textarea, first_error as e %}
 
 {#
   Assembly form macro - renders form content for both create and edit pages
@@ -41,7 +41,7 @@ ABOUTME: Reusable form content for creating and editing assemblies
             label=form.title.label.text,
             value=form.title.data or "",
             hint=form.title.description,
-            error=form.title.errors[0] if form.title.errors else "",
+            error=e(form.title.errors),
             required=true,
             id=form.title.id
             ) }}
@@ -52,7 +52,7 @@ ABOUTME: Reusable form content for creating and editing assemblies
             label=form.question.label.text,
             value=form.question.data or "",
             hint=form.question.description,
-            error=form.question.errors[0] if form.question.errors else "",
+            error=e(form.question.errors),
             rows=3,
             id=form.question.id
             ) }}
@@ -64,7 +64,7 @@ ABOUTME: Reusable form content for creating and editing assemblies
             type="date",
             value=form.first_assembly_date.data.isoformat() if form.first_assembly_date.data else "",
             hint=form.first_assembly_date.description,
-            error=form.first_assembly_date.errors[0] if form.first_assembly_date.errors else "",
+            error=e(form.first_assembly_date.errors),
             id=form.first_assembly_date.id,
             classes="max-w-xs"
             ) }}
@@ -76,7 +76,7 @@ ABOUTME: Reusable form content for creating and editing assemblies
             type="number",
             value=form.number_to_select.data if form.number_to_select.data is not none else "",
             hint=form.number_to_select.description,
-            error=form.number_to_select.errors[0] if form.number_to_select.errors else "",
+            error=e(form.number_to_select.errors),
             required=true,
             id=form.number_to_select.id,
             classes="max-w-xs",

@@ -5,7 +5,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, checkbox, radio_group %}
+{% from "backoffice/components/input.html" import input, checkbox, radio_group, first_error as e %}
 {% from "backoffice/components/tabs.html" import tabs %}
 
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
@@ -136,7 +136,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                 readonly=readonly,
                 link_url=gsheet_form.url.data if gsheet and readonly else "",
                 link_text=_("View Spreadsheet"),
-                error=gsheet_form.url.errors[0] if gsheet_form.url.errors else ""
+                error=e(gsheet_form.url.errors)
                 ) }}
 
                 {# Initial/Test Selection Fieldset #}
@@ -153,7 +153,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         placeholder=_("e.g., Respondents"),
                         hint=_("Tab containing respondent data for selection."),
                         readonly=readonly,
-                        error=gsheet_form.select_registrants_tab.errors[0] if gsheet_form.select_registrants_tab.errors else ""
+                        error=e(gsheet_form.select_registrants_tab.errors)
                         ) }}
                         {{ input(
                         name="select_targets_tab",
@@ -162,7 +162,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         placeholder=_("e.g., Categories"),
                         hint=_("Tab containing selection categories/targets."),
                         readonly=readonly,
-                        error=gsheet_form.select_targets_tab.errors[0] if gsheet_form.select_targets_tab.errors else ""
+                        error=e(gsheet_form.select_targets_tab.errors)
                         ) }}
                     </div>
                 </fieldset>
@@ -181,7 +181,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         placeholder=_("e.g., Respondents"),
                         hint=_("Tab containing respondent data for replacements."),
                         readonly=readonly,
-                        error=gsheet_form.replace_registrants_tab.errors[0] if gsheet_form.replace_registrants_tab.errors else ""
+                        error=e(gsheet_form.replace_registrants_tab.errors)
                         ) }}
                         {{ input(
                         name="replace_targets_tab",
@@ -190,7 +190,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         placeholder=_("e.g., Categories"),
                         hint=_("Tab containing replacement categories/targets."),
                         readonly=readonly,
-                        error=gsheet_form.replace_targets_tab.errors[0] if gsheet_form.replace_targets_tab.errors else ""
+                        error=e(gsheet_form.replace_targets_tab.errors)
                         ) }}
                     </div>
                     {{ input(
@@ -200,7 +200,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     placeholder=_("e.g., Selected"),
                     hint=_("Tab containing previously selected participants (for exclusion during replacement)."),
                     readonly=readonly,
-                    error=gsheet_form.already_selected_tab.errors[0] if gsheet_form.already_selected_tab.errors else ""
+                    error=e(gsheet_form.already_selected_tab.errors)
                     ) }}
                 </fieldset>
 
@@ -250,7 +250,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                             placeholder=_("e.g., ID"),
                             hint=_("Column name containing unique participant identifiers."),
                             readonly=readonly,
-                            error=gsheet_form.id_column.errors[0] if gsheet_form.id_column.errors else ""
+                            error=e(gsheet_form.id_column.errors)
                             ) }}
                             {{ input(
                             name="check_same_address_cols_string",
@@ -259,7 +259,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                             placeholder=_("e.g., Street, City, PostCode"),
                             hint=_("Comma-separated column names used for address matching."),
                             readonly=readonly,
-                            error=gsheet_form.check_same_address_cols_string.errors[0] if gsheet_form.check_same_address_cols_string.errors else ""
+                            error=e(gsheet_form.check_same_address_cols_string.errors)
                             ) }}
                             {{ input(
                             name="columns_to_keep_string",
@@ -268,7 +268,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                             placeholder=_("e.g., Name, Email, Phone"),
                             hint=_("Comma-separated column names to include in output."),
                             readonly=readonly,
-                            error=gsheet_form.columns_to_keep_string.errors[0] if gsheet_form.columns_to_keep_string.errors else ""
+                            error=e(gsheet_form.columns_to_keep_string.errors)
                             ) }}
                         </div>
                     </div>

@@ -3,6 +3,25 @@ ABOUTME: Text input component macro for backoffice design system
 ABOUTME: Supports text, email, password, number inputs with label and optional hint/error
 #}
 
+{% macro first_error(errors) %}
+    {#- Extract the first error from a list of errors, or return empty string.
+
+    This helper keeps form components "dumb" (they accept a string) while
+    reducing repetition when extracting errors from Flask-WTF form fields.
+
+    Args:
+        errors: A list of error strings (e.g., form.field.errors)
+
+    Returns:
+        The first error string, or empty string if no errors
+
+    Usage:
+        error=first_error(form.field.errors)
+-#}
+    {{ errors[0] if errors else "" }}
+{%- endmacro %}
+
+
 {% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="") %}
     {#
     Text input component using semantic design tokens.
