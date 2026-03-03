@@ -58,7 +58,7 @@ def update_data_source_from_assembly_gsheet(
     """
     if not config.use_csv_data_source_for_testing():
         return gsheet_data_source
-    test_dir = config.get_test_csv_data_dir()
+    test_dir = config.get_csv_test_data_dir()
     # Create temp directory for output files (selected/remaining)
     temp_output_dir = Path(tempfile.gettempdir()) / "opendlp_selection_output"
     temp_output_dir.mkdir(exist_ok=True)

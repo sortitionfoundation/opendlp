@@ -402,10 +402,10 @@ def use_csv_data_source_for_testing() -> bool:
     return bool_environ_get("USE_CSV_DATA_SOURCE")
 
 
-def get_test_csv_data_dir() -> Path:
+def get_csv_test_data_dir() -> Path:
     """Get directory containing test CSV files (features.csv, candidates.csv)"""
     default_dir = _get_project_root() / "tests" / "csv_fixtures" / "selection_data"
-    return Path(os.environ.get("TEST_CSV_DATA_DIR", str(default_dir)))
+    return Path(os.environ.get("CSV_TEST_DATA_DIR", str(default_dir)))
 
 
 def get_totp_encryption_key() -> bytes:

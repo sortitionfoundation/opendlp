@@ -26,15 +26,11 @@ from tests.conftest import (
 )
 from tests.data import VALID_GSHEET_URL
 
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, Urls
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
 BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
 
-# The value is milliseconds - so 5000 is 5 seconds
-# The default is 30 seconds - which means if a page fails to load
-# then the tests take a long time to fail.
-PLAYWRIGHT_TIMEOUT = 5_000
 expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
 
 
@@ -71,7 +67,7 @@ def _reset_csv_files(csv_file_dir: Path) -> None:
 
 
 @pytest.fixture(scope="session")
-def test_csv_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
+def csv_test_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
     """
     Create a temporary directory with the original CSV files in
     """
@@ -81,19 +77,19 @@ def test_csv_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def reset_csv_data_dir(test_csv_data_dir: Path) -> Generator[Path, None, None]:
+def reset_csv_data_dir(csv_test_data_dir: Path) -> Generator[Path, None, None]:
     """
     A per-test fixture which re-copies the CSV files in to reset
     the state after a test - so that an individual test could put
     different CSV files in that directory to test non-standard behaviour
     and then subsequent tests have the expected files there.
     """
-    yield test_csv_data_dir
-    _reset_csv_files(test_csv_data_dir)
+    yield csv_test_data_dir
+    _reset_csv_files(csv_test_data_dir)
 
 
 @pytest.fixture(scope="session")
-def test_server(test_database, test_csv_data_dir):
+def test_server(test_database, csv_test_data_dir):
     """Start Flask test server in background"""
     # Check if server is already running
     try:
@@ -112,14 +108,12 @@ def test_server(test_database, test_csv_data_dir):
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
-    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
+    env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
         ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
         cwd=BACKEND_PATH,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
 
     # Wait for server to start
@@ -139,7 +133,7 @@ def test_server(test_database, test_csv_data_dir):
 
 
 @pytest.fixture(scope="session")
-def test_celery_worker(test_database, test_csv_data_dir):
+def test_celery_worker(test_database, csv_test_data_dir):
     """Start celery worker in the background"""
     # create celery app with correct configuration
     celery_app = get_celery_app(redis_port=63792)
@@ -159,14 +153,12 @@ def test_celery_worker(test_database, test_csv_data_dir):
     env["REDIS_PORT"] = "63792"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
-    env["TEST_CSV_DATA_DIR"] = str(test_csv_data_dir)
+    env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
-        ["uv", "run", "celery", "-A", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
+        ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
         cwd=BACKEND_PATH,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
     # wait for celery worker
     wait_for_celery_worker_to_come_up(celery_app)
@@ -387,9 +379,17 @@ def normal_logged_in_page(page: Page, normal_user):
 
 def delete_all_except_standard_users(session: Session) -> None:
     # Clean up test data (keep admin user)
+    # Delete in order respecting foreign key constraints
+    # First delete tables that reference other tables
+    session.execute(orm.selection_run_records.delete())
+    session.execute(orm.respondents.delete())
+    session.execute(orm.target_categories.delete())
+    session.execute(orm.assembly_gsheets.delete())
+    session.execute(orm.assembly_csv.delete())
     session.execute(orm.user_invites.delete())
-    session.execute(orm.assemblies.delete())
     session.execute(orm.user_assembly_roles.delete())
+    # Now delete assemblies (children are already deleted)
+    session.execute(orm.assemblies.delete())
     # Keep admin user, clean others
     session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
     session.commit()

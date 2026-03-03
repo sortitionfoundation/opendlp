@@ -3,7 +3,7 @@ ABOUTME: Showcase section for card component
 ABOUTME: Displays card variants and composition patterns
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
-{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer, link_card %}
 {% from "backoffice/components/button.html" import button %}
 
 {% macro card_section() %}
@@ -11,7 +11,7 @@ ABOUTME: Displays card variants and composition patterns
         {{ showcase_title("Card Component") }}
         {{ showcase_description("Reusable card macro for content containers.") }}
 
-        {% call showcase_example('{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+        {% call showcase_example('{% from "backoffice/components/card.html" import card, card_body, card_footer, link_card %}
             {% from "backoffice/components/button.html" import button %}
 
             {# Basic card (auto body) #}
@@ -46,6 +46,11 @@ ABOUTME: Displays card variants and composition patterns
                 {{ button("Cancel", variant="outline") }}
                 {{ button("Save", variant="primary") }}
             {% endcall %}
+        {% endcall %}
+
+        {# Clickable card (link_card) #}
+        {% call link_card(href="/some-page", title="Title", subtitle="Subtitle") %}
+            Clickable content - entire card is a link
         {% endcall %}') %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {% call card(id="card-basic") %}
@@ -79,6 +84,12 @@ ABOUTME: Displays card variants and composition patterns
                     {{ button("Cancel", variant="outline") }}
                     {{ button("Save", variant="primary") }}
                 {% endcall %}
+            {% endcall %}
+
+            {% call link_card(href="#", title="Clickable Card", subtitle="Hover to see effect", id="card-link") %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    This entire card is clickable. Hover to see the border highlight effect.
+                </p>
             {% endcall %}
         </div>
     {% endcall %}

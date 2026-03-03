@@ -1,67 +1,47 @@
-{% extends "backoffice/base.html" %}
-{% from "backoffice/components/alert.html" import flash_messages %}
+{#
+ABOUTME: Backoffice dashboard page showing user's assemblies
+ABOUTME: Uses base_page.html for standard layout with navigation and footer
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/card.html" import card, link_card %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/card.html" import card %}
-{% from "backoffice/components/navigation.html" import navigation %}
-{% from "backoffice/components/footer.html" import footer %}
+
 {% block title %}Dashboard{% endblock %}
-{% block body %}
-    {{ navigation(logo_href=url_for('backoffice.dashboard') ,
-    nav_items=[
-    {"label": _("Dashboard"), "href": url_for('backoffice.dashboard') },
-    {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser'] },
-    {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank" },
-    {"label": _("Help"), "href": url_for('main.support') },
-    ],
-    account_items=[
-    {"label": _("My Account"), "href": url_for('profile.view') },
-    ],
-    cta_text="Sign out",
-    cta_href=url_for('auth.logout')
-    ) }}
-    <main class="max-w-screen-2xl mx-auto px-6 py-8 min-h-screen">
-        {{ flash_messages() }}
-        <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">Dashboard</h1>
-        <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">
-            Welcome back, {{ current_user.display_name }}!
-        </p>
-        <!-- Assemblies Section -->
-        <section>
-            <div class="flex justify-between items-center mb-6">
-                <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
-                {{ button(_("Create New Assembly") , href=url_for('backoffice.new_assembly'), variant="primary") }}
+
+{% block page_content %}
+    <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">Dashboard</h1>
+    <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">Welcome back, {{ current_user.display_name }}!</p>
+
+    <!-- Assemblies Section -->
+    <section>
+        <div class="flex justify-between items-center mb-6">
+            <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
+            {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+        </div>
+
+        {% if assemblies %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for assembly in assemblies %}
+                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                        {% if assembly.question %}
+                            <p style="color: var(--color-body-text);" class="text-body-md mb-4">
+                                {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if assembly.first_assembly_date %}
+                            <p style="color: var(--color-secondary-text);" class="text-body-sm">
+                                Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
+                            </p>
+                        {% endif %}
+                    {% endcall %}
+                {% endfor %}
             </div>
-            {% if assemblies %}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {% for assembly in assemblies %}
-                        {% call card(title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card", container_classes="flex flex-col h-full", body_classes="flex-1 flex flex-col") %}
-                            {% if assembly.question %}
-                                <p style="color: var(--color-body-text);" class="text-body-md mb-4">
-                                    {{ assembly.question[:100] }}
-                                    {% if assembly.question|length > 100 %}...{% endif %}
-                                </p>
-                            {% endif %}
-                            {% if assembly.first_assembly_date %}
-                                <p style="color: var(--color-secondary-text);" class="text-body-sm">
-                                    Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
-                                </p>
-                            {% endif %}
-                            <div class="mt-auto pt-4">
-                                {{ button(_("Go to Assembly") , href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
-                            </div>
-                        {% endcall %}
-                    {% endfor %}
-                </div>
-            {% else %}
-                {% call card(id="no-assemblies-card") %}
-                    <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
-                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">
-                        {{ _("Create your first citizens' assembly to get started.") }}
-                    </p>
-                    {{ button(_("Create Your First Assembly") , href=url_for('backoffice.new_assembly'), variant="primary") }}
-                {% endcall %}
-            {% endif %}
-        </section>
-    </main>
-    {{ footer() }}
+        {% else %}
+            {% call card(id="no-assemblies-card") %}
+                <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
+                <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
+                {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+            {% endcall %}
+        {% endif %}
+    </section>
 {% endblock %}

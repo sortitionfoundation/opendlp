@@ -2,21 +2,31 @@
 ABOUTME: Backoffice create assembly page
 ABOUTME: Uses assembly_form macro for creating new assemblies
 #}
-{% extends "backoffice/base.html" %}
-{% from "backoffice/assembly_form.html" import assembly_form_page with context %}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/assembly_form.html" import assembly_form %}
 
 {% block title %}{{ _("Create Assembly") }}{% endblock %}
 
-{% block body %}
-    {{ assembly_form_page(
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Create Assembly")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Create Assembly") }}</h1>
+    <p class="text-body-lg mb-8" style="color: var(--color-secondary-text);">
+        {{ _("Set up a new citizens' assembly.") }}
+    </p>
+
+    {{ assembly_form(
     form=form,
-    title=_("Create Assembly"),
-    subtitle=_("Set up a new citizens' assembly."),
     submit_label=_("Create Assembly"),
-    cancel_url=url_for('backoffice.dashboard'),
-    breadcrumb_items=[
-    {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-    {"label": _("Create Assembly")}
-    ]
+    cancel_url=url_for('backoffice.dashboard')
     ) }}
 {% endblock %}
