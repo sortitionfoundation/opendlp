@@ -15,8 +15,11 @@ from opendlp.service_layer.user_service import grant_user_assembly_role
 
 from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
-# Load all scenarios from the feature file
+# Load all scenarios from the feature files
 scenarios("../../features/backoffice.feature")
+scenarios("../../features/backoffice-assembly.feature")
+scenarios("../../features/backoffice-assembly-members.feature")
+scenarios("../../features/backoffice-assembly-gsheet.feature")
 
 
 # Store assembly data between steps
@@ -267,108 +270,6 @@ def card_with_actions_has_buttons(page: Page):
     card = page.locator("#card-actions")
     buttons = card.locator("button, a.button, [class*='btn']")
     expect(buttons.first).to_be_visible()
-
-
-# Typography Tests
-
-
-@then("I should see the typography section")
-def see_typography_section(page: Page):
-    """Verify the typography section is visible."""
-    section = page.locator("#typography-section")
-    expect(section).to_be_visible()
-
-
-@then('I should see "Semantic Tokens"')
-def see_semantic_tokens_text(page: Page):
-    """Verify the Semantic Tokens heading is visible."""
-    expect(page.locator("body")).to_contain_text("Semantic Tokens")
-
-
-@then('I should see "Use Cases"')
-def see_use_cases_text(page: Page):
-    """Verify the Use Cases heading is visible."""
-    expect(page.locator("body")).to_contain_text("Use Cases")
-
-
-@then("the display-lg sample should use the Oswald font")
-def display_lg_uses_oswald(page: Page):
-    """Verify display-lg uses Oswald font family."""
-    sample = page.locator("#typography-display-lg")
-    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
-    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
-
-
-@then("the display-lg sample should have font size 32px")
-def display_lg_has_correct_size(page: Page):
-    """Verify display-lg has 32px font size."""
-    sample = page.locator("#typography-display-lg")
-    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
-    assert font_size == "32px", f"Expected 32px, got {font_size}"
-
-
-@then("the display-md sample should use the Oswald font")
-def display_md_uses_oswald(page: Page):
-    """Verify display-md uses Oswald font family."""
-    sample = page.locator("#typography-display-md")
-    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
-    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
-
-
-@then("the display-md sample should have font size 28px")
-def display_md_has_correct_size(page: Page):
-    """Verify display-md has 28px font size."""
-    sample = page.locator("#typography-display-md")
-    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
-    assert font_size == "28px", f"Expected 28px, got {font_size}"
-
-
-@then("the heading-lg sample should use the Oswald font")
-def heading_lg_uses_oswald(page: Page):
-    """Verify heading-lg uses Oswald font family."""
-    sample = page.locator("#typography-heading-lg")
-    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
-    assert "Oswald" in font_family, f"Expected Oswald font, got {font_family}"
-
-
-@then("the heading-lg sample should have font size 20px")
-def heading_lg_has_correct_size(page: Page):
-    """Verify heading-lg has 20px font size."""
-    sample = page.locator("#typography-heading-lg")
-    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
-    assert font_size == "20px", f"Expected 20px, got {font_size}"
-
-
-@then("the body-lg sample should use the Lato font")
-def body_lg_uses_lato(page: Page):
-    """Verify body-lg uses Lato font family."""
-    sample = page.locator("#typography-body-lg")
-    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
-    assert "Lato" in font_family, f"Expected Lato font, got {font_family}"
-
-
-@then("the body-lg sample should have font size 16px")
-def body_lg_has_correct_size(page: Page):
-    """Verify body-lg has 16px font size."""
-    sample = page.locator("#typography-body-lg")
-    font_size = sample.evaluate("el => getComputedStyle(el).fontSize")
-    assert font_size == "16px", f"Expected 16px, got {font_size}"
-
-
-@then("the overline sample should use the Lato font")
-def overline_uses_lato(page: Page):
-    """Verify overline uses Lato font family."""
-    sample = page.locator("#typography-overline")
-    font_family = sample.evaluate("el => getComputedStyle(el).fontFamily")
-    assert "Lato" in font_family, f"Expected Lato font, got {font_family}"
-
-
-@then("the overline sample should be uppercase")
-def overline_is_uppercase(page: Page):
-    """Verify overline text is uppercase."""
-    sample = page.locator("#typography-overline")
-    text_transform = sample.evaluate("el => getComputedStyle(el).textTransform")
-    assert text_transform == "uppercase", f"Expected uppercase, got {text_transform}"
 
 
 # Navigation Component Tests
