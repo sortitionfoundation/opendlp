@@ -72,7 +72,8 @@ ABOUTME: Displays team members table with add/remove functionality for admins
                                         <form method="post"
                                             action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
                                             class="inline"
-                                            onsubmit="return confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}');">
+                                            x-data
+                                            @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                             {# TODO: Add danger variant and size parameter to button component in design system #}
                                             <button type="submit"

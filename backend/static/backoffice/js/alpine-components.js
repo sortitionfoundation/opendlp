@@ -3,6 +3,7 @@
  * ABOUTME: Registers reusable Alpine.data() components like autocomplete and focus restoration
  */
 
+
 /**
  * Focus restoration for keyboard navigation
  *
@@ -27,6 +28,26 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("alpine:init", function () {
+    /**
+     * Confirmation magic helper for form submissions
+     *
+     * Shows a confirmation dialog before submitting a form. Designed for CSP-safe
+     * Alpine.js usage.
+     *
+     * Usage:
+     *   <form x-data @submit.prevent="$confirm('Are you sure?', $el)">
+     *
+     * @param {string} message - The confirmation message to display
+     * @param {HTMLFormElement} formElement - The form element to submit if confirmed
+     */
+    Alpine.magic("confirm", function () {
+        return function (message, formElement) {
+            if (confirm(message)) {
+                formElement.submit();
+            }
+        };
+    });
+
     /**
    * Autocomplete search component
    *
