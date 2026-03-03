@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import (
     BooleanField,
     DateField,
@@ -342,7 +343,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired(), Length(min=1, max=100)],
         default="nationbuilder_id",
         description=_l(
-            "Column name containing unique identifiers for respondents. Note will be overridden if the Team Configuration is not 'Custom'."
+            "Name of column containing unique identifiers for respondents. Note will be overridden if the Team Configuration is not 'Custom'."
         ),
     )
 
@@ -533,3 +534,44 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
             # If we can't check (e.g., database error), allow form to continue
             # The service layer will handle this case properly
             pass
+
+
+class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for uploading a CSV file of target categories."""
+
+    csv_file = FileField(
+        _l("CSV File"),
+        validators=[
+            FileRequired(message=_l("Please select a CSV file to upload")),
+            FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
+        ],
+        description=_l("Select a CSV file containing target categories"),
+    )
+
+
+class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for uploading a CSV file of respondents."""
+
+    csv_file = FileField(
+        _l("CSV File"),
+        validators=[
+            FileRequired(message=_l("Please select a CSV file to upload")),
+            FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
+        ],
+        description=_l("Select a CSV file containing respondent data"),
+    )
+
+    replace_existing = BooleanField(
+        _l("Replace all existing respondents"),
+        description=_l(
+            "Warning: this will delete all existing respondents for this assembly before importing. "
+            "Uncheck to add to existing respondents."
+        ),
+        default=True,
+    )
+
+    id_column = StringField(
+        _l("ID Column"),
+        validators=[Optional(), Length(max=100)],
+        description=_l("Name of column containing unique identifiers. Leave blank to use the assembly default."),
+    )

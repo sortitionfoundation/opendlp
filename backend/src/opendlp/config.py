@@ -232,6 +232,9 @@ class FlaskBaseConfig:
         # Support configuration
         self.SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
 
+        # File upload limits (10 MB)
+        self.MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+
         # Deployment configuration
         self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")
         # Server name for URL generation (used when behind a reverse proxy)

@@ -1,0 +1,104 @@
+{% extends "main/view_assembly_base.html" %}
+{% block assembly_breadcrumbs %}<li class="govuk-breadcrumbs__list-item">{{ _("Targets") }}</li>{% endblock %}
+{% block assembly_content %}
+    {# ── Upload Form ────────────────────────────────────────── #}
+    <h2 class="govuk-heading-m">{{ _("Import Target Categories from CSV") }}</h2>
+    <p class="govuk-body">
+        {{ _("Upload a CSV file with columns: feature, value, min, max (and optionally min_flex, max_flex).") }}
+    </p>
+
+    {% if form.errors %}
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+            <div role="alert">
+                <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
+                <div class="govuk-error-summary__body">
+                    <ul class="govuk-list govuk-error-summary__list">
+                        {% for field_name, errors in form.errors.items() %}
+                            {% for error in errors %}
+                                <li><a href="#{{ form[field_name].id }}">{{ error }}</a></li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if target_categories %}
+        <div class="govuk-warning-text">
+            <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+            <strong class="govuk-warning-text__text">
+                <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                {{ _("Uploading a new CSV will replace all existing target categories for this assembly.") }}
+            </strong>
+        </div>
+    {% endif %}
+
+    <form method="post"
+        action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
+        enctype="multipart/form-data"
+        novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="govuk-form-group {% if form.csv_file.errors %}govuk-form-group--error{% endif %}">
+            <label class="govuk-label govuk-label--s" for="{{ form.csv_file.id }}">
+                {{ form.csv_file.label.text }}
+            </label>
+            {% if form.csv_file.description %}
+                <div class="govuk-hint">{{ form.csv_file.description }}</div>
+            {% endif %}
+            {% if form.csv_file.errors %}
+                <p class="govuk-error-message">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    {{ form.csv_file.errors[0] }}
+                </p>
+            {% endif %}
+            {{ form.csv_file(class="govuk-file-upload" + (" govuk-file-upload--error" if form.csv_file.errors else "")) }}
+        </div>
+
+        <div class="govuk-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+                {{ _("Upload CSV") }}
+            </button>
+        </div>
+    </form>
+
+    {# ── Current Targets ────────────────────────────────────── #}
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    <h2 class="govuk-heading-m">{{ _("Current Target Categories") }}</h2>
+
+    {% if target_categories %}
+        <p class="govuk-body">
+            {{ _("%(count)s categories defined.", count=target_categories|length) }}
+        </p>
+        {% for category in target_categories %}
+            <h3 class="govuk-heading-s govuk-!-margin-bottom-2">{{ category.name }}</h3>
+            <table class="govuk-table govuk-!-margin-bottom-6">
+                <thead class="govuk-table__head">
+                    <tr class="govuk-table__row">
+                        <th scope="col" class="govuk-table__header">{{ _("Value") }}</th>
+                        <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Min") }}</th>
+                        <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Max") }}</th>
+                        <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Min Flex") }}</th>
+                        <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Max Flex") }}</th>
+                    </tr>
+                </thead>
+                <tbody class="govuk-table__body">
+                    {% for val in category.values %}
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell">{{ val.value }}</td>
+                            <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.min }}</td>
+                            <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.max }}</td>
+                            <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.min_flex }}</td>
+                            <td class="govuk-table__cell govuk-table__cell--numeric">
+                                {% if val.max_flex == 0 %}auto{% else %}{{ val.max_flex }}{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% else %}
+        <p class="govuk-body">{{ _("No target categories defined yet. Upload a CSV file to get started.") }}</p>
+    {% endif %}
+{% endblock %}

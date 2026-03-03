@@ -89,6 +89,8 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.health import health_bp
     from .blueprints.main import main_bp
     from .blueprints.profile import profile_bp
+    from .blueprints.respondents import respondents_bp
+    from .blueprints.targets import targets_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -97,6 +99,8 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
+    app.register_blueprint(targets_bp)
+    app.register_blueprint(respondents_bp)
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -117,6 +121,11 @@ def register_error_handlers(app: Flask) -> None:
     def forbidden(error: HTTPException) -> tuple[str, int]:
         """Handle 403 Forbidden errors."""
         return render_template("errors/403.html"), 403
+
+    @app.errorhandler(413)
+    def request_entity_too_large(error: HTTPException) -> tuple[str, int]:
+        """Handle 413 Request Entity Too Large errors (file upload size limit)."""
+        return render_template("errors/413.html"), 413
 
 
 def register_before_request_handlers(app: Flask) -> None:

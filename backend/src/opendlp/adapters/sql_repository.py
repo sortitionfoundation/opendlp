@@ -802,6 +802,10 @@ class SqlAlchemyTargetCategoryRepository(SqlAlchemyRepository, TargetCategoryRep
         count = len(categories)
         for category in categories:
             self.session.delete(category)
+        # Flush deletes to the DB so subsequent inserts with the same
+        # unique constraint values (assembly_id, name) don't collide.
+        if count:
+            self.session.flush()
         return count
 
 
