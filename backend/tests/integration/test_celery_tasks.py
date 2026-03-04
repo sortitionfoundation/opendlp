@@ -79,6 +79,7 @@ def test_settings():
         id_column="nationbuilder_id",
         check_same_address=False,
         columns_to_keep=["nationbuilder_id", "first_name", "last_name", "email"],
+        solver_backend="highspy",  # Use HiGHS (works on Apple Silicon)
     )
 
 

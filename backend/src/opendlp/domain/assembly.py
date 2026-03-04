@@ -281,6 +281,7 @@ class AssemblyGSheet:
             check_same_address=self.check_same_address,
             check_same_address_columns=self.check_same_address_cols,
             selection_algorithm=self.selection_algorithm,
+            solver_backend="highspy",  # Use HiGHS (works on Apple Silicon, bundled with highspy)
         )
 
     def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource | CSVGSheetDataSource:

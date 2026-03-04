@@ -535,6 +535,7 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 | `/backoffice/assembly/<id>/selection/<run_id>` | GET | Selection with run status |
 | `/backoffice/assembly/<id>/selection/<run_id>/progress` | GET | HTMX progress polling |
 | `/backoffice/assembly/<id>/selection/<run_id>/cancel` | POST | Cancel task |
+| `/backoffice/assembly/<id>/selection/<run_id>/report` | GET | View full selection report |
 | `/backoffice/assembly/<id>/replacement` | GET | Replacement page |
 | `/backoffice/assembly/<id>/replacement/load` | POST | Validate replacement data |
 | `/backoffice/assembly/<id>/replacement/run` | POST | Run replacement |
@@ -558,7 +559,7 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 2. ✅ Create selection page template with three sections
 3. ✅ Implement basic routes (without task functionality)
 
-### Phase 2: Initial Selection ✅
+### Phase 2: Initial Selection 🔄
 
 **Phase 2a: Progress Endpoint & Alpine Polling**
 1. ✅ Add `/selection/<run_id>` GET route (view with run status)
@@ -575,7 +576,8 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 1. ✅ Add `/selection/run` POST route (starts SELECT_GSHEET task)
 2. ✅ Support `test=1` query param for test selection
 3. ✅ Enable "Run Selection" and "Run Test Selection" buttons
-4. ✅ Display selection results with report
+4. ⬜ Display selection results summary (selected count, demographics breakdown)
+5. ⬜ Add "View Full Report" link to detailed report page
 
 **Phase 2d: Cancel & Error Handling**
 1. ✅ Add `/selection/<run_id>/cancel` POST route

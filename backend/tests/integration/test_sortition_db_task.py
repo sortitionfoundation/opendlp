@@ -24,7 +24,12 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 @pytest.fixture
 def test_settings():
-    return Settings(id_column="external_id", check_same_address=False, columns_to_keep=[])
+    return Settings(
+        id_column="external_id",
+        check_same_address=False,
+        columns_to_keep=[],
+        solver_backend="highspy",  # Use HiGHS (works on Apple Silicon)
+    )
 
 
 @pytest.fixture
