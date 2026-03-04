@@ -70,9 +70,10 @@ def create_app(config_name: str = "") -> Flask:
 
 def register_context_processors(app: Flask) -> None:
     """Register template context processors."""
-    from .context_processors import static_versioning_context_processor
+    from .context_processors import inject_feature_flags, static_versioning_context_processor
 
     app.context_processor(static_versioning_context_processor)
+    app.context_processor(inject_feature_flags)
 
     @app.context_processor
     def inject_csp_nonce() -> dict[str, str]:

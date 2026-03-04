@@ -202,6 +202,40 @@ BABEL_DEFAULT_TIMEZONE=UTC
 
 See [docs/translations.md](translations.md) for translation management workflow.
 
+### Feature Flags
+
+Toggle features per-environment using environment variables with the `FF_` prefix:
+
+```bash
+# Enable a feature
+FF_MY_FEATURE=true
+
+# Disable a feature (or simply don't set the variable)
+FF_MY_FEATURE=false
+```
+
+**Naming convention:** Variable names are normalised by stripping the `FF_` prefix and lowercasing. So `FF_MY_FEATURE` becomes `my_feature` in code.
+
+**Supported values:** `true`/`false`, `yes`/`no`, `on`/`off`, `1`/`0` (case-insensitive). Unset variables default to `false`.
+
+**In Python code:**
+
+```python
+from opendlp.feature_flags import has_feature
+
+if has_feature("my_feature"):
+    # feature-specific logic
+    ...
+```
+
+**In Jinja templates:**
+
+```jinja
+{% if feature('my_feature') %}
+  <p>This is only shown when the feature is enabled.</p>
+{% endif %}
+```
+
 ## Environment Files
 
 ### Development: `.env`

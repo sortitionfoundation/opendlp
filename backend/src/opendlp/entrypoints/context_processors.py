@@ -161,6 +161,16 @@ def get_site_banner_config() -> tuple[str, str]:
     return flask_config.SITE_BANNER_TEXT, flask_config.SITE_BANNER_COLOUR
 
 
+def inject_feature_flags() -> dict[str, object]:
+    """Inject feature flag checker into template context.
+
+    Templates can use: {% if feature('my_feature') %} ... {% endif %}
+    """
+    from opendlp.feature_flags import has_feature
+
+    return {"feature": has_feature}
+
+
 def static_versioning_context_processor() -> dict[str, str]:
     """
     Flask context processor that adds static file version hashes to template context.
