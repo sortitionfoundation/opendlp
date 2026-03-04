@@ -45,3 +45,16 @@ repos:
       - id: djhtml
       - id: djcss
       - id: djjs
+
+  # look for typos
+  - repo: https://github.com/crate-ci/typos
+    rev: "v1.40.0"
+    hooks:
+      - id: typos
+        # no `-w` disable the auto fix, always review the output
+        # `-c` is to tell it where the config is
+        # `--force-exclude` is because the pre-commit stuff explicitly passes every
+        #    filename to typos as an argument. Without --force-exclude typos will
+        #    check all the files, even though they are in the exclude.
+        #    See https://github.com/crate-ci/typos/issues/347 for details.
+        args: ["--force-exclude", "-c", "backend/pyproject.toml"]
