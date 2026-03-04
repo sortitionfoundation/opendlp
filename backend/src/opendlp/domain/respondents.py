@@ -70,7 +70,11 @@ class Respondent:
 
     def is_available_for_selection(self) -> bool:
         """Check if respondent is available for selection"""
-        return self.selection_status == RespondentStatus.POOL and self.eligible is True and self.can_attend is True
+        return (
+            self.selection_status == RespondentStatus.POOL
+            and self.eligible is not False
+            and self.can_attend is not False
+        )
 
     def get_attribute(self, key: str, default: Any = None) -> Any:
         """Safely get attribute value"""

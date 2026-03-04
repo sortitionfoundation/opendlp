@@ -462,7 +462,7 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         if status:
             results = [r for r in results if r.selection_status == status]
         if eligible_only:
-            results = [r for r in results if r.eligible is True and r.can_attend is True]
+            results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         return results
 
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
@@ -477,8 +477,8 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             for r in self._items
             if r.assembly_id == assembly_id
             and r.selection_status == RespondentStatus.POOL
-            and r.eligible is True
-            and r.can_attend is True
+            and r.eligible is not False
+            and r.can_attend is not False
         )
 
     def delete(self, item: Respondent) -> None:

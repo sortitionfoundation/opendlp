@@ -833,10 +833,12 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             query = query.filter(orm.respondents.c.selection_status == status)
 
         if eligible_only:
+            # These are three-way states: True=yes, False=no, None=not yet set.
+            # Only exclude respondents explicitly marked as False.
             query = query.filter(
                 and_(
-                    orm.respondents.c.eligible == True,  # noqa: E712
-                    orm.respondents.c.can_attend == True,  # noqa: E712
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
                 )
             )
 
@@ -861,8 +863,8 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.selection_status == RespondentStatus.POOL,
-                    orm.respondents.c.eligible == True,  # noqa: E712
-                    orm.respondents.c.can_attend == True,  # noqa: E712
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
                 )
             )
             .count()

@@ -177,6 +177,115 @@ class TestOpenDLPDataAdapter:
             with pytest.raises(BadDataError):
                 select_data.load_people(settings, features)
 
+    def test_no_eligible_respondents_gives_clear_error(self, postgres_session_factory, test_assembly: Assembly):
+        """Test that when respondents exist but none are eligible, the error message is clear."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        # Create respondents that are explicitly NOT eligible
+        resp1 = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB001",
+            attributes={"Gender": "Male"},
+            eligible=False,
+            can_attend=True,
+        )
+        resp2 = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB002",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=False,
+        )
+
+        with uow:
+            uow.respondents.add(resp1)
+            uow.respondents.add(resp2)
+            uow.commit()
+
+        # Add features
+        with uow:
+            cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+            cat.add_value(TargetValue(value="Male", min=0, max=1))
+            cat.add_value(TargetValue(value="Female", min=0, max=1))
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        # When we try to load people, we should get a clear error about no eligible respondents
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            select_data = SelectionData(adapter)
+
+            settings = Settings(id_column="external_id", columns_to_keep=[])
+            features, _ = select_data.load_features(number_to_select=1)
+            with pytest.raises(BadDataError, match="No eligible respondents"):
+                select_data.load_people(settings, features)
+
+    def test_respondents_with_none_eligibility_are_included(self, postgres_session_factory, test_assembly: Assembly):
+        """Test that respondents with eligible=None and can_attend=None are included in selection.
+
+        These are three-way states: True means yes, False means no, None means not yet set.
+        Only respondents explicitly marked as False should be excluded.
+        """
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        # Create respondents with various eligibility states
+        resp_none = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB001",
+            attributes={"Gender": "Male"},
+            eligible=None,
+            can_attend=None,
+        )
+        resp_true = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB002",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=True,
+        )
+        resp_false_eligible = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB003",
+            attributes={"Gender": "Male"},
+            eligible=False,
+            can_attend=True,
+        )
+        resp_false_attend = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB004",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=False,
+        )
+
+        with uow:
+            uow.respondents.add(resp_none)
+            uow.respondents.add(resp_true)
+            uow.respondents.add(resp_false_eligible)
+            uow.respondents.add(resp_false_attend)
+            uow.commit()
+
+        # Add features
+        with uow:
+            cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+            cat.add_value(TargetValue(value="Male", min=0, max=1))
+            cat.add_value(TargetValue(value="Female", min=0, max=1))
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        # NB001 (None/None) and NB002 (True/True) should be included
+        # NB003 (False/True) and NB004 (True/False) should be excluded
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            select_data = SelectionData(adapter)
+
+            settings = Settings(id_column="external_id", columns_to_keep=[])
+            features, _ = select_data.load_features(number_to_select=2)
+            people, report = select_data.load_people(settings, features)
+
+            assert people.count == 2
+            assert set(people) == {"NB001", "NB002"}
+
     def test_multiple_features(self, postgres_session_factory, test_assembly: Assembly):
         """Test loading multiple target categories as features."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)

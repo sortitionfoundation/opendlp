@@ -100,14 +100,35 @@ class TestRespondent:
         )
         assert resp.is_available_for_selection() is False
 
-    def test_is_available_for_selection_false_eligible_none(self):
+    def test_is_available_for_selection_with_eligible_none(self):
+        """None means 'not yet set' — should be treated as available, not excluded."""
         resp = Respondent(
             assembly_id=uuid.uuid4(),
             external_id="NB001",
             eligible=None,
             can_attend=True,
         )
-        assert resp.is_available_for_selection() is False
+        assert resp.is_available_for_selection() is True
+
+    def test_is_available_for_selection_with_can_attend_none(self):
+        """None means 'not yet set' — should be treated as available, not excluded."""
+        resp = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="NB001",
+            eligible=True,
+            can_attend=None,
+        )
+        assert resp.is_available_for_selection() is True
+
+    def test_is_available_for_selection_with_both_none(self):
+        """None means 'not yet set' — should be treated as available, not excluded."""
+        resp = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="NB001",
+            eligible=None,
+            can_attend=None,
+        )
+        assert resp.is_available_for_selection() is True
 
     def test_is_available_for_selection_false_not_pool_status(self):
         resp = Respondent(
