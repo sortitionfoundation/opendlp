@@ -44,7 +44,13 @@
                 <li class="govuk-service-navigation__item {% if current_tab == 'data' %}govuk-service-navigation__item--active{% endif %}">
                     <a class="govuk-service-navigation__link"
                         href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
-                        {{ _("Data & Selection") }}
+                        {{ _("Selection (GSheet)") }}
+                    </a>
+                </li>
+                <li class="govuk-service-navigation__item {% if current_tab == 'db_selection' %}govuk-service-navigation__item--active{% endif %}">
+                    <a class="govuk-service-navigation__link"
+                        href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">
+                        {{ _("Selection (DB)") }}
                     </a>
                 </li>
                 <li class="govuk-service-navigation__item {% if current_tab == 'members' %}govuk-service-navigation__item--active{% endif %}">

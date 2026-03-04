@@ -1,0 +1,16 @@
+{% extends "main/view_assembly_base.html" %}
+{% block title %}{{ _("Replacements (DB)") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block assembly_breadcrumbs %}
+    <li class="govuk-breadcrumbs__list-item">
+        <a class="govuk-breadcrumbs__link"
+            href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">{{ _("Selection (DB)") }}</a>
+    </li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("Replacements") }}</li>
+{% endblock %}
+{% block assembly_content %}
+    <h2 class="govuk-heading-m">{{ _("Replacement Selection") }}</h2>
+    <p class="govuk-body">
+        {{ _("Replacement selection from database data is not yet available. This feature is coming soon.") }}
+    </p>
+    <a href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Back to Selection") }}</a>
+{% endblock %}

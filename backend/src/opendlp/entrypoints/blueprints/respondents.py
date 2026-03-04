@@ -10,6 +10,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     update_csv_config,
@@ -32,9 +33,17 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
+        status_filter_str = request.args.get("status", "")
+        status_filter: RespondentStatus | None = None
+        if status_filter_str:
+            try:
+                status_filter = RespondentStatus(status_filter_str)
+            except ValueError:
+                status_filter = None
+
         uow2 = bootstrap.bootstrap()
         with uow2:
-            all_respondents = uow2.respondents.get_by_assembly_id(assembly_id)
+            all_respondents = uow2.respondents.get_by_assembly_id(assembly_id, status=status_filter)
             total_count = len(all_respondents)
             available_count = uow2.respondents.count_available_for_selection(assembly_id)
 
@@ -62,6 +71,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             per_page=PER_PAGE,
             total_pages=total_pages,
             current_tab="respondents",
+            status_filter=status_filter_str,
         )
 
     except NotFoundError:

@@ -575,3 +575,25 @@ class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[Optional(), Length(max=100)],
         description=_l("Name of column containing unique identifiers. Leave blank to use the assembly default."),
     )
+
+
+class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for editing AssemblyCSV selection settings."""
+
+    check_same_address = BooleanField(
+        _l("Check Same Address"),
+        default=True,
+        description=_l("Prevent selecting multiple participants from the same address"),
+    )
+
+    check_same_address_cols_string = StringField(
+        _l("Address Columns"),
+        validators=[Optional(), Length(max=500)],
+        description=_l("Comma-separated respondent attribute names used for address matching"),
+    )
+
+    columns_to_keep_string = StringField(
+        _l("Columns to Keep"),
+        validators=[Optional(), Length(max=1000)],
+        description=_l("Comma-separated respondent attribute names to include in CSV output"),
+    )
