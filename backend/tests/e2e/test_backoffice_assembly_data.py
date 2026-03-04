@@ -4,6 +4,93 @@ ABOUTME: Tests the assembly data page with gsheet source selection"""
 from tests.e2e.helpers import get_csrf_token
 
 
+class TestBackofficeDashboard:
+    """Test backoffice dashboard functionality."""
+
+    def test_dashboard_loads_for_logged_in_user(self, logged_in_admin):
+        """Test that dashboard page loads successfully."""
+        response = logged_in_admin.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        assert b"Dashboard" in response.data or b"Assembly" in response.data.lower()
+
+    def test_dashboard_redirects_when_not_logged_in(self, client):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get("/backoffice/dashboard")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
+class TestBackofficeAssemblyDetails:
+    """Test backoffice assembly details page."""
+
+    def test_view_assembly_details_page_loads(self, logged_in_admin, existing_assembly):
+        """Test that assembly details page loads successfully."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert existing_assembly.title.encode() in response.data
+
+    def test_view_assembly_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_view_nonexistent_assembly_redirects(self, logged_in_admin):
+        """Test that accessing non-existent assembly redirects with error."""
+        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000")
+        assert response.status_code == 302  # Should redirect to dashboard with error
+
+
+class TestBackofficeShowcase:
+    """Test backoffice showcase page."""
+
+    def test_showcase_page_loads(self, client):
+        """Test that showcase page loads without authentication."""
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        # Showcase demonstrates the design system components
+        assert b"showcase" in response.data.lower() or b"component" in response.data.lower()
+
+    def test_search_demo_empty_query(self, client):
+        """Test search demo returns empty for no query."""
+        response = client.get("/backoffice/showcase/search-demo")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data == []
+
+    def test_search_demo_with_query(self, client):
+        """Test search demo returns mock results."""
+        response = client.get("/backoffice/showcase/search-demo?q=alice")
+        assert response.status_code == 200
+        data = response.get_json()
+        # Should match mock user with "alice"
+        assert len(data) >= 1
+        assert any("alice" in item["label"].lower() or "alice" in item["sublabel"].lower() for item in data)
+
+
+class TestBackofficeAssemblyMembers:
+    """Test backoffice assembly members page."""
+
+    def test_members_page_loads(self, logged_in_admin, existing_assembly):
+        """Test that the members page loads successfully."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        assert response.status_code == 200
+        assert b"Members" in response.data or b"Team" in response.data
+
+    def test_members_page_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_members_search_returns_json(self, logged_in_admin, existing_assembly):
+        """Test that members search endpoint returns JSON."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=test")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert isinstance(data, list)
+
+
 class TestBackofficeAssemblyDataPage:
     """Test backoffice assembly data page functionality."""
 
@@ -403,3 +490,78 @@ class TestBackofficeDataSourceLocking:
         assert response.status_code == 200
         # The gsheet option should be selected
         assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data
+
+
+class TestBackofficeSelectionTab:
+    """Test the selection tab routes for backoffice."""
+
+    def test_selection_page_loads_without_gsheet_config(self, logged_in_admin, existing_assembly):
+        """Test that selection page loads and shows configure message when no gsheet config."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show message about configuring gsheet first
+        assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+
+    def test_selection_page_loads_with_gsheet_config(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page loads when gsheet is configured."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show selection interface with gsheet configured
+        assert b"Selection" in response.data
+
+    def test_selection_page_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_selection_load_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint returns redirect with warning (stub implementation)."""
+        assembly, gsheet = assembly_with_gsheet
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/load",
+            data={"csrf_token": csrf_token},
+            follow_redirects=False,
+        )
+        # Stub implementation redirects back to selection page
+        assert response.status_code == 302
+        assert "selection" in response.location
+
+    def test_selection_run_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint returns redirect with warning (stub implementation)."""
+        assembly, gsheet = assembly_with_gsheet
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/run",
+            data={"csrf_token": csrf_token},
+            follow_redirects=False,
+        )
+        # Stub implementation redirects back to selection page
+        assert response.status_code == 302
+        assert "selection" in response.location
+
+    def test_selection_progress_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress endpoint returns JSON (stub implementation)."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/00000000-0000-0000-0000-000000000000/progress"
+        )
+        # Stub implementation returns JSON with not_implemented status
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["status"] == "not_implemented"
+
+    def test_selection_cancel_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that cancel endpoint returns redirect with warning (stub implementation)."""
+        assembly, gsheet = assembly_with_gsheet
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/00000000-0000-0000-0000-000000000000/cancel",
+            data={"csrf_token": csrf_token},
+            follow_redirects=False,
+        )
+        # Stub implementation redirects back to selection page
+        assert response.status_code == 302
+        assert "selection" in response.location

@@ -28,14 +28,6 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.sortition import (
-    InvalidSelection,
-    cancel_task,
-    check_and_update_task_health,
-    get_selection_run_status,
-    start_gsheet_load_task,
-    start_gsheet_select_task,
-)
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
@@ -224,188 +216,39 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>")
-@login_required
-def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly selection page with task run status."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Check task health before getting status
-            check_and_update_task_health(uow, run_id)
-
-            # Get run status
-            result = get_selection_run_status(uow, run_id)
-
-        # Check if gsheet is configured
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception as gsheet_error:
-            current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
-            gsheet = None
-
-        return render_template(
-            "backoffice/assembly_selection.html",
-            assembly=assembly,
-            gsheet=gsheet,
-            run_id=run_id,
-            run_record=result.run_record,
-            log_messages=result.log_messages,
-            run_report=result.run_report,
-        ), 200
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for selection with run: {e}")
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} selection: {e}")
-        flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        current_app.logger.error(f"View assembly selection with run error: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while loading the selection page"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-
-
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/progress")
-@login_required
-def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """JSON progress endpoint for Alpine polling."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            # Verify permissions
-            get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Check task health
-            check_and_update_task_health(uow, run_id)
-
-            # Get run status
-            result = get_selection_run_status(uow, run_id)
-
-        if result.run_record is None:
-            return jsonify({"error": "Task not found"}), 404
-
-        return jsonify({
-            "status": result.run_record.status.value,
-            "log_messages": result.log_messages or [],
-            "error_message": result.run_record.error_message,
-            "completed_at": result.run_record.completed_at.isoformat() if result.run_record.completed_at else None,
-            "has_report": result.run_report is not None,
-        }), 200
-    except NotFoundError:
-        return jsonify({"error": "Assembly not found"}), 404
-    except InsufficientPermissions:
-        return jsonify({"error": "Permission denied"}), 403
-    except Exception as e:
-        current_app.logger.error(f"Selection progress error: {e}")
-        return jsonify({"error": "Internal error"}), 500
-
-
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/load", methods=["POST"])
 @login_required
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Start a load/validation task for selection data."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
-
-        return redirect(
-            url_for(
-                "backoffice.view_assembly_selection_with_run",
-                assembly_id=assembly_id,
-                run_id=task_id,
-            )
-        )
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for load task: {e}")
-        flash(_("Please configure a Google Spreadsheet first"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for load task: {e}")
-        flash(_("You don't have permission to run selection"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except Exception as e:
-        current_app.logger.error(f"Start selection load error: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while starting the validation task"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    """Start a check spreadsheet task (Phase 2 - stub implementation)."""
+    # TODO: Implement actual task submission
+    flash(_("Check spreadsheet functionality is not yet implemented"), "warning")
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/run", methods=["POST"])
 @login_required
 def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Start a selection task."""
-    try:
-        # Check if test mode
-        test_mode = request.args.get("test") == "1"
+    """Start a selection run task (Phase 2 - stub implementation)."""
+    # TODO: Implement actual task submission
+    flash(_("Selection run functionality is not yet implemented"), "warning")
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
-        with uow:
-            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
 
-        return redirect(
-            url_for(
-                "backoffice.view_assembly_selection_with_run",
-                assembly_id=assembly_id,
-                run_id=task_id,
-            )
-        )
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for selection task: {e}")
-        flash(_("Please configure a Google Spreadsheet first"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for selection task: {e}")
-        flash(_("You don't have permission to run selection"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except Exception as e:
-        current_app.logger.error(f"Start selection run error: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while starting the selection task"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/progress")
+@login_required
+def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Get selection task progress as JSON (Phase 2 - stub implementation)."""
+    # TODO: Implement actual progress tracking
+    return jsonify({"status": "not_implemented", "message": "Progress tracking is not yet implemented"})
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Cancel a running selection task."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            cancel_task(uow, current_user.id, assembly_id, run_id)
-
-        flash(_("Task cancelled"), "info")
-        return redirect(
-            url_for(
-                "backoffice.view_assembly_selection_with_run",
-                assembly_id=assembly_id,
-                run_id=run_id,
-            )
-        )
-    except InvalidSelection as e:
-        current_app.logger.warning(f"Cannot cancel task: {e}")
-        flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except NotFoundError as e:
-        current_app.logger.warning(f"Task not found for cancel: {e}")
-        flash(_("Task not found"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to cancel task: {e}")
-        flash(_("You don't have permission to cancel this task"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
-    except Exception as e:
-        current_app.logger.error(f"Cancel selection error: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    """Cancel a running selection task (Phase 2 - stub implementation)."""
+    # TODO: Implement actual task cancellation
+    flash(_("Task cancellation is not yet implemented"), "warning")
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
