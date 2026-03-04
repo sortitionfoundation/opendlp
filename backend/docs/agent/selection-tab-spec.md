@@ -608,10 +608,188 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 
 ### Phase 5: Selection History ⬜
 
-1. Add selection run history table
-2. Add pagination
-3. Add view run details page
-4. Add tests
+**Goal:** Add a comprehensive selection run history section at the bottom of the Selection tab, showing all previous runs with pagination.
+
+#### Data Layer
+
+**Repository Method:** `SelectionRunRecordRepository.get_by_assembly_id_paginated()`
+- **Location:** `src/opendlp/adapters/sql_repository.py:489`
+- **Signature:** `get_by_assembly_id_paginated(assembly_id: UUID, page: int = 1, per_page: int = 50) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]`
+- **Returns:** Tuple of (list of (SelectionRunRecord, User) pairs, total_count)
+- **Implementation:**
+  - Uses LEFT JOIN to get user information alongside each run record
+  - Joins `SelectionRunRecord` with `User` on `user_id`
+  - Filters by `assembly_id`
+  - Orders by `created_at DESC` (most recent first)
+  - Uses SQLAlchemy pagination with `limit()` and `offset()`
+
+**SelectionRunRecord Fields:**
+- `task_id`: UUID - Primary key
+- `assembly_id`: UUID - Foreign key to Assembly
+- `user_id`: UUID | None - Foreign key to User who started the run
+- `task_type`: SelectionTaskType enum - Type of task (see Task Types)
+- `status`: SelectionRunStatus enum - Current status (see Task Statuses)
+- `created_at`: datetime - When task was created
+- `completed_at`: datetime | None - When task finished
+- `comment`: str - User comment (max 512 chars)
+- `error_message`: str - User-facing error message if failed
+- `log_messages`: list[str] - Log messages from execution (JSON)
+- `run_report`: RunReport - Detailed report from sortition (JSON)
+- `selected_ids`: list[list[str]] | None - Selected participant IDs (JSON)
+- `remaining_ids`: list[str] | None - Remaining pool IDs (JSON)
+- `settings_used`: dict[str, Any] - GSheet settings used (JSON)
+- `status_stages`: list[dict] | None - Stage progress (JSON)
+- `celery_task_id`: str - Celery task ID for tracking
+
+**Helper Properties:**
+- `task_type_verbose`: Converts enum to readable string (e.g., "Load google spreadsheet")
+- `has_finished`: Boolean - True if status is completed, failed, or cancelled
+- `is_pending`, `is_running`, `is_completed`, `is_failed`, `is_cancelled`: Status checks
+
+#### UI Components
+
+**Section Structure:**
+```html
+<section class="mt-8">
+  <h2>Selection Run History</h2>
+
+  <!-- Pagination info -->
+  <p>Showing X to Y of Z runs</p>
+
+  <!-- History table -->
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Task Type</th>
+        <th>Started By</th>
+        <th>Started At</th>
+        <th>Completed At</th>
+        <th>Comment</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows for each run -->
+    </tbody>
+  </table>
+
+  <!-- Pagination controls -->
+  <nav><!-- pagination --></nav>
+</section>
+```
+
+**Table Columns:**
+
+1. **Status** - Tag/badge with color coding:
+   - `pending` → Grey tag: "Pending"
+   - `running` → Blue tag: "Running"
+   - `completed` → Green tag: "Completed"
+   - `failed` → Red tag: "Failed"
+   - `cancelled` → Yellow tag: "Cancelled"
+
+2. **Task Type** - Display `run_record.task_type_verbose`:
+   - Examples: "Load google spreadsheet", "Select google spreadsheet", "Test select google spreadsheet", etc.
+
+3. **Started By** - User who initiated the task:
+   - Show `user.display_name` or `user.email` if user exists
+   - Show "Unknown" if user is None (user might have been deleted)
+
+4. **Started At** - Formatted datetime:
+   - Format: `"%d %b %Y %H:%M"` (e.g., "04 Mar 2026 14:30")
+   - Show "N/A" if `created_at` is None
+
+5. **Completed At** - Formatted datetime:
+   - Format: `"%d %b %Y %H:%M"`
+   - Show "N/A" if `completed_at` is None (still running/pending)
+
+6. **Comment** - User's comment when starting the run:
+   - Show comment text or "None" if empty
+   - Max 512 characters
+
+7. **Actions** - Link to view run details:
+   - "View" link → Routes to `view_run_details` endpoint
+
+**Pagination Controls:**
+- Show "Previous" and "Next" buttons
+- Show page numbers with ellipsis for skipped pages
+- Display window: current page ±2, always show first and last
+- Example: `1 ... 8 9 [10] 11 12 ... 25`
+- Only show pagination if `total_pages > 1`
+
+**Empty State:**
+- If no runs exist: "No selection runs have been performed yet."
+
+#### Routes
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/backoffice/assembly/<id>/selection` | GET | Main selection page with history section |
+| `/backoffice/assembly/<id>/selection/history/<run_id>` | GET | View details of a specific run |
+
+**Query Parameters:**
+- `page`: int - Page number for pagination (default: 1)
+- `per_page`: int - Items per page (fixed at 50, not exposed to users)
+
+#### View Run Details Endpoint
+
+**Existing Endpoint:** `gsheets.view_gsheet_run`
+- **Route:** `/assemblies/<assembly_id>/gsheet_runs/<run_id>/view`
+- **Purpose:** Generic redirect endpoint that routes to task-specific view
+- **Logic:**
+  1. Fetch the `SelectionRunRecord` by `run_id`
+  2. Validate `run_record.assembly_id == assembly_id`
+  3. Map `task_type` to appropriate view:
+     - `LOAD_GSHEET`, `SELECT_GSHEET`, `TEST_SELECT_GSHEET` → `select_assembly_gsheet_with_run`
+     - `LOAD_REPLACEMENT_GSHEET`, `SELECT_REPLACEMENT_GSHEET` → `replace_assembly_gsheet_with_run`
+     - `LIST_OLD_TABS`, `DELETE_OLD_TABS` → `manage_assembly_gsheet_tabs_with_run`
+
+**For Backoffice:**
+- Create similar redirect endpoint: `/backoffice/assembly/<id>/selection/history/<run_id>`
+- Redirect to appropriate backoffice section based on task type:
+  - Initial selection tasks → `/backoffice/assembly/<id>/selection?run_id=<run_id>`
+  - Replacement tasks → `/backoffice/assembly/<id>/replacement?run_id=<run_id>` (Phase 3)
+  - Tab management tasks → `/backoffice/assembly/<id>/manage-tabs?run_id=<run_id>` (Phase 4)
+
+#### Implementation Steps
+
+1. ⬜ Update `view_assembly_selection` route to fetch paginated run history
+   - Add pagination params: `page = request.args.get("page", 1, type=int)`
+   - Call `uow.selection_run_records.get_by_assembly_id_paginated(assembly_id, page, per_page=50)`
+   - Calculate `total_pages = (total_count + per_page - 1) // per_page`
+   - Pass `run_history`, `page`, `total_count`, `total_pages` to template
+
+2. ⬜ Update `assembly_selection.html` template to add history section
+   - Add section after "Manage Generated Tabs" card
+   - Include table with all columns as specified
+   - Add pagination controls using GOV.UK pagination component pattern
+   - Handle empty state
+
+3. ⬜ Create `view_run_details` redirect endpoint
+   - Route: `/backoffice/assembly/<id>/selection/history/<run_id>`
+   - Fetch run record and validate assembly ownership
+   - Redirect to appropriate section based on task type
+   - Handle errors (run not found, wrong assembly, etc.)
+
+4. ⬜ Add tests
+   - Unit tests for pagination logic
+   - E2E tests for history display
+   - Test pagination controls
+   - Test run details redirect
+   - Test permission checks
+
+#### Reference Implementation
+
+**Old Design Template:** `templates/main/view_assembly_data.html:39-171`
+**Old Design Route:** `main_bp.view_assembly_data` in `entrypoints/blueprints/main.py:89-133`
+**Repository Implementation:** `sql_repository.py:489-515`
+
+#### Notes
+
+- The history section should show ALL task types (load, select, replace, manage tabs)
+- Users should be able to click "View" to see the detailed results of any past run
+- The pagination should maintain the current page when navigating back from run details
+- Consider adding a "Filter by Task Type" dropdown in future iterations (not in this phase)
 
 ---
 
