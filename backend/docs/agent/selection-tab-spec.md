@@ -164,6 +164,26 @@ flowchart TD
     style ShowNoConfig fill:#90EE90,color:#000000
     style ShowSelectionPage fill:#90EE90,color:#000000
     style UserAction fill:#90EE90,color:#000000
+
+    %% Phase 2 Complete: Initial Selection functionality
+    style StartLoad fill:#90EE90,color:#000000
+    style StartSelect fill:#90EE90,color:#000000
+    style StartTestSelect fill:#90EE90,color:#000000
+    style CancelTask fill:#90EE90,color:#000000
+    style CreateLoadTask fill:#90EE90,color:#000000
+    style CreateSelectTask fill:#90EE90,color:#000000
+    style CreateTestTask fill:#90EE90,color:#000000
+    style SubmitCelery fill:#90EE90,color:#000000
+    style RedirectWithRunId fill:#90EE90,color:#000000
+    style ShowProgress fill:#90EE90,color:#000000
+    style PollProgress fill:#90EE90,color:#000000
+    style CheckStatus fill:#90EE90,color:#000000
+    style ContinuePolling fill:#90EE90,color:#000000
+    style ShowSuccess fill:#90EE90,color:#000000
+    style ShowError fill:#90EE90,color:#000000
+    style ShowCancelled fill:#90EE90,color:#000000
+    style RevokeTask fill:#90EE90,color:#000000
+    style UpdateStatus fill:#90EE90,color:#000000
 ```
 
 ### Replacement Selection Flow
@@ -538,33 +558,33 @@ For the new backoffice implementation, the routes will be under `/backoffice/ass
 2. ✅ Create selection page template with three sections
 3. ✅ Implement basic routes (without task functionality)
 
-### Phase 2: Initial Selection ⬜
+### Phase 2: Initial Selection ✅
 
 **Phase 2a: Progress Endpoint & Alpine Polling**
-1. Add `/selection/<run_id>` GET route (view with run status)
-2. Add `/selection/<run_id>/progress` GET route (JSON for Alpine polling)
-3. Create Alpine polling component
-4. Update template to conditionally show progress UI
+1. ✅ Add `/selection/<run_id>` GET route (view with run status)
+2. ✅ Add `/selection/<run_id>/progress` GET route (JSON for Alpine polling)
+3. ✅ Create Alpine polling component (`taskPoller` in alpine-components.js)
+4. ✅ Update template to conditionally show progress UI
 
 **Phase 2b: Check Spreadsheet (Load)**
-1. Add `/selection/load` POST route (starts LOAD_GSHEET task)
-2. Enable "Check Spreadsheet" button
-3. Display load results (participant count, validation errors)
+1. ✅ Add `/selection/load` POST route (starts LOAD_GSHEET task)
+2. ✅ Enable "Check Spreadsheet" button
+3. ✅ Display load results (participant count, validation errors)
 
 **Phase 2c: Run Selection**
-1. Add `/selection/run` POST route (starts SELECT_GSHEET task)
-2. Support `test=1` query param for test selection
-3. Enable "Run Selection" and "Run Test Selection" buttons
-4. Display selection results with report
+1. ✅ Add `/selection/run` POST route (starts SELECT_GSHEET task)
+2. ✅ Support `test=1` query param for test selection
+3. ✅ Enable "Run Selection" and "Run Test Selection" buttons
+4. ✅ Display selection results with report
 
 **Phase 2d: Cancel & Error Handling**
-1. Add `/selection/<run_id>/cancel` POST route
-2. Add cancel button during task execution
-3. Handle error states gracefully
+1. ✅ Add `/selection/<run_id>/cancel` POST route
+2. ✅ Add cancel button during task execution
+3. ✅ Handle error states gracefully
 
 **Phase 2e: Testing**
-1. Add BDD tests for selection functionality
-2. Add manual test cases
+1. ✅ Add BDD tests for selection functionality
+2. ✅ Add manual test cases (TC-S07 through TC-S18)
 
 ### Phase 3: Replacement Selection ⬜
 

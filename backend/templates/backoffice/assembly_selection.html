@@ -47,6 +47,97 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
         </section>
     {% else %}
+        {# Task Progress Section - shown when a task is running #}
+        {% if run_id %}
+            <div class="mb-8"
+                x-data="taskPoller({
+                    progressUrl: '{{ url_for('backoffice.selection_progress', assembly_id=assembly.id, run_id=run_id) }}',
+                    pollIntervalMs: 2000,
+                    initialStatus: '{{ run_record.status.value if run_record else 'pending' }}'
+                    })">
+                {% call card(title=_("Task Progress"), composed=true) %}
+                    {% call card_body() %}
+                        {# Task type info #}
+                        {% if run_record %}
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Task:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</span>
+                            </div>
+                        {% endif %}
+
+                        {# Status indicator #}
+                        <div class="mb-4">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Status:") }}</span>
+                            <span class="text-body-md px-2 py-1 rounded"
+                                x-bind:style="
+                                    status === 'completed' ? 'background-color: var(--color-success-background); color: var(--color-success-text);' :
+                                    status === 'failed' ? 'background-color: var(--color-error-background); color: var(--color-error-text);' :
+                                    status === 'cancelled' ? 'background-color: var(--color-warning-background); color: var(--color-warning-text);' :
+                                    'background-color: var(--color-info-background); color: var(--color-info-text);'
+                                "
+                                x-text="status.charAt(0).toUpperCase() + status.slice(1)">
+                            </span>
+                        </div>
+
+                        {# Spinner for running tasks #}
+                        <div x-show="status === 'pending' || status === 'running'" class="flex items-center gap-3 mb-4">
+                            <svg class="animate-spin h-5 w-5" style="color: var(--color-primary-action);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Processing...") }}</span>
+                        </div>
+
+                        {# Error message #}
+                        <template x-if="errorMessage">
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-error-text);">{{ _("Error:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-error-text);" x-text="errorMessage"></span>
+                            </div>
+                        </template>
+
+                        {# Success message with report link #}
+                        <template x-if="status === 'completed' && hasReport">
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-success-text);">{{ _("Result:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
+                            </div>
+                        </template>
+
+                        {# Log messages (detailed output) #}
+                        <div class="mb-4">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Messages:") }}</span>
+                            <div class="rounded-lg p-4 mt-2 max-h-60 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <template x-if="logMessages.length === 0">
+                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Waiting for task to start...") }}</p>
+                                </template>
+                                <template x-for="(msg, index) in logMessages" x-bind:key="index">
+                                    <p class="text-body-sm mb-1" style="color: var(--color-body-text);" x-text="msg"></p>
+                                </template>
+                            </div>
+                        </div>
+                    {% endcall %}
+                    {% call card_footer() %}
+                        {# Cancel button - only show when task is running #}
+                        <template x-if="status === 'pending' || status === 'running'">
+                            <form method="post" action="{{ url_for('backoffice.cancel_selection_run', assembly_id=assembly.id, run_id=run_id) }}" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {{ button(_("Cancel Task"), type="submit", variant="danger") }}
+                            </form>
+                        </template>
+                        {# Back to selection button - show when task is finished #}
+                        <template x-if="status === 'completed' || status === 'failed' || status === 'cancelled'">
+                            <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) }}"
+                                class="inline-flex items-center justify-center px-4 py-2.5 text-body-md font-medium rounded-lg transition-all duration-150"
+                                style="background-color: var(--color-primary-action); color: white;">
+                                {{ _("Back to Selection") }}
+                            </a>
+                        </template>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
         {# Google Sheet configured - show selection options #}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {# Initial Selection Card #}
@@ -69,9 +160,18 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
-                    {{ button(_("Run Test Selection"), variant="secondary", disabled=true) }}
-                    {{ button(_("Run Selection"), variant="primary", disabled=true) }}
+                    <form method="post" action="{{ url_for('backoffice.start_selection_load', assembly_id=assembly.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Check Spreadsheet"), type="submit", variant="outline") }}
+                    </form>
+                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}?test=1" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Test Selection"), type="submit", variant="secondary") }}
+                    </form>
+                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Selection"), type="submit", variant="primary") }}
+                    </form>
                 {% endcall %}
             {% endcall %}
 

@@ -1,7 +1,7 @@
 # Google Sheet Configuration - Manual Test Plan
 
 **Last Updated:** 2026-02-25
-**Related Spec:** [csv-upload-and-gsheet-flow-redesign-spec.md](csv-upload-and-gsheet-flow-redesign-spec.md)
+**Related Spec:** [csv-upload-and-gsheet-flow-redesign-spec.md](../../../docs/agent/csv-upload-and-gsheet-flow-redesign-spec.md)
 
 ## Overview
 
@@ -399,7 +399,7 @@ After testing, clean up:
 
 ## Selection Tab Test Cases (Phase 1)
 
-**Related Spec:** [selection-tab-spec.md](selection-tab-spec.md)
+**Related Spec:** [selection-tab-spec.md](../../../docs/agent/selection-tab-spec.md)
 
 ### TC-S01: Selection Tab Navigation
 
@@ -499,7 +499,7 @@ After testing, clean up:
 
 ## Selection Tab Test Cases (Phase 2) - Initial Selection
 
-**Status:** Pending implementation
+**Status:** Implemented - Ready for testing
 
 ### TC-S07: Check Spreadsheet - Happy Path
 
@@ -529,7 +529,7 @@ After testing, clean up:
 **Expected Results:**
 - [ ] Task starts and shows progress
 - [ ] Task fails with error message
-- [ ] Error displayed: "Could not access the spreadsheet"
+- [ ] Error displayed: "Spreadsheet not found, check URL: [url]"
 - [ ] User can retry after fixing configuration
 
 ---
@@ -700,6 +700,6 @@ After testing, clean up:
 
 ## Related Documentation
 
-- [Google Sheet Configuration Flow Spec](csv-upload-and-gsheet-flow-redesign-spec.md)
-- [Selection Tab Spec](selection-tab-spec.md)
+- [Google Sheet Configuration Flow Spec](../../../docs/agent/csv-upload-and-gsheet-flow-redesign-spec.md)
+- [Selection Tab Spec](../../../docs/agent/selection-tab-spec.md)
 - [Google Service Account Setup](google_service_account.md)
