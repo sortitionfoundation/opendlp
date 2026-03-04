@@ -3,13 +3,13 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-02-16T11:23:53.593448095Z"
+exclude-newer = "2026-02-25T16:37:30.896078366Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-02-23T11:23:53.59345575Z", span = "PT0S" }
-flask = { timestamp = "2026-02-23T11:23:53.593467532Z", span = "PT0S" }
-werkzeug = { timestamp = "2026-02-23T11:23:53.593468093Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-03-04T16:37:30.89653418Z", span = "PT0S" }
+flask = { timestamp = "2026-03-04T16:37:30.897450767Z", span = "PT0S" }
+werkzeug = { timestamp = "2026-03-04T16:37:30.897451688Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -114,6 +114,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/6e/00/2432bb2d445b39b5407f0a90e01b9a271475eea7caf913d7a86bcb956385/cattrs-25.3.0.tar.gz", hash = "sha256:1ac88d9e5eda10436c4517e390a4142d88638fe682c436c93db7ce4a277b884a", size = 509321, upload-time = "2025-10-07T12:26:08.737Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d8/2b/a40e1488fdfa02d3f9a653a61a5935ea08b3c2225ee818db6a76c7ba9695/cattrs-25.3.0-py3-none-any.whl", hash = "sha256:9896e84e0a5bf723bc7b4b68f4481785367ce07a8a02e7e9ee6eb2819bc306ff", size = 70738, upload-time = "2025-10-07T12:26:06.603Z" },
+]
+
+[[package]]
+name = "cbcbox"
+version = "2.902"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/1a/32f438ade249ff6f238078f2500df30f12fc32e3cf0950086a7066cedda1/cbcbox-2.902-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:eb7f2a5ed2e7bdff111c61d7e97f204d197442a7c959908bd37183a02b0a3f78", size = 49187008, upload-time = "2026-02-25T05:38:20.186Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/af/c7f28a6ed537e961db2d5927ecbdd6f84067a1f1d404654cbd9653edd0a4/cbcbox-2.902-py3-none-macosx_11_0_arm64.whl", hash = "sha256:2003d9cdc20c5bb4d9610c403b94d0e7e782d092c90f2ceb05ab747424fbb36b", size = 42865887, upload-time = "2026-02-25T05:38:24.244Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/dd/064b75c617b7fce85327a25f6a0b98ca05c4659dd284f04883415dc68cf2/cbcbox-2.902-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8a4e3e7f286a3359fa5bb062afeb9920d03bc93862481b36171c97b40a2410f2", size = 51143706, upload-time = "2026-02-25T05:38:28.942Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/fc/9b2d6dc679027ae4f99a1771801a8e87fb660e787a36bd98e0ca258ba39b/cbcbox-2.902-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f9f9d948eaaf97453e5fcd476effd90df9c7a4e58fe8673fff50304a1a15995a", size = 56590835, upload-time = "2026-02-25T05:38:34.157Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/29/9db2707cb7ccb4fb44f157bcee30464cb2e9a62509966b8ec7592f9e267a/cbcbox-2.902-py3-none-win_amd64.whl", hash = "sha256:5d5407939815b178559820071f56ce69dc8d42d3faaa04a87e0475a9a62f0c1b", size = 41873336, upload-time = "2026-02-25T05:38:38.588Z" },
 ]
 
 [[package]]
@@ -712,14 +724,15 @@ wheels = [
 
 [[package]]
 name = "mip"
-version = "1.15.0"
+version = "1.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "cbcbox" },
     { name = "cffi" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/30/84/41ebb2db20fbc199768c317ee8238d50b55fd6ffaa4c17e2cb94f0d03152/mip-1.15.0.tar.gz", hash = "sha256:7f6f0381cfe2c52c1b8640203da2cb56974b26e23950ddfb1a76b37d916f197e", size = 24569566, upload-time = "2023-01-04T13:51:46.934Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/0e/b45c3788964982466f7152a8713e8f7c9459c16ebc80d0363009575427ae/mip-1.17.tar.gz", hash = "sha256:9db7993851413e0f371fe5c279fcce455cfbdfebda58eccb2cd81e11c1a4cafa", size = 9435999, upload-time = "2026-02-25T12:54:36.346Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/c9/d4ba71d5d73cf57596b8637ab20eda547c6cde296860f6b6192568809e70/mip-1.15.0-py3-none-any.whl", hash = "sha256:9a48c993ddc9a48591a59e4a1221b400eb1e35fc087052085774360330bb9226", size = 15269834, upload-time = "2023-01-04T13:51:34.596Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/44/3f8d15c753b6514c2f3e3d3e789c74c8bffd22ab92489c0c157ec491a7e7/mip-1.17-py3-none-any.whl", hash = "sha256:83030f4f30b86b4f823789cc6bd74ce54934ef1d2fb9a12973a9818333888751", size = 88203, upload-time = "2026-02-25T12:54:34.797Z" },
 ]
 
 [[package]]
@@ -895,7 +908,7 @@ requires-dist = [
     { name = "qrcode", extras = ["pil"], specifier = ">=8.2" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "secure", specifier = ">=1.0.1" },
-    { name = "sortition-algorithms", specifier = "==0.11.8" },
+    { name = "sortition-algorithms", specifier = "==0.12.0" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.43" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
@@ -1408,7 +1421,7 @@ wheels = [
 
 [[package]]
 name = "sortition-algorithms"
-version = "0.11.8"
+version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1422,9 +1435,9 @@ dependencies = [
     { name = "requests" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/d9/a5cea32e55cfd95e6d36070ea23c24c6c5ae7ae292e3448258bdd985ab33/sortition_algorithms-0.11.8.tar.gz", hash = "sha256:c0c292b41e2956a11e01ee3adb40faf5325f501f8e6608afbc9bd41179b7075a", size = 236560, upload-time = "2026-02-12T13:30:40.2Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/fe/223770c100bb326f1d45296b1b0ac64c4703eb4f4c19f2a968ef70e5d539/sortition_algorithms-0.12.0.tar.gz", hash = "sha256:1e170afd907183f3e6eb51cc329483d51be1b11d950d52557a17675bdc926531", size = 341084, upload-time = "2026-03-04T13:09:52.503Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/2a/051e23773f2c5edb0ba73202dd4cc4431c6b52df74383931b9ac6b692544/sortition_algorithms-0.11.8-py3-none-any.whl", hash = "sha256:500814f5ddfebafefe1f36e9aeecc186a79ad0abc492516e04515ad318a9218b", size = 89255, upload-time = "2026-02-12T13:30:41.879Z" },
+    { url = "https://files.pythonhosted.org/packages/15/13/c0662e000971dad752cec734e3306413129affb94e78243afeeb3d8f4efe/sortition_algorithms-0.12.0-py3-none-any.whl", hash = "sha256:40468c0855beea220f8d44f2d825bf98e17c54017edc1ca79fbf00c0787ff8b5", size = 89408, upload-time = "2026-03-04T13:09:54.04Z" },
 ]
 
 [[package]]
