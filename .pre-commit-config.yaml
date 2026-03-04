@@ -54,5 +54,9 @@ repos:
     hooks:
       - id: typos
         # no `-w` disable the auto fix, always review the output
-        # tell it where the config is
-        args: ["-c", "backend/pyproject.toml"]
+        # `-c` is to tell it where the config is
+        # `--force-exclude` is because the pre-commit stuff explicitly passes every
+        #    filename to typos as an argument. Without --force-exclude typos will
+        #    check all the files, even though they are in the exclude.
+        #    See https://github.com/crate-ci/typos/issues/347 for details.
+        args: ["--force-exclude", "-c", "backend/pyproject.toml"]
