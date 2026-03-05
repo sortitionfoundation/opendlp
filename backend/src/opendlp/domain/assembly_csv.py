@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 
 from sortition_algorithms import settings
 
+from opendlp import config
+
 
 @dataclass
 class AssemblyCSV:
@@ -44,7 +46,7 @@ class AssemblyCSV:
             check_same_address=self.check_same_address,
             check_same_address_columns=self.check_same_address_cols,
             selection_algorithm=self.selection_algorithm,
-            solver_backend="highspy",  # Use HiGHS (works on Apple Silicon, bundled with highspy)
+            solver_backend=config.get_solver_backend(),
         )
 
     def create_detached_copy(self) -> "AssemblyCSV":

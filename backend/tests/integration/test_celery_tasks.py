@@ -13,6 +13,7 @@ from sortition_algorithms import CSVFileDataSource, GSheetDataSource, RunReport,
 from sortition_algorithms.errors import InfeasibleQuotasError, SelectionMultilineError
 from sortition_algorithms.features import FeatureValueMinMax
 
+from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
@@ -79,7 +80,7 @@ def test_settings():
         id_column="nationbuilder_id",
         check_same_address=False,
         columns_to_keep=["nationbuilder_id", "first_name", "last_name", "email"],
-        solver_backend="highspy",  # Use HiGHS (works on Apple Silicon)
+        solver_backend=config.get_solver_backend(),
     )
 
 
