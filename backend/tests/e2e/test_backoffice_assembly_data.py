@@ -663,3 +663,145 @@ class TestBackofficeSelectionTab:
             # Should redirect back to selection page with error flash
             assert response.status_code == 200
             assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+
+    def test_selection_with_run_page_loads(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page with run_id loads successfully when mocked."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Create mock result object
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = None
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Loading data..."]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+            assert response.status_code == 200
+            assert b"Selection" in response.data
+
+    def test_selection_with_run_not_found(self, logged_in_admin, assembly_with_gsheet):
+        """Test selection with run page handles NotFoundError."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import NotFoundError
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health",
+            side_effect=NotFoundError("Task not found"),
+        ):
+            response = logged_in_admin.get(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}",
+                follow_redirects=True,
+            )
+            # Should redirect to dashboard with error
+            assert response.status_code == 200
+
+    def test_view_run_details_endpoint_exists(self, logged_in_admin, assembly_with_gsheet):
+        """Test that view_run_details endpoint responds (tests routing)."""
+        import uuid
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Even without mocking, the endpoint should respond with redirect
+        # (either success redirect or error redirect)
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/history/{run_id}",
+            follow_redirects=False,
+        )
+
+        # Should redirect (either to selection page or with error)
+        assert response.status_code == 302
+
+    def test_selection_page_shows_history_section(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page contains Selection History section."""
+        assembly, gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show the Selection History card (even if empty)
+        assert b"Selection History" in response.data
+
+    def test_selection_progress_not_found(self, logged_in_admin, assembly_with_gsheet):
+        """Test progress endpoint returns 404 when task not found."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.run_record = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            assert response.status_code == 404
+            data = response.get_json()
+            assert data["error"] == "Task not found"
+
+    def test_selection_progress_permission_denied(self, logged_in_admin, existing_assembly):
+        """Test progress endpoint returns 403 when user lacks permission."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import InsufficientPermissions
+
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.get_assembly_with_permissions",
+            side_effect=InsufficientPermissions("No access"),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection/{run_id}/progress")
+            assert response.status_code == 403
+            data = response.get_json()
+            assert data["error"] == "Permission denied"
+
+    def test_cancel_invalid_selection_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test cancel endpoint handles InvalidSelection error."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.sortition import InvalidSelection
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.cancel_task",
+            side_effect=InvalidSelection("Cannot cancel completed task"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            # Should redirect with error message
+            assert response.status_code == 200
