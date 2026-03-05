@@ -183,6 +183,10 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
     try:
+        # Get pagination parameters
+        page = request.args.get("page", 1, type=int)
+        per_page = 15
+
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
@@ -196,10 +200,28 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
             gsheet = None
 
+        # Fetch paginated selection history
+        run_history: list = []
+        total_count = 0
+        total_pages = 0
+        try:
+            uow_history = bootstrap.bootstrap()
+            with uow_history:
+                run_history, total_count = uow_history.selection_run_records.get_by_assembly_id_paginated(
+                    assembly_id, page, per_page
+                )
+                total_pages = (total_count + per_page - 1) // per_page
+        except Exception as history_error:
+            current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
+
         return render_template(
             "backoffice/assembly_selection.html",
             assembly=assembly,
             gsheet=gsheet,
+            run_history=run_history,
+            page=page,
+            total_count=total_count,
+            total_pages=total_pages,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
@@ -249,6 +271,51 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
     # TODO: Implement actual task cancellation
     flash(_("Task cancellation is not yet implemented"), "warning")
     return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/history/<uuid:run_id>")
+@login_required
+def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """View details of a selection run from history.
+
+    Redirects to the appropriate section based on task type.
+    """
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            # Verify user has permissions for this assembly
+            get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+            # Fetch the run record
+            run_record = uow.selection_run_records.get_by_task_id(run_id)
+
+            if not run_record:
+                flash(_("Selection run not found"), "error")
+                return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+            # Validate the run belongs to this assembly
+            if run_record.assembly_id != assembly_id:
+                flash(_("Selection run does not belong to this assembly"), "error")
+                return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+            # For now, redirect back to selection page with run_id parameter
+            # This will show the task progress section
+            # TODO: Create dedicated detail pages for completed runs with full report
+            return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, run_id=run_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for run details: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} run details: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"View run details error for assembly {assembly_id} run {run_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while loading the run details"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")

@@ -82,3 +82,8 @@ class Urls:
     @classmethod
     def backoffice_selection_assembly_url(cls, assembly_id: str) -> str:
         return cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def assembly_selection(cls, assembly_id) -> str:
+        """Get URL for assembly selection page"""
+        return cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id)
