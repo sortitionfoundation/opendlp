@@ -12,7 +12,7 @@
   "dependencies": {
     "@fontsource/lato": "^5.2.7",
     "@fontsource/oswald": "^5.2.8",
-    "govuk-frontend": "^5.14.0"
+    "govuk-frontend": "^6.0.0"
   },
   "devDependencies": {
     "sass": "^1.97.2",
