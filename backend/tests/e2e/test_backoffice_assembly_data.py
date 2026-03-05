@@ -516,52 +516,150 @@ class TestBackofficeSelectionTab:
         assert response.status_code == 302
         assert "login" in response.location
 
-    def test_selection_load_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
-        """Test that load endpoint returns redirect with warning (stub implementation)."""
-        assembly, gsheet = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/load",
-            data={"csrf_token": csrf_token},
-            follow_redirects=False,
-        )
-        # Stub implementation redirects back to selection page
-        assert response.status_code == 302
-        assert "selection" in response.location
+    def test_selection_load_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint starts a gsheet load task and redirects to run page."""
+        from unittest.mock import patch
 
-    def test_selection_run_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
-        """Test that run endpoint returns redirect with warning (stub implementation)."""
         assembly, gsheet = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/run",
-            data={"csrf_token": csrf_token},
-            follow_redirects=False,
-        )
-        # Stub implementation redirects back to selection page
-        assert response.status_code == 302
-        assert "selection" in response.location
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
 
-    def test_selection_progress_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
-        """Test that progress endpoint returns JSON (stub implementation)."""
-        assembly, gsheet = assembly_with_gsheet
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/00000000-0000-0000-0000-000000000000/progress"
-        )
-        # Stub implementation returns JSON with not_implemented status
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["status"] == "not_implemented"
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            return_value=mock_task_id,
+        ) as mock_start_load:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/load",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
 
-    def test_selection_cancel_stub_endpoint(self, logged_in_admin, assembly_with_gsheet):
-        """Test that cancel endpoint returns redirect with warning (stub implementation)."""
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            assert mock_task_id in response.location
+            mock_start_load.assert_called_once()
+
+    def test_selection_run_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint starts a gsheet select task and redirects to run page."""
+        from unittest.mock import patch
+
         assembly, gsheet = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/00000000-0000-0000-0000-000000000000/cancel",
-            data={"csrf_token": csrf_token},
-            follow_redirects=False,
-        )
-        # Stub implementation redirects back to selection page
-        assert response.status_code == 302
-        assert "selection" in response.location
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            return_value=mock_task_id,
+        ) as mock_start_select:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            assert mock_task_id in response.location
+            mock_start_select.assert_called_once()
+
+    def test_selection_run_test_mode_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint with test=1 passes test_selection=True."""
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            return_value=mock_task_id,
+        ) as mock_start_select:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run?test=1",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            assert response.status_code == 302
+            # Verify test_selection=True was passed
+            call_args = mock_start_select.call_args
+            assert call_args[1].get("test_selection") is True or call_args[0][3] is True
+
+    def test_selection_progress_endpoint_returns_status(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress endpoint returns task status as JSON."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Create a mock result object
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = None
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Loading data...", "Processing..."]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["status"] == "running"
+            assert "Loading data..." in data["log_messages"]
+
+    def test_selection_cancel_endpoint_cancels_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that cancel endpoint cancels the task and redirects."""
+        import uuid
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch("opendlp.entrypoints.blueprints.backoffice.cancel_task") as mock_cancel:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            mock_cancel.assert_called_once()
+
+    def test_selection_load_handles_not_found_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint handles NotFoundError gracefully."""
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import NotFoundError
+
+        assembly, gsheet = assembly_with_gsheet
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            side_effect=NotFoundError("Gsheet config not found"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/load",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            # Should redirect back to selection page with error flash
+            assert response.status_code == 200
+            assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
