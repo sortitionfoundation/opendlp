@@ -226,6 +226,132 @@ document.addEventListener("alpine:init", function () {
    *   If the element has data-focus-id and has keyboard focus when navigating,
    *   the URL will include #focus=<focusId> to restore focus after page load.
    */
+    /**
+   * Task progress polling component
+   *
+   * Polls a JSON endpoint for task progress updates and stops when task reaches
+   * a terminal state (completed, failed, cancelled).
+   *
+   * Usage:
+   *   <div x-data="taskPoller({ progressUrl: '/api/task/123/progress', pollIntervalMs: 2000 })">
+   *     <div x-show="status === 'running'">Running...</div>
+   *     <ul>
+   *       <template x-for="msg in logMessages" :key="msg">
+   *         <li x-text="msg"></li>
+   *       </template>
+   *     </ul>
+   *     <div x-show="status === 'completed'">Done!</div>
+   *     <div x-show="status === 'failed'" x-text="errorMessage"></div>
+   *   </div>
+   *
+   * Options:
+   *   - progressUrl: URL to poll for progress (required)
+   *   - pollIntervalMs: Polling interval in milliseconds (default: 2000)
+   *   - initialStatus: Initial status value (default: 'pending')
+   *
+   * The progress URL should return JSON:
+   *   { status, log_messages, error_message, completed_at, has_report, redirect_url }
+   *   - redirect_url: Optional URL to redirect to (e.g., after load task completes)
+   */
+    Alpine.data("taskPoller", function (options) {
+        var progressUrl = options.progressUrl || "";
+        var pollIntervalMs = options.pollIntervalMs || 2000;
+        var initialStatus = options.initialStatus || "pending";
+
+        return {
+            status: initialStatus,
+            logMessages: [],
+            errorMessage: "",
+            completedAt: null,
+            hasReport: false,
+            redirectUrl: "",
+            pollTimer: null,
+            isPolling: false,
+
+            init: function () {
+                var self = this;
+                // Start polling if we have a progress URL and status is not terminal
+                if (progressUrl && !self.isTerminalStatus(self.status)) {
+                    self.startPolling();
+                }
+            },
+
+            destroy: function () {
+                this.stopPolling();
+            },
+
+            isTerminalStatus: function (status) {
+                return ["completed", "failed", "cancelled"].indexOf(status) !== -1;
+            },
+
+            startPolling: function () {
+                var self = this;
+                if (self.isPolling) {
+                    return;
+                }
+                self.isPolling = true;
+
+                // Immediate first fetch
+                self.fetchProgress();
+
+                // Set up interval
+                self.pollTimer = setInterval(function () {
+                    self.fetchProgress();
+                }, pollIntervalMs);
+            },
+
+            stopPolling: function () {
+                var self = this;
+                if (self.pollTimer) {
+                    clearInterval(self.pollTimer);
+                    self.pollTimer = null;
+                }
+                self.isPolling = false;
+            },
+
+            fetchProgress: function () {
+                var self = this;
+
+                fetch(progressUrl, {
+                    headers: {
+                        Accept: "application/json",
+                    },
+                })
+                    .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                    .then(function (data) {
+                    self.status = data.status || "unknown";
+                    self.logMessages = data.log_messages || [];
+                    self.errorMessage = data.error_message || "";
+                    self.completedAt = data.completed_at;
+                    self.hasReport = data.has_report || false;
+                    self.redirectUrl = data.redirect_url || "";
+
+                    // Handle redirect if provided
+                    if (self.redirectUrl) {
+                        self.stopPolling();
+                        window.location.href = self.redirectUrl;
+                        return;
+                    }
+
+                    // Stop polling on terminal states
+                    if (self.isTerminalStatus(self.status)) {
+                        self.stopPolling();
+                    }
+                })
+                    .catch(function (error) {
+                    console.error("Task progress fetch error:", error);
+                    // Don't stop polling on transient errors
+                });
+            },
+        };
+    });
+
+
     Alpine.data("urlSelect", function (options) {
         var baseUrl = options.baseUrl || "";
         var paramName = options.paramName || "value";

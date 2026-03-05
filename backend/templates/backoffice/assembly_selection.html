@@ -102,8 +102,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
-                    {{ button(_("Run Replacements"), variant="primary", disabled=true) }}
+                    {{ button(_("Go to Replacement Selection"), href=url_for('backoffice.view_assembly_replacement', assembly_id=assembly.id), variant="primary") }}
                 {% endcall %}
             {% endcall %}
         </div>
