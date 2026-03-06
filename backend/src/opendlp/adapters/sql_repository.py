@@ -187,7 +187,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
     def get_admins(self) -> Iterable[User]:
         """Get all users with admin privileges."""
         return (
-            self.session.query(User)
+            self.session
+            .query(User)
             .filter(
                 or_(
                     orm.users.c.global_role == GlobalRole.ADMIN,
@@ -216,7 +217,8 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
     def get_active_assemblies(self) -> Iterable[Assembly]:
         """Get all assemblies that are currently active."""
         return (
-            self.session.query(Assembly)
+            self.session
+            .query(Assembly)
             .filter_by(status=AssemblyStatus.ACTIVE)
             .order_by(orm.assemblies.c.created_at.desc())
             .all()
@@ -239,7 +241,8 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         )
 
         return (
-            self.session.query(Assembly)
+            self.session
+            .query(Assembly)
             .filter(
                 and_(
                     orm.assemblies.c.id.in_(assembly_ids_subquery),
@@ -253,7 +256,8 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
     def search_by_title(self, search_term: str) -> Iterable[Assembly]:
         """Search assemblies by title (case-insensitive partial match)."""
         return (
-            self.session.query(Assembly)
+            self.session
+            .query(Assembly)
             .filter(orm.assemblies.c.title.ilike(f"%{search_term}%"))
             .filter_by(status=AssemblyStatus.ACTIVE)
             .order_by(orm.assemblies.c.created_at.desc())
@@ -288,7 +292,8 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
         """Get all invites that are valid (not expired and not used)."""
         now = datetime.now(UTC)
         return (
-            self.session.query(UserInvite)
+            self.session
+            .query(UserInvite)
             .filter(
                 and_(
                     orm.user_invites.c.used_by.is_(None),
@@ -302,7 +307,8 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
     def get_invites_created_by(self, user_id: uuid.UUID) -> Iterable[UserInvite]:
         """Get all invites created by a specific user."""
         return (
-            self.session.query(UserInvite)
+            self.session
+            .query(UserInvite)
             .filter_by(created_by=user_id)
             .order_by(orm.user_invites.c.created_at.desc())
             .all()
@@ -312,7 +318,8 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
         """Get all invites that have expired."""
         now = datetime.now(UTC)
         return (
-            self.session.query(UserInvite)
+            self.session
+            .query(UserInvite)
             .filter(orm.user_invites.c.expires_at <= now)
             .order_by(orm.user_invites.c.expires_at.desc())
             .all()
@@ -321,7 +328,8 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
     def get_used_invites(self) -> Iterable[UserInvite]:
         """Get all invites that have been used."""
         return (
-            self.session.query(UserInvite)
+            self.session
+            .query(UserInvite)
             .filter(orm.user_invites.c.used_by.isnot(None))
             .order_by(orm.user_invites.c.used_at.desc())
             .all()
@@ -365,7 +373,8 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
     def get_roles_for_user(self, user_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all assembly roles for a user."""
         return (
-            self.session.query(UserAssemblyRole)
+            self.session
+            .query(UserAssemblyRole)
             .filter_by(user_id=user_id)
             .order_by(orm.user_assembly_roles.c.created_at.desc())
             .all()
@@ -374,7 +383,8 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
     def get_roles_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all user roles for an assembly."""
         return (
-            self.session.query(UserAssemblyRole)
+            self.session
+            .query(UserAssemblyRole)
             .filter_by(assembly_id=assembly_id)
             .order_by(orm.user_assembly_roles.c.created_at.desc())
             .all()
@@ -384,7 +394,8 @@ class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRol
         """Get all users with their roles for a specific assembly."""
         # Join users with their roles for this assembly
         rows = (
-            self.session.query(User, UserAssemblyRole)
+            self.session
+            .query(User, UserAssemblyRole)
             .join(UserAssemblyRole, orm.users.c.id == orm.user_assembly_roles.c.user_id)
             .filter(orm.user_assembly_roles.c.assembly_id == assembly_id)
             .order_by(orm.user_assembly_roles.c.created_at.desc())
@@ -448,7 +459,8 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> Iterable[SelectionRunRecord]:
         """Get all SelectionRunRecords for a specific assembly."""
         return (
-            self.session.query(SelectionRunRecord)
+            self.session
+            .query(SelectionRunRecord)
             .filter_by(assembly_id=assembly_id)
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
@@ -457,7 +469,8 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
     def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
         """Get the most recent SelectionRunRecord for an assembly."""
         return (
-            self.session.query(SelectionRunRecord)
+            self.session
+            .query(SelectionRunRecord)
             .filter_by(assembly_id=assembly_id)
             .order_by(orm.selection_run_records.c.created_at.desc())
             .first()
@@ -466,7 +479,8 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
         return (
-            self.session.query(SelectionRunRecord)
+            self.session
+            .query(SelectionRunRecord)
             .filter(orm.selection_run_records.c.status == SelectionRunStatus.RUNNING.value)
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
@@ -475,7 +489,8 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
         return (
-            self.session.query(SelectionRunRecord)
+            self.session
+            .query(SelectionRunRecord)
             .filter(
                 orm.selection_run_records.c.status.in_([
                     SelectionRunStatus.PENDING.value,
@@ -490,11 +505,10 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
         self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
     ) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]:
         """Get paginated SelectionRunRecords for an assembly with user information."""
-        from opendlp.domain.users import User
-
         # Base query with LEFT JOIN to get user info
         query = (
-            self.session.query(SelectionRunRecord, User)
+            self.session
+            .query(SelectionRunRecord, User)
             .outerjoin(User, orm.selection_run_records.c.user_id == orm.users.c.id)
             .filter(orm.selection_run_records.c.assembly_id == assembly_id)
             .order_by(orm.selection_run_records.c.created_at.desc())
@@ -530,7 +544,8 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
         """Get all active (not expired and not used) tokens for a user."""
         now = datetime.now(UTC)
         return (
-            self.session.query(PasswordResetToken)
+            self.session
+            .query(PasswordResetToken)
             .filter(
                 and_(
                     orm.password_reset_tokens.c.user_id == user_id,
@@ -545,7 +560,8 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
     def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
         """Count password reset requests for a user since a given datetime."""
         return (
-            self.session.query(PasswordResetToken)
+            self.session
+            .query(PasswordResetToken)
             .filter(
                 and_(
                     orm.password_reset_tokens.c.user_id == user_id,
@@ -571,7 +587,8 @@ class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordReset
         """Mark all active tokens for a user as used. Returns count invalidated."""
         now = datetime.now(UTC)
         active_tokens = (
-            self.session.query(PasswordResetToken)
+            self.session
+            .query(PasswordResetToken)
             .filter(
                 and_(
                     orm.password_reset_tokens.c.user_id == user_id,
@@ -619,7 +636,8 @@ class SqlAlchemyEmailConfirmationTokenRepository(SqlAlchemyRepository, EmailConf
     def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
         """Count email confirmation requests for a user since a given datetime."""
         return (
-            self.session.query(EmailConfirmationToken)
+            self.session
+            .query(EmailConfirmationToken)
             .filter(
                 and_(
                     orm.email_confirmation_tokens.c.user_id == user_id,
@@ -645,7 +663,8 @@ class SqlAlchemyEmailConfirmationTokenRepository(SqlAlchemyRepository, EmailConf
         """Mark all active tokens for a user as used. Returns count invalidated."""
         now = datetime.now(UTC)
         active_tokens = (
-            self.session.query(EmailConfirmationToken)
+            self.session
+            .query(EmailConfirmationToken)
             .filter(
                 and_(
                     orm.email_confirmation_tokens.c.user_id == user_id,
@@ -683,7 +702,8 @@ class SqlAlchemyUserBackupCodeRepository(SqlAlchemyRepository, UserBackupCodeRep
     def get_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
         """Get all backup codes for a user."""
         return (
-            self.session.query(UserBackupCode)
+            self.session
+            .query(UserBackupCode)
             .filter_by(user_id=user_id)
             .order_by(orm.user_backup_codes.c.created_at.desc())
             .all()
@@ -692,7 +712,8 @@ class SqlAlchemyUserBackupCodeRepository(SqlAlchemyRepository, UserBackupCodeRep
     def get_unused_codes_for_user(self, user_id: uuid.UUID) -> Iterable[UserBackupCode]:
         """Get all unused backup codes for a user."""
         return (
-            self.session.query(UserBackupCode)
+            self.session
+            .query(UserBackupCode)
             .filter(
                 and_(
                     orm.user_backup_codes.c.user_id == user_id,
@@ -732,7 +753,8 @@ class SqlAlchemyTwoFactorAuditLogRepository(SqlAlchemyRepository, TwoFactorAudit
     def get_logs_for_user(self, user_id: uuid.UUID, limit: int = 100) -> Iterable[TwoFactorAuditLog]:
         """Get audit logs for a user, most recent first."""
         return (
-            self.session.query(TwoFactorAuditLog)
+            self.session
+            .query(TwoFactorAuditLog)
             .filter_by(user_id=user_id)
             .order_by(orm.two_factor_audit_log.c.timestamp.desc())
             .limit(limit)
@@ -754,7 +776,8 @@ class SqlAlchemyTotpVerificationAttemptRepository(SqlAlchemyRepository, TotpVeri
     def all(self) -> Iterable[TotpVerificationAttempt]:
         """Get all verification attempts."""
         return (
-            self.session.query(TotpVerificationAttempt)
+            self.session
+            .query(TotpVerificationAttempt)
             .order_by(orm.totp_verification_attempts.c.attempted_at.desc())
             .all()
         )
@@ -762,7 +785,8 @@ class SqlAlchemyTotpVerificationAttemptRepository(SqlAlchemyRepository, TotpVeri
     def get_attempts_since(self, user_id: uuid.UUID, since: datetime) -> Iterable[TotpVerificationAttempt]:
         """Get all verification attempts for a user since a given datetime."""
         return (
-            self.session.query(TotpVerificationAttempt)
+            self.session
+            .query(TotpVerificationAttempt)
             .filter(
                 and_(
                     orm.totp_verification_attempts.c.user_id == user_id,
@@ -788,7 +812,8 @@ class SqlAlchemyTargetCategoryRepository(SqlAlchemyRepository, TargetCategoryRep
 
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
         return (
-            self.session.query(TargetCategory)
+            self.session
+            .query(TargetCategory)
             .filter(orm.target_categories.c.assembly_id == assembly_id)
             .order_by(orm.target_categories.c.sort_order)
             .all()
@@ -846,7 +871,8 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         return (
-            self.session.query(Respondent)
+            self.session
+            .query(Respondent)
             .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
@@ -858,7 +884,8 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
     def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
         return (
-            self.session.query(Respondent)
+            self.session
+            .query(Respondent)
             .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,

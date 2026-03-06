@@ -24,7 +24,7 @@ def _import_many_respondents(postgres_session_factory, admin_user, assembly_id, 
     csv_content = "\n".join(rows)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        respondents, errors = import_respondents_from_csv(
+        respondents, _ = import_respondents_from_csv(
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly_id,

@@ -3,8 +3,9 @@ ABOUTME: Verifies the feature() function is available in Jinja templates via the
 
 import os
 
-from flask import Flask
+from flask import Flask, render_template_string
 
+from opendlp.entrypoints.context_processors import inject_feature_flags
 from opendlp.feature_flags import reload_flags
 
 
@@ -14,16 +15,12 @@ def _make_app(env_overrides: dict[str, str] | None = None) -> Flask:
         os.environ.update(env_overrides)
     reload_flags()
 
-    from opendlp.entrypoints.context_processors import inject_feature_flags
-
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.context_processor(inject_feature_flags)
 
     @app.route("/test-feature")
     def test_feature() -> str:
-        from flask import render_template_string
-
         template = "{% if feature('example') %}ENABLED{% else %}DISABLED{% endif %}"
         return render_template_string(template)
 

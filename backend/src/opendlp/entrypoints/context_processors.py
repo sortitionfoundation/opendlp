@@ -9,6 +9,7 @@ from functools import cache
 from pathlib import Path
 
 from opendlp import config
+from opendlp.feature_flags import has_feature
 
 
 def _get_file_hash(filepath: Path) -> str:
@@ -93,7 +94,7 @@ def get_opendlp_version() -> str:
 
     git_dir = config.get_git_dir_path()
     if git_dir.is_dir():
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             ["git", "show", "--no-patch", "--format=%cd %h", "--date=format:%Y-%m-%d", "HEAD"],
             cwd=git_dir.parent,
             capture_output=True,
@@ -166,8 +167,6 @@ def inject_feature_flags() -> dict[str, object]:
 
     Templates can use: {% if feature('my_feature') %} ... {% endif %}
     """
-    from opendlp.feature_flags import has_feature
-
     return {"feature": has_feature}
 
 

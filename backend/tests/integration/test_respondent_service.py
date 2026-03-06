@@ -175,7 +175,7 @@ NB001,Female"""
         csv2 = """external_id,Age
 NB002,30-44"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
         )
 
@@ -193,7 +193,7 @@ NB002,30-44"""
         csv_content = """external_id,Gender
 NB001,Female"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -209,7 +209,7 @@ NB001,Female"""
 NB001,Female,true,true,false
 NB002,Male,false,true,true"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 

@@ -197,7 +197,7 @@ class TestGrantUserAssemblyRole:
         data = setup_database
         nonexistent_user_id = uuid.uuid4()
 
-        with pytest.raises(UserNotFoundError, match="User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             grant_user_assembly_role(
                 uow=uow,
                 user_id=nonexistent_user_id,
@@ -211,7 +211,7 @@ class TestGrantUserAssemblyRole:
         data = setup_database
         nonexistent_assembly_id = uuid.uuid4()
 
-        with pytest.raises(AssemblyNotFoundError, match="Assembly .* not found"):
+        with pytest.raises(AssemblyNotFoundError, match=r"Assembly .* not found"):
             grant_user_assembly_role(
                 uow=uow,
                 user_id=data["target_user"].id,
@@ -361,7 +361,7 @@ class TestRevokeUserAssemblyRole:
         data = setup_database
         nonexistent_user_id = uuid.uuid4()
 
-        with pytest.raises(UserNotFoundError, match="User .* not found"):
+        with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             revoke_user_assembly_role(
                 uow=uow,
                 user_id=nonexistent_user_id,
@@ -374,7 +374,7 @@ class TestRevokeUserAssemblyRole:
         data = setup_database
         nonexistent_assembly_id = uuid.uuid4()
 
-        with pytest.raises(AssemblyNotFoundError, match="Assembly .* not found"):
+        with pytest.raises(AssemblyNotFoundError, match=r"Assembly .* not found"):
             revoke_user_assembly_role(
                 uow=uow,
                 user_id=data["target_user"].id,
@@ -385,7 +385,7 @@ class TestRevokeUserAssemblyRole:
     def test_revoke_role_when_user_has_no_role_on_assembly(self, uow, setup_database):
         """Raises exception when user has no role on assembly to revoke."""
         data = setup_database
-        with pytest.raises(NotFoundError, match="User .* has no role on assembly"):
+        with pytest.raises(NotFoundError, match=r"User .* has no role on assembly"):
             revoke_user_assembly_role(
                 uow=uow,
                 user_id=data["target_user"].id,

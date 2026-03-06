@@ -19,6 +19,7 @@ from opendlp.service_layer.email_confirmation_service import (
 )
 from opendlp.service_layer.exceptions import EmailNotConfirmed, InvalidConfirmationToken, RateLimitExceeded
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
+from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
 
 
 class TestEmailConfirmationIntegration:
@@ -74,7 +75,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, _token = create_user(
+            create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret
@@ -101,7 +102,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, token = create_user(
+            _, token = create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret
@@ -130,7 +131,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, token = create_user(
+            _, token = create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret
@@ -189,7 +190,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, original_token = create_user(
+            create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret
@@ -197,8 +198,6 @@ class TestEmailConfirmationIntegration:
             )
 
         # Resend confirmation
-        from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
-
         email_adapter = MagicMock()
         email_adapter.send_email.return_value = True
         template_renderer = FakeTemplateRenderer()
@@ -266,7 +265,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, _token = create_user(
+            create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret
@@ -274,8 +273,6 @@ class TestEmailConfirmationIntegration:
             )
 
         # Request 2 more times (total 3)
-        from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
-
         email_adapter = MagicMock()
         email_adapter.send_email.return_value = True
         template_renderer = FakeTemplateRenderer()
@@ -303,7 +300,7 @@ class TestEmailConfirmationIntegration:
             uow.commit()
 
         with uow:
-            user, token = create_user(
+            _, token = create_user(
                 uow=uow,
                 email="test@example.com",
                 password="StrongPassword123",  # pragma: allowlist secret

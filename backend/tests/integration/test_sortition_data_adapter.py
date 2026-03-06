@@ -41,7 +41,7 @@ class TestOpenDLPDataAdapter:
             adapter = OpenDLPDataAdapter(uow, test_assembly.id)
             select_data = SelectionData(adapter)
 
-            features, report = select_data.load_features(number_to_select=30)
+            features, _ = select_data.load_features(number_to_select=30)
 
             assert "Gender" in features
             assert "Male" in features["Gender"]
@@ -91,7 +91,7 @@ class TestOpenDLPDataAdapter:
 
             settings = Settings(id_column="external_id", columns_to_keep=[])
             features, _ = select_data.load_features(number_to_select=2)
-            people, report = select_data.load_people(settings, features)
+            people, _ = select_data.load_people(settings, features)
 
             assert people.count == 2
             assert set(people) == {"NB001", "NB002"}
@@ -144,7 +144,7 @@ class TestOpenDLPDataAdapter:
 
             settings = Settings(id_column="external_id", columns_to_keep=[])
             features, _ = select_data.load_features(number_to_select=1)
-            people, report = select_data.load_people(settings, features)
+            people, _ = select_data.load_people(settings, features)
 
             assert people.count == 1
             assert set(people) == {"NB001"}
@@ -158,7 +158,7 @@ class TestOpenDLPDataAdapter:
             select_data = SelectionData(adapter)
 
             # Load empty features
-            features, report = select_data.load_features(number_to_select=30)
+            features, _ = select_data.load_features(number_to_select=30)
             assert len(features) == 0
 
         # Add features but no people
@@ -281,7 +281,7 @@ class TestOpenDLPDataAdapter:
 
             settings = Settings(id_column="external_id", columns_to_keep=[])
             features, _ = select_data.load_features(number_to_select=2)
-            people, report = select_data.load_people(settings, features)
+            people, _ = select_data.load_people(settings, features)
 
             assert people.count == 2
             assert set(people) == {"NB001", "NB002"}
@@ -310,7 +310,7 @@ class TestOpenDLPDataAdapter:
             adapter = OpenDLPDataAdapter(uow, test_assembly.id)
             select_data = SelectionData(adapter)
 
-            features, report = select_data.load_features(number_to_select=30)
+            features, _ = select_data.load_features(number_to_select=30)
 
             assert len(features) == 2
             assert "Gender" in features

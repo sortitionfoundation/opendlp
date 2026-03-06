@@ -15,6 +15,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.blueprints.db_selection import _parse_comma_list
 from opendlp.entrypoints.flask_app import create_app
+from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.sortition import CheckDataResult, check_db_selection_data
 from tests.fakes import FakeUnitOfWork
@@ -169,8 +170,6 @@ class TestDbSelectionSettingsForm:
     """Tests for DbSelectionSettingsForm validation."""
 
     def test_form_validates_with_valid_data(self, app):
-        from opendlp.entrypoints.forms import DbSelectionSettingsForm
-
         with app.test_request_context():
             form = DbSelectionSettingsForm(
                 data={
@@ -183,8 +182,6 @@ class TestDbSelectionSettingsForm:
             assert form.validate()
 
     def test_form_validates_with_empty_optional_fields(self, app):
-        from opendlp.entrypoints.forms import DbSelectionSettingsForm
-
         with app.test_request_context():
             form = DbSelectionSettingsForm(
                 data={

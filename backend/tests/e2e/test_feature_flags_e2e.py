@@ -2,6 +2,7 @@
 ABOUTME: Verifies feature flags work through the complete request/response cycle."""
 
 import os
+from unittest.mock import patch
 
 from flask.testing import FlaskClient
 
@@ -19,8 +20,6 @@ class TestFeatureFlagsE2E:
         doesn't use templates, but the app startup would have failed if
         the context processor registration raised.
         """
-        from unittest.mock import patch
-
         with (
             patch("opendlp.entrypoints.blueprints.health.check_database", return_value=(True, 0)),
             patch("opendlp.entrypoints.blueprints.health.check_celery_worker", return_value=True),
@@ -47,8 +46,6 @@ class TestFeatureFlagsE2E:
         saved = {k: os.environ.pop(k) for k in ff_keys}
         reload_flags()
         try:
-            from unittest.mock import patch
-
             with (
                 patch("opendlp.entrypoints.blueprints.health.check_database", return_value=(True, 0)),
                 patch("opendlp.entrypoints.blueprints.health.check_celery_worker", return_value=True),

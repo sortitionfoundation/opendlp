@@ -96,7 +96,7 @@ class TestInternalLoadDb:
         assembly_id = assembly_with_data
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
-        success, features, loaded_people, report = _internal_load_db(
+        success, features, loaded_people, _ = _internal_load_db(
             task_id=task_id,
             assembly_id=assembly_id,
             settings=test_settings,
@@ -243,7 +243,7 @@ class TestRunSelectFromDb:
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
         with patch.object(run_select_from_db, "update_state"):
-            success, selected_panels, report = run_select_from_db(
+            success, selected_panels = run_select_from_db(
                 task_id=task_id,
                 assembly_id=assembly_id,
                 number_people_wanted=2,

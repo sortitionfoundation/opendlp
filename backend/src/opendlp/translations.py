@@ -9,6 +9,8 @@ from flask import current_app, has_app_context
 from flask_babel import LazyString
 from flask_babel import gettext as flask_gettext
 
+from opendlp.config import get_config
+
 # Global translation objects for fallback
 _translations: dict[str, GNUTranslations] = {}
 _default_locale = "en"
@@ -61,8 +63,6 @@ def load_translations(locale_dir: str) -> None:
     global _translations
 
     # Get supported languages from config
-    from opendlp.config import get_config
-
     config = get_config()
 
     # Try to load translations for all supported locales
@@ -75,7 +75,5 @@ def load_translations(locale_dir: str) -> None:
 
 def get_supported_languages() -> list[tuple[str, str]]:
     """Get list of supported languages as (code, name) tuples."""
-    from opendlp.config import get_config
-
     config = get_config()
     return config.get_supported_languages()

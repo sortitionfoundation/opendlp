@@ -13,6 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import config
+from opendlp.entrypoints.context_processors import inject_feature_flags, static_versioning_context_processor
 from opendlp.entrypoints.extensions import init_extensions
 
 
@@ -70,8 +71,6 @@ def create_app(config_name: str = "") -> Flask:
 
 def register_context_processors(app: Flask) -> None:
     """Register template context processors."""
-    from .context_processors import inject_feature_flags, static_versioning_context_processor
-
     app.context_processor(static_versioning_context_processor)
     app.context_processor(inject_feature_flags)
 
@@ -83,16 +82,16 @@ def register_context_processors(app: Flask) -> None:
 
 def register_blueprints(app: Flask) -> None:
     """Register application blueprints."""
-    from .blueprints.admin import admin_bp
-    from .blueprints.auth import auth_bp
-    from .blueprints.backoffice import backoffice_bp
-    from .blueprints.db_selection import db_selection_bp
-    from .blueprints.gsheets import gsheets_bp
-    from .blueprints.health import health_bp
-    from .blueprints.main import main_bp
-    from .blueprints.profile import profile_bp
-    from .blueprints.respondents import respondents_bp
-    from .blueprints.targets import targets_bp
+    from .blueprints.admin import admin_bp  # noqa: PLC0415
+    from .blueprints.auth import auth_bp  # noqa: PLC0415
+    from .blueprints.backoffice import backoffice_bp  # noqa: PLC0415
+    from .blueprints.db_selection import db_selection_bp  # noqa: PLC0415
+    from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
+    from .blueprints.health import health_bp  # noqa: PLC0415
+    from .blueprints.main import main_bp  # noqa: PLC0415
+    from .blueprints.profile import profile_bp  # noqa: PLC0415
+    from .blueprints.respondents import respondents_bp  # noqa: PLC0415
+    from .blueprints.targets import targets_bp  # noqa: PLC0415
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -161,7 +160,8 @@ def get_secure_headers(config: Config) -> Secure:
     secure_headers = Secure(
         cache=headers.CacheControl().no_store(),
         coop=headers.CrossOriginOpenerPolicy().same_origin(),
-        csp=headers.ContentSecurityPolicy()
+        csp=headers
+        .ContentSecurityPolicy()
         .default_src("'self'")
         .script_src(
             "'self'",

@@ -50,7 +50,7 @@ class FlaskTemplateRenderer(TemplateRenderer):
             Rendered template as a string
         """
         # Import at runtime to avoid Flask dependency at module level
-        from flask import render_template
+        from flask import render_template  # noqa: PLC0415
 
         with self.app.app_context():
             return render_template(template_name, **context)

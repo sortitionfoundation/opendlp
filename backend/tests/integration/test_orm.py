@@ -140,7 +140,8 @@ class TestAssemblyORM:
 
         # Set JSON config directly on the mapped object
         postgres_session.execute(
-            orm.assemblies.update()
+            orm.assemblies
+            .update()
             .where(orm.assemblies.c.id == assembly.id)
             .values(config={"sheet_tabs": ["main", "backup"], "columns": {"name": "A", "email": "B"}})
         )
