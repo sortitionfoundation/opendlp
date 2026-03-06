@@ -163,6 +163,10 @@ select = [
   "UP",
   # ruff
   "RUF",
+  # pylint
+  # particularly the import-at-top-of-file - PLC0415
+  "PLC",
+  "PLE",
   # tryceratops
   # TODO: re-enable later
   # "TRY",
