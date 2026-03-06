@@ -418,7 +418,7 @@ def check_db_selection_data(
     select_data = adapters.SelectionData(data_source)
 
     try:
-        features, f_report = select_data.load_features()
+        features, f_report = select_data.load_features(assembly.number_to_select)
         features_report_html = translate_run_report_to_html(f_report)
     except SortitionBaseError as e:
         check_errors.append(translate_sortition_error_to_html(e))
