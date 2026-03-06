@@ -243,7 +243,7 @@ class TestRunSelectFromDb:
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
         with patch.object(run_select_from_db, "update_state"):
-            success, selected_panels = run_select_from_db(
+            success, selected_panels, _ = run_select_from_db(
                 task_id=task_id,
                 assembly_id=assembly_id,
                 number_people_wanted=2,
