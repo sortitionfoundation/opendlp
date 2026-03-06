@@ -25,9 +25,9 @@
     {% endif %}
 
     <form method="post"
-        action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
-        enctype="multipart/form-data"
-        novalidate>
+          action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
+          enctype="multipart/form-data"
+          novalidate>
         {{ form.hidden_tag() }}
 
         <div class="govuk-form-group {% if form.csv_file.errors %}govuk-form-group--error{% endif %}">
@@ -66,7 +66,7 @@
             <div class="govuk-checkboxes__item">
                 {{ form.replace_existing(class="govuk-checkboxes__input") }}
                 <label class="govuk-label govuk-checkboxes__label"
-                    for="{{ form.replace_existing.id }}">{{ form.replace_existing.label.text }}</label>
+                       for="{{ form.replace_existing.id }}">{{ form.replace_existing.label.text }}</label>
                 {% if form.replace_existing.description %}
                     <div class="govuk-hint govuk-checkboxes__hint">{{ form.replace_existing.description }}</div>
                 {% endif %}
@@ -123,7 +123,7 @@
         <div class="govuk-form-group govuk-!-margin-bottom-4">
             <label class="govuk-label govuk-label--s" for="status-filter">{{ _("Filter by status") }}</label>
             <select class="govuk-select" id="status-filter"
-                onchange="window.location.href='{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}' + (this.value ? '?status=' + this.value : '')">
+                    onchange="window.location.href='{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}' + (this.value ? '?status=' + this.value : '')">
                 <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
                 <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
                 <option value="SELECTED" {% if status_filter == "SELECTED" %}selected{% endif %}>{{ _("Selected") }}</option>
@@ -179,11 +179,11 @@
                 {% if page > 1 %}
                     <div class="govuk-pagination__prev">
                         <a class="govuk-link govuk-pagination__link"
-                            href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page-1) }}"
-                            rel="prev">
+                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page-1) }}"
+                           rel="prev">
                             <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
-                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
-                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                 xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                 aria-hidden="true" focusable="false" viewBox="0 0 15 13">
                                 <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
                             </svg>
                             <span class="govuk-pagination__link-title">{{ _("Previous") }}</span>
@@ -195,13 +195,13 @@
                         {% if p == page %}
                             <li class="govuk-pagination__item govuk-pagination__item--current">
                                 <a class="govuk-link govuk-pagination__link" href="#"
-                                    aria-label="Page {{ p }}" aria-current="page">{{ p }}</a>
+                                   aria-label="Page {{ p }}" aria-current="page">{{ p }}</a>
                             </li>
                         {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
                             <li class="govuk-pagination__item">
                                 <a class="govuk-link govuk-pagination__link"
-                                    href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=p) }}"
-                                    aria-label="Page {{ p }}">{{ p }}</a>
+                                   href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=p) }}"
+                                   aria-label="Page {{ p }}">{{ p }}</a>
                             </li>
                         {% elif (p == page - 3) or (p == page + 3) %}
                             <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
@@ -211,12 +211,12 @@
                 {% if page < total_pages %}
                     <div class="govuk-pagination__next">
                         <a class="govuk-link govuk-pagination__link"
-                            href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page+1) }}"
-                            rel="next">
+                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page+1) }}"
+                           rel="next">
                             <span class="govuk-pagination__link-title">{{ _("Next") }}</span>
                             <svg class="govuk-pagination__icon govuk-pagination__icon--next"
-                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
-                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                 xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                 aria-hidden="true" focusable="false" viewBox="0 0 15 13">
                                 <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
                             </svg>
                         </a>

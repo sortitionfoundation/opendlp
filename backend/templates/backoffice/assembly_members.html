@@ -63,22 +63,22 @@ ABOUTME: Displays team members table with add/remove functionality for admins
                                 <td class="px-6 py-4 text-body-md" style="color: var(--color-body-text);">{{ user.email }}</td>
                                 <td class="px-6 py-4 text-body-md">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm"
-                                        style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">
+                                          style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">
                                         {{ role.role.value }}
                                     </span>
                                 </td>
                                 {% if can_manage_assembly_users %}
                                     <td class="px-6 py-4 text-right">
                                         <form method="post"
-                                            action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
-                                            class="inline"
-                                            x-data
-                                            @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
+                                              action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
+                                              class="inline"
+                                              x-data
+                                              @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                             {# TODO: Add danger variant and size parameter to button component in design system #}
                                             <button type="submit"
-                                                class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
-                                                style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                                    class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
+                                                    style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                                 {{ _("Remove") }}
                                             </button>
                                         </form>
@@ -131,12 +131,12 @@ ABOUTME: Displays team members table with add/remove functionality for admins
                             {% for value, label in add_user_form.role.choices %}
                                 <label class="flex items-center gap-3 cursor-pointer group">
                                     <input type="radio"
-                                        id="role_{{ loop.index }}"
-                                        name="{{ add_user_form.role.name }}"
-                                        value="{{ value }}"
-                                        {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}
-                                        class="w-5 h-5 rounded-full cursor-pointer"
-                                        style="accent-color: var(--color-primary-action);">
+                                           id="role_{{ loop.index }}"
+                                           name="{{ add_user_form.role.name }}"
+                                           value="{{ value }}"
+                                           {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}
+                                           class="w-5 h-5 rounded-full cursor-pointer"
+                                           style="accent-color: var(--color-primary-action);">
                                     <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">{{ label }}</span>
                                 </label>
                             {% endfor %}

@@ -27,14 +27,14 @@
                 </div>
                 <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
                     <fieldset class="govuk-fieldset"
-                        aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
+                              aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
                         <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ _("Data Agreement") }}</legend>
                         <div id="data-agreement-hint" class="govuk-hint">
                             {{ _("Please read and accept our data agreement to proceed.") }}
                             <a href="{{ url_for('auth.user_data_agreement') }}"
-                                class="govuk-link"
-                                target="_blank"
-                                rel="noopener noreferrer">{{ _("View data agreement") }}</a>
+                               class="govuk-link"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ _("View data agreement") }}</a>
                         </div>
                         {% if form.accept_data_agreement.errors %}
                             {% for error in form.accept_data_agreement.errors %}

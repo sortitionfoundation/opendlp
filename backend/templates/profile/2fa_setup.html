@@ -10,11 +10,11 @@
             </p>
             <div class="govuk-!-margin-bottom-6">
                 <img src="{{ qr_code_url }}"
-                    alt="{{ _('QR code for two-factor authentication setup') }}"
-                    style="max-width: 300px;
-                        border: 1px solid #b1b4b6;
-                        padding: 20px;
-                        background: white" />
+                     alt="{{ _('QR code for two-factor authentication setup') }}"
+                     style="max-width: 300px;
+                            border: 1px solid #b1b4b6;
+                            padding: 20px;
+                            background: white" />
             </div>
             <details class="govuk-details govuk-!-margin-bottom-6">
                 <summary class="govuk-details__summary">
@@ -23,11 +23,11 @@
                 <div class="govuk-details__text">
                     <p class="govuk-body">{{ _("You can enter this code manually in your authenticator app:") }}</p>
                     <div style="background: #f3f2f1;
-                        padding: 15px;
-                        border-left: 4px solid #1d70b8;
-                        font-family: monospace;
-                        font-size: 18px;
-                        word-break: break-all">{{ totp_secret }}</div>
+                                padding: 15px;
+                                border-left: 4px solid #1d70b8;
+                                font-family: monospace;
+                                font-size: 18px;
+                                word-break: break-all">{{ totp_secret }}</div>
                 </div>
             </details>
             <h2 class="govuk-heading-m">{{ _("Step 2: Save Backup Codes") }}</h2>
@@ -39,15 +39,15 @@
                 </strong>
             </div>
             <div style="background: #f3f2f1;
-                padding: 20px;
-                border: 1px solid #b1b4b6;
-                margin-bottom: 30px">
+                        padding: 20px;
+                        border: 1px solid #b1b4b6;
+                        margin-bottom: 30px">
                 <div id="backup-codes"
-                    style="display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                        font-family: monospace;
-                        font-size: 16px">
+                     style="display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 10px;
+                            font-family: monospace;
+                            font-size: 16px">
                     {% for code in backup_codes %}
                         <div>{{ code }}</div>
                     {% endfor %}
@@ -55,11 +55,11 @@
             </div>
             <div class="govuk-button-group govuk-!-margin-bottom-6">
                 <button onclick="downloadBackupCodes()"
-                    class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button">{{ _("Download codes") }}</button>
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">{{ _("Download codes") }}</button>
                 <button data-print
-                    class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button">{{ _("Print codes") }}</button>
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">{{ _("Print codes") }}</button>
             </div>
             <h2 class="govuk-heading-m">{{ _("Step 3: Verify Setup") }}</h2>
             <p class="govuk-body">
@@ -70,15 +70,15 @@
                 <div class="govuk-form-group">
                     <label class="govuk-label" for="totp_code">{{ _("Verification code") }}</label>
                     <input class="govuk-input govuk-input--width-10"
-                        id="totp_code"
-                        name="totp_code"
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]{6}"
-                        maxlength="6"
-                        autocomplete="one-time-code"
-                        autofocus
-                        required />
+                           id="totp_code"
+                           name="totp_code"
+                           type="text"
+                           inputmode="numeric"
+                           pattern="[0-9]{6}"
+                           maxlength="6"
+                           autocomplete="one-time-code"
+                           autofocus
+                           required />
                 </div>
                 <div class="govuk-button-group">
                     <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Verify and enable") }}</button>

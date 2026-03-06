@@ -50,7 +50,7 @@
         </div>
         <div class="govuk-form-group {% if form.first_assembly_date.errors %}govuk-form-group--error{% endif %}">
             <label class="govuk-label govuk-label--s"
-                for="{{ form.first_assembly_date.id }}">{{ form.first_assembly_date.label.text }}</label>
+                   for="{{ form.first_assembly_date.id }}">{{ form.first_assembly_date.label.text }}</label>
             {% if form.first_assembly_date.description %}
                 <div class="govuk-hint">{{ form.first_assembly_date.description }}</div>
             {% endif %}
@@ -64,7 +64,7 @@
         </div>
         <div class="govuk-form-group {% if form.number_to_select.errors %}govuk-form-group--error{% endif %}">
             <label class="govuk-label govuk-label--s"
-                for="{{ form.number_to_select.id }}">{{ form.number_to_select.label.text }}</label>
+                   for="{{ form.number_to_select.id }}">{{ form.number_to_select.label.text }}</label>
             {% if form.number_to_select.description %}
                 <div class="govuk-hint">{{ form.number_to_select.description }}</div>
             {% endif %}
@@ -79,7 +79,7 @@
         <div class="govuk-button-group">
             <button type="submit" class="govuk-button" data-module="govuk-button">{{ _('Save Changes') }}</button>
             <a class="govuk-link"
-                href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Cancel') }}</a>
+               href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _('Cancel') }}</a>
         </div>
     </form>
 {% endblock %}

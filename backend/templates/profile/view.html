@@ -45,16 +45,16 @@
                     <dd class="govuk-summary-list__actions">
                         {% if current_user.password_hash and current_user.oauth_provider %}
                             <form method="POST"
-                                action="{{ url_for('profile.remove_password') }}"
-                                style="display: inline"
-                                data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}">
+                                  action="{{ url_for('profile.remove_password') }}"
+                                  style="display: inline"
+                                  data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit"
-                                    class="govuk-link govuk-!-font-size-19"
-                                    style="border: none;
-                                        background: none;
-                                        cursor: pointer;
-                                        text-decoration: underline">{{ _("Remove") }}</button>
+                                        class="govuk-link govuk-!-font-size-19"
+                                        style="border: none;
+                                               background: none;
+                                               cursor: pointer;
+                                               text-decoration: underline">{{ _("Remove") }}</button>
                             </form>
                         {% elif not current_user.password_hash %}
                             {% if current_user.oauth_provider %}
@@ -79,34 +79,34 @@
                             {% if current_user.oauth_provider == 'google' %}
                                 {% if current_user.password_hash %}
                                     <form method="POST"
-                                        action="{{ url_for('profile.remove_oauth') }}"
-                                        style="display: inline"
-                                        data-confirm="{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}">
+                                          action="{{ url_for('profile.remove_oauth') }}"
+                                          style="display: inline"
+                                          data-confirm="{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit"
-                                            class="govuk-link govuk-!-font-size-19"
-                                            style="border: none;
-                                                background: none;
-                                                cursor: pointer;
-                                                text-decoration: underline">{{ _("Unlink") }}</button>
+                                                class="govuk-link govuk-!-font-size-19"
+                                                style="border: none;
+                                                       background: none;
+                                                       cursor: pointer;
+                                                       text-decoration: underline">{{ _("Unlink") }}</button>
                                     </form>
                                 {% else %}
                                     <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
                                 {% endif %}
                             {% elif not current_user.oauth_provider and config.OAUTH_GOOGLE_CLIENT_ID %}
                                 <form style="display: inline"
-                                    action="{{ url_for('profile.link_google') }}"
-                                    method="get">
+                                      action="{{ url_for('profile.link_google') }}"
+                                      method="get">
                                     <div class="govuk-!-margin-top-6">
                                         <button class="gsi-material-button">
                                             <div class="gsi-material-button-state"></div>
                                             <div class="gsi-material-button-content-wrapper">
                                                 <div class="gsi-material-button-icon">
                                                     <svg version="1.1"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 48 48"
-                                                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                                                        style="display: block">
+                                                         xmlns="http://www.w3.org/2000/svg"
+                                                         viewBox="0 0 48 48"
+                                                         xmlns:xlink="http://www.w3.org/1999/xlink"
+                                                         style="display: block">
                                                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z">
                                                         </path>
                                                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z">
@@ -144,32 +144,32 @@
                             {% if current_user.oauth_provider == 'microsoft' %}
                                 {% if current_user.password_hash %}
                                     <form method="POST"
-                                        action="{{ url_for('profile.remove_oauth') }}"
-                                        style="display: inline"
-                                        data-confirm="{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}">
+                                          action="{{ url_for('profile.remove_oauth') }}"
+                                          style="display: inline"
+                                          data-confirm="{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit"
-                                            class="govuk-link govuk-!-font-size-19"
-                                            style="border: none;
-                                                background: none;
-                                                cursor: pointer;
-                                                text-decoration: underline">{{ _("Unlink") }}</button>
+                                                class="govuk-link govuk-!-font-size-19"
+                                                style="border: none;
+                                                       background: none;
+                                                       cursor: pointer;
+                                                       text-decoration: underline">{{ _("Unlink") }}</button>
                                     </form>
                                 {% else %}
                                     <span class="govuk-hint govuk-!-font-size-16">{{ _("Only authentication method") }}</span>
                                 {% endif %}
                             {% elif not current_user.oauth_provider and config.OAUTH_MICROSOFT_CLIENT_ID %}
                                 <form style="display: inline"
-                                    action="{{ url_for('profile.link_microsoft') }}"
-                                    method="get">
+                                      action="{{ url_for('profile.link_microsoft') }}"
+                                      method="get">
                                     <div class="govuk-!-margin-top-2">
                                         <button class="gsi-material-button">
                                             <div class="gsi-material-button-state"></div>
                                             <div class="gsi-material-button-content-wrapper">
                                                 <div class="gsi-material-button-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 23 23"
-                                                        style="display: block">
+                                                         viewBox="0 0 23 23"
+                                                         style="display: block">
                                                         <path fill="#f35325" d="M0 0h11v11H0z" />
                                                         <path fill="#81bc06" d="M12 0h11v11H12z" />
                                                         <path fill="#05a6f0" d="M0 12h11v11H0z" />
@@ -211,12 +211,12 @@
             </dl>
             <div class="govuk-button-group">
                 <a href="{{ url_for('profile.edit') }}"
-                    class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button">{{ _("Edit profile") }}</a>
+                   class="govuk-button govuk-button--secondary"
+                   data-module="govuk-button">{{ _("Edit profile") }}</a>
                 {% if current_user.password_hash %}
                     <a href="{{ url_for('profile.change_password') }}"
-                        class="govuk-button govuk-button--secondary"
-                        data-module="govuk-button">{{ _("Change password") }}</a>
+                       class="govuk-button govuk-button--secondary"
+                       data-module="govuk-button">{{ _("Change password") }}</a>
                 {% endif %}
             </div>
             <p class="govuk-body govuk-!-margin-top-6">

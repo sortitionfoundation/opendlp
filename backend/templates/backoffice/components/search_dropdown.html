@@ -37,7 +37,7 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
     {% set has_error = error | length > 0 %}
 
     <div class="flex flex-col gap-1.5"
-        x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: {{ min_chars }}, debounceMs: {{ debounce_ms }}, paramName: '{{ param_name }}' })">
+         x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: {{ min_chars }}, debounceMs: {{ debounce_ms }}, paramName: '{{ param_name }}' })">
 
         {# Label #}
         {% if label %}
@@ -55,21 +55,21 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
         {# Search input with dropdown #}
         <div class="relative">
             <input type="text"
-                id="{{ input_id }}_search"
-                x-model="query"
-                @input="onInput()"
-                @keydown="onKeydown($event)"
-                @click.outside="close()"
-                {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-                {% if required %}required{% endif %}
-                autocomplete="off"
-                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                style="
-                    background-color: var(--color-page-background);
-                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                    color: var(--color-body-text);
-                    --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
-                ">
+                   id="{{ input_id }}_search"
+                   x-model="query"
+                   @input="onInput()"
+                   @keydown="onKeydown($event)"
+                   @click.outside="close()"
+                   {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+                   {% if required %}required{% endif %}
+                   autocomplete="off"
+                   class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                   style="
+                          background-color: var(--color-page-background);
+                          border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                          color: var(--color-body-text);
+                          --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                         ">
 
             {# Hidden input for form submission #}
             <input type="hidden" name="{{ name }}" id="{{ input_id }}" x-bind:value="selectedId">
@@ -84,17 +84,17 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
 
             {# Dropdown results #}
             <div x-show="isOpen"
-                x-cloak
-                class="absolute z-20 w-full mt-1 rounded-lg shadow-lg overflow-hidden"
-                style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                 x-cloak
+                 class="absolute z-20 w-full mt-1 rounded-lg shadow-lg overflow-hidden"
+                 style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
                 <ul class="max-h-60 overflow-auto">
                     <template x-for="(item, index) in results" x-bind:key="item.id">
                         <li>
                             <button type="button"
-                                @click="selectItem(item)"
-                                class="w-full px-4 py-3 text-left transition-colors"
-                                x-bind:style="index === highlightedIndex ? 'background-color: var(--color-subtle-background-panels);' : ''"
-                                @mouseenter="highlightedIndex = index">
+                                    @click="selectItem(item)"
+                                    class="w-full px-4 py-3 text-left transition-colors"
+                                    x-bind:style="index === highlightedIndex ? 'background-color: var(--color-subtle-background-panels);' : ''"
+                                    @mouseenter="highlightedIndex = index">
                                 <span class="text-body-md block" style="color: var(--color-body-text);" x-text="item.label"></span>
                                 <span x-show="item.sublabel" class="text-body-sm block" style="color: var(--color-secondary-text);" x-text="item.sublabel"></span>
                             </button>
@@ -104,8 +104,8 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
 
                 {# No results message #}
                 <div x-show="results.length === 0 && !isLoading && query.length >= {{ min_chars }}"
-                    class="px-4 py-3 text-body-sm"
-                    style="color: var(--color-secondary-text);">
+                     class="px-4 py-3 text-body-sm"
+                     style="color: var(--color-secondary-text);">
                     {{ _("No results found") }}
                 </div>
             </div>

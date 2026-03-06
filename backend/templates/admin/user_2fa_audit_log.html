@@ -11,11 +11,11 @@
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
                             <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
+                               href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
                             <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('admin.view_user', user_id=user.id) }}">{{ user.email }}</a>
+                               href="{{ url_for('admin.view_user', user_id=user.id) }}">{{ user.email }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">{{ _("2FA Audit Log") }}</li>
                     </ol>
@@ -93,7 +93,7 @@
                 {% endif %}
                 <div class="govuk-button-group govuk-!-margin-top-6">
                     <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
-                        class="govuk-button govuk-button--secondary">{{ _("Back to User Details") }}</a>
+                       class="govuk-button govuk-button--secondary">{{ _("Back to User Details") }}</a>
                 </div>
             </div>
         </div>

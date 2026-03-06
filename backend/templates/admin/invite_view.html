@@ -11,7 +11,7 @@
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
                             <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
+                               href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">{{ invite.code }}</li>
                     </ol>
@@ -23,8 +23,8 @@
                         <dd class="govuk-summary-list__value">
                             <code id="invite-code">{{ invite.code }}</code>
                             <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2"
-                                data-module="govuk-button"
-                                onclick="copyToClipboard('invite-code', '{{ _("Invite code copied!") }}')">
+                                    data-module="govuk-button"
+                                    onclick="copyToClipboard('invite-code', '{{ _("Invite code copied!") }}')">
                                 {{ _("Copy Code") }}
                             </button>
                         </dd>
@@ -34,8 +34,8 @@
                         <dd class="govuk-summary-list__value">
                             <code id="invite-url">{{ url_for('auth.register', invite_code=invite.code, _external=True) }}</code>
                             <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2"
-                                data-module="govuk-button"
-                                onclick="copyToClipboard('invite-url', '{{ _("URL copied!") }}')">
+                                    data-module="govuk-button"
+                                    onclick="copyToClipboard('invite-url', '{{ _("URL copied!") }}')">
                                 {{ _("Copy URL") }}
                             </button>
                         </dd>
@@ -107,19 +107,19 @@
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     {% if invite.is_valid() and not invite.used_by %}
                         <form method="post"
-                            action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
-                            style="display: inline">
+                              action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
+                              style="display: inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button type="submit"
-                                class="govuk-button govuk-button--warning"
-                                data-module="govuk-button"
-                                data-confirm="{{ _("Are you sure you want to revoke this invite? This action cannot be undone.") }}">
+                                    class="govuk-button govuk-button--warning"
+                                    data-module="govuk-button"
+                                    data-confirm="{{ _("Are you sure you want to revoke this invite? This action cannot be undone.") }}">
                                 {{ _("Revoke Invite") }}
                             </button>
                         </form>
                     {% endif %}
                     <a href="{{ url_for('admin.list_invites_page') }}"
-                        class="govuk-button govuk-button--secondary">{{ _("Back to Invite List") }}</a>
+                       class="govuk-button govuk-button--secondary">{{ _("Back to Invite List") }}</a>
                 </div>
             </div>
         </div>

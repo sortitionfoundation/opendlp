@@ -35,9 +35,9 @@
     {% endif %}
 
     <form method="post"
-        action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
-        enctype="multipart/form-data"
-        novalidate>
+          action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
+          enctype="multipart/form-data"
+          novalidate>
         {{ form.hidden_tag() }}
 
         <div class="govuk-form-group {% if form.csv_file.errors %}govuk-form-group--error{% endif %}">

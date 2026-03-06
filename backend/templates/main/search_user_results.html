@@ -3,10 +3,10 @@
         {% for user in users %}
             <li>
                 <button type="button"
-                    class="search-result-item"
-                    data-user-id="{{ user.id }}"
-                    data-user-email="{{ user.email }}"
-                    data-user-name="{{ user.display_name }}">
+                        class="search-result-item"
+                        data-user-id="{{ user.id }}"
+                        data-user-email="{{ user.email }}"
+                        data-user-name="{{ user.display_name }}">
                     <strong>{{ user.email }}</strong>
                     <br>
                     <span class="govuk-body-s">{{ user.display_name }}</span>

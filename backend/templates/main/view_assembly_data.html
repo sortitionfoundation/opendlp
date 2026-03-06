@@ -6,19 +6,19 @@
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
         {% if not gsheet %}
             <a href="{{ url_for('gsheets.manage_assembly_gsheet', assembly_id=assembly.id) }}"
-                class="govuk-button govuk-button--secondary">{{ _("Configure Google Spreadsheet") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Configure Google Spreadsheet") }}</a>
         {% endif %}
         {% if gsheet and gsheet.url %}
             <a href="{{ url_for('gsheets.select_assembly_gsheet', assembly_id=assembly.id) }}"
-                class="govuk-button govuk-button--secondary">{{ _("Selection") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Selection") }}</a>
             <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}"
-                method="post"
-                style="display: inline">
+                  method="post"
+                  style="display: inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Replacements") }}</button>
             </form>
             <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
-                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
         {% else %}
             <button class="govuk-button govuk-button--secondary" disabled>{{ _("Selection") }}</button>
             <button class="govuk-button govuk-button--secondary" disabled>{{ _("Replacements") }}</button>
@@ -107,7 +107,7 @@
                         </td>
                         <td class="govuk-table__cell">
                             <a href="{{ url_for('gsheets.view_gsheet_run', assembly_id=assembly.id, run_id=run_record.task_id) }}"
-                                class="govuk-link">{{ _("View") }}</a>
+                               class="govuk-link">{{ _("View") }}</a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -120,11 +120,11 @@
                 {% if page > 1 %}
                     <div class="govuk-pagination__prev">
                         <a class="govuk-link govuk-pagination__link"
-                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page-1) }}"
-                            rel="prev">
+                           href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page-1) }}"
+                           rel="prev">
                             <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
-                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
-                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                 xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                 aria-hidden="true" focusable="false" viewBox="0 0 15 13">
                                 <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
                             </svg>
                             <span class="govuk-pagination__link-title">{{ _("Previous") }}</span>
@@ -136,13 +136,13 @@
                         {% if p == page %}
                             <li class="govuk-pagination__item govuk-pagination__item--current">
                                 <a class="govuk-link govuk-pagination__link" href="#"
-                                    aria-label="Page {{ p }}" aria-current="page">{{ p }}</a>
+                                   aria-label="Page {{ p }}" aria-current="page">{{ p }}</a>
                             </li>
                         {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
                             <li class="govuk-pagination__item">
                                 <a class="govuk-link govuk-pagination__link"
-                                    href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=p) }}"
-                                    aria-label="Page {{ p }}">{{ p }}</a>
+                                   href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=p) }}"
+                                   aria-label="Page {{ p }}">{{ p }}</a>
                             </li>
                         {% elif (p == page - 3) or (p == page + 3) %}
                             <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
@@ -152,12 +152,12 @@
                 {% if page < total_pages %}
                     <div class="govuk-pagination__next">
                         <a class="govuk-link govuk-pagination__link"
-                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page+1) }}"
-                            rel="next">
+                           href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id, page=page+1) }}"
+                           rel="next">
                             <span class="govuk-pagination__link-title">{{ _("Next") }}</span>
                             <svg class="govuk-pagination__icon govuk-pagination__icon--next"
-                                xmlns="http://www.w3.org/2000/svg" height="13" width="15"
-                                aria-hidden="true" focusable="false" viewBox="0 0 15 13">
+                                 xmlns="http://www.w3.org/2000/svg" height="13" width="15"
+                                 aria-hidden="true" focusable="false" viewBox="0 0 15 13">
                                 <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
                             </svg>
                         </a>

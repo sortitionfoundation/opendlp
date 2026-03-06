@@ -43,8 +43,8 @@
                 {% endif %}
             </button>
             <form method="POST"
-                action="{{ url_for('db_selection.cancel_db_selection', assembly_id=assembly.id, run_id=run_record.task_id) }}"
-                style="display: inline;">
+                  action="{{ url_for('db_selection.cancel_db_selection', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="govuk-button govuk-button--warning" type="submit" data-module="govuk-button">
                     {{ _("Cancel") }}
@@ -113,13 +113,13 @@
                 <ul class="govuk-list">
                     <li>
                         <a class="govuk-link"
-                            href="{{ url_for('db_selection.download_selected_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                           href="{{ url_for('db_selection.download_selected_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
                             {{ _("Download Selected") }}
                         </a>
                     </li>
                     <li>
                         <a class="govuk-link"
-                            href="{{ url_for('db_selection.download_remaining_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                           href="{{ url_for('db_selection.download_remaining_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
                             {{ _("Download Remaining") }}
                         </a>
                     </li>

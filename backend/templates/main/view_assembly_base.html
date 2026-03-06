@@ -5,14 +5,14 @@
         <ol class="govuk-breadcrumbs__list">
             <li class="govuk-breadcrumbs__list-item">
                 <a class="govuk-breadcrumbs__link"
-                    href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
+                   href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
             </li>
             {% if current_tab == 'details' and current_page == 'view_assembly' %}
                 <li class="govuk-breadcrumbs__list-item">{{ _("Assembly") }}: {{ assembly.title }}</li>
             {% else %}
                 <li class="govuk-breadcrumbs__list-item">
                     <a class="govuk-breadcrumbs__link"
-                        href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Assembly") }}: {{ assembly.title }}</a>
+                       href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Assembly") }}: {{ assembly.title }}</a>
                 </li>
             {% endif %}
             {# Page-specific breadcrumbs #}
@@ -23,48 +23,48 @@
         <h1 class="govuk-heading-l">{{ assembly.title }}</h1>
         {# Service Navigation for Assembly Sections #}
         <nav class="govuk-service-navigation govuk-!-margin-bottom-6"
-            aria-label="{{ _('Assembly sections') }}">
+             aria-label="{{ _('Assembly sections') }}">
             <ul class="govuk-service-navigation__list">
                 <li class="govuk-service-navigation__item {% if current_tab == 'details' %}govuk-service-navigation__item--active{% endif %}">
                     <a class="govuk-service-navigation__link"
-                        href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Details") }}</a>
+                       href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}">{{ _("Details") }}</a>
                 </li>
                 {% if feature('csv_db_assembly_links') %}
                     <li class="govuk-service-navigation__item {% if current_tab == 'targets' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                            href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}">
+                           href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}">
                             {{ _("Targets") }}
                         </a>
                     </li>
                     <li class="govuk-service-navigation__item {% if current_tab == 'respondents' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                            href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}">
+                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}">
                             {{ _("Respondents") }}
                         </a>
                     </li>
                     <li class="govuk-service-navigation__item {% if current_tab == 'data' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
+                           href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
                             {{ _("Selection (GSheet)") }}
                         </a>
                     </li>
                     <li class="govuk-service-navigation__item {% if current_tab == 'db_selection' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                            href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">
+                           href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">
                             {{ _("Selection (DB)") }}
                         </a>
                     </li>
                 {% else %}
                     <li class="govuk-service-navigation__item {% if current_tab == 'data' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
+                           href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">
                             {{ _("Data &amp; Selection") }}
                         </a>
                     </li>
                 {% endif %}
                 <li class="govuk-service-navigation__item {% if current_tab == 'members' %}govuk-service-navigation__item--active{% endif %}">
                     <a class="govuk-service-navigation__link"
-                        href="{{ url_for('main.view_assembly_members', assembly_id=assembly.id) }}">
+                       href="{{ url_for('main.view_assembly_members', assembly_id=assembly.id) }}">
                         {{ _("Team Members") }}
                     </a>
                 </li>
@@ -76,7 +76,7 @@
         <hr class="govuk-section-break govuk-section-break--visible govuk-!-margin-top-6">
         <div class="govuk-button-group govuk-!-margin-top-6">
             <a href="{{ url_for('main.dashboard') }}"
-                class="govuk-button govuk-button--secondary">{{ _("Back to Dashboard") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Back to Dashboard") }}</a>
         </div>
     </div>
 {% endblock %}

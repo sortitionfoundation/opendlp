@@ -6,27 +6,27 @@
             {% block title %}OpenDLP - {{ _("Open Democratic Lottery Platform") }}{% endblock %}
         </title>
         <meta name="viewport"
-            content="width=device-width, initial-scale=1, viewport-fit=cover">
+              content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#0b0c0c">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <link rel="shortcut icon"
-            sizes="16x16 32x32 48x48"
-            href="/static/img/favicon.ico"
-            type="image/x-icon">
+              sizes="16x16 32x32 48x48"
+              href="/static/img/favicon.ico"
+              type="image/x-icon">
         <!-- OpenDLP with GOV.UK Frontend CSS -->
         <link rel="stylesheet"
-            href="{{ url_for('static', filename='css/application.css', v=css_hash) }}">
+              href="{{ url_for('static', filename='css/application.css', v=css_hash) }}">
         {% block extra_css %}{% endblock %}
     </head>
     <body class="govuk-template__body govuk-frontend-supported">
         <script nonce="{{ csp_nonce }}">document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
         <a href="#main-content"
-            class="govuk-skip-link"
-            data-module="govuk-skip-link">{{ _("Skip to main content") }}</a>
+           class="govuk-skip-link"
+           data-module="govuk-skip-link">{{ _("Skip to main content") }}</a>
         <header class="govuk-header" role="banner" data-module="govuk-header">
             {% if site_banner_text %}
                 <div class="site-banner"
-                    style="background-color: {{ site_banner_colour }}">
+                     style="background-color: {{ site_banner_colour }}">
                     <div class="govuk-width-container">
                         <p class="site-banner__text">{{ site_banner_text }}</p>
                     </div>
@@ -35,22 +35,22 @@
             <div class="govuk-header__container govuk-width-container">
                 <div class="govuk-header__logo">
                     <a href="{{ url_for('main.index') }}"
-                        class="govuk-header__link govuk-header__link--homepage">
+                       class="govuk-header__link govuk-header__link--homepage">
                         <img alt="{{ _('Sortition Foundation Logo') }}"
-                            src="{{ url_for('static', filename='img/logosortition.svg') }}">
+                             src="{{ url_for('static', filename='img/logosortition.svg') }}">
                     </a>
                 </div>
                 {% if current_user.is_authenticated %}
                     <div class="govuk-header__content">
                         <a href="#navigation"
-                            class="govuk-header__menu-button govuk-js-header-toggle"
-                            aria-controls="navigation"
-                            aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
+                           class="govuk-header__menu-button govuk-js-header-toggle"
+                           aria-controls="navigation"
+                           aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
                         <nav class="govuk-header__navigation" id="navigation">
                             <button type="button"
-                                class="govuk-header__navigation-close govuk-js-header-toggle"
-                                aria-controls="navigation"
-                                aria-label="Close navigation menu">
+                                    class="govuk-header__navigation-close govuk-js-header-toggle"
+                                    aria-controls="navigation"
+                                    aria-label="Close navigation menu">
                                 <span class="govuk-visually-hidden">{{ _("Close menu") }}</span>
                             </button>
                             <ul class="govuk-header__navigation-list">
@@ -60,7 +60,7 @@
                                 {% if feature('backoffice_link') %}
                                     <li class="govuk-header__navigation-item">
                                         <a class="govuk-header__link"
-                                            href="{{ url_for('backoffice.dashboard') }}">{{ _("Back Office Dashboard (preview)") }}</a>
+                                           href="{{ url_for('backoffice.dashboard') }}">{{ _("Back Office Dashboard (preview)") }}</a>
                                     </li>
                                 {% endif %}
                                 {% if current_user.global_role.value == 'admin' or current_user.global_role.value == 'global-organiser' %}
@@ -70,8 +70,8 @@
                                 {% endif %}
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link"
-                                        href="https://www.sortitionfoundation.org/lab"
-                                        target="_blank">{{ _("Sortition Lab") }}</a>
+                                       href="https://www.sortitionfoundation.org/lab"
+                                       target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link" href="{{ url_for('main.support') }}">{{ _("Help") }}</a>
@@ -88,14 +88,14 @@
                 {% else %}
                     <div class="govuk-header__content">
                         <a href="#navigation"
-                            class="govuk-header__menu-button govuk-js-header-toggle"
-                            aria-controls="navigation"
-                            aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
+                           class="govuk-header__menu-button govuk-js-header-toggle"
+                           aria-controls="navigation"
+                           aria-label="Show or hide navigation menu">{{ _("Menu") }}</a>
                         <nav class="govuk-header__navigation" id="navigation">
                             <button type="button"
-                                class="govuk-header__navigation-close govuk-js-header-toggle"
-                                aria-controls="navigation"
-                                aria-label="Close navigation menu">
+                                    class="govuk-header__navigation-close govuk-js-header-toggle"
+                                    aria-controls="navigation"
+                                    aria-label="Close navigation menu">
                                 <span class="govuk-visually-hidden">{{ _("Close menu") }}</span>
                             </button>
                             <ul class="govuk-header__navigation-list">
@@ -104,8 +104,8 @@
                                 </li>
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link"
-                                        href="https://www.sortitionfoundation.org/lab"
-                                        target="_blank">{{ _("Sortition Lab") }}</a>
+                                       href="https://www.sortitionfoundation.org/lab"
+                                       target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link" href="{{ url_for('main.support') }}">{{ _("Help") }}</a>
@@ -129,9 +129,9 @@
                         </div>
                     {% else %}
                         <div {% if category == 'success' %} class="govuk-notification-banner govuk-notification-banner--success" {% else %} class="govuk-notification-banner" {% endif %}
-                            role="alert"
-                            aria-labelledby="govuk-notification-banner-title"
-                            data-module="govuk-notification-banner">
+                             role="alert"
+                             aria-labelledby="govuk-notification-banner-title"
+                             data-module="govuk-notification-banner">
                             <div class="govuk-notification-banner__header">
                                 <h2 class="govuk-notification-banner__title"
                                     id="govuk-notification-banner-title">
@@ -161,17 +161,17 @@
                         <ul class="govuk-footer__inline-list">
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
-                                    href="https://github.com/sortition-foundation/opendlp"
-                                    target="_blank">GitHub</a>
+                                   href="https://github.com/sortition-foundation/opendlp"
+                                   target="_blank">GitHub</a>
                             </li>
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
-                                    href="https://www.sortitionfoundation.org"
-                                    target="_blank">Sortition Foundation</a>
+                                   href="https://www.sortitionfoundation.org"
+                                   target="_blank">Sortition Foundation</a>
                             </li>
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
-                                    href="{{ url_for('auth.user_data_agreement') }}">{{ _("User Data Agreement") }}</a>
+                                   href="{{ url_for('auth.user_data_agreement') }}">{{ _("User Data Agreement") }}</a>
                             </li>
                             <li class="govuk-footer__inline-list-item govuk-secondary-text-colour">
                                 {{ _("OpenDLP Version") }} {{ opendlp_version }}
@@ -187,22 +187,22 @@
             </div>
         </footer>
         <script nonce="{{ csp_nonce }}"
-            src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
-            integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"
-            crossorigin="anonymous"></script>
+                src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
+                integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"
+                crossorigin="anonymous"></script>
         <script nonce="{{ csp_nonce }}"
-            src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
+                src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
         <script nonce="{{ csp_nonce }}"
-            src="{{ url_for('static', filename='js/alpine-components.js', v=alpine_js_hash) }}"></script>
+                src="{{ url_for('static', filename='js/alpine-components.js', v=alpine_js_hash) }}"></script>
         <script nonce="{{ csp_nonce }}"
-            defer
-            src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
-            integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"
-            crossorigin="anonymous"></script>
+                defer
+                src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
+                integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"
+                crossorigin="anonymous"></script>
         <script nonce="{{ csp_nonce }}"
-            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
-            integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
-            crossorigin="anonymous"></script>
+                src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+                integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+                crossorigin="anonymous"></script>
         <script nonce="{{ csp_nonce }}">
             document.addEventListener('DOMContentLoaded', function() {
                 if (typeof window.GOVUKFrontend !== 'undefined') {

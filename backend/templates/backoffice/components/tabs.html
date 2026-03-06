@@ -37,20 +37,20 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                     {% if item.active %}
                         {# Active tab #}
                         <a href="{{ item.href }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
-                            style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);"
-                            aria-current="page"
-                            {{ extra_attrs | join(' ') | safe }}>
+                           class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
+                           style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);"
+                           aria-current="page"
+                           {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
                     {% else %}
                         {# Inactive tab #}
                         <a href="{{ item.href }}"
-                            class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                            style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                            onmouseover="this.style.color='var(--color-headings)'"
-                            onmouseout="this.style.color='var(--color-secondary-text)'"
-                            {{ extra_attrs | join(' ') | safe }}>
+                           class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
+                           style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
+                           onmouseover="this.style.color='var(--color-headings)'"
+                           onmouseout="this.style.color='var(--color-secondary-text)'"
+                           {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
                     {% endif %}
