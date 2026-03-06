@@ -123,7 +123,9 @@ volumes:
 
 ### Verify the configuration
 
-You can verify that the credentials are correctly configured by checking the Assembly Data page in the backoffice. It should display the service account email address if the configuration is correct.
+You can verify the credentials are correctly configured by checking the `/health` endpoint - it returns JSON including a `service_account_email` field. If it shows the email address (not "UNKNOWN"), the configuration is working.
+
+Alternatively, check the Assembly Data page in the backoffice, which also displays the service account email.
 
 ## Troubleshooting
 
