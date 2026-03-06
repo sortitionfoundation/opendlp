@@ -8,6 +8,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
+from functools import cache
 from pathlib import Path
 
 from cachelib.file import FileSystemCache
@@ -353,6 +354,7 @@ def get_config(config_name: str = "") -> FlaskBaseConfig:
     return config_cls()
 
 
+@cache
 def _get_project_root() -> Path:
     # Get project root - go up from src/opendlp/entrypoints/flask_app.py to project root
     # But if installed in venv (as in production) then use PROJECT_ROOT
