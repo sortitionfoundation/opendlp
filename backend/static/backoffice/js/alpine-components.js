@@ -130,23 +130,23 @@ document.addEventListener("alpine:init", function () {
                     },
                 })
                     .then(function (response) {
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                    }
-                    return response.json();
-                })
+                        if (!response.ok) {
+                            throw new Error("Network response was not ok");
+                        }
+                        return response.json();
+                    })
                     .then(function (data) {
-                    self.results = data;
-                    self.isOpen = data.length > 0;
-                    self.highlightedIndex = -1;
-                    self.isLoading = false;
-                })
+                        self.results = data;
+                        self.isOpen = data.length > 0;
+                        self.highlightedIndex = -1;
+                        self.isLoading = false;
+                    })
                     .catch(function (error) {
-                    console.error("Autocomplete fetch error:", error);
-                    self.results = [];
-                    self.isOpen = false;
-                    self.isLoading = false;
-                });
+                        console.error("Autocomplete fetch error:", error);
+                        self.results = [];
+                        self.isOpen = false;
+                        self.isLoading = false;
+                    });
             },
 
             selectItem: function (item) {
