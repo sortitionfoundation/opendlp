@@ -636,6 +636,7 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
             min_select=min_select,
             max_select=max_select,
             num_to_select=num_to_select,
+            log_messages=result.log_messages,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for replacement page: {e}")

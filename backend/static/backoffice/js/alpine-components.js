@@ -252,21 +252,31 @@ document.addEventListener("alpine:init", function () {
    * The progress URL should return JSON:
    *   { status, log_messages, error_message, completed_at, has_report, redirect_url }
    *   - redirect_url: Optional URL to redirect to (e.g., after load task completes)
+   *
+   * Error handling:
+   *   - 404 responses immediately stop polling and set status to "not_found"
+   *   - Other errors are tolerated up to maxFetchErrors consecutive failures
+   *   - After maxFetchErrors, polling stops and fetchError is set
    */
     Alpine.data("taskPoller", function (options) {
         var progressUrl = options.progressUrl || "";
         var pollIntervalMs = options.pollIntervalMs || 2000;
         var initialStatus = options.initialStatus || "pending";
+        var initialErrorMessage = options.initialErrorMessage || "";
+        var initialLogMessages = options.initialLogMessages || [];
 
         return {
             status: initialStatus,
-            logMessages: [],
-            errorMessage: "",
+            logMessages: initialLogMessages,
+            errorMessage: initialErrorMessage,
             completedAt: null,
             hasReport: false,
             redirectUrl: "",
             pollTimer: null,
             isPolling: false,
+            fetchError: "",
+            fetchErrorCount: 0,
+            maxFetchErrors: 3,
 
             init: function () {
                 var self = this;
@@ -281,7 +291,7 @@ document.addEventListener("alpine:init", function () {
             },
 
             isTerminalStatus: function (status) {
-                return ["completed", "failed", "cancelled"].indexOf(status) !== -1;
+                return ["completed", "failed", "cancelled", "not_found"].indexOf(status) !== -1;
             },
 
             startPolling: function () {
@@ -318,12 +328,25 @@ document.addEventListener("alpine:init", function () {
                     },
                 })
                     .then(function (response) {
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
+                    // Handle 404 - task not found
+                    if (response.status === 404) {
+                        self.status = "not_found";
+                        self.fetchError = "Task not found. It may have been deleted or the ID is invalid.";
+                        self.stopPolling();
+                        return Promise.reject(new Error("Task not found"));
                     }
+                    // Handle other non-OK responses
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok: " + response.status);
+                    }
+                    // Reset error count on successful response
+                    self.fetchErrorCount = 0;
+                    self.fetchError = "";
                     return response.json();
                 })
                     .then(function (data) {
+                    if (!data) return; // Skip if we rejected above
+
                     self.status = data.status || "unknown";
                     self.logMessages = data.log_messages || [];
                     self.errorMessage = data.error_message || "";
@@ -344,8 +367,19 @@ document.addEventListener("alpine:init", function () {
                     }
                 })
                     .catch(function (error) {
-                    console.error("Task progress fetch error:", error);
-                    // Don't stop polling on transient errors
+                    // Don't increment error count for 404 (already handled)
+                    if (error.message === "Task not found") {
+                        return;
+                    }
+
+                    self.fetchErrorCount++;
+                    console.error("Task progress fetch error (" + self.fetchErrorCount + "/" + self.maxFetchErrors + "):", error);
+
+                    // Stop polling after too many consecutive errors
+                    if (self.fetchErrorCount >= self.maxFetchErrors) {
+                        self.fetchError = "Unable to fetch task status. Please refresh the page or try again later.";
+                        self.stopPolling();
+                    }
                 });
             },
         };

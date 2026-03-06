@@ -53,7 +53,9 @@ ABOUTME: Displays replacement selection operations with progress tracking
                 x-data="taskPoller({
                     progressUrl: '{{ url_for('backoffice.replacement_progress', assembly_id=assembly.id, run_id=run_id) }}',
                     pollIntervalMs: 2000,
-                    initialStatus: '{{ run_record.status.value if run_record else 'pending' }}'
+                    initialStatus: '{{ run_record.status.value if run_record else 'pending' }}',
+                    initialErrorMessage: '{{ run_record.error_message|default('', true)|e if run_record else '' }}',
+                    initialLogMessages: {{ (log_messages or [])|tojson }}
                     })">
                 {% call card(title=_("Task Progress"), composed=true) %}
                     {% call card_body() %}
@@ -71,11 +73,11 @@ ABOUTME: Displays replacement selection operations with progress tracking
                             <span class="text-body-md px-2 py-1 rounded"
                                 x-bind:style="
                                     status === 'completed' ? 'background-color: var(--color-success-background); color: var(--color-success-text);' :
-                                    status === 'failed' ? 'background-color: var(--color-error-background); color: var(--color-error-text);' :
+                                    (status === 'failed' || status === 'not_found') ? 'background-color: var(--color-error-background); color: var(--color-error-text);' :
                                     status === 'cancelled' ? 'background-color: var(--color-warning-background); color: var(--color-warning-text);' :
                                     'background-color: var(--color-info-background); color: var(--color-info-text);'
                                 "
-                                x-text="status.charAt(0).toUpperCase() + status.slice(1)">
+                                x-text="status === 'not_found' ? 'Not Found' : status.charAt(0).toUpperCase() + status.slice(1)">
                             </span>
                         </div>
 
@@ -88,8 +90,16 @@ ABOUTME: Displays replacement selection operations with progress tracking
                             <span class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Processing...") }}</span>
                         </div>
 
-                        {# Error message #}
-                        <template x-if="errorMessage">
+                        {# Fetch error message (network/polling errors) #}
+                        <template x-if="fetchError">
+                            <div class="mb-4 rounded-lg p-4" style="background-color: var(--color-error-background); border: 1px solid var(--color-error-text);">
+                                <span class="text-body-md font-medium" style="color: var(--color-error-text);">{{ _("Error:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-error-text);" x-text="fetchError"></span>
+                            </div>
+                        </template>
+
+                        {# Task error message (from task execution) #}
+                        <template x-if="errorMessage && !fetchError">
                             <div class="mb-4">
                                 <span class="text-body-md font-medium" style="color: var(--color-error-text);">{{ _("Error:") }}</span>
                                 <span class="text-body-md" style="color: var(--color-error-text);" x-text="errorMessage"></span>
@@ -110,11 +120,14 @@ ABOUTME: Displays replacement selection operations with progress tracking
                         </template>
 
                         {# Log messages (detailed output) #}
-                        <div class="mb-4">
+                        <div class="mb-4" x-show="!fetchError">
                             <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Messages:") }}</span>
                             <div class="rounded-lg p-4 mt-2 max-h-60 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
-                                <template x-if="logMessages.length === 0">
+                                <template x-if="logMessages.length === 0 && (status === 'pending' || status === 'running')">
                                     <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Waiting for task to start...") }}</p>
+                                </template>
+                                <template x-if="logMessages.length === 0 && status !== 'pending' && status !== 'running'">
+                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("No messages recorded.") }}</p>
                                 </template>
                                 <template x-for="(msg, index) in logMessages" x-bind:key="index">
                                     <p class="text-body-sm mb-1" style="color: var(--color-body-text);" x-text="msg"></p>
@@ -130,8 +143,8 @@ ABOUTME: Displays replacement selection operations with progress tracking
                                 {{ button(_("Cancel Task"), type="submit", variant="danger") }}
                             </form>
                         </template>
-                        {# Back to replacement button - show when task is finished #}
-                        <template x-if="status === 'completed' || status === 'failed' || status === 'cancelled'">
+                        {# Back to replacement button - show when task is finished or errored #}
+                        <template x-if="status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'not_found' || fetchError">
                             <a href="{{ url_for('backoffice.view_assembly_replacement', assembly_id=assembly.id) }}"
                                 class="inline-flex items-center justify-center px-4 py-2.5 text-body-md font-medium rounded-lg transition-all duration-150"
                                 style="background-color: var(--color-primary-action); color: white;">
