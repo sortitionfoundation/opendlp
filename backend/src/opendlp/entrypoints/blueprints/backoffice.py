@@ -28,6 +28,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.sortition import (
     InvalidSelection,
     cancel_task,
@@ -278,6 +279,7 @@ def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             run_record=result.run_record,
             log_messages=result.log_messages,
             run_report=result.run_report,
+            translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection with run: {e}")
@@ -297,12 +299,12 @@ def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/progress")
 @login_required
 def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """JSON progress endpoint for Alpine polling."""
+    """Return progress HTML fragment for HTMX polling of selection task status."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            # Verify permissions
-            get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
             # Check task health
             check_and_update_task_health(uow, run_id)
@@ -311,22 +313,37 @@ def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
             result = get_selection_run_status(uow, run_id)
 
         if result.run_record is None:
-            return jsonify({"error": "Task not found"}), 404
+            return "", 404
 
-        return jsonify({
-            "status": result.run_record.status.value,
-            "log_messages": result.log_messages or [],
-            "error_message": result.run_record.error_message,
-            "completed_at": result.run_record.completed_at.isoformat() if result.run_record.completed_at else None,
-            "has_report": result.run_report is not None,
-        }), 200
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            return "", 404
+
+        response = current_app.make_response((
+            render_template(
+                "backoffice/components/selection_progress.html",
+                assembly=assembly,
+                gsheet=gsheet,
+                run_record=result.run_record,
+                log_messages=result.log_messages,
+                run_report=result.run_report,
+                translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
+                run_id=run_id,
+            ),
+            200,
+        ))
+        if result.run_record.has_finished:
+            response.headers["HX-Refresh"] = "true"
+        return response
     except NotFoundError:
-        return jsonify({"error": "Assembly not found"}), 404
+        return "", 404
     except InsufficientPermissions:
-        return jsonify({"error": "Permission denied"}), 403
+        return "", 403
     except Exception as e:
         current_app.logger.error(f"Selection progress error: {e}")
-        return jsonify({"error": "Internal error"}), 500
+        return "", 500
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/load", methods=["POST"])
