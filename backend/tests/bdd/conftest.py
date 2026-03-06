@@ -1,7 +1,9 @@
 import os
 import shutil
 import subprocess
+import uuid
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -11,9 +13,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.app import get_celery_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.invite_service import generate_invite
@@ -445,20 +447,13 @@ def existing_assembly(assembly_creator):
 @pytest.fixture
 def assembly_with_gsheet(assembly_gsheet_creator):
     """Create assembly with Google Sheet configured"""
-    assembly, gsheet = assembly_gsheet_creator(title="Assembly with GSheet")
+    assembly, _gsheet = assembly_gsheet_creator(title="Assembly with GSheet")
     return assembly
 
 
 @pytest.fixture
 def assembly_with_many_runs(test_database, admin_user, assembly_creator):
     """Create assembly with many selection run records for testing pagination"""
-    import uuid
-    from datetime import UTC, datetime, timedelta
-
-    from opendlp.domain.assembly import SelectionRunRecord
-    from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
     assembly = assembly_creator(title="Assembly with Many Runs")
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
@@ -485,13 +480,6 @@ def assembly_with_many_runs(test_database, admin_user, assembly_creator):
 @pytest.fixture
 def assembly_with_many_runs_and_gsheet(test_database, admin_user, assembly_gsheet_creator):
     """Create assembly with gsheet and many selection run records for testing pagination"""
-    import uuid
-    from datetime import UTC, datetime, timedelta
-
-    from opendlp.domain.assembly import SelectionRunRecord
-    from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-    from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
     assembly, _gsheet = assembly_gsheet_creator(title="Assembly with Many Runs and GSheet")
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
