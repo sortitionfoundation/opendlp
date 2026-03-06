@@ -1,5 +1,13 @@
 # Google Service Account
 
+## What is a Service Account?
+
+A Service Account is a special type of Google account that represents a non-human user (like a server or application). Instead of using your personal Google account (which requires browser-based login), a service account authenticates programmatically using a JSON key file. This allows the OpenDLP backend to access Google Sheets without human interaction.
+
+Think of it as a "robot user" that can read and write to Google Spreadsheets on behalf of your application.
+
+## Setup Overview
+
 To work with Google Spreadsheets we need to set up a service account. The high level instructions are:
 
 - ensure there is a google cloud project
@@ -79,3 +87,52 @@ gcloud iam service-accounts keys create KEY_FILE \
 If you look in the JSON file, the key `client_email` has the value of the email address - something like `SERVICE_ACCOUNT_NAME@PROJECT_ID.iam.gserviceaccount.com`. Go to the Google Spreadsheet you want to use, and share it with that email address.
 
 Once you have done that, OpenDLP can do a selection with that spreadsheet.
+
+## Configure OpenDLP
+
+After downloading the JSON key file, you need to tell OpenDLP where to find it by setting the `GOOGLE_AUTH_JSON_PATH` environment variable.
+
+### For local development
+
+Save your downloaded JSON key file to the `backend/credentials/` folder (this folder is gitignored):
+
+```bash
+# Move your downloaded file to the credentials folder
+mv ~/Downloads/your-project-*.json backend/credentials/google-service-account.json
+
+# Set the environment variable (add to your shell profile for persistence)
+export GOOGLE_AUTH_JSON_PATH="$(pwd)/credentials/google-service-account.json"
+
+# Then start both Flask and Celery (in separate terminals)
+just run      # Flask server
+just celery   # Celery worker
+```
+
+**Important:** Both the Flask server and the Celery worker need access to this environment variable. If you set it in one terminal, make sure to set it in the other terminal as well, or add it to your shell profile (e.g., `~/.bashrc`, `~/.zshrc`).
+
+### For Docker deployment
+
+Add the environment variable to your Docker Compose configuration or pass it when running the container:
+
+```yaml
+environment:
+  - GOOGLE_AUTH_JSON_PATH=/app/credentials/service-account.json
+volumes:
+  - ./credentials.json:/app/credentials/service-account.json:ro
+```
+
+### Verify the configuration
+
+You can verify the credentials are correctly configured by checking the `/health` endpoint - it returns JSON including a `service_account_email` field. If it shows the email address (not "UNKNOWN"), the configuration is working.
+
+Alternatively, check the Assembly Data page in the backoffice, which also displays the service account email.
+
+## Troubleshooting
+
+### "IsADirectoryError: Is a directory: '.'"
+
+This error means `GOOGLE_AUTH_JSON_PATH` is not set or is set to a directory instead of a file. Make sure the variable points to the actual JSON file path.
+
+### "Permission denied" when accessing a spreadsheet
+
+Make sure you've shared the Google Spreadsheet with the service account email address (found in the `client_email` field of the JSON file).

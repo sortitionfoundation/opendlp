@@ -66,8 +66,22 @@ def get_alpine_js_hash() -> str:
     Returns:
         8-character hash string, or empty string if file doesn't exist
     """
-    util_js_path = config.get_static_path() / "js" / "alpine-components.js"
-    return _get_file_hash(util_js_path)
+    alpine_js_path = config.get_static_path() / "js" / "alpine-components.js"
+    return _get_file_hash(alpine_js_path)
+
+
+@cache
+def get_backoffice_alpine_js_hash() -> str:
+    """
+    Generate a short hash of the backoffice alpine-components.js file for cache-busting.
+
+    Results are cached using functools.cache to avoid re-reading the file on every request.
+
+    Returns:
+        8-character hash string, or empty string if file doesn't exist
+    """
+    alpine_js_path = config.get_static_path() / "backoffice" / "js" / "alpine-components.js"
+    return _get_file_hash(alpine_js_path)
 
 
 @cache
@@ -182,7 +196,8 @@ def static_versioning_context_processor() -> dict[str, str]:
     return {
         "css_hash": get_css_hash(),
         "util_js_hash": get_util_js_hash(),
-        "alpine_js_hash": get_util_js_hash(),
+        "alpine_js_hash": get_alpine_js_hash(),
+        "backoffice_alpine_js_hash": get_backoffice_alpine_js_hash(),
         "opendlp_version": get_opendlp_version(),
         "google_service_account_email": get_service_account_email(),
         "site_banner_text": site_banner_text,

@@ -1,0 +1,381 @@
+{#
+ABOUTME: Backoffice assembly selection page
+ABOUTME: Displays selection operations: initial selection, replacement, and tab management
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/tabs.html" import tabs %}
+
+{% block title %}{{ _("Selection") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Selection")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Run selection and manage generated outputs") }}
+    </p>
+
+    {{ tabs(
+    items=[
+    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
+    {"label": _("Selection"), "href": url_for('backoffice.view_assembly_selection', assembly_id=assembly.id), "active": true},
+    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+    ],
+    aria_label=_("Assembly sections")
+    ) }}
+
+    {% if not gsheet %}
+        {# No Google Sheet configured - show configuration prompt #}
+        {{ alert(_("Please configure a Google Spreadsheet in the Data tab before running selection."), variant="warning") }}
+
+        <section class="flex gap-4">
+            {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+            {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+        </section>
+    {% else %}
+        {# Task Progress Section - shown when a task is running #}
+        {% if run_id %}
+            <div class="mb-8"
+                x-data="taskPoller({
+                    progressUrl: '{{ url_for('backoffice.selection_progress', assembly_id=assembly.id, run_id=run_id) }}',
+                    pollIntervalMs: 2000,
+                    initialStatus: '{{ run_record.status.value if run_record else 'pending' }}'
+                    })">
+                {% call card(title=_("Task Progress"), composed=true) %}
+                    {% call card_body() %}
+                        {# Task type info #}
+                        {% if run_record %}
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Task:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</span>
+                            </div>
+                        {% endif %}
+
+                        {# Status indicator #}
+                        <div class="mb-4">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Status:") }}</span>
+                            <span class="text-body-md px-2 py-1 rounded"
+                                x-bind:style="
+                                    status === 'completed' ? 'background-color: var(--color-success-background); color: var(--color-success-text);' :
+                                    status === 'failed' ? 'background-color: var(--color-error-background); color: var(--color-error-text);' :
+                                    status === 'cancelled' ? 'background-color: var(--color-warning-background); color: var(--color-warning-text);' :
+                                    'background-color: var(--color-info-background); color: var(--color-info-text);'
+                                "
+                                x-text="status.charAt(0).toUpperCase() + status.slice(1)">
+                            </span>
+                        </div>
+
+                        {# Spinner for running tasks #}
+                        <div x-show="status === 'pending' || status === 'running'" class="flex items-center gap-3 mb-4">
+                            <svg class="animate-spin h-5 w-5" style="color: var(--color-primary-action);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Processing...") }}</span>
+                        </div>
+
+                        {# Error message #}
+                        <template x-if="errorMessage">
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-error-text);">{{ _("Error:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-error-text);" x-text="errorMessage"></span>
+                            </div>
+                        </template>
+
+                        {# Success message with report link #}
+                        <template x-if="status === 'completed' && hasReport">
+                            <div class="mb-4">
+                                <span class="text-body-md font-medium" style="color: var(--color-success-text);">{{ _("Result:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
+                            </div>
+                        </template>
+
+                        {# Log messages (detailed output) #}
+                        <div class="mb-4">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Messages:") }}</span>
+                            <div class="rounded-lg p-4 mt-2 max-h-60 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <template x-if="logMessages.length === 0">
+                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Waiting for task to start...") }}</p>
+                                </template>
+                                <template x-for="(msg, index) in logMessages" x-bind:key="index">
+                                    <p class="text-body-sm mb-1" style="color: var(--color-body-text);" x-text="msg"></p>
+                                </template>
+                            </div>
+                        </div>
+                    {% endcall %}
+                    {% call card_footer() %}
+                        {# Cancel button - only show when task is running #}
+                        <template x-if="status === 'pending' || status === 'running'">
+                            <form method="post" action="{{ url_for('backoffice.cancel_selection_run', assembly_id=assembly.id, run_id=run_id) }}" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {{ button(_("Cancel Task"), type="submit", variant="danger") }}
+                            </form>
+                        </template>
+                        {# Back to selection button - show when task is finished #}
+                        <template x-if="status === 'completed' || status === 'failed' || status === 'cancelled'">
+                            <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) }}"
+                                class="inline-flex items-center justify-center px-4 py-2.5 text-body-md font-medium rounded-lg transition-all duration-150"
+                                style="background-color: var(--color-primary-action); color: white;">
+                                {{ _("Back to Selection") }}
+                            </a>
+                        </template>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# Google Sheet configured - show selection options #}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {# Initial Selection Card #}
+            {% call card(title=_("Initial Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Run the sortition algorithm to select participants from the initial pool based on demographic targets.") }}
+                    </p>
+
+                    {# Number to select info #}
+                    <div class="rounded-lg p-4 mb-4" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                        <div class="flex items-center gap-2">
+                            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Number to select:") }}</span>
+                            <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
+                        </div>
+                    </div>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Use 'Check Spreadsheet' to validate your data before running the actual selection.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    <form method="post" action="{{ url_for('backoffice.start_selection_load', assembly_id=assembly.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Check Spreadsheet"), type="submit", variant="outline") }}
+                    </form>
+                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}?test=1" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Test Selection"), type="submit", variant="secondary") }}
+                    </form>
+                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Selection"), type="submit", variant="primary") }}
+                    </form>
+                {% endcall %}
+            {% endcall %}
+
+            {# Replacement Selection Card #}
+            {% call card(title=_("Replacement Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                    </p>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("First check the spreadsheet to see how many replacement participants are available, then specify how many to select.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
+                    {{ button(_("Run Replacements"), variant="primary", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Manage Generated Tabs Card - Full Width #}
+        <div class="mb-8">
+            {% call card(title=_("Manage Generated Tabs"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("View and delete old selection output tabs from your Google Spreadsheet.") }}
+                    </p>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Each selection run creates new tabs in your spreadsheet. Use this to clean up old tabs that are no longer needed.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("List Old Tabs"), variant="outline", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Selection History - Full Width #}
+        <div class="mb-8">
+            {% call card(title=_("Selection History"), composed=true) %}
+                {% call card_body() %}
+                    {% if run_history %}
+                        {# History Table #}
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Status") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Task Type") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Started By") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Started At") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Completed At") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Comment") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium" style="color: var(--color-headings);">{{ _("Actions") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for run_record, user in run_history %}
+                                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                            {# Status #}
+                                            <td class="py-3 px-4">
+                                                <span class="inline-block px-2 py-1 rounded text-body-sm font-medium"
+                                                    {% if run_record.status.value == 'completed' %}
+                                                        style="background-color: var(--color-success-background); color: var(--color-success-text);"
+                                                    {% elif run_record.status.value == 'failed' %}
+                                                        style="background-color: var(--color-error-background); color: var(--color-error-text);"
+                                                    {% elif run_record.status.value == 'cancelled' %}
+                                                        style="background-color: var(--color-warning-background); color: var(--color-warning-text);"
+                                                    {% elif run_record.status.value == 'running' %}
+                                                        style="background-color: var(--color-info-background); color: var(--color-info-text);"
+                                                    {% else %}
+                                                        style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);"
+                                                    {% endif %}>
+                                                    {{ run_record.status.value.capitalize() }}
+                                                </span>
+                                            </td>
+
+                                            {# Task Type #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.task_type_verbose }}
+                                            </td>
+
+                                            {# Started By #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ user.display_name if user else _("Unknown") }}
+                                            </td>
+
+                                            {# Started At #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.created_at.strftime('%Y-%m-%d %H:%M') if run_record.created_at else '-' }}
+                                            </td>
+
+                                            {# Completed At #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.completed_at.strftime('%Y-%m-%d %H:%M') if run_record.completed_at else '-' }}
+                                            </td>
+
+                                            {# Comment #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.comment if run_record.comment else '-' }}
+                                            </td>
+
+                                            {# Actions #}
+                                            <td class="py-3 px-4">
+                                                <a href="{{ url_for('backoffice.view_run_details', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                                                    class="text-body-sm font-medium hover:underline"
+                                                    style="color: var(--color-primary-action);">
+                                                    {{ _("View") }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Pagination Controls #}
+                        {% if total_pages > 1 %}
+                            <div class="mt-6 flex items-center justify-between">
+                                {# Results count #}
+                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {% set end_record = page * 15 if page * 15 < total_count else total_count %}
+                                    {{ _("Showing %(start)s-%(end)s of %(total)s runs",
+                                    start=((page - 1) * 15 + 1),
+                                    end=end_record,
+                                    total=total_count) }}
+                                </p>
+
+                                {# Pagination buttons #}
+                                <nav class="flex items-center gap-2" x-data="{}" x-scroll-preserve-links>
+                                    {# Previous button #}
+                                    {% if page > 1 %}
+                                        <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page - 1) }}"
+                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                            onmouseout="this.style.backgroundColor='transparent'">
+                                            {{ _("Previous") }}
+                                        </a>
+                                    {% else %}
+                                        <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
+                                            {{ _("Previous") }}
+                                        </span>
+                                    {% endif %}
+
+                                    {# Page numbers #}
+                                    {% for page_num in range(1, total_pages + 1) %}
+                                        {% if page_num == page %}
+                                            <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                                style="background-color: var(--color-primary-action); color: white;">
+                                                {{ page_num }}
+                                            </span>
+                                        {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
+                                            <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page_num) }}"
+                                                class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                                onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                                onmouseout="this.style.backgroundColor='transparent'">
+                                                {{ page_num }}
+                                            </a>
+                                        {% elif page_num == page - 3 or page_num == page + 3 %}
+                                            <span class="px-3 py-2 text-body-sm" style="color: var(--color-secondary-text);">...</span>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {# Next button #}
+                                    {% if page < total_pages %}
+                                        <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page + 1) }}"
+                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                            onmouseout="this.style.backgroundColor='transparent'">
+                                            {{ _("Next") }}
+                                        </a>
+                                    {% else %}
+                                        <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
+                                            {{ _("Next") }}
+                                        </span>
+                                    {% endif %}
+                                </nav>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {# Empty state #}
+                        <div class="text-center py-8">
+                            <p class="text-body-md mb-2" style="color: var(--color-secondary-text);">
+                                {{ _("No selection runs yet") }}
+                            </p>
+                            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                {{ _("Run your first selection above to see the history here.") }}
+                            </p>
+                        </div>
+                    {% endif %}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Actions #}
+        <section class="flex gap-4">
+            {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+        </section>
+    {% endif %}
+{% endblock %}

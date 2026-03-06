@@ -14,6 +14,10 @@ wheels/
 # environment file
 .env
 
+# credentials (Google service account keys, etc.)
+backend/credentials/*
+!backend/credentials/.gitkeep
+
 # Virtual environments
 .venv
 

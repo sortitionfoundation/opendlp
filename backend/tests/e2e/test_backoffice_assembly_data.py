@@ -4,6 +4,93 @@ ABOUTME: Tests the assembly data page with gsheet source selection"""
 from tests.e2e.helpers import get_csrf_token
 
 
+class TestBackofficeDashboard:
+    """Test backoffice dashboard functionality."""
+
+    def test_dashboard_loads_for_logged_in_user(self, logged_in_admin):
+        """Test that dashboard page loads successfully."""
+        response = logged_in_admin.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        assert b"Dashboard" in response.data or b"Assembly" in response.data.lower()
+
+    def test_dashboard_redirects_when_not_logged_in(self, client):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get("/backoffice/dashboard")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
+class TestBackofficeAssemblyDetails:
+    """Test backoffice assembly details page."""
+
+    def test_view_assembly_details_page_loads(self, logged_in_admin, existing_assembly):
+        """Test that assembly details page loads successfully."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert existing_assembly.title.encode() in response.data
+
+    def test_view_assembly_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_view_nonexistent_assembly_redirects(self, logged_in_admin):
+        """Test that accessing non-existent assembly redirects with error."""
+        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000")
+        assert response.status_code == 302  # Should redirect to dashboard with error
+
+
+class TestBackofficeShowcase:
+    """Test backoffice showcase page."""
+
+    def test_showcase_page_loads(self, client):
+        """Test that showcase page loads without authentication."""
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        # Showcase demonstrates the design system components
+        assert b"showcase" in response.data.lower() or b"component" in response.data.lower()
+
+    def test_search_demo_empty_query(self, client):
+        """Test search demo returns empty for no query."""
+        response = client.get("/backoffice/showcase/search-demo")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data == []
+
+    def test_search_demo_with_query(self, client):
+        """Test search demo returns mock results."""
+        response = client.get("/backoffice/showcase/search-demo?q=alice")
+        assert response.status_code == 200
+        data = response.get_json()
+        # Should match mock user with "alice"
+        assert len(data) >= 1
+        assert any("alice" in item["label"].lower() or "alice" in item["sublabel"].lower() for item in data)
+
+
+class TestBackofficeAssemblyMembers:
+    """Test backoffice assembly members page."""
+
+    def test_members_page_loads(self, logged_in_admin, existing_assembly):
+        """Test that the members page loads successfully."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        assert response.status_code == 200
+        assert b"Members" in response.data or b"Team" in response.data
+
+    def test_members_page_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_members_search_returns_json(self, logged_in_admin, existing_assembly):
+        """Test that members search endpoint returns JSON."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=test")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert isinstance(data, list)
+
+
 class TestBackofficeAssemblyDataPage:
     """Test backoffice assembly data page functionality."""
 
@@ -403,3 +490,318 @@ class TestBackofficeDataSourceLocking:
         assert response.status_code == 200
         # The gsheet option should be selected
         assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data
+
+
+class TestBackofficeSelectionTab:
+    """Test the selection tab routes for backoffice."""
+
+    def test_selection_page_loads_without_gsheet_config(self, logged_in_admin, existing_assembly):
+        """Test that selection page loads and shows configure message when no gsheet config."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show message about configuring gsheet first
+        assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+
+    def test_selection_page_loads_with_gsheet_config(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page loads when gsheet is configured."""
+        assembly, gsheet = assembly_with_gsheet
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show selection interface with gsheet configured
+        assert b"Selection" in response.data
+
+    def test_selection_page_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_selection_load_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint starts a gsheet load task and redirects to run page."""
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            return_value=mock_task_id,
+        ) as mock_start_load:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/load",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            assert mock_task_id in response.location
+            mock_start_load.assert_called_once()
+
+    def test_selection_run_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint starts a gsheet select task and redirects to run page."""
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            return_value=mock_task_id,
+        ) as mock_start_select:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            assert mock_task_id in response.location
+            mock_start_select.assert_called_once()
+
+    def test_selection_run_test_mode_endpoint(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint with test=1 passes test_selection=True."""
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        mock_task_id = "12345678-1234-1234-1234-123456789012"
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            return_value=mock_task_id,
+        ) as mock_start_select:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run?test=1",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            assert response.status_code == 302
+            # Verify test_selection=True was passed
+            call_args = mock_start_select.call_args
+            assert call_args[1].get("test_selection") is True or call_args[0][3] is True
+
+    def test_selection_progress_endpoint_returns_status(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress endpoint returns task status as JSON."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Create a mock result object
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = None
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Loading data...", "Processing..."]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["status"] == "running"
+            assert "Loading data..." in data["log_messages"]
+
+    def test_selection_cancel_endpoint_cancels_task(self, logged_in_admin, assembly_with_gsheet):
+        """Test that cancel endpoint cancels the task and redirects."""
+        import uuid
+        from unittest.mock import patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch("opendlp.entrypoints.blueprints.backoffice.cancel_task") as mock_cancel:
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                data={"csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+
+            # Should redirect to selection page with run_id
+            assert response.status_code == 302
+            assert "selection" in response.location
+            mock_cancel.assert_called_once()
+
+    def test_selection_load_handles_not_found_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint handles NotFoundError gracefully."""
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import NotFoundError
+
+        assembly, gsheet = assembly_with_gsheet
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            side_effect=NotFoundError("Gsheet config not found"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/load",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            # Should redirect back to selection page with error flash
+            assert response.status_code == 200
+            assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+
+    def test_selection_with_run_page_loads(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page with run_id loads successfully when mocked."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Create mock result object
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = None
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Loading data..."]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+            assert response.status_code == 200
+            assert b"Selection" in response.data
+
+    def test_selection_with_run_not_found(self, logged_in_admin, assembly_with_gsheet):
+        """Test selection with run page handles NotFoundError."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import NotFoundError
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health",
+            side_effect=NotFoundError("Task not found"),
+        ):
+            response = logged_in_admin.get(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}",
+                follow_redirects=True,
+            )
+            # Should redirect to dashboard with error
+            assert response.status_code == 200
+
+    def test_view_run_details_endpoint_exists(self, logged_in_admin, assembly_with_gsheet):
+        """Test that view_run_details endpoint responds (tests routing)."""
+        import uuid
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # Even without mocking, the endpoint should respond with redirect
+        # (either success redirect or error redirect)
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/history/{run_id}",
+            follow_redirects=False,
+        )
+
+        # Should redirect (either to selection page or with error)
+        assert response.status_code == 302
+
+    def test_selection_page_shows_history_section(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page contains Selection History section."""
+        assembly, gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        # Should show the Selection History card (even if empty)
+        assert b"Selection History" in response.data
+
+    def test_selection_progress_not_found(self, logged_in_admin, assembly_with_gsheet):
+        """Test progress endpoint returns 404 when task not found."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.run_record = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            assert response.status_code == 404
+            data = response.get_json()
+            assert data["error"] == "Task not found"
+
+    def test_selection_progress_permission_denied(self, logged_in_admin, existing_assembly):
+        """Test progress endpoint returns 403 when user lacks permission."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.exceptions import InsufficientPermissions
+
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.get_assembly_with_permissions",
+            side_effect=InsufficientPermissions("No access"),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection/{run_id}/progress")
+            assert response.status_code == 403
+            data = response.get_json()
+            assert data["error"] == "Permission denied"
+
+    def test_cancel_invalid_selection_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test cancel endpoint handles InvalidSelection error."""
+        import uuid
+        from unittest.mock import patch
+
+        from opendlp.service_layer.sortition import InvalidSelection
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.cancel_task",
+            side_effect=InvalidSelection("Cannot cancel completed task"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            # Should redirect with error message
+            assert response.status_code == 200
