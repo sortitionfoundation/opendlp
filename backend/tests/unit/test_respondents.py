@@ -150,6 +150,44 @@ class TestRespondent:
         assert resp.get_attribute("Gender") == "Female"
         assert resp.get_attribute("Age", "Unknown") == "Unknown"
 
+    def test_reset_to_pool_from_selected(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        run_id = uuid.uuid4()
+        resp.mark_as_selected(run_id)
+
+        resp.reset_to_pool()
+
+        assert resp.selection_status == RespondentStatus.POOL
+        assert resp.selection_run_id is None
+
+    def test_reset_to_pool_from_confirmed(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.mark_as_selected(uuid.uuid4())
+        resp.mark_as_confirmed()
+
+        resp.reset_to_pool()
+
+        assert resp.selection_status == RespondentStatus.POOL
+        assert resp.selection_run_id is None
+
+    def test_reset_to_pool_from_withdrawn(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.mark_as_selected(uuid.uuid4())
+        resp.mark_as_withdrawn()
+
+        resp.reset_to_pool()
+
+        assert resp.selection_status == RespondentStatus.POOL
+        assert resp.selection_run_id is None
+
+    def test_reset_to_pool_from_pool_is_noop(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+
+        resp.reset_to_pool()
+
+        assert resp.selection_status == RespondentStatus.POOL
+        assert resp.selection_run_id is None
+
     def test_create_detached_copy(self):
         assembly_id = uuid.uuid4()
         resp = Respondent(

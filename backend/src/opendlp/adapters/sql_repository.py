@@ -925,3 +925,17 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 updated_at=datetime.now(UTC),
             )
         )
+
+    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
+        count: int = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).count()
+        if count:
+            self.session.execute(
+                update(orm.respondents)
+                .where(orm.respondents.c.assembly_id == assembly_id)
+                .values(
+                    selection_status=RespondentStatus.POOL,
+                    selection_run_id=None,
+                    updated_at=datetime.now(UTC),
+                )
+            )
+        return count

@@ -68,6 +68,12 @@ class Respondent:
         self.selection_status = RespondentStatus.WITHDRAWN
         self.updated_at = datetime.now(UTC)
 
+    def reset_to_pool(self) -> None:
+        """Reset respondent back to pool status, clearing any selection run association"""
+        self.selection_status = RespondentStatus.POOL
+        self.selection_run_id = None
+        self.updated_at = datetime.now(UTC)
+
     def is_available_for_selection(self) -> bool:
         """Check if respondent is available for selection"""
         return (

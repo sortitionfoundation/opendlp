@@ -16,7 +16,7 @@ from opendlp.service_layer.assembly_service import (
     update_csv_config,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
-from opendlp.service_layer.respondent_service import import_respondents_from_csv
+from opendlp.service_layer.respondent_service import import_respondents_from_csv, reset_selection_status
 from opendlp.translations import gettext as _
 
 from ..forms import UploadRespondentsCsvForm
@@ -172,4 +172,25 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Upload respondents error for assembly {assembly_id}: {e}")
         current_app.logger.exception("stacktrace")
         flash(_("An unexpected error occurred during import"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+
+
+@respondents_bp.route("/assemblies/<uuid:assembly_id>/respondents/reset-status", methods=["POST"])
+@login_required
+def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    try:
+        uow = bootstrap.bootstrap()
+        count = reset_selection_status(uow, current_user.id, assembly_id)
+        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to reset selection status"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("stacktrace")
+        flash(_("An unexpected error occurred"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))

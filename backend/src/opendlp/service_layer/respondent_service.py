@@ -169,6 +169,32 @@ def import_respondents_from_csv(  # noqa: C901
         return [r.create_detached_copy() for r in respondents], errors
 
 
+def reset_selection_status(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> int:
+    """Reset all respondents for an assembly back to POOL status. Returns count updated."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="reset selection status",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        count = uow.respondents.reset_all_to_pool(assembly_id)
+        uow.commit()
+        return count
+
+
 def get_respondents_for_assembly(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
