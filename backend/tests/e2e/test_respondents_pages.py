@@ -3,8 +3,9 @@ ABOUTME: Tests viewing respondents tab, uploading CSV files, pagination, and err
 
 import io
 
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import update_csv_config
-from opendlp.service_layer.respondent_service import import_respondents_from_csv
+from opendlp.service_layer.respondent_service import create_respondent, import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -276,3 +277,54 @@ class TestUploadRespondentsCsv:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("CSV import failed" in msg for msg in flash_messages)
+
+
+class TestResetSelectionStatus:
+    def test_reset_status_resets_all_to_pool(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Test that resetting selection status sets all respondents back to POOL."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+            create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R002",
+                attributes={},
+                selection_status=RespondentStatus.CONFIRMED,
+            )
+
+        csrf = get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/respondents")
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/respondents/reset-status",
+            data={"csrf_token": csrf},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/assemblies/{existing_assembly.id}/respondents" in response.location
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Reset 2 respondents to Pool status" in msg for msg in flash_messages)
+
+    def test_reset_status_with_no_respondents(self, logged_in_admin, existing_assembly):
+        """Test resetting when there are no respondents shows zero count."""
+        csrf = get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/respondents")
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/respondents/reset-status",
+            data={"csrf_token": csrf},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Reset 0 respondents to Pool status" in msg for msg in flash_messages)
