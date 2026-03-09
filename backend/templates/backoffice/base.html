@@ -8,18 +8,18 @@
             - OpenDLP</title>
         <!-- Tailwind CSS (compiled) -->
         <link rel="stylesheet"
-              href="{{ url_for('static', filename='backoffice/dist/main.css') }}">
+              href="{{ url_for('static', filename='backoffice/dist/main.css', v=static_hashes('backoffice/dist/main.css') ) }}">
         <!-- Design Tokens -->
         <link rel="stylesheet"
-              href="{{ url_for('static', filename='backoffice/tokens/primitive.css') }}">
+              href="{{ url_for('static', filename='backoffice/tokens/primitive.css', v=static_hashes('backoffice/tokens/primitive.css') ) }}">
         <link rel="stylesheet"
-              href="{{ url_for('static', filename='backoffice/tokens/semantic.css') }}">
+              href="{{ url_for('static', filename='backoffice/tokens/semantic.css', v=static_hashes('backoffice/tokens/semantic.css') ) }}">
         <!-- Alpine.js components (must load before Alpine.js) -->
         <script nonce="{{ csp_nonce }}"
-                src="{{ url_for('static', filename='backoffice/js/alpine-components.js', v=backoffice_alpine_js_hash) }}"></script>
+                src="{{ url_for('static', filename='backoffice/js/alpine-components.js', v=static_hashes('backoffice/js/alpine-components.js')) }}"></script>
         <!-- Scroll preservation utility (must load before Alpine.js) -->
         <script nonce="{{ csp_nonce }}"
-                src="{{ url_for('static', filename='js/alpine-scroll-manager.js') }}"></script>
+                src="{{ url_for('static', filename='js/alpine-scroll-manager.js', v=static_hashes('js/alpine-scroll-manager.js')) }}"></script>
         <!-- Alpine.js (CSP-compatible build) -->
         <script nonce="{{ csp_nonce }}"
                 defer

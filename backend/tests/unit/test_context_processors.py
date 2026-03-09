@@ -8,124 +8,126 @@ from unittest.mock import patch
 import pytest
 
 from opendlp.entrypoints.context_processors import (
-    get_css_hash,
+    _get_file_hash,
     get_opendlp_version,
     get_service_account_email,
+    static_hashes,
     static_versioning_context_processor,
 )
 
 
-class TestGetCssHash:
-    """Test the get_css_hash function."""
+class TestStaticHashes:
+    """Test the static_hashes function for cache-busting."""
 
     @pytest.fixture(autouse=True)
     def clear_cache(self):
-        # Clear cache to ensure clean state
-        get_css_hash.cache_clear()
+        _get_file_hash.cache_clear()
         yield
-        # Cleanup
-        get_css_hash.cache_clear()
+        _get_file_hash.cache_clear()
 
-    def test_get_css_hash_returns_short_hash(self, tmp_path: Path):
-        """Test that get_css_hash returns a short hash of the file contents."""
-        # Create a temporary CSS file in css subdirectory
+    def test_returns_short_hash_for_css(self, tmp_path: Path):
+        """Test that static_hashes returns a short hash of the file contents."""
         css_dir = tmp_path / "css"
         css_dir.mkdir()
         css_file = css_dir / "application.css"
         css_content = "body { color: red; }"
         css_file.write_text(css_content)
 
-        # Calculate expected hash
         expected_hash = hashlib.sha256(css_content.encode()).hexdigest()[:8]
 
-        # Mock get_static_path to return our tmp_path
         with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            result = get_css_hash()
+            result = static_hashes("css/application.css")
 
         assert result == expected_hash
         assert len(result) == 8
 
-    def test_get_css_hash_changes_when_content_changes(self, tmp_path: Path):
-        """Test that the hash changes when file content changes."""
-        css_dir = tmp_path / "css"
-        css_dir.mkdir()
-        css_file = css_dir / "application.css"
+    def test_returns_short_hash_for_js(self, tmp_path: Path):
+        """Test that static_hashes works for JavaScript files too."""
+        js_dir = tmp_path / "js"
+        js_dir.mkdir()
+        js_file = js_dir / "utilities.js"
+        js_content = "function foo() { return 42; }"
+        js_file.write_text(js_content)
 
-        # Write initial content
-        css_file.write_text("body { color: red; }")
+        expected_hash = hashlib.sha256(js_content.encode()).hexdigest()[:8]
+
         with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            hash1 = get_css_hash()
+            result = static_hashes("js/utilities.js")
 
-        # Clear the cache to force recalculation
-        get_css_hash.cache_clear()
+        assert result == expected_hash
 
-        # Write different content
-        css_file.write_text("body { color: blue; }")
+    def test_returns_empty_string_when_file_missing(self, tmp_path: Path):
+        """Test that static_hashes returns empty string when file doesn't exist."""
         with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            hash2 = get_css_hash()
-
-        assert hash1 != hash2
-
-    def test_get_css_hash_returns_empty_string_when_file_missing(self, tmp_path: Path):
-        """Test that get_css_hash returns empty string when CSS file doesn't exist."""
-        # tmp_path is empty, no application.css file
-        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            result = get_css_hash()
+            result = static_hashes("css/nonexistent.css")
 
         assert result == ""
 
-    def test_get_css_hash_is_cached(self, tmp_path: Path):
-        """Test that get_css_hash uses functools.cache and returns cached value."""
+    def test_different_files_get_different_hashes(self, tmp_path: Path):
+        """Test that different files produce different hashes."""
         css_dir = tmp_path / "css"
         css_dir.mkdir()
-        css_file = css_dir / "application.css"
-        css_file.write_text("body { color: red; }")
+        js_dir = tmp_path / "js"
+        js_dir.mkdir()
+
+        (css_dir / "application.css").write_text("body { color: red; }")
+        (js_dir / "utilities.js").write_text("function foo() {}")
 
         with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            # First call
-            hash1 = get_css_hash()
-            # Second call - should be cached
-            hash2 = get_css_hash()
+            css_hash = static_hashes("css/application.css")
+            js_hash = static_hashes("js/utilities.js")
+
+        assert css_hash != js_hash
+
+    def test_works_with_nested_paths(self, tmp_path: Path):
+        """Test that static_hashes works with deeply nested paths."""
+        nested_dir = tmp_path / "backoffice" / "js"
+        nested_dir.mkdir(parents=True)
+        js_file = nested_dir / "alpine-components.js"
+        js_content = "Alpine.data('foo', () => ({}))"
+        js_file.write_text(js_content)
+
+        expected_hash = hashlib.sha256(js_content.encode()).hexdigest()[:8]
+
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
+            result = static_hashes("backoffice/js/alpine-components.js")
+
+        assert result == expected_hash
+
+    def test_underlying_hash_is_cached(self, tmp_path: Path):
+        """Test that _get_file_hash uses functools.cache."""
+        css_dir = tmp_path / "css"
+        css_dir.mkdir()
+        (css_dir / "application.css").write_text("body { color: red; }")
+
+        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
+            hash1 = static_hashes("css/application.css")
+            hash2 = static_hashes("css/application.css")
 
         assert hash1 == hash2
-
-        # Verify function has cache_clear method (indicating it's decorated with cache)
-        assert hasattr(get_css_hash, "cache_clear")
-        assert hasattr(get_css_hash, "cache_info")
+        assert hasattr(_get_file_hash, "cache_clear")
+        assert hasattr(_get_file_hash, "cache_info")
 
 
 class TestStaticVersioningContextProcessor:
     """Test the Flask context processor for static file versioning."""
 
-    def test_context_processor_adds_css_hash(self):
-        """Test that the context processor adds css_hash to template context."""
-        # Call the context processor
+    def test_context_processor_includes_static_hashes(self):
+        """Test that the context processor includes static_hashes callable."""
         context = static_versioning_context_processor()
 
-        # Should return a dict with css_hash key
         assert isinstance(context, dict)
-        assert "css_hash" in context
-        assert isinstance(context["css_hash"], str)
+        assert "static_hashes" in context
+        assert callable(context["static_hashes"])
 
-    def test_context_processor_uses_get_css_hash(self, tmp_path: Path):
-        """Test that the context processor uses get_css_hash function."""
-        # Setup test file
-        css_dir = tmp_path / "css"
-        css_dir.mkdir()
-        css_file = css_dir / "application.css"
-        css_content = "body { color: green; }"
-        css_file.write_text(css_content)
-        expected_hash = hashlib.sha256(css_content.encode()).hexdigest()[:8]
+    def test_context_processor_does_not_include_old_hash_keys(self):
+        """Test that the old per-file hash keys have been removed."""
+        context = static_versioning_context_processor()
 
-        # Clear cache and mock the path
-        get_css_hash.cache_clear()
-        with patch("opendlp.entrypoints.context_processors.config.get_static_path", return_value=tmp_path):
-            context = static_versioning_context_processor()
-
-        assert context["css_hash"] == expected_hash
-
-        # Cleanup
-        get_css_hash.cache_clear()
+        assert "css_hash" not in context
+        assert "util_js_hash" not in context
+        assert "alpine_js_hash" not in context
+        assert "backoffice_alpine_js_hash" not in context
 
 
 class TestGetOpendlpVersion:
