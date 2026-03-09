@@ -298,6 +298,21 @@ class TestDbSelectionRoutes:
             assert a.csv is not None
             assert a.csv.settings_confirmed is True
 
+    def test_save_settings_rejects_check_same_address_without_columns(self, logged_in_admin, assembly_for_db_selection):
+        """Saving settings with check_same_address=True but no columns should show a validation error."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"address columns" in response.data.lower()
+
     def test_view_db_replacement_placeholder(self, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_replace")
