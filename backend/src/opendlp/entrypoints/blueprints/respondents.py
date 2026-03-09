@@ -139,6 +139,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=assembly_id,
             last_import_filename=filename,
             last_import_timestamp=datetime.now(UTC),
+            **({"id_column": id_column} if id_column else {}),
         )
 
         msg = _("Successfully imported %(count)s respondents from %(file)s", count=len(respondents), file=filename)
