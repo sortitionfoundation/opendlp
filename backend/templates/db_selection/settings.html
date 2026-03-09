@@ -27,6 +27,22 @@
             </div>
         </div>
 
+        {% if available_columns %}
+            <details class="govuk-details govuk-!-margin-bottom-4">
+                <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">{{ _("Available respondent attributes") }}</span>
+                </summary>
+                <div class="govuk-details__text">
+                    <p class="govuk-body-s">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
+                    <code>{{ available_columns | join(", ") }}</code>
+                </div>
+            </details>
+        {% else %}
+            <div class="govuk-inset-text">
+                {{ _("No respondent data has been uploaded yet. Attribute validation will be skipped.") }}
+            </div>
+        {% endif %}
+
         <div class="govuk-form-group {% if form.check_same_address_cols_string.errors %}govuk-form-group--error{% endif %}">
             <label class="govuk-label govuk-label--s" for="{{ form.check_same_address_cols_string.id }}">
                 {{ form.check_same_address_cols_string.label.text }}
@@ -41,12 +57,18 @@
             {{ form.check_same_address_cols_string(class="govuk-input" + (" govuk-input--error" if form.check_same_address_cols_string.errors else "")) }}
         </div>
 
-        <div class="govuk-form-group">
+        <div class="govuk-form-group {% if form.columns_to_keep_string.errors %}govuk-form-group--error{% endif %}">
             <label class="govuk-label govuk-label--s" for="{{ form.columns_to_keep_string.id }}">
                 {{ form.columns_to_keep_string.label.text }}
             </label>
             <div class="govuk-hint">{{ form.columns_to_keep_string.description }}</div>
-            {{ form.columns_to_keep_string(class="govuk-input") }}
+            {% if form.columns_to_keep_string.errors %}
+                <p class="govuk-error-message">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    {{ form.columns_to_keep_string.errors[0] }}
+                </p>
+            {% endif %}
+            {{ form.columns_to_keep_string(class="govuk-input" + (" govuk-input--error" if form.columns_to_keep_string.errors else "")) }}
         </div>
 
         <div class="govuk-button-group">

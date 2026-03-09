@@ -505,6 +505,12 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 count += 1
         return count
 
+    def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
+        for r in self._items:
+            if r.assembly_id == assembly_id and r.attributes:
+                return sorted(r.attributes.keys())
+        return []
+
 
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""

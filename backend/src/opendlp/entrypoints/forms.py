@@ -587,34 +587,64 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     check_same_address_cols_string = StringField(
-        _l("Address Columns"),
+        _l("Address Attributes"),
         validators=[Optional(), Length(max=500)],
         description=_l("Comma-separated respondent attribute names used for address matching"),
     )
 
     columns_to_keep_string = StringField(
-        _l("Columns to Keep"),
+        _l("Attributes to Keep"),
         validators=[Optional(), Length(max=1000)],
         description=_l("Comma-separated respondent attribute names to include in CSV output"),
     )
 
+    def __init__(self, *args: Any, available_columns: list[str] | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._available_columns = available_columns or []
+
     def validate(self, **kwargs: Any) -> bool:
-        """Override validate to add cross-field validation."""
+        """Override validate to add cross-field and column name validation."""
         if not super().validate(**kwargs):
             return False
 
-        # Cross-field validation: check_same_address requires address columns
+        # Cross-field validation: check_same_address requires address attributes
         if self.check_same_address.data and (
             not self.check_same_address_cols_string.data or not self.check_same_address_cols_string.data.strip()
         ):
             self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
                 str(
                     _l(
-                        "You must specify address columns when 'Check Same Address' is enabled. "
-                        "Please enter column names or disable 'Check Same Address'."
+                        "You must specify address attributes when 'Check Same Address' is enabled. "
+                        "Please enter attribute names or disable 'Check Same Address'."
                     )
                 )
             )
             return False
+
+        # Attribute name validation (only when respondent data exists)
+        if self._available_columns:
+            available_set = set(self._available_columns)
+            valid = True
+
+            if self.check_same_address_cols_string.data:
+                entered = [c.strip() for c in self.check_same_address_cols_string.data.split(",") if c.strip()]
+                unknown = [c for c in entered if c not in available_set]
+                if unknown:
+                    self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
+                        str(_l("Unrecognised attribute names: %(names)s", names=", ".join(unknown)))
+                    )
+                    valid = False
+
+            if self.columns_to_keep_string.data:
+                entered = [c.strip() for c in self.columns_to_keep_string.data.split(",") if c.strip()]
+                unknown = [c for c in entered if c not in available_set]
+                if unknown:
+                    self.columns_to_keep_string.errors.append(  # type: ignore[attr-defined]
+                        str(_l("Unrecognised attribute names: %(names)s", names=", ".join(unknown)))
+                    )
+                    valid = False
+
+            if not valid:
+                return False
 
         return True
