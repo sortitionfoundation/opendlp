@@ -455,7 +455,10 @@ def start_db_select_task(
         raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
 
     csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
-    settings_obj = csv_config.to_settings()
+    try:
+        settings_obj = csv_config.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
 
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test_selection else SelectionTaskType.SELECT_FROM_DB

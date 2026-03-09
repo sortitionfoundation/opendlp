@@ -442,6 +442,44 @@ class TestDbSelectionErrorHandling:
         )
         assert response.status_code == 302
 
+    def test_start_db_selection_with_invalid_settings_shows_useful_error(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """When selection settings are invalid (e.g. check_same_address=True with no columns),
+        the user should see a descriptive error, not a generic 'unexpected error' message."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Bad Settings Assembly",
+                created_by_user_id=admin_user.id,
+                question="Will this fail?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            update_csv_config(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly_id,
+                check_same_address=True,
+                check_same_address_cols=[],
+            )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/run",
+            data={"test_selection": "0"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            # Should show a useful error about the settings, not "unexpected error"
+            assert any("Could not start selection task" in msg for msg in flash_messages)
+            assert not any("unexpected error" in msg.lower() for msg in flash_messages)
+
     @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
     def test_start_db_selection_unexpected_error(self, mock_celery, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
