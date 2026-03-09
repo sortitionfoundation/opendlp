@@ -587,19 +587,27 @@ class TestBackofficeSelectionTab:
             call_args = mock_start_select.call_args
             assert call_args[1].get("test_selection") is True or call_args[0][3] is True
 
-    def test_selection_progress_endpoint_returns_status(self, logged_in_admin, assembly_with_gsheet):
-        """Test that progress endpoint returns task status as JSON."""
+    def test_selection_progress_endpoint_returns_html(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress endpoint returns HTML fragment with HTMX attributes."""
         import uuid
         from unittest.mock import MagicMock, patch
 
         assembly, gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
-        # Create a mock result object
         mock_run_record = MagicMock()
         mock_run_record.status.value = "running"
         mock_run_record.error_message = None
         mock_run_record.completed_at = None
+        mock_run_record.assembly_id = assembly.id
+        mock_run_record.has_finished = False
+        mock_run_record.is_running = True
+        mock_run_record.is_pending = False
+        mock_run_record.is_completed = False
+        mock_run_record.is_failed = False
+        mock_run_record.is_cancelled = False
+        mock_run_record.task_type_verbose = "Load Google Spreadsheet"
+        mock_run_record.log_messages = ["Loading data...", "Processing..."]
 
         mock_result = MagicMock()
         mock_result.run_record = mock_run_record
@@ -616,9 +624,10 @@ class TestBackofficeSelectionTab:
             response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
 
             assert response.status_code == 200
-            data = response.get_json()
-            assert data["status"] == "running"
-            assert "Loading data..." in data["log_messages"]
+            assert b"hx-get" in response.data
+            assert b"hx-trigger" in response.data
+            assert b"Loading data..." in response.data
+            assert b"Processing..." in response.data
 
     def test_selection_cancel_endpoint_cancels_task(self, logged_in_admin, assembly_with_gsheet):
         """Test that cancel endpoint cancels the task and redirects."""
@@ -761,8 +770,7 @@ class TestBackofficeSelectionTab:
         ):
             response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
             assert response.status_code == 404
-            data = response.get_json()
-            assert data["error"] == "Task not found"
+            assert response.data == b""
 
     def test_selection_progress_permission_denied(self, logged_in_admin, existing_assembly):
         """Test progress endpoint returns 403 when user lacks permission."""
@@ -779,8 +787,157 @@ class TestBackofficeSelectionTab:
         ):
             response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection/{run_id}/progress")
             assert response.status_code == 403
-            data = response.get_json()
-            assert data["error"] == "Permission denied"
+            assert response.data == b""
+
+    def test_selection_progress_no_hx_get_when_completed(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress HTML omits hx-get when task is completed (stops polling)."""
+        import uuid
+        from datetime import UTC, datetime
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "completed"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = datetime.now(UTC)
+        mock_run_record.created_at = datetime.now(UTC)
+        mock_run_record.assembly_id = assembly.id
+        mock_run_record.has_finished = True
+        mock_run_record.is_running = False
+        mock_run_record.is_pending = False
+        mock_run_record.is_completed = True
+        mock_run_record.is_failed = False
+        mock_run_record.is_cancelled = False
+        mock_run_record.task_type_verbose = "Select Google Spreadsheet"
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Done"]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+
+            assert response.status_code == 200
+            assert b"hx-get" not in response.data
+            assert response.headers.get("HX-Refresh") == "true"
+
+    def test_selection_progress_hx_refresh_on_failed(self, logged_in_admin, assembly_with_gsheet):
+        """Test that HX-Refresh header is set for failed tasks too."""
+        import uuid
+        from datetime import UTC, datetime
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "failed"
+        mock_run_record.error_message = "Something went wrong"
+        mock_run_record.completed_at = datetime.now(UTC)
+        mock_run_record.created_at = datetime.now(UTC)
+        mock_run_record.assembly_id = assembly.id
+        mock_run_record.has_finished = True
+        mock_run_record.is_running = False
+        mock_run_record.is_pending = False
+        mock_run_record.is_completed = False
+        mock_run_record.is_failed = True
+        mock_run_record.is_cancelled = False
+        mock_run_record.task_type_verbose = "Select Google Spreadsheet"
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = []
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+
+            assert response.status_code == 200
+            assert b"hx-get" not in response.data
+            assert response.headers.get("HX-Refresh") == "true"
+
+    def test_selection_progress_assembly_ownership_validation(self, logged_in_admin, assembly_with_gsheet):
+        """Test that progress returns 404 when run belongs to a different assembly."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.assembly_id = uuid.uuid4()  # Different assembly
+        mock_run_record.has_finished = False
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = []
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            assert response.status_code == 404
+
+    def test_selection_with_run_renders_progress_fragment(self, logged_in_admin, assembly_with_gsheet):
+        """Test that view_assembly_selection_with_run includes the HTMX progress fragment."""
+        import uuid
+        from unittest.mock import MagicMock, patch
+
+        assembly, gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        mock_run_record = MagicMock()
+        mock_run_record.status.value = "running"
+        mock_run_record.error_message = None
+        mock_run_record.completed_at = None
+        mock_run_record.assembly_id = assembly.id
+        mock_run_record.has_finished = False
+        mock_run_record.is_running = True
+        mock_run_record.is_pending = False
+        mock_run_record.is_completed = False
+        mock_run_record.is_failed = False
+        mock_run_record.is_cancelled = False
+        mock_run_record.task_type_verbose = "Load Google Spreadsheet"
+
+        mock_result = MagicMock()
+        mock_result.run_record = mock_run_record
+        mock_result.log_messages = ["Checking data..."]
+        mock_result.run_report = None
+
+        with (
+            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                return_value=mock_result,
+            ),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+
+            assert response.status_code == 200
+            assert b"progress-section" in response.data
+            assert b"hx-get" in response.data
+            assert b"Checking data..." in response.data
 
     def test_cancel_invalid_selection_error(self, logged_in_admin, assembly_with_gsheet):
         """Test cancel endpoint handles InvalidSelection error."""

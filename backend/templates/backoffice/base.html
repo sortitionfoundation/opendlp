@@ -26,6 +26,12 @@
             integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"{# pragma: allowlist secret #}
             crossorigin="anonymous"></script>
 
+        <!-- HTMX -->
+        <script nonce="{{ csp_nonce }}"
+            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+            integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"{# pragma: allowlist secret #}
+            crossorigin="anonymous"></script>
+
         {% block head %}{% endblock %}
     </head>
     <body style="background-color: var(--color-bg-secondary);" class="min-h-screen">
