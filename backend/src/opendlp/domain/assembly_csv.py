@@ -19,8 +19,11 @@ class AssemblyCSV:
     last_import_filename: str = ""  # Track what was last imported
     last_import_timestamp: datetime | None = None
 
-    # Selection settings (same as AssemblyGSheet)
-    id_column: str = "external_id"  # Default for CSV
+    # The name of the column in uploaded CSV files that contains the unique identifier.
+    # During import, the value is extracted and stored as respondent.external_id.
+    # This field is NOT used as the id_column in sortition-algorithms Settings —
+    # see to_settings() for why.
+    id_column: str = "external_id"
     check_same_address: bool = True
     check_same_address_cols: list[str] = field(default_factory=list)
     columns_to_keep: list[str] = field(default_factory=list)
@@ -37,9 +40,16 @@ class AssemblyCSV:
             self.updated_at = datetime.now(UTC)
 
     def to_settings(self) -> settings.Settings:
-        """Convert to sortition-algorithms Settings"""
+        """Convert to sortition-algorithms Settings.
+
+        Note: id_column is always "external_id" here, not self.id_column.
+        self.id_column records the column name in the *uploaded CSV*, but during
+        import that value is extracted and stored as respondent.external_id. The
+        data adapter (OpenDLPDataAdapter) always outputs the column as "external_id",
+        so Settings.id_column must match.
+        """
         return settings.Settings(
-            id_column=self.id_column,
+            id_column="external_id",
             columns_to_keep=self.columns_to_keep,
             check_same_address=self.check_same_address,
             check_same_address_columns=self.check_same_address_cols,
