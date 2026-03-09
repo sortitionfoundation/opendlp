@@ -5,6 +5,7 @@ import base64
 import logging
 import logging.config
 import os
+import platform
 import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
@@ -442,8 +443,6 @@ def get_solver_backend() -> str:
 
     Environment variable: SOLVER_BACKEND
     """
-    import platform
-
     env_value = os.environ.get("SOLVER_BACKEND", "").strip().lower()
     if env_value:
         if env_value not in ("mip", "highspy"):

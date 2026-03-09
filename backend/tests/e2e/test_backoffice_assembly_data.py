@@ -1,6 +1,12 @@
 """ABOUTME: End-to-end tests for backoffice assembly data page
 ABOUTME: Tests the assembly data page with gsheet source selection"""
 
+import uuid
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
+
+from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
+from opendlp.service_layer.sortition import InvalidSelection
 from tests.e2e.helpers import get_csrf_token
 
 
@@ -504,7 +510,7 @@ class TestBackofficeSelectionTab:
 
     def test_selection_page_loads_with_gsheet_config(self, logged_in_admin, assembly_with_gsheet):
         """Test that selection page loads when gsheet is configured."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
         assert response.status_code == 200
         # Should show selection interface with gsheet configured
@@ -518,9 +524,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_load_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
         """Test that load endpoint starts a gsheet load task and redirects to run page."""
-        from unittest.mock import patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
@@ -542,9 +547,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_run_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
         """Test that run endpoint starts a gsheet select task and redirects to run page."""
-        from unittest.mock import patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
@@ -566,9 +570,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_run_test_mode_endpoint(self, logged_in_admin, assembly_with_gsheet):
         """Test that run endpoint with test=1 passes test_selection=True."""
-        from unittest.mock import patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
@@ -589,10 +592,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_endpoint_returns_html(self, logged_in_admin, assembly_with_gsheet):
         """Test that progress endpoint returns HTML fragment with HTMX attributes."""
-        import uuid
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_run_record = MagicMock()
@@ -631,10 +632,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_cancel_endpoint_cancels_task(self, logged_in_admin, assembly_with_gsheet):
         """Test that cancel endpoint cancels the task and redirects."""
-        import uuid
-        from unittest.mock import patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         with patch("opendlp.entrypoints.blueprints.backoffice.cancel_task") as mock_cancel:
@@ -652,11 +651,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_load_handles_not_found_error(self, logged_in_admin, assembly_with_gsheet):
         """Test that load endpoint handles NotFoundError gracefully."""
-        from unittest.mock import patch
 
-        from opendlp.service_layer.exceptions import NotFoundError
-
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
 
         with patch(
             "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
@@ -675,10 +671,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_with_run_page_loads(self, logged_in_admin, assembly_with_gsheet):
         """Test that selection page with run_id loads successfully when mocked."""
-        import uuid
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         # Create mock result object
@@ -705,12 +699,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_with_run_not_found(self, logged_in_admin, assembly_with_gsheet):
         """Test selection with run page handles NotFoundError."""
-        import uuid
-        from unittest.mock import patch
 
-        from opendlp.service_layer.exceptions import NotFoundError
-
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         with patch(
@@ -726,9 +716,8 @@ class TestBackofficeSelectionTab:
 
     def test_view_run_details_endpoint_exists(self, logged_in_admin, assembly_with_gsheet):
         """Test that view_run_details endpoint responds (tests routing)."""
-        import uuid
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         # Even without mocking, the endpoint should respond with redirect
@@ -743,7 +732,7 @@ class TestBackofficeSelectionTab:
 
     def test_selection_page_shows_history_section(self, logged_in_admin, assembly_with_gsheet):
         """Test that selection page contains Selection History section."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
         assert response.status_code == 200
@@ -752,10 +741,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_not_found(self, logged_in_admin, assembly_with_gsheet):
         """Test progress endpoint returns 404 when task not found."""
-        import uuid
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_result = MagicMock()
@@ -774,10 +761,6 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_permission_denied(self, logged_in_admin, existing_assembly):
         """Test progress endpoint returns 403 when user lacks permission."""
-        import uuid
-        from unittest.mock import patch
-
-        from opendlp.service_layer.exceptions import InsufficientPermissions
 
         run_id = uuid.uuid4()
 
@@ -791,11 +774,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_no_hx_get_when_completed(self, logged_in_admin, assembly_with_gsheet):
         """Test that progress HTML omits hx-get when task is completed (stops polling)."""
-        import uuid
-        from datetime import UTC, datetime
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_run_record = MagicMock()
@@ -832,11 +812,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_hx_refresh_on_failed(self, logged_in_admin, assembly_with_gsheet):
         """Test that HX-Refresh header is set for failed tasks too."""
-        import uuid
-        from datetime import UTC, datetime
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_run_record = MagicMock()
@@ -873,10 +850,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_progress_assembly_ownership_validation(self, logged_in_admin, assembly_with_gsheet):
         """Test that progress returns 404 when run belongs to a different assembly."""
-        import uuid
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_run_record = MagicMock()
@@ -901,10 +876,8 @@ class TestBackofficeSelectionTab:
 
     def test_selection_with_run_renders_progress_fragment(self, logged_in_admin, assembly_with_gsheet):
         """Test that view_assembly_selection_with_run includes the HTMX progress fragment."""
-        import uuid
-        from unittest.mock import MagicMock, patch
 
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         mock_run_record = MagicMock()
@@ -941,12 +914,8 @@ class TestBackofficeSelectionTab:
 
     def test_cancel_invalid_selection_error(self, logged_in_admin, assembly_with_gsheet):
         """Test cancel endpoint handles InvalidSelection error."""
-        import uuid
-        from unittest.mock import patch
 
-        from opendlp.service_layer.sortition import InvalidSelection
-
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
         with patch(

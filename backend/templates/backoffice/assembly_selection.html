@@ -150,17 +150,17 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             {# Status #}
                                             <td class="py-3 px-4">
                                                 <span class="inline-block px-2 py-1 rounded text-body-sm font-medium"
-                                                    {% if run_record.status.value == 'completed' %}
-                                                        style="background-color: var(--color-success-background); color: var(--color-success-text);"
-                                                    {% elif run_record.status.value == 'failed' %}
-                                                        style="background-color: var(--color-error-background); color: var(--color-error-text);"
-                                                    {% elif run_record.status.value == 'cancelled' %}
-                                                        style="background-color: var(--color-warning-background); color: var(--color-warning-text);"
-                                                    {% elif run_record.status.value == 'running' %}
-                                                        style="background-color: var(--color-info-background); color: var(--color-info-text);"
-                                                    {% else %}
-                                                        style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);"
-                                                    {% endif %}>
+                                                      {% if run_record.status.value == 'completed' %}
+                                                          style="background-color: var(--color-success-background); color: var(--color-success-text);"
+                                                      {% elif run_record.status.value == 'failed' %}
+                                                          style="background-color: var(--color-error-background); color: var(--color-error-text);"
+                                                      {% elif run_record.status.value == 'cancelled' %}
+                                                          style="background-color: var(--color-warning-background); color: var(--color-warning-text);"
+                                                      {% elif run_record.status.value == 'running' %}
+                                                          style="background-color: var(--color-info-background); color: var(--color-info-text);"
+                                                      {% else %}
+                                                          style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);"
+                                                      {% endif %}>
                                                     {{ run_record.status.value.capitalize() }}
                                                 </span>
                                             </td>
@@ -193,8 +193,8 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             {# Actions #}
                                             <td class="py-3 px-4">
                                                 <a href="{{ url_for('backoffice.view_run_details', assembly_id=assembly.id, run_id=run_record.task_id) }}"
-                                                    class="text-body-sm font-medium hover:underline"
-                                                    style="color: var(--color-primary-action);">
+                                                   class="text-body-sm font-medium hover:underline"
+                                                   style="color: var(--color-primary-action);">
                                                     {{ _("View") }}
                                                 </a>
                                             </td>
@@ -221,15 +221,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                     {# Previous button #}
                                     {% if page > 1 %}
                                         <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page - 1) }}"
-                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
-                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
-                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                                            onmouseout="this.style.backgroundColor='transparent'">
+                                           class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                           style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                           onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                           onmouseout="this.style.backgroundColor='transparent'">
                                             {{ _("Previous") }}
                                         </a>
                                     {% else %}
                                         <span class="px-3 py-2 rounded text-body-sm font-medium"
-                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
+                                              style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
                                             {{ _("Previous") }}
                                         </span>
                                     {% endif %}
@@ -238,15 +238,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                     {% for page_num in range(1, total_pages + 1) %}
                                         {% if page_num == page %}
                                             <span class="px-3 py-2 rounded text-body-sm font-medium"
-                                                style="background-color: var(--color-primary-action); color: white;">
+                                                  style="background-color: var(--color-primary-action); color: white;">
                                                 {{ page_num }}
                                             </span>
                                         {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
                                             <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page_num) }}"
-                                                class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
-                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
-                                                onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                                                onmouseout="this.style.backgroundColor='transparent'">
+                                               class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                               style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                               onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                               onmouseout="this.style.backgroundColor='transparent'">
                                                 {{ page_num }}
                                             </a>
                                         {% elif page_num == page - 3 or page_num == page + 3 %}
@@ -257,15 +257,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                     {# Next button #}
                                     {% if page < total_pages %}
                                         <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page + 1) }}"
-                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
-                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
-                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                                            onmouseout="this.style.backgroundColor='transparent'">
+                                           class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                           style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                           onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                           onmouseout="this.style.backgroundColor='transparent'">
                                             {{ _("Next") }}
                                         </a>
                                     {% else %}
                                         <span class="px-3 py-2 rounded text-body-sm font-medium"
-                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
+                                              style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text); opacity: 0.5;">
                                             {{ _("Next") }}
                                         </span>
                                     {% endif %}
