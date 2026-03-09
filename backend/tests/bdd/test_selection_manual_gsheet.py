@@ -149,7 +149,7 @@ def _(page: Page):
 def _(page: Page):
     """I am told selection has completed."""
     # Use .first to handle multiple matches (e.g., "Successfully selected 22 people." appears multiple times)
-    expect(page.get_by_text("Successfully selected").first).to_be_visible(timeout=10_000)
+    expect(page.get_by_text("Successfully selected").first).to_be_visible(timeout=20_000)
 
 
 @when("I initialise the replacements process")

@@ -6,7 +6,7 @@ from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 
 from sortition_algorithms.adapters import AbstractDataSource
-from sortition_algorithms.errors import ParseTableMultiError, SelectionMultilineError
+from sortition_algorithms.errors import BadDataError, ParseTableMultiError, SelectionMultilineError
 from sortition_algorithms.features import MAX_FLEX_UNSET
 from sortition_algorithms.utils import RunReport
 
@@ -80,8 +80,10 @@ class OpenDLPDataAdapter(AbstractDataSource):
         )
 
         if not respondents:
-            yield [], []
-            return
+            raise BadDataError(
+                "No eligible respondents found for selection. "
+                "Check that respondents have been uploaded and are not marked as ineligible or unable to attend."
+            )
 
         # Build headers from first respondent's attributes + external_id
         first = respondents[0]

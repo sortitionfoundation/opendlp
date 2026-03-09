@@ -159,6 +159,35 @@ class TestRespondentRepository:
         count = respondent_repo.count_available_for_selection(test_assembly.id)
         assert count == 1
 
+    def test_count_available_includes_none_eligibility(
+        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
+    ):
+        """Test that respondents with eligible=None or can_attend=None are counted as available.
+
+        These are three-way states: True=yes, False=no, None=not yet set.
+        Only False should exclude.
+        """
+        # Available: eligible=None, can_attend=None (not yet set)
+        resp1 = Respondent(assembly_id=test_assembly.id, external_id="NB010", eligible=None, can_attend=None)
+
+        # Available: eligible=True, can_attend=None
+        resp2 = Respondent(assembly_id=test_assembly.id, external_id="NB011", eligible=True, can_attend=None)
+
+        # Available: eligible=None, can_attend=True
+        resp3 = Respondent(assembly_id=test_assembly.id, external_id="NB012", eligible=None, can_attend=True)
+
+        # NOT available: eligible=False
+        resp4 = Respondent(assembly_id=test_assembly.id, external_id="NB013", eligible=False, can_attend=True)
+
+        respondent_repo.add(resp1)
+        respondent_repo.add(resp2)
+        respondent_repo.add(resp3)
+        respondent_repo.add(resp4)
+        postgres_session.commit()
+
+        count = respondent_repo.count_available_for_selection(test_assembly.id)
+        assert count == 3
+
     def test_bulk_add(
         self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
     ):

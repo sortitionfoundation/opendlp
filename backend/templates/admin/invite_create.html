@@ -11,7 +11,7 @@
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
                             <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
+                               href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">{{ _("Create Invite") }}</li>
                     </ol>
@@ -54,13 +54,13 @@
                                 {% for value, label in form.global_role.choices %}
                                     <div class="govuk-radios__item">
                                         <input class="govuk-radios__input"
-                                            id="global_role_{{ loop.index }}"
-                                            name="{{ form.global_role.name }}"
-                                            type="radio"
-                                            value="{{ value }}"
-                                            {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
+                                               id="global_role_{{ loop.index }}"
+                                               name="{{ form.global_role.name }}"
+                                               type="radio"
+                                               value="{{ value }}"
+                                               {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
                                         <label class="govuk-label govuk-radios__label"
-                                            for="global_role_{{ loop.index }}">{{ label }}</label>
+                                               for="global_role_{{ loop.index }}">{{ label }}</label>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -79,7 +79,7 @@
                     </div>
                     <div class="govuk-form-group {% if form.expires_in_hours.errors %}govuk-form-group--error{% endif %}">
                         <label class="govuk-label govuk-label--m"
-                            for="{{ form.expires_in_hours.id }}">{{ form.expires_in_hours.label.text }}</label>
+                               for="{{ form.expires_in_hours.id }}">{{ form.expires_in_hours.label.text }}</label>
                         {% if form.expires_in_hours.description %}
                             <div class="govuk-hint">{{ form.expires_in_hours.description }}</div>
                         {% endif %}

@@ -6,7 +6,7 @@
 # anything across from the main pre-commit-config
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v5.0.0"
+    rev: "v6.0.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -28,10 +28,10 @@ repos:
   # - javascript
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.11.5"
+    rev: "v0.15.5"
     hooks:
-      - id: ruff
-        args: [--exit-non-zero-on-fix]
+      - id: ruff-check
+        args: [--exit-non-zero-on-fix, --fix, --config=backend/pyproject.toml]
       - id: ruff-format
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -40,8 +40,21 @@ repos:
       - id: shellcheck
 
   - repo: https://github.com/rtts/djhtml
-    rev: "v2.0.0"
+    rev: "3.0.10"
     hooks:
       - id: djhtml
       - id: djcss
       - id: djjs
+
+  # look for typos
+  - repo: https://github.com/crate-ci/typos
+    rev: "v1.44.0"
+    hooks:
+      - id: typos
+        # no `-w` disable the auto fix, always review the output
+        # `-c` is to tell it where the config is
+        # `--force-exclude` is because the pre-commit stuff explicitly passes every
+        #    filename to typos as an argument. Without --force-exclude typos will
+        #    check all the files, even though they are in the exclude.
+        #    See https://github.com/crate-ci/typos/issues/347 for details.
+        args: ["--force-exclude", "-c", "backend/pyproject.toml"]

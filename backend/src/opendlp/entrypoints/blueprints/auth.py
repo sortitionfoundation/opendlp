@@ -615,7 +615,7 @@ def register_google(invite_code: str = "") -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
     # Import here to avoid circular import
-    from opendlp.entrypoints.forms import OAuthRegistrationForm
+    from opendlp.entrypoints.forms import OAuthRegistrationForm  # noqa: PLC0415
 
     form = OAuthRegistrationForm()
 
@@ -723,7 +723,7 @@ def register_microsoft(invite_code: str = "") -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
     # Import here to avoid circular import
-    from opendlp.entrypoints.forms import OAuthRegistrationForm
+    from opendlp.entrypoints.forms import OAuthRegistrationForm  # noqa: PLC0415
 
     form = OAuthRegistrationForm()
 

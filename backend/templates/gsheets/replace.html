@@ -3,7 +3,7 @@
 {% block assembly_breadcrumbs %}
     <li class="govuk-breadcrumbs__list-item">
         <a class="govuk-breadcrumbs__link"
-            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
+           href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
     </li>
     <li class="govuk-breadcrumbs__list-item">{{ _("Replacements") }}</li>
 {% endblock %}
@@ -13,9 +13,9 @@
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
             <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
-                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
             <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}"
-                method="post">
+                  method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="govuk-button govuk-button--secondary">
                     {% if not run_record %}
@@ -36,13 +36,13 @@
                 {% endif %}
             </button>
             <form method="POST"
-                action="{{ url_for('gsheets.cancel_gsheet_replace', assembly_id=assembly.id, run_id=run_record.task_id) }}"
-                style="display: inline;">
+                  action="{{ url_for('gsheets.cancel_gsheet_replace', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button class="govuk-button govuk-button--warning"
-                    type="submit"
-                    data-module="govuk-button"
-                    data-confirm="{{ _("Are you sure you want to cancel this task?") }}">
+                        type="submit"
+                        data-module="govuk-button"
+                        data-confirm="{{ _("Are you sure you want to cancel this task?") }}">
                     {{ _("Cancel") }}
                 </button>
             </form>
@@ -60,8 +60,8 @@
             </h2>
             {% if not run_record or run_record.task_type.value != 'select_replacement_gsheet' or run_record.has_finished %}
                 <form action="{{ url_for('gsheets.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}"
-                    method="post"
-                    id="replace-form">
+                      method="post"
+                      id="replace-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="govuk-form-group">
                         <label class="govuk-label govuk-label--s" for="number_to_select">{{ _("Number of people to select") }}</label>
@@ -69,13 +69,13 @@
                             {{ _('Enter a number between %(min)s and %(max)s', min=min_select, max=max_select) }}
                         </div>
                         <input class="govuk-input govuk-input--width-10"
-                            id="number_to_select"
-                            name="number_to_select"
-                            type="number"
-                            min="{{ min_select }}"
-                            max="{{ max_select }}"
-                            {% if num_to_select %} value="{{ num_to_select }}" {% else %} value="{{ min_select }}" {% endif %}
-                            required>
+                               id="number_to_select"
+                               name="number_to_select"
+                               type="number"
+                               min="{{ min_select }}"
+                               max="{{ max_select }}"
+                               {% if num_to_select %} value="{{ num_to_select }}" {% else %} value="{{ min_select }}" {% endif %}
+                               required>
                     </div>
                     <button type="submit" class="govuk-button" id="run-replacements-btn">{{ _("Run Replacements") }}</button>
                 </form>

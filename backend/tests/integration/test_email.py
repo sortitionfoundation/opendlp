@@ -1,6 +1,7 @@
 """ABOUTME: Integration tests for email system including bootstrap factory
 ABOUTME: Tests email adapter configuration and multiple recipient handling"""
 
+import logging
 import os
 from unittest.mock import patch
 
@@ -76,8 +77,6 @@ class TestEmailAdapterSendingIntegration:
 
     def test_console_adapter_with_multiple_recipients(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test sending email to multiple recipients via console adapter."""
-        import logging
-
         adapter = ConsoleEmailAdapter()
 
         with caplog.at_level(logging.INFO):

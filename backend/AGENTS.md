@@ -65,6 +65,9 @@ just test
 # Watch tests on file changes
 just watch-tests
 
+# use CI=true to ensure BDD tests run headless
+CI=true uv run pytest tests/bdd/
+
 # Run all quality checks (linting, type checking, dependency analysis)
 just check
 

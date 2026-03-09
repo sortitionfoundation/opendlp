@@ -111,7 +111,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
 
 def get_locale() -> str:
     """Get the best language match for the user."""
-    from flask import current_app
+    from flask import current_app  # noqa: PLC0415
 
     supported_languages = current_app.config.get("LANGUAGES", ["en"])
 
@@ -126,7 +126,7 @@ def get_locale() -> str:
         return str(session["language"])
 
     # Check user preferences (if logged in)
-    from flask_login import current_user
+    from flask_login import current_user  # noqa: PLC0415
 
     if (
         hasattr(current_user, "preferred_language")

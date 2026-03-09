@@ -15,6 +15,7 @@ from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 from sqlalchemy.sql.sqltypes import String as SQLString
 
+from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
@@ -173,8 +174,6 @@ class TargetValueListJSON(TypeDecorator):
             return []
 
         if isinstance(value, list):
-            from opendlp.domain.targets import TargetValue
-
             dict_list = []
             for v in value:
                 if isinstance(v, TargetValue):
@@ -192,8 +191,6 @@ class TargetValueListJSON(TypeDecorator):
         """Convert JSON back to list of TargetValue dataclasses"""
         if not value:
             return []
-
-        from opendlp.domain.targets import TargetValue
 
         result = []
         for item in value:

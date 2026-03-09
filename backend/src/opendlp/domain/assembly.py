@@ -286,7 +286,7 @@ class AssemblyGSheet:
 
     def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource | CSVGSheetDataSource:
         # import here to avoid circular import
-        from opendlp.bootstrap import update_data_source_from_assembly_gsheet
+        from opendlp.bootstrap import update_data_source_from_assembly_gsheet  # noqa: PLC0415
 
         if for_replacements:
             # already selected only makes sense for replacements

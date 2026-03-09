@@ -1,0 +1,135 @@
+{% extends "main/view_assembly_base.html" %}
+{% block title %}{{ _("Selection (DB)") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block assembly_breadcrumbs %}
+    <li class="govuk-breadcrumbs__list-item">{{ _("Selection (DB)") }}</li>
+{% endblock %}
+{% block assembly_content %}
+    <h2 class="govuk-heading-m">{{ _("Selection") }}</h2>
+    <p class="govuk-body">
+        {{ _("Run the democratic lottery selection for this assembly using data stored in the database.") }}
+    </p>
+    <p class="govuk-body">
+        {{ _('Selection will be for <b>%(number_to_select)s people</b>.', number_to_select=assembly.number_to_select) }}
+        {% if not run_record or run_record.has_finished %}
+            <a href="{{ url_for('main.edit_assembly', assembly_id=assembly.id) }}">{{ _("Edit the number.") }}</a>
+        {% endif %}
+    </p>
+
+    {# ── Action Buttons ─────────────────────────────────────── #}
+    <div class="govuk-button-group govuk-!-margin-top-6">
+        {% if not run_record or run_record.has_finished %}
+            <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="test_selection" value="0">
+                <button type="submit" class="govuk-button">{{ _("Run Selection") }}</button>
+            </form>
+            <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="test_selection" value="1">
+                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Test Selection") }}</button>
+            </form>
+            <form action="{{ url_for('db_selection.check_db_data', assembly_id=assembly.id) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Check Targets & Respondents") }}</button>
+            </form>
+        {% else %}
+            <button class="govuk-button" disabled>
+                {% if run_record.task_type.value == "select_from_db" %}
+                    {{ _("Running Selection") }}
+                {% elif run_record.task_type.value == "test_select_from_db" %}
+                    {{ _("Running Test Selection") }}
+                {% else %}
+                    {{ _("Task in Progress...") }}
+                {% endif %}
+            </button>
+            <form method="POST"
+                  action="{{ url_for('db_selection.cancel_db_selection', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="govuk-button govuk-button--warning" type="submit" data-module="govuk-button">
+                    {{ _("Cancel") }}
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    {# ── Links ──────────────────────────────────────────────── #}
+    <div class="govuk-!-margin-bottom-6">
+        <a href="{{ url_for('db_selection.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection Settings") }}</a>
+        &nbsp;|&nbsp;
+        <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Replacements") }}</a>
+    </div>
+
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+
+    {# ── Check Result (synchronous) ─────────────────────────── #}
+    {% if check_result is defined and check_result %}
+        {% if check_result.success %}
+            <div class="govuk-notification-banner govuk-notification-banner--success" role="alert">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title">{{ _("Data Check Passed") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <p class="govuk-body">
+                        {{ _("Found %(num_features)s target categories and %(num_people)s eligible respondents. Data is ready for selection.",
+                        num_features=check_result.num_features,
+                        num_people=check_result.num_people) }}
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            <div class="govuk-error-summary" role="alert" tabindex="-1">
+                <h2 class="govuk-error-summary__title">{{ _("Data Check Failed") }}</h2>
+                <div class="govuk-error-summary__body">
+                    <ul class="govuk-list govuk-error-summary__list">
+                        {% for error_html in check_result.errors %}
+                            <li>{{ error_html | safe }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+        {% if check_result.features_report_html or check_result.people_report_html %}
+            <details class="govuk-details">
+                <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">{{ _("Validation Details") }}</span>
+                </summary>
+                <div class="govuk-details__text">
+                    {{ check_result.features_report_html | safe }}
+                    {{ check_result.people_report_html | safe }}
+                </div>
+            </details>
+        {% endif %}
+    {% endif %}
+
+    {# ── Download Links (completed run) ─────────────────────── #}
+    {% if run_record and run_record.is_completed and run_record.selected_ids %}
+        <div class="govuk-notification-banner govuk-notification-banner--success" role="alert">
+            <div class="govuk-notification-banner__header">
+                <h2 class="govuk-notification-banner__title">{{ _("Selection Complete") }}</h2>
+            </div>
+            <div class="govuk-notification-banner__content">
+                <p class="govuk-body">{{ _("Download the results as CSV files:") }}</p>
+                <ul class="govuk-list">
+                    <li>
+                        <a class="govuk-link"
+                           href="{{ url_for('db_selection.download_selected_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                            {{ _("Download Selected") }}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="govuk-link"
+                           href="{{ url_for('db_selection.download_remaining_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                            {{ _("Download Remaining") }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Progress (running task) ─────────────────────────────── #}
+    <div class="govuk-!-margin-bottom-6">
+        {% include "db_selection/components/progress.html" %}
+    </div>
+{% endblock %}

@@ -396,3 +396,8 @@ class RespondentRepository(AbstractRepository):
     ) -> None:
         """Mark multiple respondents as selected in a single query."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
+        """Reset all respondents for an assembly back to POOL status. Returns count updated."""
+        raise NotImplementedError

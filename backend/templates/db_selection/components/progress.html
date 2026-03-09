@@ -1,0 +1,91 @@
+{# ABOUTME: Progress fragment for DB selection tasks with HTMX polling #}
+{# ABOUTME: Shows task status, log messages, and report for database selection runs #}
+{% if run_record %}
+    <div id="progress-section"
+         data-status="{{ run_record.status.value }}"
+         data-task-type="{{ run_record.task_type.value }}"
+         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('db_selection.db_selection_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 2s" hx-swap="outerHTML" {% endif %}>
+        {% if run_record.has_finished %}
+            <details class="govuk-details">
+                <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">{{ _("Full Run Report") }}</span>
+                </summary>
+                <div class="govuk-details__text">
+                    <div class="run-report">
+                        {% if run_record.log_messages %}
+                            {% for message in run_record.log_messages %}<p class="govuk-body-s">{{ message }}</p>{% endfor %}
+                        {% endif %}
+                        <p class="govuk-body-s">{{ translated_report_html | safe }}</p>
+                        <p class="govuk-body-s">
+                            {{ _("Started At") }}: {{ run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.created_at }}
+                        </p>
+                        <p class="govuk-body-s">
+                            {{ _("Completed At") }}: {{ run_record.completed_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.completed_at }}
+                        </p>
+                    </div>
+                </div>
+            </details>
+        {% endif %}
+        {% if run_record.is_running and run_record.log_messages %}
+            <h4 class="govuk-heading-s">{{ _("Progress Messages") }}</h4>
+            <div class="govuk-inset-text">
+                {% for message in run_record.log_messages %}<p class="govuk-body-s">{{ message }}</p>{% endfor %}
+            </div>
+        {% endif %}
+        {% if run_record.is_pending %}
+            <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task is Pending") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <p class="govuk-notification-banner__heading">
+                        {{ _('This page will update automatically. Current status: %(status)s', status=run_record.status.value) }}
+                    </p>
+                </div>
+            </div>
+        {% elif run_record.is_running %}
+            <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task in Progress") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <p class="govuk-notification-banner__heading">
+                        {{ _('This page will update automatically. Current status: %(status)s', status=run_record.status.value) }}
+                    </p>
+                </div>
+            </div>
+        {% elif run_record.is_completed %}
+            <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task Completed") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <p class="govuk-body">
+                        {{ _('Successfully selected %(num)s participants.', num=assembly.number_to_select) }}
+                    </p>
+                </div>
+            </div>
+        {% elif run_record.is_failed %}
+            <h4 class="govuk-heading-s">{{ _("Error Details") }}</h4>
+            <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
+                <div class="govuk-error-summary__body">
+                    <ul class="govuk-list govuk-error-summary__list">
+                        <li>{{ run_record.error_message | safe }}</li>
+                    </ul>
+                </div>
+            </div>
+        {% elif run_record.is_cancelled %}
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                    {{ _("Task Cancelled") }}
+                </strong>
+            </div>
+            <p class="govuk-body">{{ _("This task was cancelled.") }}</p>
+            {% if run_record.error_message %}
+                <p class="govuk-body-s">{{ run_record.error_message }}</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endif %}

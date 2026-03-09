@@ -54,10 +54,10 @@
                         <li>{{ _("A safe place to store backup codes for account recovery") }}</li>
                     </ul>
                     <a href="{{ url_for('profile.setup_2fa') }}"
-                        role="button"
-                        draggable="false"
-                        class="govuk-button"
-                        data-module="govuk-button">{{ _("Set up two-factor authentication") }}</a>
+                       role="button"
+                       draggable="false"
+                       class="govuk-button"
+                       data-module="govuk-button">{{ _("Set up two-factor authentication") }}</a>
                 {% else %}
                     <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Manage Two-Factor Authentication") }}</h2>
                     <h3 class="govuk-heading-s">{{ _("Regenerate backup codes") }}</h3>
@@ -75,14 +75,14 @@
                                     <label class="govuk-label" for="totp_code">{{ _("Verification code") }}</label>
                                     <div class="govuk-hint">{{ _("Enter the 6-digit code from your authenticator app") }}</div>
                                     <input class="govuk-input govuk-input--width-10"
-                                        id="totp_code"
-                                        name="totp_code"
-                                        type="text"
-                                        inputmode="numeric"
-                                        pattern="[0-9]{6}"
-                                        maxlength="6"
-                                        autocomplete="one-time-code"
-                                        required />
+                                           id="totp_code"
+                                           name="totp_code"
+                                           type="text"
+                                           inputmode="numeric"
+                                           pattern="[0-9]{6}"
+                                           maxlength="6"
+                                           autocomplete="one-time-code"
+                                           required />
                                 </div>
                                 <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button">{{ _("Regenerate codes") }}</button>
                             </form>
@@ -98,21 +98,21 @@
                         </summary>
                         <div class="govuk-details__text">
                             <form method="POST"
-                                action="{{ url_for('profile.disable_2fa') }}"
-                                data-confirm="{{ _("Are you sure you want to disable two-factor authentication? This will make your account less secure.") }}">
+                                  action="{{ url_for('profile.disable_2fa') }}"
+                                  data-confirm="{{ _("Are you sure you want to disable two-factor authentication? This will make your account less secure.") }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <div class="govuk-form-group">
                                     <label class="govuk-label" for="totp_code_disable">{{ _("Verification code") }}</label>
                                     <div class="govuk-hint">{{ _("Enter the 6-digit code from your authenticator app") }}</div>
                                     <input class="govuk-input govuk-input--width-10"
-                                        id="totp_code_disable"
-                                        name="totp_code"
-                                        type="text"
-                                        inputmode="numeric"
-                                        pattern="[0-9]{6}"
-                                        maxlength="6"
-                                        autocomplete="one-time-code"
-                                        required />
+                                           id="totp_code_disable"
+                                           name="totp_code"
+                                           type="text"
+                                           inputmode="numeric"
+                                           pattern="[0-9]{6}"
+                                           maxlength="6"
+                                           autocomplete="one-time-code"
+                                           required />
                                 </div>
                                 <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button">{{ _("Disable") }}</button>
                             </form>

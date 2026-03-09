@@ -76,11 +76,28 @@ class TestAssemblyCSV:
         settings = csv_config.to_settings()
 
         assert isinstance(settings, Settings)
-        assert settings.id_column == "participant_id"
         assert settings.check_same_address is True
         assert settings.check_same_address_columns == ["street", "zip"]
         assert settings.columns_to_keep == ["first_name", "last_name", "email"]
         assert settings.selection_algorithm == "nash"
+
+    def test_to_settings_always_uses_external_id_for_id_column(self):
+        """to_settings() must always pass 'external_id' as the id_column to sortition-algorithms.
+
+        id_column on AssemblyCSV records which column in the *uploaded CSV* contains
+        the unique identifier. During import, that value is extracted and stored as
+        respondent.external_id. The data adapter always outputs the column name
+        'external_id' to sortition-algorithms, so Settings.id_column must match."""
+        assembly_id = uuid.uuid4()
+        csv_config = AssemblyCSV(
+            assembly_id=assembly_id,
+            id_column="participant_id",
+            check_same_address=False,
+        )
+
+        settings = csv_config.to_settings()
+
+        assert settings.id_column == "external_id"
 
     def test_to_settings_with_defaults(self):
         """Test to_settings with default values (check_same_address disabled when no columns)"""

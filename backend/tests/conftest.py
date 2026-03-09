@@ -181,7 +181,7 @@ def restart_redis_pubsub():
     if not shutil.which("docker"):
         print("skipping restar, assumes running in container")
         return
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         ["docker", "compose", "restart", "-t", "0", "redis_pubsub"],
         check=True,
     )

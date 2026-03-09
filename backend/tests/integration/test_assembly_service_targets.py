@@ -243,6 +243,6 @@ Gender,Female,10,15"""
 
     def test_empty_feature_collection(self, uow, admin_user: User, test_assembly: Assembly):
         """Test getting feature collection when no targets exist."""
-        fc, report = assembly_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
+        fc, _ = assembly_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
 
         assert len(fc) == 0

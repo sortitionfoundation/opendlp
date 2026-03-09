@@ -7,13 +7,14 @@ from datetime import UTC, datetime, timedelta
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, then, when
 from sqlalchemy.orm import sessionmaker
+from werkzeug.security import generate_password_hash
 
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from opendlp.service_layer.user_service import create_user
+from opendlp.service_layer.user_service import create_user, find_or_create_oauth_user
 from tests.bdd.config import FRESH_PASSWORD, Urls
 from tests.bdd.helpers import wait_for_page_with_text
 
@@ -160,7 +161,7 @@ def _(page: Page):
 def _(test_database: sessionmaker, admin_user, user_invite: str):
     """Create a confirmed user in the database."""
     uow = SqlAlchemyUnitOfWork(test_database)
-    user, token = create_user(
+    create_user(
         uow=uow,
         email=NEWUSER_EMAIL,
         password=FRESH_PASSWORD,
@@ -185,10 +186,8 @@ def _(page: Page, user_invite: str, test_database: sessionmaker):
     """Simulate OAuth registration completion."""
     # In reality, this would go through OAuth flow
     # For testing, we'll create an OAuth user directly in the database
-    from opendlp.service_layer.user_service import find_or_create_oauth_user
-
     uow = SqlAlchemyUnitOfWork(test_database)
-    user, created = find_or_create_oauth_user(
+    user, _ = find_or_create_oauth_user(
         uow=uow,
         provider="google",
         oauth_id="google_test_123",
@@ -290,8 +289,6 @@ def _(page: Page):
 @given("the user registered before email confirmation was implemented")
 def _(test_database: sessionmaker):
     """Create a grandfathered user (email already confirmed from migration)."""
-    from werkzeug.security import generate_password_hash
-
     uow = SqlAlchemyUnitOfWork(test_database)
     with uow:
         user = User(

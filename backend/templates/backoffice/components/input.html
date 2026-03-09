@@ -70,10 +70,10 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             {# Read-only display #}
             {% if link_url %}
                 <a href="{{ link_url }}"
-                    class="text-body-md underline"
-                    style="color: var(--color-links);"
-                    target="_blank"
-                    rel="noopener noreferrer">
+                   class="text-body-md underline"
+                   style="color: var(--color-links);"
+                   target="_blank"
+                   rel="noopener noreferrer">
                     {{ link_text or value or "-" }}
                 </a>
             {% else %}
@@ -94,16 +94,16 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
                 {% if attrs %}{{ attrs | safe }}{% endif %}
                 class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ classes }}"
                 style="
-                    background-color: var(--color-page-background);
-                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                    color: var(--color-body-text);
-                    --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
-                    {% if disabled %}
-                        background-color: var(--color-subtle-background-panels);
-                        color: var(--color-placeholder-text);
-                        cursor: not-allowed;
-                    {% endif %}
-                "
+                       background-color: var(--color-page-background);
+                       border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                       color: var(--color-body-text);
+                       --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                       {% if disabled %}
+                           background-color: var(--color-subtle-background-panels);
+                           color: var(--color-placeholder-text);
+                           cursor: not-allowed;
+                       {% endif %}
+                      "
             />
         {% endif %}
 
@@ -165,16 +165,16 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 resize-y {{ classes }}"
             style="
-                background-color: var(--color-page-background);
-                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                color: var(--color-body-text);
-                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
-                {% if disabled %}
-                    background-color: var(--color-subtle-background-panels);
-                    color: var(--color-placeholder-text);
-                    cursor: not-allowed;
-                {% endif %}
-            "
+                   background-color: var(--color-page-background);
+                   border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                   color: var(--color-body-text);
+                   --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                   {% if disabled %}
+                       background-color: var(--color-subtle-background-panels);
+                       color: var(--color-placeholder-text);
+                       cursor: not-allowed;
+                   {% endif %}
+                  "
         >{{ value }}</textarea>
 
         {# Error message #}
@@ -239,16 +239,16 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer {{ classes }}"
             style="
-                background-color: var(--color-page-background);
-                border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                color: var(--color-body-text);
-                --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
-                {% if disabled %}
-                    background-color: var(--color-subtle-background-panels);
-                    color: var(--color-placeholder-text);
-                    cursor: not-allowed;
-                {% endif %}
-            "
+                   background-color: var(--color-page-background);
+                   border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                   color: var(--color-body-text);
+                   --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                   {% if disabled %}
+                       background-color: var(--color-subtle-background-panels);
+                       color: var(--color-placeholder-text);
+                       cursor: not-allowed;
+                   {% endif %}
+                  "
         >
             {% for option in options %}
                 <option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>

@@ -157,7 +157,7 @@ def test_celery_worker(test_database, csv_test_data_dir):
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
-    process = subprocess.Popen(  # noqa: S603
+    process = subprocess.Popen(
         ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
         cwd=BACKEND_PATH,
         env=env,

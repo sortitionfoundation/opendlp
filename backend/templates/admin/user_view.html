@@ -11,7 +11,7 @@
                         </li>
                         <li class="govuk-breadcrumbs__list-item">
                             <a class="govuk-breadcrumbs__link"
-                                href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
+                               href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
                         </li>
                         <li class="govuk-breadcrumbs__list-item">{{ user.email }}</li>
                     </ol>
@@ -91,12 +91,12 @@
                                 {% endif %}
                                 <br>
                                 <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
-                                    class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
+                                   class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
                             {% else %}
                                 <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
                                 <br>
                                 <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
-                                    class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
+                                   class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
                             {% endif %}
                         </dd>
                     </div>
@@ -119,18 +119,18 @@
                 </dl>
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
-                        class="govuk-button">{{ _("Edit User") }}</a>
+                       class="govuk-button">{{ _("Edit User") }}</a>
                     {% if user.totp_enabled and not user.oauth_provider %}
                         <form method="POST"
-                            action="{{ url_for('admin.disable_user_2fa', user_id=user.id) }}"
-                            style="display: inline"
-                            data-confirm="{{ _("Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.") }}">
+                              action="{{ url_for('admin.disable_user_2fa', user_id=user.id) }}"
+                              style="display: inline"
+                              data-confirm="{{ _("Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.") }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable 2FA") }}</button>
                         </form>
                     {% endif %}
                     <a href="{{ url_for('admin.list_users') }}"
-                        class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
+                       class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
                 </div>
             </div>
         </div>

@@ -538,7 +538,7 @@ def import_targets_from_csv(
         body = list(reader)
 
         try:
-            feature_collection, _, __ = read_in_features(headers, body, assembly.number_to_select)
+            feature_collection, _, __ = read_in_features(headers, body)
         except Exception as e:
             raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
 

@@ -20,8 +20,8 @@
                 <div class="govuk-!-text-align-right">
                     {% if current_user.global_role.value in ['admin', 'global-organiser'] %}
                         <a href="{{ url_for('main.create_assembly_page') }}"
-                            class="govuk-button"
-                            data-module="govuk-button">{{ _("Create Assembly") }}</a>
+                           class="govuk-button"
+                           data-module="govuk-button">{{ _("Create Assembly") }}</a>
                     {% endif %}
                 </div>
             </div>
@@ -32,7 +32,7 @@
             {% for assembly in assemblies %}
                 <div class="govuk-grid-column-one-third govuk-!-margin-bottom-4">
                     <a href="{{ url_for('main.view_assembly', assembly_id=assembly.id) }}"
-                        class="assembly-card-link">
+                       class="assembly-card-link">
                         <div class="assembly-card">
                             <h3 class="govuk-heading-m">{{ assembly.title }}</h3>
                             {% if assembly.question %}

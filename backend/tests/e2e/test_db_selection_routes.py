@@ -1,0 +1,544 @@
+"""ABOUTME: End-to-end tests for database selection routes
+ABOUTME: Tests DB selection page, check data, start selection, progress, cancel, downloads, and settings"""
+
+import uuid
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
+
+from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
+from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
+from opendlp.service_layer.sortition import CheckDataResult
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+
+@pytest.fixture
+def assembly_for_db_selection(postgres_session_factory, admin_user):
+    """Create an assembly configured for DB selection (no gsheet needed)."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title="DB Selection Assembly",
+            created_by_user_id=admin_user.id,
+            question="What should we select?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            number_to_select=10,
+        )
+        assembly_id = assembly.id
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_csv_config(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly_id,
+            check_same_address=False,
+        )
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        a = uow.assemblies.get(assembly_id)
+        return a.create_detached_copy()
+
+
+class TestDbSelectionRoutes:
+    def test_view_db_selection_page_loads(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"Selection" in response.data
+        assert b"Run Selection" in response.data
+        assert b"Run Test Selection" in response.data
+        assert b"Check Targets" in response.data
+
+    def test_view_db_selection_requires_auth(self, client, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = client.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.headers["Location"]
+
+    def test_view_db_selection_with_run_shows_status(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Task started", "Loading data"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{task_id}")
+
+        assert response.status_code == 200
+        assert b"Current status: running" in response.data
+        assert b"Loading data" in response.data
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
+    def test_start_db_selection_success(
+        self, mock_celery, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/run",
+            data={"test_selection": "0"},
+        )
+
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/db_select/" in response.headers["Location"]
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].task_type == SelectionTaskType.SELECT_FROM_DB
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
+    def test_start_db_test_selection_success(
+        self, mock_celery, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        mock_result = Mock()
+        mock_result.id = "celery-task-id"
+        mock_celery.return_value = mock_result
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/run",
+            data={"test_selection": "1"},
+        )
+
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+            assert len(records) == 1
+            assert records[0].task_type == SelectionTaskType.TEST_SELECT_FROM_DB
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    def test_check_db_data_success(self, mock_check, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        mock_check.return_value = CheckDataResult(
+            success=True,
+            errors=[],
+            features_report_html="<p>Features OK</p>",
+            people_report_html="<p>People OK</p>",
+            num_features=3,
+            num_people=100,
+        )
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/db_select/check")
+
+        assert response.status_code == 200
+        assert b"Data Check Passed" in response.data
+        assert b"3 target categories" in response.data
+        assert b"100 eligible respondents" in response.data
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    def test_check_db_data_failure(self, mock_check, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        mock_check.return_value = CheckDataResult(
+            success=False,
+            errors=["<p>Feature mismatch</p>"],
+            features_report_html="",
+            people_report_html="",
+            num_features=0,
+            num_people=0,
+        )
+
+        response = logged_in_admin.post(f"/assemblies/{assembly.id}/db_select/check")
+
+        assert response.status_code == 200
+        assert b"Data Check Failed" in response.data
+        assert b"Feature mismatch" in response.data
+
+    def test_progress_polling_returns_fragment(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Running selection"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{task_id}/progress")
+
+        assert response.status_code == 200
+        assert b"progress-section" in response.data
+        assert b"Running selection" in response.data
+
+    def test_progress_polling_completed_sends_refresh(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Done"],
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{task_id}/progress")
+
+        assert response.status_code == 200
+        assert response.headers.get("HX-Refresh") == "true"
+
+    def test_cancel_db_selection(self, logged_in_admin, assembly_for_db_selection, postgres_session_factory):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                celery_task_id="fake-celery-id",
+                log_messages=["Task started"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        with patch("opendlp.service_layer.sortition.app.app.control.revoke"):
+            response = logged_in_admin.post(
+                f"/assemblies/{assembly.id}/db_select/{task_id}/cancel",
+            )
+
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record.status == SelectionRunStatus.CANCELLED
+
+    def test_view_db_selection_settings_loads(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/settings")
+
+        assert response.status_code == 200
+        assert b"Selection Settings" in response.data
+        assert b"Check Same Address" in response.data
+
+    def test_save_db_selection_settings(self, logged_in_admin, assembly_for_db_selection, postgres_session_factory):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "address1, postcode",
+                "columns_to_keep_string": "first_name, last_name",
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/db_select" in response.headers["Location"]
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            a = uow.assemblies.get(assembly.id)
+            assert a.csv is not None
+            assert a.csv.check_same_address is True
+            assert a.csv.check_same_address_cols == ["address1", "postcode"]
+            assert a.csv.columns_to_keep == ["first_name", "last_name"]
+
+    def test_view_db_replacement_placeholder(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_replace")
+
+        assert response.status_code == 200
+        assert b"coming soon" in response.data
+
+    def test_view_gsheet_run_routes_db_selection_tasks(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Done"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/gsheet_runs/{task_id}/view",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/db_select/{task_id}" in response.headers["Location"]
+
+
+class TestDbSelectionDownloads:
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_selected_csv(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.return_value = ("name,age\nAlice,30\nBob,25\n", "name,age\nCharlie,35\n")
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{run_id}/download/selected")
+
+        assert response.status_code == 200
+        assert response.content_type == "text/csv; charset=utf-8"
+        assert b"Alice" in response.data
+        assert f"selected-{run_id}.csv" in response.headers["Content-Disposition"]
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_remaining_csv(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.return_value = ("name,age\nAlice,30\n", "name,age\nBob,25\nCharlie,35\n")
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{run_id}/download/remaining")
+
+        assert response.status_code == 200
+        assert response.content_type == "text/csv; charset=utf-8"
+        assert b"Bob" in response.data
+        assert f"remaining-{run_id}.csv" in response.headers["Content-Disposition"]
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_selected_csv_not_found(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.side_effect = NotFoundError("Run not found")
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/db_select/{run_id}/download/selected",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_selected_csv_invalid_selection(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.side_effect = InvalidSelection("No results yet")
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/db_select/{run_id}/download/selected",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_remaining_csv_not_found(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.side_effect = NotFoundError("Run not found")
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/db_select/{run_id}/download/remaining",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    def test_download_remaining_csv_invalid_selection(self, mock_generate, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        run_id = uuid.uuid4()
+        mock_generate.side_effect = InvalidSelection("No results yet")
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/db_select/{run_id}/download/remaining",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+
+class TestDbSelectionErrorHandling:
+    def test_view_db_selection_nonexistent_assembly(self, logged_in_admin):
+        fake_id = uuid.uuid4()
+        response = logged_in_admin.get(f"/assemblies/{fake_id}/db_select", follow_redirects=False)
+        assert response.status_code == 404
+
+    def test_progress_nonexistent_run(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        fake_run = uuid.uuid4()
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{fake_run}/progress")
+        assert response.status_code == 404
+
+    def test_progress_wrong_assembly(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory, admin_user
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            other_assembly = create_assembly(
+                uow=uow,
+                title="Other Assembly",
+                created_by_user_id=admin_user.id,
+                question="Other question",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=60)),
+                number_to_select=5,
+            )
+            other_id = other_assembly.id
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=other_id,
+                task_id=task_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Running"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{task_id}/progress")
+        assert response.status_code == 404
+
+    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    def test_check_db_data_unexpected_error(self, mock_check, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        mock_check.side_effect = RuntimeError("Unexpected error")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/check",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_cancel_nonexistent_run(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        fake_run = uuid.uuid4()
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/{fake_run}/cancel",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_start_db_selection_with_invalid_settings_shows_useful_error(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """When selection settings are invalid (e.g. check_same_address=True with no columns),
+        the user should see a descriptive error, not a generic 'unexpected error' message."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Bad Settings Assembly",
+                created_by_user_id=admin_user.id,
+                question="Will this fail?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            update_csv_config(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly_id,
+                check_same_address=True,
+                check_same_address_cols=[],
+            )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/run",
+            data={"test_selection": "0"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            # Should show a useful error about the settings, not "unexpected error"
+            assert any("Could not start selection task" in msg for msg in flash_messages)
+            assert not any("unexpected error" in msg.lower() for msg in flash_messages)
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
+    def test_start_db_selection_unexpected_error(self, mock_celery, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        mock_celery.side_effect = RuntimeError("Celery down")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/run",
+            data={"test_selection": "0"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_view_db_selection_with_run_wrong_assembly(
+        self, logged_in_admin, assembly_for_db_selection, postgres_session_factory, admin_user
+    ):
+        assembly = assembly_for_db_selection
+        task_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            other_assembly = create_assembly(
+                uow=uow,
+                title="Other Assembly",
+                created_by_user_id=admin_user.id,
+                question="Other question",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=60)),
+                number_to_select=5,
+            )
+            other_id = other_assembly.id
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=other_id,
+                task_id=task_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Done"],
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(
+            f"/assemblies/{assembly.id}/db_select/{task_id}",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+
+class TestRespondentsStatusFilter:
+    def test_respondents_page_shows_status_filter(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/respondents")
+        assert response.status_code == 200
+
+    def test_respondents_filter_by_status_param(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/respondents?status=SELECTED")
+        assert response.status_code == 200
+
+    def test_respondents_invalid_status_ignored(self, logged_in_admin, assembly_for_db_selection):
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/respondents?status=INVALID")
+        assert response.status_code == 200

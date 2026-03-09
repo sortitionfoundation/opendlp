@@ -175,7 +175,7 @@ NB001,Female"""
         csv2 = """external_id,Age
 NB002,30-44"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
         )
 
@@ -193,7 +193,7 @@ NB002,30-44"""
         csv_content = """external_id,Gender
 NB001,Female"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -209,7 +209,7 @@ NB001,Female"""
 NB001,Female,true,true,false
 NB002,Male,false,true,true"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -232,6 +232,63 @@ NB001,Female"""
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.import_respondents_from_csv(uow, user_id, test_assembly.id, csv_content)
+
+
+class TestResetSelectionStatus:
+    def test_reset_all_to_pool(self, uow, admin_user: User, test_assembly: Assembly):
+        """Test resetting all respondents back to POOL status."""
+        # Create respondents with different statuses
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB001",
+            attributes={},
+            selection_status=RespondentStatus.SELECTED,
+        )
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB002",
+            attributes={},
+            selection_status=RespondentStatus.CONFIRMED,
+        )
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB003",
+            attributes={},
+            selection_status=RespondentStatus.POOL,
+        )
+
+        count = respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
+
+        assert count == 3
+
+        # Verify all are now POOL
+        with uow:
+            all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
+            for r in all_resp:
+                assert r.selection_status == RespondentStatus.POOL
+                assert r.selection_run_id is None
+
+    def test_reset_without_permission(self, uow, test_assembly: Assembly):
+        """Test resetting without permission raises error."""
+        user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
+        with uow:
+            uow.users.add(user)
+            user_id = user.id
+            uow.commit()
+
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.reset_selection_status(uow, user_id, test_assembly.id)
+
+    def test_reset_empty_assembly(self, uow, admin_user: User, test_assembly: Assembly):
+        """Test resetting with no respondents returns zero."""
+        count = respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
+        assert count == 0
 
 
 class TestGetRespondentsForAssembly:

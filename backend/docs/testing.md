@@ -92,6 +92,7 @@ just test-bdd
 
 # Run BDD tests headless (for CI)
 just test-bdd-headless
+CI=true uv run pytest test/bdd/test_file_i_want.py
 
 # Install development dependencies (including Playwright browsers)
 just install-dev
@@ -171,10 +172,12 @@ def test_fails_without_required_env_var(clear_env_vars):
 ### Database Fixtures
 
 **For unit tests:**
+
 - `in_memory_sqlite_db` - Fast in-memory SQLite database
 - `sqlite_session_factory` - Session factory with mappers
 
 **For integration/e2e tests:**
+
 - `postgres_engine` - PostgreSQL test database engine (port 54322)
 - `postgres_session_factory` - PostgreSQL session factory with mappers
 - `postgres_session` - Individual test session with rollback
@@ -182,6 +185,7 @@ def test_fails_without_required_env_var(clear_env_vars):
 ### Security Fixtures
 
 **`patch_password_hashing`** - Speeds up password hashing in tests (autouse=True):
+
 - Uses only 1 iteration instead of 1 million
 - Makes tests run much faster
 - Applied automatically to all tests

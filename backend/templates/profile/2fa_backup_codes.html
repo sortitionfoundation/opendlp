@@ -21,15 +21,15 @@
                 </strong>
             </div>
             <div style="background: #f3f2f1;
-                padding: 20px;
-                border: 1px solid #b1b4b6;
-                margin-bottom: 30px">
+                        padding: 20px;
+                        border: 1px solid #b1b4b6;
+                        margin-bottom: 30px">
                 <div id="backup-codes"
-                    style="display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                        font-family: monospace;
-                        font-size: 16px">
+                     style="display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 10px;
+                            font-family: monospace;
+                            font-size: 16px">
                     {% for code in backup_codes %}
                         <div>{{ code }}</div>
                     {% endfor %}
@@ -37,11 +37,11 @@
             </div>
             <div class="govuk-button-group">
                 <button onclick="downloadBackupCodes()"
-                    class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button">{{ _("Download codes") }}</button>
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">{{ _("Download codes") }}</button>
                 <button data-print
-                    class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button">{{ _("Print codes") }}</button>
+                        class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">{{ _("Print codes") }}</button>
                 <a href="{{ url_for('profile.two_factor_settings') }}" class="govuk-button" data-module="govuk-button">{{ _("Done") }}</a>
             </div>
         </div>

@@ -1,6 +1,7 @@
 """ABOUTME: Unit tests for Assembly domain model
 ABOUTME: Tests assembly creation, validation, status changes, and updates"""
 
+import time
 import uuid
 from datetime import date, datetime, timedelta
 
@@ -92,8 +93,6 @@ class TestAssembly:
         original_updated_at = assembly.updated_at
 
         # Small delay to ensure updated_at changes
-        import time
-
         time.sleep(0.01)
 
         assembly.archive()
@@ -110,8 +109,6 @@ class TestAssembly:
         original_updated_at = assembly.updated_at
 
         # Small delay to ensure updated_at changes
-        import time
-
         time.sleep(0.01)
 
         assembly.reactivate()
@@ -147,8 +144,6 @@ class TestAssembly:
         original_updated_at = assembly.updated_at
 
         # Small delay to ensure updated_at changes
-        import time
-
         time.sleep(0.01)
 
         assembly.update_details(

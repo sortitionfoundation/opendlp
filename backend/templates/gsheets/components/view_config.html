@@ -3,9 +3,9 @@
         <dt class="govuk-summary-list__key">{{ _("Spreadsheet URL") }}</dt>
         <dd class="govuk-summary-list__value">
             <a href="{{ gsheet.url }}"
-                class="govuk-link"
-                target="_blank"
-                rel="noopener noreferrer">{{ _("View Spreadsheet") }}</a>
+               class="govuk-link"
+               target="_blank"
+               rel="noopener noreferrer">{{ _("View Spreadsheet") }}</a>
             {% if google_service_account_email != "UNKNOWN" %}
                 <br />
                 {{ _("Ensure it is shared with:") }} {{ google_service_account_email
@@ -77,5 +77,5 @@
 </dl>
 <div class="govuk-button-group govuk-!-margin-top-6">
     <a href="{{ url_for('gsheets.manage_assembly_gsheet', assembly_id=assembly.id) }}"
-        class="govuk-button govuk-button--secondary">{{ _("Change Configuration") }}</a>
+       class="govuk-button govuk-button--secondary">{{ _("Change Configuration") }}</a>
 </div>

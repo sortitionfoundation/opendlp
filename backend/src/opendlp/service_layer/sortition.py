@@ -24,6 +24,7 @@ from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
+from opendlp.service_layer.error_translation import translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -31,6 +32,7 @@ from opendlp.service_layer.exceptions import (
     SelectionRunRecordNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
+from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
@@ -368,6 +370,76 @@ def start_gsheet_manage_tabs_task(
     return task_id
 
 
+@dataclass
+class CheckDataResult:
+    """Result of validating targets and respondents against selection settings."""
+
+    success: bool
+    errors: list[str]
+    features_report_html: str
+    people_report_html: str
+    num_features: int
+    num_people: int
+
+
+@require_assembly_permission(can_manage_assembly)
+def check_db_selection_data(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> CheckDataResult:
+    """Synchronously validate targets and respondents against selection settings."""
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
+
+    check_errors: list[str] = []
+    features = None
+    people = None
+    features_report_html = ""
+    people_report_html = ""
+
+    try:
+        settings_obj = csv_config.to_settings()
+    except SortitionBaseError as e:
+        check_errors.append(translate_sortition_error_to_html(e))
+        return CheckDataResult(
+            success=False,
+            errors=check_errors,
+            features_report_html="",
+            people_report_html="",
+            num_features=0,
+            num_people=0,
+        )
+
+    data_source = OpenDLPDataAdapter(uow, assembly_id)
+    select_data = adapters.SelectionData(data_source)
+
+    try:
+        features, f_report = select_data.load_features(assembly.number_to_select)
+        features_report_html = translate_run_report_to_html(f_report)
+    except SortitionBaseError as e:
+        check_errors.append(translate_sortition_error_to_html(e))
+
+    if features is not None:
+        try:
+            people, p_report = select_data.load_people(settings_obj, features)
+            people_report_html = translate_run_report_to_html(p_report)
+        except SortitionBaseError as e:
+            check_errors.append(translate_sortition_error_to_html(e))
+
+    return CheckDataResult(
+        success=not check_errors,
+        errors=check_errors,
+        features_report_html=features_report_html,
+        people_report_html=people_report_html,
+        num_features=len(features) if features else 0,
+        num_people=people.count if people else 0,
+    )
+
+
 @require_assembly_permission(can_manage_assembly)
 def start_db_select_task(
     uow: AbstractUnitOfWork,
@@ -383,7 +455,10 @@ def start_db_select_task(
         raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
 
     csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
-    settings_obj = csv_config.to_settings()
+    try:
+        settings_obj = csv_config.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
 
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test_selection else SelectionTaskType.SELECT_FROM_DB

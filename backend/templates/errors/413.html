@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ _("File Too Large") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center mt-5">
+                <div class="mb-4">
+                    <i class="bi bi-exclamation-triangle text-warning"
+                       style="font-size: 5rem"></i>
+                </div>
+                <h1 class="display-4">413</h1>
+                <h3 class="mb-3">{{ _("File Too Large") }}</h3>
+                <p class="text-muted mb-4">
+                    {{ _("The file you tried to upload exceeds the maximum allowed size of 10 MB. Please try again with a smaller file.") }}
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.dashboard') }}"
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-speedometer2"></i> {{ _("Dashboard") }}
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> {{ _("Sign in") }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

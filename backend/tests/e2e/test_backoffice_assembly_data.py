@@ -157,7 +157,7 @@ class TestBackofficeGSheetConfigForm:
 
     def test_gsheet_form_shows_view_mode_when_config_exists(self, logged_in_admin, assembly_with_gsheet):
         """Test that readonly view mode is shown when gsheet config exists (no mode param)."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         # Should be in "view" mode - form fields should be readonly/disabled
@@ -168,7 +168,7 @@ class TestBackofficeGSheetConfigForm:
 
     def test_gsheet_form_shows_edit_mode_with_mode_param(self, logged_in_admin, assembly_with_gsheet):
         """Test that editable form is shown when mode=edit param is present."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
         # Should be in "edit" mode - form should be editable with save button
@@ -271,7 +271,7 @@ class TestBackofficeGSheetFormSubmission:
 
     def test_update_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully updating an existing gsheet configuration."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
 
         response = logged_in_admin.post(
@@ -299,7 +299,7 @@ class TestBackofficeGSheetFormSubmission:
 
     def test_update_gsheet_config_validation_error(self, logged_in_admin, assembly_with_gsheet):
         """Test validation error when updating gsheet config with invalid data."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
 
         response = logged_in_admin.post(
@@ -359,7 +359,7 @@ class TestBackofficeGSheetDelete:
 
     def test_delete_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully deleting a gsheet configuration."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
 
         response = logged_in_admin.post(
@@ -400,7 +400,7 @@ class TestBackofficeGSheetDelete:
 
     def test_delete_button_shown_in_view_mode(self, logged_in_admin, assembly_with_gsheet):
         """Test that delete button is shown in VIEW mode when config exists."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         # Should show Delete button
@@ -410,7 +410,7 @@ class TestBackofficeGSheetDelete:
 
     def test_delete_button_shown_in_edit_mode(self, logged_in_admin, assembly_with_gsheet):
         """Test that delete button is shown in EDIT mode when config exists."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
         # Should show Delete Configuration button
@@ -431,7 +431,7 @@ class TestBackofficeDataSourceLocking:
 
     def test_data_source_locked_when_gsheet_config_exists(self, logged_in_admin, assembly_with_gsheet):
         """Test that data source selector is disabled when gsheet config exists."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         # Access data page without source param - should auto-select gsheet and lock
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
         assert response.status_code == 200
@@ -444,7 +444,7 @@ class TestBackofficeDataSourceLocking:
 
     def test_data_source_auto_selects_gsheet_when_config_exists(self, logged_in_admin, assembly_with_gsheet):
         """Test that data source auto-selects gsheet when config exists, ignoring source param."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         # Try to access with csv source - should still show gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
         assert response.status_code == 200
@@ -465,7 +465,7 @@ class TestBackofficeDataSourceLocking:
 
     def test_data_source_unlocked_after_delete(self, logged_in_admin, assembly_with_gsheet):
         """Test that data source selector is unlocked after deleting config."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data")
 
         # Delete the config
@@ -485,7 +485,7 @@ class TestBackofficeDataSourceLocking:
 
     def test_gsheet_selected_shows_in_dropdown_when_locked(self, logged_in_admin, assembly_with_gsheet):
         """Test that gsheet option is selected in dropdown when config exists."""
-        assembly, gsheet = assembly_with_gsheet
+        assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
         assert response.status_code == 200
         # The gsheet option should be selected

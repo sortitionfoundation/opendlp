@@ -14,16 +14,16 @@
     <!-- Create Invite Button -->
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
         <a href="{{ url_for('admin.create_invite') }}"
-            class="govuk-button"
-            data-module="govuk-button">{{ _("Create New Invite") }}</a>
+           class="govuk-button"
+           data-module="govuk-button">{{ _("Create New Invite") }}</a>
         <form method="post"
-            action="{{ url_for('admin.cleanup_invites') }}"
-            style="display: inline">
+              action="{{ url_for('admin.cleanup_invites') }}"
+              style="display: inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <button type="submit"
-                class="govuk-button govuk-button--warning"
-                data-module="govuk-button"
-                data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
+                    class="govuk-button govuk-button--warning"
+                    data-module="govuk-button"
+                    data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
                 {{ _("Clean Up Expired Invites") }}
             </button>
         </form>
@@ -98,22 +98,22 @@
                         <td class="govuk-table__cell">{{ invite.expires_at.strftime("%d %b %Y") }}</td>
                         <td class="govuk-table__cell">
                             <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}"
-                                class="govuk-link">{{ _("View") }}</a>
+                               class="govuk-link">{{ _("View") }}</a>
                             {% if invite.is_valid() and not invite.used_by %}
                                 |
                                 <form method="post"
-                                    action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
-                                    style="display: inline">
+                                      action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
+                                      style="display: inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit"
-                                        class="govuk-link"
-                                        style="background: none;
-                                            border: none;
-                                            padding: 0;
-                                            cursor: pointer;
-                                            color: #1d70b8;
-                                            text-decoration: underline"
-                                        data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
+                                            class="govuk-link"
+                                            style="background: none;
+                                                   border: none;
+                                                   padding: 0;
+                                                   cursor: pointer;
+                                                   color: #1d70b8;
+                                                   text-decoration: underline"
+                                            data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
                                         {{ _("Revoke") }}
                                     </button>
                                 </form>
@@ -131,6 +131,6 @@
     <!-- Back Button -->
     <div class="govuk-button-group govuk-!-margin-top-6">
         <a href="{{ url_for('admin.index') }}"
-            class="govuk-button govuk-button--secondary">{{ _("Back to Site Admin") }}</a>
+           class="govuk-button govuk-button--secondary">{{ _("Back to Site Admin") }}</a>
     </div>
 {% endblock %}

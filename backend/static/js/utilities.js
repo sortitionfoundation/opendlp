@@ -1,6 +1,19 @@
 // ABOUTME: JavaScript utilities for form confirmations, clipboard, downloads, and print
 // ABOUTME: Provides event-driven handlers for common UI interactions without inline handlers
 
+// Handle select elements that navigate on change via data-navigate-base-url
+document.addEventListener("change", function (e) {
+    var baseUrl = e.target.dataset.navigateBaseUrl;
+    if (baseUrl) {
+        var paramName = e.target.dataset.navigateParam || "value";
+        var url = baseUrl;
+        if (e.target.value) {
+            url += "?" + paramName + "=" + encodeURIComponent(e.target.value);
+        }
+        window.location.href = url;
+    }
+});
+
 // Handle button clicks for confirmations and print
 document.addEventListener("click", function (e) {
     // Check for confirmation

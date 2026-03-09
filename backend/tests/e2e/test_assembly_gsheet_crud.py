@@ -196,8 +196,6 @@ class TestAssemblyGSheetEditView:
             assert any("configuration updated successfully" in msg for msg in flash_messages)
 
         # Verify the changes were actually saved to the database
-        from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
             assert saved_gsheet is not None

@@ -19,6 +19,7 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.tasks import (
+    _on_task_failure,
     _update_selection_record,
     cleanup_orphaned_tasks,
     load_gsheet,
@@ -287,7 +288,7 @@ class TestLoadGSheetTask:
         # Call the actual Celery task (bind=True automatically injects self)
         # Mock update_state since we're not going through Celery's async infrastructure
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, already_selected, report = load_gsheet(
+            success, features, people, already_selected, _ = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -357,7 +358,7 @@ class TestLoadGSheetTask:
 
         # Attempt to load data
         with patch.object(load_gsheet, "update_state"):
-            success, features, people, already_selected, report = load_gsheet(
+            success, features, people, already_selected, _ = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -500,7 +501,7 @@ class TestRunSelectTask:
 
         # Run the full selection task
         with patch.object(run_select, "update_state"):
-            success, selected_panels, report = run_select(
+            success, selected_panels, _ = run_select(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 number_people_wanted=22,
@@ -558,7 +559,7 @@ class TestManageOldTabsTask:
 
         # Call the task with dry_run=True
         with patch.object(manage_old_tabs, "update_state"):
-            success, tab_names, report = manage_old_tabs(
+            success, tab_names, _ = manage_old_tabs(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 dry_run=True,
@@ -608,7 +609,7 @@ class TestManageOldTabsTask:
 
         # Call the task with dry_run=False
         with patch.object(manage_old_tabs, "update_state"):
-            success, tab_names, report = manage_old_tabs(
+            success, tab_names, _ = manage_old_tabs(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 dry_run=False,
@@ -655,7 +656,7 @@ class TestManageOldTabsTask:
 
         # Call the task
         with patch.object(manage_old_tabs, "update_state"):
-            success, tab_names, report = manage_old_tabs(
+            success, tab_names, _ = manage_old_tabs(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 dry_run=False,
@@ -679,8 +680,6 @@ class TestOnTaskFailure:
 
     def test_on_task_failure_marks_record_as_failed(self, postgres_session_factory):
         """Test that failure callback updates the SelectionRunRecord to FAILED status."""
-        from opendlp.entrypoints.celery.tasks import _on_task_failure
-
         task_id = uuid.uuid4()
         assembly_id = uuid.uuid4()
         celery_task_id = "celery-task-123"
@@ -724,8 +723,6 @@ class TestOnTaskFailure:
 
     def test_on_task_failure_handles_completed_task(self, postgres_session_factory):
         """Test that failure callback doesn't modify already completed tasks."""
-        from opendlp.entrypoints.celery.tasks import _on_task_failure
-
         task_id = uuid.uuid4()
         assembly_id = uuid.uuid4()
         celery_task_id = "celery-task-456"
@@ -767,8 +764,6 @@ class TestOnTaskFailure:
 
     def test_on_task_failure_with_missing_task_id_in_kwargs(self, postgres_session_factory):
         """Test that failure callback handles missing task_id gracefully."""
-        from opendlp.entrypoints.celery.tasks import _on_task_failure
-
         celery_task_id = "celery-task-789"
 
         # Call callback with no task_id in kwargs (should log error but not crash)

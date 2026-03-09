@@ -1,4 +1,5 @@
 import logging
+import traceback
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -329,8 +330,6 @@ def _internal_load_gsheet(
         )
         return False, None, None, None, report
     except Exception as err:
-        import traceback
-
         error_msg = _("Failed to load gsheet: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
@@ -437,8 +436,6 @@ def _internal_run_select(
         return success, selected_panels, report
 
     except Exception as err:
-        import traceback
-
         error_msg = _("Selection task failed: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
@@ -517,8 +514,6 @@ def _internal_write_selected(
 
         return report
     except Exception as err:
-        import traceback
-
         error_msg = _("Writing results failed: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
@@ -616,8 +611,6 @@ def _internal_load_db(
         return False, None, None, report
 
     except Exception as err:
-        import traceback
-
         error_msg = _("Failed to load data from database: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
         report.add_line(error_msg)
@@ -674,8 +667,6 @@ def _internal_write_db_results(
         return report
 
     except Exception as err:
-        import traceback
-
         error_msg = _("Writing results to database failed: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
         report.add_line(error_msg, ReportLevel.IMPORTANT)
@@ -920,8 +911,6 @@ def manage_old_tabs(
         return False, [], report
 
     except Exception as err:
-        import traceback
-
         error_msg = _("Failed to %(action)s old tabs: %(error)s", action=action, error=str(err))
         traceback_msg = traceback.format_exc()
 
@@ -957,7 +946,7 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
         Dict with counts: {'checked': int, 'marked_failed': int, 'errors': int}
     """
     # Import here to avoid circular import (sortition.py imports from tasks.py)
-    from opendlp.service_layer.sortition import check_and_update_task_health
+    from opendlp.service_layer.sortition import check_and_update_task_health  # noqa: PLC0415
 
     checked = 0
     marked_failed = 0

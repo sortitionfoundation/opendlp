@@ -9,6 +9,7 @@ from functools import cache
 from pathlib import Path
 
 from opendlp import config
+from opendlp.feature_flags import has_feature
 
 
 def _get_file_hash(filepath: Path) -> str:
@@ -107,7 +108,7 @@ def get_opendlp_version() -> str:
 
     git_dir = config.get_git_dir_path()
     if git_dir.is_dir():
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             ["git", "show", "--no-patch", "--format=%cd %h", "--date=format:%Y-%m-%d", "HEAD"],
             cwd=git_dir.parent,
             capture_output=True,
@@ -173,6 +174,14 @@ def get_site_banner_config() -> tuple[str, str]:
     """
     flask_config = config.get_config()
     return flask_config.SITE_BANNER_TEXT, flask_config.SITE_BANNER_COLOUR
+
+
+def inject_feature_flags() -> dict[str, object]:
+    """Inject feature flag checker into template context.
+
+    Templates can use: {% if feature('my_feature') %} ... {% endif %}
+    """
+    return {"feature": has_feature}
 
 
 def static_versioning_context_processor() -> dict[str, str]:

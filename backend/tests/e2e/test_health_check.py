@@ -19,7 +19,7 @@ class TestHealthCheckEndpoint:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         assert response.content_type == "application/json"
 
         data = response.get_json()
@@ -137,7 +137,7 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200  # NO_MICROSOFT_OAUTH never affects health
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] is None
         assert data["oauth_microsoft_expiry_status"] == "NO_MICROSOFT_OAUTH"
@@ -154,7 +154,8 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200  # UNKNOWN doesn't affect health without fail_on_warning
+        # UNKNOWN doesn't affect health without fail_on_warning
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] is None
         assert data["oauth_microsoft_expiry_status"] == "UNKNOWN"
@@ -173,7 +174,7 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] == 60
         assert data["oauth_microsoft_expiry_status"] == "OK"
@@ -192,7 +193,8 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200  # WARNING doesn't fail without fail_on_warning
+        # WARNING doesn't fail without fail_on_warning
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] == 15
         assert data["oauth_microsoft_expiry_status"] == "WARNING"
@@ -264,7 +266,8 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health?fail_on_warning=false")
 
-        assert response.status_code == 200  # WARNING without fail_on_warning
+        # WARNING without fail_on_warning
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_expiry_status"] == "WARNING"
 
@@ -280,7 +283,8 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         ):
             response = client.get("/health")
 
-        assert response.status_code == 200  # UNKNOWN doesn't fail without fail_on_warning
+        # UNKNOWN doesn't fail without fail_on_warning
+        assert response.status_code == 200, f"status {response.status_code} and body: {response.text}"
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] is None
         assert data["oauth_microsoft_expiry_status"] == "UNKNOWN"

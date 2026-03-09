@@ -1,6 +1,9 @@
 """ABOUTME: Integration tests for Flask application factory and routing
 ABOUTME: Tests Flask app creation, configuration, blueprints, and error handlers"""
 
+import os
+import uuid
+
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
@@ -160,8 +163,6 @@ class TestAdminBlueprint:
 
     def test_admin_view_user_route_requires_login(self, client: FlaskClient) -> None:
         """Test admin view user route requires authentication."""
-        import uuid
-
         user_id = uuid.uuid4()
         response = client.get(f"/admin/users/{user_id}")
         # Should redirect to login
@@ -170,8 +171,6 @@ class TestAdminBlueprint:
 
     def test_admin_edit_user_route_requires_login(self, client: FlaskClient) -> None:
         """Test admin edit user route requires authentication."""
-        import uuid
-
         user_id = uuid.uuid4()
         response = client.get(f"/admin/users/{user_id}/edit")
         # Should redirect to login
@@ -194,8 +193,6 @@ class TestAdminBlueprint:
 
     def test_admin_view_invite_route_requires_login(self, client: FlaskClient) -> None:
         """Test admin view invite route requires authentication."""
-        import uuid
-
         invite_id = uuid.uuid4()
         response = client.get(f"/admin/invites/{invite_id}")
         # Should redirect to login
@@ -204,8 +201,6 @@ class TestAdminBlueprint:
 
     def test_admin_revoke_invite_route_requires_login(self, client: FlaskClient) -> None:
         """Test admin revoke invite route requires authentication."""
-        import uuid
-
         invite_id = uuid.uuid4()
         response = client.post(f"/admin/invites/{invite_id}/revoke")
         # Should redirect to login
@@ -248,8 +243,6 @@ class TestConfiguration:
 
     def test_development_config(self) -> None:
         """Test development configuration."""
-        import os
-
         # Save current env and set to development for this test
         original_env = os.environ.get("FLASK_ENV")
         original_debug = os.environ.get("DEBUG")
