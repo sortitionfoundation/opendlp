@@ -29,6 +29,10 @@ class AssemblyCSV:
     columns_to_keep: list[str] = field(default_factory=list)
     selection_algorithm: str = "maximin"
 
+    # Whether settings have been explicitly reviewed and saved by a user.
+    # Selection cannot be run until this is True.
+    settings_confirmed: bool = False
+
     # Timestamps
     created_at: datetime | None = None
     updated_at: datetime | None = None

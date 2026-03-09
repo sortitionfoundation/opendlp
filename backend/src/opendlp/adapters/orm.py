@@ -342,6 +342,7 @@ assembly_csv = Table(
     Column("check_same_address_cols", JSON, nullable=False, default=list),
     Column("columns_to_keep", JSON, nullable=False, default=list),
     Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+    Column("settings_confirmed", Boolean, nullable=False, default=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

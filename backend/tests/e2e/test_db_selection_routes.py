@@ -35,6 +35,7 @@ def assembly_for_db_selection(postgres_session_factory, admin_user):
             user_id=admin_user.id,
             assembly_id=assembly_id,
             check_same_address=False,
+            settings_confirmed=True,
         )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -266,6 +267,37 @@ class TestDbSelectionRoutes:
             assert a.csv.check_same_address_cols == ["address1", "postcode"]
             assert a.csv.columns_to_keep == ["first_name", "last_name"]
 
+    def test_save_db_selection_settings_marks_confirmed(self, logged_in_admin, admin_user, postgres_session_factory):
+        """Saving selection settings should set settings_confirmed=True."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        # Verify settings_confirmed starts as False
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            a = uow.assemblies.get(assembly_id)
+            assert a.csv is None or a.csv.settings_confirmed is False
+
+        logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/settings",
+            data={
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+            follow_redirects=False,
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            a = uow.assemblies.get(assembly_id)
+            assert a.csv is not None
+            assert a.csv.settings_confirmed is True
+
     def test_view_db_replacement_placeholder(self, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_replace")
@@ -442,6 +474,53 @@ class TestDbSelectionErrorHandling:
         )
         assert response.status_code == 302
 
+    def test_start_db_selection_redirects_to_settings_when_not_confirmed(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """Running selection should redirect to settings page if settings have never been confirmed."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Settings Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/run",
+            data={"test_selection": "0"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly_id}/db_select/settings" in response.headers["Location"]
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("review" in msg.lower() or "settings" in msg.lower() for msg in flash_messages)
+
+    def test_check_db_data_redirects_to_settings_when_not_confirmed(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """Checking targets should redirect to settings page if settings have never been confirmed."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Check Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/check",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly_id}/db_select/settings" in response.headers["Location"]
+
     def test_start_db_selection_with_invalid_settings_shows_useful_error(
         self, logged_in_admin, admin_user, postgres_session_factory
     ):
@@ -457,7 +536,8 @@ class TestDbSelectionErrorHandling:
             )
             assembly_id = assembly.id
 
-        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid
+        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid.
+        # Mark settings_confirmed=True so we get past the guard and hit the actual validation.
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             update_csv_config(
                 uow=uow,
@@ -465,6 +545,7 @@ class TestDbSelectionErrorHandling:
                 assembly_id=assembly_id,
                 check_same_address=True,
                 check_same_address_cols=[],
+                settings_confirmed=True,
             )
 
         response = logged_in_admin.post(
