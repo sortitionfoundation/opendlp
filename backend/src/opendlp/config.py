@@ -12,6 +12,7 @@ from datetime import timedelta
 from functools import cache
 from pathlib import Path
 
+import sortition_algorithms.settings
 from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
 from redis import Redis
@@ -445,9 +446,10 @@ def get_solver_backend() -> str:
     """
     env_value = os.environ.get("SOLVER_BACKEND", "").strip().lower()
     if env_value:
-        if env_value not in ("mip", "highspy"):
+        if env_value not in sortition_algorithms.settings.SOLVER_BACKENDS:
             logging.warning(
-                f"Invalid SOLVER_BACKEND value '{env_value}'. Must be 'mip' or 'highspy'. Using platform default."
+                f"Invalid SOLVER_BACKEND value '{env_value}'. Must be one of "
+                f"({','.join(sortition_algorithms.settings.SOLVER_BACKENDS)}). Using platform default."
             )
         else:
             return env_value
