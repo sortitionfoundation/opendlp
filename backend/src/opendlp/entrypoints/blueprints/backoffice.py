@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
@@ -384,6 +385,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/load", methods=["POST"])
 @login_required
+@require_assembly_management
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a load/validation task for selection data."""
     try:
@@ -415,6 +417,7 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/run", methods=["POST"])
 @login_required
+@require_assembly_management
 def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a selection task."""
     try:
@@ -449,6 +452,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
+@require_assembly_management
 def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running selection task."""
     try:
