@@ -153,5 +153,6 @@ def static_versioning_context_processor() -> dict[str, str | Callable]:
         "google_service_account_email": get_service_account_email(),
         "site_banner_text": site_banner_text,
         "site_banner_colour": site_banner_colour,
+        "static_hashes": static_hashes,
         "support_email_address": get_support_email(),
     }
