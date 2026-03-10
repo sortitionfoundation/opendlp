@@ -115,6 +115,20 @@ just install-dev
 - `clean_database` - Fresh database state per test
 - `logged_in_page` - Browser page with admin user logged in
 
+> **TODO: Refactor BDD tests to use non-admin users by default**
+>
+> Currently, most BDD tests run with an admin user via `logged_in_page`. This can mask permission issues as the codebase evolves to enforce proper role-based access control.
+>
+> Planned refactoring approach:
+>
+> 1. Change ALL BDD tests to use a normal (non-admin) user by default
+> 2. Most tests should continue to pass with this change
+> 3. For tests that fail with a normal user:
+>    - Keep a positive test with admin user (confirming admin CAN access)
+>    - Add a corresponding negative test with normal user (confirming normal user has NO access)
+>
+> This ensures we explicitly test permission boundaries rather than accidentally bypassing them.
+
 ## Running Tests
 
 ```bash
