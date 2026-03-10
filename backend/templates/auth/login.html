@@ -82,11 +82,13 @@
                                 <div class="gsi-material-button-state"></div>
                                 <div class="gsi-material-button-content-wrapper">
                                     <div class="gsi-material-button-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" style="display: block">
-                                            <path fill="#f35325" d="M0 0h11v11H0z"/>
-                                            <path fill="#81bc06" d="M12 0h11v11H12z"/>
-                                            <path fill="#05a6f0" d="M0 12h11v11H0z"/>
-                                            <path fill="#ffba08" d="M12 12h11v11H12z"/>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             viewBox="0 0 23 23"
+                                             style="display: block">
+                                            <path fill="#f35325" d="M0 0h11v11H0z" />
+                                            <path fill="#81bc06" d="M12 0h11v11H12z" />
+                                            <path fill="#05a6f0" d="M0 12h11v11H0z" />
+                                            <path fill="#ffba08" d="M12 12h11v11H12z" />
                                         </svg>
                                     </div>
                                     <span class="gsi-material-button-contents">{{ _("Sign in with Microsoft") }}</span>
@@ -101,8 +103,8 @@
                 <a href="{{ url_for('auth.forgot_password') }}" class="govuk-link">{{ _("Forgot your password?") }}</a>
             </p>
             <div class="govuk-inset-text">
-                {{ _("Don't have an account? You need an <strong>invite code</strong> to register.") }}
-                <a href="{{ url_for('auth.register') }}" class="govuk-link">{{ _("Register here") }}</a>
+                {{ _("Don't have an account?") }}
+                <a href="{{ url_for('auth.register') }}" class="govuk-link">{{ _("Create an account here") }}</a>
             </div>
         </div>
     </div>

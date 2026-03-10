@@ -939,3 +939,9 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 )
             )
         return count
+
+    def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
+        respondent = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).first()
+        if respondent is None or not respondent.attributes:
+            return []
+        return sorted(respondent.attributes.keys())

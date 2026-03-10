@@ -119,13 +119,13 @@ class TestAuthBlueprint:
         """Test register GET request shows registration form."""
         response = client.get("/auth/register")
         assert response.status_code == 200
-        assert b"Register" in response.data
+        assert b"Create an Account" in response.data
 
     def test_register_with_invite_code_in_url(self, client: FlaskClient) -> None:
         """Test register route with invite code in URL."""
         response = client.get("/auth/register/TEST123")
         assert response.status_code == 200
-        assert b"Register" in response.data
+        assert b"Create an Account" in response.data
 
     def test_login_post_missing_credentials(self, client: FlaskClient) -> None:
         """Test login POST with missing credentials."""

@@ -122,6 +122,12 @@ def get_site_banner_config() -> tuple[str, str]:
     return flask_config.SITE_BANNER_TEXT, flask_config.SITE_BANNER_COLOUR
 
 
+@cache
+def get_support_email() -> str:
+    flask_config = config.get_config()
+    return flask_config.SUPPORT_EMAIL
+
+
 def inject_feature_flags() -> dict[str, object]:
     """Inject feature flag checker into template context.
 
@@ -147,5 +153,5 @@ def static_versioning_context_processor() -> dict[str, str | Callable]:
         "google_service_account_email": get_service_account_email(),
         "site_banner_text": site_banner_text,
         "site_banner_colour": site_banner_colour,
-        "static_hashes": static_hashes,
+        "support_email_address": get_support_email(),
     }

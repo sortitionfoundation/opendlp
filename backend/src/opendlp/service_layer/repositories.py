@@ -401,3 +401,8 @@ class RespondentRepository(AbstractRepository):
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         """Reset all respondents for an assembly back to POOL status. Returns count updated."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
+        """Get sorted list of attribute column names from a sample respondent for an assembly."""
+        raise NotImplementedError

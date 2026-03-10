@@ -219,3 +219,11 @@ def get_respondents_for_assembly(
 
         respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status)
         return [r.create_detached_copy() for r in respondents]
+
+
+def get_respondent_attribute_columns(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+) -> list[str]:
+    """Get sorted list of available respondent attribute column names for an assembly."""
+    return uow.respondents.get_attribute_columns(assembly_id)

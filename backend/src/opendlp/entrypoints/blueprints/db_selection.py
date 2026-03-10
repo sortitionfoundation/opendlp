@@ -16,6 +16,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
+from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.service_layer.sortition import (
     cancel_task,
     check_and_update_task_health,
@@ -98,6 +99,10 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
+        if not csv_config.settings_confirmed:
+            flash(_("Please review and save the selection settings before checking targets."), "warning")
+            return redirect(url_for("db_selection.view_db_selection_settings", assembly_id=assembly_id))
+
         uow2 = bootstrap.bootstrap()
         with uow2:
             check_result = check_db_selection_data(uow=uow2, user_id=current_user.id, assembly_id=assembly_id)
@@ -130,6 +135,10 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.bootstrap()
         with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            if assembly.csv is None or not assembly.csv.settings_confirmed:
+                flash(_("Please review and save the selection settings before running selection."), "warning")
+                return redirect(url_for("db_selection.view_db_selection_settings", assembly_id=assembly_id))
             task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_selection)
 
         return redirect(url_for("db_selection.view_db_selection_with_run", assembly_id=assembly_id, run_id=task_id))
@@ -268,8 +277,10 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            available_columns = get_respondent_attribute_columns(uow, assembly_id)
 
         form = DbSelectionSettingsForm(
+            available_columns=available_columns,
             check_same_address=csv_config.check_same_address,
             check_same_address_cols_string=", ".join(csv_config.check_same_address_cols)
             if csv_config.check_same_address_cols
@@ -281,6 +292,7 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=assembly,
             csv_config=csv_config,
             form=form,
+            available_columns=available_columns,
             current_tab="db_selection",
         ), 200
     except NotFoundError:
@@ -296,31 +308,35 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        form = DbSelectionSettingsForm()
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            available_columns = get_respondent_attribute_columns(uow, assembly_id)
+
+        form = DbSelectionSettingsForm(available_columns=available_columns)
         if form.validate_on_submit():
-            uow = bootstrap.bootstrap()
+            uow2 = bootstrap.bootstrap()
             update_csv_config(
-                uow=uow,
+                uow=uow2,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 selection_algorithm="maximin",
                 check_same_address=form.check_same_address.data or False,
                 check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
                 columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
+                settings_confirmed=True,
             )
             flash(_("Selection settings saved"), "success")
             return redirect(url_for("db_selection.view_db_selection", assembly_id=assembly_id))
 
-        # Re-render with validation errors
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+        # Re-render with validation errors (assembly/csv_config already fetched above)
         return render_template(
             "db_selection/settings.html",
             assembly=assembly,
             csv_config=csv_config,
             form=form,
+            available_columns=available_columns,
             current_tab="db_selection",
         ), 200
     except NotFoundError:

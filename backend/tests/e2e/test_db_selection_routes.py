@@ -11,6 +11,7 @@ from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
+from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -35,6 +36,7 @@ def assembly_for_db_selection(postgres_session_factory, admin_user):
             user_id=admin_user.id,
             assembly_id=assembly_id,
             check_same_address=False,
+            settings_confirmed=True,
         )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -266,6 +268,170 @@ class TestDbSelectionRoutes:
             assert a.csv.check_same_address_cols == ["address1", "postcode"]
             assert a.csv.columns_to_keep == ["first_name", "last_name"]
 
+    def test_save_db_selection_settings_marks_confirmed(self, logged_in_admin, admin_user, postgres_session_factory):
+        """Saving selection settings should set settings_confirmed=True."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        # Verify settings_confirmed starts as False
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            a = uow.assemblies.get(assembly_id)
+            assert a.csv is None or a.csv.settings_confirmed is False
+
+        logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/settings",
+            data={
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+            follow_redirects=False,
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            a = uow.assemblies.get(assembly_id)
+            assert a.csv is not None
+            assert a.csv.settings_confirmed is True
+
+    def test_save_settings_rejects_check_same_address_without_columns(self, logged_in_admin, assembly_for_db_selection):
+        """Saving settings with check_same_address=True but no columns should show a validation error."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"address attributes" in response.data.lower()
+
+    def test_settings_page_shows_available_columns(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        """Settings page should display available respondent attribute columns."""
+        assembly = assembly_for_db_selection
+        csv_content = "external_id,email,Gender,Age,PostalCode\nR001,a@b.com,Female,30,SW1A\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/settings")
+        assert response.status_code == 200
+        assert b"Available respondent attributes" in response.data
+        assert b"Age" in response.data
+        assert b"Gender" in response.data
+        assert b"PostalCode" in response.data
+
+    def test_settings_page_shows_no_columns_message_without_respondents(
+        self, logged_in_admin, assembly_for_db_selection
+    ):
+        """Settings page should show a message when no respondent data exists."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/settings")
+        assert response.status_code == 200
+        assert b"No respondent data has been uploaded yet" in response.data
+
+    def test_save_settings_rejects_unknown_address_column(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        """Saving settings with unknown column names in address cols should show validation error."""
+        assembly = assembly_for_db_selection
+        csv_content = "external_id,email,Gender,Age\nR001,a@b.com,Female,30\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "Gender, nonexistent_col",
+                "columns_to_keep_string": "",
+            },
+        )
+        assert response.status_code == 200
+        assert b"nonexistent_col" in response.data
+
+    def test_save_settings_rejects_unknown_columns_to_keep(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        """Saving settings with unknown column names in columns_to_keep should show validation error."""
+        assembly = assembly_for_db_selection
+        csv_content = "external_id,email,Gender,Age\nR001,a@b.com,Female,30\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "Gender, bad_col",
+            },
+        )
+        assert response.status_code == 200
+        assert b"bad_col" in response.data
+
+    def test_save_settings_accepts_valid_columns(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        """Saving settings with valid column names should succeed."""
+        assembly = assembly_for_db_selection
+        csv_content = "external_id,email,Gender,Age\nR001,a@b.com,Female,30\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "Gender, Age",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_save_settings_skips_column_validation_without_respondents(
+        self, logged_in_admin, assembly_for_db_selection
+    ):
+        """Saving settings should succeed with any column names when no respondents exist."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/settings",
+            data={
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "anything, whatever",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
     def test_view_db_replacement_placeholder(self, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_replace")
@@ -442,6 +608,53 @@ class TestDbSelectionErrorHandling:
         )
         assert response.status_code == 302
 
+    def test_start_db_selection_redirects_to_settings_when_not_confirmed(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """Running selection should redirect to settings page if settings have never been confirmed."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Settings Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/run",
+            data={"test_selection": "0"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly_id}/db_select/settings" in response.headers["Location"]
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("review" in msg.lower() or "settings" in msg.lower() for msg in flash_messages)
+
+    def test_check_db_data_redirects_to_settings_when_not_confirmed(
+        self, logged_in_admin, admin_user, postgres_session_factory
+    ):
+        """Checking targets should redirect to settings page if settings have never been confirmed."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Unconfirmed Check Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly_id}/db_select/check",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly_id}/db_select/settings" in response.headers["Location"]
+
     def test_start_db_selection_with_invalid_settings_shows_useful_error(
         self, logged_in_admin, admin_user, postgres_session_factory
     ):
@@ -457,7 +670,8 @@ class TestDbSelectionErrorHandling:
             )
             assembly_id = assembly.id
 
-        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid
+        # Set check_same_address=True but leave check_same_address_cols empty — this is invalid.
+        # Mark settings_confirmed=True so we get past the guard and hit the actual validation.
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             update_csv_config(
                 uow=uow,
@@ -465,6 +679,7 @@ class TestDbSelectionErrorHandling:
                 assembly_id=assembly_id,
                 check_same_address=True,
                 check_same_address_cols=[],
+                settings_confirmed=True,
             )
 
         response = logged_in_admin.post(

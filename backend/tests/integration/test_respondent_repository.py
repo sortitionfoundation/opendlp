@@ -304,3 +304,25 @@ class TestRespondentRepository:
         # This should raise an integrity error
         with pytest.raises(IntegrityError):  # IntegrityError from database
             postgres_session.commit()
+
+    def test_get_attribute_columns_returns_sorted_keys(
+        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
+    ):
+        """Test that get_attribute_columns returns sorted attribute keys."""
+        resp = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB001",
+            attributes={"Gender": "Female", "Age": "30-44", "PostalCode": "SW1A 1AA"},
+        )
+        respondent_repo.add(resp)
+        postgres_session.commit()
+
+        columns = respondent_repo.get_attribute_columns(test_assembly.id)
+        assert columns == ["Age", "Gender", "PostalCode"]
+
+    def test_get_attribute_columns_empty_when_no_respondents(
+        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly
+    ):
+        """Test that get_attribute_columns returns empty list when no respondents exist."""
+        columns = respondent_repo.get_attribute_columns(test_assembly.id)
+        assert columns == []

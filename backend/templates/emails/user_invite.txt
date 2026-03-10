@@ -17,4 +17,4 @@
 ---
 {{ _("OpenDLP Team") }}
 
-{{ _("Need help? Contact us at support@opendlp.org") }}
+{{ _("Need help? Contact us at") }} {{ support_email_address }}

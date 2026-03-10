@@ -78,7 +78,10 @@
                 <h1>{{ _("Confirm Your Email Address") }}</h1>
             </div>
             <p>{{ _("Hi %(name)s,", name=user_name) }}</p>
-            <p style="background-color: #f0f0f0; padding: 10px; border-radius: 4px; margin: 15px 0;">
+            <p style="background-color: #f0f0f0;
+                      padding: 10px;
+                      border-radius: 4px;
+                      margin: 15px 0">
                 <strong>{{ _("Email address:") }}</strong> {{ email_address }}
             </p>
             <p>
@@ -89,9 +92,9 @@
             </div>
             <p class="expiry-note">
                 {% if expiry_hours != 1 %}
-                    {{ _("This link will expire in <strong>%(hours)s hours</strong>.", hours=expiry_hours)|safe }}
+                    {{ _("This link will expire in <strong>%(hours)s hours</strong>.", hours=expiry_hours) |safe }}
                 {% else %}
-                    {{ _("This link will expire in <strong>%(hours)s hour</strong>.", hours=expiry_hours)|safe }}
+                    {{ _("This link will expire in <strong>%(hours)s hour</strong>.", hours=expiry_hours) |safe }}
                 {% endif %}
             </p>
             <div class="warning">
@@ -111,7 +114,7 @@
                     <strong>{{ _("OpenDLP Team") }}</strong>
                 </p>
                 <p>
-                    {{ _("Need help? Contact us at <a href=\"mailto:support@opendlp.org\">support@opendlp.org</a>")|safe }}
+                    {{ _("Need help? Contact us at <a href=\"mailto:%(email) s\">%(email)s</a>", email=support_email_address)|safe }}
                 </p>
             </div>
         </div>

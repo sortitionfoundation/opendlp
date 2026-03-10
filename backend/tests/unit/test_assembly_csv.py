@@ -26,6 +26,7 @@ class TestAssemblyCSV:
         assert csv_config.check_same_address_cols == []
         assert csv_config.columns_to_keep == []
         assert csv_config.selection_algorithm == "maximin"
+        assert csv_config.settings_confirmed is False
         assert csv_config.created_at is not None
         assert csv_config.updated_at is not None
 
