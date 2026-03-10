@@ -142,7 +142,7 @@ class TestOAuthRegistration:
         """Test that OAuth registration form requires invite code."""
         response = client.get("/auth/register/google")
         assert response.status_code == 200
-        assert b"Register with Google" in response.data
+        assert b"Create an Account with Google" in response.data
         assert b"Invite Code" in response.data
         assert b"invitation code to create an account" in response.data
 
@@ -571,7 +571,7 @@ class TestMicrosoftOAuthRegistration:
         """Test that Microsoft OAuth registration form requires invite code."""
         response = client.get("/auth/register/microsoft")
         assert response.status_code == 200
-        assert b"Register with Microsoft" in response.data
+        assert b"Create an Account with Microsoft" in response.data
         assert b"Invite Code" in response.data
         assert b"invitation code to create an account" in response.data
 
