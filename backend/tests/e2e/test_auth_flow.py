@@ -72,7 +72,7 @@ class TestAuthenticationFlow:
         # GET registration form
         response = client.get("/auth/register")
         assert response.status_code == 200
-        assert b"Register" in response.data
+        assert b"Create an Account" in response.data
         assert b"Invite Code" in response.data
 
         # POST registration data
