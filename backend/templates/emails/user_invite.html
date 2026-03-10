@@ -106,10 +106,9 @@
                 <p>
                     <strong>{{ _("OpenDLP Team") }}</strong>
                 </p>
-                <p>
-                    {{ _("Need help? Contact us at <a href=\"mailto:support@opendlp.org\">support@opendlp.org</a>") |safe }}
-                </p>
-            </div>
+                {{ _("Need help? Contact us at <a href=\"mailto:%(email) s\">%(email)s</a>", email=support_email_address)|safe }}
+            </p>
         </div>
-    </body>
+    </div>
+</body>
 </html>

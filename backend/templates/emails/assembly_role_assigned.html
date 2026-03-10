@@ -99,16 +99,18 @@
                 <p style="background-color: #fff3cd;
                           border-left: 4px solid #ffc107;
                           padding: 15px;
-                          border-radius: 4px;">
-                    <strong>{{ _("Assembly Manager Permissions:") }}</strong><br>
+                          border-radius: 4px">
+                    <strong>{{ _("Assembly Manager Permissions:") }}</strong>
+                    <br>
                     {{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}
                 </p>
             {% elif role == "CONFIRMATION_CALLER" %}
                 <p style="background-color: #d1ecf1;
                           border-left: 4px solid #0c5460;
                           padding: 15px;
-                          border-radius: 4px;">
-                    <strong>{{ _("Confirmation Caller Permissions:") }}</strong><br>
+                          border-radius: 4px">
+                    <strong>{{ _("Confirmation Caller Permissions:") }}</strong>
+                    <br>
                     {{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}
                 </p>
             {% endif %}
@@ -117,7 +119,7 @@
                     <strong>{{ _("OpenDLP Team") }}</strong>
                 </p>
                 <p>
-                    {{ _("Need help? Contact us at <a href=\"mailto:support@opendlp.org\">support@opendlp.org</a>") |safe }}
+                    {{ _("Need help? Contact us at <a href=\"mailto:%(email) s\">%(email)s</a>", email=support_email_address) |safe }}
                 </p>
             </div>
         </div>
