@@ -193,22 +193,34 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
     try:
+        from opendlp.service_layer.sortition import LoadRunResult
+
         # Get pagination parameters
         page = request.args.get("page", 1, type=int)
         per_page = 15
 
-        # Get current_selection query parameter for modal display
+        # Get current_selection query parameter for initial selection modal display
         current_selection_param = request.args.get("current_selection")
         current_selection: uuid.UUID | None = None
         run_record = None
         log_messages: list = []
         translated_report_html = ""
 
+        # Get replacement modal query parameters
+        replacement_modal_param = request.args.get("replacement_modal")
+        current_replacement_param = request.args.get("current_replacement")
+        current_replacement: uuid.UUID | None = None
+        replacement_run_record = None
+        replacement_log_messages: list = []
+        replacement_translated_report_html = ""
+        replacement_min_select: int | None = request.args.get("min_select", type=int)
+        replacement_max_select: int | None = request.args.get("max_select", type=int)
+
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-            # Handle current_selection parameter for showing progress modal
+            # Handle current_selection parameter for showing initial selection progress modal
             if current_selection_param:
                 try:
                     current_selection = uuid.UUID(current_selection_param)
@@ -230,6 +242,35 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 except (ValueError, TypeError):
                     # Invalid UUID - ignore the parameter
                     current_selection = None
+
+            # Handle current_replacement parameter for showing replacement selection modal
+            if current_replacement_param:
+                try:
+                    from sortition_algorithms.features import maximum_selection, minimum_selection
+
+                    current_replacement = uuid.UUID(current_replacement_param)
+
+                    # Check task health before getting status
+                    check_and_update_task_health(uow, current_replacement)
+
+                    # Get run status
+                    result = get_selection_run_status(uow, current_replacement)
+                    if result.run_record and result.run_record.assembly_id == assembly_id:
+                        replacement_run_record = result.run_record
+                        replacement_log_messages = result.log_messages
+                        replacement_translated_report_html = (
+                            translate_run_report_to_html(result.run_report) if result.run_report else ""
+                        )
+                        # If load task completed successfully, extract min/max from features
+                        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+                            replacement_min_select = minimum_selection(result.features)
+                            replacement_max_select = maximum_selection(result.features)
+                    else:
+                        # Run doesn't exist or doesn't belong to this assembly - ignore
+                        current_replacement = None
+                except (ValueError, TypeError):
+                    # Invalid UUID - ignore the parameter
+                    current_replacement = None
 
         # Check if gsheet is configured
         gsheet = None
@@ -254,6 +295,9 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception as history_error:
             current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
 
+        # Determine if replacement modal should be open
+        replacement_modal_open = replacement_modal_param == "open" or current_replacement is not None
+
         return render_template(
             "backoffice/assembly_selection.html",
             assembly=assembly,
@@ -262,10 +306,19 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             page=page,
             total_count=total_count,
             total_pages=total_pages,
+            # Initial selection modal vars
             current_selection=current_selection,
             run_record=run_record,
             log_messages=log_messages,
             translated_report_html=translated_report_html,
+            # Replacement selection modal vars
+            replacement_modal_open=replacement_modal_open,
+            current_replacement=current_replacement,
+            replacement_run_record=replacement_run_record,
+            replacement_log_messages=replacement_log_messages,
+            replacement_translated_report_html=replacement_translated_report_html,
+            replacement_min_select=replacement_min_select,
+            replacement_max_select=replacement_max_select,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
@@ -380,6 +433,65 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
         return "", 403
     except Exception as e:
         current_app.logger.error(f"Selection progress modal error: {e}")
+        return "", 500
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
+@login_required
+def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return replacement modal progress HTML fragment for HTMX polling."""
+    try:
+        from sortition_algorithms.features import maximum_selection, minimum_selection
+
+        from opendlp.service_layer.sortition import LoadRunResult
+
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health
+            check_and_update_task_health(uow, run_id)
+
+            # Get run status
+            result = get_selection_run_status(uow, run_id)
+
+        if result.run_record is None:
+            return "", 404
+
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            return "", 404
+
+        # Calculate min/max if load task completed successfully
+        replacement_min_select: int | None = request.args.get("min_select", type=int)
+        replacement_max_select: int | None = request.args.get("max_select", type=int)
+
+        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+            replacement_min_select = minimum_selection(result.features)
+            replacement_max_select = maximum_selection(result.features)
+
+        return render_template(
+            "backoffice/components/replacement_modal.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            replacement_run_record=result.run_record,
+            replacement_log_messages=result.log_messages,
+            replacement_translated_report_html=(
+                translate_run_report_to_html(result.run_report) if result.run_report else ""
+            ),
+            current_replacement=run_id,
+            replacement_min_select=replacement_min_select,
+            replacement_max_select=replacement_max_select,
+        ), 200
+    except NotFoundError:
+        return "", 404
+    except InsufficientPermissions:
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Replacement progress modal error: {e}")
         return "", 500
 
 
@@ -537,120 +649,26 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement")
 @login_required
 def view_assembly_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly replacement selection page."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        # Check if gsheet is configured
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception as gsheet_error:
-            current_app.logger.error(f"Error loading gsheet config for replacement: {gsheet_error}")
-            gsheet = None
-
-        return render_template(
-            "backoffice/assembly_replacement.html",
-            assembly=assembly,
-            gsheet=gsheet,
-        ), 200
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for replacement page: {e}")
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} replacement: {e}")
-        flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        current_app.logger.error(f"View assembly replacement error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while loading the replacement page"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    """Legacy route - redirects to selection page with replacement modal open."""
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>")
 @login_required
 def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly replacement selection page with run status."""
-    try:
-        from sortition_algorithms.features import maximum_selection, minimum_selection
-
-        from opendlp.service_layer.sortition import LoadRunResult, get_selection_run_status
-
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-            result = get_selection_run_status(uow, run_id)
-
-        # Validate that the run belongs to this assembly
-        if result.run_record and result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
-            )
-            flash(_("Invalid task ID for this assembly"), "error")
-            return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
-
-        # Initialize query param variables
-        min_select: int | None = None
-        max_select: int | None = None
-        num_to_select: int | None = None
-
-        # Check if this is a completed load task with features - if so, redirect with min/max params
-        if (
-            "min_select" not in request.args
-            and isinstance(result, LoadRunResult)
-            and result.features is not None
-            and result.success
-        ):
-            # Calculate min and max selection bounds
-            min_select = minimum_selection(result.features)
-            max_select = maximum_selection(result.features)
-
-            # Redirect to same URL with query params
-            return redirect(
-                url_for(
-                    "backoffice.view_assembly_replacement_with_run",
-                    assembly_id=assembly_id,
-                    run_id=run_id,
-                    min_select=min_select,
-                    max_select=max_select,
-                )
-            )
-
-        # Get query params for template (if we didn't redirect above)
-        min_select = request.args.get("min_select", type=int)
-        max_select = request.args.get("max_select", type=int)
-        num_to_select = request.args.get("num_to_select", type=int)
-
-        return render_template(
-            "backoffice/assembly_replacement.html",
-            assembly=assembly,
-            gsheet=gsheet,
-            run_record=result.run_record,
-            run_id=run_id,
+    """Legacy route - redirects to query parameter version for backwards compatibility."""
+    # Preserve min/max params if present
+    min_select = request.args.get("min_select")
+    max_select = request.args.get("max_select")
+    return redirect(
+        url_for(
+            "backoffice.view_assembly_selection",
+            assembly_id=assembly_id,
+            current_replacement=run_id,
             min_select=min_select,
             max_select=max_select,
-            num_to_select=num_to_select,
-            log_messages=result.log_messages,
-        ), 200
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for replacement page: {e}")
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} replacement: {e}")
-        flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        current_app.logger.error(f"View assembly replacement with run error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while loading the replacement page"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+        )
+    )
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/load", methods=["POST"])
@@ -748,78 +766,6 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error starting replacement for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
         return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
-
-
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>/progress")
-@login_required
-def replacement_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Get replacement task progress as JSON for Alpine.js polling."""
-    try:
-        from sortition_algorithms.features import maximum_selection, minimum_selection
-
-        from opendlp.service_layer.sortition import (
-            LoadRunResult,
-            check_and_update_task_health,
-            get_selection_run_status,
-        )
-
-        uow = bootstrap.bootstrap()
-        with uow:
-            # Verify permissions
-            get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Check task health before getting status
-            check_and_update_task_health(uow, run_id)
-
-            result = get_selection_run_status(uow, run_id)
-
-        # Check if run record exists
-        if not result.run_record:
-            current_app.logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
-            return jsonify({"error": "Task not found"}), 404
-
-        # Validate that the run belongs to this assembly
-        if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
-            )
-            return jsonify({"error": "Invalid task"}), 404
-
-        # Build response
-        response_data = {
-            "status": result.run_record.status.value,
-            "log_messages": result.log_messages or [],
-            "error_message": result.run_record.error_message if result.run_record.is_failed else None,
-            "has_report": result.run_report is not None,
-        }
-
-        # If load task completed successfully with features, include min/max
-        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
-            response_data["min_select"] = minimum_selection(result.features)
-            response_data["max_select"] = maximum_selection(result.features)
-            response_data["redirect_url"] = url_for(
-                "backoffice.view_assembly_replacement_with_run",
-                assembly_id=assembly_id,
-                run_id=run_id,
-                min_select=response_data["min_select"],
-                max_select=response_data["max_select"],
-            )
-
-        return jsonify(response_data), 200
-
-    except NotFoundError as e:
-        current_app.logger.warning(
-            f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}"
-        )
-        return jsonify({"error": "Assembly not found"}), 404
-    except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
-        )
-        return jsonify({"error": "Insufficient permissions"}), 403
-    except Exception as e:
-        current_app.logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
-        return jsonify({"error": "Internal server error"}), 500
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
