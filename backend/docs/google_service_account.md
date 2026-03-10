@@ -94,21 +94,37 @@ After downloading the JSON key file, you need to tell OpenDLP where to find it b
 
 ### For local development
 
-Save your downloaded JSON key file to the `backend/credentials/` folder (this folder is gitignored):
+Store your credentials in a secure location outside the repository, with restricted permissions:
 
 ```bash
-# Move your downloaded file to the credentials folder
-mv ~/Downloads/your-project-*.json backend/credentials/google-service-account.json
+# Create a private directory for credentials (if it doesn't exist)
+mkdir -p ~/private
+chmod 700 ~/private
 
-# Set the environment variable (add to your shell profile for persistence)
-export GOOGLE_AUTH_JSON_PATH="$(pwd)/credentials/google-service-account.json"
+# Move your downloaded file there
+mv ~/Downloads/your-project-*.json ~/private/google-service-account.json
+chmod 600 ~/private/google-service-account.json
+```
 
-# Then start both Flask and Celery (in separate terminals)
+Then add the path to a `.env` file in the project root (this file is gitignored):
+
+```bash
+# backend/.env
+GOOGLE_AUTH_JSON_PATH=/Users/yourname/private/google-service-account.json
+```
+
+Finally, start both Flask and Celery (in separate terminals):
+
+```bash
 just run      # Flask server
 just celery   # Celery worker
 ```
 
-**Important:** Both the Flask server and the Celery worker need access to this environment variable. If you set it in one terminal, make sure to set it in the other terminal as well, or add it to your shell profile (e.g., `~/.bashrc`, `~/.zshrc`).
+**Why this approach?**
+- Credentials stored outside the repo can't be accidentally committed
+- The `.env` file works across git worktrees and shell sessions
+- Restricted permissions (700/600) prevent other users from reading the credentials
+- Both Flask and Celery automatically load from `.env`
 
 ### For Docker deployment
 
