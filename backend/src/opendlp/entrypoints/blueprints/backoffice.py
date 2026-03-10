@@ -196,9 +196,39 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         page = request.args.get("page", 1, type=int)
         per_page = 15
 
+        # Get current_selection query parameter for modal display
+        current_selection_param = request.args.get("current_selection")
+        current_selection: uuid.UUID | None = None
+        run_record = None
+        log_messages: list = []
+        translated_report_html = ""
+
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+            # Handle current_selection parameter for showing progress modal
+            if current_selection_param:
+                try:
+                    current_selection = uuid.UUID(current_selection_param)
+
+                    # Check task health before getting status
+                    check_and_update_task_health(uow, current_selection)
+
+                    # Get run status
+                    result = get_selection_run_status(uow, current_selection)
+                    if result.run_record and result.run_record.assembly_id == assembly_id:
+                        run_record = result.run_record
+                        log_messages = result.log_messages
+                        translated_report_html = (
+                            translate_run_report_to_html(result.run_report) if result.run_report else ""
+                        )
+                    else:
+                        # Run doesn't exist or doesn't belong to this assembly - ignore
+                        current_selection = None
+                except (ValueError, TypeError):
+                    # Invalid UUID - ignore the parameter
+                    current_selection = None
 
         # Check if gsheet is configured
         gsheet = None
@@ -231,6 +261,10 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             page=page,
             total_count=total_count,
             total_pages=total_pages,
+            current_selection=current_selection,
+            run_record=run_record,
+            log_messages=log_messages,
+            translated_report_html=translated_report_html,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
@@ -250,50 +284,8 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>")
 @login_required
 def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly selection page with task run status."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Check task health before getting status
-            check_and_update_task_health(uow, run_id)
-
-            # Get run status
-            result = get_selection_run_status(uow, run_id)
-
-        # Check if gsheet is configured
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception as gsheet_error:
-            current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
-            gsheet = None
-
-        return render_template(
-            "backoffice/assembly_selection.html",
-            assembly=assembly,
-            gsheet=gsheet,
-            run_id=run_id,
-            run_record=result.run_record,
-            log_messages=result.log_messages,
-            run_report=result.run_report,
-            translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
-        ), 200
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for selection with run: {e}")
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} selection: {e}")
-        flash(_("You don't have permission to view this assembly"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        current_app.logger.error(f"View assembly selection with run error: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while loading the selection page"), "error")
-        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    """Legacy route - redirects to query parameter version for backwards compatibility."""
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/progress")
@@ -346,6 +338,50 @@ def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
         return "", 500
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
+@login_required
+def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return modal progress HTML fragment for HTMX polling of selection task status."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health
+            check_and_update_task_health(uow, run_id)
+
+            # Get run status
+            result = get_selection_run_status(uow, run_id)
+
+        if result.run_record is None:
+            return "", 404
+
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            return "", 404
+
+        return render_template(
+            "backoffice/components/selection_progress_modal.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            run_record=result.run_record,
+            log_messages=result.log_messages,
+            run_report=result.run_report,
+            translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
+            current_selection=run_id,
+        ), 200
+    except NotFoundError:
+        return "", 404
+    except InsufficientPermissions:
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Selection progress modal error: {e}")
+        return "", 500
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/load", methods=["POST"])
 @login_required
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -357,9 +393,9 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "backoffice.view_assembly_selection_with_run",
+                "backoffice.view_assembly_selection",
                 assembly_id=assembly_id,
-                run_id=task_id,
+                current_selection=task_id,
             )
         )
     except NotFoundError as e:
@@ -391,9 +427,9 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "backoffice.view_assembly_selection_with_run",
+                "backoffice.view_assembly_selection",
                 assembly_id=assembly_id,
-                run_id=task_id,
+                current_selection=task_id,
             )
         )
     except NotFoundError as e:
@@ -423,9 +459,9 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         flash(_("Task cancelled"), "info")
         return redirect(
             url_for(
-                "backoffice.view_assembly_selection_with_run",
+                "backoffice.view_assembly_selection",
                 assembly_id=assembly_id,
-                run_id=run_id,
+                current_selection=run_id,
             )
         )
     except InvalidSelection as e:
@@ -472,10 +508,12 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
                 flash(_("Selection run does not belong to this assembly"), "error")
                 return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
-            # For now, redirect back to selection page with run_id parameter
-            # This will show the task progress section
+            # For now, redirect back to selection page with current_selection parameter
+            # This will show the task progress modal
             # TODO: Create dedicated detail pages for completed runs with full report
-            return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, run_id=run_id))
+            return redirect(
+                url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id)
+            )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for run details: {e}")

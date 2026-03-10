@@ -1,0 +1,78 @@
+{#
+ABOUTME: Modal component macro for backoffice design system
+ABOUTME: Uses Alpine.js modal component for state management and close behavior
+#}
+
+{% macro modal(id="", title="", classes="") %}
+    {#
+Modal component using semantic design tokens and Alpine.js for state.
+
+Requires wrapping element with x-data="modal({...})" Alpine component.
+
+Args:
+  id: Optional id attribute for the modal
+  title: Modal title displayed in header
+  classes: Additional CSS classes for the modal panel
+
+The modal component requires an Alpine.js wrapper that provides:
+  - isOpen: boolean state for visibility
+  - canClose: boolean state for whether close is allowed
+  - close(): method to close modal if allowed
+  - closeIfAllowed(): method to close via escape key
+
+Usage:
+  <div x-data="modal({initialOpen: true, canClose: false, refreshOnClose: true})"
+       @task-finished.window="setCanClose(true)">
+    {% call modal(id="my-modal", title="Modal Title") %}
+      Modal content here
+    {% endcall %}
+  </div>
+    #}
+    {# Backdrop overlay #}
+    <div x-show="isOpen"
+         x-cloak
+         class="fixed inset-0 z-40"
+         style="background-color: rgba(0, 0, 0, 0.5);"
+         @click="closeIfAllowed()"
+         @keydown.escape.window="closeIfAllowed()">
+    </div>
+
+    {# Modal panel #}
+    <div x-show="isOpen"
+         x-cloak
+         {% if id %}id="{{ id }}"{% endif %}
+         class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+         role="dialog"
+         aria-modal="true"
+         {% if title %}aria-labelledby="{{ id }}-title"{% endif %}>
+        <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden {{ classes }}"
+             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
+             @click.stop>
+            {# Header with title and close button #}
+            <div class="px-6 py-4 flex items-center justify-between"
+                 style="border-bottom: 1px solid var(--color-borders-dividers);">
+                {% if title %}
+                    <h2 {% if id %}id="{{ id }}-title"{% endif %}
+                        class="text-heading-lg"
+                        style="color: var(--color-headings);">{{ title }}</h2>
+                {% endif %}
+                <button type="button"
+                        @click="close()"
+                        :disabled="!canClose"
+                        class="p-2 rounded-lg transition-colors"
+                        :class="canClose ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'"
+                        :style="canClose ? 'color: var(--color-secondary-text);' : 'color: var(--color-secondary-text); opacity: 0.5;'"
+                        aria-label="{{ _('Close') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {# Modal content #}
+            <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                {{ caller() }}
+            </div>
+        </div>
+    </div>
+{% endmacro %}

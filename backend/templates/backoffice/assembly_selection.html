@@ -38,6 +38,12 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     aria_label=_("Assembly sections")
     ) }}
 
+    {# Selection Progress Modal - shown when current_selection parameter is present #}
+    {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
+    {% if current_selection and run_record %}
+        {% include "backoffice/components/selection_progress_modal.html" %}
+    {% endif %}
+
     {% if not gsheet %}
         {# No Google Sheet configured - show configuration prompt #}
         {{ alert(_("Please configure a Google Spreadsheet in the Data tab before running selection."), variant="warning") }}
@@ -47,11 +53,6 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
         </section>
     {% else %}
-        {# Task Progress Section - shown when a task is running #}
-        {% if run_id %}
-            <div class="mb-8">{% include "backoffice/components/selection_progress.html" %}</div>
-        {% endif %}
-
         {# Google Sheet configured - show selection options #}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {# Initial Selection Card #}
@@ -103,24 +104,6 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                 {% call card_footer() %}
                     {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
                     {{ button(_("Run Replacements"), variant="primary", disabled=true) }}
-                {% endcall %}
-            {% endcall %}
-        </div>
-
-        {# Manage Generated Tabs Card - Full Width #}
-        <div class="mb-8">
-            {% call card(title=_("Manage Generated Tabs"), composed=true) %}
-                {% call card_body() %}
-                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                        {{ _("View and delete old selection output tabs from your Google Spreadsheet.") }}
-                    </p>
-
-                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("Each selection run creates new tabs in your spreadsheet. Use this to clean up old tabs that are no longer needed.") }}
-                    </p>
-                {% endcall %}
-                {% call card_footer() %}
-                    {{ button(_("List Old Tabs"), variant="outline", disabled=true) }}
                 {% endcall %}
             {% endcall %}
         </div>
@@ -283,6 +266,24 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                             </p>
                         </div>
                     {% endif %}
+                {% endcall %}
+            {% endcall %}
+        </div>
+
+        {# Manage Generated Tabs Card - Full Width #}
+        <div class="mb-8">
+            {% call card(title=_("Manage Generated Tabs"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("View and delete old selection output tabs from your Google Spreadsheet.") }}
+                    </p>
+
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Each selection run creates new tabs in your spreadsheet. Use this to clean up old tabs that are no longer needed.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("List Old Tabs"), variant="outline", disabled=true) }}
                 {% endcall %}
             {% endcall %}
         </div>

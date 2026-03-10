@@ -1,0 +1,186 @@
+{# ABOUTME: Self-contained modal for selection task progress with HTMX polling #}
+{# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
+{% from "backoffice/components/button.html" import button %}
+
+{% set close_url = url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) %}
+{% set can_close = run_record.has_finished %}
+
+{# Entire modal is the HTMX swap target - includes close button state #}
+<div id="selection-progress-modal"
+     {% if not run_record.has_finished %}
+         hx-get="{{ url_for('backoffice.selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) }}"
+         hx-trigger="every 2s"
+         hx-swap="outerHTML"
+     {% endif %}>
+
+    {# Backdrop overlay - clickable only when task finished #}
+    <div class="fixed inset-0 z-40"
+         style="background-color: rgba(0, 0, 0, 0.5);"
+         {% if can_close %}
+             onclick="window.location.href='{{ close_url }}'"
+             style="background-color: rgba(0, 0, 0, 0.5); cursor: pointer;"
+         {% endif %}>
+    </div>
+
+    {# Modal panel #}
+    <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modal-title">
+        <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden"
+             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+
+            {# Header with title and close button #}
+            <div class="px-6 py-4 flex items-center justify-between"
+                 style="border-bottom: 1px solid var(--color-borders-dividers);">
+                <h2 id="modal-title" class="text-heading-lg" style="color: var(--color-headings);">
+                    {{ _("Task Progress") }}
+                </h2>
+                <button type="button"
+                        id="modal-close-btn"
+                        {% if not can_close %}disabled{% endif %}
+                        onclick="window.location.href='{{ close_url }}'"
+                        class="p-2 rounded-lg transition-colors"
+                        style="color: var(--color-secondary-text);{% if not can_close %} opacity: 0.5; cursor: not-allowed;{% else %} cursor: pointer;{% endif %}"
+                        aria-label="{{ _('Close') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {# Modal content #}
+            <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                {# Task type #}
+                <div class="mb-4">
+                    <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Task:") }}</span>
+                    <span class="text-body-md" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</span>
+                </div>
+
+                {# Status badge #}
+                <div class="mb-4">
+                    <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Status:") }}</span>
+                    <span class="text-body-md px-2 py-1 rounded"
+                          {% if run_record.is_completed %}
+                              style="background-color: var(--color-success-background); color: var(--color-success-text);"
+                          {% elif run_record.is_failed %}
+                              style="background-color: var(--color-error-background); color: var(--color-error-text);"
+                          {% elif run_record.is_cancelled %}
+                              style="background-color: var(--color-warning-background); color: var(--color-warning-text);"
+                          {% else %}
+                              style="background-color: var(--color-info-background); color: var(--color-info-text);"
+                          {% endif %}>
+                        {{ run_record.status.value | capitalize }}
+                    </span>
+                </div>
+
+                {# Spinner for pending/running #}
+                {% if run_record.is_pending or run_record.is_running %}
+                    <div class="flex items-center gap-3 mb-4">
+                        <svg class="animate-spin h-5 w-5" style="color: var(--color-primary-action);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Processing...") }}</span>
+                    </div>
+                {% endif %}
+
+                {# Error message #}
+                {% if run_record.is_failed and run_record.error_message %}
+                    <div class="mb-4">
+                        <span class="text-body-md font-medium" style="color: var(--color-error-text);">{{ _("Error:") }}</span>
+                        {# error_message is HTML rendered by server code that escapes user content #}
+                        <span class="text-body-md" style="color: var(--color-error-text);">{{ run_record.error_message | safe }}</span>
+                    </div>
+                {% endif %}
+
+                {# Success message #}
+                {% if run_record.is_completed %}
+                    <div class="mb-4">
+                        <span class="text-body-md font-medium" style="color: var(--color-success-text);">{{ _("Result:") }}</span>
+                        <span class="text-body-md" style="color: var(--color-success-text);">
+                            {{ _("Task completed successfully.") }}
+                        </span>
+                        {% if gsheet %}
+                            <a href="{{ gsheet.url }}" target="_blank" class="text-body-md font-medium hover:underline ml-2" style="color: var(--color-primary-action);">
+                                {{ _("View spreadsheet") }}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Cancelled message #}
+                {% if run_record.is_cancelled %}
+                    <div class="mb-4">
+                        <span class="text-body-md font-medium" style="color: var(--color-warning-text);">{{ _("Task Cancelled") }}</span>
+                        {% if run_record.error_message %}
+                            {# error_message is HTML rendered by server code that escapes user content #}
+                            <span class="text-body-md ml-2" style="color: var(--color-warning-text);">{{ run_record.error_message | safe }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Log messages #}
+                <div class="mb-4">
+                    <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Messages:") }}</span>
+                    <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                        {% if log_messages %}
+                            {% for msg in log_messages %}
+                                <p class="text-body-sm mb-1" style="color: var(--color-body-text);">{{ msg }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Waiting for task to start...") }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Full run report (collapsed, shown when finished) #}
+                {% if run_record.has_finished and translated_report_html %}
+                    <details class="mb-4">
+                        <summary class="text-body-md font-medium cursor-pointer" style="color: var(--color-headings);">{{ _("Full Run Report") }}</summary>
+                        <div class="rounded-lg p-4 mt-2" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                            <div class="text-body-sm" style="color: var(--color-body-text);">{{ translated_report_html | safe }}</div>
+                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                {{ _("Started At") }}: {{ run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.created_at }}
+                            </p>
+                            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                {{ _("Completed At") }}: {{ run_record.completed_at.strftime("%Y-%m-%d %H:%M:%S") if run_record.completed_at }}
+                            </p>
+                        </div>
+                    </details>
+                {% endif %}
+            </div>
+
+            {# Footer with action buttons #}
+            <div class="px-6 py-3 flex gap-2 justify-end" style="border-top: 1px solid var(--color-borders-dividers);">
+                {% if run_record.is_pending or run_record.is_running %}
+                    <form method="post" action="{{ url_for('backoffice.cancel_selection_run', assembly_id=assembly.id, run_id=current_selection) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
+                    </form>
+                {% endif %}
+                {% if run_record.has_finished %}
+                    <a href="{{ close_url }}"
+                       class="px-4 py-2 rounded-lg text-body-md font-medium transition-colors"
+                       style="background-color: var(--color-primary-button); color: var(--color-primary-button-text);">
+                        {{ _("Close") }}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Escape key handler - vanilla JS, only included when task is finished #}
+    {% if can_close %}
+        <script nonce="{{ csp_nonce }}">
+            (function() {
+                function handleEscape(e) {
+                    if (e.key === 'Escape') {
+                        window.location.href = '{{ close_url }}';
+                    }
+                }
+                document.addEventListener('keydown', handleEscape);
+            })();
+        </script>
+    {% endif %}
+</div>

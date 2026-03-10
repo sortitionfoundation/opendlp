@@ -669,8 +669,19 @@ class TestBackofficeSelectionTab:
             assert response.status_code == 200
             assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
 
-    def test_selection_with_run_page_loads(self, logged_in_admin, assembly_with_gsheet):
-        """Test that selection page with run_id loads successfully when mocked."""
+    def test_selection_with_run_page_redirects_to_query_param(self, logged_in_admin, assembly_with_gsheet):
+        """Test that legacy /selection/<run_id> URL redirects to query param version."""
+
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        # The legacy URL should redirect to the query parameter version
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+        assert response.status_code == 302
+        assert f"current_selection={run_id}" in response.location
+
+    def test_selection_with_current_selection_param_loads(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page with current_selection query param loads successfully."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -680,6 +691,8 @@ class TestBackofficeSelectionTab:
         mock_run_record.status.value = "running"
         mock_run_record.error_message = None
         mock_run_record.completed_at = None
+        mock_run_record.assembly_id = assembly.id
+        mock_run_record.has_finished = False
 
         mock_result = MagicMock()
         mock_result.run_record = mock_run_record
@@ -693,7 +706,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
             assert response.status_code == 200
             assert b"Selection" in response.data
 
@@ -874,8 +887,8 @@ class TestBackofficeSelectionTab:
             response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
             assert response.status_code == 404
 
-    def test_selection_with_run_renders_progress_fragment(self, logged_in_admin, assembly_with_gsheet):
-        """Test that view_assembly_selection_with_run includes the HTMX progress fragment."""
+    def test_selection_with_current_selection_renders_modal(self, logged_in_admin, assembly_with_gsheet):
+        """Test that selection page with current_selection param shows the progress modal."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -905,10 +918,10 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
 
             assert response.status_code == 200
-            assert b"progress-section" in response.data
+            assert b"selection-progress-modal" in response.data
             assert b"hx-get" in response.data
             assert b"Checking data..." in response.data
 
