@@ -1,18 +1,20 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Register") }} - OpenDLP{% endblock %}
+{% block title %}{{ _("Create an Account") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-            <h1 class="govuk-heading-xl">{{ _("Create an account") }}</h1>
+            <h1 class="govuk-heading-xl">{{ _("Create an Account") }}</h1>
             <div class="govuk-inset-text">
-                {{ _("You need an invitation code to create an account. If you do not have one, please contact your administrator.") }}
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
             </div>
             {% if config.OAUTH_GOOGLE_CLIENT_ID or config.OAUTH_MICROSOFT_CLIENT_ID %}
                 <div class="govuk-!-margin-top-6">
-                    <h2 class="govuk-heading-m">{{ _("You can register with an external account") }}</h2>
+                    <h2 class="govuk-heading-m">
+                        {{ _("You can create an OpenDLP account with an external account and an invitation code") }}
+                    </h2>
                     {% if config.OAUTH_GOOGLE_CLIENT_ID %}
                         <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_google', invite_code=form.invite_code.data) }}{% else %}{{ url_for('auth.register_google') }}{% endif %}"
+                              action="{% if form.invite_code.data %}{{ url_for('auth.register_google', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_google") }}{% endif %}"
                               method="get">
                             <div class="govuk-!-margin-top-6">
                                 <button class="gsi-material-button">
@@ -35,8 +37,8 @@
                                                 <path fill="none" d="M0 0h48v48H0z"></path>
                                             </svg>
                                         </div>
-                                        <span class="gsi-material-button-contents">{{ _("Register with Google") }}</span>
-                                        <span style="display: none;">{{ _("Register with Google") }}</span>
+                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
+                                        <span style="display: none;">{{ _("Create an Account with Google") }}</span>
                                     </div>
                                 </button>
                             </div>
@@ -44,7 +46,7 @@
                     {% endif %}
                     {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
                         <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_microsoft', invite_code=form.invite_code.data) }}{% else %}{{ url_for('auth.register_microsoft') }}{% endif %}"
+                              action="{% if form.invite_code.data %}{{ url_for('auth.register_microsoft', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_microsoft") }}{% endif %}"
                               method="get">
                             <div class="govuk-!-margin-top-2">
                                 <button class="gsi-material-button">
@@ -60,14 +62,16 @@
                                                 <path fill="#ffba08" d="M12 12h11v11H12z" />
                                             </svg>
                                         </div>
-                                        <span class="gsi-material-button-contents">{{ _("Register with Microsoft") }}</span>
-                                        <span style="display: none;">{{ _("Register with Microsoft") }}</span>
+                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
+                                        <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
                                     </div>
                                 </button>
                             </div>
                         </form>
                     {% endif %}
-                    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Or you can register with an email and password") }}</h2>
+                    <h2 class="govuk-heading-m govuk-!-margin-top-6">
+                        {{ _("Or you can create an account with an email and password") }}
+                    </h2>
                 </div>
             {% endif %}
             <form method="POST" class="govuk-!-margin-top-6" novalidate>
@@ -180,7 +184,7 @@
                         </div>
                     </fieldset>
                 </div>
-                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create account") }}</button>
+                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Account") }}</button>
             </form>
             <p class="govuk-body govuk-!-margin-top-6">
                 {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>

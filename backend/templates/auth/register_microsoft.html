@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Register with Microsoft") }} - OpenDLP{% endblock %}
+{% block title %}{{ _("Create an Account with Microsoft") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-            <h1 class="govuk-heading-xl">{{ _("Register with Microsoft") }}</h1>
-            <p class="govuk-body">{{ _("To register with your Microsoft account, you need a valid invite code.") }}</p>
+            <h1 class="govuk-heading-xl">{{ _("Create an Account with Microsoft") }}</h1>
             <div class="govuk-inset-text">
-                {{ _("You need an invitation code to create an account. If you do not have one, please contact your administrator.") }}
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
             </div>
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
@@ -55,15 +54,17 @@
                     <div class="gsi-material-button-state"></div>
                     <div class="gsi-material-button-content-wrapper">
                         <div class="gsi-material-button-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" style="display: block">
-                                <path fill="#f35325" d="M0 0h11v11H0z"/>
-                                <path fill="#81bc06" d="M12 0h11v11H12z"/>
-                                <path fill="#05a6f0" d="M0 12h11v11H0z"/>
-                                <path fill="#ffba08" d="M12 12h11v11H12z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 23 23"
+                                 style="display: block">
+                                <path fill="#f35325" d="M0 0h11v11H0z" />
+                                <path fill="#81bc06" d="M12 0h11v11H12z" />
+                                <path fill="#05a6f0" d="M0 12h11v11H0z" />
+                                <path fill="#ffba08" d="M12 12h11v11H12z" />
                             </svg>
                         </div>
-                        <span class="gsi-material-button-contents">{{ _("Register with Microsoft") }}</span>
-                        <span style="display: none;">{{ _("Register with Microsoft") }}</span>
+                        <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
+                        <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
                     </div>
                 </button>
             </form>

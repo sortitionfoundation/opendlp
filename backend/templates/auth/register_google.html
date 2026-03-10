@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Register with Google") }} - OpenDLP{% endblock %}
+{% block title %}{{ _("Create an Account with Google") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-            <h1 class="govuk-heading-xl">{{ _("Register with Google") }}</h1>
-            <p class="govuk-body">{{ _("To register with your Google account, you need a valid invite code.") }}</p>
+            <h1 class="govuk-heading-xl">{{ _("Create an Account with Google") }}</h1>
             <div class="govuk-inset-text">
-                {{ _("You need an invitation code to create an account. If you do not have one, please contact your administrator.") }}
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
             </div>
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
@@ -71,8 +70,8 @@
                                 <path fill="none" d="M0 0h48v48H0z"></path>
                             </svg>
                         </div>
-                        <span class="gsi-material-button-contents">{{ _("Register with Google") }}</span>
-                        <span style="display: none;">{{ _("Register with Google") }}</span>
+                        <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
+                        <span style="display: none;">{{ _("Create an Account with Google") }}</span>
                     </div>
                 </button>
             </form>
