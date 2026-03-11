@@ -10,16 +10,19 @@ This guide explains how to write frontend code that complies with our security h
 Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 **How it works:**
+
 - All `<script>` tags in HTML **must** have a `nonce="{{ csp_nonce }}"` attribute
 - Scripts loaded by trusted scripts (e.g., dynamically via `createElement`) are automatically trusted
 - Allowlists like `https://cdn.jsdelivr.net` are **ignored** (for backwards compatibility only)
 
 **Blocked:**
+
 - ❌ Any `<script>` tag without a valid nonce
 - ❌ eval() and Function() constructors (prevents code injection)
 - ❌ Inline event handlers (onclick, onsubmit, etc.)
 
 **Allowed:**
+
 - ✅ `<script nonce="{{ csp_nonce }}">` inline scripts
 - ✅ `<script nonce="{{ csp_nonce }}" src="...">` external scripts
 - ✅ Scripts dynamically loaded by already-trusted scripts
@@ -33,8 +36,10 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 1. Create file in `static/js/`
 2. Add to `base.html` with **nonce and cache busting**:
    ```html
-   <script nonce="{{ csp_nonce }}"
-           src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
+   <script
+     nonce="{{ csp_nonce }}"
+     src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"
+   ></script>
    ```
 
 **Important:** With `'strict-dynamic'` CSP, ALL `<script>` tags (even external ones) need the `nonce` attribute.
@@ -170,11 +175,11 @@ Static assets use query parameter versioning:
 <!-- CSS (automatic via base.html) -->
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/application.css', v=css_hash) }}"
+  href="{{ url_for('static', filename='css/application.css', v=static_hashes('css/application.css')) }}"
 />
 
 <!-- JavaScript -->
-<script src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
+<script src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
 ```
 
 When files change, hashes change → new URL → cache bypass. Note a new JS file needs a new hash in the context processor.
@@ -189,7 +194,7 @@ Before adding frontend code, verify:
 - [ ] Inline scripts have `nonce="{{ csp_nonce }}"` attribute
 - [ ] Alpine.js uses CSP-compatible features only
 - [ ] Styling uses SCSS classes (not inline styles)
-- [ ] External JS/CSS referenced with cache busting (`v=util_js_hash` / `v=css_hash`)
+- [ ] External JS/CSS referenced with cache busting (`v=static_hashes('relative/path/to/file')`)
 - [ ] No use of eval(), Function(), or similar
 - [ ] All scripts from trusted CDNs only
 

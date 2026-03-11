@@ -52,6 +52,10 @@ uv add package_name
 uv add --group dev package_name  # for dev dependencies
 ```
 
+### System Dependencies (Apple Silicon Macs)
+
+No additional system dependencies are required. The sortition-algorithms library uses HiGHS for optimization, which is bundled with the `highspy` Python package and works natively on Apple Silicon.
+
 ### Testing and Quality
 
 ```bash

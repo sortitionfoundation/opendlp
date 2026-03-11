@@ -253,4 +253,58 @@ document.addEventListener("alpine:init", function () {
             },
         };
     });
+
+    /**
+     * Modal component for dialogs and overlays
+     *
+     * Usage:
+     *   <div x-data="modal({initialOpen: true, canClose: false, refreshOnClose: true})"
+     *        @task-finished.window="setCanClose(true)">
+     *     {% call modal(id="my-modal", title="Modal Title") %}
+     *       Modal content here
+     *     {% endcall %}
+     *   </div>
+     *
+     * Options:
+     *   - initialOpen: Whether modal starts open (default: false)
+     *   - canClose: Whether modal can be closed (default: true)
+     *   - refreshOnClose: Whether to refresh page when closing (default: false)
+     *
+     * Methods:
+     *   - open(): Open the modal
+     *   - close(): Close the modal (if canClose is true)
+     *   - closeIfAllowed(): Same as close(), for escape key handler
+     *   - setCanClose(value): Update whether modal can be closed
+     */
+    Alpine.data("modal", function (options) {
+        var initialOpen = options.initialOpen || false;
+        var initialCanClose = options.canClose !== undefined ? options.canClose : true;
+        var refreshOnClose = options.refreshOnClose || false;
+
+        return {
+            isOpen: initialOpen,
+            canClose: initialCanClose,
+
+            open: function () {
+                this.isOpen = true;
+            },
+
+            close: function () {
+                if (this.canClose) {
+                    this.isOpen = false;
+                    if (refreshOnClose) {
+                        window.location.reload();
+                    }
+                }
+            },
+
+            closeIfAllowed: function () {
+                this.close();
+            },
+
+            setCanClose: function (value) {
+                this.canClose = value;
+            },
+        };
+    });
 });

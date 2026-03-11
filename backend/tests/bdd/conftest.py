@@ -1,7 +1,9 @@
 import os
 import shutil
 import subprocess
+import uuid
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -11,9 +13,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.app import get_celery_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.invite_service import generate_invite
@@ -423,3 +425,79 @@ def user_invite(test_database, admin_user) -> str:
     )
 
     return invite.code
+
+
+# =============================================================================
+# Additional Fixtures for Scroll Preservation Tests
+# =============================================================================
+
+
+@pytest.fixture
+def logged_in_page(admin_logged_in_page):
+    """Alias for admin_logged_in_page for consistency"""
+    return admin_logged_in_page
+
+
+@pytest.fixture
+def existing_assembly(assembly_creator):
+    """Create a basic assembly for testing"""
+    return assembly_creator(title="Test Assembly")
+
+
+@pytest.fixture
+def assembly_with_gsheet(assembly_gsheet_creator):
+    """Create assembly with Google Sheet configured"""
+    assembly, _gsheet = assembly_gsheet_creator(title="Assembly with GSheet")
+    return assembly
+
+
+@pytest.fixture
+def assembly_with_many_runs(test_database, admin_user, assembly_creator):
+    """Create assembly with many selection run records for testing pagination"""
+    assembly = assembly_creator(title="Assembly with Many Runs")
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+
+    # Create 100 selection run records to test pagination
+    with uow:
+        for i in range(100):
+            run_record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.COMPLETED if i % 3 == 0 else SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.SELECT_GSHEET if i % 2 == 0 else SelectionTaskType.LOAD_GSHEET,
+                user_id=admin_user.id,
+                comment=f"Test run {i}",
+                created_at=datetime.now(UTC) - timedelta(hours=i),
+                completed_at=datetime.now(UTC) - timedelta(hours=i) + timedelta(minutes=5),
+            )
+            uow.selection_run_records.add(run_record)
+        uow.commit()
+
+    return assembly
+
+
+@pytest.fixture
+def assembly_with_many_runs_and_gsheet(test_database, admin_user, assembly_gsheet_creator):
+    """Create assembly with gsheet and many selection run records for testing pagination"""
+    assembly, _gsheet = assembly_gsheet_creator(title="Assembly with Many Runs and GSheet")
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+
+    # Create 100 selection run records to test pagination
+    with uow:
+        for i in range(100):
+            run_record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.COMPLETED if i % 3 == 0 else SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.SELECT_GSHEET if i % 2 == 0 else SelectionTaskType.LOAD_GSHEET,
+                user_id=admin_user.id,
+                comment=f"Test run {i}",
+                created_at=datetime.now(UTC) - timedelta(hours=i),
+                completed_at=datetime.now(UTC) - timedelta(hours=i) + timedelta(minutes=5),
+            )
+            uow.selection_run_records.add(run_record)
+        uow.commit()
+
+    return assembly

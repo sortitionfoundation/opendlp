@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import json
 import subprocess
+from collections.abc import Callable
 from functools import cache
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from opendlp import config
 from opendlp.feature_flags import has_feature
 
 
+@cache
 def _get_file_hash(filepath: Path) -> str:
     """
     Generate a short hash of the file for cache-busting.
@@ -27,48 +29,6 @@ def _get_file_hash(filepath: Path) -> str:
     content = filepath.read_bytes()
     hash_value = hashlib.sha256(content).hexdigest()
     return hash_value[:8]
-
-
-@cache
-def get_css_hash() -> str:
-    """
-    Generate a short hash of the application.css file for cache-busting.
-
-    Results are cached using functools.cache to avoid re-reading the file on every request.
-
-    Returns:
-        8-character hash string, or empty string if file doesn't exist
-    """
-    css_path = config.get_static_path() / "css" / "application.css"
-    return _get_file_hash(css_path)
-
-
-@cache
-def get_util_js_hash() -> str:
-    """
-    Generate a short hash of the utilities.js file for cache-busting.
-
-    Results are cached using functools.cache to avoid re-reading the file on every request.
-
-    Returns:
-        8-character hash string, or empty string if file doesn't exist
-    """
-    util_js_path = config.get_static_path() / "js" / "utilities.js"
-    return _get_file_hash(util_js_path)
-
-
-@cache
-def get_alpine_js_hash() -> str:
-    """
-    Generate a short hash of the alpine-components.js file for cache-busting.
-
-    Results are cached using functools.cache to avoid re-reading the file on every request.
-
-    Returns:
-        8-character hash string, or empty string if file doesn't exist
-    """
-    util_js_path = config.get_static_path() / "js" / "alpine-components.js"
-    return _get_file_hash(util_js_path)
 
 
 @cache
@@ -176,7 +136,11 @@ def inject_feature_flags() -> dict[str, object]:
     return {"feature": has_feature}
 
 
-def static_versioning_context_processor() -> dict[str, str]:
+def static_hashes(relative_path: str) -> str:
+    return _get_file_hash(config.get_static_path() / relative_path)
+
+
+def static_versioning_context_processor() -> dict[str, str | Callable]:
     """
     Flask context processor that adds static file version hashes to template context.
 
@@ -185,12 +149,10 @@ def static_versioning_context_processor() -> dict[str, str]:
     """
     site_banner_text, site_banner_colour = get_site_banner_config()
     return {
-        "css_hash": get_css_hash(),
-        "util_js_hash": get_util_js_hash(),
-        "alpine_js_hash": get_util_js_hash(),
         "opendlp_version": get_opendlp_version(),
         "google_service_account_email": get_service_account_email(),
         "site_banner_text": site_banner_text,
         "site_banner_colour": site_banner_colour,
+        "static_hashes": static_hashes,
         "support_email_address": get_support_email(),
     }

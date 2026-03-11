@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from sortition_algorithms.settings import Settings
 
+from opendlp import config
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
@@ -24,7 +25,12 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 @pytest.fixture
 def test_settings():
-    return Settings(id_column="external_id", check_same_address=False, columns_to_keep=[])
+    return Settings(
+        id_column="external_id",
+        check_same_address=False,
+        columns_to_keep=[],
+        solver_backend=config.get_solver_backend(),
+    )
 
 
 @pytest.fixture

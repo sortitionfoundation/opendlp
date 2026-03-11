@@ -5,12 +5,14 @@ import base64
 import logging
 import logging.config
 import os
+import platform
 import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache
 from pathlib import Path
 
+import sortition_algorithms.settings
 from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
 from redis import Redis
@@ -427,3 +429,32 @@ def get_totp_encryption_key() -> bytes:
         return base64.b64decode(key_str)
     except Exception as e:
         raise ValueError(f"TOTP_ENCRYPTION_KEY must be a valid base64-encoded 32-byte key: {e}") from e
+
+
+def get_solver_backend() -> str:
+    """Get the solver backend for sortition-algorithms.
+
+    Returns the solver backend to use. Valid values are 'mip' (CBC) or 'highspy' (HiGHS).
+
+    Configuration priority:
+    1. SOLVER_BACKEND environment variable if set
+    2. Platform-specific default:
+       - macOS (Darwin): 'highspy' (CBC has issues on Apple Silicon)
+       - Other platforms: 'mip' (faster in production)
+
+    Environment variable: SOLVER_BACKEND
+    """
+    env_value = os.environ.get("SOLVER_BACKEND", "").strip().lower()
+    if env_value:
+        if env_value not in sortition_algorithms.settings.SOLVER_BACKENDS:
+            logging.warning(
+                f"Invalid SOLVER_BACKEND value '{env_value}'. Must be one of "
+                f"({','.join(sortition_algorithms.settings.SOLVER_BACKENDS)}). Using platform default."
+            )
+        else:
+            return env_value
+
+    # Platform-specific default
+    if platform.system() == "Darwin":
+        return "highspy"
+    return "mip"

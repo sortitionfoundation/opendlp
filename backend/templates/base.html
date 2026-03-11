@@ -15,7 +15,7 @@
               type="image/x-icon">
         <!-- OpenDLP with GOV.UK Frontend CSS -->
         <link rel="stylesheet"
-              href="{{ url_for('static', filename='css/application.css', v=css_hash) }}">
+              href="{{ url_for('static', filename='css/application.css', v=static_hashes('css/application.css') ) }}">
         {% block extra_css %}{% endblock %}
     </head>
     <body class="govuk-template__body govuk-frontend-supported">
@@ -194,9 +194,9 @@
                 integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"
                 crossorigin="anonymous"></script>
         <script nonce="{{ csp_nonce }}"
-                src="{{ url_for('static', filename='js/utilities.js', v=util_js_hash) }}"></script>
+                src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
-                src="{{ url_for('static', filename='js/alpine-components.js', v=alpine_js_hash) }}"></script>
+                src="{{ url_for('static', filename='js/alpine-components.js', v=static_hashes('js/alpine-components.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
                 defer
                 src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
