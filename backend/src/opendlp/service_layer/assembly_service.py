@@ -8,7 +8,8 @@ from io import StringIO
 from typing import Any, cast
 
 from sortition_algorithms.adapters import SelectionData
-from sortition_algorithms.features import FeatureCollection, read_in_features
+from sortition_algorithms.features import MAX_FLEX_UNSET, FeatureCollection, read_in_features
+from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import VALID_TEAMS, Assembly, AssemblyGSheet, Teams
@@ -21,6 +22,7 @@ from .exceptions import (
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
     InvalidSelection,
+    NotFoundError,
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
@@ -572,6 +574,196 @@ def import_targets_from_csv(
 
         uow.commit()
         return [c.create_detached_copy() for c in categories]
+
+
+def update_target_category(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    name: str,
+    description: str = "",
+) -> TargetCategory:
+    """Update a target category's name and description."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="update target category",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        if not category or category.assembly_id != assembly_id:
+            raise NotFoundError(f"Target category {category_id} not found")
+
+        category.name = name.strip()
+        category.description = description.strip()
+        category.updated_at = datetime.now(UTC)
+
+        uow.commit()
+        return category.create_detached_copy()
+
+
+def delete_target_category(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+) -> None:
+    """Delete a target category."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="delete target category",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        if not category or category.assembly_id != assembly_id:
+            raise NotFoundError(f"Target category {category_id} not found")
+
+        uow.target_categories.delete(category)
+        uow.commit()
+
+
+def add_target_value(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    value: str,
+    min_count: int,
+    max_count: int,
+) -> TargetCategory:
+    """Add a value to a target category. Returns the updated category."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="add target value",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        if not category or category.assembly_id != assembly_id:
+            raise NotFoundError(f"Target category {category_id} not found")
+
+        target_val = TargetValue(value=value, min=min_count, max=max_count)
+        category.add_value(target_val)
+        flag_modified(category, "values")
+
+        uow.commit()
+        return category.create_detached_copy()
+
+
+def update_target_value(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    value_id: uuid.UUID,
+    value: str,
+    min_count: int,
+    max_count: int,
+) -> TargetCategory:
+    """Update a value within a target category. Returns the updated category."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="update target value",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        if not category or category.assembly_id != assembly_id:
+            raise NotFoundError(f"Target category {category_id} not found")
+
+        existing = next((v for v in category.values if v.value_id == value_id), None)
+        if not existing:
+            raise NotFoundError(f"Target value {value_id} not found")
+
+        if value != existing.value and any(v.value == value for v in category.values):
+            raise ValueError(f"Value '{value}' already exists in category '{category.name}'")
+
+        existing.value = value.strip()
+        existing.min = min_count
+        existing.max = max_count
+        # Reset flex values since the form doesn't expose them;
+        # the sortition library recalculates safe defaults at selection time
+        existing.min_flex = 0
+        existing.max_flex = MAX_FLEX_UNSET
+        existing._validate()
+        category.updated_at = datetime.now(UTC)
+        flag_modified(category, "values")
+
+        uow.commit()
+        return category.create_detached_copy()
+
+
+def delete_target_value(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    value_id: uuid.UUID,
+) -> TargetCategory:
+    """Delete a value from a target category. Returns the updated category."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="delete target value",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        if not category or category.assembly_id != assembly_id:
+            raise NotFoundError(f"Target category {category_id} not found")
+
+        if not category.remove_value(value_id):
+            raise NotFoundError(f"Target value {value_id} not found")
+        flag_modified(category, "values")
+
+        uow.commit()
+        return category.create_detached_copy()
 
 
 def get_feature_collection_for_assembly(
