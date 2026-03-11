@@ -206,6 +206,8 @@
                 src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
                 integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
                 crossorigin="anonymous"></script>
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='js/htmx-422-swap.js', v=static_hashes('js/htmx-422-swap.js')) }}"></script>
         <script nonce="{{ csp_nonce }}">
             document.addEventListener('DOMContentLoaded', function() {
                 if (typeof window.GOVUKFrontend !== 'undefined') {

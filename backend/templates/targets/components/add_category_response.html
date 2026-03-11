@@ -1,0 +1,6 @@
+{# Primary swap: replaces #add-category-form with a fresh empty form #}
+{% include "targets/components/add_category_form.html" %}
+{# OOB swap: inserts the new category block before #add-category-form #}
+<div hx-swap-oob="beforebegin:#add-category-form">
+    {% include "targets/components/category_block.html" %}
+</div>
