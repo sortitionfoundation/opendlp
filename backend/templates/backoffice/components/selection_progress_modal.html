@@ -14,12 +14,9 @@
      {% endif %}>
 
     {# Backdrop overlay - clickable only when task finished #}
-    <div class="fixed inset-0 z-40"
-         style="background-color: rgba(0, 0, 0, 0.5);"
-         {% if can_close %}
-             onclick="window.location.href='{{ close_url }}'"
-             style="background-color: rgba(0, 0, 0, 0.5); cursor: pointer;"
-         {% endif %}>
+    <div id="modal-backdrop"
+         class="fixed inset-0 z-40"
+         style="background-color: rgba(0, 0, 0, 0.5);{% if can_close %} cursor: pointer;{% endif %}">
     </div>
 
     {# Modal panel #}
@@ -39,7 +36,6 @@
                 <button type="button"
                         id="modal-close-btn"
                         {% if not can_close %}disabled{% endif %}
-                        onclick="window.location.href='{{ close_url }}'"
                         class="p-2 rounded-lg transition-colors"
                         style="color: var(--color-secondary-text);{% if not can_close %} opacity: 0.5; cursor: not-allowed;{% else %} cursor: pointer;{% endif %}"
                         aria-label="{{ _('Close') }}">
@@ -123,7 +119,9 @@
                 {# Log messages #}
                 <div class="mb-4">
                     <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Messages:") }}</span>
-                    <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                    <div id="modal-messages"
+                         class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
+                         style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
                         {% if log_messages %}
                             {% for msg in log_messages %}
                                 <p class="text-body-sm mb-1" style="color: var(--color-body-text);">{{ msg }}</p>
@@ -170,17 +168,54 @@
         </div>
     </div>
 
-    {# Escape key handler - vanilla JS, only included when task is finished #}
-    {% if can_close %}
-        <script nonce="{{ csp_nonce }}">
-            (function() {
-                function handleEscape(e) {
-                    if (e.key === 'Escape') {
-                        window.location.href = '{{ close_url }}';
-                    }
+    <script nonce="{{ csp_nonce }}">
+        (function() {
+            var closeUrl = '{{ close_url }}';
+            var canClose = {{ 'true' if can_close else 'false' }};
+
+            // Auto-scroll messages to bottom on load and HTMX swap
+            function scrollMessagesToBottom() {
+                var messages = document.getElementById('modal-messages');
+                if (messages) {
+                    messages.scrollTop = messages.scrollHeight;
                 }
-                document.addEventListener('keydown', handleEscape);
-            })();
-        </script>
-    {% endif %}
+            }
+
+            // Run immediately
+            scrollMessagesToBottom();
+
+            // Also run after HTMX swaps (for when modal content is refreshed)
+            document.body.addEventListener('htmx:afterSwap', function(e) {
+                if (e.detail.target && e.detail.target.id === 'selection-progress-modal') {
+                    scrollMessagesToBottom();
+                }
+            });
+
+            // Close handlers only active when task is finished
+            if (canClose) {
+                // Escape key handler
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        window.location.href = closeUrl;
+                    }
+                });
+
+                // X button click handler
+                var closeBtn = document.getElementById('modal-close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        window.location.href = closeUrl;
+                    });
+                }
+
+                // Backdrop click handler
+                var backdrop = document.getElementById('modal-backdrop');
+                if (backdrop) {
+                    backdrop.addEventListener('click', function() {
+                        window.location.href = closeUrl;
+                    });
+                }
+            }
+        })();
+    </script>
 </div>
