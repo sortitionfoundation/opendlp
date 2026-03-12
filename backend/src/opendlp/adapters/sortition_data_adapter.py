@@ -38,14 +38,16 @@ class OpenDLPDataAdapter(AbstractDataSource):
         categories = self.uow.target_categories.get_by_assembly_id(self.assembly_id)
 
         # Convert to CSV-like format expected by sortition-algorithms
-        # Check if any category uses flex values
-        has_flex = any(
+        # Only include flex columns if ALL values have explicit (non-default) flex set.
+        # If any value has MAX_FLEX_UNSET, omit flex columns entirely and let
+        # the library calculate safe defaults via set_default_max_flex().
+        all_flex_set = bool(categories) and all(
             value.min_flex != 0 or value.max_flex != MAX_FLEX_UNSET
             for category in categories
             for value in category.values
         )
 
-        if has_flex:
+        if all_flex_set:
             headers = ["feature", "value", "min", "max", "min_flex", "max_flex"]
         else:
             headers = ["feature", "value", "min", "max"]
@@ -59,10 +61,9 @@ class OpenDLPDataAdapter(AbstractDataSource):
                     "min": str(value.min),
                     "max": str(value.max),
                 }
-                if has_flex:
+                if all_flex_set:
                     row["min_flex"] = str(value.min_flex)
-                    # If max_flex is unset, use empty string to let library calculate default
-                    row["max_flex"] = str(value.max_flex) if value.max_flex != MAX_FLEX_UNSET else ""
+                    row["max_flex"] = str(value.max_flex)
                 rows.append(row)
 
         yield headers, rows
