@@ -84,7 +84,9 @@
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-full">
                     <h3 class="govuk-heading-m">{{ _("Ready to participate in democratic decision-making?") }}</h3>
-                    <p class="govuk-body-l">{{ _("Contact your assembly organizer for an invitation code.") }}</p>
+                    <p class="govuk-body-l">
+                        {{ _("Contact <a href=\"mailto:%(email) s\">OpenDLP Support</a> for an invitation code.", email=support_email_address) }}
+                    </p>
                     <p class="govuk-body-s">
                         {{ _('OpenDLP is an open-source platform supporting democratic participation worldwide.
                         It is a project of') }} <a href="https://www.sortitionfoundation.org/lab" class="govuk-link">Sortition Lab</a>.
