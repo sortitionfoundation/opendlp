@@ -19,7 +19,7 @@ from werkzeug.security import generate_password_hash
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
-from opendlp.service_layer import security
+from opendlp.service_layer import security, totp_service
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -235,3 +235,4 @@ def patch_password_hashing(monkeypatch):
         return generate_password_hash(password, method="pbkdf2:sha256:1")
 
     monkeypatch.setattr(security, "generate_password_hash", mock_generate)
+    monkeypatch.setattr(totp_service, "generate_password_hash", mock_generate)
