@@ -204,8 +204,9 @@ def user_clicks_recheck(admin_logged_in_page: Page):
 def replacement_modal_displayed(admin_logged_in_page: Page):
     """Verify the replacement modal is visible."""
     page = admin_logged_in_page
-    modal = page.locator("#replacement-modal")
-    expect(modal).to_be_visible()
+    # Check for the modal backdrop (the wrapper div has no dimensions due to fixed children)
+    modal_backdrop = page.locator("#replacement-modal-backdrop")
+    expect(modal_backdrop).to_be_visible()
     expect(page.get_by_role("heading", name="Replacement Selection")).to_be_visible()
 
 
@@ -326,8 +327,9 @@ def user_on_selection_page(admin_logged_in_page: Page, test_assembly):
 def replacement_modal_not_visible(admin_logged_in_page: Page):
     """Verify replacement modal is not visible."""
     page = admin_logged_in_page
-    modal = page.locator("#replacement-modal")
-    expect(modal).not_to_be_visible()
+    # Check the backdrop is not visible (the wrapper div has no dimensions)
+    modal_backdrop = page.locator("#replacement-modal-backdrop")
+    expect(modal_backdrop).not_to_be_visible()
 
 
 @then("the Close button is not visible")
@@ -345,8 +347,8 @@ def modal_cannot_close_via_backdrop(admin_logged_in_page: Page):
     page = admin_logged_in_page
     # The backdrop doesn't close the modal when task is running
     # (This is enforced by the canClose check in the script)
-    modal = page.locator("#replacement-modal")
-    expect(modal).to_be_visible()
+    modal_backdrop = page.locator("#replacement-modal-backdrop")
+    expect(modal_backdrop).to_be_visible()
 
 
 @then("a new load task starts")
