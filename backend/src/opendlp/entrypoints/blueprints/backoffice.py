@@ -6,6 +6,7 @@ import uuid
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
@@ -32,10 +33,13 @@ from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.sortition import (
     InvalidSelection,
+    LoadRunResult,
     cancel_task,
     check_and_update_task_health,
     get_selection_run_status,
     start_gsheet_load_task,
+    start_gsheet_replace_load_task,
+    start_gsheet_replace_task,
     start_gsheet_select_task,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -188,89 +192,107 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _get_selection_modal_context(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, selection_param: str | None
+) -> tuple[uuid.UUID | None, object | None, list, str]:
+    """Get context for displaying the initial selection progress modal.
+
+    Returns (current_selection, run_record, log_messages, translated_report_html).
+    """
+    if not selection_param:
+        return None, None, [], ""
+
+    try:
+        current_selection = uuid.UUID(selection_param)
+        check_and_update_task_health(uow, current_selection)
+        result = get_selection_run_status(uow, current_selection)
+
+        if result.run_record and result.run_record.assembly_id == assembly_id:
+            return (
+                current_selection,
+                result.run_record,
+                result.log_messages,
+                translate_run_report_to_html(result.run_report) if result.run_report else "",
+            )
+    except (ValueError, TypeError):
+        pass
+
+    return None, None, [], ""
+
+
+def _get_replacement_modal_context(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    replacement_param: str | None,
+    initial_min_select: int | None,
+    initial_max_select: int | None,
+) -> tuple[uuid.UUID | None, object | None, list, str, int | None, int | None]:
+    """Get context for displaying the replacement selection modal.
+
+    Returns (current_replacement, run_record, log_messages, translated_report_html, min_select, max_select).
+    """
+    if not replacement_param:
+        return None, None, [], "", initial_min_select, initial_max_select
+
+    try:
+        current_replacement = uuid.UUID(replacement_param)
+        check_and_update_task_health(uow, current_replacement)
+        result = get_selection_run_status(uow, current_replacement)
+
+        if result.run_record and result.run_record.assembly_id == assembly_id:
+            min_select = initial_min_select
+            max_select = initial_max_select
+
+            if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+                min_select = minimum_selection(result.features)
+                max_select = maximum_selection(result.features)
+
+            return (
+                current_replacement,
+                result.run_record,
+                result.log_messages,
+                translate_run_report_to_html(result.run_report) if result.run_report else "",
+                min_select,
+                max_select,
+            )
+    except (ValueError, TypeError):
+        pass
+
+    return None, None, [], "", initial_min_select, initial_max_select
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection")
 @login_required
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
     try:
-        from opendlp.service_layer.sortition import LoadRunResult
-
-        # Get pagination parameters
         page = request.args.get("page", 1, type=int)
         per_page = 15
-
-        # Get current_selection query parameter for initial selection modal display
-        current_selection_param = request.args.get("current_selection")
-        current_selection: uuid.UUID | None = None
-        run_record = None
-        log_messages: list = []
-        translated_report_html = ""
-
-        # Get replacement modal query parameters
-        replacement_modal_param = request.args.get("replacement_modal")
-        current_replacement_param = request.args.get("current_replacement")
-        current_replacement: uuid.UUID | None = None
-        replacement_run_record = None
-        replacement_log_messages: list = []
-        replacement_translated_report_html = ""
-        replacement_min_select: int | None = request.args.get("min_select", type=int)
-        replacement_max_select: int | None = request.args.get("max_select", type=int)
 
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-            # Handle current_selection parameter for showing initial selection progress modal
-            if current_selection_param:
-                try:
-                    current_selection = uuid.UUID(current_selection_param)
+            # Get selection modal context
+            current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
+                uow, assembly_id, request.args.get("current_selection")
+            )
 
-                    # Check task health before getting status
-                    check_and_update_task_health(uow, current_selection)
-
-                    # Get run status
-                    result = get_selection_run_status(uow, current_selection)
-                    if result.run_record and result.run_record.assembly_id == assembly_id:
-                        run_record = result.run_record
-                        log_messages = result.log_messages
-                        translated_report_html = (
-                            translate_run_report_to_html(result.run_report) if result.run_report else ""
-                        )
-                    else:
-                        # Run doesn't exist or doesn't belong to this assembly - ignore
-                        current_selection = None
-                except (ValueError, TypeError):
-                    # Invalid UUID - ignore the parameter
-                    current_selection = None
-
-            # Handle current_replacement parameter for showing replacement selection modal
-            if current_replacement_param:
-                try:
-                    from sortition_algorithms.features import maximum_selection, minimum_selection
-
-                    current_replacement = uuid.UUID(current_replacement_param)
-
-                    # Check task health before getting status
-                    check_and_update_task_health(uow, current_replacement)
-
-                    # Get run status
-                    result = get_selection_run_status(uow, current_replacement)
-                    if result.run_record and result.run_record.assembly_id == assembly_id:
-                        replacement_run_record = result.run_record
-                        replacement_log_messages = result.log_messages
-                        replacement_translated_report_html = (
-                            translate_run_report_to_html(result.run_report) if result.run_report else ""
-                        )
-                        # If load task completed successfully, extract min/max from features
-                        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
-                            replacement_min_select = minimum_selection(result.features)
-                            replacement_max_select = maximum_selection(result.features)
-                    else:
-                        # Run doesn't exist or doesn't belong to this assembly - ignore
-                        current_replacement = None
-                except (ValueError, TypeError):
-                    # Invalid UUID - ignore the parameter
-                    current_replacement = None
+            # Get replacement modal context
+            (
+                current_replacement,
+                replacement_run_record,
+                replacement_log_messages,
+                replacement_translated_report_html,
+                replacement_min_select,
+                replacement_max_select,
+            ) = _get_replacement_modal_context(
+                uow,
+                assembly_id,
+                request.args.get("current_replacement"),
+                request.args.get("min_select", type=int),
+                request.args.get("max_select", type=int),
+            )
 
         # Check if gsheet is configured
         gsheet = None
@@ -279,7 +301,6 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
         except Exception as gsheet_error:
             current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
-            gsheet = None
 
         # Fetch paginated selection history
         run_history: list = []
@@ -295,8 +316,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception as history_error:
             current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
 
-        # Determine if replacement modal should be open
-        replacement_modal_open = replacement_modal_param == "open" or current_replacement is not None
+        replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
 
         return render_template(
             "backoffice/assembly_selection.html",
@@ -306,12 +326,10 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             page=page,
             total_count=total_count,
             total_pages=total_pages,
-            # Initial selection modal vars
             current_selection=current_selection,
             run_record=run_record,
             log_messages=log_messages,
             translated_report_html=translated_report_html,
-            # Replacement selection modal vars
             replacement_modal_open=replacement_modal_open,
             current_replacement=current_replacement,
             replacement_run_record=replacement_run_record,
@@ -441,10 +459,6 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
 def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return replacement modal progress HTML fragment for HTMX polling."""
     try:
-        from sortition_algorithms.features import maximum_selection, minimum_selection
-
-        from opendlp.service_layer.sortition import LoadRunResult
-
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
@@ -676,9 +690,6 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
 def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement data validation task."""
     try:
-        from opendlp.service_layer.exceptions import InvalidSelection
-        from opendlp.service_layer.sortition import start_gsheet_replace_load_task
-
         uow = bootstrap.bootstrap()
         with uow:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
@@ -715,8 +726,6 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement selection task."""
     try:
-        from opendlp.service_layer.sortition import start_gsheet_replace_task
-
         min_select = request.args.get("min_select", type=int) or 0
         max_select = request.args.get("max_select", type=int) or 0
 
@@ -773,9 +782,6 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running replacement task."""
     try:
-        from opendlp.service_layer.exceptions import InvalidSelection
-        from opendlp.service_layer.sortition import cancel_task
-
         uow = bootstrap.bootstrap()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)

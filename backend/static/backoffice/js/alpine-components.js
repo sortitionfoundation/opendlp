@@ -329,58 +329,58 @@ document.addEventListener("alpine:init", function () {
                 })
                     .then(function (response) {
                     // Handle 404 - task not found
-                    if (response.status === 404) {
-                        self.status = "not_found";
-                        self.fetchError = "Task not found. It may have been deleted or the ID is invalid.";
-                        self.stopPolling();
-                        return Promise.reject(new Error("Task not found"));
-                    }
+                        if (response.status === 404) {
+                            self.status = "not_found";
+                            self.fetchError = "Task not found. It may have been deleted or the ID is invalid.";
+                            self.stopPolling();
+                            return Promise.reject(new Error("Task not found"));
+                        }
                     // Handle other non-OK responses
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok: " + response.status);
-                    }
+                        if (!response.ok) {
+                            throw new Error("Network response was not ok: " + response.status);
+                        }
                     // Reset error count on successful response
-                    self.fetchErrorCount = 0;
-                    self.fetchError = "";
-                    return response.json();
-                })
+                        self.fetchErrorCount = 0;
+                        self.fetchError = "";
+                        return response.json();
+                    })
                     .then(function (data) {
-                    if (!data) return; // Skip if we rejected above
+                        if (!data) return; // Skip if we rejected above
 
-                    self.status = data.status || "unknown";
-                    self.logMessages = data.log_messages || [];
-                    self.errorMessage = data.error_message || "";
-                    self.completedAt = data.completed_at;
-                    self.hasReport = data.has_report || false;
-                    self.redirectUrl = data.redirect_url || "";
+                        self.status = data.status || "unknown";
+                        self.logMessages = data.log_messages || [];
+                        self.errorMessage = data.error_message || "";
+                        self.completedAt = data.completed_at;
+                        self.hasReport = data.has_report || false;
+                        self.redirectUrl = data.redirect_url || "";
 
                     // Handle redirect if provided
-                    if (self.redirectUrl) {
-                        self.stopPolling();
-                        window.location.href = self.redirectUrl;
-                        return;
-                    }
+                        if (self.redirectUrl) {
+                            self.stopPolling();
+                            window.location.href = self.redirectUrl;
+                            return;
+                        }
 
                     // Stop polling on terminal states
-                    if (self.isTerminalStatus(self.status)) {
-                        self.stopPolling();
-                    }
-                })
+                        if (self.isTerminalStatus(self.status)) {
+                            self.stopPolling();
+                        }
+                    })
                     .catch(function (error) {
                     // Don't increment error count for 404 (already handled)
-                    if (error.message === "Task not found") {
-                        return;
-                    }
+                        if (error.message === "Task not found") {
+                            return;
+                        }
 
-                    self.fetchErrorCount++;
-                    console.error("Task progress fetch error (" + self.fetchErrorCount + "/" + self.maxFetchErrors + "):", error);
+                        self.fetchErrorCount++;
+                        console.error("Task progress fetch error (" + self.fetchErrorCount + "/" + self.maxFetchErrors + "):", error);
 
                     // Stop polling after too many consecutive errors
-                    if (self.fetchErrorCount >= self.maxFetchErrors) {
-                        self.fetchError = "Unable to fetch task status. Please refresh the page or try again later.";
-                        self.stopPolling();
-                    }
-                });
+                        if (self.fetchErrorCount >= self.maxFetchErrors) {
+                            self.fetchError = "Unable to fetch task status. Please refresh the page or try again later.";
+                            self.stopPolling();
+                        }
+                    });
             },
         };
     });
