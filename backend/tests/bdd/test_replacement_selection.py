@@ -398,6 +398,7 @@ def task_type_shows_replace(admin_logged_in_page: Page):
     """Verify task type shows as replacement selection."""
     page = admin_logged_in_page
     # The verbose text is "Select replacement google spreadsheet"
-    # Scope to table to avoid matching assembly title or other page elements
+    # Scope to table and use .first to avoid strict mode violation
+    # (multiple cells may contain "replacement" - task type and comment)
     history_table = page.locator("table")
-    expect(history_table.get_by_text("replacement", exact=False)).to_be_visible()
+    expect(history_table.get_by_text("replacement", exact=False).first).to_be_visible()
