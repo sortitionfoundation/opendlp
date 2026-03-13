@@ -1,4 +1,5 @@
-"""Unit tests for TargetCategory and TargetValue domain models."""
+"""ABOUTME: Unit tests for TargetCategory and TargetValue domain models
+ABOUTME: Tests validation, add/remove operations, and in-place value updates"""
 
 import uuid
 
@@ -131,3 +132,27 @@ class TestTargetCategory:
         assert copy.name == "Gender"
         assert len(copy.values) == 1
         assert copy is not cat  # Different instance
+
+
+class TestTargetValueInPlaceUpdate:
+    def test_update_target_value_in_place(self):
+        cat = TargetCategory(assembly_id=uuid.uuid4(), name="Gender")
+        val = TargetValue(value="Male", min=5, max=10)
+        cat.add_value(val)
+
+        val.value = "Male (updated)"
+        val.min = 6
+        val.max = 12
+        val._validate()
+
+        assert val.value == "Male (updated)"
+        assert val.min == 6
+        assert val.max == 12
+        assert val.min_flex == 0
+        assert val.max_flex == MAX_FLEX_UNSET
+
+    def test_update_target_value_invalid_min_max(self):
+        val = TargetValue(value="Male", min=5, max=10)
+        val.min = 15
+        with pytest.raises(ValueError, match="max must be >= min"):
+            val._validate()

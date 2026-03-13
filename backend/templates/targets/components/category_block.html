@@ -1,0 +1,217 @@
+{# HTMX swap target for category-level operations #}
+<div class="govuk-!-margin-bottom-6" id="category-{{ category.id }}">
+    {# ── Category Header ──────────────────────────────── #}
+    <div class="govuk-!-margin-bottom-2" x-data="{ editing: false }">
+        <div x-show="!editing">
+            <h3 class="govuk-heading-m govuk-!-margin-bottom-1" style="display: inline;">{{ category.name }}</h3>
+            {% if can_manage %}
+                <button type="button" class="govuk-link govuk-!-margin-left-2" @click="editing = true">{{ _("Rename") }}</button>
+                <form method="post"
+                      action="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      style="display: inline;"
+                      hx-post="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-target="#category-{{ category.id }}"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit"
+                            class="govuk-link govuk-!-margin-left-2"
+                            style="color: #d4351c;"
+                            data-confirm="{{ _('Are you sure you want to delete the category &quot;%(name)s&quot; and all its values?', name=category.name) }}">{{ _("Delete") }}</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {# ── Inline Rename Form ───────────────────────── #}
+        <div x-show="editing" x-cloak>
+            <form method="post"
+                  action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  hx-target="#category-{{ category.id }}"
+                  hx-swap="outerHTML"
+                  class="govuk-!-margin-bottom-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="govuk-form-group" style="display: inline-block;">
+                    <input class="govuk-input govuk-input--width-20"
+                           type="text"
+                           name="name"
+                           value="{{ category.name }}"
+                           required />
+                </div>
+                <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0">{{ _("Save") }}</button>
+                <button type="button" class="govuk-link govuk-!-margin-left-2" @click="editing = false">{{ _("Cancel") }}</button>
+            </form>
+        </div>
+    </div>
+
+    {# ── Values Table ─────────────────────────────────── #}
+    {% if category.values %}
+        <table class="govuk-table">
+            <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">{{ _("Value") }}</th>
+                    <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Min") }}</th>
+                    <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Max") }}</th>
+                    {% if can_manage %}
+                        <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+                {% for val in category.values %}
+                    <tr class="govuk-table__row"
+                        x-data="{ editing: {{ 'true' if editing_value_id is defined and editing_value_id == val.value_id else 'false' }} }">
+                {# ── Display Mode ─── #}
+                        <template x-if="!editing">
+                            <td class="govuk-table__cell">{{ val.value }}</td>
+                        </template>
+                        <template x-if="!editing">
+                            <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.min }}</td>
+                        </template>
+                        <template x-if="!editing">
+                            <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.max }}</td>
+                        </template>
+                        {% if can_manage %}
+                            <template x-if="!editing">
+                                <td class="govuk-table__cell">
+                                    <button type="button" class="govuk-link" @click="editing = true">{{ _("Edit") }}</button>
+                                    <form method="post"
+                                          action="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          style="display: inline;"
+                                          hx-post="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          hx-target="#category-{{ category.id }}"
+                                          hx-swap="outerHTML">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        <button type="submit"
+                                                class="govuk-link govuk-!-margin-left-2"
+                                                style="color: #d4351c;"
+                                                data-confirm="{{ _('Delete value &quot;%(value)s&quot;?', value=val.value) }}">{{ _("Delete") }}</button>
+                                    </form>
+                                </td>
+                            </template>
+                        {% endif %}
+
+                {# ── Edit Mode ────── #}
+                        <template x-if="editing">
+                            <td colspan="{{ 4 if can_manage else 3 }}" class="govuk-table__cell">
+                                <form method="post"
+                                      action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                      hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                      hx-target="#category-{{ category.id }}"
+                                      hx-swap="outerHTML"
+                                      class="govuk-!-margin-bottom-0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    {% if value_form and editing_value_id is defined and editing_value_id == val.value_id %}
+                                        {% set vf = value_form %}
+                                    {% else %}
+                                        {% set vf = None %}
+                                    {% endif %}
+                                    <div style="display: flex; gap: 0.5em; align-items: flex-start; flex-wrap: wrap;">
+                                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if vf and vf.value.errors %}govuk-form-group--error{% endif %}">
+                                            <label class="govuk-visually-hidden" for="edit-value-{{ val.value_id }}">{{ _("Value") }}</label>
+                                            {% if vf and vf.value.errors %}
+                                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ vf.value.errors[0] }}</p>
+                                            {% endif %}
+                                            <input class="govuk-input govuk-input--width-10"
+                                                   type="text" name="value"
+                                                   id="edit-value-{{ val.value_id }}"
+                                                   value="{{ vf.value.data if vf and vf.value.data else val.value }}"
+                                                   required />
+                                        </div>
+                                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if vf and vf.min_count.errors %}govuk-form-group--error{% endif %}">
+                                            <label class="govuk-visually-hidden" for="edit-min-{{ val.value_id }}">{{ _("Min") }}</label>
+                                            {% if vf and vf.min_count.errors %}
+                                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ vf.min_count.errors[0] }}</p>
+                                            {% endif %}
+                                            <input class="govuk-input govuk-input--width-4"
+                                                   type="number" name="min_count"
+                                                   id="edit-min-{{ val.value_id }}"
+                                                   value="{{ vf.min_count.data if vf and vf.min_count.data is not none else val.min }}"
+                                                   min="0" required />
+                                        </div>
+                                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if vf and vf.max_count.errors %}govuk-form-group--error{% endif %}">
+                                            <label class="govuk-visually-hidden" for="edit-max-{{ val.value_id }}">{{ _("Max") }}</label>
+                                            {% if vf and vf.max_count.errors %}
+                                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ vf.max_count.errors[0] }}</p>
+                                            {% endif %}
+                                            <input class="govuk-input govuk-input--width-4"
+                                                   type="number" name="max_count"
+                                                   id="edit-max-{{ val.value_id }}"
+                                                   value="{{ vf.max_count.data if vf and vf.max_count.data is not none else val.max }}"
+                                                   min="0" required />
+                                        </div>
+                                        <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0">{{ _("Save") }}</button>
+                                        <button type="button" class="govuk-link" @click="editing = false">{{ _("Cancel") }}</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </template>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="govuk-body govuk-!-margin-bottom-2">{{ _("No values defined.") }}</p>
+    {% endif %}
+
+    {# ── Add Value Form ───────────────────────────────── #}
+    {% if can_manage %}
+        <div x-data="{ adding: {{ 'true' if show_add_value is defined and show_add_value else 'false' }} }">
+            <button type="button" class="govuk-button govuk-button--secondary" x-show="!adding" @click="adding = true">{{ _("Add value") }}</button>
+
+            <div x-show="adding" x-cloak>
+                <form method="post"
+                      action="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-post="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-target="#category-{{ category.id }}"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    {% if show_add_value is defined and show_add_value and value_form %}
+                        {% set af = value_form %}
+                    {% else %}
+                        {% set af = None %}
+                    {% endif %}
+                    <div style="display: flex; gap: 0.5em; align-items: flex-start; flex-wrap: wrap;">
+                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if af and af.value.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label" for="add-value-{{ category.id }}">{{ _("Value") }}</label>
+                            {% if af and af.value.errors %}
+                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ af.value.errors[0] }}</p>
+                            {% endif %}
+                            <input class="govuk-input govuk-input--width-10"
+                                   type="text" name="value"
+                                   id="add-value-{{ category.id }}"
+                                   value="{{ af.value.data if af and af.value.data else '' }}"
+                                   placeholder="{{ _('e.g. Male') }}"
+                                   required />
+                        </div>
+                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if af and af.min_count.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label" for="add-min-{{ category.id }}">{{ _("Min") }}</label>
+                            {% if af and af.min_count.errors %}
+                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ af.min_count.errors[0] }}</p>
+                            {% endif %}
+                            <input class="govuk-input govuk-input--width-4"
+                                   type="number" name="min_count"
+                                   id="add-min-{{ category.id }}"
+                                   value="{{ af.min_count.data if af and af.min_count.data is not none else '' }}"
+                                   min="0" required />
+                        </div>
+                        <div class="govuk-form-group govuk-!-margin-bottom-0 {% if af and af.max_count.errors %}govuk-form-group--error{% endif %}">
+                            <label class="govuk-label" for="add-max-{{ category.id }}">{{ _("Max") }}</label>
+                            {% if af and af.max_count.errors %}
+                                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ af.max_count.errors[0] }}</p>
+                            {% endif %}
+                            <input class="govuk-input govuk-input--width-4"
+                                   type="number" name="max_count"
+                                   id="add-max-{{ category.id }}"
+                                   value="{{ af.max_count.data if af and af.max_count.data is not none else '' }}"
+                                   min="0" required />
+                        </div>
+                        <div style="display: flex; gap: 0.5em; align-items: flex-end; padding-top: 1.8em;">
+                            <button type="submit" class="govuk-button govuk-!-margin-bottom-0">{{ _("Add") }}</button>
+                            <button type="button" class="govuk-link" @click="adding = false">{{ _("Cancel") }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>

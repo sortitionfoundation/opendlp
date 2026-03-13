@@ -549,6 +549,45 @@ class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class AddTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for adding a new target category."""
+
+    name = StringField(
+        _l("Category Name"),
+        validators=[DataRequired(), Length(min=1, max=255)],
+        description=_l("e.g. Gender, Age, Ethnicity"),
+    )
+
+
+class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for editing a target category name."""
+
+    name = StringField(
+        _l("Category Name"),
+        validators=[DataRequired(), Length(min=1, max=255)],
+    )
+
+
+class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for adding or editing a target value."""
+
+    value = StringField(
+        _l("Value"),
+        validators=[DataRequired(), Length(min=1, max=255)],
+        description=_l("e.g. Male, Female, 16-29"),
+    )
+
+    min_count = IntegerField(
+        _l("Min"),
+        validators=[InputRequired(), NonNegativeValidator()],
+    )
+
+    max_count = IntegerField(
+        _l("Max"),
+        validators=[InputRequired(), NonNegativeValidator()],
+    )
+
+
 class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for uploading a CSV file of respondents."""
 

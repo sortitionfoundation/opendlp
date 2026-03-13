@@ -1,9 +1,15 @@
-"""ABOUTME: End-to-end tests for the targets blueprint CSV upload pages
-ABOUTME: Tests viewing targets tab, uploading CSV files, and error handling"""
+"""ABOUTME: End-to-end tests for the targets blueprint pages
+ABOUTME: Tests viewing targets, adding/editing/deleting categories and values, and CSV upload"""
 
 import io
 
-from opendlp.service_layer.assembly_service import import_targets_from_csv
+from opendlp.domain.users import UserAssemblyRole
+from opendlp.domain.value_objects import AssemblyRole
+from opendlp.service_layer.assembly_service import (
+    add_target_value,
+    create_target_category,
+    import_targets_from_csv,
+)
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -17,7 +23,7 @@ class TestViewTargetsPage:
         response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/targets")
         assert response.status_code == 200
         assert b"Targets" in response.data
-        assert b"Import Target Categories from CSV" in response.data
+        assert b"Import from CSV" in response.data
 
     def test_get_targets_page_shows_empty_state(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/targets")
@@ -94,7 +100,6 @@ class TestUploadTargetsCsv:
         )
         assert response.status_code == 302
 
-        # Verify old targets were replaced automatically
         page_response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/targets")
         assert b"Gender" in page_response.data
         assert b"Age" not in page_response.data
@@ -111,7 +116,6 @@ class TestUploadTargetsCsv:
                 csv_content=csv_content,
             )
 
-        # Re-upload with the same feature name — exercises the unique constraint
         new_csv = b"feature,value,min,max\nGender,Male,4,8\nGender,Female,2,6\n"
         response = logged_in_admin.post(
             f"/assemblies/{existing_assembly.id}/targets/upload",
@@ -184,3 +188,197 @@ class TestUploadTargetsCsv:
         )
         assert response.status_code == 200
         assert b"Only CSV files are allowed" in response.data
+
+
+class TestAddCategory:
+    def test_add_category_creates_and_redirects(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories",
+            data={
+                "name": "Gender",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Gender" in response.data
+
+    def test_add_category_htmx_returns_fragment(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories",
+            data={
+                "name": "Age",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Age" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
+
+class TestDeleteCategory:
+    def test_delete_category_redirects(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/delete",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+    def test_delete_category_htmx_returns_empty(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/delete",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert response.data == b""
+
+
+class TestAddValue:
+    def test_add_value_to_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values",
+            data={
+                "value": "Male",
+                "min_count": "5",
+                "max_count": "10",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Male" in response.data
+
+    def test_add_value_invalid_min_max(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values",
+            data={
+                "value": "Male",
+                "min_count": "10",
+                "max_count": "5",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+
+class TestEditValue:
+    def test_edit_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/{value_id}",
+            data={
+                "value": "Female",
+                "min_count": "6",
+                "max_count": "12",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Female" in response.data
+
+
+class TestDeleteValue:
+    def test_delete_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/{value_id}/delete",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+
+class TestEditCategory:
+    def test_rename_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}",
+            data={
+                "name": "Sex",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Sex" in response.data
+
+    def test_rename_category_htmx_returns_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}",
+            data={
+                "name": "Sex",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Sex" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
+
+class TestViewerPermissions:
+    def test_viewer_sees_targets_without_edit_controls(
+        self, logged_in_user, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=existing_assembly.id,
+                csv_content=csv_content,
+            )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            regular = uow.users.get_by_email("user@example.com")
+            if regular:
+                role = UserAssemblyRole(
+                    user_id=regular.id,
+                    assembly_id=existing_assembly.id,
+                    role=AssemblyRole.CONFIRMATION_CALLER,
+                )
+                regular.assembly_roles.append(role)
+                uow.commit()
+
+        response = logged_in_user.get(f"/assemblies/{existing_assembly.id}/targets")
+        assert response.status_code == 200
+        assert b"Gender" in response.data
+        assert b"Male" in response.data
+        assert b"Add category" not in response.data
+        assert b"Add value" not in response.data

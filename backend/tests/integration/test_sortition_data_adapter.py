@@ -318,6 +318,61 @@ class TestOpenDLPDataAdapter:
             assert len(features["Gender"]) == 2
             assert len(features["Age"]) == 3
 
+    def test_mixed_flex_values_loads_successfully(self, postgres_session_factory, test_assembly: Assembly):
+        """Test that categories with a mix of explicit and unset max_flex values
+        load correctly. When any value has MAX_FLEX_UNSET, flex columns are omitted
+        and the library recalculates safe defaults for all values."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        # Category with explicit flex (e.g. from CSV import)
+        cat1 = TargetCategory(assembly_id=test_assembly.id, name="Gender", sort_order=0)
+        cat1.add_value(TargetValue(value="Male", min=10, max=15, min_flex=8, max_flex=18))
+        cat1.add_value(TargetValue(value="Female", min=10, max=15, min_flex=8, max_flex=18))
+
+        # Category with unset flex (e.g. created via UI form)
+        cat2 = TargetCategory(assembly_id=test_assembly.id, name="Age", sort_order=1)
+        cat2.add_value(TargetValue(value="Young", min=10, max=15))
+        cat2.add_value(TargetValue(value="Old", min=10, max=15))
+
+        with uow:
+            uow.target_categories.add(cat1)
+            uow.target_categories.add(cat2)
+            uow.commit()
+
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            select_data = SelectionData(adapter)
+
+            features, _ = select_data.load_features(number_to_select=30)
+
+            assert "Gender" in features
+            assert "Age" in features
+            # All values get library-calculated defaults since flex columns are omitted
+            assert features["Gender"]["Male"].max_flex >= features["Gender"]["Male"].max
+            assert features["Age"]["Young"].max_flex >= features["Age"]["Young"].max
+
+    def test_all_unset_flex_loads_successfully(self, postgres_session_factory, test_assembly: Assembly):
+        """Test that categories where all values have unset max_flex load correctly."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        cat = TargetCategory(assembly_id=test_assembly.id, name="Gender", sort_order=0)
+        cat.add_value(TargetValue(value="Male", min=10, max=15))
+        cat.add_value(TargetValue(value="Female", min=10, max=15))
+
+        with uow:
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            select_data = SelectionData(adapter)
+
+            features, _ = select_data.load_features(number_to_select=30)
+
+            assert "Gender" in features
+            # Library should calculate safe max_flex defaults
+            assert features["Gender"]["Male"].max_flex >= features["Gender"]["Male"].max
+
     def test_adapter_properties(self, postgres_session_factory, test_assembly: Assembly):
         """Test adapter property methods."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
