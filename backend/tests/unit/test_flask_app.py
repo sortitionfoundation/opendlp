@@ -1,4 +1,4 @@
-"""ABOUTME: Integration tests for Flask application factory and routing
+"""ABOUTME: Unit tests for Flask application factory and routing
 ABOUTME: Tests Flask app creation, configuration, blueprints, and error handlers"""
 
 import os
