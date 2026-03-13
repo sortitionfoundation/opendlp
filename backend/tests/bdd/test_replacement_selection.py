@@ -115,9 +115,11 @@ def user_opens_replacement_modal(admin_logged_in_page: Page, test_assembly):
 
 @when("the user clicks Check Spreadsheet")
 def user_clicks_check_spreadsheet(admin_logged_in_page: Page):
-    """Click the Check Spreadsheet button."""
+    """Click the Check Spreadsheet button in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Check Spreadsheet")
+    # Scope to modal to avoid matching button in card on page
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Check Spreadsheet")
     expect(btn).to_be_visible()
     btn.click()
 
@@ -126,15 +128,17 @@ def user_clicks_check_spreadsheet(admin_logged_in_page: Page):
 def load_task_completes(admin_logged_in_page: Page):
     """Wait for load task to complete."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Wait for the number input to appear (indicates load completed)
-    expect(page.get_by_label("Number of people to select")).to_be_visible(timeout=30_000)
+    expect(modal.get_by_label("Number of people to select")).to_be_visible(timeout=30_000)
 
 
 @when("the user enters the number to select")
 def user_enters_number(admin_logged_in_page: Page):
     """Enter a number in the selection field."""
     page = admin_logged_in_page
-    number_input = page.get_by_label("Number of people to select")
+    modal = page.locator("#replacement-modal")
+    number_input = modal.get_by_label("Number of people to select")
     expect(number_input).to_be_visible()
     # Get the min value from the input and use it
     min_val = number_input.get_attribute("min") or "1"
@@ -143,9 +147,10 @@ def user_enters_number(admin_logged_in_page: Page):
 
 @when("the user clicks Run Replacements")
 def user_clicks_run_replacements(admin_logged_in_page: Page):
-    """Click the Run Replacements button."""
+    """Click the Run Replacements button in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Run Replacements")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Run Replacements")
     expect(btn).to_be_visible()
     btn.click()
 
@@ -154,15 +159,17 @@ def user_clicks_run_replacements(admin_logged_in_page: Page):
 def replacement_task_completes(admin_logged_in_page: Page):
     """Wait for replacement task to complete."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Wait for Completed status badge to appear
-    expect(page.get_by_text("Completed")).to_be_visible(timeout=30_000)
+    expect(modal.get_by_text("Completed")).to_be_visible(timeout=30_000)
 
 
 @when("the user clicks Cancel Task")
 def user_clicks_cancel(admin_logged_in_page: Page):
-    """Click the Cancel Task button."""
+    """Click the Cancel Task button in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Cancel Task")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Cancel Task")
     expect(btn).to_be_visible()
     btn.click()
 
@@ -178,9 +185,10 @@ def user_opens_completed_task(admin_logged_in_page: Page, test_assembly, request
 
 @when("the user clicks Close")
 def user_clicks_close(admin_logged_in_page: Page):
-    """Click the Close button."""
+    """Click the Close button in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("link", name="Close")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("link", name="Close")
     expect(btn).to_be_visible()
     btn.click()
     page.wait_for_load_state()
@@ -188,9 +196,10 @@ def user_clicks_close(admin_logged_in_page: Page):
 
 @when("the user clicks Re-check Spreadsheet")
 def user_clicks_recheck(admin_logged_in_page: Page):
-    """Click the Re-check Spreadsheet button."""
+    """Click the Re-check Spreadsheet button in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Re-check Spreadsheet")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Re-check Spreadsheet")
     expect(btn).to_be_visible()
     btn.click()
 
@@ -213,9 +222,11 @@ def replacement_modal_displayed(admin_logged_in_page: Page):
 
 @then("the Check Spreadsheet button is visible")
 def check_spreadsheet_visible(admin_logged_in_page: Page):
-    """Verify Check Spreadsheet button is visible."""
+    """Verify Check Spreadsheet button is visible in the modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Check Spreadsheet")
+    # Scope to the modal to avoid matching button in card on page
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Check Spreadsheet")
     expect(btn).to_be_visible()
 
 
@@ -223,18 +234,20 @@ def check_spreadsheet_visible(admin_logged_in_page: Page):
 def modal_shows_spinner(admin_logged_in_page: Page):
     """Verify the modal shows a loading spinner."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # The spinner is an SVG with animate-spin class
-    spinner = page.locator(".animate-spin")
+    spinner = modal.locator(".animate-spin")
     expect(spinner.first).to_be_visible()
 
 
 @then("the status shows Running or Pending")
 def status_shows_running_or_pending(admin_logged_in_page: Page):
-    """Verify status is Running or Pending."""
+    """Verify status is Running or Pending in modal."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Either Running or Pending should be visible
-    running = page.get_by_text("Running")
-    pending = page.get_by_text("Pending")
+    running = modal.get_by_text("Running")
+    pending = modal.get_by_text("Pending")
     expect(running.or_(pending)).to_be_visible()
 
 
@@ -242,30 +255,34 @@ def status_shows_running_or_pending(admin_logged_in_page: Page):
 def modal_shows_replacement_count(admin_logged_in_page: Page):
     """Verify modal shows available replacement count."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Available replacements:")).to_be_visible()
+    modal = page.locator("#replacement-modal")
+    expect(modal.get_by_text("Available replacements:")).to_be_visible()
 
 
 @then("the number input field is visible")
 def number_input_visible(admin_logged_in_page: Page):
-    """Verify number input field is visible."""
+    """Verify number input field is visible in modal."""
     page = admin_logged_in_page
-    number_input = page.get_by_label("Number of people to select")
+    modal = page.locator("#replacement-modal")
+    number_input = modal.get_by_label("Number of people to select")
     expect(number_input).to_be_visible()
 
 
 @then("the Run Replacements button is visible")
 def run_replacements_visible(admin_logged_in_page: Page):
-    """Verify Run Replacements button is visible."""
+    """Verify Run Replacements button is visible in modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Run Replacements")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Run Replacements")
     expect(btn).to_be_visible()
 
 
 @then("the Full Run Report can be expanded")
 def full_report_expandable(admin_logged_in_page: Page):
-    """Verify Full Run Report details element exists."""
+    """Verify Full Run Report details element exists in modal."""
     page = admin_logged_in_page
-    details = page.get_by_text("Full Run Report")
+    modal = page.locator("#replacement-modal")
+    details = modal.get_by_text("Full Run Report")
     expect(details).to_be_visible()
 
 
@@ -273,17 +290,19 @@ def full_report_expandable(admin_logged_in_page: Page):
 def report_shows_categories(admin_logged_in_page: Page):
     """Verify the report shows category information."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Click to expand the details
-    page.get_by_text("Full Run Report").click()
+    modal.get_by_text("Full Run Report").click()
     # Check for category-related text
-    expect(page.get_by_text("categories")).to_be_visible()
+    expect(modal.get_by_text("categories")).to_be_visible()
 
 
 @then("the Cancel Task button is visible")
 def cancel_button_visible(admin_logged_in_page: Page):
-    """Verify Cancel Task button is visible."""
+    """Verify Cancel Task button is visible in modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Cancel Task")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("button", name="Cancel Task")
     expect(btn).to_be_visible()
 
 
@@ -291,21 +310,24 @@ def cancel_button_visible(admin_logged_in_page: Page):
 def modal_shows_completed(admin_logged_in_page: Page):
     """Verify modal shows Completed status."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Completed")).to_be_visible()
+    modal = page.locator("#replacement-modal")
+    expect(modal.get_by_text("Completed")).to_be_visible()
 
 
 @then("the result message shows success")
 def result_shows_success(admin_logged_in_page: Page):
-    """Verify result message shows success."""
+    """Verify result message shows success in modal."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Task completed successfully")).to_be_visible()
+    modal = page.locator("#replacement-modal")
+    expect(modal.get_by_text("Task completed successfully")).to_be_visible()
 
 
 @then("the Close button is visible")
 def close_button_visible(admin_logged_in_page: Page):
-    """Verify Close button is visible."""
+    """Verify Close button is visible in modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("link", name="Close")
+    modal = page.locator("#replacement-modal")
+    btn = modal.get_by_role("link", name="Close")
     expect(btn).to_be_visible()
 
 
@@ -313,7 +335,8 @@ def close_button_visible(admin_logged_in_page: Page):
 def modal_shows_cancelled(admin_logged_in_page: Page):
     """Verify modal shows Cancelled status."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Cancelled")).to_be_visible(timeout=10_000)
+    modal = page.locator("#replacement-modal")
+    expect(modal.get_by_text("Cancelled")).to_be_visible(timeout=10_000)
 
 
 @then("the user is returned to the selection page")
@@ -337,8 +360,9 @@ def replacement_modal_not_visible(admin_logged_in_page: Page):
 def close_button_not_visible(admin_logged_in_page: Page):
     """Verify Close button is not visible while task is running."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Close link should not be visible during task execution
-    close_link = page.get_by_role("link", name="Close")
+    close_link = modal.get_by_role("link", name="Close")
     expect(close_link).not_to_be_visible()
 
 
@@ -356,8 +380,9 @@ def modal_cannot_close_via_backdrop(admin_logged_in_page: Page):
 def new_load_task_starts(admin_logged_in_page: Page):
     """Verify a new load task has started."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
     # Should see the status change or spinner appear
-    spinner = page.locator(".animate-spin")
+    spinner = modal.locator(".animate-spin")
     expect(spinner.first).to_be_visible()
 
 
@@ -365,7 +390,8 @@ def new_load_task_starts(admin_logged_in_page: Page):
 def modal_shows_loading(admin_logged_in_page: Page):
     """Verify modal shows loading state."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Processing...")).to_be_visible()
+    modal = page.locator("#replacement-modal")
+    expect(modal.get_by_text("Processing...")).to_be_visible()
 
 
 @then("the selection history shows the replacement task")
