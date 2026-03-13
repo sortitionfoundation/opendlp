@@ -307,4 +307,54 @@ document.addEventListener("alpine:init", function () {
             },
         };
     });
+
+    /**
+     * Progress modal demo for design system showcase
+     *
+     * Interactive demo component that simulates different task states
+     * (running, completed, failed) without actual server polling.
+     */
+    Alpine.data("progressModalDemo", function () {
+        return {
+            modalOpen: false,
+            taskState: "running",
+            messages: [
+                "Loading configuration...",
+                "Processing data...",
+                "Running selection algorithm...",
+            ],
+
+            showRunning: function () {
+                this.taskState = "running";
+                this.modalOpen = true;
+            },
+
+            showCompleted: function () {
+                this.taskState = "completed";
+                this.modalOpen = true;
+            },
+
+            showFailed: function () {
+                this.taskState = "failed";
+                this.modalOpen = true;
+            },
+
+            closeModal: function () {
+                this.modalOpen = false;
+            },
+
+            cancelTask: function () {
+                this.taskState = "cancelled";
+                this.modalOpen = false;
+            },
+
+            canClose: function () {
+                return this.taskState !== "running";
+            },
+
+            isRunning: function () {
+                return this.taskState === "running";
+            },
+        };
+    });
 });

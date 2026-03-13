@@ -27,7 +27,7 @@ class Urls:
     user_data_agreement = f"{base}/auth/user-data-agreement"
     view_assembly_list = f"{base}/dashboard"
     create_assembly = f"{base}/assemblies/new"
-    admin = f"{base}/admin"
+    admin = f"{base}/admin/"
     admin_users = f"{base}/admin/users"
     admin_invites = f"{base}/admin/invites"
 
@@ -87,3 +87,18 @@ class Urls:
     def assembly_selection(cls, assembly_id) -> str:
         """Get URL for assembly selection page"""
         return cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id)
+
+    @classmethod
+    def assembly_selection_with_replacement_modal(cls, assembly_id) -> str:
+        """Get URL for assembly selection page with replacement modal open"""
+        return (
+            cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id) + "?replacement_modal=open"
+        )
+
+    @classmethod
+    def assembly_replacement_with_run(cls, assembly_id, run_id) -> str:
+        """Get URL for assembly selection page showing specific replacement run"""
+        return (
+            cls.backoffice_selection_assembly.format(base=cls.base, assembly_id=assembly_id)
+            + f"?current_replacement={run_id}"
+        )
