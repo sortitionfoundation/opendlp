@@ -74,7 +74,8 @@ Feature: Replacement Selection
   Scenario: Cancel running replacement task
     Given an assembly with gsheet configured
     And the replacement load task has completed
-    When the user clicks Run Replacements
+    When the user enters the number to select
+    And the user clicks Run Replacements
     And the user clicks Cancel Task
     Then the modal shows Cancelled status
 
@@ -93,7 +94,8 @@ Feature: Replacement Selection
   Scenario: Cannot close modal while task is running
     Given an assembly with gsheet configured
     And the replacement load task has completed
-    When the user clicks Run Replacements
+    When the user enters the number to select
+    And the user clicks Run Replacements
     Then the Close button is not visible
     And the modal cannot be closed by clicking backdrop
 
