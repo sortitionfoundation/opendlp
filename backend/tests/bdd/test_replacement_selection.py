@@ -68,7 +68,7 @@ def completed_replacement_task(test_database, admin_user, assembly_gsheet_creato
             assembly_id=assembly.id,
             task_id=run_id,
             status=SelectionRunStatus.COMPLETED,
-            task_type=SelectionTaskType.REPLACE_GSHEET,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
             user_id=admin_user.id,
             comment="Completed replacement",
             created_at=datetime.now(UTC) - timedelta(hours=1),
