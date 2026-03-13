@@ -5,7 +5,7 @@
         <div class="govuk-grid-column-two-thirds">
             <h1 class="govuk-heading-xl">{{ _("Create an Account") }}</h1>
             <div class="govuk-inset-text">
-                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
+                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>.", email=support_email_address) }}
             </div>
             {% if config.OAUTH_GOOGLE_CLIENT_ID or config.OAUTH_MICROSOFT_CLIENT_ID %}
                 <div class="govuk-!-margin-top-6">
