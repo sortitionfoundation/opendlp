@@ -37,13 +37,13 @@ Feature: Replacement Selection
     And the number input field is visible
     And the Run Replacements button is visible
 
-  Scenario: Load task shows category information
+  Scenario: Load task shows selection range information
     Given an assembly with gsheet configured
     When the user opens the replacement modal
     And the user clicks Check Spreadsheet
     And the load task completes successfully
-    Then the Full Run Report can be expanded
-    And the report shows category information
+    Then the modal shows the available replacement count
+    And the Re-check Spreadsheet button is visible
 
   # =============================================================================
   # Replacement Run Task

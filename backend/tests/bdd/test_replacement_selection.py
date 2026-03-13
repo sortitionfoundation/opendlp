@@ -38,18 +38,19 @@ def assembly_with_gsheet(assembly_gsheet_creator):
 def replacement_load_completed(admin_logged_in_page: Page, test_assembly):
     """Open replacement modal and complete the load task."""
     page = admin_logged_in_page
+    modal = page.locator("#replacement-modal")
 
     # Navigate to selection page and open replacement modal
     page.goto(Urls.assembly_selection_with_replacement_modal(test_assembly.id))
     page.wait_for_load_state()
 
-    # Click Check Spreadsheet to start load
-    check_btn = page.get_by_role("button", name="Check Spreadsheet")
+    # Click Check Spreadsheet to start load (scope to modal)
+    check_btn = modal.get_by_role("button", name="Check Spreadsheet")
     expect(check_btn).to_be_visible()
     check_btn.click()
 
     # Wait for load to complete - the form with number input appears
-    expect(page.get_by_label("Number of people to select")).to_be_visible(timeout=30_000)
+    expect(modal.get_by_label("Number of people to select")).to_be_visible(timeout=30_000)
 
     return test_assembly
 
@@ -277,24 +278,13 @@ def run_replacements_visible(admin_logged_in_page: Page):
     expect(btn).to_be_visible()
 
 
-@then("the Full Run Report can be expanded")
-def full_report_expandable(admin_logged_in_page: Page):
-    """Verify Full Run Report details element exists in modal."""
+@then("the Re-check Spreadsheet button is visible")
+def recheck_button_visible(admin_logged_in_page: Page):
+    """Verify Re-check Spreadsheet button is visible in modal."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    details = modal.get_by_text("Full Run Report")
-    expect(details).to_be_visible()
-
-
-@then("the report shows category information")
-def report_shows_categories(admin_logged_in_page: Page):
-    """Verify the report shows category information."""
-    page = admin_logged_in_page
-    modal = page.locator("#replacement-modal")
-    # Click to expand the details
-    modal.get_by_text("Full Run Report").click()
-    # Check for category-related text
-    expect(modal.get_by_text("categories")).to_be_visible()
+    btn = modal.get_by_role("button", name="Re-check Spreadsheet")
+    expect(btn).to_be_visible()
 
 
 @then("the Cancel Task button is visible")
