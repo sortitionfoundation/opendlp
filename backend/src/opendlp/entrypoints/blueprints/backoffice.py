@@ -209,6 +209,7 @@ def _get_manage_tabs_context(
             tab_names = result.tab_names if isinstance(result, TabManagementResult) else []
             return current_manage_tabs, result.run_record, tab_names, get_manage_old_tabs_status(result)
     except (ValueError, TypeError):
+        # Invalid or malformed manage_tabs_param - ignore and return defaults
         pass
     return None, None, [], None
 
