@@ -27,6 +27,18 @@ document.addEventListener("click", function (e) {
     if (e.target.dataset.print !== undefined) {
         window.print();
     }
+
+    // Check for clipboard copy via data-copy-target
+    const copyTarget = e.target.dataset.copyTarget;
+    if (copyTarget) {
+        const copyMessage = e.target.dataset.copyMessage || "Copied!";
+        copyToClipboard(copyTarget, copyMessage);
+    }
+
+    // Check for backup codes download
+    if (e.target.dataset.downloadBackupCodes !== undefined) {
+        downloadBackupCodes();
+    }
 });
 
 // Copy text to clipboard with fallback for older browsers
