@@ -6,7 +6,6 @@ import uuid
 from io import StringIO
 from typing import Any
 
-from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
@@ -68,12 +67,13 @@ def import_respondents_from_csv(  # noqa: C901
     csv_content: str,
     replace_existing: bool = False,
     id_column: str | None = None,
-) -> tuple[list[Respondent], list[str]]:
+) -> tuple[list[Respondent], list[str], str]:
     """
     Import respondents from CSV.
 
-    CSV format: id_column is required (default from assembly.csv.id_column), all other columns become attributes.
-    Returns: (list of created respondents, list of error messages)
+    CSV format: id_column is required, all other columns become attributes.
+    If id_column is not provided, the first column in the CSV is used.
+    Returns: (list of created respondents, list of error messages, resolved id_column name)
     """
     with uow:
         user = uow.users.get(user_id)
@@ -90,19 +90,18 @@ def import_respondents_from_csv(  # noqa: C901
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        # Get id_column from assembly CSV config if not provided
-        if id_column is None:
-            if assembly.csv is None:
-                # Auto-create default CSV config if needed
-                assembly.csv = AssemblyCSV(assembly_id=assembly_id)
-                uow.assemblies.add(assembly)  # Ensure it's tracked
-            id_column = assembly.csv.id_column
-
         # Parse CSV
         csv_file = StringIO(csv_content)
         reader = csv.DictReader(csv_file)
 
-        if not reader.fieldnames or id_column not in reader.fieldnames:
+        if not reader.fieldnames:
+            raise InvalidSelection("CSV file is empty or has no header row")
+
+        # Auto-detect id_column from first CSV column if not provided
+        if id_column is None:
+            id_column = reader.fieldnames[0]
+
+        if id_column not in reader.fieldnames:
             raise InvalidSelection(f"CSV must have '{id_column}' column")
 
         errors = []
@@ -166,7 +165,7 @@ def import_respondents_from_csv(  # noqa: C901
         uow.respondents.bulk_add(respondents)
         uow.commit()
 
-        return [r.create_detached_copy() for r in respondents], errors
+        return [r.create_detached_copy() for r in respondents], errors, id_column
 
 
 def reset_selection_status(

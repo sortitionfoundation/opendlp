@@ -7,7 +7,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
 from opendlp.service_layer import respondent_service
-from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection
+from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -106,7 +106,7 @@ class TestImportRespondentsFromCSV:
 NB001,Female,30-44,alice@test.com
 NB002,Male,16-29,bob@test.com"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, errors, resolved_id_column = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -115,19 +115,25 @@ NB002,Male,16-29,bob@test.com"""
         assert respondents[0].attributes["Gender"] == "Female"
         assert respondents[0].email == "alice@test.com"
         assert len(errors) == 0
+        assert resolved_id_column == "external_id"
 
         # Verify they were persisted
         with uow:
             all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
             assert len(all_resp) == 2
 
-    def test_import_csv_without_external_id_column(self, uow, admin_user: User, test_assembly: Assembly):
-        """Test importing CSV without external_id column raises error."""
+    def test_import_csv_uses_first_column_as_id(self, uow, admin_user: User, test_assembly: Assembly):
+        """Test importing CSV without explicit id_column uses first column."""
         csv_content = """name,age
 Alice,30"""
 
-        with pytest.raises(InvalidSelection, match="must have 'external_id' column"):
-            respondent_service.import_respondents_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        respondents, _, resolved_id_column = respondent_service.import_respondents_from_csv(
+            uow, admin_user.id, test_assembly.id, csv_content
+        )
+
+        assert resolved_id_column == "name"
+        assert len(respondents) == 1
+        assert respondents[0].external_id == "Alice"
 
     def test_import_skips_duplicates(self, uow, admin_user: User, test_assembly: Assembly):
         """Test importing CSV with duplicates skips them."""
@@ -135,7 +141,7 @@ Alice,30"""
 NB001,Female
 NB001,Male"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, errors, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -149,7 +155,7 @@ NB001,Male"""
 ,Female
 NB001,Male"""
 
-        respondents, errors = respondent_service.import_respondents_from_csv(
+        respondents, errors, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -175,7 +181,7 @@ NB001,Female"""
         csv2 = """external_id,Age
 NB002,30-44"""
 
-        respondents, _ = respondent_service.import_respondents_from_csv(
+        respondents, _, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
         )
 
@@ -193,7 +199,7 @@ NB002,30-44"""
         csv_content = """external_id,Gender
 NB001,Female"""
 
-        respondents, _ = respondent_service.import_respondents_from_csv(
+        respondents, _, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 
@@ -209,7 +215,7 @@ NB001,Female"""
 NB001,Female,true,true,false
 NB002,Male,false,true,true"""
 
-        respondents, _ = respondent_service.import_respondents_from_csv(
+        respondents, _, _ = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         )
 

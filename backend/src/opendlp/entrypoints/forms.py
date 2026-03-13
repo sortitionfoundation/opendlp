@@ -573,7 +573,9 @@ class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     id_column = StringField(
         _l("ID Column"),
         validators=[Optional(), Length(max=100)],
-        description=_l("Name of column containing unique identifiers. Leave blank to use the assembly default."),
+        description=_l(
+            "Name of column containing unique identifiers. If blank, the first column in the CSV will be used."
+        ),
     )
 
 
