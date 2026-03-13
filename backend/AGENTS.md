@@ -160,6 +160,7 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 - Line length: 120 characters (configured in Ruff)
 - Don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
 - Prefer the empty string as the default for string arguments, rather than `str | None`
+- Empty `except` clauses must include an explanatory comment describing why the exception is being silently ignored
 
 ### Internationalization (i18n)
 

@@ -270,6 +270,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% endcall %}
         </div>
 
+        {# Manage Tabs Progress Modal - shown when current_manage_tabs parameter is present #}
+        {% if current_manage_tabs and manage_tabs_run_record %}
+            {% include "backoffice/components/manage_tabs_progress_modal.html" %}
+        {% endif %}
+
         {# Manage Generated Tabs Card - Full Width #}
         <div class="mb-8">
             {% call card(title=_("Manage Generated Tabs"), composed=true) %}
@@ -283,7 +288,10 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("List Old Tabs"), variant="outline", disabled=true) }}
+                    <form method="post" action="{{ url_for('backoffice.start_manage_tabs_list', assembly_id=assembly.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("List Old Tabs"), type="submit", variant="outline") }}
+                    </form>
                 {% endcall %}
             {% endcall %}
         </div>
