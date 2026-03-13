@@ -590,8 +590,8 @@ class TestBackofficeSelectionTab:
             call_args = mock_start_select.call_args
             assert call_args[1].get("test_selection") is True or call_args[0][3] is True
 
-    def test_selection_progress_endpoint_returns_html(self, logged_in_admin, assembly_with_gsheet):
-        """Test that progress endpoint returns HTML fragment with HTMX attributes."""
+    def test_selection_progress_modal_endpoint_returns_html(self, logged_in_admin, assembly_with_gsheet):
+        """Test that modal progress endpoint returns HTML fragment with HTMX attributes."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -622,7 +622,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
             assert b"hx-get" in response.data
@@ -752,8 +752,8 @@ class TestBackofficeSelectionTab:
         # Should show the Selection History card (even if empty)
         assert b"Selection History" in response.data
 
-    def test_selection_progress_not_found(self, logged_in_admin, assembly_with_gsheet):
-        """Test progress endpoint returns 404 when task not found."""
+    def test_selection_progress_modal_not_found(self, logged_in_admin, assembly_with_gsheet):
+        """Test modal progress endpoint returns 404 when task not found."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -768,12 +768,12 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
             assert response.status_code == 404
             assert response.data == b""
 
-    def test_selection_progress_permission_denied(self, logged_in_admin, existing_assembly):
-        """Test progress endpoint returns 403 when user lacks permission."""
+    def test_selection_progress_modal_permission_denied(self, logged_in_admin, existing_assembly):
+        """Test modal progress endpoint returns 403 when user lacks permission."""
 
         run_id = uuid.uuid4()
 
@@ -781,12 +781,14 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.backoffice.get_assembly_with_permissions",
             side_effect=InsufficientPermissions("No access"),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(
+                f"/backoffice/assembly/{existing_assembly.id}/selection/modal-progress/{run_id}"
+            )
             assert response.status_code == 403
             assert response.data == b""
 
-    def test_selection_progress_no_hx_get_when_completed(self, logged_in_admin, assembly_with_gsheet):
-        """Test that progress HTML omits hx-get when task is completed (stops polling)."""
+    def test_selection_progress_modal_no_hx_get_when_completed(self, logged_in_admin, assembly_with_gsheet):
+        """Test that modal progress HTML omits hx-get when task is completed (stops polling)."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -817,14 +819,14 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
+            # Modal stops polling by not including hx-get when finished
             assert b"hx-get" not in response.data
-            assert response.headers.get("HX-Refresh") == "true"
 
-    def test_selection_progress_hx_refresh_on_failed(self, logged_in_admin, assembly_with_gsheet):
-        """Test that HX-Refresh header is set for failed tasks too."""
+    def test_selection_progress_modal_no_hx_get_on_failed(self, logged_in_admin, assembly_with_gsheet):
+        """Test that modal progress HTML omits hx-get for failed tasks (stops polling)."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -855,14 +857,14 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
+            # Modal stops polling by not including hx-get when finished
             assert b"hx-get" not in response.data
-            assert response.headers.get("HX-Refresh") == "true"
 
-    def test_selection_progress_assembly_ownership_validation(self, logged_in_admin, assembly_with_gsheet):
-        """Test that progress returns 404 when run belongs to a different assembly."""
+    def test_selection_progress_modal_assembly_ownership_validation(self, logged_in_admin, assembly_with_gsheet):
+        """Test that modal progress returns 404 when run belongs to a different assembly."""
 
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
@@ -884,7 +886,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
             assert response.status_code == 404
 
     def test_selection_with_current_selection_renders_modal(self, logged_in_admin, assembly_with_gsheet):

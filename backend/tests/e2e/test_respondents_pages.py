@@ -25,7 +25,7 @@ def _import_many_respondents(postgres_session_factory, admin_user, assembly_id, 
     csv_content = "\n".join(rows)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        respondents, _ = import_respondents_from_csv(
+        respondents, _, _ = import_respondents_from_csv(
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly_id,
@@ -283,21 +283,11 @@ class TestUploadRespondentsCsv:
             assert assembly.csv is not None
             assert assembly.csv.id_column == "participant_id"
 
-    def test_upload_without_id_column_does_not_overwrite_saved_config(
+    def test_upload_without_id_column_saves_first_column(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-        """Test that uploading without specifying id_column preserves the previously saved value."""
-        # Set up a custom id_column in config
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            update_csv_config(
-                uow=uow,
-                user_id=admin_user.id,
-                assembly_id=existing_assembly.id,
-                id_column="participant_id",
-            )
-
-        # Upload using the default (no id_column specified) - CSV must use the saved column name
-        csv_data = b"participant_id,email\nP001,alice@example.com\n"
+        """Test that uploading without specifying id_column saves the first CSV column as id_column."""
+        csv_data = b"external_id,email\nEXT001,alice@example.com\n"
         logged_in_admin.post(
             f"/assemblies/{existing_assembly.id}/respondents/upload",
             data={
@@ -308,17 +298,20 @@ class TestUploadRespondentsCsv:
             follow_redirects=False,
         )
 
-        # The saved id_column should still be "participant_id"
+        # The saved id_column should be "external_id" (the first column)
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assembly = uow.assemblies.get(existing_assembly.id)
-            assert assembly.csv.id_column == "participant_id"
+            assert assembly.csv is not None
+            assert assembly.csv.id_column == "external_id"
 
-    def test_upload_csv_missing_id_column_shows_error(self, logged_in_admin, existing_assembly):
+    def test_upload_csv_missing_explicit_id_column_shows_error(self, logged_in_admin, existing_assembly):
+        """Test that specifying an id_column not present in CSV shows an error."""
         csv_data = b"name,email\nAlice,alice@example.com\n"
         response = logged_in_admin.post(
             f"/assemblies/{existing_assembly.id}/respondents/upload",
             data={
                 "csv_file": (io.BytesIO(csv_data), "missing_id.csv"),
+                "id_column": "participant_id",
                 "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/respondents"),
             },
             content_type="multipart/form-data",

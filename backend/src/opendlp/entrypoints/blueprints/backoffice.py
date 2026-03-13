@@ -360,56 +360,6 @@ def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
     return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/progress")
-@login_required
-def selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Return progress HTML fragment for HTMX polling of selection task status."""
-    try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-
-            # Check task health
-            check_and_update_task_health(uow, run_id)
-
-            # Get run status
-            result = get_selection_run_status(uow, run_id)
-
-        if result.run_record is None:
-            return "", 404
-
-        if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
-            )
-            return "", 404
-
-        response = current_app.make_response((
-            render_template(
-                "backoffice/components/selection_progress.html",
-                assembly=assembly,
-                gsheet=gsheet,
-                run_record=result.run_record,
-                log_messages=result.log_messages,
-                run_report=result.run_report,
-                translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
-                run_id=run_id,
-            ),
-            200,
-        ))
-        if result.run_record.has_finished:
-            response.headers["HX-Refresh"] = "true"
-        return response
-    except NotFoundError:
-        return "", 404
-    except InsufficientPermissions:
-        return "", 403
-    except Exception as e:
-        current_app.logger.error(f"Selection progress error: {e}")
-        return "", 500
-
-
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
 @login_required
 def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
