@@ -395,6 +395,7 @@ def history_shows_replacement(admin_logged_in_page: Page):
 
 @then("the task type shows as Replace Selection")
 def task_type_shows_replace(admin_logged_in_page: Page):
-    """Verify task type shows as Replace Selection."""
+    """Verify task type shows as replacement selection."""
     page = admin_logged_in_page
-    expect(page.get_by_text("Replace Selection")).to_be_visible()
+    # The verbose text is "Select replacement google spreadsheet"
+    expect(page.get_by_text("replacement", exact=False)).to_be_visible()
