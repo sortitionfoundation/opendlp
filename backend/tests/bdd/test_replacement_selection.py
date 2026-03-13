@@ -207,7 +207,8 @@ def replacement_modal_displayed(admin_logged_in_page: Page):
     # Check for the modal backdrop (the wrapper div has no dimensions due to fixed children)
     modal_backdrop = page.locator("#replacement-modal-backdrop")
     expect(modal_backdrop).to_be_visible()
-    expect(page.get_by_role("heading", name="Replacement Selection")).to_be_visible()
+    # Use specific modal title ID to avoid matching card heading on page
+    expect(page.locator("#replacement-modal-title")).to_be_visible()
 
 
 @then("the Check Spreadsheet button is visible")
