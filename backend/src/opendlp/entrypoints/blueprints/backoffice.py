@@ -215,7 +215,9 @@ def _get_selection_modal_context(
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
             )
     except (ValueError, TypeError):
-        pass
+        current_app.logger.debug(
+            "Invalid selection_param for _get_selection_modal_context: %r", selection_param
+        )
 
     return None, None, [], ""
 
@@ -256,7 +258,9 @@ def _get_replacement_modal_context(
                 max_select,
             )
     except (ValueError, TypeError):
-        pass
+        current_app.logger.debug(
+            "Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param
+        )
 
     return None, None, [], "", initial_min_select, initial_max_select
 
