@@ -96,11 +96,12 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
 
 @when("the user clicks the Replacements button")
 def user_clicks_replacements(admin_logged_in_page: Page):
-    """Click the Replacements button to open modal."""
+    """Click the 'Go to Replacement Selection' link to open modal."""
     page = admin_logged_in_page
-    btn = page.get_by_role("button", name="Replacements")
-    expect(btn).to_be_visible()
-    btn.click()
+    # The button is actually a link styled as a button with text "Go to Replacement Selection"
+    link = page.get_by_role("link", name="Go to Replacement Selection")
+    expect(link).to_be_visible()
+    link.click()
     page.wait_for_load_state()
 
 
