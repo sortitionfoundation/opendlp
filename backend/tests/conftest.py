@@ -99,23 +99,6 @@ def temp_env_vars():
 
 
 @pytest.fixture
-def in_memory_sqlite_db():
-    engine = create_engine("sqlite:///:memory:")
-    return engine
-
-
-@pytest.fixture
-def sqlite_session_factory(in_memory_sqlite_db):
-    orm.metadata.create_all(in_memory_sqlite_db)
-    database.start_mappers()
-
-    yield sessionmaker(bind=in_memory_sqlite_db)
-
-    database.clear_mappers()
-    orm.metadata.drop_all(in_memory_sqlite_db)
-
-
-@pytest.fixture
 def cli_with_session_factory(postgres_session_factory):
     """Fixture that provides a Click runner with test session factory in context."""
 
