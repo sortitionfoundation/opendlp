@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-13 18:19+0000\n"
+"POT-Creation-Date: 2026-03-15 16:07+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -880,7 +880,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:171
 #: src/opendlp/entrypoints/blueprints/main.py:270
 #: src/opendlp/entrypoints/blueprints/respondents.py:81
-#: src/opendlp/entrypoints/blueprints/targets.py:131
+#: src/opendlp/entrypoints/blueprints/targets.py:152
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
@@ -912,8 +912,8 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents.py:78
 #: src/opendlp/entrypoints/blueprints/respondents.py:164
 #: src/opendlp/entrypoints/blueprints/respondents.py:188
-#: src/opendlp/entrypoints/blueprints/targets.py:128
-#: src/opendlp/entrypoints/blueprints/targets.py:196
+#: src/opendlp/entrypoints/blueprints/targets.py:149
+#: src/opendlp/entrypoints/blueprints/targets.py:217
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
@@ -1443,7 +1443,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:86
 #: src/opendlp/entrypoints/blueprints/respondents.py:196
-#: src/opendlp/entrypoints/blueprints/targets.py:136
+#: src/opendlp/entrypoints/blueprints/targets.py:157
 #, fuzzy
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
@@ -1464,7 +1464,7 @@ msgid "%(count)s rows were skipped: %(errors)s"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:161
-#: src/opendlp/entrypoints/blueprints/targets.py:193
+#: src/opendlp/entrypoints/blueprints/targets.py:214
 #, fuzzy, python-format
 msgid "CSV import failed: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
@@ -1475,12 +1475,12 @@ msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:170
-#: src/opendlp/entrypoints/blueprints/targets.py:202
+#: src/opendlp/entrypoints/blueprints/targets.py:223
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:175
-#: src/opendlp/entrypoints/blueprints/targets.py:207
+#: src/opendlp/entrypoints/blueprints/targets.py:228
 #, fuzzy
 msgid "An unexpected error occurred during import"
 msgstr "Hiba történt a betöltés indítása közben"
@@ -1495,83 +1495,88 @@ msgstr ""
 msgid "You don't have permission to reset selection status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:181
+#: src/opendlp/entrypoints/blueprints/targets.py:202
 #, python-format
 msgid ""
 "Successfully imported %(cats)s categories with %(vals)s values from "
 "%(file)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:199
+#: src/opendlp/entrypoints/blueprints/targets.py:220
 #, fuzzy
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:223
-#: src/opendlp/entrypoints/blueprints/targets.py:290
-#: src/opendlp/entrypoints/blueprints/targets.py:385
-#: src/opendlp/entrypoints/blueprints/targets.py:470
+#: src/opendlp/entrypoints/blueprints/targets.py:244
+#: src/opendlp/entrypoints/blueprints/targets.py:311
+#: src/opendlp/entrypoints/blueprints/targets.py:406
+#: src/opendlp/entrypoints/blueprints/targets.py:491
 msgid "Please correct the errors below"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:255
+#: src/opendlp/entrypoints/blueprints/targets.py:276
 #, python-format
 msgid "Category '%(name)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:266
-#: src/opendlp/entrypoints/blueprints/targets.py:329
-#: src/opendlp/entrypoints/blueprints/targets.py:437
-#: src/opendlp/entrypoints/blueprints/targets.py:523
+#: src/opendlp/entrypoints/blueprints/targets.py:287
+#: src/opendlp/entrypoints/blueprints/targets.py:350
+#: src/opendlp/entrypoints/blueprints/targets.py:458
+#: src/opendlp/entrypoints/blueprints/targets.py:544
 #, python-format
 msgid "Error: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:316
+#: src/opendlp/entrypoints/blueprints/targets.py:337
 #, python-format
 msgid "Category renamed to '%(name)s'"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:351
+#: src/opendlp/entrypoints/blueprints/targets.py:372
 #, fuzzy
 msgid "Category deleted"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:415
+#: src/opendlp/entrypoints/blueprints/targets.py:436
 #, python-format
 msgid "Value '%(value)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:501
+#: src/opendlp/entrypoints/blueprints/targets.py:522
 #, fuzzy
 msgid "Value updated"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:556
+#: src/opendlp/entrypoints/blueprints/targets.py:577
 #, fuzzy
 msgid "Value deleted"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:574
+#: src/opendlp/entrypoints/blueprints/targets.py:595
 msgid "No values to add"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:617
+#: src/opendlp/entrypoints/blueprints/targets.py:638
 #, python-format
 msgid "Added %(count)s values"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:637
+#: src/opendlp/entrypoints/blueprints/targets.py:658
 #, fuzzy
 msgid "No columns selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:663
+#: src/opendlp/entrypoints/blueprints/targets.py:710
+#, python-format
+msgid "Created %(count)s categories with %(values)s values: %(names)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/targets.py:719
 #, python-format
 msgid "Created %(count)s categories: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:667
+#: src/opendlp/entrypoints/blueprints/targets.py:723
 #, fuzzy
 msgid "No new categories were created"
 msgstr "Feladat állapota"
@@ -2067,7 +2072,7 @@ msgstr "Hozzon létre fiókot"
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
 #: templates/respondents/view_respondents.html:13
-#: templates/targets/view_targets.html:93
+#: templates/targets/view_targets.html:158
 msgid "There is a problem"
 msgstr "Valami probléma van"
 
@@ -2286,7 +2291,7 @@ msgstr ""
 #: templates/db_selection/components/progress.html:81
 #: templates/gsheets/components/progress.html:101
 #: templates/profile/2fa_backup_codes.html:19
-#: templates/profile/2fa_setup.html:37 templates/targets/view_targets.html:85
+#: templates/profile/2fa_setup.html:37 templates/targets/view_targets.html:150
 #, fuzzy
 msgid "Warning"
 msgstr "Folyamatban"
@@ -4880,7 +4885,7 @@ msgid ""
 msgstr ""
 
 #: templates/respondents/view_respondents.html:78
-#: templates/targets/view_targets.html:121
+#: templates/targets/view_targets.html:186
 msgid "Upload CSV"
 msgstr ""
 
@@ -4981,44 +4986,62 @@ msgstr ""
 msgid "No target categories defined yet."
 msgstr "Feladat állapota"
 
-#: templates/targets/view_targets.html:36
+#: templates/targets/view_targets.html:50
 #, fuzzy
 msgid "Respondent data columns"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/targets/view_targets.html:37
+#: templates/targets/view_targets.html:58
 msgid ""
-"These columns are available in your respondent data. Select columns to "
-"create as target categories."
+"These columns have few distinct values and are likely useful as target "
+"categories. Their values will be added automatically."
 msgstr ""
 
-#: templates/targets/view_targets.html:54
+#: templates/targets/view_targets.html:72
+#: templates/targets/view_targets.html:112
+msgid "values"
+msgstr ""
+
+#: templates/targets/view_targets.html:75
+#: templates/targets/view_targets.html:115
 #, fuzzy
 msgid "already defined"
 msgstr "Táblázat lapfülei"
 
-#: templates/targets/view_targets.html:61
+#: templates/targets/view_targets.html:94
+#, python-format
+msgid "Other columns (%(count)s)"
+msgstr ""
+
+#: templates/targets/view_targets.html:98
+msgid ""
+"These columns have many different values and probably aren't useful as "
+"target categories. Only the category will be created; values will not be "
+"added automatically."
+msgstr ""
+
+#: templates/targets/view_targets.html:126
 #, fuzzy
 msgid "Add selected categories"
 msgstr "Feladat állapota"
 
-#: templates/targets/view_targets.html:71
+#: templates/targets/view_targets.html:136
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/targets/view_targets.html:75
+#: templates/targets/view_targets.html:140
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/targets/view_targets.html:77
+#: templates/targets/view_targets.html:142
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/targets/view_targets.html:79
+#: templates/targets/view_targets.html:144
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/targets/view_targets.html:86
+#: templates/targets/view_targets.html:151
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
@@ -8183,3 +8206,9 @@ msgstr ""
 
 #~ msgid "Contact your assembly organizer for an invitation code."
 #~ msgstr "Meghívókódért lépj kapcsolatba a közösségi gyűlésed szervezőjével."
+
+#~ msgid ""
+#~ "These columns are available in your "
+#~ "respondent data. Select columns to "
+#~ "create as target categories."
+#~ msgstr ""

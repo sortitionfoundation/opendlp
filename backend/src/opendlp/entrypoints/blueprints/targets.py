@@ -31,6 +31,8 @@ from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueFo
 
 targets_bp = Blueprint("targets", __name__)
 
+MAX_DISTINCT_VALUES_FOR_AUTO_ADD = 20
+
 
 def _is_htmx() -> bool:
     return request.headers.get("HX-Request") == "true"
@@ -74,6 +76,20 @@ def _get_respondent_attribute_columns(assembly_id: uuid.UUID) -> list[str]:
         return get_respondent_attribute_columns(uow, assembly_id)
 
 
+def _get_column_distinct_counts(
+    assembly_id: uuid.UUID,
+    attribute_columns: list[str],
+) -> dict[str, int]:
+    """Get the number of distinct values for each respondent attribute column."""
+    counts: dict[str, int] = {}
+    uow = bootstrap.bootstrap()
+    with uow:
+        for col in attribute_columns:
+            value_counts = get_respondent_attribute_value_counts(uow, assembly_id, col)
+            counts[col] = len(value_counts)
+    return counts
+
+
 def _build_respondent_counts(
     assembly_id: uuid.UUID,
     target_categories: list,
@@ -111,6 +127,8 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if assembly.csv is not None:
             id_column = assembly.csv.id_column
 
+        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+
         return render_template(
             "targets/view_targets.html",
             assembly=assembly,
@@ -124,6 +142,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondent_attribute_columns=attribute_columns,
             all_respondent_counts=respondent_counts,
             id_column=id_column,
+            column_distinct_counts=column_distinct_counts,
         )
 
     except NotFoundError:
@@ -643,11 +662,16 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
         sort_order = len(existing)
 
+        # Compute distinct value counts to decide whether to auto-add values
+        attribute_columns = _get_respondent_attribute_columns(assembly_id)
+        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+
         created = []
+        values_added_count = 0
         for column_name in selected_columns:
             try:
                 uow = bootstrap.bootstrap()
-                create_target_category(
+                category = create_target_category(
                     uow=uow,
                     user_id=current_user.id,
                     assembly_id=assembly_id,
@@ -656,15 +680,45 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 created.append(column_name)
                 sort_order += 1
+
+                # Auto-add all distinct values for low-cardinality columns
+                distinct_count = column_distinct_counts.get(column_name, 0)
+                if distinct_count > 0 and distinct_count < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+                    uow2 = bootstrap.bootstrap()
+                    with uow2:
+                        value_counts = get_respondent_attribute_value_counts(uow2, assembly_id, column_name)
+                    for value_name in sorted(value_counts.keys()):
+                        uow3 = bootstrap.bootstrap()
+                        add_target_value(
+                            uow=uow3,
+                            user_id=current_user.id,
+                            assembly_id=assembly_id,
+                            category_id=category.id,
+                            value=value_name,
+                            min_count=0,
+                            max_count=0,
+                        )
+                        values_added_count += 1
             except ValueError:
                 # Category with this name may already exist; skip it
                 continue
 
         if created:
-            flash(
-                _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
-                "success",
-            )
+            if values_added_count > 0:
+                flash(
+                    _(
+                        "Created %(count)s categories with %(values)s values: %(names)s",
+                        count=len(created),
+                        values=values_added_count,
+                        names=", ".join(created),
+                    ),
+                    "success",
+                )
+            else:
+                flash(
+                    _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
+                    "success",
+                )
         else:
             flash(_("No new categories were created"), "warning")
 

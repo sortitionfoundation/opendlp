@@ -31,32 +31,97 @@
                 {% if available_columns.append(col) %}{% endif %}
             {% endif %}
         {% endfor %}
+
+        {# Split into recommended (< 20 distinct values) and high cardinality (>= 20) #}
+        {% set recommended_columns = [] %}
+        {% set high_cardinality_columns = [] %}
+        {% set counts = column_distinct_counts if column_distinct_counts is defined and column_distinct_counts else {} %}
+        {% for col in available_columns %}
+            {% set n = counts.get(col, 0) %}
+            {% if n > 0 and n < 20 %}
+                {% if recommended_columns.append(col) %}{% endif %}
+            {% else %}
+                {% if high_cardinality_columns.append(col) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+
         {% if available_columns %}
             <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
             <h3 class="govuk-heading-m">{{ _("Respondent data columns") }}</h3>
-            <p class="govuk-body">{{ _("These columns are available in your respondent data. Select columns to create as target categories.") }}</p>
+
             <form method="post"
                   action="{{ url_for('targets.add_categories_from_columns', assembly_id=assembly.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <div class="govuk-checkboxes govuk-checkboxes--small">
-                    {% for col in available_columns %}
-                        {% set already_defined = col | lower in existing_category_names_lower %}
-                        <div class="govuk-checkboxes__item">
-                            <input class="govuk-checkboxes__input"
-                                   id="col-{{ loop.index }}"
-                                   name="columns"
-                                   type="checkbox"
-                                   value="{{ col }}"
-                                   {% if already_defined %}disabled{% endif %} />
-                            <label class="govuk-label govuk-checkboxes__label" for="col-{{ loop.index }}">
-                                {{ col }}
-                                {% if already_defined %}
-                                    <strong class="govuk-tag govuk-tag--green govuk-!-margin-left-1">{{ _("already defined") }}</strong>
-                                {% endif %}
-                            </label>
-                        </div>
+
+                {# ── Recommended columns (< 20 distinct values) ── #}
+                {% if recommended_columns %}
+                    <p class="govuk-body">{{ _("These columns have few distinct values and are likely useful as target categories. Their values will be added automatically.") }}</p>
+                    <div class="govuk-checkboxes govuk-checkboxes--small">
+                        {% for col in recommended_columns %}
+                            {% set already_defined = col | lower in existing_category_names_lower %}
+                            <div class="govuk-checkboxes__item">
+                                <input class="govuk-checkboxes__input"
+                                       id="col-rec-{{ loop.index }}"
+                                       name="columns"
+                                       type="checkbox"
+                                       value="{{ col }}"
+                                       {% if already_defined %}disabled{% endif %} />
+                                <label class="govuk-label govuk-checkboxes__label" for="col-rec-{{ loop.index }}">
+                                    {{ col }}
+                                    <span class="govuk-hint govuk-!-margin-bottom-0 govuk-!-margin-left-1" style="display: inline;">
+                                        ({{ counts.get(col, 0) }} {{ _("values") }})
+                                    </span>
+                                    {% if already_defined %}
+                                        <strong class="govuk-tag govuk-tag--green govuk-!-margin-left-1">{{ _("already defined") }}</strong>
+                                    {% endif %}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {# ── High cardinality columns (>= 20 distinct values) ── #}
+                {% if high_cardinality_columns %}
+                    {% set has_selectable_high_card = [] %}
+                    {% for col in high_cardinality_columns %}
+                        {% if col | lower not in existing_category_names_lower %}
+                            {% if has_selectable_high_card.append(col) %}{% endif %}
+                        {% endif %}
                     {% endfor %}
-                </div>
+                    <details class="govuk-details govuk-!-margin-top-4">
+                        <summary class="govuk-details__summary">
+                            <span class="govuk-details__summary-text">
+                                {{ _("Other columns (%(count)s)", count=high_cardinality_columns|length) }}
+                            </span>
+                        </summary>
+                        <div class="govuk-details__text">
+                            <p class="govuk-body">{{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}</p>
+                            <div class="govuk-checkboxes govuk-checkboxes--small">
+                                {% for col in high_cardinality_columns %}
+                                    {% set already_defined = col | lower in existing_category_names_lower %}
+                                    <div class="govuk-checkboxes__item">
+                                        <input class="govuk-checkboxes__input"
+                                               id="col-hc-{{ loop.index }}"
+                                               name="columns"
+                                               type="checkbox"
+                                               value="{{ col }}"
+                                               {% if already_defined %}disabled{% endif %} />
+                                        <label class="govuk-label govuk-checkboxes__label" for="col-hc-{{ loop.index }}">
+                                            {{ col }}
+                                            <span class="govuk-hint govuk-!-margin-bottom-0 govuk-!-margin-left-1" style="display: inline;">
+                                                ({{ counts.get(col, 0) }} {{ _("values") }})
+                                            </span>
+                                            {% if already_defined %}
+                                                <strong class="govuk-tag govuk-tag--green govuk-!-margin-left-1">{{ _("already defined") }}</strong>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </details>
+                {% endif %}
+
                 <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-top-4" data-module="govuk-button">
                     {{ _("Add selected categories") }}
                 </button>

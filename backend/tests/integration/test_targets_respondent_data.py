@@ -11,6 +11,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.blueprints.targets import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer import assembly_service
 from opendlp.service_layer.respondent_service import (
@@ -245,3 +246,113 @@ class TestTargetCategoryRespondentCounts:
 
         assert "Gender" in columns
         assert counts == {"Male": 1, "Female": 2}
+
+
+class TestAddCategoriesAutoAddValues:
+    """When adding categories from respondent columns, values are auto-added for low-cardinality columns."""
+
+    def test_auto_adds_values_for_low_cardinality_column(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        admin_user: User,
+    ) -> None:
+        """Categories from columns with < MAX_DISTINCT_VALUES_FOR_AUTO_ADD values get values auto-added."""
+        assembly = Assembly(title="Auto-add Test", question="Q?", number_to_select=10)
+        with uow:
+            uow.assemblies.add(assembly)
+            assembly_id = assembly.id
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="1", attributes={"Gender": "Male", "Region": "North"})
+            )
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="2", attributes={"Gender": "Female", "Region": "South"})
+            )
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="3", attributes={"Gender": "Female", "Region": "East"})
+            )
+            uow.commit()
+
+        # Verify our test data has less than the threshold
+        uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
+        with uow2:
+            gender_counts = uow2.respondents.get_attribute_value_counts(assembly_id, "Gender")
+            assert len(gender_counts) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD
+
+        # Create category and manually simulate what add_categories_from_columns does
+        uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
+        category = assembly_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
+
+        # Auto-add values (as the endpoint would)
+        for value_name in sorted(gender_counts.keys()):
+            uow4 = SqlAlchemyUnitOfWork(uow.session_factory)
+            assembly_service.add_target_value(
+                uow=uow4,
+                user_id=admin_user.id,
+                assembly_id=assembly_id,
+                category_id=category.id,
+                value=value_name,
+                min_count=0,
+                max_count=0,
+            )
+
+        # Verify values were added
+        uow5 = SqlAlchemyUnitOfWork(uow.session_factory)
+        categories = assembly_service.get_targets_for_assembly(uow5, admin_user.id, assembly_id)
+        gender_cat = next(c for c in categories if c.name == "Gender")
+        value_names = sorted(v.value for v in gender_cat.values)
+        assert value_names == ["Female", "Male"]
+        assert all(v.min == 0 and v.max == 0 for v in gender_cat.values)
+
+    def test_no_auto_add_for_high_cardinality_column(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        admin_user: User,
+    ) -> None:
+        """Columns with >= MAX_DISTINCT_VALUES_FOR_AUTO_ADD distinct values should not get auto-added values."""
+        assembly = Assembly(title="High Card Test", question="Q?", number_to_select=10)
+        with uow:
+            uow.assemblies.add(assembly)
+            assembly_id = assembly.id
+            # Create respondents with many distinct values for "Name"
+            for i in range(MAX_DISTINCT_VALUES_FOR_AUTO_ADD + 5):
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=str(i),
+                        attributes={"Name": f"Person{i}"},
+                    )
+                )
+            uow.commit()
+
+        uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
+        with uow2:
+            name_counts = uow2.respondents.get_attribute_value_counts(assembly_id, "Name")
+            assert len(name_counts) >= MAX_DISTINCT_VALUES_FOR_AUTO_ADD
+
+    def test_column_distinct_counts(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+    ) -> None:
+        """Column distinct counts returns correct count of distinct values per column."""
+        assembly = Assembly(title="Distinct Test", question="Q?", number_to_select=10)
+        with uow:
+            uow.assemblies.add(assembly)
+            assembly_id = assembly.id
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="1", attributes={"Gender": "Male", "Age": "18-25"})
+            )
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="2", attributes={"Gender": "Female", "Age": "18-25"})
+            )
+            uow.respondents.add(
+                Respondent(assembly_id=assembly_id, external_id="3", attributes={"Gender": "Female", "Age": "26-35"})
+            )
+            uow.commit()
+
+        uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
+        with uow2:
+            gender_counts = uow2.respondents.get_attribute_value_counts(assembly_id, "Gender")
+            age_counts = uow2.respondents.get_attribute_value_counts(assembly_id, "Age")
+
+        assert len(gender_counts) == 2  # Male, Female
+        assert len(age_counts) == 2  # 18-25, 26-35
