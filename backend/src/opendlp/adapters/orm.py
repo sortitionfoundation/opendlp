@@ -13,7 +13,6 @@ from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
-from sqlalchemy.sql.sqltypes import String as SQLString
 
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
@@ -72,54 +71,6 @@ class TZAwareDatetime(TypeDecorator):
             return value.replace(tzinfo=UTC)
 
         return value  # type: ignore[no-any-return]
-
-
-class CrossDatabaseUUID(TypeDecorator):
-    """Cross-database UUID type that works with both PostgreSQL and SQLite."""
-
-    impl = SQLString
-    cache_ok = True
-
-    def load_dialect_impl(self, dialect: Dialect) -> Any:
-        """Choose the appropriate UUID implementation based on the dialect."""
-        if dialect.name == "postgresql":
-            # Use native PostgreSQL UUID type
-            return dialect.type_descriptor(PostgresUUID(as_uuid=True))
-        else:
-            # For SQLite and other databases, use CHAR(36) to store UUID as string
-            return dialect.type_descriptor(SQLString(36))
-
-    def process_bind_param(self, value: Any, dialect: Dialect) -> str | None:
-        """Convert UUID object to string for storage."""
-        if value is None:
-            return value
-
-        if isinstance(value, uuid.UUID):
-            return str(value)
-        elif isinstance(value, str):
-            # Validate it's a proper UUID string
-            try:
-                uuid.UUID(value)
-                return value
-            except ValueError as e:
-                raise ValueError(f"Invalid UUID string: {value}") from e
-        else:
-            raise TypeError(f"Expected UUID or string, got {type(value)}")
-
-    def process_result_value(self, value: Any, dialect: Dialect) -> uuid.UUID | None:
-        """Convert stored value back to UUID object."""
-        if value is None:
-            return value
-
-        if isinstance(value, uuid.UUID):
-            # Already a UUID (PostgreSQL case)
-            return value
-        elif isinstance(value, str):
-            # String UUID (SQLite case)
-            return uuid.UUID(value)
-        else:
-            # This shouldn't happen, but handle gracefully
-            return uuid.UUID(str(value))
 
 
 class RunReportJSON(TypeDecorator):
@@ -212,7 +163,7 @@ metadata = mapper_registry.metadata
 users = Table(
     "users",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column("email", String(255), nullable=False, index=True, unique=True),
     Column("first_name", String(100), nullable=False, default=""),
     Column("last_name", String(100), nullable=False, default=""),
@@ -236,7 +187,7 @@ users = Table(
 assemblies = Table(
     "assemblies",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column("title", String(255), nullable=False),
     Column("question", Text, nullable=False, default=""),
     Column("first_assembly_date", Date, nullable=True),
@@ -252,10 +203,10 @@ assemblies = Table(
 user_assembly_roles = Table(
     "user_assembly_roles",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False),
     Column(
-        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), index=True, nullable=False
+        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), index=True, nullable=False
     ),
     Column("role", EnumAsString(AssemblyRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -266,13 +217,13 @@ user_assembly_roles = Table(
 user_invites = Table(
     "user_invites",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column("code", String(50), nullable=False, index=True, unique=True),
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
-    Column("created_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
-    Column("used_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True),
+    Column("used_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True),
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
 
@@ -280,8 +231,8 @@ user_invites = Table(
 password_reset_tokens = Table(
     "password_reset_tokens",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("token", String(100), nullable=False, index=True, unique=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
@@ -292,8 +243,8 @@ password_reset_tokens = Table(
 email_confirmation_tokens = Table(
     "email_confirmation_tokens",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("token", String(100), nullable=False, index=True, unique=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
@@ -304,9 +255,9 @@ email_confirmation_tokens = Table(
 assembly_gsheets = Table(
     "assembly_gsheets",
     metadata,
-    Column("assembly_gsheet_id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("assembly_gsheet_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
-        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, unique=True
+        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, unique=True
     ),
     Column("url", String(500), nullable=False),
     Column("select_registrants_tab", String(100), nullable=False, default="Respondents"),
@@ -326,10 +277,10 @@ assembly_gsheets = Table(
 assembly_csv = Table(
     "assembly_csv",
     metadata,
-    Column("assembly_csv_id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("assembly_csv_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
         "assembly_id",
-        CrossDatabaseUUID(),
+        PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -351,9 +302,9 @@ assembly_csv = Table(
 selection_run_records = Table(
     "selection_run_records",
     metadata,
-    Column("task_id", CrossDatabaseUUID(), primary_key=True),
+    Column("task_id", PostgresUUID(as_uuid=True), primary_key=True),
     Column(
-        "assembly_id", CrossDatabaseUUID(), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
+        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
     ),
     Column("status", EnumAsString(SelectionRunStatus, 50), nullable=False, index=True),
     Column("task_type", EnumAsString(SelectionTaskType, 50), nullable=False, index=True),
@@ -363,7 +314,7 @@ selection_run_records = Table(
     Column("error_message", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("completed_at", TZAwareDatetime(), nullable=True),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True),
     Column("comment", Text, nullable=False, default=""),
     Column("status_stages", JSON, nullable=True),
     Column("selected_ids", JSON, nullable=True),
@@ -375,8 +326,8 @@ selection_run_records = Table(
 user_backup_codes = Table(
     "user_backup_codes",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("code_hash", String(255), nullable=False),
     Column("used_at", TZAwareDatetime(), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -386,8 +337,8 @@ user_backup_codes = Table(
 totp_verification_attempts = Table(
     "totp_verification_attempts",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("attempted_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("success", Boolean, nullable=False),
 )
@@ -396,10 +347,10 @@ totp_verification_attempts = Table(
 two_factor_audit_log = Table(
     "two_factor_audit_log",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
-    Column("user_id", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("action", String(50), nullable=False),
-    Column("performed_by", CrossDatabaseUUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+    Column("performed_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
     Column("timestamp", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("metadata", JSON, nullable=True),
 )
@@ -408,10 +359,10 @@ two_factor_audit_log = Table(
 target_categories = Table(
     "target_categories",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
         "assembly_id",
-        CrossDatabaseUUID(),
+        PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -431,10 +382,10 @@ target_categories = Table(
 respondents = Table(
     "respondents",
     metadata,
-    Column("id", CrossDatabaseUUID(), primary_key=True, default=uuid.uuid4),
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
         "assembly_id",
-        CrossDatabaseUUID(),
+        PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -443,7 +394,7 @@ respondents = Table(
     Column("selection_status", EnumAsString(RespondentStatus, 50), nullable=False, index=True),
     Column(
         "selection_run_id",
-        CrossDatabaseUUID(),
+        PostgresUUID(as_uuid=True),
         ForeignKey("selection_run_records.task_id", ondelete="SET NULL"),
         nullable=True,
         index=True,
