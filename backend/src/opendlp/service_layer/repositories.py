@@ -406,3 +406,8 @@ class RespondentRepository(AbstractRepository):
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         """Get sorted list of attribute column names from a sample respondent for an assembly."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        """Get counts of each distinct value for a given attribute across respondents in an assembly."""
+        raise NotImplementedError

@@ -12,6 +12,7 @@
     {# ── Category Blocks ─────────────────────────────────── #}
     <div id="target-categories">
         {% for category in target_categories %}
+            {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
             {% include "targets/components/category_block.html" %}
         {% endfor %}
     </div>
@@ -19,6 +20,48 @@
     {# ── Add Category Form ────────────────────────────────── #}
     {% if can_manage %}
         {% include "targets/components/add_category_form.html" %}
+    {% endif %}
+
+    {# ── Respondent Attribute Columns ─────────────────────── #}
+    {% if respondent_attribute_columns is defined and respondent_attribute_columns and can_manage %}
+        {% set existing_category_names_lower = target_categories | map(attribute='name') | map('lower') | list %}
+        {% set available_columns = [] %}
+        {% for col in respondent_attribute_columns %}
+            {% if col != id_column %}
+                {% if available_columns.append(col) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% if available_columns %}
+            <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+            <h3 class="govuk-heading-m">{{ _("Respondent data columns") }}</h3>
+            <p class="govuk-body">{{ _("These columns are available in your respondent data. Select columns to create as target categories.") }}</p>
+            <form method="post"
+                  action="{{ url_for('targets.add_categories_from_columns', assembly_id=assembly.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="govuk-checkboxes govuk-checkboxes--small">
+                    {% for col in available_columns %}
+                        {% set already_defined = col | lower in existing_category_names_lower %}
+                        <div class="govuk-checkboxes__item">
+                            <input class="govuk-checkboxes__input"
+                                   id="col-{{ loop.index }}"
+                                   name="columns"
+                                   type="checkbox"
+                                   value="{{ col }}"
+                                   {% if already_defined %}disabled{% endif %} />
+                            <label class="govuk-label govuk-checkboxes__label" for="col-{{ loop.index }}">
+                                {{ col }}
+                                {% if already_defined %}
+                                    <strong class="govuk-tag govuk-tag--green govuk-!-margin-left-1">{{ _("already defined") }}</strong>
+                                {% endif %}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-top-4" data-module="govuk-button">
+                    {{ _("Add selected categories") }}
+                </button>
+            </form>
+        {% endif %}
     {% endif %}
 
     {# ── CSV Import (collapsible) ─────────────────────────── #}

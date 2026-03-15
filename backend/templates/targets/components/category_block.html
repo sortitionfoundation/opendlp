@@ -1,4 +1,6 @@
 {# HTMX swap target for category-level operations #}
+{% set has_counts = respondent_counts is defined and respondent_counts %}
+{% set col_count = 3 + (1 if has_counts else 0) + (1 if can_manage else 0) %}
 <div class="govuk-!-margin-bottom-6" id="category-{{ category.id }}">
     {# ── Category Header ──────────────────────────────── #}
     <div class="govuk-!-margin-bottom-2" x-data="{ editing: false }">
@@ -51,6 +53,9 @@
                     <th scope="col" class="govuk-table__header">{{ _("Value") }}</th>
                     <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Min") }}</th>
                     <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Max") }}</th>
+                    {% if has_counts %}
+                        <th scope="col" class="govuk-table__header govuk-table__header--numeric">{{ _("Respondents") }}</th>
+                    {% endif %}
                     {% if can_manage %}
                         <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
                     {% endif %}
@@ -70,6 +75,11 @@
                         <template x-if="!editing">
                             <td class="govuk-table__cell govuk-table__cell--numeric">{{ val.max }}</td>
                         </template>
+                        {% if has_counts %}
+                            <template x-if="!editing">
+                                <td class="govuk-table__cell govuk-table__cell--numeric">{{ respondent_counts.get(val.value, 0) }}</td>
+                            </template>
+                        {% endif %}
                         {% if can_manage %}
                             <template x-if="!editing">
                                 <td class="govuk-table__cell">
@@ -92,7 +102,7 @@
 
                 {# ── Edit Mode ────── #}
                         <template x-if="editing">
-                            <td colspan="{{ 4 if can_manage else 3 }}" class="govuk-table__cell">
+                            <td colspan="{{ col_count }}" class="govuk-table__cell">
                                 <form method="post"
                                       action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                       hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
@@ -148,9 +158,55 @@
                     </tr>
                 {% endfor %}
             </tbody>
+            <tfoot class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    <th scope="row" class="govuk-table__header">{{ _("Total") }}</th>
+                    <td class="govuk-table__cell govuk-table__cell--numeric"><strong>{{ category.values | sum(attribute='min') }}</strong></td>
+                    <td class="govuk-table__cell govuk-table__cell--numeric"><strong>{{ category.values | sum(attribute='max') }}</strong></td>
+                    {% if has_counts %}
+                        <td class="govuk-table__cell govuk-table__cell--numeric"><strong>{{ respondent_counts.values() | sum }}</strong></td>
+                    {% endif %}
+                    {% if can_manage %}
+                        <td class="govuk-table__cell"></td>
+                    {% endif %}
+                </tr>
+            </tfoot>
         </table>
     {% else %}
         <p class="govuk-body govuk-!-margin-bottom-2">{{ _("No values defined.") }}</p>
+    {% endif %}
+
+    {# ── Missing Respondent Values ─────────────────────── #}
+    {% if has_counts and can_manage %}
+        {% set target_value_names = category.values | map(attribute='value') | list %}
+        {% set missing_values = [] %}
+        {% for rv in respondent_counts.keys() %}
+            {% if rv not in target_value_names %}
+                {% if missing_values.append(rv) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% if missing_values %}
+            <div class="govuk-inset-text govuk-!-margin-top-0">
+                <p class="govuk-body govuk-!-margin-bottom-2">
+                    {{ _("Values in respondent data not yet targeted:") }}
+                    <strong>{{ missing_values | join(", ") }}</strong>
+                </p>
+                <form method="post"
+                      action="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-post="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-target="#category-{{ category.id }}"
+                      hx-swap="outerHTML"
+                      class="govuk-!-margin-bottom-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    {% for mv in missing_values %}
+                        <input type="hidden" name="missing_values" value="{{ mv }}" />
+                    {% endfor %}
+                    <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0">
+                        {{ _("Add all missing values") }}
+                    </button>
+                </form>
+            </div>
+        {% endif %}
     {% endif %}
 
     {# ── Add Value Form ───────────────────────────────── #}
