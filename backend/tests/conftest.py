@@ -116,7 +116,7 @@ def sqlite_session_factory(in_memory_sqlite_db):
 
 
 @pytest.fixture
-def cli_with_session_factory(sqlite_session_factory):
+def cli_with_session_factory(postgres_session_factory):
     """Fixture that provides a Click runner with test session factory in context."""
 
     def _invoke_cli_with_context(cli_command, args):
@@ -124,7 +124,7 @@ def cli_with_session_factory(sqlite_session_factory):
         runner = CliRunner()
 
         # Create context object with our test session factory
-        ctx_obj = {"session_factory": sqlite_session_factory}
+        ctx_obj = {"session_factory": postgres_session_factory}
 
         # Invoke with the context object
         return runner.invoke(cli_command, args, obj=ctx_obj)
