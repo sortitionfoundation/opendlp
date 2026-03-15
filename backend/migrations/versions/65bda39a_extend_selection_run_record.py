@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 import opendlp.adapters.orm
 
@@ -27,7 +28,7 @@ def upgrade() -> None:
         "selection_run_records",
         sa.Column(
             "user_id",
-            opendlp.adapters.orm.CrossDatabaseUUID(),
+            PostgresUUID(as_uuid=True),
             sa.ForeignKey("users.id", ondelete="SET NULL"),
             nullable=True,
         ),

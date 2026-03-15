@@ -204,9 +204,15 @@ user_assembly_roles = Table(
     "user_assembly_roles",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False),
     Column(
-        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), index=True, nullable=False
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    ),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
     ),
     Column("role", EnumAsString(AssemblyRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -220,10 +226,14 @@ user_invites = Table(
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column("code", String(50), nullable=False, index=True, unique=True),
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
-    Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
-    Column("used_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True),
+    Column(
+        "used_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    ),
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
 
@@ -232,7 +242,9 @@ password_reset_tokens = Table(
     "password_reset_tokens",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("token", String(100), nullable=False, index=True, unique=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
@@ -244,7 +256,9 @@ email_confirmation_tokens = Table(
     "email_confirmation_tokens",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("token", String(100), nullable=False, index=True, unique=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("expires_at", TZAwareDatetime(), nullable=False, index=True),
@@ -257,7 +271,11 @@ assembly_gsheets = Table(
     metadata,
     Column("assembly_gsheet_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
-        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, unique=True
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     ),
     Column("url", String(500), nullable=False),
     Column("select_registrants_tab", String(100), nullable=False, default="Respondents"),
@@ -304,7 +322,11 @@ selection_run_records = Table(
     metadata,
     Column("task_id", PostgresUUID(as_uuid=True), primary_key=True),
     Column(
-        "assembly_id", PostgresUUID(as_uuid=True), ForeignKey("assemblies.id", ondelete="CASCADE"), nullable=False, index=True
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     ),
     Column("status", EnumAsString(SelectionRunStatus, 50), nullable=False, index=True),
     Column("task_type", EnumAsString(SelectionTaskType, 50), nullable=False, index=True),
@@ -314,7 +336,9 @@ selection_run_records = Table(
     Column("error_message", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("completed_at", TZAwareDatetime(), nullable=True),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    ),
     Column("comment", Text, nullable=False, default=""),
     Column("status_stages", JSON, nullable=True),
     Column("selected_ids", JSON, nullable=True),
@@ -327,7 +351,9 @@ user_backup_codes = Table(
     "user_backup_codes",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("code_hash", String(255), nullable=False),
     Column("used_at", TZAwareDatetime(), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -338,7 +364,9 @@ totp_verification_attempts = Table(
     "totp_verification_attempts",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("attempted_at", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
     Column("success", Boolean, nullable=False),
 )
@@ -348,7 +376,9 @@ two_factor_audit_log = Table(
     "two_factor_audit_log",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column(
+        "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    ),
     Column("action", String(50), nullable=False),
     Column("performed_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
     Column("timestamp", TZAwareDatetime(), nullable=False, default=aware_utcnow, index=True),
