@@ -12,13 +12,13 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.exceptions import InvalidResetToken, RateLimitExceeded
 from opendlp.service_layer.security import hash_password
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 
 @pytest.fixture
-def test_user_email(sqlite_session_factory):
-    """Create a test user with password authentication."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+def user_with_email():
+    """Create a FakeUnitOfWork with a test user with password authentication."""
+    uow = FakeUnitOfWork()
     email_suffix = secrets.token_urlsafe(3)
     email = f"testuser{email_suffix}@example.com"
     with uow:
@@ -31,19 +31,19 @@ def test_user_email(sqlite_session_factory):
         )
         uow.users.add(user)
         uow.commit()
-        return user.id, email
+        return {"uow": uow, "user_id": user.id, "email": email}
 
 
 @pytest.fixture
-def test_user(test_user_email):
-    test_user_id, _ = test_user_email
-    return test_user_id
+def reset_user(user_with_email):
+    return {"uow": user_with_email["uow"], "user_id": user_with_email["user_id"]}
 
 
-def test_full_password_reset_flow(sqlite_session_factory, test_user_email):
+def test_full_password_reset_flow(user_with_email):
     """Test complete password reset flow from request to completion."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    test_user_id, test_email = test_user_email
+    uow = user_with_email["uow"]
+    reset_user_id = user_with_email["user_id"]
+    test_email = user_with_email["email"]
 
     # Step 1: Request password reset
     success = password_reset_service.request_password_reset(uow, test_email)
@@ -51,10 +51,10 @@ def test_full_password_reset_flow(sqlite_session_factory, test_user_email):
 
     # Step 2: Verify token was created
     with uow:
-        tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(test_user_id))
+        tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(reset_user_id))
         assert len(tokens) == 1
         token = tokens[0].create_detached_copy()
-        assert token.user_id == test_user_id
+        assert token.user_id == reset_user_id
         assert token.is_valid()
 
     # Step 3: Validate the token
@@ -73,11 +73,11 @@ def test_full_password_reset_flow(sqlite_session_factory, test_user_email):
 
         user = password_reset_service.reset_password_with_token(uow, token.token, "NewSecurePassword123!")
 
-        assert user.id == test_user_id
+        assert user.id == reset_user_id
 
     # Step 5: Verify password was changed
     with uow:
-        updated_user = uow.users.get(test_user_id)
+        updated_user = uow.users.get(reset_user_id)
         assert updated_user.password_hash == new_password_hash
 
     # Step 6: Verify token was marked as used
@@ -86,10 +86,10 @@ def test_full_password_reset_flow(sqlite_session_factory, test_user_email):
         assert used_token.is_used()
 
 
-def test_rate_limiting(sqlite_session_factory, test_user_email):
+def test_rate_limiting(user_with_email):
     """Test that rate limiting prevents excessive requests."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    _, email = test_user_email
+    uow = user_with_email["uow"]
+    email = user_with_email["email"]
 
     # Make 3 requests (hitting the limit)
     for _i in range(3):
@@ -100,15 +100,16 @@ def test_rate_limiting(sqlite_session_factory, test_user_email):
         password_reset_service.request_password_reset(uow, email)
 
 
-def test_expired_token_cannot_be_used(sqlite_session_factory, test_user):
+def test_expired_token_cannot_be_used(reset_user):
     """Test that expired tokens cannot be used."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = reset_user["uow"]
+    user_id = reset_user["user_id"]
 
     # Create an expired token
     with uow:
         past_time = datetime.now(UTC) - timedelta(hours=2)
         token = PasswordResetToken(
-            user_id=test_user,
+            user_id=user_id,
             created_at=past_time,
             expires_at=past_time + timedelta(hours=1),
             token="expired-token-123",
@@ -121,13 +122,14 @@ def test_expired_token_cannot_be_used(sqlite_session_factory, test_user):
         password_reset_service.validate_reset_token(uow, "expired-token-123")
 
 
-def test_used_token_cannot_be_reused(sqlite_session_factory, test_user):
+def test_used_token_cannot_be_reused(reset_user):
     """Test that used tokens cannot be reused."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = reset_user["uow"]
+    user_id = reset_user["user_id"]
 
     # Create and use a token
     with uow:
-        token = PasswordResetToken(user_id=test_user, token="used-token-456")
+        token = PasswordResetToken(user_id=user_id, token="used-token-456")
         token.use()
         uow.password_reset_tokens.add(token)
         uow.commit()
@@ -137,9 +139,9 @@ def test_used_token_cannot_be_reused(sqlite_session_factory, test_user):
         password_reset_service.validate_reset_token(uow, "used-token-456")
 
 
-def test_nonexistent_email_returns_success_but_no_token(sqlite_session_factory):
+def test_nonexistent_email_returns_success_but_no_token():
     """Test that nonexistent emails return success (anti-enumeration)."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
 
     # Request reset for nonexistent email
     success = password_reset_service.request_password_reset(uow, "nonexistent@example.com")
@@ -152,9 +154,9 @@ def test_nonexistent_email_returns_success_but_no_token(sqlite_session_factory):
         assert len([t for t in all_tokens if t.token == "nonexistent"]) == 0
 
 
-def test_oauth_user_cannot_reset_password(sqlite_session_factory):
+def test_oauth_user_cannot_reset_password():
     """Test that OAuth users cannot request password reset."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
 
     # Create OAuth user
     with uow:
@@ -178,9 +180,9 @@ def test_oauth_user_cannot_reset_password(sqlite_session_factory):
         assert len(tokens) == 0
 
 
-def test_inactive_user_cannot_reset_password(sqlite_session_factory):
+def test_inactive_user_cannot_reset_password():
     """Test that inactive users cannot request password reset."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
 
     # Create inactive user
     with uow:
@@ -204,15 +206,16 @@ def test_inactive_user_cannot_reset_password(sqlite_session_factory):
         assert len(tokens) == 0
 
 
-def test_token_cleanup(sqlite_session_factory, test_user):
+def test_token_cleanup(reset_user):
     """Test that old tokens can be cleaned up."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = reset_user["uow"]
+    user_id = reset_user["user_id"]
 
     # Create old tokens
     with uow:
         old_time = datetime.now(UTC) - timedelta(days=35)
         old_token = PasswordResetToken(
-            user_id=test_user,
+            user_id=user_id,
             created_at=old_time,
             expires_at=old_time + timedelta(hours=1),
             token="old-token-789",
@@ -220,7 +223,7 @@ def test_token_cleanup(sqlite_session_factory, test_user):
         uow.password_reset_tokens.add(old_token)
 
         # Create recent token
-        recent_token = PasswordResetToken(user_id=test_user, token="recent-token-101")
+        recent_token = PasswordResetToken(user_id=user_id, token="recent-token-101")
         uow.password_reset_tokens.add(recent_token)
         uow.commit()
 
@@ -234,15 +237,16 @@ def test_token_cleanup(sqlite_session_factory, test_user):
         assert uow.password_reset_tokens.get_by_token("recent-token-101") is not None
 
 
-def test_invalidate_other_tokens_on_reset(sqlite_session_factory, test_user):
+def test_invalidate_other_tokens_on_reset(reset_user):
     """Test that all other tokens are invalidated when password is reset."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = reset_user["uow"]
+    user_id = reset_user["user_id"]
 
     # Create multiple tokens
     with uow:
-        token1 = PasswordResetToken(user_id=test_user, token="token1")
-        token2 = PasswordResetToken(user_id=test_user, token="token2")
-        token3 = PasswordResetToken(user_id=test_user, token="token3")
+        token1 = PasswordResetToken(user_id=user_id, token="token1")
+        token2 = PasswordResetToken(user_id=user_id, token="token2")
+        token3 = PasswordResetToken(user_id=user_id, token="token3")
         uow.password_reset_tokens.add(token1)
         uow.password_reset_tokens.add(token2)
         uow.password_reset_tokens.add(token3)

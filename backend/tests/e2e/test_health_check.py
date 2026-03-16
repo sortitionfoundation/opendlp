@@ -53,8 +53,11 @@ class TestHealthCheckEndpoint:
 
     def test_health_check_returns_500_when_database_fails(self, client: FlaskClient):
         """Test health check returns HTTP 500 when database check fails."""
-        # Mock database check to return failure
-        with patch("opendlp.entrypoints.blueprints.health.check_database", return_value=(False, "UNKNOWN")):
+        # Mock both checks to avoid real network calls (celery inspect times out ~5s otherwise)
+        with (
+            patch("opendlp.entrypoints.blueprints.health.check_database", return_value=(False, "UNKNOWN")),
+            patch("opendlp.entrypoints.blueprints.health.check_celery_worker", return_value=False),
+        ):
             response = client.get("/health")
 
         assert response.status_code == 500
@@ -91,7 +94,10 @@ class TestHealthCheckEndpoint:
 
     def test_health_check_includes_version_and_service_account(self, client: FlaskClient):
         """Test health check includes version string and service account email."""
-        with patch("opendlp.entrypoints.blueprints.health.check_celery_worker", return_value=True):
+        with (
+            patch("opendlp.entrypoints.blueprints.health.check_database", return_value=(True, 3)),
+            patch("opendlp.entrypoints.blueprints.health.check_celery_worker", return_value=True),
+        ):
             response = client.get("/health")
 
         data = response.get_json()

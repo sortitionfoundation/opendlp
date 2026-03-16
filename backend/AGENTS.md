@@ -189,6 +189,7 @@ See [docs/sortition_error_translations.md](docs/sortition_error_translations.md)
 - Use imperative SQLAlchemy mapping in adapters
 - Database migrations used via Alembic, see [Deployment Guide](docs/deploy.md) for details.
   - Always create migrations with the alembic command, eg: `uv run alembic revision --autogenerate -m "description of changes"`
+  - When adding a new table: also add a corresponding DELETE statement to `_delete_all_test_data()` in `tests/conftest.py`, respecting foreign key ordering (child tables before parent tables). The BDD tests have a similar function `delete_all_except_standard_users()` in `tests/bdd/conftest.py` that also needs updating.
 
 **Important:** When using imperative SQLAlchemy mapping for mypy compatibility, use ORM table column references in repository implementations instead of domain object attributes:
 

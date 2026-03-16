@@ -1,5 +1,5 @@
-"""ABOUTME: End-to-end tests for backoffice assembly data page
-ABOUTME: Tests the assembly data page with gsheet source selection"""
+"""ABOUTME: End-to-end tests for backoffice gsheet configuration and selection functionality
+ABOUTME: Tests gsheet CRUD, validation, selection loading/running/cancelling, and history"""
 
 import uuid
 from datetime import UTC, datetime
@@ -7,132 +7,8 @@ from unittest.mock import MagicMock, patch
 
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.sortition import InvalidSelection
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
-
-
-class TestBackofficeDashboard:
-    """Test backoffice dashboard functionality."""
-
-    def test_dashboard_loads_for_logged_in_user(self, logged_in_admin):
-        """Test that dashboard page loads successfully."""
-        response = logged_in_admin.get("/backoffice/dashboard")
-        assert response.status_code == 200
-        assert b"Dashboard" in response.data or b"Assembly" in response.data.lower()
-
-    def test_dashboard_redirects_when_not_logged_in(self, client):
-        """Test that unauthenticated users are redirected to login."""
-        response = client.get("/backoffice/dashboard")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-
-class TestBackofficeAssemblyDetails:
-    """Test backoffice assembly details page."""
-
-    def test_view_assembly_details_page_loads(self, logged_in_admin, existing_assembly):
-        """Test that assembly details page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
-        assert response.status_code == 200
-        assert existing_assembly.title.encode() in response.data
-
-    def test_view_assembly_redirects_when_not_logged_in(self, client, existing_assembly):
-        """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-    def test_view_nonexistent_assembly_redirects(self, logged_in_admin):
-        """Test that accessing non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000")
-        assert response.status_code == 302  # Should redirect to dashboard with error
-
-
-class TestBackofficeShowcase:
-    """Test backoffice showcase page."""
-
-    def test_showcase_page_loads(self, client):
-        """Test that showcase page loads without authentication."""
-        response = client.get("/backoffice/showcase")
-        assert response.status_code == 200
-        # Showcase demonstrates the design system components
-        assert b"showcase" in response.data.lower() or b"component" in response.data.lower()
-
-    def test_search_demo_empty_query(self, client):
-        """Test search demo returns empty for no query."""
-        response = client.get("/backoffice/showcase/search-demo")
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data == []
-
-    def test_search_demo_with_query(self, client):
-        """Test search demo returns mock results."""
-        response = client.get("/backoffice/showcase/search-demo?q=alice")
-        assert response.status_code == 200
-        data = response.get_json()
-        # Should match mock user with "alice"
-        assert len(data) >= 1
-        assert any("alice" in item["label"].lower() or "alice" in item["sublabel"].lower() for item in data)
-
-
-class TestBackofficeAssemblyMembers:
-    """Test backoffice assembly members page."""
-
-    def test_members_page_loads(self, logged_in_admin, existing_assembly):
-        """Test that the members page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members")
-        assert response.status_code == 200
-        assert b"Members" in response.data or b"Team" in response.data
-
-    def test_members_page_redirects_when_not_logged_in(self, client, existing_assembly):
-        """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-    def test_members_search_returns_json(self, logged_in_admin, existing_assembly):
-        """Test that members search endpoint returns JSON."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=test")
-        assert response.status_code == 200
-        data = response.get_json()
-        assert isinstance(data, list)
-
-
-class TestBackofficeAssemblyDataPage:
-    """Test backoffice assembly data page functionality."""
-
-    def test_view_assembly_data_page_loads(self, logged_in_admin, existing_assembly):
-        """Test that the assembly data page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
-        assert response.status_code == 200
-        assert b"Data Source" in response.data or b"data" in response.data.lower()
-
-    def test_view_assembly_data_page_with_gsheet_source(self, logged_in_admin, existing_assembly):
-        """Test that the assembly data page loads with gsheet source parameter."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
-        assert response.status_code == 200
-        # Should show the gsheet configuration form
-        assert b"Spreadsheet URL" in response.data or b"Google" in response.data
-
-    def test_view_assembly_data_page_with_csv_source(self, logged_in_admin, existing_assembly):
-        """Test that the assembly data page loads with csv source parameter."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
-        assert response.status_code == 200
-
-    def test_view_assembly_data_page_invalid_source_ignored(self, logged_in_admin, existing_assembly):
-        """Test that invalid source parameter is ignored."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=invalid")
-        assert response.status_code == 200
-
-    def test_view_assembly_data_redirects_when_not_logged_in(self, client, existing_assembly):
-        """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/data")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-    def test_view_assembly_data_nonexistent_assembly(self, logged_in_admin):
-        """Test accessing data page for non-existent assembly."""
-        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000/data")
-        assert response.status_code == 302  # Should redirect with error
 
 
 class TestBackofficeGSheetConfigForm:
@@ -192,6 +68,30 @@ class TestBackofficeGSheetConfigForm:
         assert b"Categories" in response.data  # Default for select_targets_tab
         assert b"Selected" in response.data  # Default for already_selected_tab
 
+    def test_gsheet_form_contains_all_fields(self, logged_in_admin, existing_assembly):
+        """Test that gsheet form contains all key configuration fields."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        assert response.status_code == 200
+
+        # URL field
+        assert b'name="url"' in response.data
+
+        # Tab names
+        assert b"select_registrants_tab" in response.data
+        assert b"select_targets_tab" in response.data
+        assert b"already_selected_tab" in response.data
+
+        # ID column
+        assert b"id_column" in response.data
+
+        # String list fields
+        assert b"check_same_address_cols_string" in response.data or b"address" in response.data.lower()
+        assert b"columns_to_keep_string" in response.data or b"columns" in response.data.lower()
+
+        # Checkboxes
+        assert b"check_same_address" in response.data
+        assert b"generate_remaining_tab" in response.data
+
 
 class TestBackofficeGSheetFormSubmission:
     """Test gsheet form submission (create and edit)."""
@@ -214,7 +114,7 @@ class TestBackofficeGSheetFormSubmission:
                 "id_column": "id",
                 "check_same_address": "y",
                 "generate_remaining_tab": "y",
-                "check_same_address_cols_string": "address1,city,postcode",  # Required when check_same_address is enabled
+                "check_same_address_cols_string": "address1,city,postcode",
                 "columns_to_keep_string": "name,email",
             },
             follow_redirects=False,
@@ -303,6 +203,79 @@ class TestBackofficeGSheetFormSubmission:
         # Should show success message
         assert b"updated successfully" in response.data
 
+    def test_update_gsheet_config_success_with_team_eu(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test successful gsheet editing with eu team verifying DB values."""
+        assembly, _gsheet = assembly_with_gsheet
+        updated_url = "https://docs.google.com/spreadsheets/d/updated_eu_123/edit"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            data={
+                "url": updated_url,
+                "team": "eu",
+                "select_registrants_tab": "UpdatedRespondents",
+                "select_targets_tab": "UpdatedCategories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement",
+                "already_selected_tab": "Selected",
+                "generate_remaining_tab": "y",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+        # Verify the changes were saved to the database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
+            assert saved_gsheet is not None
+            assert saved_gsheet.url == updated_url
+            assert saved_gsheet.select_registrants_tab == "UpdatedRespondents"
+            assert saved_gsheet.generate_remaining_tab is True
+
+    def test_update_gsheet_config_success_with_custom_team(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """Test successful gsheet editing with custom team verifying DB values."""
+        assembly, _gsheet = assembly_with_gsheet
+        updated_url = "https://docs.google.com/spreadsheets/d/updated_custom_123/edit"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            data={
+                "url": updated_url,
+                "team": "other",
+                "select_registrants_tab": "CustomRespondents",
+                "select_targets_tab": "CustomCategories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement",
+                "already_selected_tab": "Selected",
+                "id_column": "custom_id",
+                "check_same_address_cols_string": "address_line, postcode",
+                "columns_to_keep_string": "first_name, last_name, email, phone",
+                "generate_remaining_tab": "y",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+        # Verify the changes were saved to the database
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
+            assert saved_gsheet is not None
+            assert saved_gsheet.id_column == "custom_id"
+            assert saved_gsheet.check_same_address_cols == ["address_line", "postcode"]
+            assert saved_gsheet.columns_to_keep == ["first_name", "last_name", "email", "phone"]
+
     def test_update_gsheet_config_validation_error(self, logged_in_admin, assembly_with_gsheet):
         """Test validation error when updating gsheet config with invalid data."""
         assembly, _ = assembly_with_gsheet
@@ -359,6 +332,185 @@ class TestBackofficeGSheetFormSubmission:
         # Should show warning about empty columns_to_keep
         assert b"Warning" in response.data or b"columns to keep" in response.data.lower()
 
+    def test_create_gsheet_no_warning_for_empty_columns_with_team(self, logged_in_admin, existing_assembly):
+        """Test that team-based defaults prevent columns_to_keep warning."""
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            data={
+                "csrf_token": csrf_token,
+                "url": "https://docs.google.com/spreadsheets/d/1nowarningtest/edit",
+                "team": "uk",  # UK team will auto-fill columns_to_keep
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",
+                "check_same_address_cols_string": "address1, postcode",
+                "columns_to_keep_string": "",  # Empty but team will fill
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"created successfully" in response.data or b"success" in response.data.lower()
+        # Should NOT show warning because team fills in defaults
+        assert b"Warning" not in response.data and b"No columns to keep" not in response.data
+
+    def test_gsheet_permission_denied_for_regular_user(self, logged_in_user, existing_assembly):
+        """Test regular users cannot access or submit gsheet configuration."""
+        # GET request should be blocked
+        get_response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        assert get_response.status_code in [302, 403, 500]
+
+    def test_gsheet_redirects_when_not_logged_in(self, client, existing_assembly):
+        """Test gsheet page redirects to login when not authenticated."""
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
+class TestBackofficeGSheetValidation:
+    """Test gsheet-specific validation rules."""
+
+    def test_hard_validation_check_address_without_columns(self, logged_in_admin, existing_assembly):
+        """Test hard validation: check_same_address=True requires address columns."""
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation123/edit",
+                "team": "other",
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty - should fail validation
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet"
+                ),
+            },
+        )
+
+        # Should return form with validation error (not redirect)
+        assert response.status_code == 200
+        assert b"address columns" in response.data.lower() or b"must specify" in response.data.lower()
+
+    def test_hard_validation_passes_when_team_not_other(self, logged_in_admin, existing_assembly):
+        """Test hard validation passes when team auto-generates address columns."""
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation_team_123/edit",
+                "team": "uk",  # UK team will auto-fill address columns
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty but team will fill
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        # Should succeed and redirect
+        assert response.status_code == 302
+
+    def test_hard_validation_passes_when_check_address_disabled(self, logged_in_admin, existing_assembly):
+        """Test hard validation: check_same_address=False allows empty address columns."""
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/validation_pass_123/edit",
+                "team": "other",
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                # check_same_address not set - defaults to False
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        # Should succeed and redirect
+        assert response.status_code == 302
+
+    def test_hard_validation_on_edit(self, logged_in_admin, assembly_with_gsheet):
+        """Test hard validation on edit: check_same_address=True requires address columns."""
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/edit_validation_123/edit",
+                "team": "other",
+                "select_registrants_tab": "Respondents",
+                "select_targets_tab": "Categories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement Categories",
+                "already_selected_tab": "Selected",
+                "id_column": "test_id",
+                "check_same_address": "y",  # Enabled
+                "check_same_address_cols_string": "",  # Empty - should fail validation
+                "columns_to_keep_string": "first_name, last_name",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit"
+                ),
+            },
+        )
+
+        # Should return form with validation error (not redirect)
+        assert response.status_code == 200
+        assert b"address columns" in response.data.lower() or b"must specify" in response.data.lower()
+
+    def test_url_validation_enforced(self, logged_in_admin, existing_assembly):
+        """Test that URL validation is properly enforced for various invalid URLs."""
+        invalid_urls = [
+            "not-a-url",
+            "https://example.com/not-google-sheets",
+            "https://drive.google.com/file/d/wrong-format",
+            "",
+        ]
+
+        for invalid_url in invalid_urls:
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+                data={
+                    "url": invalid_url,
+                    "team": "uk",
+                    "select_registrants_tab": "Test",
+                    "select_targets_tab": "Test",
+                    "replace_registrants_tab": "Remaining",
+                    "replace_targets_tab": "Replacement",
+                    "already_selected_tab": "Selected",
+                    "id_column": "test_id",
+                    "csrf_token": get_csrf_token(
+                        logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet"
+                    ),
+                },
+            )
+            # Should return form with validation error
+            assert response.status_code == 200, f"Expected 200 for invalid URL: {invalid_url}"
+
 
 class TestBackofficeGSheetDelete:
     """Test gsheet configuration deletion."""
@@ -387,7 +539,6 @@ class TestBackofficeGSheetDelete:
 
     def test_delete_gsheet_config_not_found(self, logged_in_admin, existing_assembly):
         """Test deleting a non-existent gsheet configuration."""
-        # Get CSRF token from new gsheet form
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
 
         response = logged_in_admin.post(
@@ -431,71 +582,67 @@ class TestBackofficeGSheetDelete:
         # Should NOT show delete button (no config to delete)
         assert b"gsheet/delete" not in response.data
 
-
-class TestBackofficeDataSourceLocking:
-    """Test data source selector locking behavior."""
-
-    def test_data_source_locked_when_gsheet_config_exists(self, logged_in_admin, assembly_with_gsheet):
-        """Test that data source selector is disabled when gsheet config exists."""
-        assembly, _ = assembly_with_gsheet
-        # Access data page without source param - should auto-select gsheet and lock
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
-        assert response.status_code == 200
-        # Selector should be disabled
-        assert b"disabled" in response.data
-        # Should show gsheet content (auto-selected)
-        assert b"Google Spreadsheet Configuration" in response.data
-        # Should show locked message
-        assert b"locked" in response.data.lower()
-
-    def test_data_source_auto_selects_gsheet_when_config_exists(self, logged_in_admin, assembly_with_gsheet):
-        """Test that data source auto-selects gsheet when config exists, ignoring source param."""
-        assembly, _ = assembly_with_gsheet
-        # Try to access with csv source - should still show gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
-        assert response.status_code == 200
-        # Should show gsheet content, not csv
-        assert b"Google Spreadsheet Configuration" in response.data
-        # Should NOT show csv content
-        assert b"Upload a CSV file" not in response.data
-
-    def test_data_source_unlocked_when_no_config_exists(self, logged_in_admin, existing_assembly):
-        """Test that data source selector is enabled when no config exists."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
-        assert response.status_code == 200
-        # Selector should NOT be disabled (no config exists)
-        # Check that the x-data urlSelect attribute is present (indicates interactivity)
-        assert b"urlSelect" in response.data
-        # Should show standard message, not locked message
-        assert b"Choose how you want to import" in response.data
-
-    def test_data_source_unlocked_after_delete(self, logged_in_admin, assembly_with_gsheet):
-        """Test that data source selector is unlocked after deleting config."""
-        assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data")
-
-        # Delete the config
-        response = logged_in_admin.post(
+    def test_delete_gsheet_permission_denied_for_regular_user(self, logged_in_user, assembly_with_gsheet):
+        """Test regular users cannot delete gsheet configurations."""
+        assembly, _gsheet = assembly_with_gsheet
+        response = logged_in_user.post(
             f"/backoffice/assembly/{assembly.id}/gsheet/delete",
-            data={"csrf_token": csrf_token},
-            follow_redirects=True,
+            data={
+                "csrf_token": get_csrf_token(logged_in_user, f"/backoffice/assembly/{assembly.id}/data?source=gsheet"),
+            },
         )
-        assert response.status_code == 200
+        # Should redirect or show permission error
+        assert response.status_code in [302, 403, 500]
 
-        # Selector should now be enabled (unlocked)
-        assert b"urlSelect" in response.data
-        # Should show standard message
-        assert b"Choose how you want to import" in response.data
-        # Should NOT show locked message
-        assert b"locked" not in response.data.lower() or b"Data source is locked" not in response.data
+    def test_delete_gsheet_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
+        """Test delete gsheet redirects to login when not authenticated."""
+        assembly, _gsheet = assembly_with_gsheet
+        response = client.post(f"/backoffice/assembly/{assembly.id}/gsheet/delete")
+        assert response.status_code == 302
+        assert "login" in response.location
 
-    def test_gsheet_selected_shows_in_dropdown_when_locked(self, logged_in_admin, assembly_with_gsheet):
-        """Test that gsheet option is selected in dropdown when config exists."""
-        assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
-        assert response.status_code == 200
-        # The gsheet option should be selected
-        assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data
+    def test_gsheet_state_transitions(self, logged_in_admin, existing_assembly):
+        """Test state transitions between no gsheet -> has gsheet -> no gsheet."""
+        assembly = existing_assembly
+
+        # Initially no gsheet - should show new form
+        initial_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        assert initial_response.status_code == 200
+        assert b'name="url"' in initial_response.data
+
+        # Create gsheet
+        logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            data={
+                "url": "https://docs.google.com/spreadsheets/d/state_transition_123/edit",
+                "team": "uk",
+                "select_registrants_tab": "StateRespondents",
+                "select_targets_tab": "StateCategories",
+                "replace_registrants_tab": "Remaining",
+                "replace_targets_tab": "Replacement",
+                "already_selected_tab": "Selected",
+                "id_column": "state_id",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet"),
+            },
+        )
+
+        # Now has gsheet - should show view mode
+        view_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        assert view_response.status_code == 200
+        assert b"state_transition_123" in view_response.data
+
+        # Delete gsheet
+        logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            data={
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet"),
+            },
+        )
+
+        # Back to no gsheet - should show new form again
+        final_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        assert final_response.status_code == 200
+        assert b'name="url"' in final_response.data
 
 
 class TestBackofficeSelectionTab:
@@ -545,6 +692,13 @@ class TestBackofficeSelectionTab:
             assert mock_task_id in response.location
             mock_start_load.assert_called_once()
 
+    def test_selection_load_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
+        """Test that load endpoint redirects to login when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/load")
+        assert response.status_code == 302
+        assert "login" in response.location
+
     def test_selection_run_endpoint_starts_task(self, logged_in_admin, assembly_with_gsheet):
         """Test that run endpoint starts a gsheet select task and redirects to run page."""
 
@@ -568,6 +722,13 @@ class TestBackofficeSelectionTab:
             assert mock_task_id in response.location
             mock_start_select.assert_called_once()
 
+    def test_selection_run_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
+        """Test that run endpoint redirects to login when not authenticated."""
+        assembly, _ = assembly_with_gsheet
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/run")
+        assert response.status_code == 302
+        assert "login" in response.location
+
     def test_selection_run_test_mode_endpoint(self, logged_in_admin, assembly_with_gsheet):
         """Test that run endpoint with test=1 passes test_selection=True."""
 
@@ -589,6 +750,42 @@ class TestBackofficeSelectionTab:
             # Verify test_selection=True was passed
             call_args = mock_start_select.call_args
             assert call_args[1].get("test_selection") is True or call_args[0][3] is True
+
+    def test_selection_run_handles_not_found_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint handles NotFoundError gracefully."""
+
+        assembly, _gsheet = assembly_with_gsheet
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            side_effect=NotFoundError("Gsheet config not found"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            assert response.status_code == 200
+
+    def test_selection_run_handles_invalid_selection_error(self, logged_in_admin, assembly_with_gsheet):
+        """Test that run endpoint handles InvalidSelection error gracefully."""
+
+        assembly, _gsheet = assembly_with_gsheet
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            side_effect=InvalidSelection("Cannot run selection"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/run",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            assert response.status_code == 200
 
     def test_selection_progress_modal_endpoint_returns_html(self, logged_in_admin, assembly_with_gsheet):
         """Test that modal progress endpoint returns HTML fragment with HTMX attributes."""
@@ -668,6 +865,24 @@ class TestBackofficeSelectionTab:
             # Should redirect back to selection page with error flash
             assert response.status_code == 200
             assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+
+    def test_selection_load_handles_insufficient_permissions(self, logged_in_admin, assembly_with_gsheet):
+        """Test that load endpoint handles InsufficientPermissions gracefully."""
+
+        assembly, _gsheet = assembly_with_gsheet
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            side_effect=InsufficientPermissions(action="load_gsheet", required_role="admin"),
+        ):
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/selection/load",
+                data={"csrf_token": csrf_token},
+                follow_redirects=True,
+            )
+
+            assert response.status_code == 200
 
     def test_selection_with_run_page_redirects_to_query_param(self, logged_in_admin, assembly_with_gsheet):
         """Test that legacy /selection/<run_id> URL redirects to query param version."""

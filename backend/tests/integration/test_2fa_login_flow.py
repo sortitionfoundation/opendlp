@@ -11,18 +11,18 @@ from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import totp_service, two_factor_service
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 
 @pytest.fixture
-def test_user_with_2fa(sqlite_session_factory, temp_env_vars):
+def user_with_2fa(temp_env_vars):
     """Create a test user with 2FA enabled."""
     # Set up encryption key
     raw_key = secrets.token_bytes(32)
     test_key = base64.b64encode(raw_key).decode()
     temp_env_vars(TOTP_ENCRYPTION_KEY=test_key)
 
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
     email = f"testuser{secrets.token_urlsafe(3)}@example.com"
 
     with uow:
@@ -44,6 +44,7 @@ def test_user_with_2fa(sqlite_session_factory, temp_env_vars):
     two_factor_service.enable_2fa(uow, user_id, totp_secret, valid_code, backup_codes)
 
     return {
+        "uow": uow,
         "user_id": user_id,
         "email": email,
         "totp_secret": totp_secret,
@@ -52,9 +53,9 @@ def test_user_with_2fa(sqlite_session_factory, temp_env_vars):
 
 
 @pytest.fixture
-def test_user_without_2fa(sqlite_session_factory):
+def user_without_2fa():
     """Create a test user without 2FA."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
     email = f"testuser{secrets.token_urlsafe(3)}@example.com"
 
     with uow:
@@ -67,14 +68,14 @@ def test_user_without_2fa(sqlite_session_factory):
         )
         uow.users.add(user)
         uow.commit()
-        return user.id
+        return {"uow": uow, "user_id": user.id}
 
 
-def test_login_with_2fa_totp_code(sqlite_session_factory, test_user_with_2fa):
+def test_login_with_2fa_totp_code(user_with_2fa):
     """Test successful login with 2FA using TOTP code."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
-    totp_secret = test_user_with_2fa["totp_secret"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
+    totp_secret = user_with_2fa["totp_secret"]
 
     # Get user and verify 2FA is required
     with uow:
@@ -103,11 +104,11 @@ def test_login_with_2fa_totp_code(sqlite_session_factory, test_user_with_2fa):
         assert attempts[0].success is True
 
 
-def test_login_with_2fa_backup_code(sqlite_session_factory, test_user_with_2fa):
+def test_login_with_2fa_backup_code(user_with_2fa):
     """Test successful login with 2FA using backup code."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
-    backup_codes = test_user_with_2fa["backup_codes"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
+    backup_codes = user_with_2fa["backup_codes"]
 
     # Get initial count of unused codes
     with uow:
@@ -130,10 +131,10 @@ def test_login_with_2fa_backup_code(sqlite_session_factory, test_user_with_2fa):
         assert is_valid_again is False
 
 
-def test_login_with_2fa_invalid_code(sqlite_session_factory, test_user_with_2fa):
+def test_login_with_2fa_invalid_code(user_with_2fa):
     """Test login failure with invalid TOTP code."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
 
     # Try with invalid code
     invalid_code = "000000"
@@ -154,10 +155,10 @@ def test_login_with_2fa_invalid_code(sqlite_session_factory, test_user_with_2fa)
         assert attempts[0].success is False
 
 
-def test_rate_limiting_after_failed_attempts(sqlite_session_factory, test_user_with_2fa):
+def test_rate_limiting_after_failed_attempts(user_with_2fa):
     """Test rate limiting after 5 failed TOTP verification attempts."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
 
     # Check initial rate limit (should be allowed with 5 attempts remaining)
     with uow:
@@ -177,10 +178,10 @@ def test_rate_limiting_after_failed_attempts(sqlite_session_factory, test_user_w
         assert attempts_remaining == 0
 
 
-def test_rate_limit_resets_after_time_window(sqlite_session_factory, test_user_with_2fa):
+def test_rate_limit_resets_after_time_window(user_with_2fa):
     """Test that rate limit resets after the 15-minute time window."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
 
     # Record 5 failed attempts with old timestamps (16 minutes ago)
     old_timestamp = datetime.now(UTC) - timedelta(minutes=16)
@@ -197,10 +198,10 @@ def test_rate_limit_resets_after_time_window(sqlite_session_factory, test_user_w
         assert attempts_remaining == 5
 
 
-def test_successful_attempt_does_not_count_toward_rate_limit(sqlite_session_factory, test_user_with_2fa):
+def test_successful_attempt_does_not_count_toward_rate_limit(user_with_2fa):
     """Test that successful attempts don't count toward rate limit."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
 
     # Record 3 failed and 2 successful attempts
     with uow:
@@ -216,19 +217,19 @@ def test_successful_attempt_does_not_count_toward_rate_limit(sqlite_session_fact
         assert attempts_remaining == 2
 
 
-def test_user_without_2fa_does_not_require_verification(sqlite_session_factory, test_user_without_2fa):
+def test_user_without_2fa_does_not_require_verification(user_without_2fa):
     """Test that users without 2FA enabled don't require verification."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = user_without_2fa["uow"]
 
     with uow:
-        user = uow.users.get(test_user_without_2fa)
+        user = uow.users.get(user_without_2fa["user_id"])
         assert user.requires_2fa() is False
         assert user.totp_enabled is False
 
 
-def test_oauth_user_bypasses_2fa(sqlite_session_factory):
+def test_oauth_user_bypasses_2fa():
     """Test that OAuth users bypass 2FA even if they somehow had it enabled."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = FakeUnitOfWork()
     email = f"oauthuser{secrets.token_urlsafe(3)}@example.com"
 
     with uow:
@@ -247,10 +248,10 @@ def test_oauth_user_bypasses_2fa(sqlite_session_factory):
         assert user.requires_2fa() is False
 
 
-def test_invalid_backup_code_format(sqlite_session_factory, test_user_with_2fa):
+def test_invalid_backup_code_format(user_with_2fa):
     """Test that invalid backup code format is rejected."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
 
     # Try with malformed backup code
     invalid_code = "INVALID"
@@ -259,11 +260,11 @@ def test_invalid_backup_code_format(sqlite_session_factory, test_user_with_2fa):
         assert is_valid is False
 
 
-def test_2fa_verification_with_expired_codes(sqlite_session_factory, test_user_with_2fa):
+def test_2fa_verification_with_expired_codes(user_with_2fa):
     """Test that old TOTP codes are rejected."""
-    uow = SqlAlchemyUnitOfWork(sqlite_session_factory)
-    user_id = test_user_with_2fa["user_id"]
-    totp_secret = test_user_with_2fa["totp_secret"]
+    uow = user_with_2fa["uow"]
+    user_id = user_with_2fa["user_id"]
+    totp_secret = user_with_2fa["totp_secret"]
 
     # Generate a code from 2 minutes ago (should be invalid)
     totp = pyotp.TOTP(totp_secret)

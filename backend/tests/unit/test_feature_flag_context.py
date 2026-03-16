@@ -1,4 +1,4 @@
-"""ABOUTME: Integration tests for feature flag template context processor.
+"""ABOUTME: Unit tests for feature flag template context processor.
 ABOUTME: Verifies the feature() function is available in Jinja templates via the Flask app."""
 
 import os

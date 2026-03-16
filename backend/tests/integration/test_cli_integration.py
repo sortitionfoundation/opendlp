@@ -25,7 +25,7 @@ def setup_mappers():
 class TestCliUsersIntegration:
     """Integration tests for user management CLI commands."""
 
-    def test_add_and_list_user_flow(self, sqlite_session_factory, cli_with_session_factory):
+    def test_add_and_list_user_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test complete user creation and listing flow."""
         # Add a user using the CLI
         result = cli_with_session_factory(
@@ -51,18 +51,18 @@ class TestCliUsersIntegration:
         assert "integration-test@example.com" in result.output
 
         # Verify user was actually created in database
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user = uow.users.get_by_email("integration-test@example.com")
             assert user is not None
             assert user.global_role == GlobalRole.ADMIN
             assert user.is_active
 
-    def test_deactivate_user_flow(self, sqlite_session_factory, cli_with_session_factory):
+    def test_deactivate_user_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test user deactivation flow."""
 
         # Create a user first
         user_email = "deactivate-test@example.com"
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user, _ = create_user(
                 uow=uow,
                 email=user_email,
@@ -79,19 +79,19 @@ class TestCliUsersIntegration:
         assert f"✓ User '{user_email}' has been deactivated." in result.output
 
         # Verify user is deactivated
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user = uow.users.get_by_email(user_email)
             assert user is not None
             assert not user.is_active
 
-    def test_reset_password_flow(self, sqlite_session_factory, cli_with_session_factory, monkeypatch):
+    def test_reset_password_flow(self, postgres_session_factory, cli_with_session_factory, monkeypatch):
         """Test user password reset flow."""
         user_email = "reset-password-test@example.com"
         original_password = "original123abc"
         new_password = "newpassword456def"
 
         # Create a user first
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user, _ = create_user(
                 uow=uow,
                 email=user_email,
@@ -109,7 +109,7 @@ class TestCliUsersIntegration:
         assert f"✓ Password reset for user '{user_email}'." in result.output
 
         # Verify password was changed
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user = uow.users.get_by_email(user_email)
             assert user is not None
             assert user.password_hash != original_hash
@@ -120,10 +120,10 @@ class TestCliUsersIntegration:
 class TestCliInvitesIntegration:
     """Integration tests for invite management CLI commands."""
 
-    def test_generate_and_list_invites_flow(self, sqlite_session_factory, cli_with_session_factory):
+    def test_generate_and_list_invites_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test complete invite generation and listing flow."""
         user_email = "gen-invite-test@example.com"
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             create_user(uow=uow, email=user_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
 
         # Generate invites
@@ -143,11 +143,11 @@ class TestCliInvitesIntegration:
         invite_lines = [line for line in lines if "user" in line and "Valid" in line]
         assert len(invite_lines) >= 2
 
-    def test_revoke_invite_flow(self, sqlite_session_factory, cli_with_session_factory):
+    def test_revoke_invite_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test invite revocation flow."""
         # Create an admin user and invite
         admin_email = "revoke-admin@example.com"
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             admin_user, _ = create_user(
                 uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
             )
@@ -166,7 +166,7 @@ class TestCliInvitesIntegration:
         assert f"✓ Invite '{invite_code}' has been revoked by {admin_email}." in result.output
 
         # Verify invite is no longer valid
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             invite = uow.user_invites.get_by_code(invite_code)
             assert invite is not None
             # Revoked invites should not be valid
@@ -174,12 +174,12 @@ class TestCliInvitesIntegration:
             # Should be marked as used by the admin user
             assert invite.used_by == admin_user.id
 
-    def test_revoke_invite_non_admin_fails(self, sqlite_session_factory, cli_with_session_factory):
+    def test_revoke_invite_non_admin_fails(self, postgres_session_factory, cli_with_session_factory):
         """Test that non-admin users cannot revoke invites."""
         admin_email = "revoke-admin2@example.com"
         non_admin_email = "regular-user@example.com"
         # Create admin user and invite
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             admin_user, _ = create_user(
                 uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
             )
@@ -202,21 +202,21 @@ class TestCliInvitesIntegration:
         assert f"✗ User '{non_admin_email}' must have ADMIN role to revoke invites." in result.output
 
         # Verify invite is still valid
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             invite = uow.user_invites.get_by_code(invite_code)
             assert invite is not None
             assert invite.is_valid()  # Should still be valid since revoke failed
             assert invite.used_by is None
 
-    def test_cleanup_expired_invites(self, sqlite_session_factory, cli_with_session_factory):
+    def test_cleanup_expired_invites(self, postgres_session_factory, cli_with_session_factory):
         """Test cleanup of expired invites."""
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user, _ = create_user(
                 uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
             )
 
         # Create an expired invite directly
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             expired_invite = UserInvite(
                 invite_id=uuid.uuid4(),
                 code=generate_invite_code(),
@@ -237,7 +237,7 @@ class TestCliInvitesIntegration:
         assert "✓ Cleaned up" in result.output and "expired invite(s)." in result.output
 
         # Verify expired invite was removed
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             invite = uow.user_invites.get_by_code(expired_code)
             assert invite is None
 
@@ -245,7 +245,7 @@ class TestCliInvitesIntegration:
 class TestCliDatabaseIntegration:
     """Integration tests for database CLI commands."""
 
-    def test_seed_database_flow(self, sqlite_session_factory, cli_with_session_factory):
+    def test_seed_database_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test database seeding flow."""
 
         # Seed the database
@@ -256,7 +256,7 @@ class TestCliDatabaseIntegration:
         assert "admin@opendlp.example" in result.output
 
         # Verify seeded data exists
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             # Check admin user exists
             admin_user = uow.users.get_by_email("admin@opendlp.example")
             assert admin_user is not None
@@ -280,11 +280,11 @@ class TestCliDatabaseIntegration:
             assemblies = uow.assemblies.all()
             assert len(assemblies) >= 1  # At least the sample assembly
 
-    def test_seed_already_seeded_database(self, sqlite_session_factory, cli_with_session_factory):
+    def test_seed_already_seeded_database(self, postgres_session_factory, cli_with_session_factory):
         """Test seeding when database already has data."""
 
         # Create a user first to simulate existing data
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             create_user(
                 uow=uow,
                 email="existing@example.com",
@@ -300,13 +300,13 @@ class TestCliDatabaseIntegration:
         assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
         assert "Database already contains users. Skipping seed." in result.output
 
-    def test_reset_database_flow(self, sqlite_session_factory, cli_with_session_factory, monkeypatch):
+    def test_reset_database_flow(self, postgres_session_factory, cli_with_session_factory, monkeypatch):
         """Test database reset flow."""
         # Enable dangerous reset operation
         monkeypatch.setenv("ALLOW_RESET_DB", "DANGEROUS")
 
         # Create some initial data
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             create_user(
                 uow=uow,
                 email="before-reset@example.com",
@@ -315,7 +315,7 @@ class TestCliDatabaseIntegration:
             )
 
         # Verify initial data exists
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user = uow.users.get_by_email("before-reset@example.com")
             assert user is not None
 
@@ -330,7 +330,7 @@ class TestCliDatabaseIntegration:
             assert "✓ Database reset successfully." in result.output
 
         # Verify data was cleared
-        with SqlAlchemyUnitOfWork(session_factory=sqlite_session_factory) as uow:
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user = uow.users.get_by_email("before-reset@example.com")
             assert user is None  # Should be gone after reset
 
