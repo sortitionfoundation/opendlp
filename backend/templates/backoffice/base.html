@@ -35,6 +35,14 @@
     </head>
     <body style="background-color: var(--color-bg-secondary)"
           class="min-h-screen">
+        {% if site_banner_text %}
+            <div class="site-banner"
+                 style="background-color: {{ site_banner_colour }}">
+                <div class="w-full p-2">
+                    <p class="text-body-xl text-center font-semibold">{{ site_banner_text }}</p>
+                </div>
+            </div>
+        {% endif %}
         {% block body %}
             <main class="max-w-screen-2xl mx-auto px-6 py-8">
                 {% block content %}{% endblock %}
