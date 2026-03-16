@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 import opendlp.adapters.orm
 
@@ -44,10 +45,10 @@ def upgrade() -> None:
     # Create email_confirmation_tokens table
     op.create_table(
         "email_confirmation_tokens",
-        sa.Column("id", opendlp.adapters.orm.CrossDatabaseUUID(), nullable=False),
+        sa.Column("id", PostgresUUID(as_uuid=True), nullable=False),
         sa.Column(
             "user_id",
-            opendlp.adapters.orm.CrossDatabaseUUID(),
+            PostgresUUID(as_uuid=True),
             nullable=False,
         ),
         sa.Column("token", sa.String(length=100), nullable=False),

@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from opendlp import bootstrap
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
@@ -19,17 +18,15 @@ from opendlp.service_layer.email_confirmation_service import (
 )
 from opendlp.service_layer.exceptions import EmailNotConfirmed, InvalidConfirmationToken, RateLimitExceeded
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
-from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
+from tests.fakes import FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
 
 
 class TestEmailConfirmationIntegration:
-    """Integration tests for email confirmation with real database."""
+    """Integration tests for email confirmation with FakeUnitOfWork."""
 
-    def test_password_user_registration_creates_unconfirmed_user(self, sqlite_session_factory):
-        """Password registration should create unconfirmed user with token."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite
+    def _create_uow_with_invite(self):
+        """Create a FakeUnitOfWork with a valid invite."""
+        uow = FakeUnitOfWork()
         with uow:
             invite = UserInvite(
                 code="TESTINVITE",
@@ -39,6 +36,11 @@ class TestEmailConfirmationIntegration:
             )
             uow.user_invites.add(invite)
             uow.commit()
+        return uow
+
+    def test_password_user_registration_creates_unconfirmed_user(self):
+        """Password registration should create unconfirmed user with token."""
+        uow = self._create_uow_with_invite()
 
         # Register user
         with uow:
@@ -53,26 +55,15 @@ class TestEmailConfirmationIntegration:
         assert token is not None  # Token was created
         assert token.user_id == user.id
 
-        # Verify token is in database
+        # Verify token is in repository
         with uow:
             stored_token = uow.email_confirmation_tokens.get_by_token(token.token)
             assert stored_token is not None
             assert stored_token.is_valid()
 
-    def test_user_cannot_login_before_confirmation(self, sqlite_session_factory):
+    def test_user_cannot_login_before_confirmation(self):
         """User cannot login before confirming email."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             create_user(
@@ -86,20 +77,9 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(EmailNotConfirmed):
             authenticate_user(uow, "test@example.com", "StrongPassword123")
 
-    def test_user_can_confirm_email_with_token(self, sqlite_session_factory):
+    def test_user_can_confirm_email_with_token(self):
         """User can confirm email with valid token."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             _, token = create_user(
@@ -115,20 +95,9 @@ class TestEmailConfirmationIntegration:
         assert confirmed_user.email_confirmed_at is not None
         assert confirmed_user.is_email_confirmed()
 
-    def test_user_can_login_after_confirmation(self, sqlite_session_factory):
+    def test_user_can_login_after_confirmation(self):
         """User can login after confirming email."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             _, token = create_user(
@@ -146,20 +115,9 @@ class TestEmailConfirmationIntegration:
         assert authenticated_user is not None
         assert authenticated_user.is_email_confirmed()
 
-    def test_oauth_user_auto_confirmed(self, sqlite_session_factory):
+    def test_oauth_user_auto_confirmed(self):
         """OAuth users are automatically confirmed."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         # Register OAuth user
         user, created = find_or_create_oauth_user(
@@ -174,20 +132,9 @@ class TestEmailConfirmationIntegration:
         assert user.email_confirmed_at is not None  # Auto-confirmed
         assert user.is_email_confirmed()
 
-    def test_resend_confirmation_creates_new_token(self, sqlite_session_factory):
+    def test_resend_confirmation_creates_new_token(self):
         """Resend confirmation creates a new token."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             create_user(
@@ -209,21 +156,12 @@ class TestEmailConfirmationIntegration:
             tokens = list(uow.email_confirmation_tokens.all())
             assert len(tokens) == 2  # Original + new token
 
-    def test_expired_token_rejected(self, sqlite_session_factory):
+    def test_expired_token_rejected(self):
         """Expired tokens are rejected."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
+        uow = FakeUnitOfWork()
 
-        # Create invite and user
+        # Create user directly with unconfirmed email
         with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-
-            # Create user directly with unconfirmed email
             user = User(
                 email="test@example.com",
                 global_role=GlobalRole.USER,
@@ -231,7 +169,7 @@ class TestEmailConfirmationIntegration:
             )
             uow.users.add(user)
             uow.commit()
-            user_id = user.id  # Save ID before session closes
+            user_id = user.id
 
         # Create expired token
         with uow:
@@ -249,20 +187,9 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(InvalidConfirmationToken, match="expired"):
             confirm_email_with_token(uow, "expired-token")
 
-    def test_rate_limiting_works(self, sqlite_session_factory):
+    def test_rate_limiting_works(self):
         """Rate limiting prevents spam."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             create_user(
@@ -284,20 +211,9 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(RateLimitExceeded):
             resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
-    def test_used_token_rejected(self, sqlite_session_factory):
+    def test_used_token_rejected(self):
         """Used tokens cannot be reused."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
-
-        # Create invite and user
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        uow = self._create_uow_with_invite()
 
         with uow:
             _, token = create_user(
@@ -314,9 +230,9 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(InvalidConfirmationToken, match="already been used"):
             confirm_email_with_token(uow, token.token)
 
-    def test_cleanup_removes_old_tokens(self, sqlite_session_factory):
+    def test_cleanup_removes_old_tokens(self):
         """Cleanup removes old tokens."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
+        uow = FakeUnitOfWork()
 
         # Create user
         with uow:
@@ -327,7 +243,7 @@ class TestEmailConfirmationIntegration:
             )
             uow.users.add(user)
             uow.commit()
-            user_id = user.id  # Save ID before session closes
+            user_id = user.id
 
         # Create old token
         with uow:
@@ -344,7 +260,7 @@ class TestEmailConfirmationIntegration:
         with uow:
             recent_token = create_confirmation_token(uow, user_id)
             uow.commit()
-            recent_token_string = recent_token.token  # Save token string before session closes
+            recent_token_string = recent_token.token
 
         # Cleanup
         count = cleanup_expired_tokens(uow, days_old=30)
@@ -356,9 +272,9 @@ class TestEmailConfirmationIntegration:
             stored_token = uow.email_confirmation_tokens.get_by_token(recent_token_string)
             assert stored_token is not None
 
-    def test_grandfathered_user_can_login(self, sqlite_session_factory):
+    def test_grandfathered_user_can_login(self):
         """Existing users with email_confirmed_at set can login."""
-        uow = bootstrap.bootstrap(session_factory=sqlite_session_factory)
+        uow = FakeUnitOfWork()
 
         # Create a "grandfathered" user (simulating migration)
         with uow:

@@ -283,13 +283,6 @@ def test_fails_without_required_env_var(clear_env_vars):
 
 ### Database Fixtures
 
-**For unit tests:**
-
-- `in_memory_sqlite_db` - Fast in-memory SQLite database
-- `sqlite_session_factory` - Session factory with mappers
-
-**For integration/e2e tests:**
-
 - `postgres_engine` - PostgreSQL test database engine (port 54322)
 - `postgres_session_factory` - PostgreSQL session factory with mappers
 - `postgres_session` - Individual test session with rollback
@@ -355,8 +348,8 @@ If logs are supposed to contain errors (e.g., testing error handling), those err
 Integration and e2e tests use:
 
 - **Development/Manual Testing:** PostgreSQL on port 54321
-- **BDD Tests:** PostgreSQL on port 54322 (isolation from manual testing)
-- **Unit Tests:** SQLite in-memory database (fast, no PostgreSQL needed)
+- **Integration/E2E/BDD Tests:** PostgreSQL on port 54322 (isolation from manual testing)
+- **Unit Tests:** Mostly use `FakeUnitOfWork` (no database needed); some use PostgreSQL on port 54322
 
 ## Writing Good Tests
 

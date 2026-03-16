@@ -7,17 +7,26 @@ from uuid import uuid4
 import pytest
 
 from opendlp.adapters.sql_repository import SqlAlchemySelectionRunRecordRepository
-from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, SelectionRunStatus, SelectionTaskType
 
 
 @pytest.fixture
-def session(sqlite_session_factory):
+def session(postgres_session_factory):
     """Create a test database session."""
-    session = sqlite_session_factory()
+    session = postgres_session_factory()
     yield session
     session.close()
+
+
+def _create_assembly(session, assembly_id=None):
+    """Helper to create and persist an Assembly for FK constraints."""
+    aid = assembly_id or uuid4()
+    assembly = Assembly(title="Test Assembly", assembly_id=aid)
+    session.add(assembly)
+    session.flush()
+    return aid
 
 
 def test_get_by_assembly_id_paginated_returns_records_with_users(session):
@@ -43,10 +52,10 @@ def test_get_by_assembly_id_paginated_returns_records_with_users(session):
     )
     session.add(user1)
     session.add(user2)
-    session.commit()
 
     # Create assembly
-    assembly_id = uuid4()
+    assembly_id = _create_assembly(session)
+    session.commit()
 
     # Create run records with different timestamps
     now = datetime.now(UTC)
@@ -97,9 +106,10 @@ def test_get_by_assembly_id_paginated_pagination_works(session):
         password_hash="hash",  # pragma: allowlist secret
     )
     session.add(user)
+
+    assembly_id = _create_assembly(session)
     session.commit()
 
-    assembly_id = uuid4()
     now = datetime.now(UTC)
 
     # Create 75 run records
@@ -136,7 +146,8 @@ def test_get_by_assembly_id_paginated_pagination_works(session):
 
 def test_get_by_assembly_id_paginated_handles_null_user_id(session):
     """Test that records with null user_id return None for user."""
-    assembly_id = uuid4()
+    assembly_id = _create_assembly(session)
+    session.commit()
 
     # Create run record with null user_id
     record = SelectionRunRecord(
@@ -173,9 +184,9 @@ def test_get_by_assembly_id_paginated_handles_deleted_user(session):
         password_hash="hash",  # pragma: allowlist secret
     )
     session.add(user)
-    session.commit()
 
-    assembly_id = uuid4()
+    assembly_id = _create_assembly(session)
+    session.commit()
 
     # Create run record
     record = SelectionRunRecord(
@@ -216,9 +227,10 @@ def test_get_by_assembly_id_paginated_ordering_newest_first(session):
         password_hash="hash",  # pragma: allowlist secret
     )
     session.add(user)
+
+    assembly_id = _create_assembly(session)
     session.commit()
 
-    assembly_id = uuid4()
     now = datetime.now(UTC)
 
     # Create records with specific timestamps
@@ -277,10 +289,10 @@ def test_get_by_assembly_id_paginated_filters_by_assembly(session):
         password_hash="hash",  # pragma: allowlist secret
     )
     session.add(user)
-    session.commit()
 
-    assembly1_id = uuid4()
-    assembly2_id = uuid4()
+    assembly1_id = _create_assembly(session)
+    assembly2_id = _create_assembly(session)
+    session.commit()
 
     # Create records for assembly 1
     for i in range(3):
