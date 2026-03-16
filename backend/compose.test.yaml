@@ -11,6 +11,8 @@ services:
     networks:
       - test_net
     # for test we don't use a volume so it is created fresh each time
+    # raise max_connections for parallel xdist workers (default 100 is too low)
+    command: ["postgres", "-c", "max_connections=300"]
 
   redis_test:
     image: redis:alpine

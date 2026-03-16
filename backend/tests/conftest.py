@@ -180,7 +180,13 @@ def postgres_engine(_worker_database):
     postgres_cfg = PostgresCfg.from_env()
     postgres_cfg.port = 54322
     postgres_cfg.db_name = _worker_database
-    engine = create_engine(postgres_cfg.to_url(), echo=False, isolation_level="SERIALIZABLE")
+    engine = create_engine(
+        postgres_cfg.to_url(),
+        echo=False,
+        isolation_level="SERIALIZABLE",
+        pool_size=2,
+        max_overflow=3,
+    )
     wait_for_postgres_to_come_up(engine)
 
     yield engine
