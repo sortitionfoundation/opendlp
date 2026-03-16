@@ -1,4 +1,4 @@
-"""ABOUTME: Integration tests for targets blueprint routes
+"""ABOUTME: Unit tests for targets blueprint routes
 ABOUTME: Tests route registration, authentication requirements, and basic request handling"""
 
 import uuid

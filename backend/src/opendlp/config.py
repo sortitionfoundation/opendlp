@@ -43,9 +43,6 @@ def should_log_all_requests() -> bool:
     return is_production() and bool_environ_get("LOG_ALL_REQUESTS")
 
 
-SQLITE_DB_URI = "sqlite:///:memory:"
-
-
 @dataclass(slots=True, kw_only=True)
 class PostgresCfg:
     user: str
@@ -284,31 +281,29 @@ class FlaskConfig(FlaskBaseConfig):
         self.SESSION_REDIS = Redis(host=redis_cfg.host, port=redis_cfg.port)
 
 
-class FlaskTestSQLiteConfig(FlaskBaseConfig):
-    """Test configuration that uses SQLite in-memory database."""
+class FlaskTestConfig(FlaskBaseConfig):
+    """Test configuration that uses PostgreSQL test database."""
 
     TESTING = True
     WTF_CSRF_ENABLED = False
 
     def __init__(self) -> None:
         super().__init__()
-        self.SQLALCHEMY_DATABASE_URI = SQLITE_DB_URI
+        if not os.environ.get("DB_URI"):
+            postgres_cfg = PostgresCfg.from_env()
+            postgres_cfg.port = 54322
+            self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
 
         # Use filesystem for session cache for testing
+        # Namespace by xdist worker to avoid collisions during parallel runs
         self.SESSION_TYPE = "cachelib"
-        session_file_dir = Path(tempfile.gettempdir()) / "flask_session"
+        worker_suffix = os.environ.get("PYTEST_XDIST_WORKER", "")
+        session_dir_name = f"flask_session_{worker_suffix}" if worker_suffix else "flask_session"
+        session_file_dir = Path(tempfile.gettempdir()) / session_dir_name
         session_file_dir.mkdir(exist_ok=True)
         self.SESSION_CACHELIB = FileSystemCache(str(session_file_dir))
-
-
-class FlaskTestPostgresConfig(FlaskTestSQLiteConfig):
-    def __init__(self) -> None:
-        super().__init__()
-        postgres_cfg = PostgresCfg.from_env()
-        postgres_cfg.port = 54322
-        self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
 
 
 class FlaskProductionConfig(FlaskConfig):
@@ -345,9 +340,8 @@ def get_config(config_name: str = "") -> FlaskBaseConfig:
 
     config_classes = {
         "development": FlaskConfig,
-        "testing": FlaskTestSQLiteConfig,
-        "testing_postgres": FlaskTestPostgresConfig,
-        "testing_sqlite": FlaskTestSQLiteConfig,
+        "testing": FlaskTestConfig,
+        "testing_postgres": FlaskTestConfig,
         "production": FlaskProductionConfig,
     }
 

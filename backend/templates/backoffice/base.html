@@ -31,10 +31,21 @@
                 src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
                 integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"{# pragma: allowlist secret #}
                 crossorigin="anonymous"></script>
+        <!-- Shared utilities (progress modal handlers, clipboard, etc.) -->
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
         {% block head %}{% endblock %}
     </head>
     <body style="background-color: var(--color-bg-secondary)"
           class="min-h-screen">
+        {% if site_banner_text %}
+            <div class="site-banner"
+                 style="background-color: {{ site_banner_colour }}">
+                <div class="w-full p-2">
+                    <p class="text-body-xl text-center font-semibold">{{ site_banner_text }}</p>
+                </div>
+            </div>
+        {% endif %}
         {% block body %}
             <main class="max-w-screen-2xl mx-auto px-6 py-8">
                 {% block content %}{% endblock %}

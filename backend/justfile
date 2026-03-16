@@ -24,7 +24,7 @@ test: test-html
 
 test-nobdd:
 	@echo "🚀 Testing code: Running pytest"
-	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html
+	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto
 
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
@@ -102,6 +102,10 @@ flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
 # run flask for BDD tests - the BDD tests will use this server if it exists
 flask-bdd $FLASK_APP="src/opendlp/entrypoints/flask_app.py" $DB_PORT="54322" $REDIS_PORT="63792" $USE_CSV_DATA_SOURCE="true" $FLASK_ENV="testing_postgres":
   @uv run flask run --port=5002 --host=127.0.0.1 --debug
+
+# restart the flask process, so reloading all static files etc
+reload-flask:
+  @touch src/opendlp/entrypoints/flask_app.py
 
 # run a celery worker (for local dev)
 celery:

@@ -8,8 +8,7 @@ import pytest
 from opendlp.config import (
     FlaskConfig,
     FlaskProductionConfig,
-    FlaskTestPostgresConfig,
-    FlaskTestSQLiteConfig,
+    FlaskTestConfig,
     InvalidConfig,
     get_config,
     get_task_timeout_hours,
@@ -99,22 +98,12 @@ class TestFlaskConfigClass:
 
 
 class TestFlaskTestConfig:
-    """Test the DevTestConfig class."""
+    """Test the FlaskTestConfig class."""
 
-    def test_test_sqlite_config_overrides(self):
-        """Test that FlaskTestSQLiteConfig overrides appropriate values."""
-        config = FlaskTestSQLiteConfig()
-
-        assert config.SQLALCHEMY_DATABASE_URI == "sqlite:///:memory:"
-        assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
-        assert config.FLASK_ENV == "testing"
-        # Should inherit other defaults
-        assert config.INVITE_EXPIRY_HOURS == 168
-
-    def test_test_postgres_config_overrides(self, clear_env_vars):
-        """Test that FlaskTestPostgresConfig overrides appropriate values."""
+    def test_test_config_overrides(self, clear_env_vars):
+        """Test that FlaskTestConfig overrides appropriate values."""
         clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
-        config = FlaskTestPostgresConfig()
+        config = FlaskTestConfig()
 
         assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54322/opendlp"
         assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
@@ -151,16 +140,14 @@ class TestGetConfig:
         config = get_config()
 
         assert isinstance(config, FlaskConfig)
-        assert not isinstance(config, FlaskTestSQLiteConfig)
-        assert not isinstance(config, FlaskTestPostgresConfig)
+        assert not isinstance(config, FlaskTestConfig)
         assert not isinstance(config, FlaskProductionConfig)
 
     @pytest.mark.parametrize(
         "name,klass",
         [
-            ("testing", FlaskTestSQLiteConfig),
-            ("testing_sqlite", FlaskTestSQLiteConfig),
-            ("testing_postgres", FlaskTestPostgresConfig),
+            ("testing", FlaskTestConfig),
+            ("testing_postgres", FlaskTestConfig),
         ],
     )
     def test_get_config_testing(self, name, klass, temp_env_vars):
@@ -186,8 +173,7 @@ class TestGetConfig:
 
         config = get_config()
         assert isinstance(config, FlaskConfig)
-        assert not isinstance(config, FlaskTestSQLiteConfig)
-        assert not isinstance(config, FlaskTestPostgresConfig)
+        assert not isinstance(config, FlaskTestConfig)
         assert not isinstance(config, FlaskProductionConfig)
 
 

@@ -6,6 +6,7 @@ import uuid
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
@@ -32,10 +33,16 @@ from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.sortition import (
     InvalidSelection,
+    LoadRunResult,
+    TabManagementResult,
     cancel_task,
     check_and_update_task_health,
+    get_manage_old_tabs_status,
     get_selection_run_status,
     start_gsheet_load_task,
+    start_gsheet_manage_tabs_task,
+    start_gsheet_replace_load_task,
+    start_gsheet_replace_task,
     start_gsheet_select_task,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -188,48 +195,143 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _get_manage_tabs_context(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, manage_tabs_param: str | None
+) -> tuple[uuid.UUID | None, object, list[str], object]:
+    """Extract manage tabs modal context from query parameter.
+
+    Returns tuple of (current_manage_tabs, manage_tabs_run_record, manage_tabs_tab_names, manage_tabs_status).
+    """
+    if not manage_tabs_param:
+        return None, None, [], None
+
+    try:
+        current_manage_tabs = uuid.UUID(manage_tabs_param)
+        check_and_update_task_health(uow, current_manage_tabs)
+        result = get_selection_run_status(uow, current_manage_tabs)
+        if result.run_record and result.run_record.assembly_id == assembly_id:
+            tab_names = result.tab_names if isinstance(result, TabManagementResult) else []
+            return current_manage_tabs, result.run_record, tab_names, get_manage_old_tabs_status(result)
+    except (ValueError, TypeError):
+        # Invalid or malformed manage_tabs_param - ignore and return defaults
+        pass
+    return None, None, [], None
+
+
+def _get_selection_modal_context(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, selection_param: str | None
+) -> tuple[uuid.UUID | None, object | None, list, str]:
+    """Get context for displaying the initial selection progress modal.
+
+    Returns (current_selection, run_record, log_messages, translated_report_html).
+    """
+    if not selection_param:
+        return None, None, [], ""
+
+    try:
+        current_selection = uuid.UUID(selection_param)
+        check_and_update_task_health(uow, current_selection)
+        result = get_selection_run_status(uow, current_selection)
+
+        if result.run_record and result.run_record.assembly_id == assembly_id:
+            return (
+                current_selection,
+                result.run_record,
+                result.log_messages,
+                translate_run_report_to_html(result.run_report) if result.run_report else "",
+            )
+    except (ValueError, TypeError):
+        current_app.logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
+
+    return None, None, [], ""
+
+
+def _get_replacement_modal_context(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    replacement_param: str | None,
+    initial_min_select: int | None,
+    initial_max_select: int | None,
+) -> tuple[uuid.UUID | None, object | None, list, str, int | None, int | None]:
+    """Get context for displaying the replacement selection modal.
+
+    Returns (current_replacement, run_record, log_messages, translated_report_html, min_select, max_select).
+    """
+    if not replacement_param:
+        return None, None, [], "", initial_min_select, initial_max_select
+
+    try:
+        current_replacement = uuid.UUID(replacement_param)
+        check_and_update_task_health(uow, current_replacement)
+        result = get_selection_run_status(uow, current_replacement)
+
+        if result.run_record and result.run_record.assembly_id == assembly_id:
+            min_select = initial_min_select
+            max_select = initial_max_select
+
+            if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+                min_select = minimum_selection(result.features)
+                max_select = maximum_selection(result.features)
+
+            return (
+                current_replacement,
+                result.run_record,
+                result.log_messages,
+                translate_run_report_to_html(result.run_report) if result.run_report else "",
+                min_select,
+                max_select,
+            )
+    except (ValueError, TypeError):
+        current_app.logger.debug("Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param)
+
+    return None, None, [], "", initial_min_select, initial_max_select
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection")
 @login_required
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
     try:
-        # Get pagination parameters
         page = request.args.get("page", 1, type=int)
         per_page = 15
 
-        # Get current_selection query parameter for modal display
-        current_selection_param = request.args.get("current_selection")
         current_selection: uuid.UUID | None = None
         run_record = None
         log_messages: list = []
         translated_report_html = ""
 
+        # Manage tabs variables (extracted to helper for complexity)
+        current_manage_tabs_param = request.args.get("current_manage_tabs")
+
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-            # Handle current_selection parameter for showing progress modal
-            if current_selection_param:
-                try:
-                    current_selection = uuid.UUID(current_selection_param)
+            # Get selection modal context
+            current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
+                uow, assembly_id, request.args.get("current_selection")
+            )
 
-                    # Check task health before getting status
-                    check_and_update_task_health(uow, current_selection)
+            # Get replacement modal context
+            (
+                current_replacement,
+                replacement_run_record,
+                replacement_log_messages,
+                replacement_translated_report_html,
+                replacement_min_select,
+                replacement_max_select,
+            ) = _get_replacement_modal_context(
+                uow,
+                assembly_id,
+                request.args.get("current_replacement"),
+                request.args.get("min_select", type=int),
+                request.args.get("max_select", type=int),
+            )
 
-                    # Get run status
-                    result = get_selection_run_status(uow, current_selection)
-                    if result.run_record and result.run_record.assembly_id == assembly_id:
-                        run_record = result.run_record
-                        log_messages = result.log_messages
-                        translated_report_html = (
-                            translate_run_report_to_html(result.run_report) if result.run_report else ""
-                        )
-                    else:
-                        # Run doesn't exist or doesn't belong to this assembly - ignore
-                        current_selection = None
-                except (ValueError, TypeError):
-                    # Invalid UUID - ignore the parameter
-                    current_selection = None
+            # Handle current_manage_tabs parameter for showing manage tabs modal
+            current_manage_tabs, manage_tabs_run_record, manage_tabs_tab_names, manage_tabs_status = (
+                _get_manage_tabs_context(uow, assembly_id, current_manage_tabs_param)
+            )
 
         # Check if gsheet is configured
         gsheet = None
@@ -238,7 +340,6 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
         except Exception as gsheet_error:
             current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
-            gsheet = None
 
         # Fetch paginated selection history
         run_history: list = []
@@ -254,6 +355,8 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception as history_error:
             current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
 
+        replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
+
         return render_template(
             "backoffice/assembly_selection.html",
             assembly=assembly,
@@ -266,6 +369,17 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             run_record=run_record,
             log_messages=log_messages,
             translated_report_html=translated_report_html,
+            current_manage_tabs=current_manage_tabs,
+            manage_tabs_run_record=manage_tabs_run_record,
+            manage_tabs_tab_names=manage_tabs_tab_names,
+            manage_tabs_status=manage_tabs_status,
+            replacement_modal_open=replacement_modal_open,
+            current_replacement=current_replacement,
+            replacement_run_record=replacement_run_record,
+            replacement_log_messages=replacement_log_messages,
+            replacement_translated_report_html=replacement_translated_report_html,
+            replacement_min_select=replacement_min_select,
+            replacement_max_select=replacement_max_select,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
@@ -330,6 +444,61 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
         return "", 403
     except Exception as e:
         current_app.logger.error(f"Selection progress modal error: {e}")
+        return "", 500
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
+@login_required
+def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return replacement modal progress HTML fragment for HTMX polling."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health
+            check_and_update_task_health(uow, run_id)
+
+            # Get run status
+            result = get_selection_run_status(uow, run_id)
+
+        if result.run_record is None:
+            return "", 404
+
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            return "", 404
+
+        # Calculate min/max if load task completed successfully
+        replacement_min_select: int | None = request.args.get("min_select", type=int)
+        replacement_max_select: int | None = request.args.get("max_select", type=int)
+
+        if isinstance(result, LoadRunResult) and result.features is not None and result.success:
+            replacement_min_select = minimum_selection(result.features)
+            replacement_max_select = maximum_selection(result.features)
+
+        return render_template(
+            "backoffice/components/replacement_modal.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            replacement_run_record=result.run_record,
+            replacement_log_messages=result.log_messages,
+            replacement_translated_report_html=(
+                translate_run_report_to_html(result.run_report) if result.run_report else ""
+            ),
+            current_replacement=run_id,
+            replacement_min_select=replacement_min_select,
+            replacement_max_select=replacement_max_select,
+        ), 200
+    except NotFoundError:
+        return "", 404
+    except InsufficientPermissions:
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Replacement progress modal error: {e}")
         return "", 500
 
 
@@ -437,6 +606,148 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/start-list", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start listing old tabs task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
+
+        return redirect(
+            url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
+        )
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly or gsheet not found for manage tabs list: {e}")
+        flash(_("Please configure a Google Spreadsheet first"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for manage tabs list: {e}")
+        flash(_("You don't have permission to manage tabs"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Start manage tabs list error: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while starting the list tabs task"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/start-delete", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start deleting old tabs task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
+
+        return redirect(
+            url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
+        )
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly or gsheet not found for manage tabs delete: {e}")
+        flash(_("Please configure a Google Spreadsheet first"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for manage tabs delete: {e}")
+        flash(_("You don't have permission to manage tabs"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Start manage tabs delete error: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while starting the delete tabs task"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/progress")
+@login_required
+@require_assembly_management
+def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """HTMX endpoint for manage tabs progress modal."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+
+            # Check task health
+            check_and_update_task_health(uow, run_id)
+
+            # Get run status
+            result = get_selection_run_status(uow, run_id)
+
+        if result.run_record is None:
+            return "", 404
+
+        if result.run_record.assembly_id != assembly_id:
+            current_app.logger.warning(
+                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            )
+            return "", 404
+
+        # Get tab names from TabManagementResult if available
+        tab_names: list[str] = []
+        if isinstance(result, TabManagementResult):
+            tab_names = result.tab_names
+
+        return render_template(
+            "backoffice/components/manage_tabs_progress_modal.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            manage_tabs_run_record=result.run_record,
+            manage_tabs_tab_names=tab_names,
+            manage_tabs_status=get_manage_old_tabs_status(result),
+            current_manage_tabs=run_id,
+        ), 200
+    except NotFoundError:
+        return "", 404
+    except InsufficientPermissions:
+        return "", 403
+    except Exception as e:
+        current_app.logger.error(f"Manage tabs progress modal error: {e}")
+        return "", 500
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/cancel", methods=["POST"])
+@login_required
+@require_assembly_management
+def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running manage tabs task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            cancel_task(uow, current_user.id, assembly_id, run_id)
+
+        flash(_("Task cancelled"), "info")
+        return redirect(
+            url_for(
+                "backoffice.view_assembly_selection",
+                assembly_id=assembly_id,
+                current_manage_tabs=run_id,
+            )
+        )
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Cannot cancel manage tabs task: {e}")
+        flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Manage tabs task not found for cancel: {e}")
+        flash(_("Task not found"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to cancel manage tabs task: {e}")
+        flash(_("You don't have permission to cancel this task"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Cancel manage tabs error: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while cancelling the task"), "error")
+        return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/history/<uuid:run_id>")
 @login_required
 def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -482,6 +793,162 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading the run details"), "error")
         return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement")
+@login_required
+def view_assembly_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Legacy route - redirects to selection page with replacement modal open."""
+    return redirect(url_for("backoffice.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>")
+@login_required
+def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Legacy route - redirects to query parameter version for backwards compatibility."""
+    # Preserve min/max params if present
+    min_select = request.args.get("min_select")
+    max_select = request.args.get("max_select")
+    return redirect(
+        url_for(
+            "backoffice.view_assembly_selection",
+            assembly_id=assembly_id,
+            current_replacement=run_id,
+            min_select=min_select,
+            max_select=max_select,
+        )
+    )
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/load", methods=["POST"])
+@login_required
+def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a replacement data validation task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
+
+        return redirect(
+            url_for("backoffice.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid selection attempted with replacement load for assembly {assembly_id}: {e}")
+        flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Failed to start replacement load for assembly {assembly_id}: {e}")
+        flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting replacement load {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting replacement load for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the loading task"), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/run", methods=["POST"])
+@login_required
+def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a replacement selection task."""
+    try:
+        min_select = request.args.get("min_select", type=int) or 0
+        max_select = request.args.get("max_select", type=int) or 0
+
+        # Get and validate number_to_select from form
+        number_to_select_str = request.form.get("number_to_select")
+        if not number_to_select_str:
+            flash(_("Number of people to select is required"), "error")
+            return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+        try:
+            number_to_select = int(number_to_select_str)
+            if number_to_select <= 0:
+                flash(_("Number of people to select must be greater than zero"), "error")
+                return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+        except ValueError:
+            flash(_("Number of people to select must be a valid integer"), "error")
+            return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+        uow = bootstrap.bootstrap()
+        with uow:
+            task_id = start_gsheet_replace_task(uow, current_user.id, assembly_id, number_to_select)
+
+        return redirect(
+            url_for(
+                "backoffice.view_assembly_replacement_with_run",
+                assembly_id=assembly_id,
+                run_id=task_id,
+                num_to_select=number_to_select,
+                min_select=min_select,
+                max_select=max_select,
+            )
+        )
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Failed to start replacement for assembly {assembly_id}: {e}")
+        flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions for starting replacement {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error starting replacement for assembly {assembly_id}: {e}")
+        flash(_("An unexpected error occurred while starting the replacement task"), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
+@login_required
+def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running replacement task."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            cancel_task(uow, current_user.id, assembly_id, run_id)
+
+        flash(_("Task has been cancelled"), "success")
+        return redirect(
+            url_for("backoffice.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
+
+    except NotFoundError as e:
+        current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        flash(_("Task not found"), "error")
+        return redirect(url_for("backoffice.view_assembly_replacement", assembly_id=assembly_id))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
+        flash(str(e), "error")
+        return redirect(
+            url_for("backoffice.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to cancel this task"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    except Exception as e:
+        current_app.logger.error(f"Error cancelling task {run_id}: {e}")
+        flash(_("An error occurred while cancelling the task"), "error")
+        return redirect(
+            url_for("backoffice.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")

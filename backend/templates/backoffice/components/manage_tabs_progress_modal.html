@@ -1,0 +1,105 @@
+{# ABOUTME: Manage tabs progress modal using design system macros #}
+{# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
+
+{% set close_url = url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) %}
+{% set can_close = manage_tabs_run_record.has_finished %}
+{% set htmx_poll_url = url_for('backoffice.manage_tabs_progress', assembly_id=assembly.id, run_id=current_manage_tabs) if not manage_tabs_run_record.has_finished else "" %}
+
+{% call progress_modal(
+id="manage-tabs-progress-modal",
+title=_("Manage Tabs Progress"),
+can_close=can_close,
+close_url=close_url,
+htmx_poll_url=htmx_poll_url
+) %}
+    {# Task type #}
+{{ labeled_value(_("Task:"), manage_tabs_run_record.task_type_verbose) }}
+
+    {# Status badge #}
+{{ status_badge(manage_tabs_run_record.status.value, _("Status:")) }}
+
+    {# Spinner for pending/running #}
+{% if manage_tabs_run_record.is_pending or manage_tabs_run_record.is_running %}
+    {{ spinner(_("Processing...")) }}
+{% endif %}
+
+    {# Error message #}
+{% if manage_tabs_run_record.is_failed and manage_tabs_run_record.error_message %}
+        {# error_message is HTML rendered by server code that escapes user content #}
+    {{ labeled_value(_("Error:"), manage_tabs_run_record.error_message | safe, "color: var(--color-error-text);") }}
+{% endif %}
+
+    {# Cancelled message #}
+{% if manage_tabs_run_record.is_cancelled %}
+    <div class="mb-4">
+        <span class="text-body-md font-medium" style="color: var(--color-warning-text);">{{ _("Task Cancelled") }}</span>
+        {% if manage_tabs_run_record.error_message %}
+                {# error_message is HTML rendered by server code that escapes user content #}
+            <span class="text-body-md ml-2" style="color: var(--color-warning-text);">{{ manage_tabs_run_record.error_message | safe }}</span>
+        {% endif %}
+    </div>
+{% endif %}
+
+    {# LIST_COMPLETED - show tab list #}
+{% if manage_tabs_status and manage_tabs_status.is_list_completed %}
+    {% if manage_tabs_tab_names %}
+        <div class="mb-4">
+            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Found old tabs:") }}</span>
+            <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                <ul class="list-disc ml-4">
+                    {% for tab_name in manage_tabs_tab_names %}
+                        <li class="text-body-sm mb-1" style="color: var(--color-body-text);">{{ tab_name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                {{ _("%(count)s tab(s) will be deleted.", count=manage_tabs_tab_names|length) }}
+            </p>
+        </div>
+    {% else %}
+        <div class="mb-4">
+            <span class="text-body-md" style="color: var(--color-success-text);">
+                {{ _("No old tabs found. Your spreadsheet is clean.") }}
+            </span>
+        </div>
+    {% endif %}
+{% endif %}
+
+    {# DELETE_COMPLETED - show success message #}
+{% if manage_tabs_status and manage_tabs_status.is_finished and not manage_tabs_status.is_list_completed %}
+    {% if not manage_tabs_run_record.is_failed and not manage_tabs_run_record.is_cancelled %}
+        <div class="mb-4">
+            <span class="text-body-md font-medium" style="color: var(--color-success-text);">{{ _("Result:") }}</span>
+            <span class="text-body-md" style="color: var(--color-success-text);">
+                {{ _("Old tabs have been deleted successfully.") }}
+            </span>
+            {% if gsheet %}
+                <a href="{{ gsheet.url }}" target="_blank" class="text-body-md font-medium hover:underline ml-2" style="color: var(--color-primary-action);">
+                    {{ _("View spreadsheet") }}
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endif %}
+
+    {# Footer with action buttons #}
+{{ modal_footer_start() }}
+{% if manage_tabs_run_record.is_pending or manage_tabs_run_record.is_running %}
+    <form method="post" action="{{ url_for('backoffice.cancel_manage_tabs', assembly_id=assembly.id, run_id=current_manage_tabs) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
+    </form>
+{% endif %}
+{% if manage_tabs_status and manage_tabs_status.is_list_completed and manage_tabs_tab_names %}
+    <form method="post" action="{{ url_for('backoffice.start_manage_tabs_delete', assembly_id=assembly.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ button(_("Delete These Tabs"), type="submit", variant="primary") }}
+    </form>
+{% endif %}
+{% if manage_tabs_run_record.has_finished %}
+    {{ button(_("Close"), href=close_url, variant="primary" if not (manage_tabs_status and manage_tabs_status.is_list_completed and manage_tabs_tab_names) else "outline") }}
+{% endif %}
+{{ modal_footer_end() }}
+{% endcall %}

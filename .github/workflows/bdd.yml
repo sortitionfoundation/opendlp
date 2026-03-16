@@ -20,7 +20,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: postgres:16
         env:
           POSTGRES_DB: opendlp
           POSTGRES_USER: opendlp
@@ -34,7 +34,7 @@ jobs:
           --health-retries 5
 
       redis:
-        image: redis:7-alpine
+        image: redis:alpine
         ports:
           - 63792:6379
         options: >-
@@ -67,7 +67,7 @@ jobs:
           DB_PORT: 54322
           DB_PASSWORD: abc123
           REDIS_HOST: localhost
-          REDIS_PORT: 63791
+          REDIS_PORT: 63792
 
       - name: Run BDD tests
         run: uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
@@ -76,7 +76,7 @@ jobs:
           DB_PORT: 54322
           DB_PASSWORD: abc123
           REDIS_HOST: localhost
-          REDIS_PORT: 63791
+          REDIS_PORT: 63792
           SECRET_KEY: test-secret-key-for-ci
           CI: true
 

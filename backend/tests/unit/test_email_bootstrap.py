@@ -1,4 +1,4 @@
-"""ABOUTME: Integration tests for email system including bootstrap factory
+"""ABOUTME: Unit tests for email system including bootstrap factory
 ABOUTME: Tests email adapter configuration and multiple recipient handling"""
 
 import logging

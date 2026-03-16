@@ -160,6 +160,7 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 - Line length: 120 characters (configured in Ruff)
 - Don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
 - Prefer the empty string as the default for string arguments, rather than `str | None`
+- Empty `except` clauses must include an explanatory comment describing why the exception is being silently ignored
 
 ### Internationalization (i18n)
 
@@ -188,6 +189,7 @@ See [docs/sortition_error_translations.md](docs/sortition_error_translations.md)
 - Use imperative SQLAlchemy mapping in adapters
 - Database migrations used via Alembic, see [Deployment Guide](docs/deploy.md) for details.
   - Always create migrations with the alembic command, eg: `uv run alembic revision --autogenerate -m "description of changes"`
+  - When adding a new table: also add a corresponding DELETE statement to `_delete_all_test_data()` in `tests/conftest.py`, respecting foreign key ordering (child tables before parent tables). The BDD tests have a similar function `delete_all_except_standard_users()` in `tests/bdd/conftest.py` that also needs updating.
 
 **Important:** When using imperative SQLAlchemy mapping for mypy compatibility, use ORM table column references in repository implementations instead of domain object attributes:
 
@@ -235,6 +237,8 @@ This requirement also means that we MUST NOT have copies of details in long term
 - [Project Specification](docs/spec.md) - Original project specification
 
 ### Agent-Specific Documentation
+
+- [Code Quality Rules](docs/agent/code_quality_rules.md) - Exception handling, complexity, and formatting rules
 
 When working on frontend issues, see:
 

@@ -8,6 +8,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
@@ -21,6 +22,7 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    PasswordResetTokenRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -399,6 +401,46 @@ class FakeTotpVerificationAttemptRepository(FakeRepository, TotpVerificationAtte
         return user_attempts
 
 
+class FakePasswordResetTokenRepository(FakeRepository, PasswordResetTokenRepository):
+    """Fake implementation of PasswordResetTokenRepository."""
+
+    def get_by_token(self, token: str) -> PasswordResetToken | None:
+        """Get a password reset token by its token string."""
+        for item in self._items:
+            if item.token == token:
+                return item
+        return None
+
+    def get_active_tokens_for_user(self, user_id: uuid.UUID) -> Iterable[PasswordResetToken]:
+        """Get all active (not expired and not used) tokens for a user."""
+        return [item for item in self._items if item.user_id == user_id and item.is_valid()]
+
+    def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
+        """Count password reset requests for a user since a given datetime."""
+        return sum(1 for item in self._items if item.user_id == user_id and item.created_at >= since)
+
+    def delete_old_tokens(self, before: datetime) -> int:
+        """Delete tokens created before a given datetime. Returns count deleted."""
+        to_delete = [item for item in self._items if item.created_at < before]
+        for item in to_delete:
+            self._items.remove(item)
+        return len(to_delete)
+
+    def invalidate_user_tokens(self, user_id: uuid.UUID) -> int:
+        """Mark all active tokens for a user as used. Returns count invalidated."""
+        count = 0
+        for item in self._items:
+            if item.user_id == user_id and item.is_valid():
+                item.use()
+                count += 1
+        return count
+
+    def delete(self, item: PasswordResetToken) -> None:
+        """Delete a token from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
 class FakeEmailConfirmationTokenRepository(FakeRepository, EmailConfirmationTokenRepository):
     """Fake implementation of EmailConfirmationTokenRepository."""
 
@@ -534,6 +576,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.user_backup_codes = self.fake_user_backup_codes = FakeUserBackupCodeRepository()
         self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
         self.totp_attempts = self.fake_totp_attempts = FakeTotpVerificationAttemptRepository()
+        self.password_reset_tokens = self.fake_password_reset_tokens = FakePasswordResetTokenRepository()
         self.email_confirmation_tokens = self.fake_email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
         self.target_categories = self.fake_target_categories = FakeTargetCategoryRepository()
         self.respondents = self.fake_respondents = FakeRespondentRepository()
@@ -562,6 +605,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_user_backup_codes._items.clear()
         self.fake_two_factor_audit_logs._items.clear()
         self.fake_totp_attempts._items.clear()
+        self.fake_password_reset_tokens._items.clear()
         self.fake_email_confirmation_tokens._items.clear()
         self.fake_target_categories._items.clear()
         self.fake_respondents._items.clear()

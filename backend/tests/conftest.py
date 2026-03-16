@@ -12,14 +12,14 @@ from pathlib import Path
 import pytest
 import redis
 from click.testing import CliRunner
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from tenacity import Retrying, retry, stop_after_delay
 from werkzeug.security import generate_password_hash
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
-from opendlp.service_layer import security
+from opendlp.service_layer import security, totp_service
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -99,24 +99,7 @@ def temp_env_vars():
 
 
 @pytest.fixture
-def in_memory_sqlite_db():
-    engine = create_engine("sqlite:///:memory:")
-    return engine
-
-
-@pytest.fixture
-def sqlite_session_factory(in_memory_sqlite_db):
-    orm.metadata.create_all(in_memory_sqlite_db)
-    database.start_mappers()
-
-    yield sessionmaker(bind=in_memory_sqlite_db)
-
-    database.clear_mappers()
-    orm.metadata.drop_all(in_memory_sqlite_db)
-
-
-@pytest.fixture
-def cli_with_session_factory(sqlite_session_factory):
+def cli_with_session_factory(postgres_session_factory):
     """Fixture that provides a Click runner with test session factory in context."""
 
     def _invoke_cli_with_context(cli_command, args):
@@ -124,7 +107,7 @@ def cli_with_session_factory(sqlite_session_factory):
         runner = CliRunner()
 
         # Create context object with our test session factory
-        ctx_obj = {"session_factory": sqlite_session_factory}
+        ctx_obj = {"session_factory": postgres_session_factory}
 
         # Invoke with the context object
         return runner.invoke(cli_command, args, obj=ctx_obj)
@@ -132,12 +115,78 @@ def cli_with_session_factory(sqlite_session_factory):
     return _invoke_cli_with_context
 
 
+def _get_worker_db_name(worker_id: str) -> str:
+    """Return a database name unique to each xdist worker."""
+    if worker_id == "master":
+        return "opendlp"  # not running under xdist
+    return f"opendlp_test_{worker_id}"  # e.g. opendlp_test_gw0
+
+
 @pytest.fixture(scope="session")
-def postgres_engine():
+def _worker_database(worker_id):
+    """Create a per-worker database for xdist parallel execution."""
+    db_name = _get_worker_db_name(worker_id)
+    if db_name == "opendlp":
+        yield db_name
+        return
+
+    # Connect to the default 'opendlp' database to issue CREATE DATABASE
+    admin_cfg = PostgresCfg.from_env()
+    admin_cfg.port = 54322
+    admin_engine = create_engine(
+        admin_cfg.to_url(),
+        isolation_level="AUTOCOMMIT",  # CREATE DATABASE can't run inside a transaction
+    )
+    with admin_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :name"),
+            {"name": db_name},
+        )
+        if not result.fetchone():
+            conn.execute(text(f'CREATE DATABASE "{db_name}"'))
+    admin_engine.dispose()
+
+    yield db_name
+
+    # Teardown: drop the worker database
+    admin_engine = create_engine(
+        admin_cfg.to_url(),
+        isolation_level="AUTOCOMMIT",
+    )
+    with admin_engine.connect() as conn:
+        # db_name is safe: only values from _get_worker_db_name (opendlp_test_gw<N>)
+        conn.execute(
+            text(
+                f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "  # noqa: S608
+                f"WHERE datname = '{db_name}' AND pid <> pg_backend_pid()"
+            )
+        )
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{db_name}"'))
+    admin_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def worker_db_url(_worker_database):
+    """Full PostgreSQL URL for this worker's database."""
+    postgres_cfg = PostgresCfg.from_env()
+    postgres_cfg.port = 54322
+    postgres_cfg.db_name = _worker_database
+    return postgres_cfg.to_url()
+
+
+@pytest.fixture(scope="session")
+def postgres_engine(_worker_database):
     """Create a test database engine using PostgreSQL."""
     postgres_cfg = PostgresCfg.from_env()
     postgres_cfg.port = 54322
-    engine = create_engine(postgres_cfg.to_url(), echo=False, isolation_level="SERIALIZABLE")
+    postgres_cfg.db_name = _worker_database
+    engine = create_engine(
+        postgres_cfg.to_url(),
+        echo=False,
+        isolation_level="SERIALIZABLE",
+        pool_size=2,
+        max_overflow=3,
+    )
     wait_for_postgres_to_come_up(engine)
 
     yield engine
@@ -145,16 +194,52 @@ def postgres_engine():
     engine.dispose()
 
 
-@pytest.fixture
-def postgres_session_factory(postgres_engine):
+@pytest.fixture(scope="session")
+def _postgres_tables(postgres_engine):
+    """Create tables once for the entire test session."""
     orm.metadata.create_all(postgres_engine)
     database.start_mappers()
-
-    session_factory = sessionmaker(bind=postgres_engine)
-    yield session_factory
-
+    yield
     database.clear_mappers()
     orm.metadata.drop_all(postgres_engine)
+
+
+def _delete_all_test_data(session_factory):
+    """Delete all data from all tables, respecting foreign key constraints.
+
+    When adding a new table to the ORM, add a corresponding delete statement
+    here. Tables must be deleted in dependency order: child tables before
+    parent tables, so that foreign key constraints are satisfied.
+    """
+    session = session_factory()
+    try:
+        # Child tables (no other table references these)
+        session.execute(orm.totp_verification_attempts.delete())
+        session.execute(orm.two_factor_audit_log.delete())
+        session.execute(orm.user_backup_codes.delete())
+        session.execute(orm.email_confirmation_tokens.delete())
+        session.execute(orm.password_reset_tokens.delete())
+        session.execute(orm.selection_run_records.delete())
+        session.execute(orm.respondents.delete())
+        session.execute(orm.target_categories.delete())
+        session.execute(orm.assembly_gsheets.delete())
+        session.execute(orm.assembly_csv.delete())
+        session.execute(orm.user_invites.delete())
+        session.execute(orm.user_assembly_roles.delete())
+        # Parent tables (referenced by child tables above)
+        session.execute(orm.assemblies.delete())
+        session.execute(orm.users.delete())
+        session.commit()
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def postgres_session_factory(postgres_engine, _postgres_tables):
+    """Provide a session factory, cleaning up all data after each test."""
+    session_factory = sessionmaker(bind=postgres_engine)
+    yield session_factory
+    _delete_all_test_data(session_factory)
 
 
 @pytest.fixture
@@ -235,3 +320,4 @@ def patch_password_hashing(monkeypatch):
         return generate_password_hash(password, method="pbkdf2:sha256:1")
 
     monkeypatch.setattr(security, "generate_password_hash", mock_generate)
+    monkeypatch.setattr(totp_service, "generate_password_hash", mock_generate)
