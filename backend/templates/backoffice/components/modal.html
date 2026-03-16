@@ -100,6 +100,9 @@ Args:
 Usage: See selection_progress_modal.html for a complete example.
     #}
 <div id="{{ id }}"
+     class="progress-modal"
+     data-can-close="{{ 'true' if can_close else 'false' }}"
+     data-close-url="{{ close_url }}"
      {% if htmx_poll_url %}
          hx-get="{{ htmx_poll_url }}"
          hx-trigger="every {{ htmx_poll_interval }}"
@@ -117,7 +120,9 @@ Usage: See selection_progress_modal.html for a complete example.
          role="dialog"
          aria-modal="true"
          aria-labelledby="{{ id }}-title">
-        <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden {{ classes }}"
+        <div id="{{ id }}-panel"
+             tabindex="-1"
+             class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden {{ classes }}"
              style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
 
                 {# Header with title and close button #}

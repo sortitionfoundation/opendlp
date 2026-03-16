@@ -49,7 +49,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres
+        image: postgres:16
         # Provide the password for postgres
         env:
           POSTGRES_DB: opendlp
@@ -65,7 +65,7 @@ jobs:
           - 54322:5432
       redis:
         # Docker Hub image
-        image: redis
+        image: redis:alpine
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -73,7 +73,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 63791:6379
+          - 63792:6379
     defaults:
       run:
         working-directory: ./backend
