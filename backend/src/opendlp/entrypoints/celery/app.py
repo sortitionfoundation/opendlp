@@ -5,7 +5,7 @@ from celery import Celery, Task
 from opendlp import config
 
 
-def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
+def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | None = None) -> Celery:
     # Configure Celery (using Redis as both broker and result backend)
     redis_cfg = config.RedisCfg.from_env()
     if redis_host:
@@ -13,6 +13,9 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
     if redis_port:
         redis_cfg.port = redis_port
     redis_cfg.db = "0"
+    # only re-initialise if the URL has changed
+    if old_app and old_app.conf.broker_write_url == redis_cfg.to_url():
+        return old_app
     app = Celery(
         "opendlp",
         broker=redis_cfg.to_url(),
@@ -36,6 +39,15 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0) -> Celery:
     }
 
     return app
+
+
+def reset_celery_app() -> None:
+    """
+    Used by tests to force resetting the app module attribute, so it is
+    re-initialised from the current environment variables
+    """
+    global app
+    app = get_celery_app(old_app=app)
 
 
 app = get_celery_app()

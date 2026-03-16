@@ -4,6 +4,7 @@ import pytest
 
 from opendlp.adapters.database import start_mappers
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.celery.app import reset_celery_app
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -14,7 +15,11 @@ from tests.e2e.helpers import get_csrf_token
 @pytest.fixture
 def app(temp_env_vars):
     """Create test Flask application."""
-    temp_env_vars(DB_URI="postgresql://opendlp:abc123@localhost:54322/opendlp")  # pragma: allowlist secret
+    temp_env_vars(
+        DB_URI="postgresql://opendlp:abc123@localhost:54322/opendlp",  # pragma: allowlist secret
+        REDIS_PORT="63792",
+    )
+    reset_celery_app()  # ensure the celery app is reset and picks up
     start_mappers()  # Initialize SQLAlchemy mappings
     app = create_app("testing_postgres")
     return app
