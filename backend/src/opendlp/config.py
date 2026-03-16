@@ -289,15 +289,19 @@ class FlaskTestConfig(FlaskBaseConfig):
 
     def __init__(self) -> None:
         super().__init__()
-        postgres_cfg = PostgresCfg.from_env()
-        postgres_cfg.port = 54322
-        self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
+        if not os.environ.get("DB_URI"):
+            postgres_cfg = PostgresCfg.from_env()
+            postgres_cfg.port = 54322
+            self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
         self.FLASK_ENV = "testing"
 
         # Use filesystem for session cache for testing
+        # Namespace by xdist worker to avoid collisions during parallel runs
         self.SESSION_TYPE = "cachelib"
-        session_file_dir = Path(tempfile.gettempdir()) / "flask_session"
+        worker_suffix = os.environ.get("PYTEST_XDIST_WORKER", "")
+        session_dir_name = f"flask_session_{worker_suffix}" if worker_suffix else "flask_session"
+        session_file_dir = Path(tempfile.gettempdir()) / session_dir_name
         session_file_dir.mkdir(exist_ok=True)
         self.SESSION_CACHELIB = FileSystemCache(str(session_file_dir))
 

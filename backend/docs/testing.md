@@ -230,11 +230,16 @@ just install-dev
 ## Running Tests
 
 ```bash
-# Run all tests with coverage
-just test
-# or: uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+# Run non-BDD tests in parallel (default target)
+just test-nobdd  # uses pytest-xdist -n auto
 
-# Watch tests on file changes
+# Run all tests with coverage (including BDD, serial)
+just test
+
+# Run in parallel manually with specific worker count
+uv run pytest tests/unit tests/integration tests/e2e -n 4
+
+# Watch tests on file changes (serial, for rapid feedback)
 just watch-tests
 
 # Run specific test level
@@ -283,9 +288,10 @@ def test_fails_without_required_env_var(clear_env_vars):
 
 ### Database Fixtures
 
-- `postgres_engine` - PostgreSQL test database engine (port 54322)
+- `postgres_engine` - PostgreSQL test database engine (port 54322), automatically targets per-worker database when running with xdist
 - `postgres_session_factory` - PostgreSQL session factory with mappers
 - `postgres_session` - Individual test session with rollback
+- `worker_db_url` - Session-scoped URL pointing to the per-worker database (used by e2e Flask app fixtures)
 
 ### Security Fixtures
 
@@ -350,6 +356,15 @@ Integration and e2e tests use:
 - **Development/Manual Testing:** PostgreSQL on port 54321
 - **Integration/E2E/BDD Tests:** PostgreSQL on port 54322 (isolation from manual testing)
 - **Unit Tests:** Mostly use `FakeUnitOfWork` (no database needed); some use PostgreSQL on port 54322
+
+### Parallel Execution with pytest-xdist
+
+When running with `-n auto` (or any `-n <count>`), each xdist worker gets its own database:
+
+- Worker `gw0` uses `opendlp_test_gw0`, worker `gw1` uses `opendlp_test_gw1`, etc.
+- Databases are created automatically at session start and dropped after the test session
+- When running without `-n`, tests use the default `opendlp` database as before
+- BDD tests are excluded from parallel execution (they manage their own server processes)
 
 ## Writing Good Tests
 

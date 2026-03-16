@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 import redis
 from click.testing import CliRunner
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from tenacity import Retrying, retry, stop_after_delay
 from werkzeug.security import generate_password_hash
@@ -115,11 +115,71 @@ def cli_with_session_factory(postgres_session_factory):
     return _invoke_cli_with_context
 
 
+def _get_worker_db_name(worker_id: str) -> str:
+    """Return a database name unique to each xdist worker."""
+    if worker_id == "master":
+        return "opendlp"  # not running under xdist
+    return f"opendlp_test_{worker_id}"  # e.g. opendlp_test_gw0
+
+
 @pytest.fixture(scope="session")
-def postgres_engine():
+def _worker_database(worker_id):
+    """Create a per-worker database for xdist parallel execution."""
+    db_name = _get_worker_db_name(worker_id)
+    if db_name == "opendlp":
+        yield db_name
+        return
+
+    # Connect to the default 'opendlp' database to issue CREATE DATABASE
+    admin_cfg = PostgresCfg.from_env()
+    admin_cfg.port = 54322
+    admin_engine = create_engine(
+        admin_cfg.to_url(),
+        isolation_level="AUTOCOMMIT",  # CREATE DATABASE can't run inside a transaction
+    )
+    with admin_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :name"),
+            {"name": db_name},
+        )
+        if not result.fetchone():
+            conn.execute(text(f'CREATE DATABASE "{db_name}"'))
+    admin_engine.dispose()
+
+    yield db_name
+
+    # Teardown: drop the worker database
+    admin_engine = create_engine(
+        admin_cfg.to_url(),
+        isolation_level="AUTOCOMMIT",
+    )
+    with admin_engine.connect() as conn:
+        # db_name is safe: only values from _get_worker_db_name (opendlp_test_gw<N>)
+        conn.execute(
+            text(
+                f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "  # noqa: S608
+                f"WHERE datname = '{db_name}' AND pid <> pg_backend_pid()"
+            )
+        )
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{db_name}"'))
+    admin_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def worker_db_url(_worker_database):
+    """Full PostgreSQL URL for this worker's database."""
+    postgres_cfg = PostgresCfg.from_env()
+    postgres_cfg.port = 54322
+    postgres_cfg.db_name = _worker_database
+    return postgres_cfg.to_url()
+
+
+@pytest.fixture(scope="session")
+def postgres_engine(_worker_database):
     """Create a test database engine using PostgreSQL."""
     postgres_cfg = PostgresCfg.from_env()
     postgres_cfg.port = 54322
+    postgres_cfg.db_name = _worker_database
     engine = create_engine(postgres_cfg.to_url(), echo=False, isolation_level="SERIALIZABLE")
     wait_for_postgres_to_come_up(engine)
 
