@@ -73,6 +73,71 @@ function fallbackCopyToClipboard(text, successMessage) {
     document.body.removeChild(textarea);
 }
 
+// Progress modal: close handlers (Escape, X button, backdrop) and auto-scroll.
+// Reads state from data-can-close and data-close-url on .progress-modal elements.
+// Runs after DOM ready and re-runs after every HTMX swap so it works even when
+// the modal transitions from "running" to "finished" via HTMX polling.
+(function () {
+    function setupProgressModals() {
+        document.querySelectorAll(".progress-modal").forEach(function (modal) {
+            var canClose = modal.dataset.canClose === "true";
+            var closeUrl = modal.dataset.closeUrl;
+            var modalId = modal.id;
+
+            // Auto-scroll any message log to the bottom
+            var messages = modal.querySelector("[id$='-messages'], #modal-messages");
+            if (messages) {
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            // Close handler for X button
+            var closeBtn = document.getElementById(modalId + "-close-btn");
+            if (closeBtn) {
+                closeBtn.onclick = canClose
+                    ? function () {
+                        window.location.href = closeUrl;
+                    }
+                    : null;
+            }
+
+            // Close handler for backdrop
+            var backdrop = document.getElementById(modalId + "-backdrop");
+            if (backdrop) {
+                backdrop.onclick = canClose
+                    ? function () {
+                        window.location.href = closeUrl;
+                    }
+                    : null;
+            }
+        });
+    }
+
+    // Escape key: find any closeable progress modal and navigate to its close URL
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            var modal = document.querySelector(
+                '.progress-modal[data-can-close="true"]',
+            );
+            if (modal && modal.dataset.closeUrl) {
+                window.location.href = modal.dataset.closeUrl;
+            }
+        }
+    });
+
+    // Run after DOM is ready (script may load in <head> before body exists)
+    document.addEventListener("DOMContentLoaded", setupProgressModals);
+
+    // Re-run after HTMX swaps (covers polling updates)
+    document.addEventListener("htmx:afterSwap", function (e) {
+        if (
+            e.detail.target &&
+            e.detail.target.classList.contains("progress-modal")
+        ) {
+            setupProgressModals();
+        }
+    });
+})();
+
 // Download 2FA backup codes as text file
 function downloadBackupCodes() {
     const codesElement = document.getElementById("backup-codes");

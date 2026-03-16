@@ -100,6 +100,9 @@ Args:
 Usage: See selection_progress_modal.html for a complete example.
     #}
 <div id="{{ id }}"
+     class="progress-modal"
+     data-can-close="{{ 'true' if can_close else 'false' }}"
+     data-close-url="{{ close_url }}"
      {% if htmx_poll_url %}
          hx-get="{{ htmx_poll_url }}"
          hx-trigger="every {{ htmx_poll_interval }}"
