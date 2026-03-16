@@ -237,6 +237,8 @@ This requirement also means that we MUST NOT have copies of details in long term
 
 ### Agent-Specific Documentation
 
+- [Code Quality Rules](docs/agent/code_quality_rules.md) - Exception handling, complexity, and formatting rules
+
 When working on frontend issues, see:
 
 - [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline

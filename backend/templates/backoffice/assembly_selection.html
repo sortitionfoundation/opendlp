@@ -44,6 +44,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         {% include "backoffice/components/selection_progress_modal.html" %}
     {% endif %}
 
+    {# Replacement Selection Modal - shown when replacement_modal_open is true #}
+    {% if replacement_modal_open %}
+        {% include "backoffice/components/replacement_modal.html" %}
+    {% endif %}
+
     {% if not gsheet %}
         {# No Google Sheet configured - show configuration prompt #}
         {{ alert(_("Please configure a Google Spreadsheet in the Data tab before running selection."), variant="warning") }}
@@ -102,8 +107,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("Check Spreadsheet"), variant="outline", disabled=true) }}
-                    {{ button(_("Run Replacements"), variant="primary", disabled=true) }}
+                    {{ button(_("Go to Replacement Selection"), href=url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'), variant="primary") }}
                 {% endcall %}
             {% endcall %}
         </div>

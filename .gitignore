@@ -346,6 +346,8 @@ backend/celerybeat-schedule.db
 backend/thirdparty/
 # this is a place for temporary files
 backend/scratchpad/
+# manual test reports - visible to LLMs but not version controlled
+backend/tests/manual/reports/
 
 # this file is generated, so we will not commit it
 backend/static/css/application.css

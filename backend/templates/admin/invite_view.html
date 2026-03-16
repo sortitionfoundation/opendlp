@@ -24,7 +24,8 @@
                             <code id="invite-code">{{ invite.code }}</code>
                             <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2"
                                     data-module="govuk-button"
-                                    onclick="copyToClipboard('invite-code', '{{ _("Invite code copied!") }}')">
+                                    data-copy-target="invite-code"
+                                    data-copy-message="{{ _("Invite code copied!") }}">
                                 {{ _("Copy Code") }}
                             </button>
                         </dd>
@@ -35,7 +36,8 @@
                             <code id="invite-url">{{ url_for('auth.register', invite_code=invite.code, _external=True) }}</code>
                             <button class="govuk-button govuk-button--secondary govuk-!-margin-left-2"
                                     data-module="govuk-button"
-                                    onclick="copyToClipboard('invite-url', '{{ _("URL copied!") }}')">
+                                    data-copy-target="invite-url"
+                                    data-copy-message="{{ _("URL copied!") }}">
                                 {{ _("Copy URL") }}
                             </button>
                         </dd>
