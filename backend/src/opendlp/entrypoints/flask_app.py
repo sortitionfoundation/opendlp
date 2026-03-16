@@ -45,8 +45,9 @@ def create_app(config_name: str = "") -> Flask:
     app.config.from_object(flask_config)
 
     # Apply ProxyFix middleware to trust reverse proxy headers (X-Forwarded-* headers from Caddy)
-    # Trust 1 layer of proxy (the reverse proxy in front of the app)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[method-assign]
+    # Only apply in production - in dev/test without a proxy, ProxyFix causes empty hostname in URLs
+    if config_name == "production":
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[method-assign]
 
     # Initialize extensions
     init_extensions(app, flask_config)
