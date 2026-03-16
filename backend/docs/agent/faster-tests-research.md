@@ -183,6 +183,8 @@ Extended `patch_password_hashing` in `tests/conftest.py` to also monkeypatch `to
 
 ### A3. Session-scoped `postgres_session_factory` with BDD-style cleanup
 
+**STATUS: DONE** - Implemented session-scoped `_postgres_tables` fixture and `_delete_all_test_data()` cleanup function. E2e tests went from ~170s to ~63s. Total non-BDD test time went from ~238s to ~71s.
+
 **Impact: HIGH (estimated 30-60s savings on e2e tests)**
 
 Instead of `create_all`/`drop_all` per test, create tables once per session and use explicit DELETE cleanup between tests (the BDD pattern).
@@ -233,6 +235,8 @@ This is proven in the BDD tests (`tests/bdd/conftest.py:382-397`, `delete_all_ex
 **Savings:** Eliminates per-test `create_all`/`drop_all` (which involves DDL round-trips to PostgreSQL). The DELETE cleanup is faster than DDL since it operates on data, not schema. Also eliminates per-test `start_mappers`/`clear_mappers` cycling.
 
 **Risk:** Low-medium. DELETE cleanup is slightly less isolated than drop/create (e.g. auto-increment sequences won't reset), but this doesn't matter for tests that use UUIDs. The BDD tests have been using this pattern successfully.
+
+**Extra:** We need to remember to add new tables to the delete list - and add them in an order that will work with foreign keys etc. At the least, add a note to AGENTS.md (or one of the files it references) to point out this needs to be maintained. Probably best to add it where we talk about adding database migrations, which would need to be read when a new table is added.
 
 ### A4. Move misclassified tests to unit
 

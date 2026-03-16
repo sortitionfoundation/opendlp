@@ -128,16 +128,52 @@ def postgres_engine():
     engine.dispose()
 
 
-@pytest.fixture
-def postgres_session_factory(postgres_engine):
+@pytest.fixture(scope="session")
+def _postgres_tables(postgres_engine):
+    """Create tables once for the entire test session."""
     orm.metadata.create_all(postgres_engine)
     database.start_mappers()
-
-    session_factory = sessionmaker(bind=postgres_engine)
-    yield session_factory
-
+    yield
     database.clear_mappers()
     orm.metadata.drop_all(postgres_engine)
+
+
+def _delete_all_test_data(session_factory):
+    """Delete all data from all tables, respecting foreign key constraints.
+
+    When adding a new table to the ORM, add a corresponding delete statement
+    here. Tables must be deleted in dependency order: child tables before
+    parent tables, so that foreign key constraints are satisfied.
+    """
+    session = session_factory()
+    try:
+        # Child tables (no other table references these)
+        session.execute(orm.totp_verification_attempts.delete())
+        session.execute(orm.two_factor_audit_log.delete())
+        session.execute(orm.user_backup_codes.delete())
+        session.execute(orm.email_confirmation_tokens.delete())
+        session.execute(orm.password_reset_tokens.delete())
+        session.execute(orm.selection_run_records.delete())
+        session.execute(orm.respondents.delete())
+        session.execute(orm.target_categories.delete())
+        session.execute(orm.assembly_gsheets.delete())
+        session.execute(orm.assembly_csv.delete())
+        session.execute(orm.user_invites.delete())
+        session.execute(orm.user_assembly_roles.delete())
+        # Parent tables (referenced by child tables above)
+        session.execute(orm.assemblies.delete())
+        session.execute(orm.users.delete())
+        session.commit()
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def postgres_session_factory(postgres_engine, _postgres_tables):
+    """Provide a session factory, cleaning up all data after each test."""
+    session_factory = sessionmaker(bind=postgres_engine)
+    yield session_factory
+    _delete_all_test_data(session_factory)
 
 
 @pytest.fixture
