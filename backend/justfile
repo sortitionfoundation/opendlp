@@ -24,7 +24,7 @@ test: test-html
 
 test-nobdd:
 	@echo "🚀 Testing code: Running pytest"
-	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html
+	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto
 
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
