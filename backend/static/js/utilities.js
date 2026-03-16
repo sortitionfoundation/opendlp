@@ -90,6 +90,12 @@ function fallbackCopyToClipboard(text, successMessage) {
                 messages.scrollTop = messages.scrollHeight;
             }
 
+            // Focus the modal panel so Firefox dispatches keyboard events
+            var panel = document.getElementById(modalId + "-panel");
+            if (panel) {
+                panel.focus();
+            }
+
             // Close handler for X button
             var closeBtn = document.getElementById(modalId + "-close-btn");
             if (closeBtn) {
@@ -112,8 +118,9 @@ function fallbackCopyToClipboard(text, successMessage) {
         });
     }
 
-    // Escape key: find any closeable progress modal and navigate to its close URL
-    document.addEventListener("keydown", function (e) {
+    // Escape key: find any closeable progress modal and navigate to its close URL.
+    // Uses window (not document) for reliable Firefox support.
+    window.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
             var modal = document.querySelector(
                 '.progress-modal[data-can-close="true"]',
