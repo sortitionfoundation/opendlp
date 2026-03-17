@@ -33,7 +33,7 @@
     {% endif %}
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if manage_status.is_fresh or manage_status.is_completed %}
-            <form action="{{ url_for('gsheets.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
+            <form action="{{ url_for('gsheets_legacy.start_gsheet_list_tabs', assembly_id=assembly.id) }}"
                   method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="govuk-button">
@@ -53,7 +53,7 @@
                 {% endif %}
             </button>
             <form method="POST"
-                  action="{{ url_for('gsheets.cancel_gsheet_manage_tabs', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  action="{{ url_for('gsheets_legacy.cancel_gsheet_manage_tabs', assembly_id=assembly.id, run_id=run_record.task_id) }}"
                   style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button class="govuk-button govuk-button--warning"
@@ -66,7 +66,7 @@
         {% endif %}
         {% if tab_names and manage_status.is_list_completed %}
             {% if tab_names|length > 0 %}
-                <form action="{{ url_for('gsheets.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
+                <form action="{{ url_for('gsheets_legacy.start_gsheet_delete_tabs', assembly_id=assembly.id) }}"
                       method="post"
                       data-confirm="{{ _("Are you sure you want to delete %(count)s tab(s)?", count=tab_names|length) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

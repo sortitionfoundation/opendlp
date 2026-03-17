@@ -1,4 +1,4 @@
-"""ABOUTME: Google Sheets integration routes for selection and replacement workflows
+"""ABOUTME: Legacy Google Sheets integration routes for selection and replacement workflows
 ABOUTME: Handles configuration, selection, and replacement tasks for Google Spreadsheets"""
 
 import uuid
@@ -37,10 +37,10 @@ from opendlp.translations import gettext as _
 
 from ..forms import CreateAssemblyGSheetForm, EditAssemblyGSheetForm
 
-gsheets_bp = Blueprint("gsheets", __name__)
+gsheets_legacy_bp = Blueprint("gsheets_legacy", __name__)
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet", methods=["GET", "POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet", methods=["GET", "POST"])
 @login_required
 def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Create or edit Google Spreadsheet configuration for an assembly."""
@@ -146,7 +146,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
 @login_required
 def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Remove Google Spreadsheet configuration from an assembly."""
@@ -173,7 +173,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["GET"])
 @login_required
 @require_assembly_management
 def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -200,7 +200,7 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>", methods=["GET"])
 @login_required
 @require_assembly_management
 def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -218,7 +218,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
                 f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
             )
             flash(_("Invalid task ID for this assembly"), "error")
-            return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+            return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
         return render_template(
             "gsheets/select.html",
@@ -246,7 +246,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/progress", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/progress", methods=["GET"])
 @login_required
 @require_assembly_management
 def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -285,7 +285,7 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
                 run_report=result.run_report,
                 translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
-                progress_url=url_for("gsheets.gsheet_select_progress", assembly_id=assembly_id, run_id=run_id),
+                progress_url=url_for("gsheets_legacy.gsheet_select_progress", assembly_id=assembly_id, run_id=run_id),
             ),
             200,
         ))
@@ -308,7 +308,7 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         return "", 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -321,16 +321,18 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # TODO: set number_people_wanted properly
             task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_selection)
 
-        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+        return redirect(
+            url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid Selection attempted with gsheet select for assembly {assembly_id}: {e}")
         flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet select for assembly {assembly_id}: {e}")
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -342,10 +344,10 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet select for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the selection task"), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_load", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_load", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -355,17 +357,19 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
 
-        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+        return redirect(
+            url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid Selection attempted with gsheet load for assembly {assembly_id}: {e}")
         flash(_("Could not start load spreadsheet task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -377,10 +381,10 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet load for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the loading task"), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_select/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -391,17 +395,21 @@ def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
         flash(_("Task has been cancelled"), "success")
-        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
         flash(str(e), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
@@ -411,10 +419,12 @@ def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
     except Exception as e:
         current_app.logger.error(f"Error cancelling task {run_id}: {e}")
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["GET"])
 @login_required
 @require_assembly_management
 def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -445,7 +455,7 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>", methods=["GET"])
 @login_required
 @require_assembly_management
 def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -463,7 +473,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
                 f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
             )
             flash(_("Invalid task ID for this assembly"), "error")
-            return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+            return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
         # Initialize query param variables
         min_select: int | None = None
@@ -485,7 +495,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             # Redirect to same URL with query params
             return redirect(
                 url_for(
-                    "gsheets.replace_assembly_gsheet_with_run",
+                    "gsheets_legacy.replace_assembly_gsheet_with_run",
                     assembly_id=assembly_id,
                     run_id=run_id,
                     min_select=min_select,
@@ -531,7 +541,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/progress", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/progress", methods=["GET"])
 @login_required
 @require_assembly_management
 def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -568,7 +578,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
 
             # Return HX-Redirect header to trigger client-side redirect
             redirect_url = url_for(
-                "gsheets.replace_assembly_gsheet_with_run",
+                "gsheets_legacy.replace_assembly_gsheet_with_run",
                 assembly_id=assembly_id,
                 run_id=run_id,
                 min_select=min_select,
@@ -588,7 +598,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
                 run_report=result.run_report,
                 translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
-                progress_url=url_for("gsheets.gsheet_replace_progress", assembly_id=assembly_id, run_id=run_id),
+                progress_url=url_for("gsheets_legacy.gsheet_replace_progress", assembly_id=assembly_id, run_id=run_id),
             ),
             200,
         ))
@@ -611,7 +621,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
         return "", 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace_load", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace_load", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -621,19 +631,21 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
-        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id))
+        return redirect(
+            url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
 
     except InvalidSelection as e:
         current_app.logger.warning(
             f"Invalid Selection attempted with gsheet replace load for assembly {assembly_id}: {e}"
         )
         flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -645,10 +657,10 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet replacement load for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the loading task"), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -661,16 +673,16 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
         number_to_select_str = request.form.get("number_to_select")
         if not number_to_select_str:
             flash(_("Number of people to select is required"), "error")
-            return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+            return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
         try:
             number_to_select = int(number_to_select_str)
             if number_to_select <= 0:
                 flash(_("Number of people to select must be greater than zero"), "error")
-                return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+                return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
         except ValueError:
             flash(_("Number of people to select must be a valid integer"), "error")
-            return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+            return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         with uow:
@@ -678,7 +690,7 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "gsheets.replace_assembly_gsheet_with_run",
+                "gsheets_legacy.replace_assembly_gsheet_with_run",
                 assembly_id=assembly_id,
                 run_id=task_id,
                 num_to_select=number_to_select,
@@ -690,7 +702,7 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet replacement for assembly {assembly_id}: {e}")
         flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -702,10 +714,10 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet replacement for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_replace/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -716,17 +728,21 @@ def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
         flash(_("Task has been cancelled"), "success")
-        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
         flash(str(e), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
@@ -736,10 +752,12 @@ def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
     except Exception as e:
         current_app.logger.error(f"Error cancelling task {run_id}: {e}")
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs", methods=["GET"])
 @login_required
 @require_assembly_management
 def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -774,7 +792,7 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>", methods=["GET"])
 @login_required
 @require_assembly_management
 def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -792,7 +810,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
                 f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
             )
             flash(_("Invalid task ID for this assembly"), "error")
-            return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+            return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
         # Extract tab_names if available
         tab_names = []
@@ -828,7 +846,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
         return render_template("errors/500.html"), 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/progress", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/progress", methods=["GET"])
 @login_required
 @require_assembly_management
 def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -873,7 +891,9 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
                 translated_report_html=translate_run_report_to_html(result.run_report),
                 run_id=run_id,
                 tab_names=tab_names,
-                progress_url=url_for("gsheets.gsheet_manage_tabs_progress", assembly_id=assembly_id, run_id=run_id),
+                progress_url=url_for(
+                    "gsheets_legacy.gsheet_manage_tabs_progress", assembly_id=assembly_id, run_id=run_id
+                ),
             ),
             200,
         ))
@@ -896,7 +916,7 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
         return "", 500
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_list_tabs", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_list_tabs", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -907,13 +927,13 @@ def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
 
         return redirect(
-            url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
+            url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
         )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet list tabs for assembly {assembly_id}: {e}")
         flash(_("Failed to start listing task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -925,10 +945,10 @@ def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet list tabs for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the listing task"), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_delete_tabs", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_delete_tabs", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -939,13 +959,13 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
 
         return redirect(
-            url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
+            url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=task_id)
         )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Failed to start gsheet delete tabs for assembly {assembly_id}: {e}")
         flash(_("Failed to start deletion task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
@@ -957,10 +977,10 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         current_app.logger.error(f"Error starting gsheet delete tabs for assembly {assembly_id}: {e}")
         flash(_("An unexpected error occurred while starting the deletion task"), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_manage_tabs/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -971,17 +991,21 @@ def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Resp
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
         flash(_("Task has been cancelled"), "success")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except NotFoundError as e:
         current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
+        return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
         flash(str(e), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
@@ -991,10 +1015,12 @@ def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Resp
     except Exception as e:
         current_app.logger.error(f"Error cancelling task {run_id}: {e}")
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(
+            url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
+        )
 
 
-@gsheets_bp.route("/assemblies/<uuid:assembly_id>/gsheet_runs/<uuid:run_id>/view", methods=["GET"])
+@gsheets_legacy_bp.route("/assemblies/<uuid:assembly_id>/gsheet_runs/<uuid:run_id>/view", methods=["GET"])
 @login_required
 @require_assembly_management
 def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -1025,15 +1051,19 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
             SelectionTaskType.SELECT_GSHEET,
             SelectionTaskType.TEST_SELECT_GSHEET,
         ):
-            return redirect(url_for("gsheets.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+            return redirect(
+                url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+            )
         elif task_type in (
             SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
             SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
         ):
-            return redirect(url_for("gsheets.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id))
+            return redirect(
+                url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
+            )
         elif task_type in (SelectionTaskType.LIST_OLD_TABS, SelectionTaskType.DELETE_OLD_TABS):
             return redirect(
-                url_for("gsheets.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
+                url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
             )
         elif task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
             return redirect(url_for("db_selection.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id))
