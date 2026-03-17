@@ -20,19 +20,19 @@
     </p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
-            <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
+            <form action="{{ url_for('gsheets_legacy.start_gsheet_select', assembly_id=assembly.id) }}"
                   method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="test_selection" value="0" />
                 <button type="submit" class="govuk-button">{{ _("Run Selection") }}</button>
             </form>
-            <form action="{{ url_for('gsheets.start_gsheet_select', assembly_id=assembly.id) }}"
+            <form action="{{ url_for('gsheets_legacy.start_gsheet_select', assembly_id=assembly.id) }}"
                   method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="test_selection" value="1" />
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Test Selection") }}</button>
             </form>
-            <form action="{{ url_for('gsheets.start_gsheet_load', assembly_id=assembly.id) }}"
+            <form action="{{ url_for('gsheets_legacy.start_gsheet_load', assembly_id=assembly.id) }}"
                   method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="govuk-button govuk-button--secondary">
@@ -43,7 +43,7 @@
                     {% endif %}
                 </button>
             </form>
-            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+            <a href="{{ url_for('gsheets_legacy.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
         {% else %}
             <button class="govuk-button" disabled>
@@ -58,7 +58,7 @@
                 {% endif %}
             </button>
             <form method="POST"
-                  action="{{ url_for('gsheets.cancel_gsheet_select', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  action="{{ url_for('gsheets_legacy.cancel_gsheet_select', assembly_id=assembly.id, run_id=run_record.task_id) }}"
                   style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button class="govuk-button govuk-button--warning"

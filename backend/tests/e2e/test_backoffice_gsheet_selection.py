@@ -676,7 +676,7 @@ class TestBackofficeSelectionTab:
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             return_value=mock_task_id,
         ) as mock_start_load:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -706,7 +706,7 @@ class TestBackofficeSelectionTab:
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             return_value=mock_task_id,
         ) as mock_start_select:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -736,7 +736,7 @@ class TestBackofficeSelectionTab:
         mock_task_id = "12345678-1234-1234-1234-123456789012"
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             return_value=mock_task_id,
         ) as mock_start_select:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -757,7 +757,7 @@ class TestBackofficeSelectionTab:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             side_effect=NotFoundError("Gsheet config not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -775,7 +775,7 @@ class TestBackofficeSelectionTab:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_select_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             side_effect=InvalidSelection("Cannot run selection"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -813,9 +813,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -833,7 +833,7 @@ class TestBackofficeSelectionTab:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
-        with patch("opendlp.entrypoints.blueprints.backoffice.cancel_task") as mock_cancel:
+        with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
             response = logged_in_admin.post(
                 f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
@@ -852,7 +852,7 @@ class TestBackofficeSelectionTab:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             side_effect=NotFoundError("Gsheet config not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -872,7 +872,7 @@ class TestBackofficeSelectionTab:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.start_gsheet_load_task",
+            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             side_effect=InsufficientPermissions(action="load_gsheet", required_role="admin"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
@@ -915,9 +915,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -932,7 +932,7 @@ class TestBackofficeSelectionTab:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health",
+            "opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health",
             side_effect=NotFoundError("Task not found"),
         ):
             response = logged_in_admin.get(
@@ -977,9 +977,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_record = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -993,7 +993,7 @@ class TestBackofficeSelectionTab:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.get_assembly_with_permissions",
+            "opendlp.entrypoints.blueprints.gsheets.get_assembly_with_permissions",
             side_effect=InsufficientPermissions("No access"),
         ):
             response = logged_in_admin.get(
@@ -1028,9 +1028,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -1066,9 +1066,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -1095,9 +1095,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -1129,9 +1129,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -1149,7 +1149,7 @@ class TestBackofficeSelectionTab:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.backoffice.cancel_task",
+            "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")

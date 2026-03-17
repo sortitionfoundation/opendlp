@@ -3,9 +3,9 @@
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
 
-{% set close_url = url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = manage_tabs_run_record.has_finished %}
-{% set htmx_poll_url = url_for('backoffice.manage_tabs_progress', assembly_id=assembly.id, run_id=current_manage_tabs) if not manage_tabs_run_record.has_finished else "" %}
+{% set htmx_poll_url = url_for('gsheets.manage_tabs_progress', assembly_id=assembly.id, run_id=current_manage_tabs) if not manage_tabs_run_record.has_finished else "" %}
 
 {% call progress_modal(
 id="manage-tabs-progress-modal",
@@ -87,13 +87,13 @@ htmx_poll_url=htmx_poll_url
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if manage_tabs_run_record.is_pending or manage_tabs_run_record.is_running %}
-    <form method="post" action="{{ url_for('backoffice.cancel_manage_tabs', assembly_id=assembly.id, run_id=current_manage_tabs) }}" class="inline">
+    <form method="post" action="{{ url_for('gsheets.cancel_manage_tabs', assembly_id=assembly.id, run_id=current_manage_tabs) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
     </form>
 {% endif %}
 {% if manage_tabs_status and manage_tabs_status.is_list_completed and manage_tabs_tab_names %}
-    <form method="post" action="{{ url_for('backoffice.start_manage_tabs_delete', assembly_id=assembly.id) }}" class="inline">
+    <form method="post" action="{{ url_for('gsheets.start_manage_tabs_delete', assembly_id=assembly.id) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Delete These Tabs"), type="submit", variant="primary") }}
     </form>

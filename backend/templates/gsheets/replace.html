@@ -12,9 +12,9 @@
     <p class="govuk-body">{{ _("Run the replacement selection for this assembly using Google Spreadsheet data.") }}</p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
-            <a href="{{ url_for('gsheets.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
+            <a href="{{ url_for('gsheets_legacy.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
                class="govuk-button govuk-button--secondary">{{ _("Manage Generated Tabs") }}</a>
-            <form action="{{ url_for('gsheets.start_gsheet_replace_load', assembly_id=assembly.id) }}"
+            <form action="{{ url_for('gsheets_legacy.start_gsheet_replace_load', assembly_id=assembly.id) }}"
                   method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="govuk-button govuk-button--secondary">
@@ -36,7 +36,7 @@
                 {% endif %}
             </button>
             <form method="POST"
-                  action="{{ url_for('gsheets.cancel_gsheet_replace', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  action="{{ url_for('gsheets_legacy.cancel_gsheet_replace', assembly_id=assembly.id, run_id=run_record.task_id) }}"
                   style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button class="govuk-button govuk-button--warning"
@@ -59,7 +59,7 @@
                 {% endif %}
             </h2>
             {% if not run_record or run_record.task_type.value != 'select_replacement_gsheet' or run_record.has_finished %}
-                <form action="{{ url_for('gsheets.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}"
+                <form action="{{ url_for('gsheets_legacy.start_gsheet_replace', assembly_id=assembly.id, min_select=min_select, max_select=max_select) }}"
                       method="post"
                       id="replace-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -87,7 +87,7 @@
         {% include "gsheets/components/view_config_collapsed.html" %}
     {% endif %}
     <div class="govuk-!-margin-top-6 govuk-!-margin-bottom-6">
-        {% set progress_url = url_for('gsheets.gsheet_replace_progress', assembly_id=assembly.id, run_id=run_id) if run_id else '' %}
+        {% set progress_url = url_for('gsheets_legacy.gsheet_replace_progress', assembly_id=assembly.id, run_id=run_id) if run_id else '' %}
         {% include "gsheets/components/progress.html" %}
     </div>
 {% endblock %}
