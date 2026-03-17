@@ -366,7 +366,7 @@ class TestDeleteValue:
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         cat = add_target_value(uow3, admin_user.id, existing_assembly.id, category.id, "Female", 3, 7)
         male_value_id = cat.values[0].value_id
