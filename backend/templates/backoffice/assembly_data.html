@@ -31,7 +31,7 @@ ABOUTME: Displays data source selection and data management for assemblies
     items=[
     {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
     {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id), "active": true},
-    {"label": _("Selection"), "href": url_for('backoffice.view_assembly_selection', assembly_id=assembly.id)},
+    {"label": _("Selection"), "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id)},
     {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
     ],
     aria_label=_("Assembly sections")
@@ -104,7 +104,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             {% if readonly %}
                 <div class="flex gap-2">
                     {{ button(_("Edit Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
-                    <form method="post" action="{{ url_for('backoffice.delete_gsheet_config', assembly_id=assembly.id) }}" class="inline"
+                    <form method="post" action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}" class="inline"
                           x-data
                           @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}
@@ -122,7 +122,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 
         {# Configuration Form / View #}
         <div class="rounded-lg p-6 mb-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            <form method="post" action="{{ url_for('backoffice.save_gsheet_config', assembly_id=assembly.id) }}" class="flex flex-col gap-6">
+            <form method="post" action="{{ url_for('gsheets.save_gsheet_config', assembly_id=assembly.id) }}" class="flex flex-col gap-6">
                 {% if not readonly %}{{ gsheet_form.hidden_tag() }}{% endif %}
 
                 {# Spreadsheet URL #}
@@ -314,7 +314,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             {# Delete button in edit mode - separate form outside the save form #}
             {% if is_edit %}
                 <div class="flex justify-end mt-4 pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
-                    <form method="post" action="{{ url_for('backoffice.delete_gsheet_config', assembly_id=assembly.id) }}"
+                    <form method="post" action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}"
                           x-data
                           @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}

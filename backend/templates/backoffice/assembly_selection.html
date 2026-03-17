@@ -32,7 +32,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     items=[
     {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
     {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
-    {"label": _("Selection"), "href": url_for('backoffice.view_assembly_selection', assembly_id=assembly.id), "active": true},
+    {"label": _("Selection"), "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id), "active": true},
     {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
     ],
     aria_label=_("Assembly sections")
@@ -80,15 +80,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    <form method="post" action="{{ url_for('backoffice.start_selection_load', assembly_id=assembly.id) }}" class="inline">
+                    <form method="post" action="{{ url_for('gsheets.start_selection_load', assembly_id=assembly.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ button(_("Check Spreadsheet"), type="submit", variant="outline") }}
                     </form>
-                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}?test=1" class="inline">
+                    <form method="post" action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}?test=1" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ button(_("Run Test Selection"), type="submit", variant="secondary") }}
                     </form>
-                    <form method="post" action="{{ url_for('backoffice.start_selection_run', assembly_id=assembly.id) }}" class="inline">
+                    <form method="post" action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ button(_("Run Selection"), type="submit", variant="primary") }}
                     </form>
@@ -107,7 +107,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("Go to Replacement Selection"), href=url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'), variant="primary") }}
+                    {{ button(_("Go to Replacement Selection"), href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'), variant="primary") }}
                 {% endcall %}
             {% endcall %}
         </div>
@@ -179,7 +179,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
 
                                             {# Actions #}
                                             <td class="py-3 px-4">
-                                                <a href="{{ url_for('backoffice.view_run_details', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                                                <a href="{{ url_for('gsheets.view_run_details', assembly_id=assembly.id, run_id=run_record.task_id) }}"
                                                    class="text-body-sm font-medium hover:underline"
                                                    style="color: var(--color-primary-action);">
                                                     {{ _("View") }}
@@ -207,7 +207,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                 <nav class="flex items-center gap-2" x-data="{}" x-scroll-preserve-links>
                                     {# Previous button #}
                                     {% if page > 1 %}
-                                        <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page - 1) }}"
+                                        <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page - 1) }}"
                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
@@ -229,7 +229,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                 {{ page_num }}
                                             </span>
                                         {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
-                                            <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page_num) }}"
+                                            <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page_num) }}"
                                                class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                                onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
@@ -243,7 +243,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
 
                                     {# Next button #}
                                     {% if page < total_pages %}
-                                        <a href="{{ url_for('backoffice.view_assembly_selection', assembly_id=assembly.id, page=page + 1) }}"
+                                        <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page + 1) }}"
                                            class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                            onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
@@ -292,7 +292,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    <form method="post" action="{{ url_for('backoffice.start_manage_tabs_list', assembly_id=assembly.id) }}" class="inline">
+                    <form method="post" action="{{ url_for('gsheets.start_manage_tabs_list', assembly_id=assembly.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {{ button(_("List Old Tabs"), type="submit", variant="outline") }}
                     </form>

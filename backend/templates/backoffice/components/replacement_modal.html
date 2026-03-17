@@ -3,12 +3,12 @@
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
 
-{% set close_url = url_for('backoffice.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set is_task_running = replacement_run_record and not replacement_run_record.has_finished %}
 {% set task_finished = replacement_run_record and replacement_run_record.has_finished %}
 {% set has_min_max = replacement_min_select and replacement_max_select %}
 {% set can_close = not is_task_running %}
-{% set htmx_poll_url = url_for('backoffice.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
+{% set htmx_poll_url = url_for('gsheets.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
 
 {#
 State logic:
@@ -39,7 +39,7 @@ htmx_poll_url=htmx_poll_url
         {{ _("First check the spreadsheet to see how many replacement participants are available.") }}
     </p>
 
-    <form method="post" action="{{ url_for('backoffice.start_replacement_load', assembly_id=assembly.id) }}">
+    <form method="post" action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Check Spreadsheet"), type="submit", variant="primary") }}
     </form>
@@ -64,7 +64,7 @@ htmx_poll_url=htmx_poll_url
         </div>
     </div>
 
-    <form method="post" action="{{ url_for('backoffice.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
+    <form method="post" action="{{ url_for('gsheets.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="mb-4">
@@ -92,7 +92,7 @@ htmx_poll_url=htmx_poll_url
     </form>
 
         {# Re-check spreadsheet as separate form #}
-    <form method="post" action="{{ url_for('backoffice.start_replacement_load', assembly_id=assembly.id) }}" class="mt-4">
+    <form method="post" action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}" class="mt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Re-check Spreadsheet"), type="submit", variant="outline") }}
     </form>
@@ -157,7 +157,7 @@ htmx_poll_url=htmx_poll_url
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if is_task_running %}
-    <form method="post" action="{{ url_for('backoffice.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}" class="inline">
+    <form method="post" action="{{ url_for('gsheets.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
     </form>
