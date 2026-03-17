@@ -82,7 +82,10 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
                 </p>
             {% endif %}
         {% else %}
-            {# Input field #}
+            {# Input field — password inputs get a show/hide toggle button #}
+            {% if type == "password" %}
+                <div class="flex items-center gap-2">
+            {% endif %}
             <input
                 type="{{ type }}"
                 name="{{ name }}"
@@ -105,6 +108,21 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
                        {% endif %}
                       "
             />
+            {% if type == "password" %}
+                <button
+                    type="button"
+                    data-toggle-password="{{ input_id }}"
+                    aria-label="Show password"
+                    class="text-body-sm px-3 py-2.5 rounded-lg whitespace-nowrap cursor-pointer transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    style="
+                           background-color: var(--color-subtle-background-panels);
+                           border: 1px solid var(--color-borders-dividers);
+                           color: var(--color-body-text);
+                           --tw-ring-color: var(--color-focus-ring);
+                          "
+                >Show</button>
+                </div>
+            {% endif %}
         {% endif %}
 
         {# Error message #}

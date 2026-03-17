@@ -146,6 +146,22 @@ function fallbackCopyToClipboard(text, successMessage) {
   });
 })();
 
+// Toggle password visibility via data-toggle-password
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-toggle-password]");
+  if (!btn) return;
+  var targetId = btn.dataset.togglePassword;
+  var input = document.getElementById(targetId);
+  if (!input) return;
+  var isPassword = input.type === "password";
+  input.type = isPassword ? "text" : "password";
+  btn.textContent = isPassword ? "Hide" : "Show";
+  btn.setAttribute(
+    "aria-label",
+    isPassword ? "Hide password" : "Show password",
+  );
+});
+
 // Download 2FA backup codes as text file
 function downloadBackupCodes() {
   const codesElement = document.getElementById("backup-codes");
