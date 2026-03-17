@@ -33,6 +33,14 @@ from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_
 BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
 
+
+def _build_coverage_command(base_module_args: list[str]) -> list[str]:
+    """Wrap a command with coverage run if BDD_COVERAGE is enabled."""
+    if os.environ.get("BDD_COVERAGE", "").lower() in ("1", "true"):
+        return ["uv", "run", "coverage", "run", "--parallel-mode", "-m", *base_module_args]
+    return ["uv", "run", *base_module_args]
+
+
 expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
 
 
@@ -113,7 +121,7 @@ def test_server(test_database, csv_test_data_dir):
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
     process = subprocess.Popen(  # noqa: S603
-        ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
+        _build_coverage_command(["flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"]),
         cwd=BACKEND_PATH,
         env=env,
     )
@@ -157,8 +165,8 @@ def test_celery_worker(test_database, csv_test_data_dir):
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
 
-    process = subprocess.Popen(
-        ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"],
+    process = subprocess.Popen(  # noqa: S603
+        _build_coverage_command(["celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"]),
         cwd=BACKEND_PATH,
         env=env,
     )

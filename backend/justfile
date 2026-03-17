@@ -9,15 +9,29 @@ set dotenv-load
 # Test the code with pytest (HTML report)
 default: test-nobdd
 
-# Test the code with pytest, headless BDD, HTML report
+# Test the code with pytest, headless BDD, HTML report (combines BDD subprocess coverage)
 test-html:
-	@echo "🚀 Testing code: Running pytest"
-	CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=html
+	#!/usr/bin/env bash
+	set -uo pipefail
+	echo "🚀 Testing code: Running pytest with BDD coverage"
+	BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
+	echo "🚀 Combining coverage data from BDD subprocesses"
+	uv run coverage combine --append 2>/dev/null || true
+	uv run coverage html
+	uv run coverage report --fail-under=90 || PYTEST_EXIT=2
+	exit $PYTEST_EXIT
 
-# Test the code with pytest, headless BDD, XML report
+# Test the code with pytest, headless BDD, XML report (combines BDD subprocess coverage)
 test-xml:
-	@echo "🚀 Testing code: Running pytest"
-	CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml --cov-report=xml
+	#!/usr/bin/env bash
+	set -uo pipefail
+	echo "🚀 Testing code: Running pytest with BDD coverage"
+	BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
+	echo "🚀 Combining coverage data from BDD subprocesses"
+	uv run coverage combine --append 2>/dev/null || true
+	uv run coverage xml
+	uv run coverage report --fail-under=90 || PYTEST_EXIT=2
+	exit $PYTEST_EXIT
 
 # Test the code with pytest, headless BDD, HTML report
 test: test-html

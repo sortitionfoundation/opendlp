@@ -101,7 +101,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 54322
           DB_NAME: opendlp
-        run: uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml --cov-fail-under=80
 
       - name: Check typing
         run: uv run mypy
