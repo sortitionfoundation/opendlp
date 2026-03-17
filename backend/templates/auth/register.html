@@ -134,30 +134,9 @@
                     {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") ,
                     aria_describedby=("email-error" if form.email.errors else "")) }}
                 </div>
-                <div class="govuk-form-group{% if form.password.errors %} govuk-form-group--error{% endif %}">
-                    {{ form.password.label(class="govuk-label govuk-label--m") }}
-                    {% if form.password.errors %}
-                        {% for error in form.password.errors %}
-                            <p id="password-error" class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
-                            </p>
-                        {% endfor %}
-                    {% endif %}
-                    {{ form.password(class="govuk-input" + (" govuk-input--error" if form.password.errors else "") ,
-                    aria_describedby=("password-error" if form.password.errors else "")) }}
-                </div>
-                <div class="govuk-form-group{% if form.password_confirm.errors %} govuk-form-group--error{% endif %}">
-                    {{ form.password_confirm.label(class="govuk-label govuk-label--m") }}
-                    {% if form.password_confirm.errors %}
-                        {% for error in form.password_confirm.errors %}
-                            <p id="password-confirm-error" class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
-                            </p>
-                        {% endfor %}
-                    {% endif %}
-                    {{ form.password_confirm(class="govuk-input" + (" govuk-input--error" if form.password_confirm.errors else "") ,
-                    aria_describedby=("password-confirm-error" if form.password_confirm.errors else "")) }}
-                </div>
+                {% from "components/govuk_password_input.html" import govuk_password_input %}
+                {{ govuk_password_input(form.password, autocomplete="new-password") }}
+                {{ govuk_password_input(form.password_confirm, autocomplete="new-password") }}
                 <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
                     <fieldset class="govuk-fieldset"
                               aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
