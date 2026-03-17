@@ -1,6 +1,7 @@
 """ABOUTME: End-to-end health check endpoint tests
 ABOUTME: Tests health check endpoint with different system states"""
 
+import os
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
@@ -294,3 +295,46 @@ class TestHealthCheckMicrosoftOAuthExpiry:
         data = response.get_json()
         assert data["oauth_microsoft_days_to_expiry"] is None
         assert data["oauth_microsoft_expiry_status"] == "UNKNOWN"
+
+
+class TestBddHealthCheck:
+    """Test BDD health check endpoint for test infrastructure validation."""
+
+    def test_bdd_health_check_returns_config_in_testing_env(self, client: FlaskClient):
+        """Test /health/bdd returns config values when FLASK_ENV is testing."""
+        with patch.dict(
+            os.environ,
+            {
+                "FLASK_ENV": "testing",
+                "DB_PORT": "54322",
+                "REDIS_PORT": "63792",
+                "USE_CSV_DATA_SOURCE": "true",
+            },
+        ):
+            response = client.get("/health/bdd")
+
+        assert response.status_code == 200
+        assert response.content_type == "application/json"
+
+        data = response.get_json()
+        assert data is not None
+        assert data["flask_env"] == "testing"
+        assert data["db_port"] == "54322"
+        assert data["redis_port"] == "63792"
+        assert data["use_csv_data_source"] == "true"
+        assert "running_hours" in data
+        assert isinstance(data["running_hours"], float)
+
+    def test_bdd_health_check_returns_404_in_non_testing_env(self, client: FlaskClient):
+        """Test /health/bdd returns 404 when FLASK_ENV is not testing."""
+        with patch.dict(os.environ, {"FLASK_ENV": "development"}):
+            response = client.get("/health/bdd")
+
+        assert response.status_code == 404
+
+    def test_bdd_health_check_returns_404_in_production_env(self, client: FlaskClient):
+        """Test /health/bdd returns 404 when FLASK_ENV is production."""
+        with patch.dict(os.environ, {"FLASK_ENV": "production"}):
+            response = client.get("/health/bdd")
+
+        assert response.status_code == 404
