@@ -3,6 +3,7 @@ ABOUTME: Tests viewing targets, adding/editing/deleting categories and values, a
 
 import io
 
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import (
@@ -262,6 +263,26 @@ class TestAddValue:
         assert response.status_code == 200
         assert b"Male" in response.data
 
+    def test_add_value_htmx_returns_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values",
+            data={
+                "value": "Male",
+                "min_count": "5",
+                "max_count": "10",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Male" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
     def test_add_value_invalid_min_max(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
@@ -300,6 +321,29 @@ class TestEditValue:
         assert response.status_code == 200
         assert b"Female" in response.data
 
+    def test_edit_value_htmx_returns_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/{value_id}",
+            data={
+                "value": "Female",
+                "min_count": "6",
+                "max_count": "12",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Female" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
 
 class TestDeleteValue:
     def test_delete_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
@@ -315,6 +359,27 @@ class TestDeleteValue:
             follow_redirects=True,
         )
         assert response.status_code == 200
+
+    def test_delete_value_htmx_returns_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = add_target_value(uow3, admin_user.id, existing_assembly.id, category.id, "Female", 3, 7)
+        male_value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/{male_value_id}/delete",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Gender" in response.data
+        assert b"Female" in response.data
+        assert b"<!DOCTYPE" not in response.data
 
 
 class TestEditCategory:
@@ -350,6 +415,169 @@ class TestEditCategory:
         assert response.status_code == 200
         assert b"Sex" in response.data
         assert b"<!DOCTYPE" not in response.data
+
+
+def _add_respondents(postgres_session_factory, assembly_id, respondents_data):
+    """Helper to add respondents with given attributes to an assembly."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        for ext_id, attributes in respondents_data:
+            uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=ext_id, attributes=attributes))
+        uow.commit()
+
+
+class TestAddMissingValues:
+    def test_add_missing_values_creates_values(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Adding missing respondent values bulk-creates them with min=0, max=0."""
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [
+                ("1", {"Gender": "Male"}),
+                ("2", {"Gender": "Female"}),
+                ("3", {"Gender": "Non-binary"}),
+            ],
+        )
+
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        # Add one value so the others are "missing"
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/add-missing",
+            data={
+                "missing_values": ["Female", "Non-binary"],
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Female" in response.data
+        assert b"Non-binary" in response.data
+
+    def test_add_missing_values_htmx_returns_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """HTMX request returns a category block fragment instead of redirecting."""
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [
+                ("1", {"Gender": "Male"}),
+                ("2", {"Gender": "Female"}),
+            ],
+        )
+
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/add-missing",
+            data={
+                "missing_values": ["Male", "Female"],
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Male" in response.data
+        assert b"Female" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
+    def test_add_missing_values_no_values_redirects(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Posting with no missing values shows a warning and redirects."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/{existing_assembly.id}/values/add-missing",
+            data={
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+
+class TestAddCategoriesFromColumns:
+    def test_creates_categories_from_selected_columns(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Selecting respondent columns creates target categories with auto-added values."""
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [
+                ("1", {"Gender": "Male", "Region": "North"}),
+                ("2", {"Gender": "Female", "Region": "South"}),
+                ("3", {"Gender": "Female", "Region": "East"}),
+            ],
+        )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/add-from-columns",
+            data={
+                "columns": ["Gender", "Region"],
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Gender" in response.data
+        assert b"Region" in response.data
+        # Values should have been auto-added for low-cardinality columns
+        assert b"Male" in response.data
+        assert b"Female" in response.data
+        assert b"North" in response.data
+
+    def test_creates_single_category_from_column(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Selecting a single column creates one target category."""
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [
+                ("1", {"Age": "18-25"}),
+                ("2", {"Age": "26-35"}),
+            ],
+        )
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/add-from-columns",
+            data={
+                "columns": ["Age"],
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Created 1 categories" in msg for msg in flash_messages)
+
+    def test_no_columns_selected_shows_warning(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Posting with no columns selected shows a warning."""
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/categories/add-from-columns",
+            data={
+                "csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("No columns selected" in msg for msg in flash_messages)
 
 
 class TestViewerPermissions:
