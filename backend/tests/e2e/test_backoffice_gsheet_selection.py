@@ -364,7 +364,7 @@ class TestBackofficeGSheetFormSubmission:
         """Test regular users cannot access or submit gsheet configuration."""
         # GET request should be blocked
         get_response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
-        assert get_response.status_code in [302, 403, 500]
+        assert get_response.status_code in [302, 403]
 
     def test_gsheet_redirects_when_not_logged_in(self, client, existing_assembly):
         """Test gsheet page redirects to login when not authenticated."""
@@ -592,7 +592,7 @@ class TestBackofficeGSheetDelete:
             },
         )
         # Should redirect or show permission error
-        assert response.status_code in [302, 403, 500]
+        assert response.status_code in [302, 403]
 
     def test_delete_gsheet_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
         """Test delete gsheet redirects to login when not authenticated."""

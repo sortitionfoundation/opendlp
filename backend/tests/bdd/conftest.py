@@ -215,7 +215,7 @@ def admin_user(test_database):
 
 @pytest.fixture(scope="session")
 def normal_user(test_database):
-    """Create admin user for testing"""
+    """Create normal user for testing"""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
 
@@ -274,7 +274,7 @@ def assembly_user_role_creator(test_database, admin_user):
 
 @pytest.fixture
 def assembly_gsheet_creator(test_database, admin_user):
-    """Create assembly for testing"""
+    """Create assembly with configured gsheet for testing"""
 
     def _create_assembly_gsheet(title: str) -> tuple[Assembly, AssemblyGSheet]:
         session_factory = test_database
@@ -374,7 +374,7 @@ def admin_logged_in_page(page: Page, admin_user):
 
 @pytest.fixture
 def normal_logged_in_page(page: Page, normal_user):
-    """Page with admin user logged in"""
+    """Page with normal user logged in"""
     # we might already be logged in - try
     page.goto(Urls.dashboard)
     page.wait_for_load_state()

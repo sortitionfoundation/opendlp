@@ -2,7 +2,6 @@
 ABOUTME: Card component macros for backoffice design system
 ABOUTME: Supports simple cards and composed cards with body/footer sections
 #}
-
 {% macro card(title="", subtitle="", id="", classes="", container_classes="", header_classes="", body_classes="", composed=false) %}
     {#
 Card component using semantic design tokens.
@@ -39,47 +38,42 @@ Footers automatically align when cards are in a flex/grid container.
     {% endcall %}
   {% endcall %}
     #}
-    <div
-        {% if id %}id="{{ id }}"{% endif %}
-        style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
-        class="rounded-lg shadow-md overflow-hidden {% if composed %}flex flex-col{% endif %} {{ classes }} {{ container_classes }}"
-    >
-        {% if title %}
-            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4 {{ header_classes }}">
-                <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
-                {% if subtitle %}
-                    <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
-                {% endif %}
-            </div>
+  <div {% if id %}id="{{ id }}"{% endif %}
+       style="background-color: var(--color-tables-cards);
+              border: 1px solid var(--color-borders-dividers)"
+       class="rounded-lg shadow-md overflow-hidden {% if composed %}flex flex-col{% endif %} {{ classes }} {{ container_classes }}">
+    {% if title %}
+      <div style="border-bottom: 1px solid var(--color-borders-dividers)"
+           class="px-6 py-4 {{ header_classes }}">
+        <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
+        {% if subtitle %}
+          <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
         {% endif %}
-        {% if composed %}
-            {{ caller() }}
-        {% else %}
-            <div class="px-6 py-4 {{ body_classes }}">
-                {{ caller() }}
-            </div>
-        {% endif %}
-    </div>
+      </div>
+    {% endif %}
+    {% if composed %}
+      {{ caller() }}
+    {% else %}
+      <div class="px-6 py-4 {{ body_classes }}">{{ caller() }}</div>
+    {% endif %}
+  </div>
 {% endmacro %}
-
-
 {% macro card_body(classes="") %}
     {#
 Card body section for use with composed cards.
 Automatically grows to fill available space so footers align.
+
+Args:
+  classes: Additional CSS classes for the card footer
 
 Usage:
   {% call card_body() %}
     Content here
   {% endcall %}
     #}
-    <div class="px-6 py-4 flex-1 {{ classes }}">
-        {{ caller() }}
-    </div>
+  <div class="px-6 py-4 flex-1 {{ classes }}">{{ caller() }}</div>
 {% endmacro %}
-
-
-{% macro card_footer() %}
+{% macro card_footer(classes="") %}
     {#
 Card footer section for actions, used with composed cards.
 
@@ -88,12 +82,9 @@ Usage:
     {{ button("Action", variant="primary") }}
   {% endcall %}
     #}
-    <div style="border-top: 1px solid var(--color-borders-dividers);" class="px-6 py-3 flex gap-2 justify-end">
-        {{ caller() }}
-    </div>
+  <div style="border-top: 1px solid var(--color-borders-dividers)"
+       class="px-6 py-3 flex gap-2 justify-end {{ classes }}">{{ caller() }}</div>
 {% endmacro %}
-
-
 {% macro link_card(href, title="", subtitle="", id="", classes="", container_classes="", header_classes="", body_classes="") %}
     {#
 Clickable card component that navigates to a URL when clicked.
@@ -113,24 +104,26 @@ Usage:
     Card content here
   {% endcall %}
     #}
-    <a
-        href="{{ href }}"
-        {% if id %}id="{{ id }}"{% endif %}
-        style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); display: block; text-decoration: none; color: inherit; transition: box-shadow 0.2s ease, border-color 0.2s ease;"
-        class="rounded-lg shadow-md overflow-hidden hover:shadow-lg {{ classes }} {{ container_classes }}"
-        onmouseover="this.style.borderColor='var(--color-primary-button)'"
-        onmouseout="this.style.borderColor='var(--color-borders-dividers)'"
-    >
-        {% if title %}
-            <div style="border-bottom: 1px solid var(--color-borders-dividers);" class="px-6 py-4 {{ header_classes }}">
-                <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
-                {% if subtitle %}
-                    <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
-                {% endif %}
-            </div>
+  <a href="{{ href }}"
+     {% if id %}id="{{ id }}"{% endif %}
+     style="background-color: var(--color-tables-cards);
+            border: 1px solid var(--color-borders-dividers);
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease"
+     class="rounded-lg shadow-md overflow-hidden hover:shadow-lg {{ classes }} {{ container_classes }}"
+     onmouseover="this.style.borderColor='var(--color-primary-action)'"
+     onmouseout="this.style.borderColor='var(--color-borders-dividers)'">
+    {% if title %}
+      <div style="border-bottom: 1px solid var(--color-borders-dividers)"
+           class="px-6 py-4 {{ header_classes }}">
+        <h3 style="color: var(--color-headings);" class="text-heading-lg">{{ title }}</h3>
+        {% if subtitle %}
+          <p style="color: var(--color-secondary-text);" class="text-body-sm mt-1">{{ subtitle }}</p>
         {% endif %}
-        <div class="px-6 py-4 {{ body_classes }}">
-            {{ caller() }}
-        </div>
-    </a>
+      </div>
+    {% endif %}
+    <div class="px-6 py-4 {{ body_classes }}">{{ caller() }}</div>
+  </a>
 {% endmacro %}
