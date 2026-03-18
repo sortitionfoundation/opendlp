@@ -16,7 +16,7 @@
    ======================================== */
 
 @layer components {
-    /* Display (Oswald) - Page/section titles */
+    /* Display (Montserrat) - Page/section titles */
     .text-display-lg {
         font: 500 2rem/2.5rem var(--font-display);
         letter-spacing: -0.32px;
@@ -32,7 +32,7 @@
         letter-spacing: -0.12px;
     }
 
-    /* Heading (Oswald) - Card/panel/group headers */
+    /* Heading (Montserrat) - Card/panel/group headers */
     .text-heading-lg {
         font: 500 1.25rem/1.75rem var(--font-heading);
         letter-spacing: 0;

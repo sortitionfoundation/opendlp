@@ -39,13 +39,13 @@ ABOUTME: Supports primary, secondary, outline variants with proper token styling
     {% set variant_styles = "" %}
 
     {% if disabled %}
-        {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed;" %}
+        {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed; border: 2px solid var(--color-disabled-borders);" %}
     {% elif variant == "primary" %}
-        {% set variant_styles = "background-color: var(--color-primary-action); color: var(--color-page-background);" %}
+        {% set variant_styles = "background-color: var(--color-primary-action); color: var(--color-page-background); border: 2px solid var(--color-primary-action);" %}
         {% set hover_styles = "hover:opacity-90" %}
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% elif variant == "secondary" %}
-        {% set variant_styles = "background-color: var(--color-buttons-secondary); color: var(--color-page-background);" %}
+        {% set variant_styles = "background-color: var(--color-buttons-secondary); color: var(--color-page-background); border: 2px solid var(--color-buttons-secondary);" %}
         {% set hover_styles = "hover:opacity-90" %}
         {% set focus_ring = "focus:ring-[var(--color-focus-ring)]" %}
     {% elif variant == "outline" %}

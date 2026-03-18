@@ -351,3 +351,6 @@ backend/tests/manual/reports/
 
 # this file is generated, so we will not commit it
 backend/static/css/application.css
+
+# test reports for feedback to LLM
+/backend/tests/reports/
