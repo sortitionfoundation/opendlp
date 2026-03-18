@@ -74,8 +74,8 @@ exclude-newer = "1 week"
 [tool.uv.exclude-newer-package]
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
-# for security update django 6.0.3 released 2026-03-03 - so can remove after 2026-03-10
-django = "0 days"
+# for security update pyasn1 0.6.3 released 2026-03-17 - so can remove after 2026-03-24
+pyasn1 = "0 days"
 
 [tool.mypy]
 files = ["src"]
