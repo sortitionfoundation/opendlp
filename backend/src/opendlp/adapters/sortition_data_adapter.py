@@ -10,15 +10,23 @@ from sortition_algorithms.errors import BadDataError, ParseTableMultiError, Sele
 from sortition_algorithms.features import MAX_FLEX_UNSET
 from sortition_algorithms.utils import RunReport
 
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
 class OpenDLPDataAdapter(AbstractDataSource):
     """Data adapter that reads from OpenDLP database via UnitOfWork."""
 
-    def __init__(self, uow: AbstractUnitOfWork, assembly_id: uuid.UUID):
+    def __init__(self, uow: AbstractUnitOfWork, assembly_id: uuid.UUID, *, eligible_only: bool = True) -> None:
+        """
+        Args:
+          uow: The UnitOfWork for accessing data
+          assembly_id: The ID of the Assembly to get data for
+          eligible_only: Whether to get only eligible people. If False, we get all people.
+        """
         self.uow = uow
         self.assembly_id = assembly_id
+        self.eligible_only = eligible_only
 
     @property
     def people_data_container(self) -> str:
@@ -74,16 +82,24 @@ class OpenDLPDataAdapter(AbstractDataSource):
         """Load respondents from database as people data."""
         # Note: We don't add a message here as custom codes aren't supported
 
-        respondents = self.uow.respondents.get_by_assembly_id(
-            self.assembly_id,
-            eligible_only=True,
-        )
-
-        if not respondents:
-            raise BadDataError(
-                "No eligible respondents found for selection. "
-                "Check that respondents have been uploaded and are not marked as ineligible or unable to attend."
+        if self.eligible_only:
+            respondents = self.uow.respondents.get_by_assembly_id(
+                self.assembly_id,
+                status=RespondentStatus.POOL,
+                eligible_only=True,
             )
+            if not respondents:
+                raise BadDataError(
+                    "No eligible respondents found for selection. "
+                    "Check that respondents have been uploaded, have status POOL "
+                    "and are not marked as ineligible or unable to attend."
+                )
+        else:
+            respondents = self.uow.respondents.get_by_assembly_id(self.assembly_id)
+            if not respondents:
+                raise BadDataError(
+                    "No eligible respondents found for selection. Check that respondents have been uploaded."
+                )
 
         # Build headers from first respondent's attributes + external_id
         first = respondents[0]

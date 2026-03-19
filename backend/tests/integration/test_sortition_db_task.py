@@ -61,6 +61,7 @@ def assembly_with_data(postgres_session_factory):
                     attributes={"Gender": gender},
                     eligible=True,
                     can_attend=True,
+                    selection_status=RespondentStatus.POOL,
                 )
             )
 
@@ -72,6 +73,7 @@ def assembly_with_data(postgres_session_factory):
                 attributes={"Gender": "Male"},
                 eligible=False,
                 can_attend=True,
+                selection_status=RespondentStatus.POOL,
             )
         )
 
