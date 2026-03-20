@@ -238,7 +238,9 @@ document.addEventListener("alpine:init", function () {
                 // Build URL - skip query param if value is empty
                 var url = baseUrl;
                 if (this.selected) {
-                    url += "?" + paramName + "=" + encodeURIComponent(this.selected);
+                    // Use & if URL already has query params, otherwise use ?
+                    var separator = url.indexOf("?") !== -1 ? "&" : "?";
+                    url += separator + paramName + "=" + encodeURIComponent(this.selected);
                 }
 
                 // Add focus hash if element has focus (keyboard navigation)

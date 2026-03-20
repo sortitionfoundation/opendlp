@@ -82,9 +82,9 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
                                             class="w-full px-3 py-2 rounded-lg text-body-md"
                                             style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                         <option value="">{{ _("Choose...") }}</option>
-                                        <option value="option1">{{ _("Option 1") }}</option>
-                                        <option value="option2">{{ _("Option 2") }}</option>
-                                        <option value="option3">{{ _("Option 3") }}</option>
+                                        <option value="option1" {% if request.args.get('demo') == 'option1' %}selected{% endif %}>{{ _("Option 1") }}</option>
+                                        <option value="option2" {% if request.args.get('demo') == 'option2' %}selected{% endif %}>{{ _("Option 2") }}</option>
+                                        <option value="option3" {% if request.args.get('demo') == 'option3' %}selected{% endif %}>{{ _("Option 3") }}</option>
                                     </select>
                                     {% if request.args.get('demo') %}
                                         <p class="text-body-sm mt-2" style="color: var(--color-success-600);">
