@@ -64,7 +64,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
                                     🔒 can_manage_assembly()
                                 </span>
-                                <button @click="copyToClipboard('respondent_service.py:63')"
+                                <button @click="copyRespondentServiceRef()"
                                         class="text-body-sm px-2 py-1 rounded transition-colors"
                                         style="background-color: var(--color-subtle-background-panels);">
                                     📋 Copy
@@ -147,7 +147,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                         {# Assembly Select #}
                             <div class="mb-4">
                                 <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
-                                <select x-model="forms.import_respondents.assembly_id"
+                                <select x-model="importRespondentsAssemblyId"
                                         class="w-full px-3 py-2 rounded-lg text-body-md"
                                         style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                     <option value="">{{ _("Select an assembly...") }}</option>
@@ -161,13 +161,13 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                             <div class="mb-4">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
-                                    <button @click="loadSampleData('import_respondents')"
+                                    <button @click="loadRespondentsSample()"
                                             class="text-body-sm px-2 py-1 rounded transition-colors"
                                             style="background-color: var(--color-info-100); color: var(--color-info-600);">
                                         📄 {{ _("Load Sample") }}
                                     </button>
                                 </div>
-                                <textarea x-model="forms.import_respondents.csv_content"
+                                <textarea x-model="importRespondentsCsvContent"
                                           rows="8"
                                           class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
                                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
@@ -177,7 +177,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                         {# Options Row #}
                             <div class="flex gap-4 mb-4">
                                 <div class="flex items-center gap-2">
-                                    <input type="checkbox" x-model="forms.import_respondents.replace_existing" id="resp_replace"
+                                    <input type="checkbox" x-model="importRespondentsReplaceExisting" id="resp_replace"
                                            class="rounded" style="accent-color: var(--color-primary-action);">
                                     <label for="resp_replace" class="text-body-sm" style="color: var(--color-body-text);">
                                         {{ _("Replace existing") }}
@@ -185,7 +185,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                                     </label>
                                 </div>
                                 <div class="flex-1">
-                                    <input type="text" x-model="forms.import_respondents.id_column"
+                                    <input type="text" x-model="importRespondentsIdColumn"
                                            class="w-full px-3 py-2 rounded-lg text-body-sm"
                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                            placeholder="{{ _('ID Column (leave empty for first column)') }}">
@@ -194,14 +194,14 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
                         {# Action Buttons #}
                             <div class="flex gap-2 mb-4">
-                                <button @click="executeService('import_respondents_from_csv', forms.import_respondents)"
+                                <button @click="executeImportRespondents()"
                                         :disabled="loading.import_respondents"
                                         class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                         style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                     <span x-show="!loading.import_respondents">▶️ {{ _("Execute") }}</span>
-                                    <span x-show="loading.import_respondents">⏳ {{ _("Running...") }}</span>
+                                    <span x-cloak x-show="loading.import_respondents">⏳ {{ _("Running...") }}</span>
                                 </button>
-                                <button @click="resetForm('import_respondents')"
+                                <button @click="resetImportRespondents()"
                                         class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                         style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
                                     🔄 {{ _("Reset") }}
@@ -215,7 +215,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                                         <span class="text-heading-sm" :style="responses.import_respondents.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
                                             <span x-text="responses.import_respondents.status === 'success' ? '✅ Success' : '❌ Error'"></span>
                                         </span>
-                                        <button @click="copyToClipboard(JSON.stringify(responses.import_respondents, null, 2))"
+                                        <button @click="copyImportRespondentsResponse()"
                                                 class="text-body-sm px-2 py-1 rounded"
                                                 style="background-color: var(--color-page-background);">
                                             📋 {{ _("Copy JSON") }}
@@ -245,7 +245,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
                                     🔒 can_manage_assembly()
                                 </span>
-                                <button @click="copyToClipboard('assembly_service.py:501')"
+                                <button @click="copyAssemblyServiceTargetsRef()"
                                         class="text-body-sm px-2 py-1 rounded transition-colors"
                                         style="background-color: var(--color-subtle-background-panels);">
                                     📋 Copy
@@ -323,7 +323,7 @@ Age,51+,2,5,1,1</pre>
                         {# Assembly Select #}
                             <div class="mb-4">
                                 <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
-                                <select x-model="forms.import_targets.assembly_id"
+                                <select x-model="importTargetsAssemblyId"
                                         class="w-full px-3 py-2 rounded-lg text-body-md"
                                         style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                     <option value="">{{ _("Select an assembly...") }}</option>
@@ -337,13 +337,13 @@ Age,51+,2,5,1,1</pre>
                             <div class="mb-4">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
-                                    <button @click="loadSampleData('import_targets')"
+                                    <button @click="loadTargetsSample()"
                                             class="text-body-sm px-2 py-1 rounded transition-colors"
                                             style="background-color: var(--color-info-100); color: var(--color-info-600);">
                                         📄 {{ _("Load Sample") }}
                                     </button>
                                 </div>
-                                <textarea x-model="forms.import_targets.csv_content"
+                                <textarea x-model="importTargetsCsvContent"
                                           rows="8"
                                           class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
                                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
@@ -359,14 +359,14 @@ Age,51+,2,5,1,1</pre>
 
                         {# Action Buttons #}
                             <div class="flex gap-2 mb-4">
-                                <button @click="executeService('import_targets_from_csv', forms.import_targets)"
+                                <button @click="executeImportTargets()"
                                         :disabled="loading.import_targets"
                                         class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                         style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                     <span x-show="!loading.import_targets">▶️ {{ _("Execute") }}</span>
-                                    <span x-show="loading.import_targets">⏳ {{ _("Running...") }}</span>
+                                    <span x-cloak x-show="loading.import_targets">⏳ {{ _("Running...") }}</span>
                                 </button>
-                                <button @click="resetForm('import_targets')"
+                                <button @click="resetImportTargets()"
                                         class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                         style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
                                     🔄 {{ _("Reset") }}
@@ -380,7 +380,7 @@ Age,51+,2,5,1,1</pre>
                                         <span class="text-heading-sm" :style="responses.import_targets.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
                                             <span x-text="responses.import_targets.status === 'success' ? '✅ Success' : '❌ Error'"></span>
                                         </span>
-                                        <button @click="copyToClipboard(JSON.stringify(responses.import_targets, null, 2))"
+                                        <button @click="copyImportTargetsResponse()"
                                                 class="text-body-sm px-2 py-1 rounded"
                                                 style="background-color: var(--color-page-background);">
                                             📋 {{ _("Copy JSON") }}
@@ -450,7 +450,7 @@ Age,51+,2,5,1,1</pre>
 
                                 <div class="mb-4">
                                     <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
-                                    <select x-model="forms.get_csv_config.assembly_id"
+                                    <select x-model="getCsvConfigAssemblyId"
                                             class="w-full px-3 py-2 rounded-lg text-body-md"
                                             style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                         <option value="">{{ _("Select an assembly...") }}</option>
@@ -461,12 +461,12 @@ Age,51+,2,5,1,1</pre>
                                 </div>
 
                                 <div class="flex gap-2 mb-4">
-                                    <button @click="executeService('get_or_create_csv_config', forms.get_csv_config)"
+                                    <button @click="executeGetCsvConfig()"
                                             :disabled="loading.get_csv_config"
                                             class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                             style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                         <span x-show="!loading.get_csv_config">▶️ {{ _("Execute") }}</span>
-                                        <span x-show="loading.get_csv_config">⏳ {{ _("Running...") }}</span>
+                                        <span x-cloak x-show="loading.get_csv_config">⏳ {{ _("Running...") }}</span>
                                     </button>
                                 </div>
 
@@ -476,7 +476,7 @@ Age,51+,2,5,1,1</pre>
                                             <span class="text-heading-sm" :style="responses.get_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
                                                 <span x-text="responses.get_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
                                             </span>
-                                            <button @click="copyToClipboard(JSON.stringify(responses.get_csv_config, null, 2))"
+                                            <button @click="copyGetCsvConfigResponse()"
                                                     class="text-body-sm px-2 py-1 rounded"
                                                     style="background-color: var(--color-page-background);">
                                                 📋 {{ _("Copy JSON") }}
@@ -541,7 +541,7 @@ Age,51+,2,5,1,1</pre>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
-                                        <select x-model="forms.update_csv_config.assembly_id"
+                                        <select x-model="updateCsvConfigAssemblyId"
                                                 class="w-full px-3 py-2 rounded-lg text-body-md"
                                                 style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                             <option value="">{{ _("Select...") }}</option>
@@ -552,14 +552,14 @@ Age,51+,2,5,1,1</pre>
                                     </div>
                                     <div>
                                         <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("ID Column") }}</label>
-                                        <input type="text" x-model="forms.update_csv_config.id_column"
+                                        <input type="text" x-model="updateCsvConfigIdColumn"
                                                class="w-full px-3 py-2 rounded-lg text-body-md"
                                                style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                                placeholder="external_id">
                                     </div>
                                     <div>
                                         <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Selection Algorithm") }}</label>
-                                        <select x-model="forms.update_csv_config.selection_algorithm"
+                                        <select x-model="updateCsvConfigAlgorithm"
                                                 class="w-full px-3 py-2 rounded-lg text-body-md"
                                                 style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
                                             <option value="">{{ _("Select...") }}</option>
@@ -570,12 +570,12 @@ Age,51+,2,5,1,1</pre>
                                     </div>
                                     <div class="flex items-center gap-4 pt-6">
                                         <label class="flex items-center gap-2">
-                                            <input type="checkbox" x-model="forms.update_csv_config.check_same_address"
+                                            <input type="checkbox" x-model="updateCsvConfigCheckSameAddress"
                                                    style="accent-color: var(--color-primary-action);">
                                             <span class="text-body-sm">{{ _("Check same address") }}</span>
                                         </label>
                                         <label class="flex items-center gap-2">
-                                            <input type="checkbox" x-model="forms.update_csv_config.settings_confirmed"
+                                            <input type="checkbox" x-model="updateCsvConfigSettingsConfirmed"
                                                    style="accent-color: var(--color-primary-action);">
                                             <span class="text-body-sm">{{ _("Settings confirmed") }}</span>
                                         </label>
@@ -583,14 +583,14 @@ Age,51+,2,5,1,1</pre>
                                 </div>
 
                                 <div class="flex gap-2 mb-4">
-                                    <button @click="executeService('update_csv_config', forms.update_csv_config)"
+                                    <button @click="executeUpdateCsvConfig()"
                                             :disabled="loading.update_csv_config"
                                             class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                             style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                         <span x-show="!loading.update_csv_config">▶️ {{ _("Execute") }}</span>
-                                        <span x-show="loading.update_csv_config">⏳ {{ _("Running...") }}</span>
+                                        <span x-cloak x-show="loading.update_csv_config">⏳ {{ _("Running...") }}</span>
                                     </button>
-                                    <button @click="resetForm('update_csv_config')"
+                                    <button @click="resetUpdateCsvConfig()"
                                             class="px-4 py-2 rounded-lg text-button-lg transition-all"
                                             style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
                                         🔄 {{ _("Reset") }}
@@ -603,7 +603,7 @@ Age,51+,2,5,1,1</pre>
                                             <span class="text-heading-sm" :style="responses.update_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
                                                 <span x-text="responses.update_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
                                             </span>
-                                            <button @click="copyToClipboard(JSON.stringify(responses.update_csv_config, null, 2))"
+                                            <button @click="copyUpdateCsvConfigResponse()"
                                                     class="text-body-sm px-2 py-1 rounded"
                                                     style="background-color: var(--color-page-background);">
                                                 📋 {{ _("Copy JSON") }}
@@ -628,34 +628,28 @@ Age,51+,2,5,1,1</pre>
     </div>
 
     <script nonce="{{ csp_nonce }}">
-        function serviceDocsController() {
-            return {
+        // Register component with Alpine before initialization
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('serviceDocsController', () => ({
                 toast: { show: false, message: '', type: 'info' },
 
-            // Form state for each service
-                forms: {
-                    import_respondents: {
-                        assembly_id: '',
-                        csv_content: '',
-                        replace_existing: false,
-                        id_column: ''
-                    },
-                    import_targets: {
-                        assembly_id: '',
-                        csv_content: '',
-                        replace_existing: true
-                    },
-                    get_csv_config: {
-                        assembly_id: ''
-                    },
-                    update_csv_config: {
-                        assembly_id: '',
-                        id_column: '',
-                        check_same_address: true,
-                        selection_algorithm: '',
-                        settings_confirmed: false
-                    }
-                },
+                // Flat form properties for CSP-compatible Alpine.js (x-model cannot use nested paths)
+                // Import Respondents form
+                importRespondentsAssemblyId: '',
+                importRespondentsCsvContent: '',
+                importRespondentsReplaceExisting: false,
+                importRespondentsIdColumn: '',
+                // Import Targets form
+                importTargetsAssemblyId: '',
+                importTargetsCsvContent: '',
+                // Get CSV Config form
+                getCsvConfigAssemblyId: '',
+                // Update CSV Config form
+                updateCsvConfigAssemblyId: '',
+                updateCsvConfigIdColumn: '',
+                updateCsvConfigCheckSameAddress: true,
+                updateCsvConfigAlgorithm: '',
+                updateCsvConfigSettingsConfirmed: false,
 
             // Loading state for each service
                 loading: {
@@ -689,43 +683,6 @@ Age,31-50,2,5,1,1
 Age,51+,2,5,1,1`
                 },
 
-                loadSampleData(formKey) {
-                    if (formKey === 'import_respondents') {
-                        this.forms.import_respondents.csv_content = this.sampleData.import_respondents;
-                    } else if (formKey === 'import_targets') {
-                        this.forms.import_targets.csv_content = this.sampleData.import_targets;
-                    }
-                    this.showToast('Sample data loaded', 'success');
-                },
-
-                resetForm(formKey) {
-                    if (formKey === 'import_respondents') {
-                        this.forms.import_respondents = {
-                            assembly_id: '',
-                            csv_content: '',
-                            replace_existing: false,
-                            id_column: ''
-                        };
-                        this.responses.import_respondents = null;
-                    } else if (formKey === 'import_targets') {
-                        this.forms.import_targets = {
-                            assembly_id: '',
-                            csv_content: '',
-                            replace_existing: true
-                        };
-                        this.responses.import_targets = null;
-                    } else if (formKey === 'update_csv_config') {
-                        this.forms.update_csv_config = {
-                            assembly_id: '',
-                            id_column: '',
-                            check_same_address: true,
-                            selection_algorithm: '',
-                            settings_confirmed: false
-                        };
-                        this.responses.update_csv_config = null;
-                    }
-                },
-
                 async executeService(serviceName, params) {
                 // Map service name to loading/response key
                     const keyMap = {
@@ -750,6 +707,7 @@ Age,51+,2,5,1,1`
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token() }}'
                             },
                             body: JSON.stringify({
                                 service: serviceName,
@@ -788,8 +746,94 @@ Age,51+,2,5,1,1`
                     setTimeout(() => {
                         this.toast.show = false;
                     }, 3000);
+                },
+
+                // Specific execute methods for CSP-compatible Alpine.js (no string arguments)
+                // Build params from flat properties
+                executeImportRespondents() {
+                    this.executeService('import_respondents_from_csv', {
+                        assembly_id: this.importRespondentsAssemblyId,
+                        csv_content: this.importRespondentsCsvContent,
+                        replace_existing: this.importRespondentsReplaceExisting,
+                        id_column: this.importRespondentsIdColumn
+                    });
+                },
+                executeImportTargets() {
+                    this.executeService('import_targets_from_csv', {
+                        assembly_id: this.importTargetsAssemblyId,
+                        csv_content: this.importTargetsCsvContent,
+                        replace_existing: true
+                    });
+                },
+                executeGetCsvConfig() {
+                    this.executeService('get_or_create_csv_config', {
+                        assembly_id: this.getCsvConfigAssemblyId
+                    });
+                },
+                executeUpdateCsvConfig() {
+                    this.executeService('update_csv_config', {
+                        assembly_id: this.updateCsvConfigAssemblyId,
+                        id_column: this.updateCsvConfigIdColumn,
+                        check_same_address: this.updateCsvConfigCheckSameAddress,
+                        selection_algorithm: this.updateCsvConfigAlgorithm,
+                        settings_confirmed: this.updateCsvConfigSettingsConfirmed
+                    });
+                },
+
+                // Specific reset methods - reset flat properties
+                resetImportRespondents() {
+                    this.importRespondentsAssemblyId = '';
+                    this.importRespondentsCsvContent = '';
+                    this.importRespondentsReplaceExisting = false;
+                    this.importRespondentsIdColumn = '';
+                    this.responses.import_respondents = null;
+                },
+                resetImportTargets() {
+                    this.importTargetsAssemblyId = '';
+                    this.importTargetsCsvContent = '';
+                    this.responses.import_targets = null;
+                },
+                resetUpdateCsvConfig() {
+                    this.updateCsvConfigAssemblyId = '';
+                    this.updateCsvConfigIdColumn = '';
+                    this.updateCsvConfigCheckSameAddress = true;
+                    this.updateCsvConfigAlgorithm = '';
+                    this.updateCsvConfigSettingsConfirmed = false;
+                    this.responses.update_csv_config = null;
+                },
+
+                // Specific sample data loaders - use flat properties
+                loadRespondentsSample() {
+                    this.importRespondentsCsvContent = this.sampleData.import_respondents;
+                    this.showToast('Sample data loaded', 'success');
+                },
+                loadTargetsSample() {
+                    this.importTargetsCsvContent = this.sampleData.import_targets;
+                    this.showToast('Sample data loaded', 'success');
+                },
+
+                // Copy response JSON
+                copyImportRespondentsResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.import_respondents, null, 2));
+                },
+                copyImportTargetsResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.import_targets, null, 2));
+                },
+                copyGetCsvConfigResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.get_csv_config, null, 2));
+                },
+                copyUpdateCsvConfigResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.update_csv_config, null, 2));
+                },
+
+                // Copy code references
+                copyRespondentServiceRef() {
+                    this.copyToClipboard('respondent_service.py:63');
+                },
+                copyAssemblyServiceTargetsRef() {
+                    this.copyToClipboard('assembly_service.py:501');
                 }
-            };
-        }
+            }));
+        });
     </script>
 {% endblock %}
