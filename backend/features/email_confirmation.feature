@@ -63,6 +63,11 @@ Feature: Email Confirmation for User Registration
     Then the user should be able to login successfully
     And the user should see the dashboard
 
+  Scenario: Email scanner visiting confirmation link does not confirm account
+    Given the user has registered but not confirmed their email
+    When an email scanner visits the confirmation link
+    Then the user's email should not be confirmed
+
   Scenario: Cannot use confirmation token twice
     Given the user has registered but not confirmed their email
     And the user has confirmed their email once

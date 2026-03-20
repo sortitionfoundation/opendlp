@@ -448,3 +448,94 @@ class TestCacheHeaders:
 
         # When redirected, no special cache headers should be present
         assert "Cache-Control" not in response.headers or "no-cache" not in response.headers.get("Cache-Control", "")
+
+
+class TestEmailConfirmation:
+    """Test two-step email confirmation flow (GET shows page, POST confirms)."""
+
+    @pytest.fixture
+    def unconfirmed_user_with_token(self, postgres_session_factory, valid_invite):
+        """Create an unconfirmed user and return (user, token)."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user, token = create_user(
+                uow=uow,
+                email="unconfirmed@example.com",
+                password="securepassword123",
+                invite_code=valid_invite.code,
+            )
+        return user, token
+
+    def test_confirm_email_get_shows_confirmation_page(self, client: FlaskClient, unconfirmed_user_with_token):
+        """GET /auth/confirm-email/<token> shows a confirmation page with a form."""
+        _, token = unconfirmed_user_with_token
+        response = client.get(f"/auth/confirm-email/{token.token}")
+        assert response.status_code == 200
+        assert b"Confirm your email" in response.data
+        assert b'method="POST"' in response.data or b"method=POST" in response.data
+
+    def test_confirm_email_get_does_not_confirm_email(
+        self, client: FlaskClient, postgres_session_factory, unconfirmed_user_with_token
+    ):
+        """GET alone must NOT confirm the email (scanner resistance)."""
+        user, token = unconfirmed_user_with_token
+        client.get(f"/auth/confirm-email/{token.token}")
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            fetched = uow.users.get(user.id)
+            assert fetched.email_confirmed_at is None
+
+    def test_confirm_email_post_confirms_and_redirects(
+        self, client: FlaskClient, postgres_session_factory, unconfirmed_user_with_token
+    ):
+        """POST confirms email, logs user in, and redirects to dashboard."""
+        user, token = unconfirmed_user_with_token
+        response = client.post(
+            f"/auth/confirm-email/{token.token}",
+            data={"csrf_token": get_csrf_token(client, "/auth/login")},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/dashboard"
+
+        # Verify email is confirmed
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            fetched = uow.users.get(user.id)
+            assert fetched.email_confirmed_at is not None
+
+        # Verify user is logged in
+        with client.session_transaction() as sess:
+            assert "_user_id" in sess
+
+    def test_confirm_email_get_invalid_token_redirects(self, client: FlaskClient):
+        """GET with bad token redirects to login with error flash."""
+        response = client.get("/auth/confirm-email/invalid-token-abc", follow_redirects=False)
+        assert response.status_code == 302
+        assert "login" in response.headers["Location"]
+
+    def test_confirm_email_get_expired_token_redirects(
+        self, client: FlaskClient, postgres_session_factory, unconfirmed_user_with_token
+    ):
+        """GET with expired token redirects to login."""
+        _, token = unconfirmed_user_with_token
+
+        # Expire the token
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            db_token = uow.email_confirmation_tokens.get_by_token(token.token)
+            past = datetime.now(UTC) - timedelta(hours=25)
+            db_token.created_at = past
+            db_token.expires_at = past + timedelta(hours=24)
+            uow.commit()
+
+        response = client.get(f"/auth/confirm-email/{token.token}", follow_redirects=False)
+        assert response.status_code == 302
+        assert "login" in response.headers["Location"]
+
+    def test_confirm_email_post_invalid_token_redirects(self, client: FlaskClient):
+        """POST with bad token redirects to login."""
+        response = client.post(
+            "/auth/confirm-email/invalid-token-abc",
+            data={"csrf_token": get_csrf_token(client, "/auth/login")},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert "login" in response.headers["Location"]

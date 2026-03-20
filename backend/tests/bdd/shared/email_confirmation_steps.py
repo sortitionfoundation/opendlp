@@ -106,10 +106,11 @@ def _(page: Page):
 
 @when("the user clicks the confirmation link")
 def _(page: Page, unconfirmed_user: dict):
-    """Navigate to confirmation link."""
+    """Navigate to confirmation link and click the confirm button."""
     token = unconfirmed_user["token"]
     confirmation_url = f"{Urls.base}/auth/confirm-email/{token.token}"
     page.goto(confirmation_url)
+    page.click('button[type="submit"]')
 
 
 @then("the user should be automatically logged in")
@@ -286,6 +287,24 @@ def _(page: Page):
     expect(page.locator("text=Rate limit exceeded")).to_be_visible()
 
 
+@when("an email scanner visits the confirmation link")
+def _(page: Page, unconfirmed_user: dict):
+    """Simulate an email scanner following the confirmation link (GET only, no button click)."""
+    token = unconfirmed_user["token"]
+    confirmation_url = f"{Urls.base}/auth/confirm-email/{token.token}"
+    page.goto(confirmation_url)
+
+
+@then("the user's email should not be confirmed")
+def _(test_database: sessionmaker):
+    """Verify the user's email has not been confirmed."""
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        user = uow.users.get_by_email(NEWUSER_EMAIL)
+        assert user is not None
+        assert user.email_confirmed_at is None
+
+
 @given("the user registered before email confirmation was implemented")
 def _(test_database: sessionmaker):
     """Create a grandfathered user (email already confirmed from migration)."""
@@ -313,6 +332,7 @@ def _(page: Page, unconfirmed_user: dict):
     token = unconfirmed_user["token"]
     confirmation_url = f"{Urls.base}/auth/confirm-email/{token.token}"
     page.goto(confirmation_url)
+    page.click('button[type="submit"]')
     # Wait for confirmation to complete
     expect(page).to_have_url(Urls.dashboard)
 
