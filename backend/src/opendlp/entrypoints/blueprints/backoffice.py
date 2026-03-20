@@ -803,7 +803,7 @@ def patterns() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'dropdown'
     active_tab = request.args.get("tab", "dropdown")
-    valid_tabs = ["dropdown", "form", "ajax"]
+    valid_tabs = ["dropdown", "form", "ajax", "file-upload"]
     if active_tab not in valid_tabs:
         active_tab = "dropdown"
 

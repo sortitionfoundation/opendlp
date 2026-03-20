@@ -41,7 +41,8 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
         items=[
         {"label": _("Dropdown"), "href": url_for('backoffice.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
         {"label": _("Form State"), "href": url_for('backoffice.patterns', tab='form'), "active": active_tab == 'form'},
-        {"label": _("AJAX"), "href": url_for('backoffice.patterns', tab='ajax'), "active": active_tab == 'ajax'}
+        {"label": _("AJAX"), "href": url_for('backoffice.patterns', tab='ajax'), "active": active_tab == 'ajax'},
+        {"label": _("File Upload"), "href": url_for('backoffice.patterns', tab='file-upload'), "active": active_tab == 'file-upload'}
         ],
         aria_label=_("Pattern categories")
         ) }}
@@ -312,6 +313,211 @@ x-model="importAssemblyId"</pre>
             </div>
         {% endif %}
 
+        {# ===== FILE UPLOAD PATTERN ===== #}
+        {% if active_tab == 'file-upload' %}
+            <div class="space-y-6">
+                {# File Upload Pattern #}
+                {% call card(title="CSV File Upload Pattern", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Pattern for uploading CSV files with client-side validation and server-side processing. The file is read as text and passed to service layer functions.") }}
+                        </p>
+
+                        {# Architecture Overview #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Architecture") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>{{ _("UI Component") }}:</strong> <code>file_input</code> {{ _("macro in") }} <code>components/input.html</code></li>
+                                <li><strong>{{ _("Form submission") }}:</strong> <code>enctype="multipart/form-data"</code></li>
+                                <li><strong>{{ _("Server reads file") }}:</strong> <code>file.read().decode("utf-8-sig")</code></li>
+                                <li><strong>{{ _("Service layer") }}:</strong> {{ _("Receives CSV content as string, not file object") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Example") }}
+                            </h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <form class="max-w-md space-y-4"
+                                      x-data="fileUploadDemo()"
+                                      @submit.prevent="handleSubmit()">
+                                    {# File Input #}
+                                    <div class="flex flex-col gap-1.5">
+                                        <label for="demo-file" class="text-label-lg" style="color: var(--color-headings);">
+                                            {{ _("CSV File") }}
+                                            <span style="color: var(--color-primary-action);">*</span>
+                                        </label>
+                                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                            {{ _("Select a CSV file to see the pattern in action") }}
+                                        </p>
+                                        <input
+                                            type="file"
+                                            id="demo-file"
+                                            accept=".csv"
+                                            @change="onFileSelect($event)"
+                                            class="text-body-md w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-button-md file:cursor-pointer"
+                                            style="color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
+                                        />
+                                    </div>
+
+                                    {# File info display #}
+                                    <div x-show="fileName" x-cloak class="p-3 rounded-lg" style="background-color: var(--color-success-100); border: 1px solid var(--color-success-400);">
+                                        <p class="text-body-sm" style="color: var(--color-success-600);">
+                                            <strong>{{ _("Selected") }}:</strong> <span x-text="fileName"></span>
+                                            (<span x-text="fileSize"></span>)
+                                        </p>
+                                        <p class="text-body-sm mt-1" style="color: var(--color-success-600);">
+                                            <strong>{{ _("Preview") }}:</strong> <span x-text="preview"></span>
+                                        </p>
+                                    </div>
+
+                                    {# Error display #}
+                                    <div x-show="error" x-cloak class="p-3 rounded-lg" style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                                        <p class="text-body-sm" style="color: var(--color-error-600);" x-text="error"></p>
+                                    </div>
+
+                                    {# Submit button (demo only) #}
+                                    <button type="submit"
+                                            :disabled="!fileName"
+                                            class="px-4 py-2.5 rounded-lg text-button-md transition-all duration-150"
+                                            :style="fileName ? 'background-color: var(--color-primary-action); color: white; cursor: pointer;' : 'background-color: var(--color-subtle-background-panels); color: var(--color-placeholder-text); cursor: not-allowed;'">
+                                        {{ _("Upload (Demo)") }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {# Code Example - Template #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Template Code") }}</h4>
+                                <button @click="copyFileUploadTemplateCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the component #}
+{% from "backoffice/components/input.html" import file_input %}
+
+{# Form with multipart encoding #}
+&lt;form method="post"
+      action="{{ url_for('...') }}"
+      enctype="multipart/form-data"&gt;
+    {{ form.hidden_tag() }}
+
+    {{ file_input(
+        "csv_file",
+        label="CSV File",
+        hint="Select a CSV file to upload",
+        accept=".csv",
+        required=true,
+        error=first_error(form.csv_file.errors)
+    ) }}
+
+    &lt;button type="submit"&gt;Upload&lt;/button&gt;
+&lt;/form&gt;{% endraw %}</pre>
+                        </div>
+
+                        {# Code Example - Flask Route #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Flask Route Code") }}</h4>
+                                <button @click="copyFileUploadRouteCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"># Flask-WTF Form
+class UploadCsvForm(FlaskForm):
+    csv_file = FileField(
+        _l("CSV File"),
+        validators=[
+            FileRequired(message=_l("Please select a file")),
+            FileAllowed(["csv"], message=_l("Only CSV files allowed")),
+        ],
+    )
+
+# Route handler
+@bp.route("/upload", methods=["POST"])
+def upload_csv():
+    form = UploadCsvForm()
+
+    if not form.validate_on_submit():
+        # Re-render form with errors
+        return render_template("...", form=form)
+
+    # Read file content as string
+    csv_file = form.csv_file.data
+    csv_content = csv_file.read().decode("utf-8-sig")
+    filename = csv_file.filename or "unknown.csv"
+
+    # Pass to service layer (content as string, not file)
+    result = import_from_csv(uow, csv_content=csv_content)
+
+    flash(_("Imported successfully"), "success")
+    return redirect(url_for("..."))</pre>
+                        </div>
+
+                        {# Key Points #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>enctype="multipart/form-data"</strong> — {{ _("Required for file uploads") }}</li>
+                                <li><strong>utf-8-sig</strong> — {{ _("Handles BOM (byte order mark) in CSV files from Excel") }}</li>
+                                <li><strong>{{ _("Service layer receives string") }}</strong> — {{ _("Not the file object, for testability") }}</li>
+                                <li><strong>{{ _("CSRF token") }}</strong> — {{ _("form.hidden_tag() includes it automatically") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Line") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/input.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">426</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">file_input macro</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/forms.py</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">552</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UploadRespondentsCsvForm</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/respondents.py</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">92</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">upload_respondents_csv route</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">templates/respondents/view_respondents.html</td>
+                                            <td class="px-3 py-2">27</td>
+                                            <td class="px-3 py-2">File upload form (old design)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
         {# Toast Notification #}
         <div x-cloak x-show="toast.show" x-transition
              class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
@@ -384,6 +590,108 @@ x-model="importAssemblyId"</pre>
 
                 copyInlineSelectCode() {
                     this.copyToClipboard(this.inlineSelectCode);
+                },
+
+                // File upload pattern code snippets
+                fileUploadTemplateCode: '{{ "{%" }} from "backoffice/components/input.html" import file_input {{ "%}" }}\n\n' +
+                '<form method="post"\n' +
+                '      action="{{ "{{" }} url_for(\'...\') {{ "}}" }}"\n' +
+                '      enctype="multipart/form-data">\n' +
+                '    {{ "{{" }} form.hidden_tag() {{ "}}" }}\n\n' +
+                '    {{ "{{" }} file_input(\n' +
+                '        "csv_file",\n' +
+                '        label="CSV File",\n' +
+                '        hint="Select a CSV file to upload",\n' +
+                '        accept=".csv",\n' +
+                '        required=true,\n' +
+                '        error=first_error(form.csv_file.errors)\n' +
+                '    ) {{ "}}" }}\n\n' +
+                '    <button type="submit">Upload</button>\n' +
+                '</form>',
+
+                fileUploadRouteCode: '# Flask-WTF Form\n' +
+                'class UploadCsvForm(FlaskForm):\n' +
+                '    csv_file = FileField(\n' +
+                '        _l("CSV File"),\n' +
+                '        validators=[\n' +
+                '            FileRequired(message=_l("Please select a file")),\n' +
+                '            FileAllowed(["csv"], message=_l("Only CSV files allowed")),\n' +
+                '        ],\n' +
+                '    )\n\n' +
+                '# Route handler\n' +
+                '@bp.route("/upload", methods=["POST"])\n' +
+                'def upload_csv():\n' +
+                '    form = UploadCsvForm()\n\n' +
+                '    if not form.validate_on_submit():\n' +
+                '        # Re-render form with errors\n' +
+                '        return render_template("...", form=form)\n\n' +
+                '    # Read file content as string\n' +
+                '    csv_file = form.csv_file.data\n' +
+                '    csv_content = csv_file.read().decode("utf-8-sig")\n' +
+                '    filename = csv_file.filename or "unknown.csv"\n\n' +
+                '    # Pass to service layer (content as string, not file)\n' +
+                '    result = import_from_csv(uow, csv_content=csv_content)\n\n' +
+                '    flash(_("Imported successfully"), "success")\n' +
+                '    return redirect(url_for("..."))',
+
+                copyFileUploadTemplateCode() {
+                    this.copyToClipboard(this.fileUploadTemplateCode);
+                },
+
+                copyFileUploadRouteCode() {
+                    this.copyToClipboard(this.fileUploadRouteCode);
+                }
+            }));
+
+            // File upload demo component
+            Alpine.data('fileUploadDemo', () => ({
+                fileName: '',
+                fileSize: '',
+                preview: '',
+                error: '',
+
+                onFileSelect(event) {
+                    var file = event.target.files[0];
+                    this.error = '';
+                    this.preview = '';
+
+                    if (!file) {
+                        this.fileName = '';
+                        this.fileSize = '';
+                        return;
+                    }
+
+                    // Validate file type
+                    if (!file.name.endsWith('.csv')) {
+                        this.error = 'Please select a CSV file';
+                        this.fileName = '';
+                        this.fileSize = '';
+                        event.target.value = '';
+                        return;
+                    }
+
+                    this.fileName = file.name;
+                    this.fileSize = this.formatFileSize(file.size);
+
+                    // Read first 200 chars for preview
+                    var reader = new FileReader();
+                    var self = this;
+                    reader.onload = function(e) {
+                        var content = e.target.result;
+                        self.preview = content.substring(0, 200) + (content.length > 200 ? '...' : '');
+                    };
+                    reader.readAsText(file);
+                },
+
+                formatFileSize(bytes) {
+                    if (bytes < 1024) return bytes + ' bytes';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                },
+
+                handleSubmit() {
+                    // Demo only - show toast
+                    alert('Demo: Would submit file "' + this.fileName + '" to server.\n\nIn real implementation, form would POST to server with enctype="multipart/form-data".');
                 }
             }));
         });
