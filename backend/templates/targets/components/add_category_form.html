@@ -1,0 +1,25 @@
+<div id="add-category-form">
+    <form method="post"
+          action="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
+          hx-post="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
+          hx-target="#add-category-form"
+          hx-swap="outerHTML"
+          class="govuk-!-margin-top-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div style="display: flex; gap: 0.5em; align-items: flex-end; flex-wrap: wrap;">
+            <div class="govuk-form-group govuk-!-margin-bottom-0 {% if add_category_form.name.errors %}govuk-form-group--error{% endif %}">
+                <label class="govuk-label" for="new-category-name">{{ _("New category name") }}</label>
+                {% if add_category_form.name.errors %}
+                    <p class="govuk-error-message govuk-!-margin-bottom-0">{{ add_category_form.name.errors[0] }}</p>
+                {% endif %}
+                <input class="govuk-input govuk-input--width-20"
+                       type="text" name="name"
+                       id="new-category-name"
+                       value="{{ add_category_form.name.data or '' }}"
+                       placeholder="{{ _('e.g. Gender') }}"
+                       required />
+            </div>
+            <button type="submit" class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button">{{ _("Add category") }}</button>
+        </div>
+    </form>
+</div>

@@ -1,6 +1,8 @@
+import json
 import os
 import shutil
 import subprocess
+import urllib.request
 import uuid
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
@@ -29,6 +31,9 @@ from tests.conftest import (
 from tests.data import VALID_GSHEET_URL
 
 from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
+
+# Maximum age in hours before a reused server is considered stale
+_MAX_SERVER_AGE_HOURS = 24
 
 BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
@@ -98,15 +103,64 @@ def reset_csv_data_dir(csv_test_data_dir: Path) -> Generator[Path, None, None]:
     _reset_csv_files(csv_test_data_dir)
 
 
+def _validate_existing_server(port: int) -> None:
+    """
+    Validate that an existing server on the given port is properly configured for BDD tests.
+
+    Hits the /health/bdd endpoint and checks that key config values match expectations.
+    Raises pytest.fail() with a clear message if the server is misconfigured or stale.
+    """
+    url = f"http://localhost:{port}/health/bdd"
+    try:
+        response = urllib.request.urlopen(url, timeout=5)  # noqa: S310
+        data = json.loads(response.read())
+    except Exception as e:
+        pytest.fail(
+            f"Existing server on port {port} does not have /health/bdd endpoint: {e}\n"
+            f"The server may not be running FLASK_ENV=testing_*.\n"
+            f"Start it with: just flask-bdd"
+        )
+
+    # Validate config values
+    problems = []
+    expected = {
+        "flask_env": "testing_postgres",
+        "db_port": "54322",
+        "redis_port": "63792",
+        "use_csv_data_source": "true",
+    }
+    for key, expected_value in expected.items():
+        actual = data.get(key, "")
+        if actual != expected_value:
+            problems.append(f"  {key}: expected {expected_value!r}, got {actual!r}")
+
+    # Check server age
+    running_hours = data.get("running_hours", 0)
+    if running_hours > _MAX_SERVER_AGE_HOURS:
+        problems.append(
+            f"  Server running for {running_hours:.1f} hours (max {_MAX_SERVER_AGE_HOURS}h) — likely a stale process"
+        )
+
+    if problems:
+        pytest.fail(
+            f"Existing server on port {port} is misconfigured for BDD tests:\n"
+            + "\n".join(problems)
+            + "\n\nKill the existing server and restart with: just flask-bdd"
+        )
+
+
 @pytest.fixture(scope="session")
 def test_server(test_database, csv_test_data_dir):
     """Start Flask test server in background"""
     # Check if server is already running
     try:
         wait_for_webapp_to_come_up_on_port(port=BDD_PORT, timeout=2)
-        print("Test server already running, using existing instance")
+        _validate_existing_server(BDD_PORT)
+        print("Test server already running and properly configured, using existing instance")
         yield
         return
+    except pytest.fail.Exception:
+        raise
     except Exception:
         print("Starting test server...")
 

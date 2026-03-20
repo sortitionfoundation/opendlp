@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
@@ -945,3 +945,17 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         if respondent is None or not respondent.attributes:
             return []
         return sorted(respondent.attributes.keys())
+
+    def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                )
+            )
+            .group_by(val_col)
+        ).all()
+        return {row.val: row.cnt for row in rows if row.val is not None}

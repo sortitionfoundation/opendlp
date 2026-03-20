@@ -226,3 +226,12 @@ def get_respondent_attribute_columns(
 ) -> list[str]:
     """Get sorted list of available respondent attribute column names for an assembly."""
     return uow.respondents.get_attribute_columns(assembly_id)
+
+
+def get_respondent_attribute_value_counts(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    attribute_name: str,
+) -> dict[str, int]:
+    """Get counts of each distinct value for a given attribute across respondents in an assembly."""
+    return uow.respondents.get_attribute_value_counts(assembly_id, attribute_name)

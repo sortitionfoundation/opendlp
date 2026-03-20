@@ -553,6 +553,15 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 return sorted(r.attributes.keys())
         return []
 
+    def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for r in self._items:
+            if r.assembly_id == assembly_id and r.attributes:
+                val = r.attributes.get(attribute_name)
+                if val is not None:
+                    counts[val] = counts.get(val, 0) + 1
+        return counts
+
 
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""

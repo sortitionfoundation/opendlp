@@ -1,0 +1,22 @@
+{# Standalone category name edit form for error display #}
+<div class="govuk-!-margin-bottom-2">
+    <form method="post"
+          action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-target="#category-{{ category_id }}"
+          hx-swap="outerHTML"
+          class="govuk-!-margin-bottom-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="govuk-form-group {% if edit_category_form.name.errors %}govuk-form-group--error{% endif %}" style="display: inline-block;">
+            {% if edit_category_form.name.errors %}
+                <p class="govuk-error-message govuk-!-margin-bottom-0">{{ edit_category_form.name.errors[0] }}</p>
+            {% endif %}
+            <input class="govuk-input govuk-input--width-20"
+                   type="text" name="name"
+                   value="{{ edit_category_form.name.data or '' }}"
+                   required />
+        </div>
+        <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0">{{ _("Save") }}</button>
+        <a href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly_id) }}" class="govuk-link govuk-!-margin-left-2">{{ _("Cancel") }}</a>
+    </form>
+</div>

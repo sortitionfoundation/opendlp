@@ -1,6 +1,7 @@
 """ABOUTME: Health check endpoint for monitoring service status
 ABOUTME: Reports database, celery, and system configuration status as JSON"""
 
+import os
 from datetime import UTC, datetime
 
 from flask import Blueprint, current_app, jsonify, request
@@ -16,6 +17,9 @@ from opendlp.entrypoints.context_processors import (
 )
 
 health_bp = Blueprint("health", __name__)
+
+# Record process start time at module load
+_PROCESS_STARTED_AT = datetime.now(UTC)
 
 
 def check_database() -> tuple[bool, int | str]:
@@ -171,3 +175,28 @@ def health_check() -> ResponseReturnValue:
     status_code = 200 if is_healthy else 500
 
     return jsonify(response_data), status_code
+
+
+@health_bp.route("/health/bdd")
+def bdd_health_check() -> ResponseReturnValue:
+    """
+    BDD test configuration endpoint.
+
+    Returns key environment settings so the BDD test fixture can verify
+    that a reused server is properly configured. Only available when
+    FLASK_ENV starts with "testing".
+    """
+    flask_env = os.environ.get("FLASK_ENV", "development")
+    if not flask_env.startswith("testing"):
+        return jsonify({"error": "Not available outside testing"}), 404
+
+    age = datetime.now(UTC) - _PROCESS_STARTED_AT
+    running_hours = round(age.total_seconds() / 3600, 1)
+
+    return jsonify({
+        "flask_env": flask_env,
+        "db_port": os.environ.get("DB_PORT", ""),
+        "redis_port": os.environ.get("REDIS_PORT", ""),
+        "use_csv_data_source": os.environ.get("USE_CSV_DATA_SOURCE", ""),
+        "running_hours": running_hours,
+    }), 200
