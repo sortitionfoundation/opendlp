@@ -522,7 +522,9 @@ def generate_selection_csvs(
         columns_to_keep=stored.get("columns_to_keep", []),
     )
 
-    data_source = OpenDLPDataAdapter(uow, assembly_id)
+    # We need to get ALL the people, so we can get all their data, so we can fetch data for
+    # those who are already selected.
+    data_source = OpenDLPDataAdapter(uow, assembly_id, eligible_only=False)
     select_data = adapters.SelectionData(data_source)
     features, _feat_report = select_data.load_features()
     full_people, _ppl_report = select_data.load_people(settings_obj, features)

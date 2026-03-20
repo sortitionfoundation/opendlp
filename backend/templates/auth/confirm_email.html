@@ -1,0 +1,24 @@
+{# ABOUTME: Email confirmation landing page template
+   ABOUTME: Shows a confirmation button so that GET requests from email scanners do not auto-confirm accounts #}
+{% extends "base.html" %}
+
+{% block title %}{{ _('Confirm your email') }} - OpenDLP{% endblock %}
+
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _('Confirm your email') }}</h1>
+
+            <p class="govuk-body">
+                {{ _('Click the button below to confirm your email address and activate your account.') }}
+            </p>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    {{ _('Confirm email address') }}
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

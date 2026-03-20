@@ -29,6 +29,7 @@ from opendlp.service_layer.email_confirmation_service import (
     confirm_email_with_token,
     resend_confirmation_email,
     send_confirmation_email,
+    validate_confirmation_token,
 )
 from opendlp.service_layer.exceptions import (
     EmailNotConfirmed,
@@ -364,14 +365,27 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())
 
 
-@auth_bp.route("/confirm-email/<token>")
+@auth_bp.route("/confirm-email/<token>", methods=["GET", "POST"])
 def confirm_email(token: str) -> ResponseReturnValue:
-    """Confirm email with token."""
+    """Confirm email with token. GET shows confirmation page, POST confirms."""
+    uow = bootstrap.bootstrap()
+
+    if request.method == "GET":
+        try:
+            validate_confirmation_token(uow, token)
+            return render_template("auth/confirm_email.html", token=token)
+        except InvalidConfirmationToken as e:
+            flash(str(e), "error")
+            return redirect(url_for("auth.login"))
+        except Exception as e:
+            current_app.logger.error(f"Email confirmation error: {e}")
+            flash(_("An error occurred. Please try again."), "error")
+            return redirect(url_for("auth.login"))
+
+    # POST: actually confirm the email
     try:
-        uow = bootstrap.bootstrap()
         user = confirm_email_with_token(uow, token)
         flash(_("Email confirmed successfully! You can now log in."), "success")
-        # Auto-login for better UX
         login_user(user)
         return redirect(url_for("main.dashboard"))
     except InvalidConfirmationToken as e:

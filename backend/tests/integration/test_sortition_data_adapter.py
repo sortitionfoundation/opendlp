@@ -10,6 +10,7 @@ from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -96,7 +97,7 @@ class TestOpenDLPDataAdapter:
             assert people.count == 2
             assert set(people) == {"NB001", "NB002"}
 
-    def test_only_eligible_respondents_loaded(self, postgres_session_factory, test_assembly: Assembly):
+    def test_only_eligible_respondents_loaded(self, subtests, postgres_session_factory, test_assembly: Assembly):
         """Test that only eligible respondents are loaded for selection."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
 
@@ -107,6 +108,7 @@ class TestOpenDLPDataAdapter:
             attributes={"Gender": "Male"},
             eligible=True,
             can_attend=True,
+            selection_status=RespondentStatus.POOL,
         )
         resp2 = Respondent(
             assembly_id=test_assembly.id,
@@ -114,6 +116,7 @@ class TestOpenDLPDataAdapter:
             attributes={"Gender": "Female"},
             eligible=False,  # Not eligible
             can_attend=True,
+            selection_status=RespondentStatus.POOL,
         )
         resp3 = Respondent(
             assembly_id=test_assembly.id,
@@ -121,12 +124,22 @@ class TestOpenDLPDataAdapter:
             attributes={"Gender": "Male"},
             eligible=True,
             can_attend=False,  # Can't attend
+            selection_status=RespondentStatus.POOL,
+        )
+        resp4 = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB004",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=True,  # Can't attend
+            selection_status=RespondentStatus.SELECTED,  # Already selected
         )
 
         with uow:
             uow.respondents.add(resp1)
             uow.respondents.add(resp2)
             uow.respondents.add(resp3)
+            uow.respondents.add(resp4)
             uow.commit()
 
         # Add features
@@ -137,17 +150,28 @@ class TestOpenDLPDataAdapter:
             uow.target_categories.add(cat)
             uow.commit()
 
-        # Test adapter - should only load NB001
-        with uow:
-            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+        settings = Settings(id_column="external_id", columns_to_keep=[])
+        with subtests.test("Default - eligible_only is True"), uow:
+            # Test adapter - should only load NB001
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, eligible_only=True)
             select_data = SelectionData(adapter)
 
-            settings = Settings(id_column="external_id", columns_to_keep=[])
             features, _ = select_data.load_features(number_to_select=1)
             people, _ = select_data.load_people(settings, features)
 
             assert people.count == 1
             assert set(people) == {"NB001"}
+
+        with subtests.test("All people - eligible_only is False"), uow:
+            # Test adapter with eligible_only=False - should load all 4
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, eligible_only=False)
+            select_data = SelectionData(adapter)
+
+            features, _ = select_data.load_features(number_to_select=1)
+            people, _ = select_data.load_people(settings, features)
+
+            assert people.count == 4
+            assert set(people) == {"NB001", "NB002", "NB003", "NB004"}
 
     def test_empty_data_sources(self, postgres_session_factory, test_assembly: Assembly):
         """Test adapter behavior with no features or people."""

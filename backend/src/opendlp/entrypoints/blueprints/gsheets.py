@@ -214,6 +214,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             run_history=run_history,
             page=page,
+            per_page=per_page,
             total_count=total_count,
             total_pages=total_pages,
             current_selection=current_selection,

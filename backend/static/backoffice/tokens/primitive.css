@@ -6,11 +6,11 @@
 
 /* @font-face declarations - self-hosted via @fontsource */
 @font-face {
-    font-family: "Oswald";
+    font-family: "Montserrat";
     font-style: normal;
     font-display: swap;
     font-weight: 500;
-    src: url("/static/backoffice/fonts/oswald-latin-500-normal.woff2") format("woff2");
+    src: url("/static/backoffice/fonts/montserrat-latin-500-normal.woff2") format("woff2");
 }
 
 @font-face {
@@ -82,8 +82,8 @@
      TYPOGRAPHY - Font Families (Primitives)
      ======================================== */
 
-    --font-display: "Oswald", sans-serif;
-    --font-heading: "Oswald", sans-serif;
+    --font-display: "Montserrat", sans-serif;
+    --font-heading: "Montserrat", sans-serif;
     --font-body: "Lato", sans-serif;
     --font-caption: "Lato", sans-serif;
     --font-overline: "Lato", sans-serif;
