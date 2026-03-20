@@ -513,6 +513,29 @@ def search_demo() -> ResponseReturnValue:
 
 
 # =============================================================================
+# Developer Tools Dashboard (Admin-only)
+# =============================================================================
+
+
+@backoffice_bp.route("/dev")
+@login_required
+def dev_dashboard() -> ResponseReturnValue:
+    """Developer tools dashboard.
+
+    Admin-only page that links to all developer tools.
+    Disabled in production for security.
+    """
+    if config.is_production():
+        abort(404)
+
+    if not has_global_admin(current_user):
+        flash(_("You don't have permission to access developer tools"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    return render_template("backoffice/dev_dashboard.html"), 200
+
+
+# =============================================================================
 # Service Layer Documentation (Admin-only developer tools)
 # =============================================================================
 
