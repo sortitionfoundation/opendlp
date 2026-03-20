@@ -16,7 +16,11 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
+from opendlp.service_layer.respondent_service import (
+    count_non_pool_respondents,
+    get_respondent_attribute_columns,
+    reset_selection_status,
+)
 from opendlp.service_layer.sortition import (
     cancel_task,
     check_and_update_task_health,
@@ -41,12 +45,14 @@ def view_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            non_pool_count = count_non_pool_respondents(uow, assembly_id)
 
         return render_template(
             "db_selection/select.html",
             assembly=assembly,
             csv_config=csv_config,
             current_tab="db_selection",
+            non_pool_count=non_pool_count,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -66,6 +72,7 @@ def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
             result = get_selection_run_status(uow, run_id)
+            non_pool_count = count_non_pool_respondents(uow, assembly_id)
 
         if result.run_record and result.run_record.assembly_id != assembly_id:
             flash(_("Invalid task ID for this assembly"), "error")
@@ -80,6 +87,7 @@ def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             run_report=result.run_report,
             translated_report_html=translate_run_report_to_html(result.run_report),
             run_id=run_id,
+            non_pool_count=non_pool_count,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -366,6 +374,28 @@ def view_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
+
+
+@db_selection_bp.route("/assemblies/<uuid:assembly_id>/db_select/reset-respondents", methods=["POST"])
+@login_required
+@require_assembly_management
+def reset_respondents_for_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    try:
+        uow = bootstrap.bootstrap()
+        count = reset_selection_status(uow, current_user.id, assembly_id)
+        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        return redirect(url_for("db_selection.view_db_selection", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to reset selection status"), "error")
+        return redirect(url_for("db_selection.view_db_selection", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("stacktrace")
+        flash(_("An unexpected error occurred"), "error")
+        return redirect(url_for("db_selection.view_db_selection", assembly_id=assembly_id))
 
 
 def _parse_comma_list(value: str | None) -> list[str]:

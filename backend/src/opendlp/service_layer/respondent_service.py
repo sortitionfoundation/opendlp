@@ -220,6 +220,11 @@ def get_respondents_for_assembly(
         return [r.create_detached_copy() for r in respondents]
 
 
+def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
+    """Count respondents for an assembly that are not in POOL status."""
+    return uow.respondents.count_non_pool(assembly_id)
+
+
 def get_respondent_attribute_columns(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,

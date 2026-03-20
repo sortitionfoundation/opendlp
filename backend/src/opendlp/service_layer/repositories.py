@@ -403,6 +403,11 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def count_non_pool(self, assembly_id: uuid.UUID) -> int:
+        """Count respondents for an assembly that are not in POOL status."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         """Get sorted list of attribute column names from a sample respondent for an assembly."""
         raise NotImplementedError

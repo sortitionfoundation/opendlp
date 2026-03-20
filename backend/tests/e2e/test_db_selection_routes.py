@@ -742,6 +742,167 @@ class TestDbSelectionErrorHandling:
         assert response.status_code == 302
 
 
+class TestNonPoolRespondentWarning:
+    """Tests for the warning shown when respondents have non-POOL status."""
+
+    def _import_and_select_respondents(self, postgres_session_factory, admin_user, assembly_id):
+        """Import respondents and mark some as SELECTED so they are non-POOL."""
+        csv_content = "external_id,Gender,Age\nR001,Female,30\nR002,Male,25\nR003,Female,40\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly_id,
+                csv_content=csv_content,
+            )
+        # Create a SelectionRunRecord so the FK constraint is satisfied
+        run_id = uuid.uuid4()
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=run_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                log_messages=["Done"],
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+        # Mark one respondent as SELECTED
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.respondents.bulk_mark_as_selected(
+                assembly_id=assembly_id,
+                external_ids=["R001"],
+                selection_run_id=run_id,
+            )
+            uow.commit()
+
+    def test_selection_page_shows_warning_with_non_pool_respondents(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"already have a selection status" in response.data
+        assert b"Reset all respondents to Pool" in response.data
+
+    def test_selection_buttons_disabled_with_non_pool_respondents(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        # The Run Selection and Run Test Selection buttons should be disabled
+        data = response.data.decode("utf-8")
+        assert (
+            "disabled>Run Selection" in data
+            or 'disabled="">Run Selection' in data
+            or "disabled>Run Selection" in data.replace(" ", "")
+        )
+
+    def test_check_targets_button_enabled_with_non_pool_respondents(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        # Check Targets button should NOT be disabled
+        data = response.data.decode("utf-8")
+        assert "Check Targets" in data
+
+    def test_selection_page_no_warning_when_all_pool(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        # Import respondents but don't select any
+        csv_content = "external_id,Gender,Age\nR001,Female,30\nR002,Male,25\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"already have a selection status" not in response.data
+        assert b"Reset all respondents to Pool" not in response.data
+
+    def test_reset_respondents_from_selection_page(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/reset-respondents",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert f"/assemblies/{assembly.id}/db_select" in response.headers["Location"]
+
+        # Verify respondents are reset
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            non_pool = uow.respondents.count_non_pool(assembly.id)
+            assert non_pool == 0
+
+    def test_reset_respondents_shows_success_flash(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/reset-respondents",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Reset" in response.data
+        assert b"Pool status" in response.data
+
+    def test_after_reset_warning_disappears(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        # Reset
+        logged_in_admin.post(
+            f"/assemblies/{assembly.id}/db_select/reset-respondents",
+            follow_redirects=False,
+        )
+
+        # Check the page no longer shows warning
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+        assert response.status_code == 200
+        assert b"already have a selection status" not in response.data
+
+    def test_replacements_link_shown_in_warning(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        assembly = assembly_for_db_selection
+        self._import_and_select_respondents(postgres_session_factory, admin_user, assembly.id)
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"Do replacements" in response.data
+        assert f"/assemblies/{assembly.id}/db_replace".encode() in response.data
+
+
 class TestRespondentsStatusFilter:
     def test_respondents_page_shows_status_filter(self, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection

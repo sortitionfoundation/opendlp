@@ -15,18 +15,49 @@
         {% endif %}
     </p>
 
+    {# ── Non-POOL Warning ─────────────────────────────────────── #}
+    {% if non_pool_count is defined and non_pool_count > 0 and (not run_record or run_record.has_finished) %}
+        <div class="govuk-warning-text govuk-!-margin-top-6">
+            <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+            <strong class="govuk-warning-text__text">
+                <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                {{ _("%(count)s respondents already have a selection status (selected, confirmed, withdrawn, etc). A fresh selection will only draw from the remaining pool.", count=non_pool_count) }}
+            </strong>
+        </div>
+        <p class="govuk-body">{{ _("Your options:") }}</p>
+        <ul class="govuk-list govuk-list--bullet">
+            <li>
+                <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
+                {{ _("— select replacement members from the remaining pool") }}
+            </li>
+            <li>
+                {{ _("Reset all respondents to Pool status, then run a fresh selection") }}
+            </li>
+        </ul>
+        <form method="post"
+              action="{{ url_for('db_selection.reset_respondents_for_selection', assembly_id=assembly.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
+                    data-module="govuk-button"
+                    data-confirm="{{ _('Are you sure? This will reset all respondents to Pool status.') }}">
+                {{ _("Reset all respondents to Pool") }}
+            </button>
+        </form>
+    {% endif %}
+
     {# ── Action Buttons ─────────────────────────────────────── #}
     <div class="govuk-button-group govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
+            {% set selection_disabled = non_pool_count is defined and non_pool_count > 0 %}
             <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="test_selection" value="0">
-                <button type="submit" class="govuk-button">{{ _("Run Selection") }}</button>
+                <button type="submit" class="govuk-button" {% if selection_disabled %}disabled{% endif %}>{{ _("Run Selection") }}</button>
             </form>
             <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="test_selection" value="1">
-                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Run Test Selection") }}</button>
+                <button type="submit" class="govuk-button govuk-button--secondary" {% if selection_disabled %}disabled{% endif %}>{{ _("Run Test Selection") }}</button>
             </form>
             <form action="{{ url_for('db_selection.check_db_data', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -547,6 +547,11 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 count += 1
         return count
 
+    def count_non_pool(self, assembly_id: uuid.UUID) -> int:
+        return sum(
+            1 for r in self._items if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.POOL
+        )
+
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         for r in self._items:
             if r.assembly_id == assembly_id and r.attributes:
