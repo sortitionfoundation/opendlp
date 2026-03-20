@@ -1,0 +1,795 @@
+{#
+ABOUTME: Interactive service layer documentation page for CSV upload services
+ABOUTME: Provides testing console with code references, sample data, and execution
+#}
+{% extends "backoffice/base_page.html" %}
+
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card, card_body, card_footer %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/tabs.html" import tabs %}
+
+{% block title %}{{ _("Service Layer Documentation") }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Developer Tools")},
+        {"label": _("Service Docs")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Main Alpine.js controller for the entire page #}
+    <div x-data="serviceDocsController()" x-cloak>
+        {# Page Header #}
+        <div class="mb-8">
+            <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">
+                <span class="mr-2">📚</span>{{ _("Service Layer Documentation") }}
+            </h1>
+            <p class="text-body-lg" style="color: var(--color-secondary-text);">
+                {{ _("Interactive testing console for CSV upload services. Execute service functions directly and inspect responses.") }}
+            </p>
+            <p class="text-body-sm mt-2" style="color: var(--color-warning-600);">
+                <span class="font-semibold">⚠️ {{ _("Admin Only") }}:</span>
+                {{ _("This page allows direct database modifications. Use with caution.") }}
+            </p>
+        </div>
+
+        {# Tabs for service categories #}
+        {{ tabs(
+        items=[
+        {"label": _("Respondents"), "href": url_for('backoffice.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
+        {"label": _("Targets"), "href": url_for('backoffice.service_docs', tab='targets'), "active": active_tab == 'targets'},
+        {"label": _("CSV Config"), "href": url_for('backoffice.service_docs', tab='config'), "active": active_tab == 'config'}
+        ],
+        aria_label=_("Service categories")
+        ) }}
+
+        {# ===== RESPONDENTS TAB ===== #}
+        {% if active_tab == 'respondents' %}
+            <div>
+            {# import_respondents_from_csv #}
+                {% call card(title="import_respondents_from_csv()", composed=true) %}
+                    {% call card_body() %}
+                    {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                respondent_service.py:63
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                                <button @click="copyToClipboard('respondent_service.py:63')"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 Copy
+                                </button>
+                            </div>
+                        </div>
+
+                    {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Imports respondents from CSV with flexible column mapping. Extracts special fields (consent, eligible, can_attend, email) and stores remaining columns as attributes.") }}
+                        </p>
+
+                    {# Parameters Table #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Name</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Type</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Required</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">csv_content</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">str</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">CSV file contents (UTF-8)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">replace_existing</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">bool</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">❌</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Delete existing respondents before import (default: false)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">id_column</td>
+                                            <td class="px-3 py-2">str | None</td>
+                                            <td class="px-3 py-2">❌</td>
+                                            <td class="px-3 py-2">Column name for respondent ID (default: first column)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                tuple[list[Respondent], list[str], str]  →  (respondents, errors, resolved_id_column)
+                            </code>
+                        </div>
+
+                    {# Error Cases #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InvalidSelection</code> — CSV has no header, missing id_column, or parsing fails</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InsufficientPermissions</code> — User lacks can_manage_assembly() permission</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">NotFoundError</code> — Assembly or user not found</li>
+                            </ul>
+                        </div>
+
+                    {# Try It Section #}
+                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                            <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Try It") }}
+                            </h4>
+
+                        {# Assembly Select #}
+                            <div class="mb-4">
+                                <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                <select x-model="forms.import_respondents.assembly_id"
+                                        class="w-full px-3 py-2 rounded-lg text-body-md"
+                                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                    <option value="">{{ _("Select an assembly...") }}</option>
+                                    {% for assembly in assemblies %}
+                                        <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                        {# CSV Content #}
+                            <div class="mb-4">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
+                                    <button @click="loadSampleData('import_respondents')"
+                                            class="text-body-sm px-2 py-1 rounded transition-colors"
+                                            style="background-color: var(--color-info-100); color: var(--color-info-600);">
+                                        📄 {{ _("Load Sample") }}
+                                    </button>
+                                </div>
+                                <textarea x-model="forms.import_respondents.csv_content"
+                                          rows="8"
+                                          class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                                          style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                          placeholder="external_id,name,email,gender,consent&#10;001,Alice Smith,alice@example.com,Female,true&#10;002,Bob Jones,bob@example.com,Male,true"></textarea>
+                            </div>
+
+                        {# Options Row #}
+                            <div class="flex gap-4 mb-4">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" x-model="forms.import_respondents.replace_existing" id="resp_replace"
+                                           class="rounded" style="accent-color: var(--color-primary-action);">
+                                    <label for="resp_replace" class="text-body-sm" style="color: var(--color-body-text);">
+                                        {{ _("Replace existing") }}
+                                        <span class="text-body-sm" style="color: var(--color-error-600);">(⚠️ destructive)</span>
+                                    </label>
+                                </div>
+                                <div class="flex-1">
+                                    <input type="text" x-model="forms.import_respondents.id_column"
+                                           class="w-full px-3 py-2 rounded-lg text-body-sm"
+                                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                           placeholder="{{ _('ID Column (leave empty for first column)') }}">
+                                </div>
+                            </div>
+
+                        {# Action Buttons #}
+                            <div class="flex gap-2 mb-4">
+                                <button @click="executeService('import_respondents_from_csv', forms.import_respondents)"
+                                        :disabled="loading.import_respondents"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                    <span x-show="!loading.import_respondents">▶️ {{ _("Execute") }}</span>
+                                    <span x-show="loading.import_respondents">⏳ {{ _("Running...") }}</span>
+                                </button>
+                                <button @click="resetForm('import_respondents')"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                                    🔄 {{ _("Reset") }}
+                                </button>
+                            </div>
+
+                        {# Response Display #}
+                            <template x-if="responses.import_respondents">
+                                <div class="rounded-lg p-4" :style="responses.import_respondents.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-heading-sm" :style="responses.import_respondents.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                            <span x-text="responses.import_respondents.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                        </span>
+                                        <button @click="copyToClipboard(JSON.stringify(responses.import_respondents, null, 2))"
+                                                class="text-body-sm px-2 py-1 rounded"
+                                                style="background-color: var(--color-page-background);">
+                                            📋 {{ _("Copy JSON") }}
+                                        </button>
+                                    </div>
+                                <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.import_respondents, null, 2)"></pre>
+                                </div>
+                            </template>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# ===== TARGETS TAB ===== #}
+        {% if active_tab == 'targets' %}
+            <div>
+            {# import_targets_from_csv #}
+                {% call card(title="import_targets_from_csv()", composed=true) %}
+                    {% call card_body() %}
+                    {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                assembly_service.py:501
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                                <button @click="copyToClipboard('assembly_service.py:501')"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 Copy
+                                </button>
+                            </div>
+                        </div>
+
+                    {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Imports target categories from CSV using sortition-algorithms library. Parses and validates category definitions with min/max quotas.") }}
+                        </p>
+
+                    {# Parameters Table #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Name</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Type</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Required</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">csv_content</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">str</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">CSV with columns: feature, value, min, max, [min_flex, max_flex]</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">replace_existing</td>
+                                            <td class="px-3 py-2">bool</td>
+                                            <td class="px-3 py-2">❌</td>
+                                            <td class="px-3 py-2">Always replaces (default: true)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                list[TargetCategory]  →  List of imported categories with their values
+                            </code>
+                        </div>
+
+                    {# CSV Format Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("CSV Format") }}</h4>
+                        <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">feature,value,min,max,min_flex,max_flex
+Gender,Male,3,7,0,2
+Gender,Female,3,7,0,2
+Age,18-30,2,5,1,1
+Age,31-50,2,5,1,1
+Age,51+,2,5,1,1</pre>
+                        </div>
+
+                    {# Try It Section #}
+                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                            <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Try It") }}
+                            </h4>
+
+                        {# Assembly Select #}
+                            <div class="mb-4">
+                                <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                <select x-model="forms.import_targets.assembly_id"
+                                        class="w-full px-3 py-2 rounded-lg text-body-md"
+                                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                    <option value="">{{ _("Select an assembly...") }}</option>
+                                    {% for assembly in assemblies %}
+                                        <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                        {# CSV Content #}
+                            <div class="mb-4">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
+                                    <button @click="loadSampleData('import_targets')"
+                                            class="text-body-sm px-2 py-1 rounded transition-colors"
+                                            style="background-color: var(--color-info-100); color: var(--color-info-600);">
+                                        📄 {{ _("Load Sample") }}
+                                    </button>
+                                </div>
+                                <textarea x-model="forms.import_targets.csv_content"
+                                          rows="8"
+                                          class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                                          style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                          placeholder="feature,value,min,max&#10;Gender,Male,3,7&#10;Gender,Female,3,7"></textarea>
+                            </div>
+
+                        {# Warning about replace #}
+                            <div class="mb-4 p-3 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                                <p class="text-body-sm" style="color: var(--color-warning-600);">
+                                    ⚠️ {{ _("This operation always replaces existing targets for the selected assembly.") }}
+                                </p>
+                            </div>
+
+                        {# Action Buttons #}
+                            <div class="flex gap-2 mb-4">
+                                <button @click="executeService('import_targets_from_csv', forms.import_targets)"
+                                        :disabled="loading.import_targets"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                    <span x-show="!loading.import_targets">▶️ {{ _("Execute") }}</span>
+                                    <span x-show="loading.import_targets">⏳ {{ _("Running...") }}</span>
+                                </button>
+                                <button @click="resetForm('import_targets')"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                                    🔄 {{ _("Reset") }}
+                                </button>
+                            </div>
+
+                        {# Response Display #}
+                            <template x-if="responses.import_targets">
+                                <div class="rounded-lg p-4" :style="responses.import_targets.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-heading-sm" :style="responses.import_targets.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                            <span x-text="responses.import_targets.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                        </span>
+                                        <button @click="copyToClipboard(JSON.stringify(responses.import_targets, null, 2))"
+                                                class="text-body-sm px-2 py-1 rounded"
+                                                style="background-color: var(--color-page-background);">
+                                            📋 {{ _("Copy JSON") }}
+                                        </button>
+                                    </div>
+                                <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.import_targets, null, 2)"></pre>
+                                </div>
+                            </template>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# ===== CSV CONFIG TAB ===== #}
+        {% if active_tab == 'config' %}
+            <div>
+                <div class="space-y-6">
+                {# get_or_create_csv_config #}
+                    {% call card(title="get_or_create_csv_config()", composed=true) %}
+                        {% call card_body() %}
+                        {# Code Reference #}
+                            <div class="flex items-center justify-between mb-4">
+                                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                    assembly_service.py:613
+                                </code>
+                                <div class="flex gap-2">
+                                    <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                        👁️ can_view_assembly()
+                                    </span>
+                                </div>
+                            </div>
+
+                        {# Description #}
+                            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                                {{ _("Retrieves existing CSV config or creates a default one if none exists. Safe to call multiple times.") }}
+                            </p>
+
+                        {# Parameters #}
+                            <div class="mb-6">
+                                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        {# Returns #}
+                            <div class="mb-6">
+                                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                                <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                    AssemblyCSV  →  Configuration object with all CSV settings
+                                </code>
+                            </div>
+
+                        {# Try It Section #}
+                            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                                </h4>
+
+                                <div class="mb-4">
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                    <select x-model="forms.get_csv_config.assembly_id"
+                                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("Select an assembly...") }}</option>
+                                        {% for assembly in assemblies %}
+                                            <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="flex gap-2 mb-4">
+                                    <button @click="executeService('get_or_create_csv_config', forms.get_csv_config)"
+                                            :disabled="loading.get_csv_config"
+                                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                            style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                        <span x-show="!loading.get_csv_config">▶️ {{ _("Execute") }}</span>
+                                        <span x-show="loading.get_csv_config">⏳ {{ _("Running...") }}</span>
+                                    </button>
+                                </div>
+
+                                <template x-if="responses.get_csv_config">
+                                    <div class="rounded-lg p-4" :style="responses.get_csv_config.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-heading-sm" :style="responses.get_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                                <span x-text="responses.get_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                            </span>
+                                            <button @click="copyToClipboard(JSON.stringify(responses.get_csv_config, null, 2))"
+                                                    class="text-body-sm px-2 py-1 rounded"
+                                                    style="background-color: var(--color-page-background);">
+                                                📋 {{ _("Copy JSON") }}
+                                            </button>
+                                        </div>
+                                    <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.get_csv_config, null, 2)"></pre>
+                                    </div>
+                                </template>
+                            </div>
+                        {% endcall %}
+                    {% endcall %}
+
+                {# update_csv_config #}
+                    {% call card(title="update_csv_config()", composed=true) %}
+                        {% call card_body() %}
+                        {# Code Reference #}
+                            <div class="flex items-center justify-between mb-4">
+                                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                    assembly_service.py:643
+                                </code>
+                                <div class="flex gap-2">
+                                    <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                        🔒 can_manage_assembly()
+                                    </span>
+                                </div>
+                            </div>
+
+                        {# Description #}
+                            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                                {{ _("Updates CSV configuration settings. Only provided fields are updated.") }}
+                            </p>
+
+                        {# Parameters #}
+                            <div class="mb-6">
+                                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Name</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Type</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">id_column</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">str</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Column name for respondent ID</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">check_same_address</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">bool</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Enable address deduplication</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">check_same_address_cols</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">list[str]</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Address columns to check</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">columns_to_keep</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">list[str]</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Columns to preserve in output</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">selection_algorithm</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">str</td><td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Algorithm: "maximin", "random", etc.</td></tr>
+                                        <tr><td class="px-3 py-2 font-mono">settings_confirmed</td><td class="px-3 py-2">bool</td><td class="px-3 py-2">Mark settings as confirmed</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        {# Try It Section #}
+                            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                                </h4>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                        <select x-model="forms.update_csv_config.assembly_id"
+                                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                                style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                            <option value="">{{ _("Select...") }}</option>
+                                            {% for assembly in assemblies %}
+                                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("ID Column") }}</label>
+                                        <input type="text" x-model="forms.update_csv_config.id_column"
+                                               class="w-full px-3 py-2 rounded-lg text-body-md"
+                                               style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                               placeholder="external_id">
+                                    </div>
+                                    <div>
+                                        <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Selection Algorithm") }}</label>
+                                        <select x-model="forms.update_csv_config.selection_algorithm"
+                                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                                style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                            <option value="">{{ _("Select...") }}</option>
+                                            <option value="maximin">maximin</option>
+                                            <option value="random">random</option>
+                                            <option value="legacy">legacy</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-4 pt-6">
+                                        <label class="flex items-center gap-2">
+                                            <input type="checkbox" x-model="forms.update_csv_config.check_same_address"
+                                                   style="accent-color: var(--color-primary-action);">
+                                            <span class="text-body-sm">{{ _("Check same address") }}</span>
+                                        </label>
+                                        <label class="flex items-center gap-2">
+                                            <input type="checkbox" x-model="forms.update_csv_config.settings_confirmed"
+                                                   style="accent-color: var(--color-primary-action);">
+                                            <span class="text-body-sm">{{ _("Settings confirmed") }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2 mb-4">
+                                    <button @click="executeService('update_csv_config', forms.update_csv_config)"
+                                            :disabled="loading.update_csv_config"
+                                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                            style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                        <span x-show="!loading.update_csv_config">▶️ {{ _("Execute") }}</span>
+                                        <span x-show="loading.update_csv_config">⏳ {{ _("Running...") }}</span>
+                                    </button>
+                                    <button @click="resetForm('update_csv_config')"
+                                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                            style="background-color: transparent; color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                                        🔄 {{ _("Reset") }}
+                                    </button>
+                                </div>
+
+                                <template x-if="responses.update_csv_config">
+                                    <div class="rounded-lg p-4" :style="responses.update_csv_config.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-heading-sm" :style="responses.update_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                                <span x-text="responses.update_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                            </span>
+                                            <button @click="copyToClipboard(JSON.stringify(responses.update_csv_config, null, 2))"
+                                                    class="text-body-sm px-2 py-1 rounded"
+                                                    style="background-color: var(--color-page-background);">
+                                                📋 {{ _("Copy JSON") }}
+                                            </button>
+                                        </div>
+                                    <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.update_csv_config, null, 2)"></pre>
+                                    </div>
+                                </template>
+                            </div>
+                        {% endcall %}
+                    {% endcall %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# Toast Notification #}
+        <div x-cloak x-show="toast.show" x-transition
+             class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
+             :style="toast.type === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);'">
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce }}">
+        function serviceDocsController() {
+            return {
+                toast: { show: false, message: '', type: 'info' },
+
+            // Form state for each service
+                forms: {
+                    import_respondents: {
+                        assembly_id: '',
+                        csv_content: '',
+                        replace_existing: false,
+                        id_column: ''
+                    },
+                    import_targets: {
+                        assembly_id: '',
+                        csv_content: '',
+                        replace_existing: true
+                    },
+                    get_csv_config: {
+                        assembly_id: ''
+                    },
+                    update_csv_config: {
+                        assembly_id: '',
+                        id_column: '',
+                        check_same_address: true,
+                        selection_algorithm: '',
+                        settings_confirmed: false
+                    }
+                },
+
+            // Loading state for each service
+                loading: {
+                    import_respondents: false,
+                    import_targets: false,
+                    get_csv_config: false,
+                    update_csv_config: false
+                },
+
+            // Response data for each service
+                responses: {
+                    import_respondents: null,
+                    import_targets: null,
+                    get_csv_config: null,
+                    update_csv_config: null
+                },
+
+            // Sample data for each service
+                sampleData: {
+                    import_respondents: `external_id,name,email,gender,age_group,consent,eligible
+R001,Alice Smith,alice@example.com,Female,18-30,true,true
+R002,Bob Johnson,bob@example.com,Male,31-50,true,true
+R003,Carol Williams,carol@example.com,Female,51+,true,true
+R004,David Brown,david@example.com,Male,18-30,true,true
+R005,Eve Davis,eve@example.com,Female,31-50,true,true`,
+                    import_targets: `feature,value,min,max,min_flex,max_flex
+Gender,Male,3,7,0,2
+Gender,Female,3,7,0,2
+Age,18-30,2,5,1,1
+Age,31-50,2,5,1,1
+Age,51+,2,5,1,1`
+                },
+
+                loadSampleData(formKey) {
+                    if (formKey === 'import_respondents') {
+                        this.forms.import_respondents.csv_content = this.sampleData.import_respondents;
+                    } else if (formKey === 'import_targets') {
+                        this.forms.import_targets.csv_content = this.sampleData.import_targets;
+                    }
+                    this.showToast('Sample data loaded', 'success');
+                },
+
+                resetForm(formKey) {
+                    if (formKey === 'import_respondents') {
+                        this.forms.import_respondents = {
+                            assembly_id: '',
+                            csv_content: '',
+                            replace_existing: false,
+                            id_column: ''
+                        };
+                        this.responses.import_respondents = null;
+                    } else if (formKey === 'import_targets') {
+                        this.forms.import_targets = {
+                            assembly_id: '',
+                            csv_content: '',
+                            replace_existing: true
+                        };
+                        this.responses.import_targets = null;
+                    } else if (formKey === 'update_csv_config') {
+                        this.forms.update_csv_config = {
+                            assembly_id: '',
+                            id_column: '',
+                            check_same_address: true,
+                            selection_algorithm: '',
+                            settings_confirmed: false
+                        };
+                        this.responses.update_csv_config = null;
+                    }
+                },
+
+                async executeService(serviceName, params) {
+                // Map service name to loading/response key
+                    const keyMap = {
+                        'import_respondents_from_csv': 'import_respondents',
+                        'import_targets_from_csv': 'import_targets',
+                        'get_or_create_csv_config': 'get_csv_config',
+                        'update_csv_config': 'update_csv_config'
+                    };
+                    const key = keyMap[serviceName];
+
+                // Validate required fields
+                    if (!params.assembly_id) {
+                        this.responses[key] = { status: 'error', error: 'Please select an assembly', error_type: 'ValidationError' };
+                        return;
+                    }
+
+                    this.loading[key] = true;
+                    this.responses[key] = null;
+
+                    try {
+                        const response = await fetch('{{ url_for("backoffice.service_docs_execute") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                service: serviceName,
+                                params: params
+                            })
+                        });
+
+                        const data = await response.json();
+                        this.responses[key] = data;
+
+                        if (data.status === 'success') {
+                            this.showToast('Service executed successfully', 'success');
+                        }
+                    } catch (error) {
+                        this.responses[key] = {
+                            status: 'error',
+                            error: error.message,
+                            error_type: 'NetworkError'
+                        };
+                    } finally {
+                        this.loading[key] = false;
+                    }
+                },
+
+                async copyToClipboard(text) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.showToast('Copied to clipboard!', 'success');
+                    } catch (err) {
+                        this.showToast('Failed to copy', 'error');
+                    }
+                },
+
+                showToast(message, type = 'info') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                }
+            };
+        }
+    </script>
+{% endblock %}

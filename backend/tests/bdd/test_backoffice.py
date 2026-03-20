@@ -20,6 +20,7 @@ scenarios("../../features/backoffice.feature")
 scenarios("../../features/backoffice-assembly.feature")
 scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
+scenarios("../../features/backoffice-csv-upload.feature")
 
 
 # Store assembly data between steps
@@ -1112,3 +1113,28 @@ def try_access_assembly_selection_page(page: Page, title: str, test_database):
 def see_assembly_selection_page(page: Page):
     """Verify we're on the assembly selection page."""
     expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/selection"))
+
+
+# CSV Upload Tests
+
+
+@then(parsers.parse('I should see a "{tab_name}" tab in the assembly navigation'))
+def see_tab_in_navigation(page: Page, tab_name: str):
+    """Verify a specific tab is visible in the assembly navigation."""
+    tab = page.locator("nav[aria-label] a, nav[aria-label] span").filter(has_text=tab_name)
+    expect(tab).to_be_visible()
+
+
+@then(parsers.parse('the "{tab_name}" tab should be disabled'))
+def tab_should_be_disabled(page: Page, tab_name: str):
+    """Verify a specific tab is disabled (shown as span, not a link)."""
+    # Disabled tabs are rendered as spans with data-disabled attribute, not links
+    disabled_tab = page.locator("nav[aria-label] span[data-disabled='true']").filter(has_text=tab_name)
+    expect(disabled_tab).to_be_visible()
+
+
+@then(parsers.parse('I should not see a "{tab_name}" tab in the assembly navigation'))
+def should_not_see_tab_in_navigation(page: Page, tab_name: str):
+    """Verify a specific tab is not visible in the assembly navigation."""
+    tab = page.locator("nav[aria-label] a, nav[aria-label] span").filter(has_text=tab_name)
+    expect(tab).to_have_count(0)

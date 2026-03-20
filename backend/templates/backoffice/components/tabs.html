@@ -8,6 +8,7 @@ ABOUTME: Horizontal tab navigation for switching between page sections
         - label: Display text (required)
         - href: Link URL (required)
         - active: Whether this tab is currently active (optional, default false)
+        - disabled: Whether this tab is disabled/unclickable (optional, default false)
         - Any additional attributes are passed through to the anchor element (e.g., data-proto)
 
     aria_label: Accessible label for the navigation (required)
@@ -18,6 +19,7 @@ ABOUTME: Horizontal tab navigation for switching between page sections
             items=[
                 {"label": "Details", "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
                 {"label": "Data", "href": "#", "data-proto": "click:show:data-panel"},
+                {"label": "Targets", "href": "#", "disabled": true},
                 {"label": "Selection", "href": "#"},
                 {"label": "Team Members", "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
             ],
@@ -31,12 +33,20 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                 {# Build extra attributes string from non-standard keys #}
                 {% set extra_attrs = [] %}
                 {% for key, value in item.items() %}
-                    {% if key not in ['label', 'href', 'active'] %}
+                    {% if key not in ['label', 'href', 'active', 'disabled'] %}
                         {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
                     {% endif %}
                 {% endfor %}
                 <li>
-                    {% if item.active %}
+                    {% if item.disabled %}
+                        {# Disabled tab - rendered as non-clickable span #}
+                        <span class="inline-block px-4 py-3 text-body-md font-medium -mb-px cursor-not-allowed"
+                              style="color: var(--color-secondary-text); opacity: 0.5; border-bottom: 2px solid transparent;"
+                              data-disabled="true"
+                              {{ extra_attrs | join(' ') | safe }}>
+                            {{ item.label }}
+                        </span>
+                    {% elif item.active %}
                         {# Active tab - directive handles scroll preservation #}
                         <a href="{{ item.href }}"
                            class="inline-block px-4 py-3 text-body-md font-medium -mb-px"

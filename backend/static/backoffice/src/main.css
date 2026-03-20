@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   Alpine.js Utilities
+   ======================================== */
+
+/*
+ * Hide elements with x-cloak until Alpine.js initializes.
+ * This prevents flash of unstyled content for modals, dropdowns, etc.
+ */
+[x-cloak] {
+    display: none !important;
+}
+
 /*
  * Design Tokens are loaded separately in templates:
  * - tokens/primitive.css (raw color values + @font-face + font family primitives)
