@@ -1,0 +1,391 @@
+{#
+ABOUTME: Interactive frontend patterns documentation page
+ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live examples and code
+#}
+{% extends "backoffice/base_page.html" %}
+
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/card.html" import card, card_body %}
+{% from "backoffice/components/tabs.html" import tabs %}
+
+{% block title %}{{ _("Frontend Patterns") }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Developer Tools")},
+        {"label": _("Patterns")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <div x-data="patternsController()" x-cloak>
+        {# Page Header #}
+        <div class="mb-8">
+            <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">
+                <span class="mr-2">🎨</span>{{ _("Frontend Patterns") }}
+            </h1>
+            <p class="text-body-lg" style="color: var(--color-secondary-text);">
+                {{ _("Living documentation for Alpine.js patterns used in the backoffice. Each pattern includes working examples, code snippets, and links to implementations.") }}
+            </p>
+            <p class="text-body-sm mt-2" style="color: var(--color-info-600);">
+                <span class="font-semibold">💡 {{ _("Tip") }}:</span>
+                {{ _("These patterns are CSP-compatible and work with the Alpine.js CSP build.") }}
+            </p>
+        </div>
+
+        {# Tabs for pattern categories #}
+        {{ tabs(
+        items=[
+        {"label": _("Dropdown"), "href": url_for('backoffice.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
+        {"label": _("Form State"), "href": url_for('backoffice.patterns', tab='form'), "active": active_tab == 'form'},
+        {"label": _("AJAX"), "href": url_for('backoffice.patterns', tab='ajax'), "active": active_tab == 'ajax'}
+        ],
+        aria_label=_("Pattern categories")
+        ) }}
+
+        {# ===== DROPDOWN PATTERN ===== #}
+        {% if active_tab == 'dropdown' %}
+            <div class="space-y-6">
+                {# URL Select Pattern #}
+                {% call card(title="URL Select (Navigation Dropdown)", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("A dropdown that navigates to a URL when selection changes. Uses the reusable <code>urlSelect</code> Alpine component with focus restoration for keyboard users.") | safe }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li>{{ _("Dropdown selection triggers a page navigation/reload") }}</li>
+                                <li>{{ _("Value is passed as URL query parameter") }}</li>
+                                <li>{{ _("Server-side rendering based on selection") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Example") }}
+                            </h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <div class="max-w-md"
+                                     x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.patterns', tab='dropdown') }}', paramName: 'demo', initialValue: '{{ request.args.get('demo', '') }}' })">
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Select an option") }}</label>
+                                    <select x-model="selected"
+                                            @change="navigate($event)"
+                                            data-focus-id="demo-select"
+                                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("Choose...") }}</option>
+                                        <option value="option1">{{ _("Option 1") }}</option>
+                                        <option value="option2">{{ _("Option 2") }}</option>
+                                        <option value="option3">{{ _("Option 3") }}</option>
+                                    </select>
+                                    {% if request.args.get('demo') %}
+                                        <p class="text-body-sm mt-2" style="color: var(--color-success-600);">
+                                            ✅ {{ _("Selected: %(value)s (see URL)", value=request.args.get('demo')) }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+                                <button @click="copyUrlSelectCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
+    baseUrl: '{% raw %}{{ url_for(...) }}{% endraw %}',
+    paramName: 'source',
+    initialValue: '{% raw %}{{ current_value }}{% endraw %}'
+})"&gt;
+    &lt;select x-model="selected"
+            @change="navigate($event)"
+            data-focus-id="my-select"&gt;
+        &lt;option value=""&gt;Choose...&lt;/option&gt;
+        &lt;option value="opt1"&gt;Option 1&lt;/option&gt;
+    &lt;/select&gt;
+&lt;/div&gt;</pre>
+                        </div>
+
+                        {# CSP Notes #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("CSP Compatibility Notes") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>x-model must use flat properties</strong> — <code>x-model="selected"</code> works, <code>x-model="form.field"</code> does NOT</li>
+                                <li><strong>Component options via object</strong> — Pass config as object to <code>Alpine.data()</code>, not inline expressions</li>
+                                <li><strong>No string arguments in handlers</strong> — <code>@click="doThing()"</code> works, <code>@click="doThing('arg')"</code> does NOT</li>
+                            </ul>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Line") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">229</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Component definition</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">47</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Data source selector</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">templates/backoffice/patterns.html</td>
+                                            <td class="px-3 py-2">—</td>
+                                            <td class="px-3 py-2">This documentation page</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Inline State Dropdown Pattern #}
+                {% call card(title="Inline State Dropdown (Form Binding)", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("A dropdown that binds to Alpine.js state for use in forms or interactive components. Does NOT navigate — stores value in component state.") }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li>{{ _("Selection is part of a larger form") }}</li>
+                                <li>{{ _("Value used in AJAX request or local computation") }}</li>
+                                <li>{{ _("No page reload needed") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Example") }}
+                            </h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <div class="max-w-md">
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                    <select x-model="demoAssemblyId"
+                                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("Select an assembly...") }}</option>
+                                        {% for assembly in assemblies %}
+                                            <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                        {{ _("Selected ID:") }} <code x-text="demoAssemblyId || '(none)'" class="px-1 rounded" style="background-color: var(--color-subtle-background-panels);"></code>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+                                <button @click="copyInlineSelectCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">// In your Alpine component, declare FLAT property:
+Alpine.data('myComponent', () =&gt; ({
+    assemblyId: '',  // Flat property
+    // NOT: form: { assemblyId: '' }  // Nested - won't work with CSP
+
+    executeAction() {
+        // Use the flat property
+        fetch('/api/endpoint', {
+            body: JSON.stringify({ assembly_id: this.assemblyId })
+        });
+    }
+}));
+
+// In template:
+&lt;select x-model="assemblyId"&gt;
+    &lt;option value=""&gt;Select...&lt;/option&gt;
+    {% raw %}{% for a in assemblies %}{% endraw %}
+        &lt;option value="{% raw %}{{ a.id }}{% endraw %}"&gt;{% raw %}{{ a.title }}{% endraw %}&lt;/option&gt;
+    {% raw %}{% endfor %}{% endraw %}
+&lt;/select&gt;</pre>
+                        </div>
+
+                        {# CSP Notes #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">🚫 {{ _("Common Mistake") }}</h4>
+                            <pre class="text-body-sm font-mono p-2 rounded" style="background-color: var(--color-page-background);">// ❌ THIS DOES NOT WORK with CSP build:
+x-model="forms.import.assembly_id"
+
+// ✅ USE FLAT PROPERTIES INSTEAD:
+x-model="importAssemblyId"</pre>
+                            <p class="text-body-sm mt-2" style="color: var(--color-body-text);">
+                                {{ _("The CSP-compatible Alpine.js build cannot evaluate nested property paths in x-model directives.") }}
+                            </p>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Line") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/service_docs.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">150, 326, 453, 544</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Service form dropdowns</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">templates/backoffice/assembly_data.html</td>
+                                            <td class="px-3 py-2">244</td>
+                                            <td class="px-3 py-2">Team member selector</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# ===== FORM STATE PATTERN ===== #}
+        {% if active_tab == 'form' %}
+            <div class="space-y-6">
+                {% call card(title="Form State Pattern", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Documentation for form state patterns coming soon...") }}
+                        </p>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# ===== AJAX PATTERN ===== #}
+        {% if active_tab == 'ajax' %}
+            <div class="space-y-6">
+                {% call card(title="AJAX with CSRF Pattern", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Documentation for AJAX patterns coming soon...") }}
+                        </p>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# Toast Notification #}
+        <div x-cloak x-show="toast.show" x-transition
+             class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
+             :style="toast.type === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);'">
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce }}">
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('patternsController', () => ({
+                toast: { show: false, message: '', type: 'info' },
+
+                // Demo state for inline select example
+                demoAssemblyId: '',
+
+                // Code snippets for copying
+                urlSelectCode: '<div x-data="urlSelect({\n' +
+                '    baseUrl: \'$url_for(...)$\',\n' +
+                '    paramName: \'source\',\n' +
+                '    initialValue: \'$current_value$\'\n' +
+                '})">\n' +
+                '    <select x-model="selected"\n' +
+                '            @change="navigate($event)"\n' +
+                '            data-focus-id="my-select">\n' +
+                '        <option value="">Choose...</option>\n' +
+                '        <option value="opt1">Option 1</option>\n' +
+                '    </select>\n' +
+                '</div>',
+
+                inlineSelectCode: '// In your Alpine component, declare FLAT property:\n' +
+                'Alpine.data(\'myComponent\', () => ({\n' +
+                '    assemblyId: \'\',  // Flat property\n' +
+                '    // NOT: form: { assemblyId: \'\' }  // Nested - won\'t work with CSP\n' +
+                '\n' +
+                '    executeAction() {\n' +
+                '        fetch(\'/api/endpoint\', {\n' +
+                '            body: JSON.stringify({ assembly_id: this.assemblyId })\n' +
+                '        });\n' +
+                '    }\n' +
+                '}));\n' +
+                '\n' +
+                '// In template:\n' +
+                '<select x-model="assemblyId">\n' +
+                '    <option value="">Select...</option>\n' +
+                '    {{ "{%" }} for a in assemblies {{ "%}" }}\n' +
+                '        <option value="{{ "{{" }} a.id {{ "}}" }}">{{ "{{" }} a.title {{ "}}" }}</option>\n' +
+                '    {{ "{%" }} endfor {{ "%}" }}\n' +
+                '</select>',
+
+                showToast(message, type) {
+                    this.toast = { show: true, message: message, type: type };
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                },
+
+                async copyToClipboard(text) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.showToast('Copied to clipboard!', 'success');
+                    } catch (err) {
+                        this.showToast('Failed to copy', 'error');
+                    }
+                },
+
+                copyUrlSelectCode() {
+                    this.copyToClipboard(this.urlSelectCode);
+                },
+
+                copyInlineSelectCode() {
+                    this.copyToClipboard(this.inlineSelectCode);
+                }
+            }));
+        });
+    </script>
+{% endblock %}

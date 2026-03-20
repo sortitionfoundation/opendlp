@@ -755,3 +755,37 @@ def _execute_service(service_name: str, params: dict[str, Any]) -> dict[str, Any
 
     uow = bootstrap.bootstrap()
     return handler(uow, params)
+
+
+# =============================================================================
+# Frontend Patterns Documentation (Admin-only developer tools)
+# =============================================================================
+
+
+@backoffice_bp.route("/dev/patterns")
+@login_required
+def patterns() -> ResponseReturnValue:
+    """Interactive frontend patterns documentation page.
+
+    Admin-only page that documents Alpine.js patterns, form handling,
+    and other frontend patterns used in the backoffice.
+    Disabled in production for security.
+    """
+    if config.is_production():
+        abort(404)
+
+    if not has_global_admin(current_user):
+        flash(_("You don't have permission to access developer tools"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    # Get active tab from query parameter, default to 'dropdown'
+    active_tab = request.args.get("tab", "dropdown")
+    valid_tabs = ["dropdown", "form", "ajax"]
+    if active_tab not in valid_tabs:
+        active_tab = "dropdown"
+
+    # Get assemblies for live examples
+    uow = bootstrap.bootstrap()
+    assemblies = get_user_assemblies(uow, current_user.id)
+
+    return render_template("backoffice/patterns.html", assemblies=assemblies, active_tab=active_tab), 200
