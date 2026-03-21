@@ -106,6 +106,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            non_pool_count = count_non_pool_respondents(uow, assembly_id)
 
         if not csv_config.settings_confirmed:
             flash(_("Please review and save the selection settings before checking targets."), "warning")
@@ -121,6 +122,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config=csv_config,
             current_tab="db_selection",
             check_result=check_result,
+            non_pool_count=non_pool_count,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")
