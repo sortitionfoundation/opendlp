@@ -25,6 +25,7 @@ from opendlp.service_layer.respondent_service import (
     get_respondent_attribute_columns,
     get_respondent_attribute_value_counts,
 )
+from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.translations import gettext as _
 
 from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueForm, UploadTargetsCsvForm
@@ -726,4 +727,62 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route("/assemblies/<uuid:assembly_id>/targets/check", methods=["POST"])
+@login_required
+def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    try:
+        uow = bootstrap.bootstrap()
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        uow2 = bootstrap.bootstrap()
+        with uow2:
+            check_result = check_targets_detailed(uow2, current_user.id, assembly_id)
+
+        uow3 = bootstrap.bootstrap()
+        target_categories = get_targets_for_assembly(uow3, current_user.id, assembly_id)
+
+        upload_form = UploadTargetsCsvForm()
+        add_category_form = AddTargetCategoryForm()
+        value_form = TargetValueForm()
+        can_manage = _can_manage(assembly_id)
+
+        attribute_columns = _get_respondent_attribute_columns(assembly_id)
+        respondent_counts = _build_respondent_counts(assembly_id, target_categories, attribute_columns)
+
+        id_column = ""
+        if assembly.csv is not None:
+            id_column = assembly.csv.id_column
+
+        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+
+        return render_template(
+            "targets/view_targets.html",
+            assembly=assembly,
+            assembly_id=assembly_id,
+            target_categories=target_categories,
+            form=upload_form,
+            add_category_form=add_category_form,
+            value_form=value_form,
+            can_manage=can_manage,
+            current_tab="targets",
+            respondent_attribute_columns=attribute_columns,
+            all_respondent_counts=respondent_counts,
+            id_column=id_column,
+            column_distinct_counts=column_distinct_counts,
+            check_result=check_result,
+        ), 200
+
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("main.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Error checking targets for assembly {assembly_id}: {e}")
+        current_app.logger.exception("stacktrace")
+        flash(_("An unexpected error occurred while checking targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

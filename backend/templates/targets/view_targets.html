@@ -9,10 +9,82 @@
         <p class="govuk-body">{{ _("No target categories defined yet.") }}</p>
     {% endif %}
 
+    {# ── Check Targets Button ────────────────────────────── #}
+    {% if target_categories %}
+        <form method="post"
+              action="{{ url_for('targets.check_targets', assembly_id=assembly.id) }}"
+              class="govuk-!-margin-bottom-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button">
+                {{ _("Check targets in detail") }}
+            </button>
+        </form>
+    {% endif %}
+
+    {# ── Check Result Display ────────────────────────────── #}
+    {% if check_result is defined and check_result %}
+        {% if check_result.success %}
+            <div class="govuk-notification-banner govuk-notification-banner--success" role="alert">
+                <div class="govuk-notification-banner__header">
+                    <h2 class="govuk-notification-banner__title">{{ _("All checks passed") }}</h2>
+                </div>
+                <div class="govuk-notification-banner__content">
+                    <p class="govuk-body">
+                        {{ _("Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                        num_features=check_result.num_features,
+                        num_people=check_result.num_people) }}
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            {% if check_result.global_errors %}
+                <div class="govuk-error-summary" data-module="govuk-error-summary">
+                    <div role="alert">
+                        <h2 class="govuk-error-summary__title">{{ _("Target check found problems") }}</h2>
+                        <div class="govuk-error-summary__body">
+                            <ul class="govuk-list govuk-error-summary__list">
+                                {% for error_msg in check_result.global_errors %}
+                                    <li>{{ error_msg }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% elif not check_result.annotations and not check_result.category_annotations %}
+                <div class="govuk-error-summary" data-module="govuk-error-summary">
+                    <div role="alert">
+                        <h2 class="govuk-error-summary__title">{{ _("Target check found problems") }}</h2>
+                        <div class="govuk-error-summary__body">
+                            <p class="govuk-body">{{ _("See details below next to the affected targets.") }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="govuk-error-summary" data-module="govuk-error-summary">
+                    <div role="alert">
+                        <h2 class="govuk-error-summary__title">{{ _("Target check found problems") }}</h2>
+                        <div class="govuk-error-summary__body">
+                            {% if check_result.global_errors %}
+                                <ul class="govuk-list govuk-error-summary__list">
+                                    {% for error_msg in check_result.global_errors %}
+                                        <li>{{ error_msg }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            <p class="govuk-body">{{ _("See details below next to the affected targets.") }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
     {# ── Category Blocks ─────────────────────────────────── #}
     <div id="target-categories">
         {% for category in target_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+            {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
+            {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
             {% include "targets/components/category_block.html" %}
         {% endfor %}
     </div>

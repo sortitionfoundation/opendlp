@@ -3,6 +3,7 @@ ABOUTME: Tests viewing targets, adding/editing/deleting categories and values, a
 
 import io
 
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole
@@ -578,6 +579,92 @@ class TestAddCategoriesFromColumns:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("No columns selected" in msg for msg in flash_messages)
+
+
+class TestCheckTargets:
+    def test_check_button_visible_when_targets_exist(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=existing_assembly.id, csv_content=csv_content
+            )
+
+        response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/targets")
+        assert response.status_code == 200
+        assert b"Check targets in detail" in response.data
+
+    def test_check_button_hidden_when_no_targets(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/targets")
+        assert response.status_code == 200
+        assert b"Check targets in detail" not in response.data
+
+    def test_check_with_valid_data_shows_success(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=existing_assembly.id, csv_content=csv_content
+            )
+
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [(f"p{i}", {"Gender": "Male" if i % 2 == 0 else "Female"}) for i in range(20)],
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = uow.assemblies.get(existing_assembly.id)
+            assembly.number_to_select = 10
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+            uow.commit()
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/check",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"All checks passed" in response.data
+
+    def test_check_with_insufficient_respondents_shows_error(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = "feature,value,min,max\nGender,Male,5,7\nGender,Female,5,7\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=existing_assembly.id, csv_content=csv_content
+            )
+
+        # Only 1 female, but min is 5
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [("p0", {"Gender": "Female"})] + [(f"p{i}", {"Gender": "Male"}) for i in range(1, 20)],
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = uow.assemblies.get(existing_assembly.id)
+            assembly.number_to_select = 10
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+            uow.commit()
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/check",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Target check found problems" in response.data
+        # Should have inline error annotation for "female"
+        assert b"respondents match" in response.data
+
+    def test_check_requires_login(self, client, existing_assembly):
+        response = client.post(f"/assemblies/{existing_assembly.id}/targets/check")
+        assert response.status_code == 302
+        assert "login" in response.location
 
 
 class TestViewerPermissions:

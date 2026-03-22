@@ -45,6 +45,22 @@
         </div>
     </div>
 
+    {# ── Category-level Annotations ──────────────────── #}
+    {% if category_annotation_list is defined and category_annotation_list %}
+        {% for ann in category_annotation_list %}
+            {% if ann.level == "error" %}
+                <div class="govuk-error-message govuk-!-margin-bottom-2">{{ ann.message }}</div>
+            {% elif ann.level == "warning" %}
+                <div class="govuk-warning-text govuk-!-margin-bottom-2">
+                    <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                    <strong class="govuk-warning-text__text">{{ ann.message }}</strong>
+                </div>
+            {% elif ann.level == "suggestion" %}
+                <p class="govuk-body govuk-!-margin-bottom-2"><strong class="govuk-tag govuk-tag--yellow">{{ _("Suggestion") }}</strong> {{ ann.message }}</p>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     {# ── Values Table ─────────────────────────────────── #}
     {% if category.values %}
         <table class="govuk-table">
@@ -156,6 +172,22 @@
                             </td>
                         </template>
                     </tr>
+                    {# ── Value Annotations Row ── #}
+                    {% if value_annotations is defined and value_annotations.get(val.value) %}
+                        <tr class="govuk-table__row">
+                            <td colspan="{{ col_count }}" class="govuk-table__cell" style="border-top: none; padding-top: 0;">
+                                {% for ann in value_annotations[val.value] %}
+                                    {% if ann.level == "error" %}
+                                        <p class="govuk-error-message govuk-!-margin-bottom-1">{{ ann.message }}</p>
+                                    {% elif ann.level == "suggestion" %}
+                                        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong class="govuk-tag govuk-tag--yellow">{{ _("Suggestion") }}</strong> {{ ann.message }}</p>
+                                    {% elif ann.level == "warning" %}
+                                        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong class="govuk-tag govuk-tag--orange">{{ _("Warning") }}</strong> {{ ann.message }}</p>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
             <tfoot class="govuk-table__head">
