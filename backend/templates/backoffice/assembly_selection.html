@@ -43,7 +43,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% endif %}
     {% if not gsheet %}
         {# No Google Sheet configured - show configuration prompt #}
-        {{ alert(_("Please configure a Google Spreadsheet in the Data tab before running selection.") , variant="warning") }}
+        {{ alert(_("Please use the Data tab to tell us about your data, before running a selection.") , variant="warning") }}
         <section class="flex gap-4">
             {{ button(_("Configure Data Source") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
             {{ button(_("Back to Dashboard") , href=url_for('backoffice.dashboard'), variant="outline") }}

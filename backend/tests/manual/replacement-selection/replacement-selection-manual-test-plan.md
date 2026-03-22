@@ -82,7 +82,7 @@ Share with the service account email (Editor permission for write operations).
 1. Navigate directly to `/backoffice/assembly/<id>/replacement`
 
 **Expected Results:**
-- [ ] Warning alert: "Please configure a Google Spreadsheet in the Data tab before running replacement selection."
+- [ ] Warning alert: "Please use the Data tab to tell us about your data, before running a selection."
 - [ ] "Configure Data Source" button visible
 - [ ] "Back to Selection" button visible
 - [ ] No replacement form visible

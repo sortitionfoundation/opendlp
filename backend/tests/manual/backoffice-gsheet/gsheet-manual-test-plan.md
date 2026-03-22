@@ -426,7 +426,7 @@ After testing, clean up:
 1. Navigate to assembly Selection tab
 
 **Expected Results:**
-- [ ] Warning alert displayed: "Please configure a Google Spreadsheet in the Data tab before running selection."
+- [ ] Warning alert displayed: "Please use the Data tab to tell us about your data, before running a selection."
 - [ ] "Configure Data Source" button visible and links to Data tab
 - [ ] "Back to Dashboard" button visible
 - [ ] No selection cards visible (Initial Selection, Replacement, Manage Tabs)

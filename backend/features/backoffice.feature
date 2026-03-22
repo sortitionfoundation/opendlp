@@ -52,7 +52,7 @@ Feature: Backoffice Dashboard
     Given I am logged in as an admin user
     And there is an assembly called "Selection No GSheet Assembly"
     When I visit the assembly selection page for "Selection No GSheet Assembly"
-    Then I should see "Please configure a Google Spreadsheet"
+    Then I should see "Please use the Data tab to tell us about your data"
     And I should see the "Configure Data Source" button
     And I should not see "Initial Selection"
 
