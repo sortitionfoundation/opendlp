@@ -5,7 +5,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, checkbox, radio_group, first_error as e %}
+{% from "backoffice/components/input.html" import input, checkbox, radio_group, file_input, first_error as e %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
@@ -33,7 +33,8 @@ ABOUTME: Displays data source selection and data management for assemblies
     data_source=data_source,
     gsheet=gsheet,
     targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false)
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
     ) }}
 
     {# Data Source Selector #}
@@ -328,11 +329,115 @@ ABOUTME: Displays data source selection and data management for assemblies
 
 {# CSV file content macro #}
 {% macro render_csv_content() %}
+    {% set has_targets = csv_status.has_targets|default(false) if csv_status else false %}
+    {% set has_respondents = csv_status.has_respondents|default(false) if csv_status else false %}
+    {% set targets_count = csv_status.targets_count|default(0) if csv_status else 0 %}
+    {% set respondents_count = csv_status.respondents_count|default(0) if csv_status else 0 %}
+
     <section class="mb-8">
-        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("CSV File") }}</h2>
-        <p class="text-body-md" style="color: var(--color-secondary-text);">
-            {{ _("Upload a CSV file to import participant data.") }}
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("CSV Files Upload") }}</h2>
+        <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+            {{ _("Upload CSV files to import participant data. Upload targets first, then people.") }}
         </p>
-        {# TODO: Add CSV upload UI #}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {# Target Upload Card #}
+            <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Target") }}</h3>
+                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("Upload target categories for selection criteria.") }}
+                </p>
+
+                {% if has_targets %}
+                    {# Show uploaded status #}
+                    <div class="flex items-center gap-2 mb-4 p-3 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-success-green);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span class="text-body-sm" style="color: var(--color-body-text);">
+                            {{ _("%(count)d categories uploaded", count=targets_count) }}
+                        </span>
+                    </div>
+                    {# Delete button #}
+                    <form method="post" action="{{ url_for('backoffice.delete_targets', assembly_id=assembly.id) }}"
+                          x-data
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete all targets? This action cannot be undone.") }}', $el)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ button(_("Delete Targets"), type="submit", variant="danger") }}
+                    </form>
+                {% else %}
+                    {# Upload form #}
+                    <form method="post" action="{{ url_for('backoffice.upload_targets_csv', assembly_id=assembly.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ file_input(
+                        name="file",
+                        label=_("CSV File"),
+                        accept=".csv",
+                        required=true,
+                        hint=_("Select a CSV file with target categories.")
+                        ) }}
+                        <div class="mt-4">
+                            {{ button(_("Upload"), type="submit", variant="primary") }}
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+
+            {# People Upload Card #}
+            <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("People") }}</h3>
+                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("Upload respondent data for selection.") }}
+                </p>
+
+                {% if has_respondents %}
+                    {# Show uploaded status #}
+                    <div class="flex items-center gap-2 mb-4 p-3 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-success-green);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span class="text-body-sm" style="color: var(--color-body-text);">
+                            {{ _("%(count)d respondents uploaded", count=respondents_count) }}
+                        </span>
+                    </div>
+                    {# Delete button #}
+                    <form method="post" action="{{ url_for('backoffice.delete_respondents', assembly_id=assembly.id) }}"
+                          x-data
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete all respondents? This action cannot be undone.") }}', $el)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ button(_("Delete Respondents"), type="submit", variant="danger") }}
+                    </form>
+                {% elif has_targets %}
+                    {# Upload form (only enabled after targets uploaded) #}
+                    <form method="post" action="{{ url_for('backoffice.upload_respondents_csv', assembly_id=assembly.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ file_input(
+                        name="file",
+                        label=_("CSV File"),
+                        accept=".csv",
+                        required=true,
+                        hint=_("Select a CSV file with respondent data.")
+                        ) }}
+                        <div class="mt-4">
+                            {{ button(_("Upload"), type="submit", variant="primary") }}
+                        </div>
+                    </form>
+                {% else %}
+                    {# Disabled state - targets not yet uploaded #}
+                    <div class="opacity-50">
+                        {{ file_input(
+                        name="file",
+                        label=_("CSV File"),
+                        accept=".csv",
+                        disabled=true,
+                        hint=_("Upload targets first before uploading people.")
+                        ) }}
+                        <div class="mt-4">
+                            {{ button(_("Upload"), type="submit", variant="primary", disabled=true) }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </section>
 {% endmacro %}

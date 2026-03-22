@@ -18,6 +18,7 @@ from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
     get_assembly_gsheet,
     get_assembly_with_permissions,
+    get_csv_upload_status,
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
@@ -209,10 +210,30 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
         edit_number_modal_open = request.args.get("edit_number") == "1"
 
+        # Get CSV status for tab enabled states
+        csv_status = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
+
         # Determine data source and tab enabled states
-        data_source = "gsheet" if gsheet else ""
-        targets_enabled = gsheet is not None
-        respondents_enabled = gsheet is not None
+        if gsheet:
+            data_source = "gsheet"
+            targets_enabled = True
+            respondents_enabled = True
+            selection_enabled = True
+        elif csv_status and (csv_status.get("has_targets") or csv_status.get("has_respondents")):
+            data_source = "csv"
+            targets_enabled = csv_status.get("has_targets", False)
+            respondents_enabled = csv_status.get("has_respondents", False)
+            selection_enabled = targets_enabled and respondents_enabled
+        else:
+            data_source = ""
+            targets_enabled = False
+            respondents_enabled = False
+            selection_enabled = False
 
         return render_template(
             "backoffice/assembly_selection.html",
@@ -242,6 +263,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             data_source=data_source,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")

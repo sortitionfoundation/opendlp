@@ -868,3 +868,110 @@ def update_csv_config(
         uow.commit()
 
         return csv_config.create_detached_copy()
+
+
+def get_csv_upload_status(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> dict[str, Any]:
+    """Get CSV upload status for an assembly.
+
+    Returns a dict with:
+        - has_targets: bool - whether any targets have been uploaded
+        - targets_count: int - number of target categories
+        - has_respondents: bool - whether any respondents have been uploaded
+        - respondents_count: int - number of respondents
+        - csv_config: AssemblyCSV | None - the CSV config if exists
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view CSV upload status",
+                required_role="assembly role or global privileges",
+            )
+
+        # Get targets count
+        targets = uow.target_categories.get_by_assembly_id(assembly_id)
+        targets_count = len(targets)
+
+        # Get respondents count
+        respondents = uow.respondents.get_by_assembly_id(assembly_id)
+        respondents_count = len(respondents)
+
+        # Get CSV config if exists
+        csv_config = assembly.csv.create_detached_copy() if assembly.csv else None
+
+        return {
+            "has_targets": targets_count > 0,
+            "targets_count": targets_count,
+            "has_respondents": respondents_count > 0,
+            "respondents_count": respondents_count,
+            "csv_config": csv_config,
+        }
+
+
+def delete_targets_for_assembly(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> int:
+    """Delete all target categories for an assembly.
+
+    Returns the number of categories deleted.
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="delete targets",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        count = uow.target_categories.delete_all_for_assembly(assembly_id)
+        uow.commit()
+        return count
+
+
+def delete_respondents_for_assembly(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> int:
+    """Delete all respondents for an assembly.
+
+    Returns the number of respondents deleted.
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="delete respondents",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        count = uow.respondents.delete_all_for_assembly(assembly_id)
+        uow.commit()
+        return count

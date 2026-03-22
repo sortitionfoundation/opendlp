@@ -4,7 +4,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
 #}
 {% from "backoffice/components/tabs.html" import tabs %}
 
-{% macro assembly_tabs(assembly, active_tab, data_source="", gsheet=none, targets_enabled=false, respondents_enabled=false) %}
+{% macro assembly_tabs(assembly, active_tab, data_source="", gsheet=none, targets_enabled=false, respondents_enabled=false, selection_enabled=false) %}
     {#
     Render consistent assembly navigation tabs across all assembly pages.
 
@@ -15,11 +15,12 @@ ABOUTME: Ensures consistent tab display across all assembly pages
         gsheet: Google Sheet configuration object (if exists)
         targets_enabled: Whether the Targets tab should be clickable
         respondents_enabled: Whether the Respondents tab should be clickable
+        selection_enabled: Whether the Selection tab should be clickable
 
     Usage:
         assembly_tabs(assembly, "details")
         assembly_tabs(assembly, "data", data_source="csv", targets_enabled=false)
-        assembly_tabs(assembly, "targets", data_source="gsheet", gsheet=gsheet, targets_enabled=true)
+        assembly_tabs(assembly, "targets", data_source="gsheet", gsheet=gsheet, targets_enabled=true, selection_enabled=true)
     #}
     {% set source_param = "?source=" ~ data_source if data_source else "" %}
 
@@ -50,7 +51,8 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     {
     "label": _("Selection"),
     "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ~ source_param,
-    "active": active_tab == "selection"
+    "active": active_tab == "selection",
+    "disabled": not selection_enabled
     },
     {
     "label": _("Team Members"),

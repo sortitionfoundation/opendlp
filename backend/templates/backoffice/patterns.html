@@ -470,7 +470,8 @@ def upload_csv():
                                 <li><strong>enctype="multipart/form-data"</strong> — {{ _("Required for file uploads") }}</li>
                                 <li><strong>utf-8-sig</strong> — {{ _("Handles BOM (byte order mark) in CSV files from Excel") }}</li>
                                 <li><strong>{{ _("Service layer receives string") }}</strong> — {{ _("Not the file object, for testability") }}</li>
-                                <li><strong>{{ _("CSRF token") }}</strong> — {{ _("form.hidden_tag() includes it automatically") }}</li>
+                                <li><strong>{{ _("CSRF token") }}</strong> — {{ _("form.hidden_tag() includes it automatically for Flask-WTF forms") }}</li>
+                                <li><strong>{{ _("Plain HTML forms") }}</strong> — {{ _("Add manual CSRF input:") }} <code>&lt;input type="hidden" name="csrf_token" value="&#123;&#123; csrf_token() &#125;&#125;"/&gt;</code></li>
                             </ul>
                         </div>
 
@@ -505,9 +506,29 @@ def upload_csv():
                                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">upload_respondents_csv route</td>
                                         </tr>
                                         <tr>
-                                            <td class="px-3 py-2 font-mono">templates/respondents/view_respondents.html</td>
-                                            <td class="px-3 py-2">27</td>
-                                            <td class="px-3 py-2">File upload form (old design)</td>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/respondents/view_respondents.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">27</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">File upload form (old design)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">370</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Upload targets CSV form (plain HTML)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">412</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Upload respondents CSV form (plain HTML)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/backoffice.py</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">325</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">upload_targets_csv route</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">src/opendlp/entrypoints/blueprints/backoffice.py</td>
+                                            <td class="px-3 py-2">414</td>
+                                            <td class="px-3 py-2">upload_respondents_csv route</td>
                                         </tr>
                                     </tbody>
                                 </table>

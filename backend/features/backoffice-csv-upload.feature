@@ -52,3 +52,46 @@ Feature: Backoffice CSV Upload
     When I visit the assembly data page for "CSV Targets Assembly" with source "csv"
     Then I should see a "Targets" tab in the assembly navigation
     And the "Targets" tab should be disabled
+
+  # CSV Upload Panel Tests
+
+  Scenario: CSV upload section appears when CSV source is selected
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV Upload Section Test"
+    When I visit the assembly data page for "CSV Upload Section Test" with source "csv"
+    Then I should see "CSV Files Upload"
+    And I should see "Target"
+    And I should see "People"
+
+  Scenario: Target upload button is active and People upload is disabled initially
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV Initial Upload State"
+    When I visit the assembly data page for "CSV Initial Upload State" with source "csv"
+    Then the Target upload button should be enabled
+    And the People upload button should be disabled
+
+  Scenario: After uploading targets, People upload becomes active
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV With Targets"
+    And the assembly "CSV With Targets" has targets uploaded
+    When I visit the assembly data page for "CSV With Targets"
+    Then the People upload button should be enabled
+    And the data source selector should be disabled
+
+  Scenario: Targets tab is enabled after targets uploaded
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV Targets Tab Enable"
+    And the assembly "CSV Targets Tab Enable" has targets uploaded
+    When I visit the assembly data page for "CSV Targets Tab Enable"
+    Then the "Targets" tab should be enabled
+    And the "Respondents" tab should be disabled
+
+  Scenario: Both tabs enabled after both CSVs uploaded
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV Both Uploaded"
+    And the assembly "CSV Both Uploaded" has targets uploaded
+    And the assembly "CSV Both Uploaded" has respondents uploaded
+    When I visit the assembly data page for "CSV Both Uploaded"
+    Then the "Targets" tab should be enabled
+    And the "Respondents" tab should be enabled
+    And the data source selector should be disabled

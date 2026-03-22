@@ -535,6 +535,11 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
     def bulk_add(self, items: list[Respondent]) -> None:
         self._items.extend(items)
 
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        before = len(self._items)
+        self._items = [r for r in self._items if r.assembly_id != assembly_id]
+        return before - len(self._items)
+
     def bulk_mark_as_selected(
         self,
         assembly_id: uuid.UUID,

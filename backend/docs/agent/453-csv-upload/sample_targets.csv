@@ -1,0 +1,10 @@
+feature,value,min,max,min_flex,max_flex
+Gender,Male,4,6,4,6
+Gender,Female,4,6,4,6
+Age,18-35,3,5,3,5
+Age,36-55,3,5,3,5
+Age,56+,2,4,2,4
+Region,North,2,4,2,4
+Region,South,2,4,2,4
+Region,East,2,4,2,4
+Region,West,2,4,2,4

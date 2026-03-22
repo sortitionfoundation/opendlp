@@ -909,6 +909,15 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
     def bulk_add(self, items: list[Respondent]) -> None:
         self.session.bulk_save_objects(items)
 
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        """Delete all respondents for an assembly."""
+        respondents = self.get_by_assembly_id(assembly_id)
+        count = len(respondents)
+        for respondent in respondents:
+            self.session.delete(respondent)
+        self.session.flush()
+        return count
+
     def bulk_mark_as_selected(
         self,
         assembly_id: uuid.UUID,

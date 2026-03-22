@@ -30,7 +30,8 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     data_source=data_source|default(""),
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false)
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
     ) }}
     {# Selection Progress Modal - shown when current_selection parameter is present #}
     {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
@@ -45,7 +46,13 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% if edit_number_modal_open %}
         {% include "backoffice/components/edit_number_to_select_modal.html" %}
     {% endif %}
-    {% if not gsheet %}
+    {% if data_source == "csv" %}
+        {# CSV source - placeholder for future implementation #}
+        {{ alert(_("CSV based selection will be implemented here."), variant="info") }}
+        <section class="flex gap-4">
+            {{ button(_("Back to Dashboard") , href=url_for('backoffice.dashboard'), variant="outline") }}
+        </section>
+    {% elif not gsheet %}
         {# No Google Sheet configured - show configuration prompt #}
         {{ alert(_("Please use the Data tab to tell us about your data, before running a selection.") , variant="warning") }}
         <section class="flex gap-4">

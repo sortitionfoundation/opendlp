@@ -21,8 +21,11 @@ from opendlp.entrypoints.forms import (
 )
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    delete_respondents_for_assembly,
+    delete_targets_for_assembly,
     get_assembly_gsheet,
     get_assembly_with_permissions,
+    get_csv_upload_status,
     get_or_create_csv_config,
     import_targets_from_csv,
     update_assembly,
@@ -112,10 +115,19 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception:  # noqa: S110
             pass  # No gsheet config exists - this is expected for new assemblies
 
+        # Get CSV status
+        csv_status = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
+
         # Determine data source and tab enabled states
-        data_source = "gsheet" if gsheet else ""
-        targets_enabled = gsheet is not None
-        respondents_enabled = gsheet is not None
+        data_source, _locked = _determine_data_source(gsheet, csv_status)
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
 
         return render_template(
             "backoffice/assembly_details.html",
@@ -124,6 +136,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -200,6 +213,35 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _determine_data_source(gsheet: Any, csv_status: dict[str, Any] | None) -> tuple[str, bool]:
+    """Determine data source and whether it's locked based on existing configs."""
+    if gsheet:
+        return "gsheet", True
+    if csv_status and (csv_status.get("has_targets") or csv_status.get("has_respondents")):
+        return "csv", True
+    # No config exists - allow user to choose source from query param
+    data_source = request.args.get("source", "")
+    if data_source not in ("gsheet", "csv", ""):
+        data_source = ""
+    return data_source, False
+
+
+def _get_tab_enabled_states(
+    data_source: str, gsheet: Any, csv_status: dict[str, Any] | None
+) -> tuple[bool, bool, bool]:
+    """Determine whether targets, respondents, and selection tabs should be enabled."""
+    if data_source == "gsheet":
+        enabled = gsheet is not None
+        return enabled, enabled, enabled
+    if data_source == "csv":
+        has_targets = csv_status.get("has_targets", False) if csv_status else False
+        has_respondents = csv_status.get("has_respondents", False) if csv_status else False
+        # Selection requires both targets and respondents
+        selection_enabled = has_targets and has_respondents
+        return has_targets, has_respondents, selection_enabled
+    return False, False, False
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
 @login_required
 def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -238,11 +280,6 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
     try:
-        # Initialize context
-        gsheet = None
-        gsheet_mode = "new"
-        gsheet_form = None
-        data_source_locked = False
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
         # Get assembly with permissions
@@ -250,38 +287,37 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        # Always check if gsheet config exists - if so, lock to gsheet source
+        # Get gsheet config if exists
+        gsheet = None
         try:
             uow_gsheet = bootstrap.bootstrap()
             gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
         except Exception as gsheet_error:
             current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
-            current_app.logger.exception("Gsheet loading stacktrace:")
-            gsheet = None
 
-        # If gsheet config exists, force gsheet source and lock the selector
-        if gsheet:
-            data_source = "gsheet"
-            data_source_locked = True
-        else:
-            # No config exists - allow user to choose source from query param
-            data_source = request.args.get("source", "")
-            if data_source not in ("gsheet", "csv", ""):
-                data_source = ""
+        # Get CSV upload status
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception as csv_error:
+            current_app.logger.error(f"Error loading CSV status: {csv_error}")
+            csv_status = {"has_targets": False, "targets_count": 0, "has_respondents": False, "respondents_count": 0}
+
+        # Determine data source and locking
+        data_source, data_source_locked = _determine_data_source(gsheet, csv_status)
 
         # Set up gsheet form if gsheet source is selected
+        gsheet_mode = "new"
+        gsheet_form = None
         if data_source == "gsheet":
             mode_param = request.args.get("mode", "")
-            # Config exists: default to view, allow edit. No config: always show new form
             gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
-            # Create form based on mode - form has defaults built in
             gsheet_form = EditAssemblyGSheetForm(obj=gsheet) if gsheet else CreateAssemblyGSheetForm()
 
         # Determine tab enabled states
-        # For gsheet: enabled if gsheet config exists
-        # For CSV: would be enabled if targets/respondents CSV uploaded (future implementation)
-        targets_enabled = gsheet is not None if data_source == "gsheet" else False
-        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
 
         return render_template(
             "backoffice/assembly_data.html",
@@ -294,6 +330,8 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             google_service_account_email=google_service_account_email,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
+            csv_status=csv_status,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -308,6 +346,199 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly data"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+# =============================================================================
+# CSV Upload Routes
+# =============================================================================
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/data/upload-targets", methods=["POST"])
+@login_required
+def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Upload targets CSV file for an assembly."""
+    try:
+        # Check if file was uploaded
+        if "file" not in request.files:
+            flash(_("No file selected"), "error")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+        file = request.files["file"]
+        if file.filename == "":
+            flash(_("No file selected"), "error")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+        # Read CSV content
+        csv_content = file.read().decode("utf-8")
+
+        # Import targets using service function
+        uow = bootstrap.bootstrap()
+        with uow:
+            categories = import_targets_from_csv(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                csv_content=csv_content,
+                replace_existing=True,
+            )
+
+        flash(
+            _("Targets uploaded successfully: %(count)d categories", count=len(categories)),
+            "success",
+        )
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid CSV format for targets upload assembly {assembly_id}: {e}")
+        flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to upload targets for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to upload targets"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for targets upload: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Upload targets error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while uploading targets"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
+@login_required
+def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Delete all targets for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            count = delete_targets_for_assembly(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+
+        flash(_("Targets deleted: %(count)d categories removed", count=count), "success")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to delete targets for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to delete targets"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for targets deletion: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Delete targets error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while deleting targets"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents", methods=["POST"])
+@login_required
+def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Upload respondents (people) CSV file for an assembly."""
+    try:
+        # Check if file was uploaded
+        if "file" not in request.files:
+            flash(_("No file selected"), "error")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+        file = request.files["file"]
+        if file.filename == "":
+            flash(_("No file selected"), "error")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+        # Read CSV content
+        csv_content = file.read().decode("utf-8")
+
+        # Import respondents using service function
+        uow = bootstrap.bootstrap()
+        with uow:
+            respondents, errors, _id_column = import_respondents_from_csv(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                csv_content=csv_content,
+                replace_existing=True,
+            )
+
+        if errors:
+            flash(
+                _(
+                    "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors",
+                    count=len(respondents),
+                    errors=len(errors),
+                ),
+                "warning",
+            )
+        else:
+            flash(
+                _("Respondents uploaded successfully: %(count)d imported", count=len(respondents)),
+                "success",
+            )
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+    except InvalidSelection as e:
+        current_app.logger.warning(f"Invalid CSV format for respondents upload assembly {assembly_id}: {e}")
+        flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to upload respondents for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to upload respondents"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for respondents upload: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Upload respondents error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while uploading respondents"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/data/delete-respondents", methods=["POST"])
+@login_required
+def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Delete all respondents for an assembly."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            count = delete_respondents_for_assembly(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+
+        flash(_("Respondents deleted: %(count)d removed", count=count), "success")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to delete respondents for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to delete respondents"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for respondents deletion: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Delete respondents error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while deleting respondents"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/targets")
@@ -328,20 +559,21 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception:  # noqa: S110
             pass  # No gsheet config exists - this is expected for new assemblies
 
+        # Get CSV status
+        csv_status = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
+
         # Determine data source
-        if gsheet:
-            data_source = "gsheet"
-        else:
-            data_source = request.args.get("source", "")
-            if data_source not in ("gsheet", "csv", ""):
-                data_source = ""
+        data_source, _locked = _determine_data_source(gsheet, csv_status)
 
-        # Targets tab is enabled if gsheet exists (for gsheet source)
-        # For CSV source, it would be enabled if targets CSV has been uploaded (future implementation)
-        targets_enabled = gsheet is not None if data_source == "gsheet" else False
-
-        # Respondents tab enabled logic (for now, same as targets for gsheet)
-        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+        # Tab enabled states
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
 
         return render_template(
             "backoffice/assembly_targets.html",
@@ -350,6 +582,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -384,17 +617,21 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception:  # noqa: S110
             pass  # No gsheet config exists - this is expected for new assemblies
 
-        # Determine data source
-        if gsheet:
-            data_source = "gsheet"
-        else:
-            data_source = request.args.get("source", "")
-            if data_source not in ("gsheet", "csv", ""):
-                data_source = ""
+        # Get CSV status
+        csv_status = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
 
-        # Tab enabled logic
-        targets_enabled = gsheet is not None if data_source == "gsheet" else False
-        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+        # Determine data source
+        data_source, _locked = _determine_data_source(gsheet, csv_status)
+
+        # Tab enabled states
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
 
         return render_template(
             "backoffice/assembly_respondents.html",
@@ -403,6 +640,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -444,10 +682,19 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except Exception:  # noqa: S110
             pass  # No gsheet config exists - this is expected for new assemblies
 
+        # Get CSV status
+        csv_status = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
+
         # Determine data source and tab enabled states
-        data_source = "gsheet" if gsheet else ""
-        targets_enabled = gsheet is not None
-        respondents_enabled = gsheet is not None
+        data_source, _locked = _determine_data_source(gsheet, csv_status)
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
 
         add_user_form = AddUserToAssemblyForm()
 
@@ -462,6 +709,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")

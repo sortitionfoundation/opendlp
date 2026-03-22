@@ -2,12 +2,15 @@
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
 import re
+import uuid
 
 import pytest
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -1169,3 +1172,76 @@ def visit_assembly_respondents_page(page: Page, title: str, test_database):
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_respondents_assembly_url(assembly_id))
+
+
+@given(parsers.parse('the assembly "{title}" has targets uploaded'))
+def assembly_has_targets_uploaded(title: str, test_database):
+    """Create target categories for an assembly to simulate CSV upload."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if not assembly_id:
+        return
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        # Create sample target categories
+        category = TargetCategory(
+            assembly_id=uuid.UUID(assembly_id),
+            name="Gender",
+            sort_order=0,
+        )
+        category.values = [
+            TargetValue(value="Male", min=10, max=20),
+            TargetValue(value="Female", min=10, max=20),
+        ]
+        uow.target_categories.add(category)
+        uow.commit()
+
+
+@given(parsers.parse('the assembly "{title}" has respondents uploaded'))
+def assembly_has_respondents_uploaded(title: str, test_database):
+    """Create respondents for an assembly to simulate CSV upload."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if not assembly_id:
+        return
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        # Create sample respondents
+        respondents = []
+        for i in range(5):
+            respondent = Respondent(
+                assembly_id=uuid.UUID(assembly_id),
+                external_id=f"test-{i}",
+                attributes={"name": f"Test Person {i}", "Gender": "Male" if i % 2 == 0 else "Female"},
+            )
+            respondents.append(respondent)
+        uow.respondents.bulk_add(respondents)
+        uow.commit()
+
+
+@then("the Target upload button should be enabled")
+def target_upload_button_enabled(page: Page):
+    """Verify the Target section has an enabled upload button."""
+    # Look for an enabled submit button in the Target section
+    target_section = page.locator("text=Target").locator("..").locator("..")
+    upload_button = target_section.locator("button[type='submit'], input[type='submit']").first
+    expect(upload_button).to_be_enabled()
+
+
+@then("the People upload button should be disabled")
+def people_upload_button_disabled(page: Page):
+    """Verify the People section has a disabled upload button."""
+    # Look for a disabled button in the People section
+    people_section = page.locator("text=People").locator("..").locator("..")
+    disabled_button = people_section.locator("button[disabled], span[data-disabled='true']").first
+    expect(disabled_button).to_be_visible()
+
+
+@then("the People upload button should be enabled")
+def people_upload_button_enabled(page: Page):
+    """Verify the People section has an enabled upload button."""
+    people_section = page.locator("text=People").locator("..").locator("..")
+    upload_button = people_section.locator("button[type='submit'], input[type='submit']").first
+    expect(upload_button).to_be_enabled()
