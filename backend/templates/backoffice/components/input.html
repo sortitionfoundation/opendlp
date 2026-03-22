@@ -444,25 +444,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         attrs: Additional HTML attributes (e.g., 'x-model="file"' for Alpine.js binding)
 
     Usage:
-        {# Basic file input #}
-    {{ file_input("csv_file", label="CSV File", accept=".csv", required=true) }}
-
-        {# With hint and error #}
-    {{ file_input(
-    "import_file",
-    label="Import File",
-    hint="Select a CSV file containing respondent data",
-    accept=".csv",
-    error=first_error(form.csv_file.errors)
-    ) }}
-
-        {# With Alpine.js binding #}
-    {{ file_input(
-    "csv_file",
-    label="CSV File",
-    accept=".csv",
-    attrs='@change="onFileSelect($event)"'
-    ) }}
+        file_input("csv_file", label="CSV File", accept=".csv", required=true)
+        file_input("import_file", label="Import File", hint="Select a CSV file", accept=".csv", error=first_error(form.csv_file.errors))
+        file_input("csv_file", label="CSV File", accept=".csv", attrs='@change="onFileSelect($event)"')
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
