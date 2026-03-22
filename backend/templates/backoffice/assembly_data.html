@@ -6,7 +6,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, checkbox, radio_group, first_error as e %}
-{% from "backoffice/components/tabs.html" import tabs %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
 
@@ -27,16 +27,13 @@ ABOUTME: Displays data source selection and data management for assemblies
         {{ _("Manage data for this assembly") }}
     </p>
 
-    {% set source_param = "?source=" ~ data_source if data_source else "" %}
-    {{ tabs(
-    items=[
-    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id) ~ source_param},
-    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ source_param, "active": true}
-    ] + ([{"label": _("Targets"), "href": "#", "disabled": true}] if data_source == "csv" else []) + [
-    {"label": _("Selection"), "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ~ source_param},
-    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id) ~ source_param}
-    ],
-    aria_label=_("Assembly sections")
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="data",
+    data_source=data_source,
+    gsheet=gsheet,
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false)
     ) }}
 
     {# Data Source Selector #}

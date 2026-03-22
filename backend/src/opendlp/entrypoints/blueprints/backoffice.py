@@ -104,7 +104,27 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        return render_template("backoffice/assembly_details.html", assembly=assembly), 200
+        # Get gsheet config for tab state
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception:  # noqa: S110
+            pass  # No gsheet config exists - this is expected for new assemblies
+
+        # Determine data source and tab enabled states
+        data_source = "gsheet" if gsheet else ""
+        targets_enabled = gsheet is not None
+        respondents_enabled = gsheet is not None
+
+        return render_template(
+            "backoffice/assembly_details.html",
+            assembly=assembly,
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
+        ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         # TODO: consider change to "Assembly not found" so as not to leak info
@@ -257,6 +277,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Create form based on mode - form has defaults built in
             gsheet_form = EditAssemblyGSheetForm(obj=gsheet) if gsheet else CreateAssemblyGSheetForm()
 
+        # Determine tab enabled states
+        # For gsheet: enabled if gsheet config exists
+        # For CSV: would be enabled if targets/respondents CSV uploaded (future implementation)
+        targets_enabled = gsheet is not None if data_source == "gsheet" else False
+        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+
         return render_template(
             "backoffice/assembly_data.html",
             assembly=assembly,
@@ -266,6 +292,8 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet_mode=gsheet_mode,
             gsheet_form=gsheet_form,
             google_service_account_email=google_service_account_email,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -279,6 +307,117 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"View assembly data error for assembly {assembly_id} user {current_user.id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly data"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/targets")
+@login_required
+def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice assembly targets page."""
+    try:
+        # Get assembly with permissions
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Determine data source and whether tabs should be enabled
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception:  # noqa: S110
+            pass  # No gsheet config exists - this is expected for new assemblies
+
+        # Determine data source
+        if gsheet:
+            data_source = "gsheet"
+        else:
+            data_source = request.args.get("source", "")
+            if data_source not in ("gsheet", "csv", ""):
+                data_source = ""
+
+        # Targets tab is enabled if gsheet exists (for gsheet source)
+        # For CSV source, it would be enabled if targets CSV has been uploaded (future implementation)
+        targets_enabled = gsheet is not None if data_source == "gsheet" else False
+
+        # Respondents tab enabled logic (for now, same as targets for gsheet)
+        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+
+        return render_template(
+            "backoffice/assembly_targets.html",
+            assembly=assembly,
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
+        ), 200
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"View assembly targets error for assembly {assembly_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while loading assembly targets"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/respondents")
+@login_required
+def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice assembly respondents page."""
+    try:
+        # Get assembly with permissions
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Determine data source and whether tabs should be enabled
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception:  # noqa: S110
+            pass  # No gsheet config exists - this is expected for new assemblies
+
+        # Determine data source
+        if gsheet:
+            data_source = "gsheet"
+        else:
+            data_source = request.args.get("source", "")
+            if data_source not in ("gsheet", "csv", ""):
+                data_source = ""
+
+        # Tab enabled logic
+        targets_enabled = gsheet is not None if data_source == "gsheet" else False
+        respondents_enabled = gsheet is not None if data_source == "gsheet" else False
+
+        return render_template(
+            "backoffice/assembly_respondents.html",
+            assembly=assembly,
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
+        ), 200
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(
+            f"View assembly respondents error for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while loading assembly respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -297,6 +436,19 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Check if current user can manage this assembly
             can_manage_assembly_users = has_global_admin(current_user)
 
+        # Get gsheet config for tab state
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception:  # noqa: S110
+            pass  # No gsheet config exists - this is expected for new assemblies
+
+        # Determine data source and tab enabled states
+        data_source = "gsheet" if gsheet else ""
+        targets_enabled = gsheet is not None
+        respondents_enabled = gsheet is not None
+
         add_user_form = AddUserToAssemblyForm()
 
         return render_template(
@@ -306,6 +458,10 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             can_manage_assembly_users=can_manage_assembly_users,
             add_user_form=add_user_form,
             current_tab="members",
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")

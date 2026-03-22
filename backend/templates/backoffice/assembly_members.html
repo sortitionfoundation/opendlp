@@ -7,7 +7,7 @@ ABOUTME: Displays team members table with add/remove functionality for admins
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/search_dropdown.html" import search_dropdown %}
-{% from "backoffice/components/tabs.html" import tabs %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 
 {% block title %}{{ _("Team Members") }} - {{ assembly.title }}{% endblock %}
 
@@ -28,14 +28,13 @@ ABOUTME: Displays team members table with add/remove functionality for admins
         {{ _("Manage team members for this assembly") }}
     </p>
 
-    {{ tabs(
-    items=[
-    {"label": _("Details"), "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-    {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id)},
-    {"label": _("Selection"), "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id)},
-    {"label": _("Team Members"), "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id), "active": true}
-    ],
-    aria_label=_("Assembly sections")
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="members",
+    data_source=data_source|default(""),
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false)
     ) }}
 
     {# Team Members Section #}

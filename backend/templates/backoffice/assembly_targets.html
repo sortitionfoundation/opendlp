@@ -1,0 +1,96 @@
+{#
+ABOUTME: Backoffice assembly targets page
+ABOUTME: Displays target categories configuration for assemblies
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Targets")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Configure selection targets for this assembly") }}
+    </p>
+
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="targets",
+    data_source=data_source,
+    gsheet=gsheet,
+    targets_enabled=targets_enabled,
+    respondents_enabled=respondents_enabled
+    ) }}
+
+    {% if data_source == "gsheet" and gsheet %}
+        {# Google Sheet source - show info about where targets are configured #}
+        <section class="mb-8">
+            <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <svg class="w-6 h-6" style="color: var(--color-primary-action);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets are configured in Google Sheets") }}</h2>
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Selection targets (demographic categories and quotas) are defined in your Google Spreadsheet.") }}
+                        </p>
+
+                        <dl class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Initial Selection Categories Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_targets_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Replacement Categories Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_targets_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4">
+                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% elif data_source == "csv" %}
+        {# CSV source - placeholder for future implementation #}
+        <section class="mb-8">
+            {{ alert(_("CSV targets upload will be implemented here."), variant="info") }}
+        </section>
+    {% else %}
+        {# No data source selected #}
+        <section class="mb-8">
+            {{ alert(_("Please configure a data source in the Data tab first."), variant="warning") }}
+            <div class="mt-4">
+                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+            </div>
+        </section>
+    {% endif %}
+
+    {# Actions #}
+    <section class="flex gap-4">
+        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+    </section>
+{% endblock %}

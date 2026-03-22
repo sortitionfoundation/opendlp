@@ -1121,7 +1121,10 @@ def see_assembly_selection_page(page: Page):
 @then(parsers.parse('I should see a "{tab_name}" tab in the assembly navigation'))
 def see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is visible in the assembly navigation."""
-    tab = page.locator("nav[aria-label] a, nav[aria-label] span").filter(has_text=tab_name)
+    # Use the Assembly sections nav specifically to avoid matching breadcrumbs
+    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+        has_text=tab_name
+    )
     expect(tab).to_be_visible()
 
 
@@ -1129,12 +1132,40 @@ def see_tab_in_navigation(page: Page, tab_name: str):
 def tab_should_be_disabled(page: Page, tab_name: str):
     """Verify a specific tab is disabled (shown as span, not a link)."""
     # Disabled tabs are rendered as spans with data-disabled attribute, not links
-    disabled_tab = page.locator("nav[aria-label] span[data-disabled='true']").filter(has_text=tab_name)
+    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[data-disabled='true']").filter(
+        has_text=tab_name
+    )
     expect(disabled_tab).to_be_visible()
+
+
+@then(parsers.parse('the "{tab_name}" tab should be enabled'))
+def tab_should_be_enabled(page: Page, tab_name: str):
+    """Verify a specific tab is enabled (shown as a clickable link)."""
+    # Enabled tabs are rendered as anchor tags, not spans
+    enabled_tab = page.locator("nav[aria-label='Assembly sections'] a").filter(has_text=tab_name)
+    expect(enabled_tab).to_be_visible()
 
 
 @then(parsers.parse('I should not see a "{tab_name}" tab in the assembly navigation'))
 def should_not_see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is not visible in the assembly navigation."""
-    tab = page.locator("nav[aria-label] a, nav[aria-label] span").filter(has_text=tab_name)
+    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+        has_text=tab_name
+    )
     expect(tab).to_have_count(0)
+
+
+@when(parsers.parse('I visit the assembly targets page for "{title}"'))
+def visit_assembly_targets_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly targets page."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_targets_assembly_url(assembly_id))
+
+
+@when(parsers.parse('I visit the assembly respondents page for "{title}"'))
+def visit_assembly_respondents_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly respondents page."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_respondents_assembly_url(assembly_id))

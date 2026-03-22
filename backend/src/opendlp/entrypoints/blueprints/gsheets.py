@@ -209,6 +209,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
         edit_number_modal_open = request.args.get("edit_number") == "1"
 
+        # Determine data source and tab enabled states
+        data_source = "gsheet" if gsheet else ""
+        targets_enabled = gsheet is not None
+        respondents_enabled = gsheet is not None
+
         return render_template(
             "backoffice/assembly_selection.html",
             assembly=assembly,
@@ -234,6 +239,9 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             replacement_min_select=replacement_min_select,
             replacement_max_select=replacement_max_select,
             edit_number_modal_open=edit_number_modal_open,
+            data_source=data_source,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
