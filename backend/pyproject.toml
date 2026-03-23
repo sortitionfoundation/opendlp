@@ -266,3 +266,5 @@ Hashi = "Hashi"
 # British English additions, for now at least
 superceded = "superceded"
 supercedes = "supercedes"
+# person's name in sample CSV data
+Ines = "Ines"

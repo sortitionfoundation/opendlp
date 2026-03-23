@@ -8,9 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c0c">
     <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/govuk-frontend.min.css"
-          integrity="sha384-hwDj3b1MqzffgVcYB7l6yI3rcloSMo0LTxDVvyP/vXRZ5/9envUrqbnkK4PAvRfQ" <!-- pragma: allowlist secret -->
-    crossorigin="anonymous">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/govuk-frontend.min.css">
     <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
   </head>
   <body class="govuk-template__body govuk-frontend-supported">
@@ -28,9 +27,7 @@
 
     {{ partial "footer.html" . }}
 
-    <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
-            integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy" <!-- pragma: allowlist secret -->
-      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.GOVUKFrontend !== 'undefined') {

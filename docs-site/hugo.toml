@@ -28,6 +28,10 @@ theme = 'govuk-sortition'
     url = '/help/'
     weight = 2
   [[menu.main]]
+    name = 'CSV Format'
+    url = '/csv-format/'
+    weight = 3
+  [[menu.main]]
     name = 'Data Agreement'
     url = '/data-agreement/'
-    weight = 3
+    weight = 4

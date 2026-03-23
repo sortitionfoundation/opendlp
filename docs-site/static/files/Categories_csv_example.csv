@@ -1,0 +1,25 @@
+category,name,min,max,Notes
+gender,Female,10,11,
+gender,Male,9,10,
+gender,Non-binary or other,0,1,
+age_bucket,0-17,0,0,
+age_bucket,18-24,3,4,
+age_bucket,25-34,4,5,
+age_bucket,35-44,3,4,
+age_bucket,45-54,3,4,
+age_bucket,55-64,2,3,
+age_bucket,65+,2,3,
+ethnicity,Asian or Asian British,3,4,
+ethnicity,Black or African or Caribbean or Black British,1,2,
+ethnicity,Mixed or Multiple ethnic groups,1,2,
+ethnicity,White,10,12,
+ethnicity,Other ethnic group,1,2,
+disability,Yes,3,4,
+disability,No,16,17,
+colour_bucket,Red,4,20,"""Soft targets"" for inclusion"
+colour_bucket,Green,4,20,"""Soft targets"" for inclusion"
+colour_bucket,Blue,4,20,"""Soft targets"" for inclusion"
+colour_bucket,Other,4,20,"""Soft targets"" for inclusion"
+,,,,
+,Socio-economic target?,,,
+,Geographical target?,,,
