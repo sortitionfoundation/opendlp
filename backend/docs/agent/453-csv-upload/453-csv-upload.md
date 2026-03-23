@@ -464,6 +464,152 @@ def update_csv_config(
     """Update CSV configuration fields."""
 ```
 
+### Selection (sortition.py)
+
+These functions handle the CSV/DB-based selection flow (as opposed to Google Sheets).
+
+```python
+# sortition.py
+
+@dataclass
+class CheckDataResult:
+    """Result of validating targets and respondents against selection settings."""
+    success: bool
+    errors: list[str]
+    features_report_html: str
+    people_report_html: str
+    num_features: int
+    num_people: int
+
+def check_db_selection_data(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> CheckDataResult:
+    """Synchronously validate targets and respondents against selection settings.
+
+    Loads features (targets) and people (respondents) from the database and
+    validates them against the assembly's selection settings. Returns detailed
+    error messages and HTML reports for display.
+
+    Used by: db_selection.check_db_data route (POST /assemblies/<id>/db_select/check)
+    """
+
+def start_db_select_task(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    test_selection: bool = False,
+) -> uuid.UUID:
+    """Start a Celery task to run selection from DB-stored data.
+
+    Creates a SelectionRunRecord to track the task, then submits the
+    run_select_from_db Celery task. Returns the task_id (UUID) for tracking.
+
+    Args:
+        test_selection: If True, runs a test selection (doesn't save results)
+
+    Used by: db_selection.start_db_selection route (POST /assemblies/<id>/db_select/run)
+    """
+
+def generate_selection_csvs(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    task_id: uuid.UUID,
+) -> tuple[str, str]:
+    """Generate CSV exports for selected and remaining respondents.
+
+    Reconstructs the settings from the SelectionRunRecord and generates
+    CSV content for both selected participants and remaining pool.
+
+    Returns: (selected_csv_content, remaining_csv_content)
+
+    Raises:
+        SelectionRunRecordNotFoundError: If task not found
+        InvalidSelection: If selection has not completed
+
+    Used by: db_selection.download_selected_csv, download_remaining_csv routes
+    """
+
+@dataclass
+class RunResult:
+    """Base result class for selection run status."""
+    run_record: SelectionRunRecord | None
+    run_report: RunReport  # from sortition_algorithms
+    log_messages: list[str]
+    success: bool | None  # None = not finished
+
+def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> RunResult:
+    """Get the status of a selection run task.
+
+    Checks both the database record and Celery for current status.
+    Handles cases where Celery has forgotten old tasks (>24hrs).
+
+    Used by: db_selection.view_db_selection_with_run, db_selection_progress routes
+    """
+
+def cancel_task(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    task_id: uuid.UUID,
+) -> None:
+    """Cancel a running or pending task.
+
+    Revokes the Celery task and updates the SelectionRunRecord to CANCELLED.
+
+    Raises:
+        InvalidSelection: If task not found or already finished
+        InsufficientPermissions: If user cannot manage the assembly
+
+    Used by: db_selection.cancel_db_selection route (POST /assemblies/<id>/db_select/<run_id>/cancel)
+    """
+
+def check_and_update_task_health(
+    uow: AbstractUnitOfWork,
+    task_id: uuid.UUID,
+    timeout_hours: int | None = None,
+) -> None:
+    """Check if a task is still alive and update its status if it has died.
+
+    Called during progress polling to detect crashed workers or timed-out tasks.
+    Only checks tasks in PENDING or RUNNING state.
+
+    Used by: db_selection.db_selection_progress route (progress polling)
+    """
+```
+
+### Respondent Helpers
+
+```python
+# respondent_service.py
+
+def get_respondent_attribute_columns(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+) -> list[str]:
+    """Get sorted list of available respondent attribute column names for an assembly.
+
+    Used by: db_selection.view_db_selection_settings route for populating
+    the check_same_address_cols and columns_to_keep options.
+    """
+```
+
+### Report Translation
+
+```python
+# report_translation.py
+
+def translate_run_report_to_html(run_report: RunReport | None) -> str:
+    """Convert a sortition-algorithms RunReport to translated HTML.
+
+    Translates all messages in the report using the application's
+    i18n system and formats them as HTML for display.
+
+    Used by: All selection routes that display run progress/results
+    """
+```
+
 ---
 
 ## Technical Notes

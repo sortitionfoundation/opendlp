@@ -44,7 +44,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         items=[
         {"label": _("Respondents"), "href": url_for('backoffice.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
         {"label": _("Targets"), "href": url_for('backoffice.service_docs', tab='targets'), "active": active_tab == 'targets'},
-        {"label": _("CSV Config"), "href": url_for('backoffice.service_docs', tab='config'), "active": active_tab == 'config'}
+        {"label": _("CSV Config"), "href": url_for('backoffice.service_docs', tab='config'), "active": active_tab == 'config'},
+        {"label": _("Selection"), "href": url_for('backoffice.service_docs', tab='selection'), "active": active_tab == 'selection'}
         ],
         aria_label=_("Service categories")
         ) }}
@@ -616,6 +617,456 @@ Age,51+,2,5,1,1</pre>
                         {% endcall %}
                     {% endcall %}
                 </div>
+            </div>
+        {% endif %}
+
+        {# ===== SELECTION TAB ===== #}
+        {% if active_tab == 'selection' %}
+            <div class="space-y-6">
+                {# check_db_selection_data #}
+                {% call card(title="check_db_selection_data()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:386
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Synchronously validates targets and respondents against selection settings. Loads features (targets) and people (respondents) from the database and validates them. Returns detailed error messages and HTML reports.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block mb-2" style="background-color: var(--color-subtle-background-panels);">
+                                CheckDataResult(success, errors, features_report_html, people_report_html, num_features, num_people)
+                            </code>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.check_db_data</code> — POST /assemblies/&lt;id&gt;/db_select/check
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# start_db_select_task #}
+                {% call card(title="start_db_select_task()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:444
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Starts a Celery task to run selection from DB-stored data. Creates a SelectionRunRecord to track the task, then submits the run_select_from_db Celery task.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">test_selection</td>
+                                        <td class="px-3 py-2">bool</td>
+                                        <td class="px-3 py-2">❌</td>
+                                        <td class="px-3 py-2">If True, runs a test selection (doesn't save results)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                uuid.UUID  →  Task ID for tracking the selection run
+                            </code>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.start_db_selection</code> — POST /assemblies/&lt;id&gt;/db_select/run
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# get_selection_run_status #}
+                {% call card(title="get_selection_run_status()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:610
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                    👁️ No permission required
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Gets the status of a selection run task. Checks both the database record and Celery for current status. Handles cases where Celery has forgotten old tasks (>24hrs).") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">task_id</td>
+                                        <td class="px-3 py-2">UUID</td>
+                                        <td class="px-3 py-2">✅</td>
+                                        <td class="px-3 py-2">SelectionRunRecord task_id (not Celery task ID)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                RunResult(run_record, run_report, log_messages, success)
+                            </code>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.view_db_selection_with_run</code>, <code>db_selection.db_selection_progress</code>
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# generate_selection_csvs #}
+                {% call card(title="generate_selection_csvs()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:501
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                    👁️ No permission required
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Generates CSV exports for selected and remaining respondents. Reconstructs the settings from the SelectionRunRecord and generates CSV content for download.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">task_id</td>
+                                        <td class="px-3 py-2">UUID</td>
+                                        <td class="px-3 py-2">✅</td>
+                                        <td class="px-3 py-2">SelectionRunRecord task_id</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                tuple[str, str]  →  (selected_csv_content, remaining_csv_content)
+                            </code>
+                        </div>
+
+                        {# Error Cases #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">SelectionRunRecordNotFoundError</code> — Task not found</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InvalidSelection</code> — Selection has not completed (no results)</li>
+                            </ul>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.download_selected_csv</code>, <code>db_selection.download_remaining_csv</code>
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# cancel_task #}
+                {% call card(title="cancel_task()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:657
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Cancels a running or pending task. Revokes the Celery task and updates the SelectionRunRecord to CANCELLED status.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">For permission checking</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">task_id</td>
+                                        <td class="px-3 py-2">UUID</td>
+                                        <td class="px-3 py-2">✅</td>
+                                        <td class="px-3 py-2">Task to cancel</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Error Cases #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InvalidSelection</code> — Task not found or already finished</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InsufficientPermissions</code> — User cannot manage assembly</li>
+                            </ul>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.cancel_db_selection</code> — POST /assemblies/&lt;id&gt;/db_select/&lt;run_id&gt;/cancel
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# check_and_update_task_health #}
+                {% call card(title="check_and_update_task_health()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                sortition.py:829
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                    👁️ No permission required
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Checks if a task is still alive and updates its status if it has died. Called during progress polling to detect crashed workers, revoked tasks, or timed-out tasks. Only checks tasks in PENDING or RUNNING state.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">task_id</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">SelectionRunRecord task_id</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">timeout_hours</td>
+                                        <td class="px-3 py-2">int | None</td>
+                                        <td class="px-3 py-2">❌</td>
+                                        <td class="px-3 py-2">Overrides env config timeout</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.db_selection_progress</code> — Progress polling during selection run
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# get_respondent_attribute_columns #}
+                {% call card(title="get_respondent_attribute_columns()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                respondent_service.py:223
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                    👁️ No permission required
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Gets a sorted list of available respondent attribute column names for an assembly. Used to populate dropdown options for check_same_address_cols and columns_to_keep settings.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">assembly_id</td>
+                                        <td class="px-3 py-2">UUID</td>
+                                        <td class="px-3 py-2">✅</td>
+                                        <td class="px-3 py-2">Target assembly ID</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                list[str]  →  Sorted list of attribute column names from respondent data
+                            </code>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>db_selection.view_db_selection_settings</code> — Selection settings page
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# translate_run_report_to_html #}
+                {% call card(title="translate_run_report_to_html()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                report_translation.py
+                            </code>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Converts a sortition-algorithms RunReport to translated HTML. Translates all messages in the report using the application's i18n system and formats them for display.") }}
+                        </p>
+
+                        {# Parameters #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                <tbody>
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">run_report</td>
+                                        <td class="px-3 py-2">RunReport | None</td>
+                                        <td class="px-3 py-2">✅</td>
+                                        <td class="px-3 py-2">Report from sortition-algorithms library</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                str  →  Translated HTML string for display
+                            </code>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                All selection routes that display run progress/results
+                            </p>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
             </div>
         {% endif %}
 

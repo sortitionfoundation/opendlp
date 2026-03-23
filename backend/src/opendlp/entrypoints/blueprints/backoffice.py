@@ -962,7 +962,7 @@ def service_docs() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'respondents'
     active_tab = request.args.get("tab", "respondents")
-    valid_tabs = ["respondents", "targets", "config"]
+    valid_tabs = ["respondents", "targets", "config", "selection"]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
 
