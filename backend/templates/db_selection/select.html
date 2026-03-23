@@ -15,40 +15,72 @@
         {% endif %}
     </p>
 
-    {# ── Non-POOL Warning ─────────────────────────────────────── #}
-    {% if non_pool_count is defined and non_pool_count > 0 and (not run_record or run_record.has_finished) %}
-        <div class="govuk-warning-text govuk-!-margin-top-6">
-            <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-            <strong class="govuk-warning-text__text">
-                <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
-                {{ _("%(count)s respondents already have a selection status (selected, confirmed, withdrawn, etc). A fresh selection will only draw from the remaining pool.", count=non_pool_count) }}
-            </strong>
-        </div>
-        <p class="govuk-body">{{ _("Your options:") }}</p>
-        <ul class="govuk-list govuk-list--bullet">
-            <li>
-                <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
-                {{ _("— select replacement members from the remaining pool") }}
-            </li>
-            <li>
-                {{ _("Reset all respondents to Pool status, then run a fresh selection") }}
-            </li>
-        </ul>
-        <form method="post"
-              action="{{ url_for('db_selection.reset_respondents_for_selection', assembly_id=assembly.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
-                    data-module="govuk-button"
-                    data-confirm="{{ _('Are you sure? This will reset all respondents to Pool status.') }}">
-                {{ _("Reset all respondents to Pool") }}
-            </button>
-        </form>
+    {# ── Readiness Warnings ───────────────────────────────────── #}
+    {% if readiness is defined and not readiness.can_run_selection and (not run_record or run_record.has_finished) %}
+        {% if not readiness.settings_confirmed or not readiness.has_targets or not readiness.has_respondents %}
+            <div class="govuk-warning-text govuk-!-margin-top-6">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                    {{ _("Selection cannot run yet. The following items need to be completed:") }}
+                </strong>
+            </div>
+            <ul class="govuk-list govuk-list--bullet">
+                {% if not readiness.settings_confirmed %}
+                    <li>
+                        <a href="{{ url_for('db_selection.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection settings") }}</a>
+                        {{ _("— need to be reviewed and saved") }}
+                    </li>
+                {% endif %}
+                {% if not readiness.has_targets %}
+                    <li>
+                        <a href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Target categories") }}</a>
+                        {{ _("— none have been set up yet") }}
+                    </li>
+                {% endif %}
+                {% if not readiness.has_respondents %}
+                    <li>
+                        <a href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Respondents") }}</a>
+                        {{ _("— none have been uploaded yet") }}
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+
+        {% if readiness.non_pool_count > 0 %}
+            <div class="govuk-warning-text govuk-!-margin-top-6">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                    {{ _("%(count)s respondents already have a selection status (selected, confirmed, withdrawn, etc). A fresh selection will only draw from the remaining pool.", count=readiness.non_pool_count) }}
+                </strong>
+            </div>
+            <p class="govuk-body">{{ _("Your options:") }}</p>
+            <ul class="govuk-list govuk-list--bullet">
+                <li>
+                    <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
+                    {{ _("— select replacement members from the remaining pool") }}
+                </li>
+                <li>
+                    {{ _("Reset all respondents to Pool status, then run a fresh selection") }}
+                </li>
+            </ul>
+            <form method="post"
+                  action="{{ url_for('db_selection.reset_respondents_for_selection', assembly_id=assembly.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
+                        data-module="govuk-button"
+                        data-confirm="{{ _('Are you sure? This will reset all respondents to Pool status.') }}">
+                    {{ _("Reset all respondents to Pool") }}
+                </button>
+            </form>
+        {% endif %}
     {% endif %}
 
     {# ── Action Buttons ─────────────────────────────────────── #}
     <div class="govuk-button-group govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
-            {% set selection_disabled = non_pool_count is defined and non_pool_count > 0 %}
+            {% set selection_disabled = readiness is defined and not readiness.can_run_selection %}
             <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="test_selection" value="0">

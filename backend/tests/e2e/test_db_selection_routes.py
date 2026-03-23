@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
@@ -740,6 +741,102 @@ class TestDbSelectionErrorHandling:
             follow_redirects=False,
         )
         assert response.status_code == 302
+
+
+class TestSelectionReadinessWarnings:
+    """Tests for readiness warnings on the selection page."""
+
+    def test_shows_no_targets_warning(self, logged_in_admin, assembly_for_db_selection):
+        """Selection page should warn when no target categories exist."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"Target categories" in response.data
+        assert b"none have been set up yet" in response.data
+
+    def test_shows_no_respondents_warning(self, logged_in_admin, assembly_for_db_selection):
+        """Selection page should warn when no respondents have been uploaded."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"Respondents" in response.data
+        assert b"none have been uploaded yet" in response.data
+
+    def test_shows_no_settings_warning(self, logged_in_admin, admin_user, postgres_session_factory):
+        """Selection page should warn when settings haven't been confirmed."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="No Settings Assembly",
+                created_by_user_id=admin_user.id,
+                question="Test?",
+                number_to_select=10,
+            )
+            assembly_id = assembly.id
+
+        response = logged_in_admin.get(f"/assemblies/{assembly_id}/db_select")
+
+        assert response.status_code == 200
+        assert b"Selection settings" in response.data
+        assert b"need to be reviewed and saved" in response.data
+
+    def test_buttons_disabled_when_not_ready(self, logged_in_admin, assembly_for_db_selection):
+        """Selection buttons should be disabled when prerequisites are missing."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        data = response.data.decode("utf-8")
+        # Both Run Selection and Run Test Selection should be disabled
+        assert "disabled" in data
+
+    def test_no_warnings_when_all_ready(
+        self, logged_in_admin, admin_user, assembly_for_db_selection, postgres_session_factory
+    ):
+        """No readiness warnings when settings, targets, and respondents all exist."""
+        assembly = assembly_for_db_selection
+        # Add respondents
+        csv_content = "external_id,Gender\nR001,Female\nR002,Male\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=assembly.id,
+                csv_content=csv_content,
+            )
+        # Add a target category
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            cat = TargetCategory(
+                assembly_id=assembly.id,
+                name="Gender",
+                sort_order=0,
+                values=[TargetValue(value="Female", min=0, max=5), TargetValue(value="Male", min=0, max=5)],
+            )
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        assert b"cannot run yet" not in response.data
+        assert b"already have a selection status" not in response.data
+
+    def test_check_targets_button_always_enabled(self, logged_in_admin, assembly_for_db_selection):
+        """Check Targets button should remain enabled even when prerequisites are missing."""
+        assembly = assembly_for_db_selection
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select")
+
+        assert response.status_code == 200
+        data = response.data.decode("utf-8")
+        # Find the Check Targets button - it should NOT be disabled
+        # The button text appears after the submit button tag
+        check_idx = data.find("Check Targets")
+        assert check_idx > 0
+        # Look backwards from "Check Targets" to find the button tag
+        button_region = data[max(0, check_idx - 200) : check_idx]
+        assert "disabled" not in button_region
 
 
 class TestNonPoolRespondentWarning:

@@ -2,6 +2,7 @@
 ABOUTME: Handles selection, validation, progress tracking and CSV downloads"""
 
 import uuid
+from dataclasses import dataclass
 
 from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
@@ -29,11 +30,38 @@ from opendlp.service_layer.sortition import (
     get_selection_run_status,
     start_db_select_task,
 )
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 from ..forms import DbSelectionSettingsForm
 
 db_selection_bp = Blueprint("db_selection", __name__)
+
+
+@dataclass
+class SelectionReadiness:
+    """Tracks whether the prerequisites for running a selection are met."""
+
+    settings_confirmed: bool
+    has_targets: bool
+    has_respondents: bool
+    non_pool_count: int
+
+    @property
+    def can_run_selection(self) -> bool:
+        return self.settings_confirmed and self.has_targets and self.has_respondents and self.non_pool_count == 0
+
+
+def _get_selection_readiness(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, settings_confirmed: bool
+) -> SelectionReadiness:
+    """Gather the readiness checks for running a selection."""
+    return SelectionReadiness(
+        settings_confirmed=settings_confirmed,
+        has_targets=uow.target_categories.count_by_assembly_id(assembly_id) > 0,
+        has_respondents=uow.respondents.count_by_assembly_id(assembly_id) > 0,
+        non_pool_count=count_non_pool_respondents(uow, assembly_id),
+    )
 
 
 @db_selection_bp.route("/assemblies/<uuid:assembly_id>/db_select", methods=["GET"])
@@ -45,14 +73,14 @@ def view_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-            non_pool_count = count_non_pool_respondents(uow, assembly_id)
+            readiness = _get_selection_readiness(uow, assembly_id, csv_config.settings_confirmed)
 
         return render_template(
             "db_selection/select.html",
             assembly=assembly,
             csv_config=csv_config,
             current_tab="db_selection",
-            non_pool_count=non_pool_count,
+            readiness=readiness,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -72,7 +100,7 @@ def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
             result = get_selection_run_status(uow, run_id)
-            non_pool_count = count_non_pool_respondents(uow, assembly_id)
+            readiness = _get_selection_readiness(uow, assembly_id, csv_config.settings_confirmed)
 
         if result.run_record and result.run_record.assembly_id != assembly_id:
             flash(_("Invalid task ID for this assembly"), "error")
@@ -87,7 +115,7 @@ def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             run_report=result.run_report,
             translated_report_html=translate_run_report_to_html(result.run_report),
             run_id=run_id,
-            non_pool_count=non_pool_count,
+            readiness=readiness,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -106,7 +134,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-            non_pool_count = count_non_pool_respondents(uow, assembly_id)
+            readiness = _get_selection_readiness(uow, assembly_id, csv_config.settings_confirmed)
 
         if not csv_config.settings_confirmed:
             flash(_("Please review and save the selection settings before checking targets."), "warning")
@@ -122,7 +150,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config=csv_config,
             current_tab="db_selection",
             check_result=check_result,
-            non_pool_count=non_pool_count,
+            readiness=readiness,
         ), 200
     except NotFoundError:
         flash(_("Assembly not found"), "error")

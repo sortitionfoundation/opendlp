@@ -819,6 +819,9 @@ class SqlAlchemyTargetCategoryRepository(SqlAlchemyRepository, TargetCategoryRep
             .all()
         )
 
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return self.session.query(TargetCategory).filter(orm.target_categories.c.assembly_id == assembly_id).count()
+
     def delete(self, item: TargetCategory) -> None:
         self.session.delete(item)
 
@@ -868,6 +871,9 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             )
 
         return query.order_by(orm.respondents.c.created_at.desc()).all()
+
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).count()
 
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         return (

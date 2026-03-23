@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-20 17:50+0000\n"
+"POT-Creation-Date: 2026-03-23 11:04+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -860,11 +860,11 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:105
 #: src/opendlp/entrypoints/blueprints/backoffice.py:237
 #: src/opendlp/entrypoints/blueprints/backoffice.py:277
-#: src/opendlp/entrypoints/blueprints/db_selection.py:61
-#: src/opendlp/entrypoints/blueprints/db_selection.py:96
-#: src/opendlp/entrypoints/blueprints/db_selection.py:129
-#: src/opendlp/entrypoints/blueprints/db_selection.py:310
-#: src/opendlp/entrypoints/blueprints/db_selection.py:375
+#: src/opendlp/entrypoints/blueprints/db_selection.py:89
+#: src/opendlp/entrypoints/blueprints/db_selection.py:124
+#: src/opendlp/entrypoints/blueprints/db_selection.py:159
+#: src/opendlp/entrypoints/blueprints/db_selection.py:340
+#: src/opendlp/entrypoints/blueprints/db_selection.py:405
 #: src/opendlp/entrypoints/blueprints/gsheets.py:242
 #: src/opendlp/entrypoints/blueprints/gsheets.py:647
 #: src/opendlp/entrypoints/blueprints/gsheets.py:904
@@ -890,13 +890,13 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:167
 #: src/opendlp/entrypoints/blueprints/backoffice.py:233
 #: src/opendlp/entrypoints/blueprints/backoffice.py:273
-#: src/opendlp/entrypoints/blueprints/db_selection.py:58
-#: src/opendlp/entrypoints/blueprints/db_selection.py:93
-#: src/opendlp/entrypoints/blueprints/db_selection.py:126
-#: src/opendlp/entrypoints/blueprints/db_selection.py:307
-#: src/opendlp/entrypoints/blueprints/db_selection.py:351
-#: src/opendlp/entrypoints/blueprints/db_selection.py:372
-#: src/opendlp/entrypoints/blueprints/db_selection.py:389
+#: src/opendlp/entrypoints/blueprints/db_selection.py:86
+#: src/opendlp/entrypoints/blueprints/db_selection.py:121
+#: src/opendlp/entrypoints/blueprints/db_selection.py:156
+#: src/opendlp/entrypoints/blueprints/db_selection.py:337
+#: src/opendlp/entrypoints/blueprints/db_selection.py:381
+#: src/opendlp/entrypoints/blueprints/db_selection.py:402
+#: src/opendlp/entrypoints/blueprints/db_selection.py:419
 #: src/opendlp/entrypoints/blueprints/gsheets.py:238
 #: src/opendlp/entrypoints/blueprints/gsheets.py:643
 #: src/opendlp/entrypoints/blueprints/gsheets.py:900
@@ -1016,7 +1016,7 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:78
+#: src/opendlp/entrypoints/blueprints/db_selection.py:106
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:220
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:475
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:812
@@ -1024,33 +1024,33 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:111
+#: src/opendlp/entrypoints/blueprints/db_selection.py:140
 msgid "Please review and save the selection settings before checking targets."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:134
+#: src/opendlp/entrypoints/blueprints/db_selection.py:164
 #, fuzzy
 msgid "An unexpected error occurred while checking data"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:148
+#: src/opendlp/entrypoints/blueprints/db_selection.py:178
 msgid "Please review and save the selection settings before running selection."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:155
+#: src/opendlp/entrypoints/blueprints/db_selection.py:185
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:330
 #, fuzzy, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:158
+#: src/opendlp/entrypoints/blueprints/db_selection.py:188
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:334
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:161
-#: src/opendlp/entrypoints/blueprints/db_selection.py:354
+#: src/opendlp/entrypoints/blueprints/db_selection.py:191
+#: src/opendlp/entrypoints/blueprints/db_selection.py:384
 #: src/opendlp/entrypoints/blueprints/gsheets.py:709
 #: src/opendlp/entrypoints/blueprints/gsheets.py:765
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:341
@@ -1062,12 +1062,12 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:165
+#: src/opendlp/entrypoints/blueprints/db_selection.py:195
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:346
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:214
+#: src/opendlp/entrypoints/blueprints/db_selection.py:244
 #: src/opendlp/entrypoints/blueprints/gsheets.py:783
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:397
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:730
@@ -1075,7 +1075,7 @@ msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 msgid "Task has been cancelled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:217
+#: src/opendlp/entrypoints/blueprints/db_selection.py:247
 #: src/opendlp/entrypoints/blueprints/gsheets.py:448
 #: src/opendlp/entrypoints/blueprints/gsheets.py:593
 #: src/opendlp/entrypoints/blueprints/gsheets.py:788
@@ -1087,7 +1087,7 @@ msgstr ""
 msgid "Task not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:223
+#: src/opendlp/entrypoints/blueprints/db_selection.py:253
 #: src/opendlp/entrypoints/blueprints/gsheets.py:452
 #: src/opendlp/entrypoints/blueprints/gsheets.py:597
 #: src/opendlp/entrypoints/blueprints/gsheets.py:798
@@ -1098,30 +1098,30 @@ msgstr "Az oldal nem elérhető"
 msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:249
-#: src/opendlp/entrypoints/blueprints/db_selection.py:275
+#: src/opendlp/entrypoints/blueprints/db_selection.py:279
+#: src/opendlp/entrypoints/blueprints/db_selection.py:305
 #, fuzzy
 msgid "You don't have permission to download this data"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:338
+#: src/opendlp/entrypoints/blueprints/db_selection.py:368
 #, fuzzy
 msgid "Selection settings saved"
 msgstr "További beállítások"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:386
+#: src/opendlp/entrypoints/blueprints/db_selection.py:416
 #: src/opendlp/entrypoints/blueprints/respondents.py:185
 #, python-format
 msgid "Reset %(count)s respondents to Pool status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:392
+#: src/opendlp/entrypoints/blueprints/db_selection.py:422
 #: src/opendlp/entrypoints/blueprints/respondents.py:191
 #, fuzzy
 msgid "You don't have permission to reset selection status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection.py:397
+#: src/opendlp/entrypoints/blueprints/db_selection.py:427
 #: src/opendlp/entrypoints/blueprints/respondents.py:86
 #: src/opendlp/entrypoints/blueprints/respondents.py:196
 #: src/opendlp/entrypoints/blueprints/targets.py:158
@@ -2000,41 +2000,41 @@ msgstr ""
 msgid "Task stopped unexpectedly"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:116
+#: src/opendlp/service_layer/target_checking.py:118
 #, python-format
 msgid ""
 "Sum of max values (%(value)s) is the smallest across all categories — "
 "conflicts with category '%(other)s'"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:129
+#: src/opendlp/service_layer/target_checking.py:131
 #, python-format
 msgid ""
 "Sum of min values (%(value)s) is the largest across all categories — "
 "conflicts with category '%(other)s'"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:143
+#: src/opendlp/service_layer/target_checking.py:145
 #, python-format
 msgid "Sum of minimums (%(sum)s) exceeds number to select (%(limit)s)"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:156
+#: src/opendlp/service_layer/target_checking.py:158
 #, python-format
 msgid "Sum of maximums (%(sum)s) is less than number to select (%(limit)s)"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:177
+#: src/opendlp/service_layer/target_checking.py:179
 #, python-format
 msgid "Need minimum %(min)s but only %(count)s respondents match"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:204
+#: src/opendlp/service_layer/target_checking.py:206
 #, python-format
 msgid "Suggested minimum: %(value)s (currently %(current)s)"
 msgstr ""
 
-#: src/opendlp/service_layer/target_checking.py:220
+#: src/opendlp/service_layer/target_checking.py:222
 #, python-format
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr ""
@@ -2257,7 +2257,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/admin/invite_create.html:96 templates/admin/user_edit.html:135
 #: templates/backoffice/assembly_data.html:309
 #: templates/backoffice/assembly_form.html:90
-#: templates/db_selection/select.html:81
+#: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
 #: templates/gsheets/create_config.html:236
 #: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
@@ -2377,7 +2377,7 @@ msgstr ""
 
 #: templates/admin/invite_view.html:104 templates/admin/user_edit.html:127
 #: templates/db_selection/components/progress.html:81
-#: templates/db_selection/select.html:23
+#: templates/db_selection/select.html:24 templates/db_selection/select.html:54
 #: templates/gsheets/components/progress.html:101
 #: templates/profile/2fa_backup_codes.html:19
 #: templates/profile/2fa_setup.html:37
@@ -3425,13 +3425,13 @@ msgid "Check Spreadsheet"
 msgstr "Táblázat megtekintése"
 
 #: templates/backoffice/assembly_selection.html:85
-#: templates/db_selection/select.html:60 templates/gsheets/select.html:33
+#: templates/db_selection/select.html:92 templates/gsheets/select.html:33
 #, fuzzy
 msgid "Run Test Selection"
 msgstr "Rétegzett kiválasztás"
 
 #: templates/backoffice/assembly_selection.html:91
-#: templates/db_selection/select.html:55 templates/gsheets/select.html:27
+#: templates/db_selection/select.html:87 templates/gsheets/select.html:27
 #, fuzzy
 msgid "Run Selection"
 msgstr "Rétegzett kiválasztás"
@@ -3785,7 +3785,7 @@ msgstr "Kieső emberek pótlása új kiválasztással"
 msgid "Selection (DB)"
 msgstr "Kiválasztás"
 
-#: templates/db_selection/replace.html:8 templates/db_selection/select.html:91
+#: templates/db_selection/replace.html:8 templates/db_selection/select.html:123
 #: templates/gsheets/replace.html:2 templates/gsheets/replace.html:8
 #: templates/main/view_assembly_data.html:18
 #: templates/main/view_assembly_data.html:24
@@ -3822,7 +3822,43 @@ msgstr "A kiválasztandók száma <b>%(number_to_select)s ember</b>."
 msgid "Edit the number."
 msgstr "Módosítsa a számot."
 
-#: templates/db_selection/select.html:24
+#: templates/db_selection/select.html:25
+msgid "Selection cannot run yet. The following items need to be completed:"
+msgstr ""
+
+#: templates/db_selection/select.html:31
+#, fuzzy
+msgid "Selection settings"
+msgstr "További beállítások"
+
+#: templates/db_selection/select.html:32
+msgid "— need to be reviewed and saved"
+msgstr ""
+
+#: templates/db_selection/select.html:37
+#, fuzzy
+msgid "Target categories"
+msgstr "Feladat állapota"
+
+#: templates/db_selection/select.html:38
+#, fuzzy
+msgid "— none have been set up yet"
+msgstr "Kijelentkeztél."
+
+#: templates/db_selection/select.html:43
+#: templates/main/view_assembly_base.html:42
+#: templates/respondents/view_respondents.html:2
+#: templates/targets/components/category_block.html:73
+#, fuzzy
+msgid "Respondents"
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/db_selection/select.html:44
+#, fuzzy
+msgid "— none have been uploaded yet"
+msgstr "Kijelentkeztél."
+
+#: templates/db_selection/select.html:55
 #, python-format
 msgid ""
 "%(count)s respondents already have a selection status (selected, "
@@ -3830,95 +3866,96 @@ msgid ""
 "remaining pool."
 msgstr ""
 
-#: templates/db_selection/select.html:27
+#: templates/db_selection/select.html:58
 #, fuzzy
 msgid "Your options:"
 msgstr "Kiválasztás"
 
-#: templates/db_selection/select.html:30
+#: templates/db_selection/select.html:61
 #, fuzzy
 msgid "Do replacements"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/db_selection/select.html:31
+#: templates/db_selection/select.html:62
 msgid "— select replacement members from the remaining pool"
 msgstr ""
 
-#: templates/db_selection/select.html:34
+#: templates/db_selection/select.html:65
 msgid "Reset all respondents to Pool status, then run a fresh selection"
 msgstr ""
 
-#: templates/db_selection/select.html:42
+#: templates/db_selection/select.html:73
 #: templates/respondents/view_respondents.html:144
 msgid "Are you sure? This will reset all respondents to Pool status."
 msgstr ""
 
-#: templates/db_selection/select.html:43
+#: templates/db_selection/select.html:74
 #, fuzzy
 msgid "Reset all respondents to Pool"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/db_selection/select.html:64
+#: templates/db_selection/select.html:96
 #, fuzzy
 msgid "Check Targets & Respondents"
 msgstr "Feladat állapota"
 
-#: templates/db_selection/select.html:69
+#: templates/db_selection/select.html:101
 #, fuzzy
 msgid "Running Selection"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/db_selection/select.html:71
+#: templates/db_selection/select.html:103
 #, fuzzy
 msgid "Running Test Selection"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/db_selection/select.html:73 templates/gsheets/replace.html:35
+#: templates/db_selection/select.html:105 templates/gsheets/replace.html:35
 #: templates/gsheets/select.html:57
 msgid "Task in Progress..."
 msgstr "Feladat folyamatban"
 
-#: templates/db_selection/select.html:89 templates/db_selection/settings.html:2
+#: templates/db_selection/select.html:121
+#: templates/db_selection/settings.html:2
 #: templates/db_selection/settings.html:11
 #, fuzzy
 msgid "Selection Settings"
 msgstr "További beállítások"
 
-#: templates/db_selection/select.html:101
+#: templates/db_selection/select.html:133
 msgid "Data Check Passed"
 msgstr ""
 
-#: templates/db_selection/select.html:105
+#: templates/db_selection/select.html:137
 #, python-format
 msgid ""
 "Found %(num_features)s target categories and %(num_people)s eligible "
 "respondents. Data is ready for selection."
 msgstr ""
 
-#: templates/db_selection/select.html:113
+#: templates/db_selection/select.html:145
 msgid "Data Check Failed"
 msgstr ""
 
-#: templates/db_selection/select.html:126
+#: templates/db_selection/select.html:158
 #, fuzzy
 msgid "Validation Details"
 msgstr "Meghívó kód"
 
-#: templates/db_selection/select.html:140
+#: templates/db_selection/select.html:172
 #, fuzzy
 msgid "Selection Complete"
 msgstr "Kiválasztás"
 
-#: templates/db_selection/select.html:143
+#: templates/db_selection/select.html:175
 msgid "Download the results as CSV files:"
 msgstr ""
 
-#: templates/db_selection/select.html:148
+#: templates/db_selection/select.html:180
 #, fuzzy
 msgid "Download Selected"
 msgstr "Táblázat lapfülei"
 
-#: templates/db_selection/select.html:154
+#: templates/db_selection/select.html:186
 #, fuzzy
 msgid "Download Remaining"
 msgstr "Fennmaradó résztvevők lap generálása"
@@ -4696,13 +4733,6 @@ msgstr "Közösségi gyűlés"
 #, fuzzy
 msgid "Targets"
 msgstr "Kezdés dátuma"
-
-#: templates/main/view_assembly_base.html:42
-#: templates/respondents/view_respondents.html:2
-#: templates/targets/components/category_block.html:73
-#, fuzzy
-msgid "Respondents"
-msgstr "Válaszadókat tartalmazó lapful neve"
 
 #: templates/main/view_assembly_base.html:48
 #, fuzzy

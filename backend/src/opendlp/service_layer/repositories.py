@@ -353,6 +353,11 @@ class TargetCategoryRepository(AbstractRepository):
         """Delete all target categories for an assembly. Returns count deleted."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        """Count target categories for an assembly."""
+        raise NotImplementedError
+
 
 class RespondentRepository(AbstractRepository):
     """Repository interface for Respondent domain objects."""
@@ -370,6 +375,11 @@ class RespondentRepository(AbstractRepository):
     @abc.abstractmethod
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         """Get a respondent by assembly and external ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        """Count all respondents for an assembly."""
         raise NotImplementedError
 
     @abc.abstractmethod

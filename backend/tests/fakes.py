@@ -482,6 +482,9 @@ class FakeTargetCategoryRepository(FakeRepository, TargetCategoryRepository):
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
         return [c for c in self._items if c.assembly_id == assembly_id]
 
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return sum(1 for c in self._items if c.assembly_id == assembly_id)
+
     def delete(self, item: TargetCategory) -> None:
         self._items = [c for c in self._items if c.id != item.id]
 
@@ -512,6 +515,9 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             if r.assembly_id == assembly_id and r.external_id == external_id:
                 return r
         return None
+
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return sum(1 for r in self._items if r.assembly_id == assembly_id)
 
     def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
         return sum(
