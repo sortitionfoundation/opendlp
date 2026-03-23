@@ -321,3 +321,35 @@ def patch_password_hashing(monkeypatch):
 
     monkeypatch.setattr(security, "generate_password_hash", mock_generate)
     monkeypatch.setattr(totp_service, "generate_password_hash", mock_generate)
+
+
+def _get_worker_redis_db(worker_id: str) -> int:
+    """Return a Redis database number unique to each xdist worker.
+
+    Redis supports databases 0-15. Database 0 is used by Celery, so we
+    start worker databases from 1. Without xdist (worker_id == "master")
+    we use database 1.
+    """
+    if worker_id == "master":
+        return 1
+    # worker_id is like "gw0", "gw1", etc — extract the number and offset by 1
+    worker_num = int(worker_id.replace("gw", ""))
+    db = worker_num + 1
+    if db > 15:
+        raise ValueError(f"Too many xdist workers for Redis databases (max 15): {worker_id}")
+    return db
+
+
+@pytest.fixture(scope="session")
+def test_redis_client(worker_id):
+    """Provide a per-worker Redis client using separate Redis databases.
+
+    Each xdist worker gets its own Redis database (1-15) to avoid
+    interference between parallel test runs. Database 0 is reserved
+    for Celery.
+    """
+    db = _get_worker_redis_db(worker_id)
+    r = redis.Redis(host="localhost", port=63792, db=db, decode_responses=True)
+    r.flushdb()
+    yield r
+    r.flushdb()

@@ -85,19 +85,18 @@ def get_google_auth_json_path() -> Path:
 class RedisCfg:
     host: str
     port: int
-    db: str = ""
+    db: int = 0
 
     def to_url(self) -> str:
-        if self.db:
-            return f"redis://{self.host}:{self.port}/{self.db}"
-        return f"redis://{self.host}:{self.port}"
+        return f"redis://{self.host}:{self.port}/{self.db}"
 
     @classmethod
     def from_env(cls) -> "RedisCfg":
         host = os.environ.get("REDIS_HOST", "localhost")
         default_port = 63791 if host == "localhost" else 6379
         port = int(os.environ.get("REDIS_PORT", default_port))
-        return RedisCfg(host=host, port=port)
+        db = int(os.environ.get("REDIS_DB", "0"))
+        return RedisCfg(host=host, port=port, db=db)
 
 
 @dataclass(slots=True, kw_only=True)

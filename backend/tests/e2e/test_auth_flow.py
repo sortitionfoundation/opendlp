@@ -5,12 +5,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from flask.testing import FlaskClient
-from redis import Redis
 
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.login_rate_limit_service import _KEY_PREFIX_EMAIL, _KEY_PREFIX_IP
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -67,19 +65,11 @@ def expired_invite(postgres_session_factory):
 
 
 @pytest.fixture(autouse=True)
-def clear_login_rate_limit_keys():
-    """Clean up Redis rate limit keys before and after each test."""
-    r = Redis(host="localhost", port=63792, decode_responses=True)
-    _clear_rate_limit_keys(r)
+def clear_login_rate_limit_keys(test_redis_client):
+    """Flush the per-worker Redis database before and after each test."""
+    test_redis_client.flushdb()
     yield
-    _clear_rate_limit_keys(r)
-
-
-def _clear_rate_limit_keys(r: Redis) -> None:
-    for key in r.scan_iter(f"{_KEY_PREFIX_EMAIL}*"):
-        r.delete(key)
-    for key in r.scan_iter(f"{_KEY_PREFIX_IP}*"):
-        r.delete(key)
+    test_redis_client.flushdb()
 
 
 class TestAuthenticationFlow:

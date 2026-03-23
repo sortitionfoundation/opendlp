@@ -5,14 +5,13 @@ from celery import Celery, Task
 from opendlp import config
 
 
-def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | None = None) -> Celery:
+def get_celery_app(redis_host: str = "", redis_port: int = 6379, old_app: Celery | None = None) -> Celery:
     # Configure Celery (using Redis as both broker and result backend)
     redis_cfg = config.RedisCfg.from_env()
     if redis_host:
         redis_cfg.host = redis_host
     if redis_port:
         redis_cfg.port = redis_port
-    redis_cfg.db = "0"
     # only re-initialise if the URL has changed
     if old_app and old_app.conf.broker_write_url == redis_cfg.to_url():
         return old_app

@@ -24,7 +24,7 @@ DEFAULT_WINDOW_MINUTES = 15
 def _get_redis() -> Redis:
     """Get a Redis connection for rate limiting."""
     cfg = RedisCfg.from_env()
-    return Redis(host=cfg.host, port=cfg.port, decode_responses=True)
+    return Redis(host=cfg.host, port=cfg.port, db=cfg.db, decode_responses=True)
 
 
 def _email_key(email: str) -> str:

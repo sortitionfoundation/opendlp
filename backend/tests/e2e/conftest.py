@@ -13,11 +13,12 @@ from tests.e2e.helpers import get_csrf_token
 
 
 @pytest.fixture
-def app(temp_env_vars, worker_db_url):
+def app(temp_env_vars, worker_db_url, test_redis_client):
     """Create test Flask application."""
     temp_env_vars(
         DB_URI=worker_db_url,
         REDIS_PORT="63792",
+        REDIS_DB=str(test_redis_client.connection_pool.connection_kwargs["db"]),
     )
     reset_celery_app()  # ensure the celery app is reset and picks up
     start_mappers()  # Initialize SQLAlchemy mappings
