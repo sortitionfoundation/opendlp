@@ -1,0 +1,34 @@
+# ABOUTME: Sveltia CMS configuration for editing OpenDLP documentation content
+# ABOUTME: Defines the GitHub backend, media storage, and content collections
+
+backend:
+  name: github
+  repo: sortitionfoundation/opendlp
+  branch: main
+  # Set base_url to your Sveltia CMS Authenticator URL for OAuth login.
+  # Without this, editors can still sign in using a GitHub personal access token.
+  # base_url: https://sveltia-cms-auth.YOUR_SUBDOMAIN.workers.dev
+
+media_folder: docs-site/static/files
+public_folder: /files
+
+collections:
+  - name: pages
+    label: Pages
+    label_singular: Page
+    folder: docs-site/content
+    create: true
+    extension: md
+    format: yaml-frontmatter
+    slug: "{{slug}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+      - label: Description
+        name: description
+        widget: string
+        required: false
+      - label: Body
+        name: body
+        widget: markdown
