@@ -41,6 +41,7 @@ from opendlp.service_layer.exceptions import (
     RateLimitExceeded,
     UserAlreadyExists,
 )
+from opendlp.service_layer.login_rate_limit_service import check_login_rate_limit, record_failed_login
 from opendlp.service_layer.password_reset_service import (
     request_password_reset,
     reset_password_with_token,
@@ -76,11 +77,19 @@ def login() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
+            # Check login rate limit before attempting authentication
+            assert form.email.data is not None
+            assert form.password.data is not None
+            check_login_rate_limit(
+                email=form.email.data,
+                ip_address=request.remote_addr or "",
+                max_per_email=current_app.config.get("LOGIN_RATE_LIMIT_PER_EMAIL", 5),
+                max_per_ip=current_app.config.get("LOGIN_RATE_LIMIT_PER_IP", 20),
+                window_minutes=current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", 15),
+            )
+
             uow = bootstrap.bootstrap()
             with uow:
-                # After form validation, these fields are guaranteed to be non-None
-                assert form.email.data is not None
-                assert form.password.data is not None
                 user = authenticate_user(uow, form.email.data, form.password.data)
 
                 # Check if user requires 2FA
@@ -106,7 +115,14 @@ def login() -> ResponseReturnValue:
                 next_page = request.args.get("next")
                 return redirect(get_safe_next_page(next_page, default=url_for("main.dashboard")))
 
+        except RateLimitExceeded:
+            flash(_("Invalid email or password."), "error")
         except InvalidCredentials:
+            record_failed_login(
+                email=form.email.data or "",
+                ip_address=request.remote_addr or "",
+                window_minutes=current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", 15),
+            )
             flash(_("Invalid email or password."), "error")
         except EmailNotConfirmed:
             flash(

@@ -5,10 +5,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from flask.testing import FlaskClient
+from redis import Redis
 
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.service_layer.login_rate_limit_service import _KEY_PREFIX_EMAIL, _KEY_PREFIX_IP
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -62,6 +64,22 @@ def expired_invite(postgres_session_factory):
         uow.commit()
 
         return detached_invite
+
+
+@pytest.fixture(autouse=True)
+def clear_login_rate_limit_keys():
+    """Clean up Redis rate limit keys before and after each test."""
+    r = Redis(host="localhost", port=63792, decode_responses=True)
+    _clear_rate_limit_keys(r)
+    yield
+    _clear_rate_limit_keys(r)
+
+
+def _clear_rate_limit_keys(r: Redis) -> None:
+    for key in r.scan_iter(f"{_KEY_PREFIX_EMAIL}*"):
+        r.delete(key)
+    for key in r.scan_iter(f"{_KEY_PREFIX_IP}*"):
+        r.delete(key)
 
 
 class TestAuthenticationFlow:
@@ -373,10 +391,35 @@ class TestAuthenticationEdgeCases:
 
         assert response.status_code == 200  # Returns form with error
 
-    def test_login_rate_limiting_basic(self, client: FlaskClient, regular_user: User):
-        """Basic test for login rate limiting (if implemented)."""
-        # This test assumes rate limiting might be implemented
-        # Make multiple failed login attempts
+    def test_login_rate_limiting_blocks_after_max_failures(self, client: FlaskClient, regular_user: User):
+        """Test that login is rate limited after too many failed attempts."""
+        # Make 5 failed login attempts (the default per-email limit)
+        for _ in range(5):
+            response = client.post(
+                "/auth/login",
+                data={
+                    "email": regular_user.email,
+                    "password": "wrongpassword",
+                    "csrf_token": get_csrf_token(client, "/auth/login"),
+                },
+            )
+            assert response.status_code == 200
+
+        # The 6th attempt should be blocked by rate limiting
+        response = client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "wrongpassword",
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+        )
+        assert response.status_code == 200
+        assert b"Invalid email or password" in response.data
+
+    def test_login_rate_limiting_blocks_correct_credentials_too(self, client: FlaskClient, regular_user: User):
+        """Test that even correct credentials are rejected when rate limited."""
+        # Exhaust the rate limit with wrong passwords
         for _ in range(5):
             client.post(
                 "/auth/login",
@@ -387,8 +430,71 @@ class TestAuthenticationEdgeCases:
                 },
             )
 
-        # TODO: This test would check for rate limiting behavior - there is no assert right now
-        # The actual implementation may vary
+        # Now try with the correct password — should still be blocked
+        response = client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+            follow_redirects=False,
+        )
+        # Should NOT redirect to dashboard (i.e. login is blocked)
+        assert response.status_code == 200
+        assert b"Invalid email or password" in response.data
+
+    def test_login_rate_limiting_does_not_block_different_email(self, client: FlaskClient, admin_user):
+        """Test that rate limiting one email doesn't block another."""
+        # Exhaust rate limit for regular_user email
+        for _ in range(5):
+            client.post(
+                "/auth/login",
+                data={
+                    "email": "ratelimited@example.com",
+                    "password": "wrongpassword",
+                    "csrf_token": get_csrf_token(client, "/auth/login"),
+                },
+            )
+
+        # A different user should still be able to log in
+        response = client.post(
+            "/auth/login",
+            data={
+                "email": admin_user.email,
+                "password": "adminpass123",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/dashboard"
+
+    def test_login_succeeds_under_rate_limit(self, client: FlaskClient, regular_user: User):
+        """Test that login works fine with fewer failures than the limit."""
+        # Make 4 failed attempts (under the limit of 5)
+        for _ in range(4):
+            client.post(
+                "/auth/login",
+                data={
+                    "email": regular_user.email,
+                    "password": "wrongpassword",
+                    "csrf_token": get_csrf_token(client, "/auth/login"),
+                },
+            )
+
+        # Correct password on 5th attempt should succeed
+        response = client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/dashboard"
 
     def test_csrf_protection_enabled(self, client: FlaskClient):
         """Test that CSRF protection is working."""

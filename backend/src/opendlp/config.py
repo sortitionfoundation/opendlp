@@ -232,6 +232,11 @@ class FlaskBaseConfig:
         # Support configuration
         self.SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
 
+        # Login rate limiting
+        self.LOGIN_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_EMAIL", "5"))
+        self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
+        self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
+
         # File upload limits (10 MB)
         self.MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 
