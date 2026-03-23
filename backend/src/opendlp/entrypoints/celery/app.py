@@ -5,7 +5,7 @@ from celery import Celery, Task
 from opendlp import config
 
 
-def get_celery_app(redis_host: str = "", redis_port: int = 6379, old_app: Celery | None = None) -> Celery:
+def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | None = None) -> Celery:
     # Configure Celery (using Redis as both broker and result backend)
     redis_cfg = config.RedisCfg.from_env()
     if redis_host:
