@@ -1,0 +1,12 @@
+{{/* ABOUTME: Single page template for standard content pages */}}
+{{/* ABOUTME: Renders markdown content in a two-thirds width GOV.UK layout */}}
+{{ define "content" }}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <h1 class="govuk-heading-xl">{{ .Title }}</h1>
+    <div class="govuk-body">
+      {{ .Content }}
+    </div>
+  </div>
+</div>
+{{ end }}

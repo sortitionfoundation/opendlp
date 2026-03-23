@@ -1,0 +1,134 @@
+/* ABOUTME: Custom styles for the OpenDLP docs site using Sortition Foundation branding */
+/* ABOUTME: Overrides GOV.UK Frontend defaults with Sortition colour palette */
+
+:root {
+  --sortition-hot-pink: rgb(228, 15, 125);
+  --sortition-white: #ffffff;
+  --sortition-black: #000000;
+  --sortition-dark-grey: #473d3d;
+  --sortition-purple-red: #730045;
+  --sortition-blood-red: #910d3f;
+  --sortition-scarlet-red: #c7003a;
+  --sortition-red: #ff0026;
+  --sortition-burnt-orange: #fe5734;
+  --sortition-buttermilk: #ffe2ae;
+  --sortition-saffron-yellow: #fda135;
+  --sortition-sap-green: #70a311;
+  --sortition-woad-blue: #548eb4;
+}
+
+/* Header branding */
+.govuk-header {
+  background: var(--sortition-dark-grey);
+  border-bottom: 10px solid var(--sortition-burnt-orange);
+}
+
+.govuk-header__logotype-text {
+  font-weight: 700;
+}
+
+.govuk-header__link:link,
+.govuk-header__link:visited {
+  color: var(--sortition-white);
+}
+
+.govuk-header__link:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: .1em;
+}
+
+/* Focus styles using saffron yellow */
+.govuk-skip-link:focus,
+a:focus,
+.govuk-header__link:focus,
+.govuk-footer__link:focus,
+.govuk-link:focus {
+  outline: 3px solid var(--sortition-saffron-yellow);
+  outline-offset: 0;
+  background-color: var(--sortition-saffron-yellow);
+  color: var(--sortition-black);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Hero section */
+.hero-section {
+  background: var(--sortition-burnt-orange);
+  margin: -40px -15px 0 -15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.hero-section__title {
+  color: var(--sortition-white);
+  margin-bottom: 20px;
+}
+
+.hero-section__description {
+  color: var(--sortition-white);
+  max-width: 40em;
+}
+
+/* Feature cards */
+.feature-card {
+  border-top: 4px solid var(--sortition-burnt-orange);
+  padding-top: 15px;
+  margin-bottom: 30px;
+}
+
+/* Footer */
+.govuk-footer {
+  border-top: 1px solid #b1b4b6;
+}
+
+/* Markdown content styling within govuk-body containers */
+.govuk-body h2 {
+  font-family: "GDS Transport", arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.govuk-body h3 {
+  font-family: "GDS Transport", arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+
+.govuk-body p {
+  margin-bottom: 1em;
+}
+
+.govuk-body ul,
+.govuk-body ol {
+  margin-bottom: 1em;
+  padding-left: 20px;
+}
+
+.govuk-body li {
+  margin-bottom: 0.5em;
+}
+
+.govuk-body a {
+  color: #1d70b8;
+}
+
+.govuk-body a:visited {
+  color: #4c2c92;
+}
+
+.govuk-body strong {
+  font-weight: 700;
+}
+
+.govuk-body hr {
+  border: 0;
+  border-top: 1px solid #b1b4b6;
+  margin: 2em 0;
+}

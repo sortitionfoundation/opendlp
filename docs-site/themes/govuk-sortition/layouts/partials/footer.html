@@ -1,0 +1,27 @@
+{{/* ABOUTME: Site footer with links to GitHub, Sortition Foundation, and data agreement */}}
+{{/* ABOUTME: Matches the GOV.UK footer pattern used in the backend application */}}
+<footer class="govuk-footer" role="contentinfo">
+  <div class="govuk-width-container">
+    <div class="govuk-footer__meta">
+      <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+        <h2 class="govuk-visually-hidden">Support links</h2>
+        <ul class="govuk-footer__inline-list">
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="{{ .Site.Params.githubURL }}" target="_blank">GitHub</a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="{{ .Site.Params.sortitionFoundationURL }}" target="_blank">Sortition Foundation</a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="{{ "data-agreement/" | relURL }}">User Data Agreement</a>
+          </li>
+        </ul>
+        <div class="govuk-footer__meta-custom">
+          <p class="govuk-body-s">
+            OpenDLP is an open source platform for Democratic Lottery and Citizens' Assembly management.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

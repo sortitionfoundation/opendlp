@@ -1,0 +1,33 @@
+# ABOUTME: Hugo configuration for the OpenDLP documentation site
+# ABOUTME: Uses a custom GOV.UK-styled theme with Sortition Foundation branding
+
+baseURL = '/'
+languageCode = 'en-gb'
+title = 'OpenDLP Documentation'
+theme = 'govuk-sortition'
+
+[params]
+  description = 'Documentation for the Open Democratic Lottery Platform'
+  supportEmail = 'opendlp-support@sortitionfoundation.org'
+  githubURL = 'https://github.com/sortitionfoundation/opendlp'
+  sortitionLabURL = 'https://www.sortitionfoundation.org/lab'
+  sortitionFoundationURL = 'https://www.sortitionfoundation.org'
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+[menu]
+  [[menu.main]]
+    name = 'Home'
+    url = '/'
+    weight = 1
+  [[menu.main]]
+    name = 'Help'
+    url = '/help/'
+    weight = 2
+  [[menu.main]]
+    name = 'Data Agreement'
+    url = '/data-agreement/'
+    weight = 3

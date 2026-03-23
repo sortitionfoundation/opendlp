@@ -1,0 +1,6 @@
+# ABOUTME: Git ignore rules for the Hugo docs site
+# ABOUTME: Excludes build output and Hugo resource cache
+
+public/
+resources/
+.hugo_build.lock

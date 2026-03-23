@@ -1,0 +1,38 @@
+{{/* ABOUTME: Home page template with hero section and feature cards */}}
+{{/* ABOUTME: Uses Sortition Foundation burnt-orange hero and GOV.UK grid for features */}}
+{{ define "content" }}
+<div class="hero-section govuk-!-padding-top-8 govuk-!-padding-bottom-8">
+  <h1 class="govuk-heading-xl hero-section__title">OpenDLP Documentation</h1>
+  <p class="govuk-body-l hero-section__description">
+    Documentation for the Open Democratic Lottery Platform &mdash; an open source tool
+    for running Citizens' Assemblies and democratic lotteries.
+  </p>
+</div>
+
+<div class="govuk-grid-row govuk-!-margin-top-6">
+  <div class="govuk-grid-column-one-third">
+    <div class="feature-card">
+      <h2 class="govuk-heading-m">
+        <a class="govuk-link" href="{{ "help/" | relURL }}">Help &amp; Support</a>
+      </h2>
+      <p class="govuk-body">Get help with using OpenDLP, including how to contact our support team and what to include in a support request.</p>
+    </div>
+  </div>
+  <div class="govuk-grid-column-one-third">
+    <div class="feature-card">
+      <h2 class="govuk-heading-m">
+        <a class="govuk-link" href="{{ "data-agreement/" | relURL }}">User Data Agreement</a>
+      </h2>
+      <p class="govuk-body">Read our data processing agreement covering how we handle personal data in compliance with GDPR.</p>
+    </div>
+  </div>
+  <div class="govuk-grid-column-one-third">
+    <div class="feature-card">
+      <h2 class="govuk-heading-m">
+        <a class="govuk-link" href="{{ .Site.Params.githubURL }}" target="_blank">Source Code</a>
+      </h2>
+      <p class="govuk-body">OpenDLP is open source. Browse the code, report issues, or contribute on GitHub.</p>
+    </div>
+  </div>
+</div>
+{{ end }}

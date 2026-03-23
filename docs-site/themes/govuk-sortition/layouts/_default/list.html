@@ -1,0 +1,22 @@
+{{/* ABOUTME: List template for section pages showing child pages */}}
+{{/* ABOUTME: Renders section heading and links to child pages in GOV.UK style */}}
+{{ define "content" }}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <h1 class="govuk-heading-xl">{{ .Title }}</h1>
+    <div class="govuk-body">
+      {{ .Content }}
+    </div>
+    {{ range .Pages }}
+    <div class="govuk-!-margin-bottom-6">
+      <h2 class="govuk-heading-m">
+        <a class="govuk-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
+      </h2>
+      {{ with .Description }}
+      <p class="govuk-body">{{ . }}</p>
+      {{ end }}
+    </div>
+    {{ end }}
+  </div>
+</div>
+{{ end }}

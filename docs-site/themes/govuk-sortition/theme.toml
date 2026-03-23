@@ -1,0 +1,13 @@
+# ABOUTME: Theme metadata for the custom GOV.UK + Sortition Foundation theme
+# ABOUTME: Provides GOV.UK design system styling with Sortition Foundation branding
+
+name = "GOV.UK Sortition"
+license = "MIT"
+licenselink = "https://github.com/sortitionfoundation/opendlp/blob/main/LICENSE"
+description = "A GOV.UK Design System theme with Sortition Foundation branding for OpenDLP documentation"
+tags = ["govuk", "documentation"]
+min_version = "0.100.0"
+
+[author]
+  name = "Sortition Foundation"
+  homepage = "https://www.sortitionfoundation.org"
