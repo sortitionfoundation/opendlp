@@ -224,11 +224,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled = True
             respondents_enabled = True
             selection_enabled = True
-        elif csv_status and (csv_status.get("has_targets") or csv_status.get("has_respondents")):
+        elif csv_status and csv_status.has_data:
             data_source = "csv"
-            targets_enabled = csv_status.get("has_targets", False)
-            respondents_enabled = csv_status.get("has_respondents", False)
-            selection_enabled = targets_enabled and respondents_enabled
+            targets_enabled = csv_status.has_targets
+            respondents_enabled = csv_status.has_respondents
+            selection_enabled = csv_status.selection_enabled
         else:
             data_source = ""
             targets_enabled = False

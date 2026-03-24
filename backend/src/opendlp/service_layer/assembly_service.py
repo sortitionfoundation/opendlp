@@ -3,6 +3,7 @@ ABOUTME: Provides functions for assembly creation, updates, permissions, and lif
 
 import csv as csv_module
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from io import StringIO
 from typing import Any, cast
@@ -870,11 +871,34 @@ def update_csv_config(
         return csv_config.create_detached_copy()
 
 
+@dataclass(kw_only=True)
+class CSVUploadStatus:
+    targets_count: int
+    respondents_count: int
+    csv_config: AssemblyCSV | None
+
+    @property
+    def has_targets(self) -> bool:
+        return self.targets_count > 0
+
+    @property
+    def has_respondents(self) -> bool:
+        return self.respondents_count > 0
+
+    @property
+    def has_data(self) -> bool:
+        return self.respondents_count > 0 or self.targets_count > 0
+
+    @property
+    def selection_enabled(self) -> bool:
+        return self.respondents_count > 0 and self.targets_count > 0
+
+
 def get_csv_upload_status(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-) -> dict[str, Any]:
+) -> CSVUploadStatus:
     """Get CSV upload status for an assembly.
 
     Returns a dict with:
@@ -910,13 +934,11 @@ def get_csv_upload_status(
         # Get CSV config if exists
         csv_config = assembly.csv.create_detached_copy() if assembly.csv else None
 
-        return {
-            "has_targets": targets_count > 0,
-            "targets_count": targets_count,
-            "has_respondents": respondents_count > 0,
-            "respondents_count": respondents_count,
-            "csv_config": csv_config,
-        }
+        return CSVUploadStatus(
+            targets_count=targets_count,
+            respondents_count=respondents_count,
+            csv_config=csv_config,
+        )
 
 
 def delete_targets_for_assembly(

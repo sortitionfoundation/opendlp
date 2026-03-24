@@ -21,6 +21,7 @@ from opendlp.entrypoints.forms import (
     EditAssemblyGSheetForm,
 )
 from opendlp.service_layer.assembly_service import (
+    CSVUploadStatus,
     create_assembly,
     delete_respondents_for_assembly,
     delete_targets_for_assembly,
@@ -117,7 +118,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No gsheet config exists - this is expected for new assemblies
 
         # Get CSV status
-        csv_status = None
+        csv_status: CSVUploadStatus | None = None
         try:
             uow_csv = bootstrap.bootstrap()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
@@ -214,11 +215,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-def _determine_data_source(gsheet: Any, csv_status: dict[str, Any] | None) -> tuple[str, bool]:
+def _determine_data_source(gsheet: Any, csv_status: CSVUploadStatus | None) -> tuple[str, bool]:
     """Determine data source and whether it's locked based on existing configs."""
     if gsheet:
         return "gsheet", True
-    if csv_status and (csv_status.get("has_targets") or csv_status.get("has_respondents")):
+    if csv_status and csv_status.has_data:
         return "csv", True
     # No config exists - allow user to choose source from query param
     data_source = request.args.get("source", "")
@@ -228,18 +229,14 @@ def _determine_data_source(gsheet: Any, csv_status: dict[str, Any] | None) -> tu
 
 
 def _get_tab_enabled_states(
-    data_source: str, gsheet: Any, csv_status: dict[str, Any] | None
+    data_source: str, gsheet: Any, csv_status: CSVUploadStatus | None
 ) -> tuple[bool, bool, bool]:
     """Determine whether targets, respondents, and selection tabs should be enabled."""
     if data_source == "gsheet":
         enabled = gsheet is not None
         return enabled, enabled, enabled
-    if data_source == "csv":
-        has_targets = csv_status.get("has_targets", False) if csv_status else False
-        has_respondents = csv_status.get("has_respondents", False) if csv_status else False
-        # Selection requires both targets and respondents
-        selection_enabled = has_targets and has_respondents
-        return has_targets, has_respondents, selection_enabled
+    if data_source == "csv" and csv_status:
+        return csv_status.has_targets, csv_status.has_respondents, csv_status.selection_enabled
     return False, False, False
 
 
@@ -302,7 +299,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
         except Exception as csv_error:
             current_app.logger.error(f"Error loading CSV status: {csv_error}")
-            csv_status = {"has_targets": False, "targets_count": 0, "has_respondents": False, "respondents_count": 0}
+            csv_status = CSVUploadStatus(targets_count=0, respondents_count=0, csv_config=None)
 
         # Determine data source and locking
         data_source, data_source_locked = _determine_data_source(gsheet, csv_status)
@@ -561,7 +558,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No gsheet config exists - this is expected for new assemblies
 
         # Get CSV status
-        csv_status = None
+        csv_status: CSVUploadStatus | None = None
         try:
             uow_csv = bootstrap.bootstrap()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
@@ -619,7 +616,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No gsheet config exists - this is expected for new assemblies
 
         # Get CSV status
-        csv_status = None
+        csv_status: CSVUploadStatus | None = None
         try:
             uow_csv = bootstrap.bootstrap()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
@@ -684,7 +681,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No gsheet config exists - this is expected for new assemblies
 
         # Get CSV status
-        csv_status = None
+        csv_status: CSVUploadStatus | None = None
         try:
             uow_csv = bootstrap.bootstrap()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
