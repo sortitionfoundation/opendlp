@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
@@ -826,15 +826,13 @@ class SqlAlchemyTargetCategoryRepository(SqlAlchemyRepository, TargetCategoryRep
         self.session.delete(item)
 
     def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
-        categories = self.get_by_assembly_id(assembly_id)
-        count = len(categories)
-        for category in categories:
-            self.session.delete(category)
-        # Flush deletes to the DB so subsequent inserts with the same
+        # Expire cached instances so subsequent inserts with the same
         # unique constraint values (assembly_id, name) don't collide.
-        if count:
-            self.session.flush()
-        return count
+        self.session.expire_all()
+        result = self.session.execute(
+            delete(orm.target_categories).where(orm.target_categories.c.assembly_id == assembly_id)
+        )
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
 
 
 class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository):
@@ -911,12 +909,9 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
     def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
         """Delete all respondents for an assembly."""
-        respondents = self.get_by_assembly_id(assembly_id)
-        count = len(respondents)
-        for respondent in respondents:
-            self.session.delete(respondent)
-        self.session.flush()
-        return count
+        self.session.expire_all()
+        result = self.session.execute(delete(orm.respondents).where(orm.respondents.c.assembly_id == assembly_id))
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
 
     def bulk_mark_as_selected(
         self,
