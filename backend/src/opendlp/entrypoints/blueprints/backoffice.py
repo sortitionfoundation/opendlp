@@ -3,6 +3,7 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 
 import traceback
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
@@ -1166,7 +1167,7 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
 
 
 # Mapping of service names to their handler functions
-_SERVICE_HANDLERS: dict[str, Any] = {
+_SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
     "import_targets_from_csv": _handle_import_targets,
     "get_or_create_csv_config": _handle_get_csv_config,
