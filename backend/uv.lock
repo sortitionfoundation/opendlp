@@ -3,12 +3,12 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-03-13T17:32:17.968327362Z"
+exclude-newer = "2026-03-17T10:09:06.329762842Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-03-20T17:32:17.968413134Z", span = "PT0S" }
-pyasn1 = { timestamp = "2026-03-20T17:32:17.969024258Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-03-24T10:09:06.329878189Z", span = "PT0S" }
+pyasn1 = { timestamp = "2026-03-24T10:09:06.330119503Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
