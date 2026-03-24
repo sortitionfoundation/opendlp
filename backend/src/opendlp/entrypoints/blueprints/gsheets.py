@@ -207,6 +207,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
 
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
+        edit_number_modal_open = request.args.get("edit_number") == "1"
 
         return render_template(
             "backoffice/assembly_selection.html",
@@ -232,6 +233,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             replacement_translated_report_html=replacement_translated_report_html,
             replacement_min_select=replacement_min_select,
             replacement_max_select=replacement_max_select,
+            edit_number_modal_open=edit_number_modal_open,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")

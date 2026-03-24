@@ -174,6 +174,39 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
+@login_required
+def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Update just the number_to_select field for an assembly."""
+    try:
+        number_to_select = request.form.get("number_to_select", type=int)
+        if number_to_select is None or number_to_select < 1:
+            flash(_("Please enter a valid positive number"), "error")
+            return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, edit_number=1))
+
+        uow = bootstrap.bootstrap()
+        with uow:
+            updated_assembly = update_assembly(
+                uow=uow,
+                assembly_id=assembly_id,
+                user_id=current_user.id,
+                number_to_select=number_to_select,
+            )
+
+        flash(_("Number to select updated to %(number)s", number=updated_assembly.number_to_select), "success")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to update number_to_select for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to edit this assembly"), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for update by user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:

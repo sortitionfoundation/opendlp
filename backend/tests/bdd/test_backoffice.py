@@ -362,6 +362,20 @@ def create_test_assembly(title: str, admin_user, test_database):
     _assembly_name_id_cache.add_existing(title, assembly)
 
 
+@given(parsers.parse('there is an assembly called "{title}" with number_to_select {number:d}'))
+def create_test_assembly_with_number_to_select(title: str, number: int, admin_user, test_database):
+    """Create a test assembly with a specific number_to_select for the admin user."""
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly = create_assembly(
+        uow=uow,
+        title=title,
+        created_by_user_id=admin_user.id,
+        number_to_select=number,
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+
+
 @when("I try to access the backoffice dashboard")
 def try_access_backoffice_dashboard(page: Page):
     """Attempt to access the backoffice dashboard."""
@@ -550,6 +564,15 @@ def click_button_with_text(page: Page, button_text: str):
     page.wait_for_load_state("networkidle")
 
 
+@when(parsers.parse('I click the "{link_text}" link'))
+def click_link_with_text(page: Page, link_text: str):
+    """Click a link with specific text (exact match)."""
+    link = page.get_by_role("link", name=link_text, exact=True)
+    link.click()
+    # Wait for navigation
+    page.wait_for_load_state("networkidle")
+
+
 @when(parsers.parse('I visit the edit assembly page for "{title}"'))
 def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
     """Navigate directly to the edit assembly page."""
@@ -641,6 +664,13 @@ def fill_in_number_to_select(page: Page, number: str):
     """Fill in the number to select input with a value."""
     number_input = page.locator("input[name='number_to_select']")
     number_input.fill(number)
+
+
+@when(parsers.parse('I fill in "{field}" with "{value}"'))
+def fill_in_field_with_value(page: Page, field: str, value: str):
+    """Fill in an input field by name with a value."""
+    input_field = page.locator(f"input[name='{field}']")
+    input_field.fill(value)
 
 
 @given("there are no assemblies")

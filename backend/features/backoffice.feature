@@ -52,7 +52,7 @@ Feature: Backoffice Dashboard
     Given I am logged in as an admin user
     And there is an assembly called "Selection No GSheet Assembly"
     When I visit the assembly selection page for "Selection No GSheet Assembly"
-    Then I should see "Please configure a Google Spreadsheet"
+    Then I should see "Please use the Data tab to tell us about your data"
     And I should see the "Configure Data Source" button
     And I should not see "Initial Selection"
 
@@ -65,6 +65,20 @@ Feature: Backoffice Dashboard
     And I should see "Replacement Selection"
     And I should see "Manage Generated Tabs"
     And I should see "Number to select:"
+
+  Scenario: User can edit number to select from selection tab
+    Given I am logged in as an admin user
+    And there is an assembly called "Edit Number Assembly" with number_to_select 50
+    And the assembly "Edit Number Assembly" has a gsheet configuration
+    When I visit the assembly selection page for "Edit Number Assembly"
+    Then I should see "Number to select:"
+    And I should see "50"
+    When I click the "Edit" link
+    Then I should see "Edit Number to Select"
+    When I fill in "number_to_select" with "75"
+    And I click the "Save" button
+    Then I should see "Number to select updated to 75"
+    And I should see "75"
 
   Scenario: Selection tab is accessible from all assembly tabs
     Given I am logged in as an admin user

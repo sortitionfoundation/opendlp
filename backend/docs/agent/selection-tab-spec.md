@@ -342,7 +342,7 @@ ERROR            - Task failed
 
 | Trigger | Message |
 |---------|---------|
-| No gsheet configured | "Please configure a Google Spreadsheet first" |
+| No gsheet configured | "Please use the Data tab to tell us about your data, before running a selection." |
 | Spreadsheet not found | "Could not access the spreadsheet. Please check the URL and permissions." |
 | Missing required tab | "Required tab '%(tab)s' not found in spreadsheet" |
 | Missing required column | "Required column '%(column)s' not found in tab '%(tab)s'" |
