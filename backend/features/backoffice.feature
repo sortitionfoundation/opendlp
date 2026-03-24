@@ -34,6 +34,7 @@ Feature: Backoffice Dashboard
   Scenario: User can navigate to selection tab from assembly details
     Given I am logged in as an admin user
     And there is an assembly called "Selection Test Assembly"
+    And the assembly "Selection Test Assembly" has a gsheet configuration
     When I visit the assembly details page for "Selection Test Assembly"
     And I click the "Selection" tab
     Then I should see the assembly selection page
@@ -83,6 +84,7 @@ Feature: Backoffice Dashboard
   Scenario: Selection tab is accessible from all assembly tabs
     Given I am logged in as an admin user
     And there is an assembly called "Selection Tab Navigation Assembly"
+    And the assembly "Selection Tab Navigation Assembly" has a gsheet configuration
     When I visit the assembly data page for "Selection Tab Navigation Assembly"
     And I click the "Selection" tab
     Then I should see the assembly selection page
