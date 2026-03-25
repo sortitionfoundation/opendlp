@@ -63,12 +63,12 @@ Feature: Backoffice CSV Upload
     And I should see "Target"
     And I should see "People"
 
-  Scenario: Target upload button is active and People upload is disabled initially
+  Scenario: Both Target and People upload buttons are active initially
     Given I am logged in as an admin user
     And there is an assembly called "CSV Initial Upload State"
     When I visit the assembly data page for "CSV Initial Upload State" with source "csv"
     Then the Target upload button should be enabled
-    And the People upload button should be disabled
+    And the People upload button should be enabled
 
   Scenario: After uploading targets, People upload becomes active
     Given I am logged in as an admin user

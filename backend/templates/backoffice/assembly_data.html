@@ -301,7 +301,7 @@ ABOUTME: Displays data source selection and data management for assemblies
     <section class="mb-8">
         <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("CSV Files Upload") }}</h2>
         <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-            {{ _("Upload CSV files to import participant data. Upload targets first, then people.") }}
+            {{ _("Upload CSV files to import participant data.") }}
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {# Target Upload Card #}
@@ -384,8 +384,8 @@ ABOUTME: Displays data source selection and data management for assemblies
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         {{ button(_("Delete Respondents") , type="submit", variant="danger") }}
                     </form>
-                {% elif has_targets %}
-                    {# Upload form (only enabled after targets uploaded) #}
+                {% else %}
+                    {# Upload form #}
                     <form method="post"
                           action="{{ url_for('backoffice.upload_respondents_csv', assembly_id=assembly.id) }}"
                           enctype="multipart/form-data">
@@ -398,17 +398,6 @@ ABOUTME: Displays data source selection and data management for assemblies
                         ) }}
                         <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>
-                {% else %}
-                    {# Disabled state - targets not yet uploaded #}
-                    <div class="opacity-50">
-                        {{ file_input(name="file",
-                        label=_("CSV File") ,
-                        accept=".csv",
-                        disabled=true,
-                        hint=_("Upload targets first before uploading people.")
-                        ) }}
-                        <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary", disabled=true) }}</div>
-                    </div>
                 {% endif %}
             </div>
         </div>
