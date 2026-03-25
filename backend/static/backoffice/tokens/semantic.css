@@ -40,9 +40,29 @@
      FOCUS RING
      ======================================== */
 
-    --color-focus-ring: var(--color-brand-200);
+    --color-focus-ring: var(--color-brand-400);
     --focus-ring-width: 2px;
-    --focus-ring-offset: 2px;
+    --focus-ring-offset: 4px;
+
+    /* ========================================
+     BUTTON SEMANTIC TOKENS
+     ======================================== */
+
+    /* Primary Button */
+    --color-button-primary-bg: var(--color-brand-400);
+    --color-button-primary-bg-hover: var(--color-brand-600);
+    --color-button-primary-text: var(--color-neutral-0);
+
+    /* Secondary Button */
+    --color-button-secondary-bg: var(--color-neutral-0);
+    --color-button-secondary-bg-hover: var(--color-neutral-200);
+    --color-button-secondary-border: var(--color-neutral-700);
+    --color-button-secondary-text: var(--color-neutral-700);
+
+    /* Tertiary (Ghost) & Icon-only Button */
+    --color-button-tertiary-bg: transparent;
+    --color-button-tertiary-bg-hover: var(--color-neutral-200);
+    --color-button-tertiary-text: var(--color-neutral-700);
 
     /* ========================================
      ALERT / STATUS COLORS

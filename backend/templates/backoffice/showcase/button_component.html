@@ -5,29 +5,50 @@ ABOUTME: Displays button variants and usage examples
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
 
+{# Sample SVG icons for demonstration #}
+{% set edit_icon %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+{% endset %}
+
+{% set chevron_down_icon %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+    </svg>
+{% endset %}
+
+{% set plus_icon %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+{% endset %}
+
+{% set trash_icon %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg>
+{% endset %}
+
 {% macro button_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Button Component") }}
-        {{ showcase_description("Reusable button macro with variant support.") }}
+        {{ showcase_description("Reusable button macro with variant support and icon slots. Based on OpenDLP Figma UI specification.") }}
 
+        {# Variants Section #}
         {% call showcase_example('{% from "backoffice/components/button.html" import button %}
 
-            {{ button("Click me") }}
-            {{ button("Submit", variant="primary", type="submit") }}
+{# Basic variants #}
+            {{ button("Primary", variant="primary") }}
             {{ button("Secondary", variant="secondary") }}
-            {{ button("Cancel", variant="outline") }}
-            {{ button("Disabled", disabled=true) }}
-
-            {# Button as link (renders as <a> instead of <button>) #}
-            {{ button("Go to Dashboard", href="/dashboard") }}
-            {{ button("External Link", href="https://example.com", variant="outline") }}') %}
+            {{ button("Tertiary", variant="tertiary") }}
+            {{ button("Disabled", disabled=true) }}') %}
             <div class="flex flex-wrap gap-4 items-center">
                 <div class="flex flex-col items-center gap-2">
-                    {{ button("Click me", id="btn-default") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Default</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Submit", variant="primary", id="btn-primary") }}
+                    {{ button("Primary", variant="primary", id="btn-primary") }}
                     <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
@@ -35,29 +56,85 @@ ABOUTME: Displays button variants and usage examples
                     <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                    {{ button("Cancel", variant="outline", id="btn-outline") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Outline</span>
+                    {{ button("Tertiary", variant="tertiary", id="btn-tertiary") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
                     {{ button("Disabled", disabled=true, id="btn-disabled") }}
                     <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
                 </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Link Button", href="#", id="btn-link") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Link (href)</span>
-                </div>
             </div>
         {% endcall %}
 
-        {{ showcase_tokens([
-        "--color-primary-action",
-        "--color-buttons-secondary",
-        "--color-page-background",
-        "--color-headings",
-        "--color-subtle-background-panels",
-        "--color-disabled-borders",
-        "--color-placeholder-text",
-        ".text-button-lg"
-        ]) }}
+        {# Icons Section #}
+        {% call showcase_example('{# With leading icon #}
+        {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
+
+{# With trailing icon (dropdown) #}
+        {{ button("Options", variant="secondary", trailing_icon=chevron_icon) }}
+
+{# Icon-only button #}
+        {{ button(variant="icon", icon=plus_icon) }}') %}
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Leading icon</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Options", variant="secondary", trailing_icon=chevron_down_icon) }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Trailing icon</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Add New", variant="tertiary", leading_icon=plus_icon) }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary + icon</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                {{ button(variant="icon", icon=edit_icon) }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                {{ button(variant="icon", icon=trash_icon) }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
+            </div>
+        </div>
     {% endcall %}
+
+        {# Link buttons #}
+    {% call showcase_example('{# Button as link (renders as <a> instead of <button>) #}
+    {{ button("Go to Dashboard", href="/dashboard") }}
+    {{ button("External Link", href="https://example.com", variant="secondary") }}') %}
+    <div class="flex flex-wrap gap-4 items-center">
+        <div class="flex flex-col items-center gap-2">
+            {{ button("Go to Dashboard", href="#", id="btn-link-primary") }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Link (Primary)</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+            {{ button("External Link", href="#", variant="secondary", id="btn-link-secondary") }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Link (Secondary)</span>
+        </div>
+    </div>
+{% endcall %}
+
+        {# Full width #}
+{% call showcase_example('{{ button("Full Width Button", variant="primary", full_width=true) }}') %}
+    <div class="w-full max-w-md">
+        {{ button("Full Width Button", variant="primary", full_width=true) }}
+    </div>
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-button-primary-bg",
+"--color-button-primary-bg-hover",
+"--color-button-primary-text",
+"--color-button-secondary-bg",
+"--color-button-secondary-bg-hover",
+"--color-button-secondary-border",
+"--color-button-secondary-text",
+"--color-button-tertiary-bg",
+"--color-button-tertiary-bg-hover",
+"--color-button-tertiary-text",
+"--color-focus-ring",
+"--focus-ring-offset"
+]) }}
+{% endcall %}
 {% endmacro %}

@@ -115,4 +115,52 @@
         font: 700 0.75rem/0.875rem var(--font-button);
         letter-spacing: 0.72px;
     }
+
+    /* ========================================
+       BUTTON COMPONENT STYLES
+       Hover and focus states for button variants
+       ======================================== */
+
+    /* Primary button hover */
+    .btn-primary-hover:hover:not(:disabled) {
+        background-color: var(--color-button-primary-bg-hover) !important;
+    }
+
+    /* Secondary button hover */
+    .btn-secondary-hover:hover:not(:disabled) {
+        background-color: var(--color-button-secondary-bg-hover) !important;
+    }
+
+    /* Tertiary/Icon button hover */
+    .btn-tertiary-hover:hover:not(:disabled) {
+        background-color: var(--color-button-tertiary-bg-hover) !important;
+    }
+
+    /* Focus ring for all buttons - keyboard navigation only */
+    .btn-focus:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    /* Remove default focus outline */
+    .btn-focus:focus {
+        outline: none;
+    }
+
+    /* Icon sizing within buttons */
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .btn-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
+    }
 }
