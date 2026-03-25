@@ -9,98 +9,111 @@ set dotenv-load
 # Test the code with pytest (HTML report)
 default: test-nobdd
 
-# Test the code with pytest, headless BDD, HTML report (combines BDD subprocess coverage)
+# Test the code with pytest, headless BDD, HTML report (includes BDD subprocess coverage)
 test-html:
-	#!/usr/bin/env bash
-	set -uo pipefail
-	echo "🚀 Testing code: Running pytest with BDD coverage"
-	BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
-	echo "🚀 Combining coverage data from BDD subprocesses"
-	uv run coverage combine --append 2>/dev/null || true
-	uv run coverage html
-	uv run coverage report --fail-under=90 || PYTEST_EXIT=2
-	exit $PYTEST_EXIT
+  #!/usr/bin/env bash
+  set -uo pipefail
+  rm -f .coverage .coverage.bdd-*
+  echo "🚀 Testing code: Running pytest with BDD coverage"
+  BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
+  uv run coverage html
+  uv run coverage report --fail-under=90 || PYTEST_EXIT=2
+  echo "Independent processes for flask and celery - if not expected you might need to re-run:"
+  ps -ef | grep flask | grep 5002
+  ps -ef | grep celery | grep solo
+  exit $PYTEST_EXIT
 
-# Test the code with pytest, headless BDD, XML report (combines BDD subprocess coverage)
+# Test the code with pytest, headless BDD, XML report (includes BDD subprocess coverage)
 test-xml:
-	#!/usr/bin/env bash
-	set -uo pipefail
-	echo "🚀 Testing code: Running pytest with BDD coverage"
-	BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
-	echo "🚀 Combining coverage data from BDD subprocesses"
-	uv run coverage combine --append 2>/dev/null || true
-	uv run coverage xml
-	uv run coverage report --fail-under=90 || PYTEST_EXIT=2
-	exit $PYTEST_EXIT
+  #!/usr/bin/env bash
+  set -uo pipefail
+  rm -f .coverage .coverage.bdd-*
+  echo "🚀 Testing code: Running pytest with BDD coverage"
+  BDD_COVERAGE=true CI=true uv run python -m pytest --tb=short --cov --cov-config=pyproject.toml; PYTEST_EXIT=$?
+  uv run coverage xml
+  uv run coverage report --fail-under=90 || PYTEST_EXIT=2
+  echo "Independent processes for flask and celery - if not expected you might need to re-run:"
+  ps -ef | grep flask | grep 5002
+  ps -ef | grep celery | grep solo
+  exit $PYTEST_EXIT
 
 # Test the code with pytest, headless BDD, HTML report
 test: test-html
 
 test-nobdd:
-	@echo "🚀 Testing code: Running pytest"
-	uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
+  @echo "🚀 Testing code: Running pytest"
+  uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
 # Run BDD tests with pytest-bdd and Playwright
 test-bdd:
-	@echo "🚀 Running BDD tests"
-	CI=true uv run python -m pytest tests/bdd/ --verbose --tb=short
+  @echo "🚀 Running BDD tests"
+  CI=true uv run python -m pytest tests/bdd/ --verbose --tb=short
+  echo "Independent processes for flask and celery - if not expected you might need to re-run:"
+  ps -ef | grep flask | grep 5002
+  ps -ef | grep celery | grep solo
 
 # Run backoffice BDD tests only
 test-backoffice:
-	@echo "🚀 Running backoffice BDD tests"
-	CI=true uv run python -m pytest tests/bdd/test_backoffice.py --verbose --tb=short
+  @echo "🚀 Running backoffice BDD tests"
+  CI=true uv run python -m pytest tests/bdd/test_backoffice.py --verbose --tb=short
 
 test-bdd-not-headless:
-	@echo "🚀 Running BDD tests"
-	uv run python -m pytest tests/bdd/ --verbose --tb=short
+  @echo "🚀 Running BDD tests"
+  uv run python -m pytest tests/bdd/ --verbose --tb=short
+  echo "Independent processes for flask and celery - if not expected you might need to re-run:"
+  ps -ef | grep flask | grep 5002
+  ps -ef | grep celery | grep solo
 
 # Run BDD tests in headless mode (for CI)
 test-bdd-headless:
-	@echo "🚀 Running BDD tests (headless)"
-	@CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
+  @echo "🚀 Running BDD tests (headless)"
+  @CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
+  echo "Independent processes for flask and celery - if not expected you might need to re-run:"
+  ps -ef | grep flask | grep 5002
+  ps -ef | grep celery | grep solo
 
 # run the tests when an files change
 watch-tests:
-	ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
+  ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
 # Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
 install:
-	@echo "🚀 Creating virtual environment using uv"
-	@uv sync
-	@echo "🚀 Setting up prek (pre-commit) hooks"
-	@uv tool run prek install
-	@echo "🚀 Install node dependencies & build CSS"
-	@npm install
-	@npm run build:sass
-	@npm run build:backoffice
-	@echo "🚀 Compile translations"
-	@uv run pybabel compile -d translations
+  @echo "🚀 Creating virtual environment using uv"
+  @uv sync
+  @echo "🚀 Setting up prek (pre-commit) hooks"
+  @uv tool run prek install
+  @echo "🚀 Install node dependencies & build CSS"
+  @npm install
+  @npm run build:sass
+  @npm run build:backoffice
+  @echo "🚀 Compile translations"
+  @uv run pybabel compile -d translations
 
 install-dev: install
-	@echo "🚀 Installing development dependencies"
-	@uv run playwright install
+  @echo "🚀 Installing development dependencies"
+  @uv run playwright install
 
 # Run code quality tools.
 check:
-	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
-	@uv lock --locked
-	@echo "🚀 Linting code: Running prek (pre-commit)"
-	@uv tool run prek run --all-files
-	@echo "🚀 Static type checking: Running mypy"
-	@uv run mypy
-	@echo "🚀 Checking for obsolete dependencies: Running deptry"
-	@uv run deptry src
+  @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
+  @uv lock --locked
+  @echo "🚀 Linting code: Running prek (pre-commit)"
+  @uv tool run prek run --all-files
+  @echo "🚀 Static type checking: Running mypy"
+  @uv run mypy
+  @echo "🚀 Checking for obsolete dependencies: Running deptry"
+  @uv run deptry src
 
 # Run code quality tools - CI edition
 check-ci:
-	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
-	@uv lock --locked
-	@echo "🚀 Linting code: Running prek (pre-commit)"
-	@uv tool run prek run --all-files --config ../.pre-commit-config-ci.yaml
-	@echo "🚀 Static type checking: Running mypy"
-	@uv run mypy
-	@echo "🚀 Checking for obsolete dependencies: Running deptry"
-	@uv run deptry src
+  @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
+  @uv lock --locked
+  @echo "🚀 Linting code: Running prek (pre-commit)"
+  @uv tool run prek run --all-files --config ../.pre-commit-config-ci.yaml
+  @echo "🚀 Static type checking: Running mypy"
+  @uv run mypy
+  @echo "🚀 Checking for obsolete dependencies: Running deptry"
+  @uv run deptry src
 
 # start the flask shell
 flask-shell:
@@ -197,20 +210,20 @@ translate-compile:
 
 # shut down docker
 stop-docker:
-	@docker compose down
+  @docker compose down
 
 # rebuild docker image
 build-docker:
-	@git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
-	@docker compose build
+  @git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+  @docker compose build
 
 # start docker and detach - note NO WATCH
 start-docker:
-	@docker compose up --detach
+  @docker compose up --detach
 
 # start docker watching for changes and blocking - i.e. not detaching
 start-docker-b:
-	@docker compose up --watch
+  @docker compose up --watch
 
 # stop, rebuild, start docker and detach
 restart-docker: stop-docker build-docker start-docker
