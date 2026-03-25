@@ -46,11 +46,13 @@ def add_user(
         uow = bootstrap.bootstrap(session_factory=session_factory)
         with uow:
             # create_user now returns (user, token) tuple
+            # Auto-confirm email since CLI users have no way to click a confirmation link
             user, _token = create_user(
                 uow=uow,
                 email=email,
                 password=password,
                 global_role=global_role,
+                auto_confirm_email=True,
             )
 
             click.echo(click.style("✓ User created successfully:", "green"))

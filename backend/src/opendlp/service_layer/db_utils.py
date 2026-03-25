@@ -57,6 +57,7 @@ def seed_database(
         now = datetime.now(UTC)
 
         # Create admin user
+        # Seeded users have email auto-confirmed since no confirmation email is sent
         admin_user = User(
             user_id=admin_user_id,
             email=admin_email,
@@ -66,6 +67,7 @@ def seed_database(
             global_role=GlobalRole.ADMIN,
             created_at=now,
             is_active=True,
+            email_confirmed_at=now,
         )
         uow.users.add(admin_user)
 
@@ -79,6 +81,7 @@ def seed_database(
             global_role=GlobalRole.GLOBAL_ORGANISER,
             created_at=now,
             is_active=True,
+            email_confirmed_at=now,
         )
         uow.users.add(organiser_user)
 
@@ -92,6 +95,7 @@ def seed_database(
             global_role=GlobalRole.USER,
             created_at=now,
             is_active=True,
+            email_confirmed_at=now,
         )
         uow.users.add(regular_user)
         # we need to commit so that the following items can refer to these
