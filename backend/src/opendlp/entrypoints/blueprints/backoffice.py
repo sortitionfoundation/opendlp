@@ -1,7 +1,6 @@
 """ABOUTME: Backoffice routes for admin UI using Pines UI + Tailwind CSS
 ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source, and team members"""
 
-import traceback
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -1002,9 +1001,8 @@ def service_docs_execute() -> ResponseReturnValue:
         current_app.logger.exception("Full traceback:")
         return jsonify({
             "status": "error",
-            "error": str(e),
-            "error_type": type(e).__name__,
-            "traceback": traceback.format_exc(),
+            "error": "An internal error occurred while executing the service.",
+            "error_type": "InternalError",
         }), 500
 
 
