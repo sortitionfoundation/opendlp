@@ -235,6 +235,7 @@ user_invites = Table(
         "used_by", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
     ),
     Column("used_at", TZAwareDatetime(), nullable=True),
+    Column("email", String(255), nullable=True, default=""),
 )
 
 # Password reset tokens table

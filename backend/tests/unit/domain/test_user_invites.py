@@ -232,6 +232,28 @@ class TestUserInvite:
         expired_time_until_expiry = expired_invite.time_until_expiry()
         assert expired_time_until_expiry.total_seconds() < 0
 
+    def test_create_user_invite_with_email(self):
+        created_by = uuid.uuid4()
+
+        invite = UserInvite(global_role=GlobalRole.USER, created_by=created_by, email="test@example.com")
+
+        assert invite.email == "test@example.com"
+
+    def test_create_user_invite_email_defaults_to_empty_string(self):
+        created_by = uuid.uuid4()
+
+        invite = UserInvite(global_role=GlobalRole.USER, created_by=created_by)
+
+        assert invite.email == ""
+
+    def test_create_detached_copy_preserves_email(self):
+        created_by = uuid.uuid4()
+
+        invite = UserInvite(global_role=GlobalRole.USER, created_by=created_by, email="copy@example.com")
+        copy = invite.create_detached_copy()
+
+        assert copy.email == "copy@example.com"
+
     def test_user_invite_equality_and_hash(self):
         invite_id = uuid.uuid4()
         created_by = uuid.uuid4()

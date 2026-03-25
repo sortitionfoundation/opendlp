@@ -31,6 +31,7 @@ class UserInvite:
         expires_at: datetime | None = None,
         used_by: uuid.UUID | None = None,
         used_at: datetime | None = None,
+        email: str = "",
     ):
         if expires_in_hours <= 0:
             raise ValueError("Expiry hours must be positive")
@@ -45,6 +46,7 @@ class UserInvite:
         self.expires_at = expires_at or (current_time + timedelta(hours=expires_in_hours))
         self.used_by = used_by
         self.used_at = used_at
+        self.email = email
 
     def is_valid(self) -> bool:
         """Check if invite is valid (not expired and not used)."""
@@ -93,5 +95,6 @@ class UserInvite:
             expires_at=self.expires_at,
             used_by=self.used_by,
             used_at=self.used_at,
+            email=self.email,
         )
         return detached_user_invite

@@ -316,6 +316,7 @@ def create_invite() -> ResponseReturnValue:
                         created_by_user_id=current_user.id,
                         global_role=global_role,
                         expires_in_hours=expires_in_hours,
+                        email=form.email.data or "",
                     )
 
                 flash(

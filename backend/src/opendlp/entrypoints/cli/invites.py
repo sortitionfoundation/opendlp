@@ -102,12 +102,13 @@ def list_invites_cmd(ctx: click.Context, include_expired: bool, include_used: bo
                 return
 
             # Display header
-            click.echo(f"{'Code':<20} {'Role':<15} {'Status':<8} {'Expires':<19} {'Used By':<30}")
-            click.echo("-" * 95)
+            click.echo(f"{'Code':<20} {'Email':<30} {'Role':<15} {'Status':<8} {'Expires':<19} {'Used By':<30}")
+            click.echo("-" * 125)
 
             # Display invites
             for invite in invites_list:
                 expires_str = invite.expires_at.strftime("%Y-%m-%d %H:%M:%S")
+                email_str = (invite.email or "-")[:29]
 
                 if invite.used_by:
                     status = "Used"
@@ -120,7 +121,8 @@ def list_invites_cmd(ctx: click.Context, include_expired: bool, include_used: bo
                     used_by = "-"
 
                 click.echo(
-                    f"{invite.code:<20} {invite.global_role.value:<15} {status:<8} {expires_str:<19} {used_by:<30}"
+                    f"{invite.code:<20} {email_str:<30} {invite.global_role.value:<15} "
+                    f"{status:<8} {expires_str:<19} {used_by:<30}"
                 )
 
     except Exception as e:

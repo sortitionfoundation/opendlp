@@ -63,6 +63,7 @@
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
                     <th scope="col" class="govuk-table__header">{{ _("Code") }}</th>
+                    <th scope="col" class="govuk-table__header">{{ _("Email") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Role") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Status") }}</th>
                     <th scope="col" class="govuk-table__header">{{ _("Created") }}</th>
@@ -76,6 +77,7 @@
                         <td class="govuk-table__cell">
                             <code>{{ invite.code }}</code>
                         </td>
+                        <td class="govuk-table__cell">{{ invite.email or "—" }}</td>
                         <td class="govuk-table__cell">
                             {% if invite.global_role.value == 'admin' %}
                                 <strong class="govuk-tag govuk-tag--red">{{ _("Admin") }}</strong>
