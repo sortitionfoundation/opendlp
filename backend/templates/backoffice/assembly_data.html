@@ -388,7 +388,8 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {# Upload form #}
                     <form method="post"
                           action="{{ url_for('backoffice.upload_respondents_csv', assembly_id=assembly.id) }}"
-                          enctype="multipart/form-data">
+                          enctype="multipart/form-data"
+                          class="flex flex-col gap-4">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         {{ file_input(name="file",
                         label=_("CSV File") ,
@@ -396,7 +397,13 @@ ABOUTME: Displays data source selection and data management for assemblies
                         required=true,
                         hint=_("Select a CSV file with respondent data.")
                         ) }}
-                        <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
+                        {{ input(name="id_column",
+                        label=_("ID Column") ,
+                        value="",
+                        placeholder=_("e.g., ID"),
+                        hint=_("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.")
+                        ) }}
+                        <div>{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>
                 {% endif %}
             </div>

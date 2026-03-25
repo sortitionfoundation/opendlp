@@ -454,6 +454,9 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Read CSV content
         csv_content = file.read().decode("utf-8")
 
+        # Get optional id_column from form (empty string means use first column)
+        id_column = request.form.get("id_column", "").strip() or None
+
         # Import respondents using service function
         uow = bootstrap.bootstrap()
         with uow:
@@ -463,6 +466,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 csv_content=csv_content,
                 replace_existing=True,
+                id_column=id_column,
             )
 
         if errors:
