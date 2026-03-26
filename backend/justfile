@@ -188,7 +188,7 @@ translate-regen:
   @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
   uv run pybabel extract \
     --mapping-file=babel.cfg \
-    --keyword=_l -keyword=N_ \
+    --keyword=_l --keyword=N_ \
     --output-file=translations/messages.pot \
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
