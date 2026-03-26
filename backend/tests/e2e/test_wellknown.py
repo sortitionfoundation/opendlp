@@ -41,10 +41,10 @@ class TestSecurityTxt:
 class TestChangePassword:
     """Tests for /.well-known/change-password redirect."""
 
-    def test_anonymous_user_redirects_to_forgot_password(self, client: FlaskClient) -> None:
+    def test_anonymous_user_redirects_to_profile_change_password(self, client: FlaskClient) -> None:
         response = client.get("/.well-known/change-password")
         assert response.status_code == 302
-        assert "/auth/forgot-password" in response.headers["Location"]
+        assert "/profile/change-password" in response.headers["Location"]
 
     def test_logged_in_user_redirects_to_profile_change_password(
         self, logged_in_user: FlaskClient, regular_user: User

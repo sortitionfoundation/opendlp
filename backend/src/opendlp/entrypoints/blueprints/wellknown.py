@@ -3,7 +3,6 @@ ABOUTME: Serves standard well-known URIs as defined by RFC 8615 and related spec
 
 from flask import Blueprint, redirect, send_from_directory, url_for
 from flask.typing import ResponseReturnValue
-from flask_login import current_user
 
 from opendlp import config
 
@@ -40,9 +39,8 @@ def change_password() -> ResponseReturnValue:
     """Redirect to the appropriate password-change page.
 
     Signed-in users go to the profile change-password form.
-    Anonymous users go to the forgot-password (reset) flow.
+    Anonymous users will try to go to the profile change-password form, and be redirected
+    to the sign in page.
     See https://w3c.github.io/webappsec-change-password-url/
     """
-    if current_user.is_authenticated:
-        return redirect(url_for("profile.change_password"), code=302)
-    return redirect(url_for("auth.forgot_password"), code=302)
+    return redirect(url_for("profile.change_password"), code=302)
