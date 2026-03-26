@@ -63,7 +63,7 @@ test-bdd-headless:
 watch-tests:
 	ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
-# Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
+# Install the virtual environment, dependencies, and an editable copy of this install and install the prek hooks
 install:
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
