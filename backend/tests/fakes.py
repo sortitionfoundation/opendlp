@@ -323,7 +323,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         if not assembly_records:
             return None
         # Sort by created_at, return the most recent
-        return max(assembly_records, key=lambda r: r.created_at or "")
+        return max(assembly_records, key=lambda r: r.created_at or datetime.min)
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
@@ -343,7 +343,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         # Get all records for the assembly
         all_records = sorted(
             [item for item in self._items if item.assembly_id == assembly_id],
-            key=lambda r: r.created_at or "",
+            key=lambda r: r.created_at or datetime.min,
             reverse=True,  # Newest first
         )
 
