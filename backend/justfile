@@ -59,7 +59,7 @@ test-bdd-headless:
 	@echo "🚀 Running BDD tests (headless)"
 	@CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
 
-# run the tests when an files change
+# run the tests when any files change
 watch-tests:
 	ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
