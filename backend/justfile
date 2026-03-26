@@ -143,6 +143,8 @@ gunicorn:
 build-css:
   @echo "🚀 Building CSS from SCSS"
   @npm run build:sass
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
 
 # watch and rebuild CSS from SCSS (GOV.UK public pages)
 watch-css:
@@ -153,6 +155,8 @@ watch-css:
 build-backoffice:
   @echo "🚀 Building Tailwind CSS for backoffice"
   @npm run build:backoffice
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
 
 # watch and rebuild Tailwind CSS for backoffice
 watch-backoffice:
