@@ -453,11 +453,7 @@ class FakeEmailConfirmationTokenRepository(FakeRepository, EmailConfirmationToke
 
     def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
         """Count email confirmation requests for a user since a given datetime."""
-        return sum(
-            1
-            for item in self._items
-            if item.user_id == user_id and item.created_at >= since
-        )
+        return sum(1 for item in self._items if item.user_id == user_id and item.created_at >= since)
 
     def delete_old_tokens(self, before: datetime) -> int:
         """Delete tokens created before a given datetime. Returns count deleted."""
