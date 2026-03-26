@@ -59,11 +59,11 @@ test-bdd-headless:
 	@echo "🚀 Running BDD tests (headless)"
 	@CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
 
-# run the tests when an files change
+# run the tests when any files change
 watch-tests:
 	ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
-# Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
+# Install the virtual environment, dependencies, and an editable copy of this install and install the prek hooks
 install:
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
@@ -188,7 +188,7 @@ translate-regen:
   @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
   uv run pybabel extract \
     --mapping-file=babel.cfg \
-    --keyword=_l -keyword=N_ \
+    --keyword=_l --keyword=N_ \
     --output-file=translations/messages.pot \
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
