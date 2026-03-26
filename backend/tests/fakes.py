@@ -327,7 +327,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
-        return [item for item in self._items if item.status in ["pending", "running"]]
+        return [item for item in self._items if item.is_running]
 
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
@@ -480,7 +480,10 @@ class FakeTargetCategoryRepository(FakeRepository, TargetCategoryRepository):
     """Fake in-memory TargetCategoryRepository."""
 
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
-        return [c for c in self._items if c.assembly_id == assembly_id]
+        return sorted(
+            [c for c in self._items if c.assembly_id == assembly_id],
+            key=lambda c: c.sort_order,
+        )
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         return sum(1 for c in self._items if c.assembly_id == assembly_id)
