@@ -72,11 +72,11 @@ test-bdd-headless:
   ps -ef | grep flask | grep 5002
   ps -ef | grep celery | grep solo
 
-# run the tests when an files change
+# run the tests when any files change
 watch-tests:
   ls *.py | entr uv run pytest --tb=short --ignore=tests/bdd
 
-# Install the virtual environment, dependencies, an editable copy of this install and install the prek hooks
+# Install the virtual environment, dependencies, and an editable copy of this install and install the prek hooks
 install:
   @echo "🚀 Creating virtual environment using uv"
   @uv sync
@@ -156,6 +156,8 @@ gunicorn:
 build-css:
   @echo "🚀 Building CSS from SCSS"
   @npm run build:sass
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
 
 # watch and rebuild CSS from SCSS (GOV.UK public pages)
 watch-css:
@@ -166,6 +168,8 @@ watch-css:
 build-backoffice:
   @echo "🚀 Building Tailwind CSS for backoffice"
   @npm run build:backoffice
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
 
 # watch and rebuild Tailwind CSS for backoffice
 watch-backoffice:
@@ -197,7 +201,7 @@ translate-regen:
   @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
   uv run pybabel extract \
     --mapping-file=babel.cfg \
-    --keyword=_l -keyword=N_ \
+    --keyword=_l --keyword=N_ \
     --output-file=translations/messages.pot \
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \

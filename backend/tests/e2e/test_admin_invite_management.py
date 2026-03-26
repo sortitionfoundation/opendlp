@@ -84,6 +84,19 @@ class TestListInvitesPage:
         assert response.status_code == 200
         assert invite_code.encode() in response.data
 
+    def test_list_invites_shows_email_column(self, client: FlaskClient, admin_user: User, postgres_session_factory):
+        """Test that invite list shows the email address column."""
+        login_as_admin(client, admin_user)
+
+        # Create invite with email
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24, email="list@example.com")
+
+        response = client.get("/admin/invites")
+        assert response.status_code == 200
+        assert b"Email" in response.data
+        assert b"list@example.com" in response.data
+
     def test_list_invites_shows_role_tags(self, client: FlaskClient, admin_user: User, postgres_session_factory):
         """Test that invite list displays role tags."""
         login_as_admin(client, admin_user)
@@ -197,7 +210,7 @@ class TestCreateInvite:
 
     @pytest.mark.time_machine(datetime(2025, 1, 1))
     def test_create_invite_with_email(self, client: FlaskClient, admin_user: User, postgres_session_factory, caplog):
-        """Test creating an invite with email sends invitation email."""
+        """Test creating an invite with email sends invitation email and saves it."""
         login_as_admin(client, admin_user)
 
         response = client.post(
@@ -217,11 +230,12 @@ class TestCreateInvite:
         # Should show success message for email sending (in console mode)
         assert b"Invitation email sent" in response.data
 
-        # Verify invite was created in database
+        # Verify invite was created in database with email saved
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             invites = list(uow.user_invites.all())
             assert len(invites) == 1
             assert invites[0].global_role == GlobalRole.USER
+            assert invites[0].email == "newuser@example.com"
 
         # Verify email was logged (console adapter logs emails)
         assert "Invite email sent to newuser@example.com" in caplog.text
@@ -265,6 +279,20 @@ class TestViewInvite:
 
         response = client.get(f"/admin/invites/{invite_id}")
         assert response.status_code == 403  # Forbidden
+
+    def test_view_invite_shows_email(self, client: FlaskClient, admin_user: User, postgres_session_factory):
+        """Test that view invite page shows the email address."""
+        login_as_admin(client, admin_user)
+
+        # Create test invite with email
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24, email="view@example.com")
+            invite_id = invite.id
+
+        response = client.get(f"/admin/invites/{invite_id}")
+        assert response.status_code == 200
+        assert b"view@example.com" in response.data
+        assert b"Email" in response.data
 
     def test_view_invite_shows_details(self, client: FlaskClient, admin_user: User, postgres_session_factory):
         """Test that view invite page shows all relevant information."""

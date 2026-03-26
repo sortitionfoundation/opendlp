@@ -17,6 +17,7 @@ def generate_invite(
     created_by_user_id: uuid.UUID,
     global_role: GlobalRole,
     expires_in_hours: int = 168,  # 7 days default
+    email: str = "",
 ) -> UserInvite:
     """
     Generate a new user invite.
@@ -54,6 +55,7 @@ def generate_invite(
             global_role=global_role,
             created_by=created_by_user_id,
             expires_at=datetime.now(UTC) + timedelta(hours=expires_in_hours),
+            email=email,
         )
 
         uow.user_invites.add(invite)
@@ -68,6 +70,7 @@ def generate_batch_invites(
     global_role: GlobalRole,
     count: int,
     expires_in_hours: int = 168,
+    email: str = "",
 ) -> list[UserInvite]:
     """
     Generate multiple invites at once.
@@ -113,6 +116,7 @@ def generate_batch_invites(
                 global_role=global_role,
                 created_by=created_by_user_id,
                 expires_at=expires_at,
+                email=email,
             )
 
             uow.user_invites.add(invite)

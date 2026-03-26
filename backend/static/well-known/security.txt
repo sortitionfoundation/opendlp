@@ -1,0 +1,3 @@
+Contact: mailto:security@sortitionfoundation.org
+Preferred-Languages: en
+Canonical: https://opendlp.sortitionlab.org/.well-known/security.txt

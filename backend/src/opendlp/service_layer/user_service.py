@@ -46,6 +46,7 @@ def create_user(
     global_role: GlobalRole | None = None,
     is_active: bool = True,
     accept_data_agreement: bool = False,
+    auto_confirm_email: bool = False,
 ) -> tuple[User, EmailConfirmationToken | None]:
     """
     Create a new user with proper validation.
@@ -61,10 +62,12 @@ def create_user(
         invite_code: invite code for registration
         global_role: role for the user
         accept_data_agreement: whether user has accepted data agreement
+        auto_confirm_email: if True, mark email as confirmed immediately
+            (used for CLI-created users where no confirmation email is sent)
 
     Returns:
         Tuple of (User instance, EmailConfirmationToken or None)
-        Token is None for OAuth users (who are auto-confirmed)
+        Token is None for OAuth users or auto-confirmed users
 
     Raises:
         UserAlreadyExists: If email already exists
@@ -99,8 +102,8 @@ def create_user(
         assert isinstance(user_role, GlobalRole)
 
         # Create the user
-        # OAuth users are auto-confirmed
-        email_confirmed_at = datetime.now(UTC) if oauth_provider else None
+        # OAuth users and CLI-created users are auto-confirmed
+        email_confirmed_at = datetime.now(UTC) if (oauth_provider or auto_confirm_email) else None
 
         user = User(
             email=email,
@@ -124,9 +127,9 @@ def create_user(
         if invite_code:
             use_invite(uow, invite_code, user.id)
 
-        # Create confirmation token for password users only
+        # Create confirmation token for password users who need email confirmation
         token = None
-        if password and not oauth_provider:
+        if password and not oauth_provider and not auto_confirm_email:
             token = create_confirmation_token(uow, user.id)
 
         detached_user = user.create_detached_copy()

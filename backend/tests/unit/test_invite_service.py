@@ -62,6 +62,35 @@ class TestGenerateInvite:
         with pytest.raises(InsufficientPermissions):
             invite_service.generate_invite(uow=uow, created_by_user_id=regular_user.id, global_role=GlobalRole.USER)
 
+    def test_generate_invite_with_email(self):
+        """Test that generate_invite accepts email and stores it on the invite."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        invite = invite_service.generate_invite(
+            uow=uow,
+            created_by_user_id=admin_user.id,
+            global_role=GlobalRole.USER,
+            email="invitee@example.com",
+        )
+
+        assert invite.email == "invitee@example.com"
+
+    def test_generate_invite_email_defaults_to_empty_string(self):
+        """Test that generate_invite email defaults to empty string."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        invite = invite_service.generate_invite(
+            uow=uow,
+            created_by_user_id=admin_user.id,
+            global_role=GlobalRole.USER,
+        )
+
+        assert invite.email == ""
+
     def test_generate_invite_user_not_found(self):
         """Test invite generation fails when user not found."""
         uow = FakeUnitOfWork()
@@ -91,6 +120,22 @@ class TestGenerateBatchInvites:
         codes = {invite.code for invite in invites}
         assert len(codes) == 5
         assert uow.committed
+
+    def test_generate_batch_invites_with_email(self):
+        """Test that generate_batch_invites accepts email and stores it on all invites."""
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        invites = invite_service.generate_batch_invites(
+            uow=uow,
+            created_by_user_id=admin_user.id,
+            global_role=GlobalRole.USER,
+            count=3,
+            email="batch@example.com",
+        )
+
+        assert all(invite.email == "batch@example.com" for invite in invites)
 
     def test_generate_batch_invites_invalid_count(self):
         """Test batch invite generation fails with invalid count."""

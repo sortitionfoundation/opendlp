@@ -57,6 +57,28 @@ class TestCliUsersIntegration:
             assert user.global_role == GlobalRole.ADMIN
             assert user.is_active
 
+    def test_add_user_has_confirmed_email(self, postgres_session_factory, cli_with_session_factory):
+        """Test that users created via CLI have their email auto-confirmed."""
+        result = cli_with_session_factory(
+            cli,
+            [
+                "users",
+                "add",
+                "--email",
+                "cli-confirmed@example.com",
+                "--password",
+                "pass123dfsaio",
+            ],
+        )
+
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+
+        # Verify user has email_confirmed_at set (since no confirmation email is sent from CLI)
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            user = uow.users.get_by_email("cli-confirmed@example.com")
+            assert user is not None
+            assert user.email_confirmed_at is not None, "Users created via CLI should have email auto-confirmed"
+
     def test_deactivate_user_flow(self, postgres_session_factory, cli_with_session_factory):
         """Test user deactivation flow."""
 
@@ -279,6 +301,18 @@ class TestCliDatabaseIntegration:
             # Check assembly exists
             assemblies = uow.assemblies.all()
             assert len(assemblies) >= 1  # At least the sample assembly
+
+    def test_seed_database_users_have_confirmed_email(self, postgres_session_factory, cli_with_session_factory):
+        """Test that seeded users have their email auto-confirmed."""
+        result = cli_with_session_factory(cli, ["database", "seed", "--confirm"])
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+
+        # Verify all seeded users have email_confirmed_at set
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            for email in ["admin@opendlp.example", "organiser@opendlp.example", "user@opendlp.example"]:
+                user = uow.users.get_by_email(email)
+                assert user is not None, f"Seeded user {email} not found"
+                assert user.email_confirmed_at is not None, f"Seeded user {email} should have email auto-confirmed"
 
     def test_seed_already_seeded_database(self, postgres_session_factory, cli_with_session_factory):
         """Test seeding when database already has data."""

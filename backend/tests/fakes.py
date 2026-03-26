@@ -323,11 +323,11 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         if not assembly_records:
             return None
         # Sort by created_at, return the most recent
-        return max(assembly_records, key=lambda r: r.created_at or "")
+        return max(assembly_records, key=lambda r: r.created_at or datetime.min)
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
-        return [item for item in self._items if item.status in ["pending", "running"]]
+        return [item for item in self._items if item.is_running]
 
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
@@ -343,7 +343,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         # Get all records for the assembly
         all_records = sorted(
             [item for item in self._items if item.assembly_id == assembly_id],
-            key=lambda r: r.created_at or "",
+            key=lambda r: r.created_at or datetime.min,
             reverse=True,  # Newest first
         )
 
@@ -453,11 +453,7 @@ class FakeEmailConfirmationTokenRepository(FakeRepository, EmailConfirmationToke
 
     def count_recent_requests(self, user_id: uuid.UUID, since: datetime) -> int:
         """Count email confirmation requests for a user since a given datetime."""
-        count = 0
-        for item in self._items:
-            if item.user_id == user_id and item.created_at >= since:
-                count += 1
-        return count
+        return sum(1 for item in self._items if item.user_id == user_id and item.created_at >= since)
 
     def delete_old_tokens(self, before: datetime) -> int:
         """Delete tokens created before a given datetime. Returns count deleted."""
@@ -480,7 +476,10 @@ class FakeTargetCategoryRepository(FakeRepository, TargetCategoryRepository):
     """Fake in-memory TargetCategoryRepository."""
 
     def get_by_assembly_id(self, assembly_id: uuid.UUID) -> list[TargetCategory]:
-        return [c for c in self._items if c.assembly_id == assembly_id]
+        return sorted(
+            [c for c in self._items if c.assembly_id == assembly_id],
+            key=lambda c: c.sort_order,
+        )
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         return sum(1 for c in self._items if c.assembly_id == assembly_id)
