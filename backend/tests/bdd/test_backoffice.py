@@ -1118,6 +1118,73 @@ def see_assembly_selection_page(page: Page):
     expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/selection"))
 
 
+# Update Number to Select Tests
+
+
+@given(parsers.parse('there is an assembly called "{title}" with number to select "{number}"'))
+def create_test_assembly_with_number_to_select_quoted(title: str, number: str, admin_user, test_database):
+    """Create a test assembly with a specific number_to_select for the admin user."""
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly = create_assembly(
+        uow=uow,
+        title=title,
+        created_by_user_id=admin_user.id,
+        number_to_select=int(number),
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+
+
+@when(parsers.parse('I visit the selection page for "{title}"'))
+def visit_selection_page_for_assembly(page: Page, title: str, test_database):
+    """Navigate directly to the selection page for a specific assembly."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_selection_assembly_url(assembly_id))
+        page.wait_for_load_state("networkidle")
+
+
+@when('I click the "Edit" link next to number to select')
+def click_edit_number_to_select(page: Page):
+    """Click the Edit link next to the number to select field on selection page."""
+    # The edit link is typically a query param that shows the edit form
+    edit_link = (
+        page
+        .locator("a[href*='edit_number=1'], a:has-text('Edit')")
+        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Number to Select')]"))
+        .first
+    )
+    if edit_link.count() == 0:
+        # Fallback: try to find any edit link near the number to select section
+        edit_link = page.locator("a[href*='edit_number']").first
+    edit_link.click()
+    page.wait_for_load_state("networkidle")
+
+
+@when('I click the "Save" button')
+def click_save_button(page: Page):
+    """Click the Save button."""
+    save_button = page.locator("button:has-text('Save'), input[type='submit'][value*='Save']").first
+    save_button.click()
+    page.wait_for_load_state("networkidle")
+
+
+@then(parsers.parse('I should be on the selection page for "{title}"'))
+def should_be_on_selection_page(page: Page, title: str, test_database):
+    """Verify we're on the selection page for the specified assembly."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        expect(page).to_have_url(re.compile(rf".*/backoffice/assembly/{assembly_id}/selection"))
+
+
+@then(parsers.parse('the number to select should be "{number}"'))
+def number_to_select_should_be(page: Page, number: str):
+    """Verify the number to select displays the expected value."""
+    # Look for the number in the summary section or the field value
+    page_content = page.content()
+    assert number in page_content, f"Expected number to select '{number}' not found in page"
+
+
 # CSV Upload Tests
 
 

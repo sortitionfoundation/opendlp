@@ -8,8 +8,11 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
@@ -897,6 +900,291 @@ class TestBackofficeCsvUpload:
             },
             content_type="multipart/form-data",
         )
+
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_upload_targets_csv_success(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+        postgres_session_factory,
+    ):
+        """Test successfully uploading a targets CSV file."""
+        # CSV format must use: feature,value,min,max (matching sortition-algorithms library)
+        csv_content = "feature,value,min,max\nGender,Male,10,20\nGender,Female,10,20\nAge,18-30,5,15\nAge,31-50,5,15"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-targets",
+            data={
+                "file": (BytesIO(csv_content.encode()), "targets.csv"),
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
+                ),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert "source=csv" in response.location
+
+        # Verify targets were created
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            categories = uow.target_categories.get_by_assembly_id(existing_assembly.id)
+            assert len(categories) == 2  # Gender and Age
+            category_names = {c.name for c in categories}
+            assert category_names == {"Gender", "Age"}
+
+    def test_upload_targets_csv_shows_success_message(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+    ):
+        """Test that successful targets upload shows success flash message."""
+        # CSV format must use: feature,value,min,max (matching sortition-algorithms library)
+        csv_content = "feature,value,min,max\nRegion,North,5,10\nRegion,South,5,10"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-targets",
+            data={
+                "file": (BytesIO(csv_content.encode()), "targets.csv"),
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
+                ),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"success" in response.data.lower() or b"uploaded" in response.data.lower()
+
+
+@pytest.fixture
+def assembly_with_targets(postgres_session_factory, admin_user):
+    """Create an assembly with target categories for testing."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title="Assembly with Targets",
+            created_by_user_id=admin_user.id,
+            question="What is the question?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+        )
+        assembly_id = assembly.id
+
+    # Add target categories
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        category = TargetCategory(
+            assembly_id=assembly_id,
+            name="Gender",
+            sort_order=0,
+        )
+        category.values = [
+            TargetValue(value="Male", min=10, max=20),
+            TargetValue(value="Female", min=10, max=20),
+        ]
+        uow.target_categories.add(category)
+        uow.commit()
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = uow.assemblies.get(assembly_id)
+        return assembly.create_detached_copy()
+
+
+@pytest.fixture
+def assembly_with_respondents(postgres_session_factory, admin_user):
+    """Create an assembly with respondents for testing."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title="Assembly with Respondents",
+            created_by_user_id=admin_user.id,
+            question="What is the question?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+        )
+        assembly_id = assembly.id
+
+    # Add target categories first (required for respondents to have a data source)
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        category = TargetCategory(
+            assembly_id=assembly_id,
+            name="Gender",
+            sort_order=0,
+        )
+        category.values = [
+            TargetValue(value="Male", min=10, max=20),
+            TargetValue(value="Female", min=10, max=20),
+        ]
+        uow.target_categories.add(category)
+        uow.commit()
+
+    # Add respondents
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        respondents = []
+        for i in range(5):
+            respondent = Respondent(
+                assembly_id=assembly_id,
+                external_id=f"test-{i}",
+                attributes={"name": f"Test Person {i}", "Gender": "Male" if i % 2 == 0 else "Female"},
+            )
+            respondents.append(respondent)
+        uow.respondents.bulk_add(respondents)
+        uow.commit()
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = uow.assemblies.get(assembly_id)
+        return assembly.create_detached_copy()
+
+
+class TestBackofficeCsvDelete:
+    """Test CSV delete functionality in backoffice."""
+
+    def test_delete_targets_success(
+        self,
+        logged_in_admin,
+        assembly_with_targets: Assembly,
+        postgres_session_factory,
+    ):
+        """Test successfully deleting targets for an assembly."""
+        # Verify targets exist before deletion
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            categories = uow.target_categories.get_by_assembly_id(assembly_with_targets.id)
+            assert len(categories) > 0
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly_with_targets.id}/data?source=csv"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert "source=csv" in response.location
+
+        # Verify targets were deleted
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            categories = uow.target_categories.get_by_assembly_id(assembly_with_targets.id)
+            assert len(categories) == 0
+
+    def test_delete_targets_shows_success_message(
+        self,
+        logged_in_admin,
+        assembly_with_targets: Assembly,
+    ):
+        """Test that successful targets deletion shows success flash message."""
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly_with_targets.id}/data?source=csv"
+                ),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
+
+    def test_delete_respondents_success(
+        self,
+        logged_in_admin,
+        assembly_with_respondents: Assembly,
+        postgres_session_factory,
+    ):
+        """Test successfully deleting respondents for an assembly."""
+        # Verify respondents exist before deletion
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(assembly_with_respondents.id)
+            assert len(respondents) > 0
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_respondents.id}/data/delete-respondents",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly_with_respondents.id}/data?source=csv"
+                ),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert "source=csv" in response.location
+
+        # Verify respondents were deleted
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(assembly_with_respondents.id)
+            assert len(respondents) == 0
+
+    def test_delete_respondents_shows_success_message(
+        self,
+        logged_in_admin,
+        assembly_with_respondents: Assembly,
+    ):
+        """Test that successful respondents deletion shows success flash message."""
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_respondents.id}/data/delete-respondents",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin, f"/backoffice/assembly/{assembly_with_respondents.id}/data?source=csv"
+                ),
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
+
+
+class TestBackofficeCsvViewPages:
+    """Test targets and respondents view pages with CSV data source."""
+
+    def test_view_targets_page_with_csv_source(
+        self,
+        logged_in_admin,
+        assembly_with_targets: Assembly,
+    ):
+        """Test that targets page loads successfully for CSV data source."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
+
+        assert response.status_code == 200
+        # Should see the page title containing "Targets"
+        assert b"Targets" in response.data
+
+    def test_view_respondents_page_with_csv_source(
+        self,
+        logged_in_admin,
+        assembly_with_respondents: Assembly,
+    ):
+        """Test that respondents page loads successfully for CSV data source."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_with_respondents.id}/respondents")
+
+        assert response.status_code == 200
+        # Should see the page content
+        assert b"Respondents" in response.data or b"respondents" in response.data.lower()
+
+    def test_view_targets_page_redirects_when_not_logged_in(
+        self,
+        client,
+        assembly_with_targets: Assembly,
+    ):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
+
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_view_respondents_page_redirects_when_not_logged_in(
+        self,
+        client,
+        assembly_with_respondents: Assembly,
+    ):
+        """Test that unauthenticated users are redirected to login."""
+        response = client.get(f"/backoffice/assembly/{assembly_with_respondents.id}/respondents")
 
         assert response.status_code == 302
         assert "login" in response.location
