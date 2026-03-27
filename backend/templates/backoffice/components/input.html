@@ -361,7 +361,7 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
 
 {% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
     {#
-    Radio button group component using semantic design tokens.
+    Radio button group component based on Figma OpenDLP UI specification.
 
     Args:
         name: Radio group name attribute (required)
@@ -389,7 +389,7 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
 
-    <fieldset class="flex flex-col gap-3">
+    <fieldset class="flex flex-col gap-3" role="radiogroup">
         {% if label %}
             <legend class="text-label-lg" style="color: var(--color-headings);">{{ label }}</legend>
         {% endif %}
@@ -406,10 +406,11 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
                 {% endif %}
             {% endfor %}
         {% else %}
-            {# Editable radio buttons #}
+            {# Editable radio buttons with custom styling #}
             <div class="flex flex-col gap-2">
                 {% for option in options %}
-                    <label class="flex items-center gap-3 cursor-pointer group">
+                    <label class="radio-container{% if disabled %} radio-disabled{% endif %}">
+                        {# Hidden native radio for accessibility #}
                         <input
                             type="radio"
                             name="{{ name }}"
@@ -418,12 +419,14 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
                             {% if option.value == value %}checked{% endif %}
                             {% if disabled %}disabled{% endif %}
                             {% if attrs %}{{ attrs | safe }}{% endif %}
-                            class="w-5 h-5 cursor-pointer"
-                            style="accent-color: var(--color-primary-action);"
+                            class="radio-input"
                         />
-                        <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">
-                            {{ option.label }}
+                        {# Custom radio circle #}
+                        <span class="radio-circle">
+                            <span class="radio-dot"></span>
                         </span>
+                        {# Label text #}
+                        <span class="radio-label">{{ option.label }}</span>
                     </label>
                 {% endfor %}
             </div>
