@@ -329,7 +329,13 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Set up CSV settings form if CSV source is selected
         csv_settings_form = None
         csv_available_columns: list[str] = []
+        csv_mode = "view"  # Default to view mode
+        csv_config = None
         if data_source == "csv":
+            # Determine mode (view or edit)
+            mode_param = request.args.get("mode", "")
+            csv_mode = "edit" if mode_param == "edit" else "view"
+
             # Get or create CSV config
             uow_csv_config = bootstrap.bootstrap()
             with uow_csv_config:
@@ -371,6 +377,8 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_status=csv_status,
             csv_settings_form=csv_settings_form,
             csv_available_columns=csv_available_columns,
+            csv_mode=csv_mode,
+            csv_config=csv_config,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
