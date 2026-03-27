@@ -36,7 +36,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {# Selection Progress Modal - shown when current_selection parameter is present #}
     {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
     {% if current_selection and run_record %}
-        {% include "backoffice/components/selection_progress_modal.html" %}
+        {% if data_source == "csv" %}
+            {% include "backoffice/components/csv_selection_progress_modal.html" %}
+        {% else %}
+            {% include "backoffice/components/selection_progress_modal.html" %}
+        {% endif %}
     {% endif %}
     {# Replacement Selection Modal - shown when replacement_modal_open is true #}
     {% if replacement_modal_open %}
@@ -47,8 +51,70 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         {% include "backoffice/components/edit_number_to_select_modal.html" %}
     {% endif %}
     {% if data_source == "csv" %}
-        {# CSV source - placeholder for future implementation #}
-        {{ alert(_("CSV based selection will be implemented here."), variant="info") }}
+        {# CSV/Database source - show selection options #}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {# Initial Selection Card #}
+            {% call card(title=_("Initial Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Run the sortition algorithm to select participants from the uploaded CSV data based on demographic targets.") }}
+                    </p>
+                    {# Number to select info #}
+                    <div class="rounded-lg p-4 mb-4"
+                         style="background-color: var(--color-subtle-background-panels);
+                                border: 1px solid var(--color-borders-dividers)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
+                            </div>
+                            <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
+                               class="text-body-sm font-medium hover:underline"
+                               style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
+                        </div>
+                    </div>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Use 'Check Data' to validate your data before running the actual selection.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    <form method="post"
+                          action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
+                          class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Check Data") , type="submit", variant="outline") }}
+                    </form>
+                    <form method="post"
+                          action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}?test=1"
+                          class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Test Selection") , type="submit", variant="outline") }}
+                    </form>
+                    <form method="post"
+                          action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}"
+                          class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ button(_("Run Selection") , type="submit", variant="primary") }}
+                    </form>
+                {% endcall %}
+            {% endcall %}
+            {# Replacement Selection Card #}
+            {% call card(title=_("Replacement Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                    </p>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Replacement selection for CSV data will be available in a future update.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("Coming Soon") , variant="outline", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+        {# Actions #}
         <section class="flex gap-4">
             {{ button(_("Back to Dashboard") , href=url_for('backoffice.dashboard'), variant="outline") }}
         </section>
