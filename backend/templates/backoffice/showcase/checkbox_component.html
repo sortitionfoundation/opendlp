@@ -1,0 +1,81 @@
+{#
+ABOUTME: Showcase section for checkbox component
+ABOUTME: Displays checkbox variants and usage examples
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/input.html" import checkbox %}
+
+{% macro checkbox_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Checkbox Component") }}
+        {{ showcase_description("Custom styled checkbox with label, based on OpenDLP Figma UI specification.") }}
+
+        {# Basic States #}
+        {% call showcase_example('{% from "backoffice/components/input.html" import checkbox %}
+
+{# Basic checkbox states #}
+            {{ checkbox("unchecked", label="Unchecked checkbox") }}
+            {{ checkbox("checked", label="Checked checkbox", checked=true) }}
+            {{ checkbox("disabled-unchecked", label="Disabled unchecked", disabled=true) }}
+            {{ checkbox("disabled-checked", label="Disabled checked", checked=true, disabled=true) }}') %}
+            <div class="flex flex-wrap gap-6 items-start">
+                <div class="flex flex-col gap-2">
+                    {{ checkbox("demo-unchecked", label="Unchecked") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Default</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ checkbox("demo-checked", label="Checked", checked=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Selected</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ checkbox("demo-disabled", label="Disabled", disabled=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ checkbox("demo-disabled-checked", label="Disabled checked", checked=true, disabled=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled + Checked</span>
+                </div>
+            </div>
+        {% endcall %}
+
+        {# With Hints and Errors #}
+        {% call showcase_example('{# Checkbox with hint text #}
+        {{ checkbox("notify", label="Send email notifications", hint="You will receive updates about your assembly.") }}
+
+{# Checkbox with error #}
+        {{ checkbox("agree", label="I agree to the terms", error="You must agree to continue") }}') %}
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-2">
+                <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint</span>
+                {{ checkbox("demo-hint", label="Send email notifications", hint="You will receive updates about your assembly.") }}
+            </div>
+            <div class="flex flex-col gap-2">
+                <span class="text-label-md" style="color: var(--color-secondary-text);">With Error</span>
+                {{ checkbox("demo-error", label="I agree to the terms and conditions", error="You must agree to continue") }}
+            </div>
+        </div>
+    {% endcall %}
+
+        {# Read-only State #}
+    {% call showcase_example('{# Read-only checkbox (displays as text) #}
+    {{ checkbox("readonly-no", label="Email notifications", checked=false, readonly=true) }}
+    {{ checkbox("readonly-yes", label="SMS notifications", checked=true, readonly=true) }}') %}
+    <div class="flex flex-col gap-4">
+        <span class="text-label-md" style="color: var(--color-secondary-text);">Read-only Display</span>
+        {{ checkbox("demo-readonly-no", label="Email notifications", checked=false, readonly=true) }}
+        {{ checkbox("demo-readonly-yes", label="SMS notifications", checked=true, readonly=true) }}
+    </div>
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-button-primary-bg",
+"--color-button-primary-bg-hover",
+"--color-page-background",
+"--color-headings",
+"--color-focus-ring",
+".checkbox-container",
+".checkbox-box",
+".checkbox-label"
+]) }}
+{% endcall %}
+{% endmacro %}
