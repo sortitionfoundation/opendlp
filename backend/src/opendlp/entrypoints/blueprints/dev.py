@@ -1,15 +1,15 @@
 """ABOUTME: Developer tools routes for interactive testing and documentation
-ABOUTME: Provides /backoffice/dev/* routes - disabled in production for security"""
+ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments"""
 
 import uuid
 from collections.abc import Callable
 from typing import Any
 
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
-from opendlp import bootstrap, config
+from opendlp import bootstrap
 from opendlp.service_layer.assembly_service import (
     get_or_create_csv_config,
     import_targets_from_csv,
@@ -35,11 +35,8 @@ def dev_dashboard() -> ResponseReturnValue:
     """Developer tools dashboard.
 
     Admin-only page that links to all developer tools.
-    Disabled in production for security.
+    This blueprint is only registered in non-production environments.
     """
-    if config.is_production():
-        abort(404)
-
     if not has_global_admin(current_user):
         flash(_("You don't have permission to access developer tools"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -58,12 +55,8 @@ def service_docs() -> ResponseReturnValue:
     """Interactive service layer documentation page for CSV upload services.
 
     Admin-only page that provides interactive testing of service layer functions.
-    Disabled in production for security.
+    This blueprint is only registered in non-production environments.
     """
-    # Disable in production - developer tools should not be available
-    if config.is_production():
-        abort(404)
-
     if not has_global_admin(current_user):
         flash(_("You don't have permission to access developer tools"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -87,12 +80,8 @@ def service_docs_execute() -> ResponseReturnValue:
     """Execute a service layer function for testing.
 
     Accepts JSON with service name and parameters, returns JSON result.
-    Disabled in production for security.
+    This blueprint is only registered in non-production environments.
     """
-    # Disable in production - developer tools should not be available
-    if config.is_production():
-        abort(404)
-
     if not has_global_admin(current_user):
         return jsonify({"status": "error", "error": "Unauthorized", "error_type": "InsufficientPermissions"}), 403
 
@@ -303,11 +292,8 @@ def patterns() -> ResponseReturnValue:
 
     Admin-only page that documents Alpine.js patterns, form handling,
     and other frontend patterns used in the backoffice.
-    Disabled in production for security.
+    This blueprint is only registered in non-production environments.
     """
-    if config.is_production():
-        abort(404)
-
     if not has_global_admin(current_user):
         flash(_("You don't have permission to access developer tools"), "error")
         return redirect(url_for("backoffice.dashboard"))
