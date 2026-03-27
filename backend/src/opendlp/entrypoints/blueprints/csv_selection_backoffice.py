@@ -9,10 +9,12 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.entrypoints.decorators import require_assembly_management
+from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_or_create_csv_config,
+    update_csv_config,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
@@ -264,3 +266,68 @@ def download_csv_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while generating the download"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+
+
+@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
+@login_required
+@require_assembly_management
+def save_csv_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Save CSV selection settings."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            # Get available columns for form validation
+            respondents = uow.respondents.get_by_assembly_id(assembly_id)
+            available_columns: list[str] = []
+            if respondents and respondents[0].attributes:
+                available_columns = sorted(respondents[0].attributes.keys())
+
+        # Create form with request data for validation
+        form = DbSelectionSettingsForm(available_columns=available_columns)
+
+        if not form.validate_on_submit():
+            # Re-render the page with validation errors
+            for field_name, errors in form.errors.items():
+                for error in errors:
+                    flash(f"{field_name}: {error}", "error")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+        # Parse comma-separated columns
+        check_same_address_cols = (
+            [c.strip() for c in form.check_same_address_cols_string.data.split(",") if c.strip()]
+            if form.check_same_address_cols_string.data
+            else []
+        )
+        columns_to_keep = (
+            [c.strip() for c in form.columns_to_keep_string.data.split(",") if c.strip()]
+            if form.columns_to_keep_string.data
+            else []
+        )
+
+        # Update the CSV config
+        uow2 = bootstrap.bootstrap()
+        with uow2:
+            update_csv_config(
+                uow=uow2,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                check_same_address=form.check_same_address.data,
+                check_same_address_cols=check_same_address_cols,
+                columns_to_keep=columns_to_keep,
+                settings_confirmed=True,  # Saving settings confirms them
+            )
+
+        flash(_("Selection settings saved successfully."), "success")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Save CSV settings error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while saving settings"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
