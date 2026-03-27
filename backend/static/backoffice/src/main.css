@@ -253,4 +253,88 @@
         letter-spacing: 0.3px;
         color: var(--color-headings);
     }
+
+    /* ========================================
+       RADIO BUTTON COMPONENT STYLES
+       Custom radio button based on Figma spec
+       ======================================== */
+
+    /* Container for radio + label */
+    .radio-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Disabled state */
+    .radio-container.radio-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Hide native radio but keep accessible */
+    .radio-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Custom radio circle */
+    .radio-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 9999px;
+        border: 1px solid var(--color-button-primary-bg);
+        background-color: var(--color-page-background);
+        transition: border-color 150ms ease;
+        flex-shrink: 0;
+    }
+
+    /* Inner dot - hidden by default */
+    .radio-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--color-button-primary-bg);
+        transform: scale(0);
+        transition: transform 150ms ease;
+    }
+
+    /* Selected state - show inner dot */
+    .radio-input:checked + .radio-circle .radio-dot {
+        transform: scale(1);
+    }
+
+    /* Hover state (when not disabled) */
+    .radio-container:not(.radio-disabled):hover .radio-circle {
+        border-color: var(--color-button-primary-bg-hover);
+    }
+
+    /* Focus ring for keyboard navigation */
+    .radio-input:focus-visible + .radio-circle {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+    }
+
+    /* Label text styling */
+    .radio-label {
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: 0.3px;
+        color: var(--color-headings);
+    }
 }
