@@ -104,6 +104,10 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
+    if not config.is_production():
+        from .blueprints.dev import dev_bp  # noqa: PLC0415
+
+        app.register_blueprint(dev_bp, url_prefix="/backoffice")
     app.register_blueprint(gsheets_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_bp)
     app.register_blueprint(respondents_bp)

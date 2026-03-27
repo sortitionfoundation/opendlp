@@ -246,3 +246,11 @@ When working on frontend issues, see:
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
+
+**IMPORTANT - Before implementing Alpine.js components:**
+
+Check the interactive patterns documentation at `/backoffice/dev/patterns` (dev only) or read the template at `templates/backoffice/patterns.html`. This documents CSP-compatible patterns for dropdowns, forms, and AJAX with working examples and links to existing implementations. Key constraints:
+
+- `x-model` must use flat properties (`x-model="selected"` not `x-model="form.field"`)
+- `@click` handlers cannot have string arguments (`@click="doThing()"` not `@click="doThing('arg')"`)
+- AJAX requests must include `X-CSRFToken` header

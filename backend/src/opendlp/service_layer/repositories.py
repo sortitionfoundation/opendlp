@@ -398,6 +398,11 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        """Delete all respondents for an assembly. Returns count deleted."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def bulk_mark_as_selected(
         self,
         assembly_id: uuid.UUID,

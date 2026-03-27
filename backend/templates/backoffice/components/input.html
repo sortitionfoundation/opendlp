@@ -1,6 +1,6 @@
 {#
-ABOUTME: Text input component macro for backoffice design system
-ABOUTME: Supports text, email, password, number inputs with label and optional hint/error
+ABOUTME: Form input component macros for backoffice design system
+ABOUTME: Supports text, email, password, number, textarea, select, checkbox, radio, and file inputs
 #}
 
 {% macro first_error(errors) %}
@@ -420,4 +420,76 @@ ABOUTME: Supports text, email, password, number inputs with label and optional h
             {% endif %}
         {% endif %}
     </fieldset>
+{% endmacro %}
+
+
+{% macro file_input(name, label="", hint="", error="", accept="", required=false, disabled=false, id="", classes="", attrs="") %}
+    {#
+    File input component using semantic design tokens.
+
+    This is a stateless UI component. For file upload handling logic
+    (form submission, reading content, validation), see the File Upload
+    pattern in /backoffice/dev/patterns.
+
+    Args:
+        name: Input name attribute (required)
+        label: Label text displayed above the input
+        hint: Help text displayed below the label
+        error: Error message (displays input in error state)
+        accept: Comma-separated list of accepted file types (e.g., ".csv", ".csv,.xlsx", "text/csv")
+        required: Boolean to mark field as required
+        disabled: Boolean to disable the input
+        id: Optional id attribute (defaults to name)
+        classes: Additional CSS classes for the input
+        attrs: Additional HTML attributes (e.g., 'x-model="file"' for Alpine.js binding)
+
+    Usage:
+        file_input("csv_file", label="CSV File", accept=".csv", required=true)
+        file_input("import_file", label="Import File", hint="Select a CSV file", accept=".csv", error=first_error(form.csv_file.errors))
+        file_input("csv_file", label="CSV File", accept=".csv", attrs='@change="onFileSelect($event)"')
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+
+    <div class="flex flex-col gap-1.5">
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# File input with custom styling #}
+        <div class="relative">
+            <input
+                type="file"
+                name="{{ name }}"
+                id="{{ input_id }}"
+                {% if accept %}accept="{{ accept }}"{% endif %}
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+                {% if attrs %}{{ attrs | safe }}{% endif %}
+                class="text-body-md w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-button-md file:cursor-pointer {{ classes }}"
+                style="
+                       color: var(--color-body-text);
+                       --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
+                       {% if disabled %}
+                           color: var(--color-placeholder-text);
+                           cursor: not-allowed;
+                       {% endif %}
+                      "
+            />
+        </div>
+
+        {# Error message #}
+        {% if has_error %}
+            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
 {% endmacro %}

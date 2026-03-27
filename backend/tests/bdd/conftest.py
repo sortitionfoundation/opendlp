@@ -1,6 +1,8 @@
+import contextlib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import urllib.request
 import uuid
@@ -14,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.adapters import database, orm
-from opendlp.config import PostgresCfg
+from opendlp.config import PostgresCfg, to_bool
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, SelectionRunStatus, SelectionTaskType
@@ -39,11 +41,45 @@ BACKEND_PATH = Path(__file__).parent.parent.parent
 CSV_FIXTURES_DIR = BACKEND_PATH / "tests" / "csv_fixtures" / "selection_data"
 
 
-def _build_coverage_command(base_module_args: list[str]) -> list[str]:
-    """Wrap a command with coverage run if BDD_COVERAGE is enabled."""
-    if os.environ.get("BDD_COVERAGE", "").lower() in ("1", "true"):
-        return ["uv", "run", "coverage", "run", "--parallel-mode", "-m", *base_module_args]
-    return ["uv", "run", *base_module_args]
+def _add_coverage_env(env: dict[str, str], label: str) -> None:
+    """Configure environment variables for automatic subprocess coverage.
+
+    Instead of wrapping commands with ``coverage run``, we use the
+    COVERAGE_PROCESS_START mechanism: coverage's installed .pth file
+    (a1_coverage.pth) calls ``coverage.process_startup()`` on every Python
+    start. When COVERAGE_PROCESS_START is set, this auto-instruments the
+    process. Each subprocess gets its own COVERAGE_FILE so data can be
+    reliably combined after the test run.
+
+    See https://coverage.readthedocs.io/en/latest/subprocess.html
+    """
+    if to_bool(os.environ.get("BDD_COVERAGE", "")):
+        rcfile = str(BACKEND_PATH / "pyproject.toml")
+        data_file = str(BACKEND_PATH / f".coverage.bdd-{label}") if label else str(BACKEND_PATH / ".coverage.bdd")
+        env["COVERAGE_PROCESS_START"] = rcfile
+        env["COVERAGE_FILE"] = data_file
+
+
+def _terminate_subprocess(process: subprocess.Popen, label: str) -> None:
+    """Terminate a subprocess and wait for it to exit cleanly.
+
+    Sends SIGTERM to the process group so that all child processes also receive
+    the signal. Falls back to SIGKILL after 10s.
+    """
+    try:
+        pgid = os.getpgid(process.pid)
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        print(f"{label} already exited")
+        return
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        print(f"{label} did not exit within 10s, sending SIGKILL")
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        process.wait()
+    print(f"{label} stopped (exit code: {process.returncode})")
 
 
 expect.set_options(timeout=PLAYWRIGHT_TIMEOUT)
@@ -173,11 +209,13 @@ def test_server(test_database, csv_test_data_dir):
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
+    _add_coverage_env(env, label="flask")
 
     process = subprocess.Popen(  # noqa: S603
-        _build_coverage_command(["flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"]),
+        ["uv", "run", "flask", "run", f"--port={BDD_PORT}", "--host=127.0.0.1"],
         cwd=BACKEND_PATH,
         env=env,
+        start_new_session=True,
     )
 
     # Wait for server to start
@@ -186,14 +224,7 @@ def test_server(test_database, csv_test_data_dir):
 
     yield
 
-    # Cleanup
-    process.terminate()
-    try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait()
-    print("Test server stopped")
+    _terminate_subprocess(process, "Test server")
 
 
 @pytest.fixture(scope="session")
@@ -218,11 +249,18 @@ def test_celery_worker(test_database, csv_test_data_dir):
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
+    _add_coverage_env(env, label="celery")
 
+    celery_args = ["uv", "run", "celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"]
+    # When collecting coverage, use solo pool to avoid prefork spawning many child
+    # processes that each inherit coverage instrumentation and fight over the data file.
+    if to_bool(os.environ.get("BDD_COVERAGE", "")):
+        celery_args.extend(["--pool=solo"])
     process = subprocess.Popen(  # noqa: S603
-        _build_coverage_command(["celery", "--app", "opendlp.entrypoints.celery.tasks", "worker", "--loglevel=info"]),
+        celery_args,
         cwd=BACKEND_PATH,
         env=env,
+        start_new_session=True,
     )
     # wait for celery worker
     wait_for_celery_worker_to_come_up(celery_app)
@@ -230,14 +268,7 @@ def test_celery_worker(test_database, csv_test_data_dir):
 
     yield
 
-    # Cleanup
-    process.terminate()
-    try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait()
-    print("Test celery worker stopped")
+    _terminate_subprocess(process, "Test celery worker")
 
 
 @pytest.fixture(scope="session")

@@ -222,7 +222,8 @@ preview = true
 [tool.coverage.run]
 source = ["src", "tests"]
 plugins = ["covdefaults"]
-omit = ["tests/bdd/*"]
+# The dev blueprint is not even registered in production configs, so we can ignore it.
+omit = ["src/opendlp/entrypoints/blueprints/dev.py"]
 sigterm = true
 
 [tool.coverage.report]

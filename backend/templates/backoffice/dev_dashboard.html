@@ -1,0 +1,108 @@
+{#
+ABOUTME: Developer tools dashboard for admin users
+ABOUTME: Links to service docs, frontend patterns, and component showcase
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/card.html" import link_card %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+
+{% block title %}{{ _("Developer Tools") }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Developer Tools")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">
+        <span class="mr-2">🛠️</span>{{ _("Developer Tools") }}
+    </h1>
+    <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">
+        {{ _("Interactive documentation and testing tools for development.") }}
+    </p>
+
+    {# Warning banner #}
+    <div class="mb-8 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+        <p class="text-body-md" style="color: var(--color-warning-600);">
+            <strong>⚠️ {{ _("Development Only") }}</strong> —
+            {{ _("These tools are disabled in production and only available to admin users.") }}
+        </p>
+    </div>
+
+    {# Developer Tools Cards #}
+    <section>
+        <h2 style="color: var(--color-headings);" class="text-heading-lg mb-6">{{ _("Documentation & Testing") }}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {# Service Layer Docs #}
+            {% call link_card(
+            href=url_for('backoffice.service_docs'),
+            title=_("Service Layer Docs"),
+            subtitle=_("CSV Upload Services"),
+            id="service-docs-card"
+            ) %}
+            <p style="color: var(--color-body-text);" class="text-body-md mb-4">
+                {{ _("Interactive documentation for CSV upload service layer functions. Test import_respondents, import_targets, and CSV config services.") }}
+            </p>
+            <p style="color: var(--color-secondary-text);" class="text-body-sm">
+                📄 {{ _("4 services documented") }}
+            </p>
+{% endcall %}
+
+            {# Frontend Patterns #}
+{% call link_card(
+href=url_for('backoffice.patterns'),
+title=_("Frontend Patterns"),
+subtitle=_("Alpine.js & CSP Guidelines"),
+id="patterns-card"
+) %}
+<p style="color: var(--color-body-text);" class="text-body-md mb-4">
+    {{ _("Living documentation for CSP-compatible Alpine.js patterns. Includes dropdown bindings, form state, and AJAX with working examples.") }}
+</p>
+<p style="color: var(--color-secondary-text);" class="text-body-sm">
+    🎨 {{ _("Patterns with implementation index") }}
+</p>
+{% endcall %}
+
+            {# Component Showcase #}
+{% call link_card(
+href=url_for('backoffice.showcase'),
+title=_("Component Showcase"),
+subtitle=_("Design System Reference"),
+id="showcase-card"
+) %}
+<p style="color: var(--color-body-text);" class="text-body-md mb-4">
+    {{ _("Visual reference for all backoffice UI components. Buttons, cards, forms, modals, typography, and color tokens.") }}
+</p>
+<p style="color: var(--color-secondary-text);" class="text-body-sm">
+    🧩 {{ _("All components in one place") }}
+</p>
+{% endcall %}
+</div>
+</section>
+
+    {# Quick Links #}
+<section class="mt-12">
+    <h2 style="color: var(--color-headings);" class="text-heading-lg mb-4">{{ _("Quick Reference") }}</h2>
+    <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+        <ul class="space-y-2 text-body-md" style="color: var(--color-body-text);">
+            <li>
+                <strong>CLAUDE.md</strong> —
+                {{ _("Project guidance for AI assistants (includes Alpine.js CSP constraints)") }}
+            </li>
+            <li>
+                <strong>docs/agent/</strong> —
+                {{ _("Agent-specific documentation for frontend, testing, and code quality") }}
+            </li>
+            <li>
+                <strong>static/backoffice/js/alpine-components.js</strong> —
+                {{ _("Reusable Alpine.js components (urlSelect, autocomplete, modal)") }}
+            </li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

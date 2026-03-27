@@ -2,12 +2,15 @@
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
 import re
+import uuid
 
 import pytest
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -20,6 +23,7 @@ scenarios("../../features/backoffice.feature")
 scenarios("../../features/backoffice-assembly.feature")
 scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
+scenarios("../../features/backoffice-csv-upload.feature")
 
 
 # Store assembly data between steps
@@ -1112,3 +1116,199 @@ def try_access_assembly_selection_page(page: Page, title: str, test_database):
 def see_assembly_selection_page(page: Page):
     """Verify we're on the assembly selection page."""
     expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/selection"))
+
+
+# Update Number to Select Tests
+
+
+@given(parsers.parse('there is an assembly called "{title}" with number to select "{number}"'))
+def create_test_assembly_with_number_to_select_quoted(title: str, number: str, admin_user, test_database):
+    """Create a test assembly with a specific number_to_select for the admin user."""
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    assembly = create_assembly(
+        uow=uow,
+        title=title,
+        created_by_user_id=admin_user.id,
+        number_to_select=int(number),
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+
+
+@when(parsers.parse('I visit the selection page for "{title}"'))
+def visit_selection_page_for_assembly(page: Page, title: str, test_database):
+    """Navigate directly to the selection page for a specific assembly."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_selection_assembly_url(assembly_id))
+        page.wait_for_load_state("networkidle")
+
+
+@when('I click the "Edit" link next to number to select')
+def click_edit_number_to_select(page: Page):
+    """Click the Edit link next to the number to select field on selection page."""
+    # The edit link is typically a query param that shows the edit form
+    edit_link = (
+        page
+        .locator("a[href*='edit_number=1'], a:has-text('Edit')")
+        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Number to Select')]"))
+        .first
+    )
+    if edit_link.count() == 0:
+        # Fallback: try to find any edit link near the number to select section
+        edit_link = page.locator("a[href*='edit_number']").first
+    edit_link.click()
+    page.wait_for_load_state("networkidle")
+
+
+@when('I click the "Save" button')
+def click_save_button(page: Page):
+    """Click the Save button."""
+    save_button = page.locator("button:has-text('Save'), input[type='submit'][value*='Save']").first
+    save_button.click()
+    page.wait_for_load_state("networkidle")
+
+
+@then(parsers.parse('I should be on the selection page for "{title}"'))
+def should_be_on_selection_page(page: Page, title: str, test_database):
+    """Verify we're on the selection page for the specified assembly."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        expect(page).to_have_url(re.compile(rf".*/backoffice/assembly/{assembly_id}/selection"))
+
+
+@then(parsers.parse('the number to select should be "{number}"'))
+def number_to_select_should_be(page: Page, number: str):
+    """Verify the number to select displays the expected value."""
+    # Look for the number in the summary section or the field value
+    page_content = page.content()
+    assert number in page_content, f"Expected number to select '{number}' not found in page"
+
+
+# CSV Upload Tests
+
+
+@then(parsers.parse('I should see a "{tab_name}" tab in the assembly navigation'))
+def see_tab_in_navigation(page: Page, tab_name: str):
+    """Verify a specific tab is visible in the assembly navigation."""
+    # Use the Assembly sections nav specifically to avoid matching breadcrumbs
+    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+        has_text=tab_name
+    )
+    expect(tab).to_be_visible()
+
+
+@then(parsers.parse('the "{tab_name}" tab should be disabled'))
+def tab_should_be_disabled(page: Page, tab_name: str):
+    """Verify a specific tab is disabled (shown as span, not a link)."""
+    # Disabled tabs are rendered as spans with data-disabled attribute, not links
+    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[data-disabled='true']").filter(
+        has_text=tab_name
+    )
+    expect(disabled_tab).to_be_visible()
+
+
+@then(parsers.parse('the "{tab_name}" tab should be enabled'))
+def tab_should_be_enabled(page: Page, tab_name: str):
+    """Verify a specific tab is enabled (shown as a clickable link)."""
+    # Enabled tabs are rendered as anchor tags, not spans
+    enabled_tab = page.locator("nav[aria-label='Assembly sections'] a").filter(has_text=tab_name)
+    expect(enabled_tab).to_be_visible()
+
+
+@then(parsers.parse('I should not see a "{tab_name}" tab in the assembly navigation'))
+def should_not_see_tab_in_navigation(page: Page, tab_name: str):
+    """Verify a specific tab is not visible in the assembly navigation."""
+    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+        has_text=tab_name
+    )
+    expect(tab).to_have_count(0)
+
+
+@when(parsers.parse('I visit the assembly targets page for "{title}"'))
+def visit_assembly_targets_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly targets page."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_targets_assembly_url(assembly_id))
+
+
+@when(parsers.parse('I visit the assembly respondents page for "{title}"'))
+def visit_assembly_respondents_page(page: Page, title: str, test_database):
+    """Navigate directly to the assembly respondents page."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if assembly_id:
+        page.goto(Urls.backoffice_respondents_assembly_url(assembly_id))
+
+
+@given(parsers.parse('the assembly "{title}" has targets uploaded'))
+def assembly_has_targets_uploaded(title: str, test_database):
+    """Create target categories for an assembly to simulate CSV upload."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if not assembly_id:
+        return
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        # Create sample target categories
+        category = TargetCategory(
+            assembly_id=uuid.UUID(assembly_id),
+            name="Gender",
+            sort_order=0,
+        )
+        category.values = [
+            TargetValue(value="Male", min=10, max=20),
+            TargetValue(value="Female", min=10, max=20),
+        ]
+        uow.target_categories.add(category)
+        uow.commit()
+
+
+@given(parsers.parse('the assembly "{title}" has respondents uploaded'))
+def assembly_has_respondents_uploaded(title: str, test_database):
+    """Create respondents for an assembly to simulate CSV upload."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    if not assembly_id:
+        return
+
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        # Create sample respondents
+        respondents = []
+        for i in range(5):
+            respondent = Respondent(
+                assembly_id=uuid.UUID(assembly_id),
+                external_id=f"test-{i}",
+                attributes={"name": f"Test Person {i}", "Gender": "Male" if i % 2 == 0 else "Female"},
+            )
+            respondents.append(respondent)
+        uow.respondents.bulk_add(respondents)
+        uow.commit()
+
+
+@then("the Target upload button should be enabled")
+def target_upload_button_enabled(page: Page):
+    """Verify the Target section has an enabled upload button."""
+    # Look for an enabled submit button in the Target section
+    target_section = page.locator("text=Target").locator("..").locator("..")
+    upload_button = target_section.locator("button[type='submit'], input[type='submit']").first
+    expect(upload_button).to_be_enabled()
+
+
+@then("the People upload button should be disabled")
+def people_upload_button_disabled(page: Page):
+    """Verify the People section has a disabled upload button."""
+    # Look for a disabled button in the People section
+    people_section = page.locator("text=People").locator("..").locator("..")
+    disabled_button = people_section.locator("button[disabled], span[data-disabled='true']").first
+    expect(disabled_button).to_be_visible()
+
+
+@then("the People upload button should be enabled")
+def people_upload_button_enabled(page: Page):
+    """Verify the People section has an enabled upload button."""
+    people_section = page.locator("text=People").locator("..").locator("..")
+    upload_button = people_section.locator("button[type='submit'], input[type='submit']").first
+    expect(upload_button).to_be_enabled()

@@ -39,6 +39,8 @@ class Urls:
     backoffice_edit_assembly = "{base}/backoffice/assembly/{assembly_id}/edit"
     backoffice_members_assembly = "{base}/backoffice/assembly/{assembly_id}/members"
     backoffice_data_assembly = "{base}/backoffice/assembly/{assembly_id}/data"
+    backoffice_targets_assembly = "{base}/backoffice/assembly/{assembly_id}/targets"
+    backoffice_respondents_assembly = "{base}/backoffice/assembly/{assembly_id}/respondents"
     backoffice_selection_assembly = "{base}/backoffice/assembly/{assembly_id}/selection"
 
     assembly_urls: typing.ClassVar = {
@@ -77,6 +79,20 @@ class Urls:
             params["mode"] = mode
         if params:
             url += "?" + urllib.parse.urlencode(params)
+        return url
+
+    @classmethod
+    def backoffice_targets_assembly_url(cls, assembly_id: str, source: str = "") -> str:
+        url = cls.backoffice_targets_assembly.format(base=cls.base, assembly_id=assembly_id)
+        if source:
+            url += "?" + urllib.parse.urlencode({"source": source})
+        return url
+
+    @classmethod
+    def backoffice_respondents_assembly_url(cls, assembly_id: str, source: str = "") -> str:
+        url = cls.backoffice_respondents_assembly.format(base=cls.base, assembly_id=assembly_id)
+        if source:
+            url += "?" + urllib.parse.urlencode({"source": source})
         return url
 
     @classmethod

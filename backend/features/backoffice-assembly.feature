@@ -137,3 +137,17 @@ Feature: Backoffice Assembly Management
     When I visit the backoffice dashboard
     Then I should see "No assemblies yet"
     And I should see the "Create Your First Assembly" button
+
+  # Update Number to Select (from Selection Page)
+
+  Scenario: User can update number to select from selection page
+    Given I am logged in as an admin user
+    And there is an assembly called "Selection Test Assembly" with number to select "25"
+    And the assembly "Selection Test Assembly" has a gsheet configuration
+    When I visit the selection page for "Selection Test Assembly"
+    And I click the "Edit" link next to number to select
+    And I fill in the number to select with "50"
+    And I click the "Save" button
+    Then I should be on the selection page for "Selection Test Assembly"
+    And I should see "updated"
+    And the number to select should be "50"

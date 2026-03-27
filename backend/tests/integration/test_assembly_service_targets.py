@@ -9,12 +9,13 @@ from sortition_algorithms.features import MAX_FLEX_UNSET
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer import assembly_service
+from opendlp.service_layer import assembly_service, respondent_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
+    UserNotFoundError,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -447,3 +448,143 @@ class TestDeleteTargetValue:
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with pytest.raises(NotFoundError):
             assembly_service.delete_target_value(uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4())
+
+
+class TestDeleteTargetsForAssembly:
+    def test_delete_all_targets(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
+        """Test deleting all target categories for an assembly."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender", sort_order=0)
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, "Age", sort_order=1)
+
+        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        count = assembly_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
+        assert count == 2
+
+        # Verify they're gone
+        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cats = assembly_service.get_targets_for_assembly(uow4, admin_user.id, test_assembly.id)
+        assert len(cats) == 0
+
+    def test_delete_targets_returns_zero_when_none_exist(
+        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that deleting targets when none exist returns 0."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        count = assembly_service.delete_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert count == 0
+
+    def test_delete_targets_insufficient_permissions(
+        self, regular_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that a regular user cannot delete targets."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.delete_targets_for_assembly(uow, regular_user.id, test_assembly.id)
+
+    def test_delete_targets_nonexistent_assembly(self, admin_user: User, postgres_session_factory):
+        """Test that deleting targets for a nonexistent assembly raises error."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(AssemblyNotFoundError):
+            assembly_service.delete_targets_for_assembly(uow, admin_user.id, uuid.uuid4())
+
+    def test_delete_targets_nonexistent_user(self, test_assembly: Assembly, postgres_session_factory):
+        """Test that deleting targets with a nonexistent user raises error."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(UserNotFoundError):
+            assembly_service.delete_targets_for_assembly(uow, uuid.uuid4(), test_assembly.id)
+
+    def test_delete_targets_does_not_affect_other_assembly(
+        self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that deleting targets for one assembly doesn't affect another."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow2, admin_user.id, other_assembly.id, "Age")
+
+        # Delete only from test_assembly
+        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
+
+        # other_assembly targets should still exist
+        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        other_cats = assembly_service.get_targets_for_assembly(uow4, admin_user.id, other_assembly.id)
+        assert len(other_cats) == 1
+        assert other_cats[0].name == "Age"
+
+
+class TestDeleteRespondentsForAssembly:
+    def test_delete_all_respondents(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
+        """Test deleting all respondents for an assembly."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        respondent_service.create_respondent(
+            uow, admin_user.id, test_assembly.id, external_id="NB001", attributes={"Gender": "Male"}
+        )
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        respondent_service.create_respondent(
+            uow2, admin_user.id, test_assembly.id, external_id="NB002", attributes={"Gender": "Female"}
+        )
+
+        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        count = assembly_service.delete_respondents_for_assembly(uow3, admin_user.id, test_assembly.id)
+        assert count == 2
+
+        # Verify they're gone
+        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with uow4:
+            respondents = uow4.respondents.get_by_assembly_id(test_assembly.id)
+            assert len(respondents) == 0
+
+    def test_delete_respondents_returns_zero_when_none_exist(
+        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that deleting respondents when none exist returns 0."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        count = assembly_service.delete_respondents_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert count == 0
+
+    def test_delete_respondents_insufficient_permissions(
+        self, regular_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that a regular user cannot delete respondents."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.delete_respondents_for_assembly(uow, regular_user.id, test_assembly.id)
+
+    def test_delete_respondents_nonexistent_assembly(self, admin_user: User, postgres_session_factory):
+        """Test that deleting respondents for a nonexistent assembly raises error."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(AssemblyNotFoundError):
+            assembly_service.delete_respondents_for_assembly(uow, admin_user.id, uuid.uuid4())
+
+    def test_delete_respondents_nonexistent_user(self, test_assembly: Assembly, postgres_session_factory):
+        """Test that deleting respondents with a nonexistent user raises error."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(UserNotFoundError):
+            assembly_service.delete_respondents_for_assembly(uow, uuid.uuid4(), test_assembly.id)
+
+    def test_delete_respondents_does_not_affect_other_assembly(
+        self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
+    ):
+        """Test that deleting respondents for one assembly doesn't affect another."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        respondent_service.create_respondent(
+            uow, admin_user.id, test_assembly.id, external_id="NB001", attributes={"Gender": "Male"}
+        )
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        respondent_service.create_respondent(
+            uow2, admin_user.id, other_assembly.id, external_id="NB002", attributes={"Gender": "Female"}
+        )
+
+        # Delete only from test_assembly
+        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.delete_respondents_for_assembly(uow3, admin_user.id, test_assembly.id)
+
+        # other_assembly respondents should still exist
+        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with uow4:
+            other_resps = uow4.respondents.get_by_assembly_id(other_assembly.id)
+            assert len(other_resps) == 1
+            assert other_resps[0].external_id == "NB002"
