@@ -26,6 +26,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_or_create_selection_settings,
     import_targets_from_csv,
     update_assembly,
 )
@@ -300,13 +301,30 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Determine data source and locking
         data_source, data_source_locked = _determine_data_source(gsheet, csv_status)
 
+        # Get selection settings for gsheet display and form population
+        sel_settings = None
+        try:
+            uow_sel = bootstrap.bootstrap()
+            sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
+        except Exception as sel_error:
+            current_app.logger.error(f"Error loading selection settings: {sel_error}")
+
         # Set up gsheet form if gsheet source is selected
         gsheet_mode = "new"
         gsheet_form = None
         if data_source == "gsheet":
             mode_param = request.args.get("mode", "")
             gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
-            gsheet_form = EditAssemblyGSheetForm(obj=gsheet) if gsheet else CreateAssemblyGSheetForm()
+            if gsheet:
+                gsheet_form = EditAssemblyGSheetForm(
+                    obj=gsheet,
+                    id_column=sel_settings.id_column if sel_settings else "",
+                    check_same_address=sel_settings.check_same_address if sel_settings else True,
+                    check_same_address_cols_string=sel_settings.check_same_address_cols_string if sel_settings else "",
+                    columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings else "",
+                )
+            else:
+                gsheet_form = CreateAssemblyGSheetForm()
 
         # Determine tab enabled states
         targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
@@ -319,6 +337,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             data_source=data_source,
             data_source_locked=data_source_locked,
             gsheet=gsheet,
+            selection_settings=sel_settings,
             gsheet_mode=gsheet_mode,
             gsheet_form=gsheet_form,
             google_service_account_email=google_service_account_email,

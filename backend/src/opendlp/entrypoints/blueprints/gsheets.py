@@ -19,6 +19,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_or_create_selection_settings,
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
@@ -917,8 +918,15 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
         # Form validation failed or service error - re-render the page with errors
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+        uow_err = bootstrap.bootstrap()
+        with uow_err:
+            assembly = get_assembly_with_permissions(uow_err, assembly_id, current_user.id)
+        sel_settings = None
+        try:
+            uow_sel = bootstrap.bootstrap()
+            sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
+        except Exception:  # noqa: S110 — selection_settings is optional for form re-render
+            pass
 
         return render_template(
             "backoffice/assembly_data.html",
@@ -926,6 +934,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             data_source="gsheet",
             data_source_locked=is_update,  # Locked if updating existing config
             gsheet=existing_gsheet,
+            selection_settings=sel_settings,
             gsheet_mode="edit" if is_update else "new",
             gsheet_form=form,
             google_service_account_email=current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN"),
