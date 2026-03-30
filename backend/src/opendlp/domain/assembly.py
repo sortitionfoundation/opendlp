@@ -290,6 +290,7 @@ class AssemblyGSheet:
 
         if for_replacements:
             # already selected only makes sense for replacements
+            # and we only need id_column set when using already_selected_tab
             gsheet_data_source = adapters.GSheetDataSource(
                 feature_tab_name=self.replace_targets_tab,
                 people_tab_name=self.replace_registrants_tab,
