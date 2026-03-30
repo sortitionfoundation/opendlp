@@ -326,34 +326,3 @@ class TestRespondentRepository:
         """Test that get_attribute_columns returns empty list when no respondents exist."""
         columns = respondent_repo.get_attribute_columns(test_assembly.id)
         assert columns == []
-
-    def test_delete_all_for_assembly(
-        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
-    ):
-        """Test deleting all respondents for an assembly."""
-        resp1 = Respondent(assembly_id=test_assembly.id, external_id="NB001", attributes={"Gender": "Male"})
-        resp2 = Respondent(assembly_id=test_assembly.id, external_id="NB002", attributes={"Gender": "Female"})
-        resp3 = Respondent(assembly_id=test_assembly.id, external_id="NB003", attributes={"Gender": "Male"})
-
-        respondent_repo.add(resp1)
-        respondent_repo.add(resp2)
-        respondent_repo.add(resp3)
-        postgres_session.commit()
-
-        # Delete all respondents for assembly
-        count = respondent_repo.delete_all_for_assembly(test_assembly.id)
-        postgres_session.commit()
-
-        assert count == 3
-
-        # Verify they're gone
-        respondents = respondent_repo.get_by_assembly_id(test_assembly.id)
-        assert len(respondents) == 0
-
-    def test_delete_all_for_assembly_returns_zero_when_none_exist(
-        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
-    ):
-        """Test that delete_all_for_assembly returns 0 when no respondents exist."""
-        count = respondent_repo.delete_all_for_assembly(test_assembly.id)
-        postgres_session.commit()
-        assert count == 0

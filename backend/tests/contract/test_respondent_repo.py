@@ -238,6 +238,26 @@ class TestGetAttributeColumns:
         assert respondent_backend.repo.get_attribute_columns(uuid.uuid4()) == []
 
 
+class TestDeleteAllForAssembly:
+    def test_deletes_all_for_assembly(self, respondent_backend: ContractBackend):
+        a1 = respondent_backend.make_assembly()
+        a2 = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, a1.id, external_id="R001")
+        _make_respondent(respondent_backend, a1.id, external_id="R002")
+        _make_respondent(respondent_backend, a2.id, external_id="R003")
+
+        count = respondent_backend.repo.delete_all_for_assembly(a1.id)
+        respondent_backend.commit()
+
+        assert count == 2
+        assert respondent_backend.repo.get_by_assembly_id(a1.id) == []
+        # a2's respondents should be untouched
+        assert len(respondent_backend.repo.get_by_assembly_id(a2.id)) == 1
+
+    def test_returns_zero_when_none_to_delete(self, respondent_backend: ContractBackend):
+        assert respondent_backend.repo.delete_all_for_assembly(uuid.uuid4()) == 0
+
+
 class TestGetAttributeValueCounts:
     def test_returns_value_counts(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
