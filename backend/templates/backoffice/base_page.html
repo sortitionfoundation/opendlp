@@ -6,7 +6,7 @@ ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, an
 {% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/alert.html" import flash_messages %}
-{% from "backoffice/components/footer.html" import footer %}
+{% from "backoffice/components/footer.html" import footer with context %}
 
 {% block body %}
     <div class="min-h-screen flex flex-col">
