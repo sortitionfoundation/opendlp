@@ -3,12 +3,12 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-03-19T14:16:48.973118757Z"
+exclude-newer = "2026-03-23T01:56:29.45073555Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-03-26T14:16:48.973128035Z", span = "PT0S" }
-requests = { timestamp = "2026-03-26T14:16:48.973140378Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-03-30T01:56:29.450745305Z", span = "PT0S" }
+requests = { timestamp = "2026-03-30T01:56:29.450750172Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -1647,14 +1647,14 @@ wheels = [
 
 [[package]]
 name = "types-qrcode"
-version = "8.2.0.20250914"
+version = "8.2.0.20260322"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pillow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/1b/b662d2baa355df5739ca084b0d959a5ce8d0e1bea742ee3e027372f89a56/types_qrcode-8.2.0.20250914.tar.gz", hash = "sha256:fc82e0112095c60c0ef3e403ab2a604a9ae1929c70fb0e708bc1ebfe8ca5c45e", size = 14988, upload-time = "2025-09-14T02:56:59.106Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/cf/fdc11e1ce6a9a9ac3139cc5c9450d192de8517f9ff1061e103945216ae80/types_qrcode-8.2.0.20260322.tar.gz", hash = "sha256:bb8f976104b58bb198458b99fa9432f761947eb649b2712dcf8baf6c411af200", size = 15111, upload-time = "2026-03-22T04:09:02.504Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/47/9105e9949a83789b6982bcbab4874ce7804f74fd27e6ab83d0186805b0aa/types_qrcode-8.2.0.20250914-py3-none-any.whl", hash = "sha256:6b992d62f05c2df0422507c5307ddd969c0a4d2ab23863c4217f96226710c308", size = 19849, upload-time = "2025-09-14T02:56:58.353Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/43/e9f8ec93c14939e996c0b1ae04e7697e935a299ee378f4f2638666bc38b3/types_qrcode-8.2.0.20260322-py3-none-any.whl", hash = "sha256:91ddf8b648dd4b69b934aeb41a402a87f3cb50a678ec704b7d3fc75e21173288", size = 19867, upload-time = "2026-03-22T04:09:01.524Z" },
 ]
 
 [[package]]
