@@ -123,6 +123,28 @@ class TestGetExpiredInvites:
         assert expired_invites[0].id == expired.id
 
 
+class TestGetUsedInvites:
+    def test_returns_only_used_invites(self, user_invite_backend: ContractBackend):
+        user = user_invite_backend.make_user()
+
+        # Used invite
+        used = _make_invite(user_invite_backend, created_by=user.id, used_by=user.id)
+
+        # Unused invite
+        _make_invite(user_invite_backend, created_by=user.id)
+
+        used_invites = list(user_invite_backend.repo.get_used_invites())
+        assert len(used_invites) == 1
+        assert used_invites[0].id == used.id
+
+    def test_returns_empty_when_none_used(self, user_invite_backend: ContractBackend):
+        user = user_invite_backend.make_user()
+        _make_invite(user_invite_backend, created_by=user.id)
+
+        used_invites = list(user_invite_backend.repo.get_used_invites())
+        assert len(used_invites) == 0
+
+
 class TestDelete:
     def test_delete_removes_invite(self, user_invite_backend: ContractBackend):
         user = user_invite_backend.make_user()

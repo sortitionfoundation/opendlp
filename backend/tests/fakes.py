@@ -16,7 +16,7 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus
 from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
@@ -65,9 +65,10 @@ class FakeUserRepository(FakeRepository, UserRepository):
         """List users filtered by criteria."""
         users = list(self._items)
         if role:
-            users = [user for user in users if user.role == role]
+            role_enum = GlobalRole(role.lower())
+            users = [user for user in users if user.global_role == role_enum]
         if active is not None:
-            users = [user for user in users if user.active == active]
+            users = [user for user in users if user.is_active == active]
         return users
 
     def filter_paginated(
@@ -195,6 +196,10 @@ class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
         # For simplicity, returning all active assemblies
         return self.get_active_assemblies()
 
+    def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
+        """Get assemblies by their status."""
+        return [assembly for assembly in self._items if assembly.status == status]
+
     def search_by_title(self, search_term: str) -> Iterable[Assembly]:
         """Search assemblies by title (case-insensitive partial match)."""
         search_term = search_term.lower()
@@ -222,6 +227,10 @@ class FakeUserInviteRepository(FakeRepository, UserInviteRepository):
     def get_expired_invites(self) -> Iterable[UserInvite]:
         """Get all invites that have expired."""
         return [invite for invite in self._items if not invite.is_valid()]
+
+    def get_used_invites(self) -> Iterable[UserInvite]:
+        """Get all invites that have been used."""
+        return [invite for invite in self._items if invite.used_by is not None]
 
     def delete(self, item: UserInvite) -> None:
         """Delete an invite from the repository."""

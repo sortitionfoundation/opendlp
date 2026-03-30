@@ -55,6 +55,26 @@ class TestGetActiveAssemblies:
         assert len(results) == 0
 
 
+class TestGetAssembliesByStatus:
+    def test_returns_matching_status(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(assembly_repo_backend, title="Active 1", status=AssemblyStatus.ACTIVE)
+        _add_assembly(assembly_repo_backend, title="Active 2", status=AssemblyStatus.ACTIVE)
+        _add_assembly(assembly_repo_backend, title="Archived", status=AssemblyStatus.ARCHIVED)
+
+        active = list(assembly_repo_backend.repo.get_assemblies_by_status(AssemblyStatus.ACTIVE))
+        assert len(active) == 2
+
+        archived = list(assembly_repo_backend.repo.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
+        assert len(archived) == 1
+        assert archived[0].title == "Archived"
+
+    def test_returns_empty_when_none_match(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(assembly_repo_backend, title="Active", status=AssemblyStatus.ACTIVE)
+
+        results = list(assembly_repo_backend.repo.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
+        assert len(results) == 0
+
+
 class TestSearchByTitle:
     def test_finds_by_partial_match(self, assembly_repo_backend: ContractBackend):
         _add_assembly(assembly_repo_backend, title="Climate Change Assembly")

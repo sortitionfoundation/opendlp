@@ -19,7 +19,7 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus
 
 
 class AbstractRepository(abc.ABC):
@@ -120,6 +120,11 @@ class AssemblyRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
+        """Get assemblies by their status."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def search_by_title(self, search_term: str) -> Iterable[Assembly]:
         """Search assemblies by title (case-insensitive partial match)."""
         raise NotImplementedError
@@ -146,6 +151,11 @@ class UserInviteRepository(AbstractRepository):
     @abc.abstractmethod
     def get_expired_invites(self) -> Iterable[UserInvite]:
         """Get all invites that have expired."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_used_invites(self) -> Iterable[UserInvite]:
+        """Get all invites that have been used."""
         raise NotImplementedError
 
     @abc.abstractmethod

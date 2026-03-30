@@ -66,9 +66,9 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         user_query = self.session.query(User)
         if role:
             role_enum = GlobalRole(role.lower())
-            user_query = user_query.filter(orm.users.c.role == role_enum)
+            user_query = user_query.filter(orm.users.c.global_role == role_enum)
         if active is not None:
-            user_query = user_query.filter(orm.users.c.active == active)
+            user_query = user_query.filter(orm.users.c.is_active == active)
         return user_query.all()
 
     def filter_paginated(

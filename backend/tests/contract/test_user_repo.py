@@ -7,6 +7,7 @@ import uuid
 from typing import Any
 
 from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole
 from tests.contract.conftest import ContractBackend, make_user
 
 
@@ -72,3 +73,37 @@ class TestGetByOauthCredentials:
 
     def test_returns_none_for_nonexistent(self, user_repo_backend: ContractBackend):
         assert user_repo_backend.repo.get_by_oauth_credentials("google", "nonexistent") is None
+
+
+class TestFilter:
+    def test_filters_by_role(self, user_repo_backend: ContractBackend):
+        _add_user(user_repo_backend, email="admin@example.com", global_role=GlobalRole.ADMIN)
+        _add_user(user_repo_backend, email="user@example.com", global_role=GlobalRole.USER)
+
+        admins = list(user_repo_backend.repo.filter(role="admin"))
+        assert len(admins) == 1
+        assert admins[0].email == "admin@example.com"
+
+    def test_filters_by_active(self, user_repo_backend: ContractBackend):
+        _add_user(user_repo_backend, email="active@example.com", is_active=True)
+        _add_user(user_repo_backend, email="inactive@example.com", is_active=False)
+
+        active = list(user_repo_backend.repo.filter(active=True))
+        assert len(active) == 1
+        assert active[0].email == "active@example.com"
+
+    def test_filters_by_role_and_active(self, user_repo_backend: ContractBackend):
+        _add_user(user_repo_backend, email="active-admin@example.com", global_role=GlobalRole.ADMIN, is_active=True)
+        _add_user(user_repo_backend, email="inactive-admin@example.com", global_role=GlobalRole.ADMIN, is_active=False)
+        _add_user(user_repo_backend, email="active-user@example.com", global_role=GlobalRole.USER, is_active=True)
+
+        results = list(user_repo_backend.repo.filter(role="admin", active=True))
+        assert len(results) == 1
+        assert results[0].email == "active-admin@example.com"
+
+    def test_no_filters_returns_all(self, user_repo_backend: ContractBackend):
+        _add_user(user_repo_backend, email="user1@example.com")
+        _add_user(user_repo_backend, email="user2@example.com")
+
+        results = list(user_repo_backend.repo.filter())
+        assert len(results) == 2
