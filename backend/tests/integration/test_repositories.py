@@ -1,7 +1,6 @@
-"""ABOUTME: Integration tests for repository implementations
-ABOUTME: Tests repository methods with actual database operations"""
+"""ABOUTME: Integration tests for SQL-specific repository behaviour.
+ABOUTME: Tests methods not in the abstract interface and cross-repository queries requiring real DB."""
 
-import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -16,7 +15,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
 
 @pytest.fixture
@@ -44,77 +43,7 @@ def role_repo(postgres_session):
 
 
 class TestUserRepository:
-    def test_add_and_get_user(self, user_repo: SqlAlchemyUserRepository, postgres_session: Session):
-        """Test adding and retrieving a user."""
-        user = User(
-            email="test@example.com",
-            global_role=GlobalRole.USER,
-            password_hash="hash123",
-            first_name="Test",
-            last_name="User",
-        )
-
-        user_repo.add(user)
-        postgres_session.commit()
-
-        # Test get by ID
-        retrieved = user_repo.get(user.id)
-        assert retrieved is not None
-        assert retrieved.email == "test@example.com"
-        assert retrieved.first_name == "Test"
-        assert retrieved.last_name == "User"
-
-    def test_get_by_email(self, user_repo: SqlAlchemyUserRepository, postgres_session: Session):
-        """Test retrieving user by email."""
-        user = User(
-            email="test@example.com",
-            global_role=GlobalRole.USER,
-            password_hash="hash123",
-        )
-
-        user_repo.add(user)
-        postgres_session.commit()
-
-        retrieved = user_repo.get_by_email("test@example.com")
-        assert retrieved is not None
-        assert retrieved.id == user.id
-
-        # Test non-existent email
-        assert user_repo.get_by_email("nonexistent@example.com") is None
-
-    def test_get_by_oauth_credentials(self, user_repo: SqlAlchemyUserRepository, postgres_session: Session):
-        """Test retrieving user by OAuth credentials."""
-        user = User(
-            email="oauth@example.com",
-            global_role=GlobalRole.USER,
-            oauth_provider="google",
-            oauth_id="12345",
-        )
-
-        user_repo.add(user)
-        postgres_session.commit()
-
-        retrieved = user_repo.get_by_oauth_credentials("google", "12345")
-        assert retrieved is not None
-        assert retrieved.id == user.id
-
-        # Test non-existent credentials
-        assert user_repo.get_by_oauth_credentials("google", "nonexistent") is None
-
-    def test_list_users(self, user_repo: SqlAlchemyUserRepository, postgres_session: Session):
-        """Test listing all users."""
-        user1 = User(email="user1@example.com", global_role=GlobalRole.USER, password_hash="hash1")
-        user2 = User(email="user2@example.com", global_role=GlobalRole.ADMIN, password_hash="hash2")
-
-        user_repo.add(user1)
-        user_repo.add(user2)
-        postgres_session.commit()
-
-        users = list(user_repo.all())
-        assert len(users) == 2
-        emails = [u.email for u in users]
-        assert "user1@example.com" in emails
-        assert "user2@example.com" in emails
+    """Tests for SQL-specific UserRepository methods not in the abstract interface."""
 
     def test_get_users_for_assembly(
         self,
@@ -205,46 +134,7 @@ class TestUserRepository:
 
 
 class TestAssemblyRepository:
-    def test_add_and_get_assembly(self, assembly_repo: SqlAlchemyAssemblyRepository, postgres_session: Session):
-        """Test adding and retrieving an assembly."""
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-
-        assembly_repo.add(assembly)
-        postgres_session.commit()
-
-        retrieved = assembly_repo.get(assembly.id)
-        assert retrieved is not None
-        assert retrieved.title == "Test Assembly"
-
-    def test_get_active_assemblies(self, assembly_repo: SqlAlchemyAssemblyRepository, postgres_session: Session):
-        """Test getting active assemblies."""
-        future_date = date.today() + timedelta(days=30)
-
-        active_assembly = Assembly(
-            title="Active Assembly",
-            question="Active question?",
-            first_assembly_date=future_date,
-            status=AssemblyStatus.ACTIVE,
-        )
-        archived_assembly = Assembly(
-            title="Archived Assembly",
-            question="Archived question?",
-            first_assembly_date=future_date,
-            status=AssemblyStatus.ARCHIVED,
-        )
-
-        assembly_repo.add(active_assembly)
-        assembly_repo.add(archived_assembly)
-        postgres_session.commit()
-
-        active_assemblies = list(assembly_repo.get_active_assemblies())
-        assert len(active_assemblies) == 1
-        assert active_assemblies[0].title == "Active Assembly"
+    """Tests for SQL-specific AssemblyRepository methods requiring cross-repo queries."""
 
     def test_get_assemblies_for_user_global_role(
         self,
@@ -303,153 +193,9 @@ class TestAssemblyRepository:
         assert len(assemblies) == 1
         assert assemblies[0].title == "Assembly 1"
 
-    def test_search_by_title(self, assembly_repo: SqlAlchemyAssemblyRepository, postgres_session: Session):
-        """Test searching assemblies by title."""
-        future_date = date.today() + timedelta(days=30)
-
-        assembly1 = Assembly(
-            title="Climate Change Assembly",
-            question="Climate question?",
-            first_assembly_date=future_date,
-        )
-        assembly2 = Assembly(
-            title="Healthcare Assembly",
-            question="Healthcare question?",
-            first_assembly_date=future_date,
-        )
-        assembly3 = Assembly(
-            title="Education Policy Assembly",
-            question="Education question?",
-            first_assembly_date=future_date,
-        )
-
-        assembly_repo.add(assembly1)
-        assembly_repo.add(assembly2)
-        assembly_repo.add(assembly3)
-        postgres_session.commit()
-
-        # Search for "climate"
-        results = list(assembly_repo.search_by_title("climate"))
-        assert len(results) == 1
-        assert results[0].title == "Climate Change Assembly"
-
-        # Search for "assembly" (should match all)
-        results = list(assembly_repo.search_by_title("assembly"))
-        assert len(results) == 3
-
-        # Case insensitive search
-        results = list(assembly_repo.search_by_title("HEALTHCARE"))
-        assert len(results) == 1
-        assert results[0].title == "Healthcare Assembly"
-
 
 class TestUserInviteRepository:
-    def test_add_and_get_invite(
-        self,
-        invite_repo: SqlAlchemyUserInviteRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test adding and retrieving an invite."""
-        # Create user first
-        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        user_repo.add(user)
-        postgres_session.flush()
-
-        invite = UserInvite(global_role=GlobalRole.USER, created_by=user.id)
-        invite_repo.add(invite)
-        postgres_session.commit()
-
-        retrieved = invite_repo.get(invite.id)
-        assert retrieved is not None
-        assert retrieved.global_role == GlobalRole.USER
-
-    def test_get_by_code(
-        self,
-        invite_repo: SqlAlchemyUserInviteRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test retrieving invite by code."""
-        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        user_repo.add(user)
-        postgres_session.flush()
-
-        invite = UserInvite(global_role=GlobalRole.USER, created_by=user.id, code="TESTCODE123")
-        invite_repo.add(invite)
-        postgres_session.commit()
-
-        retrieved = invite_repo.get_by_code("TESTCODE123")
-        assert retrieved is not None
-        assert retrieved.id == invite.id
-
-        assert invite_repo.get_by_code("NONEXISTENT") is None
-
-    def test_get_valid_invites(
-        self,
-        invite_repo: SqlAlchemyUserInviteRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test getting valid invites."""
-        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        user_repo.add(user)
-        postgres_session.flush()
-
-        # Create valid invite
-        valid_invite = UserInvite(global_role=GlobalRole.USER, created_by=user.id, expires_in_hours=24)
-
-        # Create expired invite
-        past_time = datetime.now(UTC) - timedelta(hours=2)
-        expired_invite = UserInvite(
-            global_role=GlobalRole.USER,
-            created_by=user.id,
-            created_at=past_time,
-            expires_at=past_time + timedelta(hours=1),
-        )
-
-        # Create used invite
-        used_invite = UserInvite(global_role=GlobalRole.USER, created_by=user.id, used_by=user.id)
-
-        invite_repo.add(valid_invite)
-        invite_repo.add(expired_invite)
-        invite_repo.add(used_invite)
-        postgres_session.commit()
-
-        valid_invites = list(invite_repo.get_valid_invites())
-        assert len(valid_invites) == 1
-        assert valid_invites[0].id == valid_invite.id
-
-    def test_get_expired_invites(
-        self,
-        invite_repo: SqlAlchemyUserInviteRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test getting expired invites."""
-        user = User(email="creator@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        user_repo.add(user)
-        postgres_session.flush()
-
-        # Create expired invite
-        past_time = datetime.now(UTC) - timedelta(hours=2)
-        expired_invite = UserInvite(
-            global_role=GlobalRole.USER,
-            created_by=user.id,
-            created_at=past_time,
-            expires_at=past_time + timedelta(hours=1),
-        )
-
-        # Create valid invite
-        valid_invite = UserInvite(global_role=GlobalRole.USER, created_by=user.id, expires_in_hours=24)
-
-        invite_repo.add(expired_invite)
-        invite_repo.add(valid_invite)
-        postgres_session.commit()
-
-        expired_invites = list(invite_repo.get_expired_invites())
-        assert len(expired_invites) == 1
-        assert expired_invites[0].id == expired_invite.id
+    """Tests for SQL-specific UserInviteRepository methods not in the abstract interface."""
 
     def test_cleanup_expired_invites(
         self,
@@ -487,101 +233,3 @@ class TestUserInviteRepository:
         remaining_invites = list(invite_repo.all())
         assert len(remaining_invites) == 1
         assert remaining_invites[0].id == valid_invite.id
-
-
-class TestUserAssemblyRoleRepository:
-    def test_add_and_get_role(
-        self,
-        role_repo: SqlAlchemyUserAssemblyRoleRepository,
-        user_repo: SqlAlchemyUserRepository,
-        assembly_repo: SqlAlchemyAssemblyRepository,
-        postgres_session: Session,
-    ):
-        """Test adding and retrieving a role."""
-        # Create user and assembly
-        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-
-        user_repo.add(user)
-        assembly_repo.add(assembly)
-        postgres_session.flush()
-
-        role = UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.ASSEMBLY_MANAGER)
-        role_repo.add(role)
-        postgres_session.commit()
-
-        retrieved = role_repo.get(role.id)
-        assert retrieved is not None
-        assert retrieved.role == AssemblyRole.ASSEMBLY_MANAGER
-
-    def test_get_by_user_and_assembly(
-        self,
-        role_repo: SqlAlchemyUserAssemblyRoleRepository,
-        user_repo: SqlAlchemyUserRepository,
-        assembly_repo: SqlAlchemyAssemblyRepository,
-        postgres_session: Session,
-    ):
-        """Test getting role by user and assembly."""
-        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-
-        user_repo.add(user)
-        assembly_repo.add(assembly)
-        postgres_session.flush()
-
-        role = UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.ASSEMBLY_MANAGER)
-        role_repo.add(role)
-        postgres_session.commit()
-
-        retrieved = role_repo.get_by_user_and_assembly(user.id, assembly.id)
-        assert retrieved is not None
-        assert retrieved.id == role.id
-
-        # Test non-existent combination
-        assert role_repo.get_by_user_and_assembly(uuid.uuid4(), assembly.id) is None
-
-    def test_remove_role(
-        self,
-        role_repo: SqlAlchemyUserAssemblyRoleRepository,
-        user_repo: SqlAlchemyUserRepository,
-        assembly_repo: SqlAlchemyAssemblyRepository,
-        postgres_session: Session,
-    ):
-        """Test removing a role."""
-        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-
-        user_repo.add(user)
-        assembly_repo.add(assembly)
-        postgres_session.flush()
-
-        role = UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.ASSEMBLY_MANAGER)
-        role_repo.add(role)
-        postgres_session.commit()
-
-        # Remove role
-        success = role_repo.remove_role(user.id, assembly.id)
-        assert success is True
-        postgres_session.commit()
-
-        # Verify role is gone
-        assert role_repo.get_by_user_and_assembly(user.id, assembly.id) is None
-
-        # Try to remove non-existent role
-        success = role_repo.remove_role(user.id, assembly.id)
-        assert success is False

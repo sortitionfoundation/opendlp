@@ -1,5 +1,5 @@
-"""ABOUTME: Integration tests for TargetCategoryRepository
-ABOUTME: Tests target category repository methods with actual database operations"""
+"""ABOUTME: Integration tests for SQL-specific TargetCategoryRepository behaviour.
+ABOUTME: Tests cascade deletes, JSON serialization, and database constraints."""
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -26,101 +26,6 @@ def test_assembly(postgres_session):
 
 
 class TestTargetCategoryRepository:
-    def test_add_and_get_category(
-        self,
-        target_category_repo: SqlAlchemyTargetCategoryRepository,
-        test_assembly: Assembly,
-        postgres_session: Session,
-    ):
-        """Test adding and retrieving a target category."""
-        category = TargetCategory(assembly_id=test_assembly.id, name="Gender", description="Gender category")
-        category.add_value(TargetValue(value="Male", min=10, max=15))
-        category.add_value(TargetValue(value="Female", min=10, max=15))
-
-        target_category_repo.add(category)
-        postgres_session.commit()
-
-        # Test get by ID
-        retrieved = target_category_repo.get(category.id)
-        assert retrieved is not None
-        assert retrieved.name == "Gender"
-        assert retrieved.description == "Gender category"
-        assert len(retrieved.values) == 2
-        assert retrieved.values[0].value == "Male"
-        assert retrieved.values[0].min == 10
-        assert retrieved.values[0].max == 15
-
-    def test_get_by_assembly_id(
-        self,
-        target_category_repo: SqlAlchemyTargetCategoryRepository,
-        test_assembly: Assembly,
-        postgres_session: Session,
-    ):
-        """Test retrieving categories by assembly ID."""
-        cat1 = TargetCategory(assembly_id=test_assembly.id, name="Gender", sort_order=0)
-        cat1.add_value(TargetValue(value="Male", min=10, max=15))
-
-        cat2 = TargetCategory(assembly_id=test_assembly.id, name="Age", sort_order=1)
-        cat2.add_value(TargetValue(value="16-29", min=5, max=8))
-
-        target_category_repo.add(cat1)
-        target_category_repo.add(cat2)
-        postgres_session.commit()
-
-        # Get all categories for assembly
-        categories = target_category_repo.get_by_assembly_id(test_assembly.id)
-        assert len(categories) == 2
-        # Should be ordered by sort_order
-        assert categories[0].name == "Gender"
-        assert categories[1].name == "Age"
-
-    def test_delete_category(
-        self,
-        target_category_repo: SqlAlchemyTargetCategoryRepository,
-        test_assembly: Assembly,
-        postgres_session: Session,
-    ):
-        """Test deleting a target category."""
-        category = TargetCategory(assembly_id=test_assembly.id, name="Gender")
-        category.add_value(TargetValue(value="Male", min=10, max=15))
-
-        target_category_repo.add(category)
-        postgres_session.commit()
-        category_id = category.id
-
-        # Delete the category
-        cat = target_category_repo.get(category_id)
-        target_category_repo.delete(cat)
-        postgres_session.commit()
-
-        # Verify it's gone
-        retrieved = target_category_repo.get(category_id)
-        assert retrieved is None
-
-    def test_delete_all_for_assembly(
-        self,
-        target_category_repo: SqlAlchemyTargetCategoryRepository,
-        test_assembly: Assembly,
-        postgres_session: Session,
-    ):
-        """Test deleting all categories for an assembly."""
-        cat1 = TargetCategory(assembly_id=test_assembly.id, name="Gender")
-        cat2 = TargetCategory(assembly_id=test_assembly.id, name="Age")
-
-        target_category_repo.add(cat1)
-        target_category_repo.add(cat2)
-        postgres_session.commit()
-
-        # Delete all categories for assembly
-        count = target_category_repo.delete_all_for_assembly(test_assembly.id)
-        postgres_session.commit()
-
-        assert count == 2
-
-        # Verify they're gone
-        categories = target_category_repo.get_by_assembly_id(test_assembly.id)
-        assert len(categories) == 0
-
     def test_cascade_delete_with_assembly(
         self, target_category_repo: SqlAlchemyTargetCategoryRepository, postgres_session: Session
     ):
