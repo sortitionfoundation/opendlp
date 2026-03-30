@@ -1,6 +1,6 @@
 # Testing Strategy
 
-OpenDLP follows a comprehensive testing approach with three levels of testing to ensure code quality and reliability.
+OpenDLP follows a comprehensive testing approach with multiple levels of testing to ensure code quality and reliability.
 
 ## Testing Levels
 
@@ -24,16 +24,52 @@ def test_user_has_admin_role():
     assert user.is_admin
 ```
 
-### Integration Tests (`tests/integration/`)
+### Contract Tests (`tests/contract/`)
 
-**Purpose:** Test database operations and service layer interactions.
+**Purpose:** Verify that fake (in-memory) and SQL repository implementations behave identically for every repository method.
 
 **Characteristics:**
 
-- Tests involve SQLAlchemy and database
+- Every test runs twice: once against the fake backend, once against the real SQL backend
+- Tests the repository interface contract, not implementation details
+- Catches drift between fake and SQL implementations
+- Catches bugs in both implementations simultaneously (e.g. wrong field names)
+
+**How it works:**
+
+Each repository has a parameterized fixture in `tests/contract/conftest.py` that provides a `ContractBackend` wrapping either the fake or SQL implementation. Tests use this backend abstraction so the same test code exercises both.
+
+```python
+# tests/contract/test_user_repo.py
+class TestGetByEmail:
+    def test_finds_by_email(self, user_repo_backend: ContractBackend):
+        user = _add_user(user_repo_backend, email="test@example.com")
+
+        retrieved = user_repo_backend.repo.get_by_email("test@example.com")
+        assert retrieved is not None
+        assert retrieved.id == user.id
+```
+
+**When to add contract tests:**
+
+- Every new repository method should have a contract test
+- If a method is in the abstract interface (`repositories.py`) and has both a SQL and fake implementation, it belongs here
+- SQL-specific behaviour (cascade deletes, unique constraints, JSON serialization round-trips) stays in integration tests
+
+**When to promote a SQL-only method:**
+
+If a method only exists on the SQL implementation but could reasonably be tested against a fake, add it to the abstract interface in `repositories.py`, implement the fake in `tests/fakes.py`, then add a contract test.
+
+### Integration Tests (`tests/integration/`)
+
+**Purpose:** Test database-specific behaviour and service layer interactions.
+
+**Characteristics:**
+
+- Tests involve SQLAlchemy and a real PostgreSQL database
 - Uses test database fixtures
-- Validates repository patterns
 - Tests service layer methods
+- Tests SQL-specific behaviour that contract tests cannot cover: cascade deletes, unique constraints, JSON column serialization round-trips, nullable field persistence, and methods that only exist on the SQL implementation (no fake equivalent)
 
 **Example:**
 
@@ -244,6 +280,7 @@ just watch-tests
 
 # Run specific test level
 uv run pytest tests/unit/
+uv run pytest tests/contract/
 uv run pytest tests/integration/
 uv run pytest tests/e2e/
 ```
@@ -423,7 +460,8 @@ The CI pipeline:
 
 1. Runs linting and type checking
 2. Runs unit tests
-3. Runs integration tests (with PostgreSQL)
-4. Runs e2e tests
-5. Runs BDD tests (headless mode)
-6. Generates coverage reports
+3. Runs contract tests (fake + SQL backends)
+4. Runs integration tests (with PostgreSQL)
+5. Runs e2e tests
+6. Runs BDD tests (headless mode)
+7. Generates coverage reports

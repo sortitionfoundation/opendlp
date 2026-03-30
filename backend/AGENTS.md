@@ -77,7 +77,7 @@ uv run deptry src              # Check for obsolete dependencies
 uv tool run prek run -a        # Run linting
 ```
 
-See [docs/testing.md](docs/testing.md) for complete testing strategy including BDD tests.
+See [docs/testing.md](docs/testing.md) for complete testing strategy including contract and BDD tests.
 
 ### Running the Application
 
@@ -223,7 +223,7 @@ This requirement also means that we MUST NOT have copies of details in long term
 
 ### General Documentation
 
-- [Testing Strategy](docs/testing.md) - Unit, integration, e2e, and BDD testing
+- [Testing Strategy](docs/testing.md) - Unit, contract, integration, e2e, and BDD testing
 - [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes
 - [Command Line Interface](docs/cli.md) - System administration CLI commands
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
