@@ -238,10 +238,11 @@ This requirement also means that we MUST NOT have copies of details in long term
 
 ### Agent-Specific Documentation
 
+The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/ABOUT.md](docs/agent/ABOUT.md) for the full structure.
+
+**Permanent guidelines (always relevant):**
+
 - [Code Quality Rules](docs/agent/code_quality_rules.md) - Exception handling, complexity, and formatting rules
-
-When working on frontend issues, see:
-
 - [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
@@ -254,3 +255,7 @@ Check the interactive patterns documentation at `/backoffice/dev/patterns` (dev 
 - `x-model` must use flat properties (`x-model="selected"` not `x-model="form.field"`)
 - `@click` handlers cannot have string arguments (`@click="doThing()"` not `@click="doThing('arg')"`)
 - AJAX requests must include `X-CSRFToken` header
+
+**Active development folders** contain specs for current work (e.g., `547-component-redesign/`).
+
+**Historical specs** are in `docs/agent/history/` - consult these only when you need context about past architectural decisions.

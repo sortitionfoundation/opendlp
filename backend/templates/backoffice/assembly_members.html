@@ -8,6 +8,7 @@ ABOUTME: Displays team members table with add/remove functionality for admins
 {% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/search_dropdown.html" import search_dropdown %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/input.html" import radio_group %}
 
 {% block title %}{{ _("Team Members") }} - {{ assembly.title }}{% endblock %}
 
@@ -118,35 +119,22 @@ ABOUTME: Displays team members table with add/remove functionality for admins
                         ) }}
                     </div>
 
-                    {# TODO: Extract radio button group into a reusable component in the design system #}
                     {# Role Selection Radio Buttons #}
-                    <fieldset class="mb-6">
-                        <legend class="text-label-lg block mb-3" style="color: var(--color-headings);">
-                            {{ add_user_form.role.label.text }}
-                        </legend>
-                        {% if add_user_form.role.description %}
-                            <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">{{ add_user_form.role.description }}</p>
-                        {% endif %}
-                        <div class="flex flex-col gap-3">
-                            {% for value, label in add_user_form.role.choices %}
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="radio"
-                                           id="role_{{ loop.index }}"
-                                           name="{{ add_user_form.role.name }}"
-                                           value="{{ value }}"
-                                           {% if add_user_form.role.data and add_user_form.role.data.name == value %}checked{% endif %}
-                                           class="w-5 h-5 rounded-full cursor-pointer"
-                                           style="accent-color: var(--color-primary-action);">
-                                    <span class="text-body-md group-hover:underline" style="color: var(--color-body-text);">{{ label }}</span>
-                                </label>
-                            {% endfor %}
-                        </div>
-                        {% if add_user_form.role.errors %}
-                            <p class="text-body-sm mt-1.5" style="color: var(--color-primary-action);">
-                                {% for error in add_user_form.role.errors %}{{ error }}{% endfor %}
-                            </p>
-                        {% endif %}
-                    </fieldset>
+                    <div class="mb-6">
+                        {% set role_options = [] %}
+                        {% for value, label in add_user_form.role.choices %}
+                            {% set _ = role_options.append({"value": value, "label": label}) %}
+                        {% endfor %}
+                        {% set selected_role = add_user_form.role.data.name if add_user_form.role.data else "" %}
+                        {{ radio_group(
+                        name=add_user_form.role.name,
+                        label=add_user_form.role.label.text,
+                        options=role_options,
+                        value=selected_role,
+                        hint=add_user_form.role.description,
+                        error=add_user_form.role.errors|join(", ") if add_user_form.role.errors else ""
+                        ) }}
+                    </div>
 
                     {{ button(_("Add User to Assembly"), type="submit", variant="primary") }}
                 </form>

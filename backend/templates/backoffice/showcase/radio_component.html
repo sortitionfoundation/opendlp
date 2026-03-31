@@ -1,0 +1,173 @@
+{#
+ABOUTME: Showcase section for radio button component
+ABOUTME: Displays radio group variants and usage examples
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/input.html" import radio_group %}
+
+{% macro radio_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Radio Button Component") }}
+        {{ showcase_description("Custom styled radio button group with label, based on OpenDLP Figma UI specification. Radio buttons are mutually exclusive within a group.") }}
+
+        {# Basic Radio Group #}
+        {% call showcase_example('{% from "backoffice/components/input.html" import radio_group %}
+
+{# Basic radio group #}
+            {{ radio_group(
+            name="team",
+            label="Select Team",
+            options=[
+            {"value": "sf", "label": "Sortition Foundation"},
+            {"value": "partner", "label": "Partner Organisation"},
+            {"value": "other", "label": "Other"}
+            ],
+            value="sf"
+            ) }}') %}
+            <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Default (with selection)</span>
+                    {{ radio_group(
+                    name="demo-team",
+                    label="Select Team",
+                    options=[
+                    {"value": "sf", "label": "Sortition Foundation"},
+                    {"value": "partner", "label": "Partner Organisation"},
+                    {"value": "other", "label": "Other"}
+                    ],
+                    value="sf"
+                    ) }}
+                </div>
+            </div>
+        {% endcall %}
+
+        {# Without Selection #}
+        {% call showcase_example('{# Radio group without initial selection #}
+        {{ radio_group(
+        name="preference",
+        label="Notification Preference",
+        options=[
+        {"value": "email", "label": "Email"},
+        {"value": "sms", "label": "SMS"},
+        {"value": "none", "label": "No notifications"}
+        ]
+        ) }}') %}
+        <div class="flex flex-col gap-2">
+            <span class="text-label-md" style="color: var(--color-secondary-text);">No initial selection</span>
+            {{ radio_group(
+            name="demo-preference",
+            label="Notification Preference",
+            options=[
+            {"value": "email", "label": "Email"},
+            {"value": "sms", "label": "SMS"},
+            {"value": "none", "label": "No notifications"}
+            ]
+            ) }}
+        </div>
+    {% endcall %}
+
+        {# With Hint and Error #}
+    {% call showcase_example('{# With hint text #}
+    {{ radio_group(
+    name="data_source",
+    label="Data Source",
+    options=[...],
+    hint="Choose how you want to import participant data."
+    ) }}
+
+{# With error #}
+    {{ radio_group(
+    name="required_choice",
+    label="Required Selection",
+    options=[...],
+    error="Please select an option"
+    ) }}') %}
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-2">
+            <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint</span>
+            {{ radio_group(
+            name="demo-source",
+            label="Data Source",
+            options=[
+            {"value": "gsheet", "label": "Google Spreadsheet"},
+            {"value": "csv", "label": "CSV Upload"}
+            ],
+            hint="Choose how you want to import participant data."
+            ) }}
+        </div>
+        <div class="flex flex-col gap-2">
+            <span class="text-label-md" style="color: var(--color-secondary-text);">With Error</span>
+            {{ radio_group(
+            name="demo-required",
+            label="Required Selection",
+            options=[
+            {"value": "yes", "label": "Yes"},
+            {"value": "no", "label": "No"}
+            ],
+            error="Please select an option"
+            ) }}
+        </div>
+    </div>
+{% endcall %}
+
+        {# Disabled State #}
+{% call showcase_example('{# Disabled radio group #}
+{{ radio_group(
+name="locked",
+label="Locked Selection",
+options=[...],
+value="option1",
+disabled=true
+) }}') %}
+<div class="flex flex-col gap-2">
+    <span class="text-label-md" style="color: var(--color-secondary-text);">Disabled</span>
+    {{ radio_group(
+    name="demo-disabled",
+    label="Locked Selection",
+    options=[
+    {"value": "option1", "label": "Option 1 (selected)"},
+    {"value": "option2", "label": "Option 2"}
+    ],
+    value="option1",
+    disabled=true
+    ) }}
+</div>
+{% endcall %}
+
+        {# Read-only State #}
+{% call showcase_example('{# Read-only (displays selected value as text) #}
+{{ radio_group(
+name="readonly",
+label="Data Source",
+options=[...],
+value="gsheet",
+readonly=true
+) }}') %}
+<div class="flex flex-col gap-2">
+    <span class="text-label-md" style="color: var(--color-secondary-text);">Read-only Display</span>
+    {{ radio_group(
+    name="demo-readonly",
+    label="Data Source",
+    options=[
+    {"value": "gsheet", "label": "Google Spreadsheet"},
+    {"value": "csv", "label": "CSV Upload"}
+    ],
+    value="gsheet",
+    readonly=true
+    ) }}
+</div>
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-button-primary-bg",
+"--color-button-primary-bg-hover",
+"--color-page-background",
+"--color-headings",
+"--color-focus-ring",
+".radio-container",
+".radio-circle",
+".radio-dot",
+".radio-label"
+]) }}
+{% endcall %}
+{% endmacro %}
