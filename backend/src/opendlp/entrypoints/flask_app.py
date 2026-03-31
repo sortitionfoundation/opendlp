@@ -93,6 +93,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
     from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
+    from .blueprints.targets import targets_bp  # noqa: PLC0415
     from .blueprints.targets_legacy import targets_legacy_bp  # noqa: PLC0415
     from .blueprints.wellknown import wellknown_bp  # noqa: PLC0415
 
@@ -109,6 +110,7 @@ def register_blueprints(app: Flask) -> None:
 
         app.register_blueprint(dev_bp, url_prefix="/backoffice")
     app.register_blueprint(gsheets_bp, url_prefix="/backoffice")
+    app.register_blueprint(targets_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_legacy_bp)
     app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)

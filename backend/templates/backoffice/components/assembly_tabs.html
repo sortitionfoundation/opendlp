@@ -38,7 +38,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     },
     {
     "label": _("Targets"),
-    "href": url_for('backoffice.view_assembly_targets', assembly_id=assembly.id) ~ source_param,
+    "href": url_for('targets.view_assembly_targets', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "targets",
     "disabled": not targets_enabled
     },
