@@ -628,3 +628,46 @@ class TestCsvSelectionSelectedCount:
         # Should show Run Selection buttons
         assert b"Run Selection" in response.data
         assert b"Run Test Selection" in response.data
+
+
+class TestCsvSelectionHistory:
+    """Tests for CSV selection history display."""
+
+    def test_selection_page_shows_history_section(self, logged_in_admin, assembly_with_csv_config):
+        """Test that CSV selection page shows the Selection History section."""
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"Selection History" in response.data
+        # Empty state message when no history
+        assert b"No selection runs yet" in response.data
+
+    def test_selection_page_shows_history_with_runs(
+        self, logged_in_admin, assembly_with_csv_config, postgres_session_factory, admin_user
+    ):
+        """Test that CSV selection page shows selection runs in history table."""
+        assembly = assembly_with_csv_config
+
+        # Create a completed selection run
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                user_id=admin_user.id,
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"Selection History" in response.data
+        # Should show completed status
+        assert b"Completed" in response.data
+        # Should have View action link
+        assert b"View" in response.data
