@@ -136,7 +136,7 @@ class TestDbSelectionRoutes:
             assert len(records) == 1
             assert records[0].task_type == SelectionTaskType.TEST_SELECT_FROM_DB
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.check_db_selection_data")
     def test_check_db_data_success(self, mock_check, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         mock_check.return_value = CheckDataResult(
@@ -155,7 +155,7 @@ class TestDbSelectionRoutes:
         assert b"3 target categories" in response.data
         assert b"100 eligible respondents" in response.data
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.check_db_selection_data")
     def test_check_db_data_failure(self, mock_check, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         mock_check.return_value = CheckDataResult(
@@ -474,7 +474,7 @@ class TestDbSelectionRoutes:
 
 
 class TestDbSelectionDownloads:
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_selected_csv(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -487,7 +487,7 @@ class TestDbSelectionDownloads:
         assert b"Alice" in response.data
         assert f"selected-{run_id}.csv" in response.headers["Content-Disposition"]
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_remaining_csv(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -500,7 +500,7 @@ class TestDbSelectionDownloads:
         assert b"Bob" in response.data
         assert f"remaining-{run_id}.csv" in response.headers["Content-Disposition"]
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_selected_csv_not_found(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -513,7 +513,7 @@ class TestDbSelectionDownloads:
 
         assert response.status_code == 302
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_selected_csv_invalid_selection(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -526,7 +526,7 @@ class TestDbSelectionDownloads:
 
         assert response.status_code == 302
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_remaining_csv_not_found(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -539,7 +539,7 @@ class TestDbSelectionDownloads:
 
         assert response.status_code == 302
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.generate_selection_csvs")
     def test_download_remaining_csv_invalid_selection(self, mock_generate, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         run_id = uuid.uuid4()
@@ -596,7 +596,7 @@ class TestDbSelectionErrorHandling:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/db_select/{task_id}/progress")
         assert response.status_code == 404
 
-    @patch("opendlp.entrypoints.blueprints.db_selection.check_db_selection_data")
+    @patch("opendlp.entrypoints.blueprints.db_selection_legacy.check_db_selection_data")
     def test_check_db_data_unexpected_error(self, mock_check, logged_in_admin, assembly_for_db_selection):
         assembly = assembly_for_db_selection
         mock_check.side_effect = RuntimeError("Unexpected error")
