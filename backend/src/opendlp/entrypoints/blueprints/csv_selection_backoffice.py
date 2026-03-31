@@ -15,6 +15,7 @@ from opendlp.service_layer.assembly_service import (
     get_csv_upload_status,
     get_or_create_csv_config,
     update_csv_config,
+    update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
@@ -304,17 +305,26 @@ def save_csv_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             else []
         )
 
-        # Update the CSV config
+        # Update selection settings (check_same_address, columns, etc.)
         uow2 = bootstrap.bootstrap()
         with uow2:
-            update_csv_config(
+            update_selection_settings(
                 uow=uow2,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 check_same_address=form.check_same_address.data,
                 check_same_address_cols=check_same_address_cols,
                 columns_to_keep=columns_to_keep,
-                settings_confirmed=True,  # Saving settings confirms them
+            )
+
+        # Mark CSV config as confirmed
+        uow3 = bootstrap.bootstrap()
+        with uow3:
+            update_csv_config(
+                uow=uow3,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                settings_confirmed=True,
             )
 
         flash(_("Selection settings saved successfully."), "success")
