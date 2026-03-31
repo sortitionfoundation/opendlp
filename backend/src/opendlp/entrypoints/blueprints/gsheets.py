@@ -222,6 +222,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Determine data source and tab enabled states
         csv_selected_count = 0
+        csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
         if gsheet:
             data_source = "gsheet"
             targets_enabled = True
@@ -232,6 +233,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled = csv_status.has_targets
             respondents_enabled = csv_status.has_respondents
             selection_enabled = csv_status.selection_enabled
+            csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
             # Get count of respondents that have been selected (not in Pool status)
             try:
                 uow_count = bootstrap.bootstrap()
@@ -275,6 +277,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
             csv_selected_count=csv_selected_count,
+            csv_settings_confirmed=csv_settings_confirmed,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")

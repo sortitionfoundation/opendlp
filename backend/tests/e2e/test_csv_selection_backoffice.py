@@ -75,7 +75,7 @@ def assembly_with_csv_config(postgres_session_factory, admin_user):
 
 @pytest.fixture
 def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
-    """Create an assembly with CSV config but settings NOT confirmed."""
+    """Create an assembly with CSV config and data but settings NOT confirmed."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         assembly = create_assembly(
             uow=uow,
@@ -102,6 +102,16 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
             assembly_id=assembly_id,
             settings_confirmed=False,
         )
+
+    # Upload targets CSV (needed for data_source detection)
+    targets_csv = "feature,value,min,max\nGender,Male,4,6\nGender,Female,4,6"
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly_service.import_targets_from_csv(uow, admin_user.id, assembly_id, targets_csv)
+
+    # Upload respondents CSV (needed for data_source detection)
+    respondents_csv = "external_id,Gender\n1,Male\n2,Female"
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        respondent_service.import_respondents_from_csv(uow, admin_user.id, assembly_id, respondents_csv)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         a = uow.assemblies.get(assembly_id)
@@ -628,6 +638,46 @@ class TestCsvSelectionSelectedCount:
         # Should show Run Selection buttons
         assert b"Run Selection" in response.data
         assert b"Run Test Selection" in response.data
+
+
+class TestCsvSelectionSettingsWarning:
+    """Tests for CSV selection settings confirmation warning."""
+
+    def test_selection_page_shows_warning_when_settings_not_confirmed(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """Test that selection page shows warning when settings are not confirmed."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        # Should show warning message
+        assert b"review and save the selection settings" in response.data
+        # Should have link to data settings
+        assert b"Go to Data Settings" in response.data
+
+    def test_selection_page_buttons_disabled_when_settings_not_confirmed(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """Test that selection buttons are disabled when settings are not confirmed."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        # Buttons should be disabled - check for disabled attribute in HTML
+        assert b"disabled" in response.data
+
+    def test_selection_page_no_warning_when_settings_confirmed(self, logged_in_admin, assembly_with_csv_config):
+        """Test that selection page does not show warning when settings are confirmed."""
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        # Should NOT show warning message
+        assert b"review and save the selection settings" not in response.data
 
 
 class TestCsvSelectionHistory:
