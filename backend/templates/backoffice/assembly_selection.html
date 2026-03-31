@@ -74,29 +74,59 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
                         </div>
                     </div>
-                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("Use 'Check Data' to validate your data before running the actual selection.") }}
-                    </p>
+                    {% if csv_selected_count|default(0) > 0 %}
+                        {# Show selection status when respondents have been selected #}
+                        <div class="rounded-lg p-4 mb-4"
+                             style="background-color: var(--color-warning-background);
+                                    border: 1px solid var(--color-warning-text)">
+                            <p class="text-body-md font-medium mb-2" style="color: var(--color-warning-text);">
+                                {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
+                            </p>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to Pool status.") }}
+                            </p>
+                        </div>
+                    {% else %}
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Use 'Check Data' to validate your data before running the actual selection.") }}
+                        </p>
+                    {% endif %}
                 {% endcall %}
                 {% call card_footer() %}
-                    <form method="post"
-                          action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Check Data") , type="submit", variant="outline") }}
-                    </form>
-                    <form method="post"
-                          action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}?test=1"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Run Test Selection") , type="submit", variant="outline") }}
-                    </form>
-                    <form method="post"
-                          action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Run Selection") , type="submit", variant="primary") }}
-                    </form>
+                    {% if csv_selected_count|default(0) > 0 %}
+                        {# Show reset button when respondents have been selected #}
+                        <form method="post"
+                              action="{{ url_for('csv_selection_backoffice.reset_csv_selection', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Reset to Pool"), type="submit", variant="danger") }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Check Data"), type="submit", variant="outline") }}
+                        </form>
+                    {% else %}
+                        <form method="post"
+                              action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Check Data") , type="submit", variant="outline") }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}?test=1"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Test Selection") , type="submit", variant="outline") }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Selection") , type="submit", variant="primary") }}
+                        </form>
+                    {% endif %}
                 {% endcall %}
             {% endcall %}
             {# Replacement Selection Card #}
