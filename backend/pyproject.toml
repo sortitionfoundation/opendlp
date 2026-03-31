@@ -78,6 +78,8 @@ sortition-algorithms = "0 days"
 requests = "0 days"
 # for security update cryptography 46.0.6 released 2026-03-25 - so can remove after 2026-04-02
 cryptography = "0 days"
+# for security update pygments 2.20.0 released 2026-03-29 - so can remove after 2026-04-05
+pygments = "0 days"
 
 [tool.mypy]
 files = ["src"]
