@@ -16,6 +16,7 @@ from sortition_algorithms.people import FeatureValueCountCheck
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
@@ -268,7 +269,8 @@ def _make_uow_with_targets_and_respondents(
     uow.users.add(admin)
 
     assembly = Assembly(title="Test Assembly", number_to_select=number_to_select)
-    assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+    assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+    assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
     uow.assemblies.add(assembly)
 
     if target_categories:

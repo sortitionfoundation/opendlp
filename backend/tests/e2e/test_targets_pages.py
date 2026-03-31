@@ -5,6 +5,7 @@ import io
 
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import (
@@ -618,7 +619,8 @@ class TestCheckTargets:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assembly = uow.assemblies.get(existing_assembly.id)
             assembly.number_to_select = 10
-            assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
             uow.commit()
 
         response = logged_in_admin.post(
@@ -648,7 +650,8 @@ class TestCheckTargets:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assembly = uow.assemblies.get(existing_assembly.id)
             assembly.number_to_select = 10
-            assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
             uow.commit()
 
         response = logged_in_admin.post(

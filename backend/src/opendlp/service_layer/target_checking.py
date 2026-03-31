@@ -27,7 +27,7 @@ from sortition_algorithms.people import (
 )
 
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
-from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -264,12 +264,16 @@ def check_targets_detailed(
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     number_to_select = assembly.number_to_select
-    csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
+    sel_settings = (
+        assembly.selection_settings
+        if assembly.selection_settings is not None
+        else SelectionSettings(assembly_id=assembly_id)
+    )
 
     result = DetailedCheckResult(success=True, global_errors=[])
 
     try:
-        settings_obj = csv_config.to_settings()
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         result.success = False
         result.global_errors.append(str(e))

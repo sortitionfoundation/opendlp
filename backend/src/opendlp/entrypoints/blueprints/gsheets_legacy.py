@@ -15,6 +15,7 @@ from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
     get_assembly_gsheet,
     get_assembly_with_permissions,
+    get_or_create_selection_settings,
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
@@ -63,7 +64,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
         if form.validate_on_submit():
             try:
                 if action == "create":
-                    final_gsheet = add_assembly_gsheet(
+                    add_assembly_gsheet(
                         uow=uow,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
@@ -81,7 +82,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                     )
                     flash(_("Google Spreadsheet configuration created successfully"), "success")
                 else:
-                    final_gsheet = update_assembly_gsheet(
+                    update_assembly_gsheet(
                         uow=uow,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
@@ -100,7 +101,11 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                     flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
                 # Soft validation warning - check if columns_to_keep is empty
-                if not final_gsheet.columns_to_keep:
+                # Team defaults may have populated columns_to_keep even if the form field was empty
+                team = form.team.data if hasattr(form, "team") and form.team else ""
+                columns_to_keep = form.columns_to_keep_string.data or ""
+                has_team_with_defaults = team and team != "other"
+                if not columns_to_keep.strip() and not has_team_with_defaults:
                     flash(
                         _(
                             "Warning: No columns to keep specified. "
@@ -183,8 +188,15 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
-        return render_template("gsheets/select.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
+        return render_template(
+            "gsheets/select.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            current_tab="data",
+            selection_settings=sel_settings,
+        ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
@@ -210,6 +222,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
             result = get_selection_run_status(uow, run_id)
 
         # Validate that the run belongs to this assembly
@@ -230,6 +243,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             run_report=result.run_report,
             translated_report_html=translate_run_report_to_html(result.run_report),
             run_id=run_id,
+            selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
@@ -434,8 +448,15 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
-        return render_template("gsheets/replace.html", assembly=assembly, gsheet=gsheet, current_tab="data"), 200
+        return render_template(
+            "gsheets/replace.html",
+            assembly=assembly,
+            gsheet=gsheet,
+            current_tab="data",
+            selection_settings=sel_settings,
+        ), 200
     except NotFoundError as e:
         current_app.logger.warning(
             f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}"
@@ -465,6 +486,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
             result = get_selection_run_status(uow, run_id)
 
         # Validate that the run belongs to this assembly
@@ -521,6 +543,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             min_select=min_select,
             max_select=max_select,
             num_to_select=num_to_select,
+            selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(
@@ -767,6 +790,7 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
         return render_template(
             "gsheets/manage_tabs.html",
@@ -774,6 +798,7 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet=gsheet,
             current_tab="data",
             manage_status=ManageOldTabsStatus(ManageOldTabsState.FRESH),
+            selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(
@@ -802,6 +827,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
             result = get_selection_run_status(uow, run_id)
 
         # Validate that the run belongs to this assembly
@@ -828,6 +854,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             run_report=result.run_report,
             run_id=run_id,
             tab_names=tab_names,
+            selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(

@@ -13,7 +13,9 @@ from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_or_create_csv_config,
+    get_or_create_selection_settings,
     update_csv_config,
+    update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
@@ -315,15 +317,16 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
             available_columns = get_respondent_attribute_columns(uow, assembly_id)
 
         form = DbSelectionSettingsForm(
             available_columns=available_columns,
-            check_same_address=csv_config.check_same_address,
-            check_same_address_cols_string=", ".join(csv_config.check_same_address_cols)
-            if csv_config.check_same_address_cols
+            check_same_address=sel_settings.check_same_address,
+            check_same_address_cols_string=sel_settings.check_same_address_cols_string
+            if sel_settings.check_same_address_cols
             else "",
-            columns_to_keep_string=", ".join(csv_config.columns_to_keep) if csv_config.columns_to_keep else "",
+            columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings.columns_to_keep else "",
         )
         return render_template(
             "db_selection/settings.html",
@@ -355,7 +358,7 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form = DbSelectionSettingsForm(available_columns=available_columns)
         if form.validate_on_submit():
             uow2 = bootstrap.bootstrap()
-            update_csv_config(
+            update_selection_settings(
                 uow=uow2,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
@@ -363,6 +366,12 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 check_same_address=form.check_same_address.data or False,
                 check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
                 columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
+            )
+            uow3 = bootstrap.bootstrap()
+            update_csv_config(
+                uow=uow3,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
                 settings_confirmed=True,
             )
             flash(_("Selection settings saved"), "success")

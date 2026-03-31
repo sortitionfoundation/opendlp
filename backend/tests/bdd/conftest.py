@@ -481,6 +481,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     session.execute(orm.target_categories.delete())
     session.execute(orm.assembly_gsheets.delete())
     session.execute(orm.assembly_csv.delete())
+    session.execute(orm.selection_settings.delete())
     session.execute(orm.user_invites.delete())
     session.execute(orm.user_assembly_roles.delete())
     # Now delete assemblies (children are already deleted)

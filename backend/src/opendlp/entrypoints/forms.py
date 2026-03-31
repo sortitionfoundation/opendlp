@@ -19,7 +19,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
 
-from opendlp.domain.assembly import OTHER_TEAM
+from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options

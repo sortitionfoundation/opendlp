@@ -10,7 +10,7 @@ import pytest
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
+from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.sortition import CheckDataResult
@@ -36,8 +36,15 @@ def assembly_for_db_selection(postgres_session_factory, admin_user):
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly_id,
-            check_same_address=False,
             settings_confirmed=True,
+        )
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_selection_settings(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly_id,
+            check_same_address=False,
         )
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -264,10 +271,10 @@ class TestDbSelectionRoutes:
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             a = uow.assemblies.get(assembly.id)
-            assert a.csv is not None
-            assert a.csv.check_same_address is True
-            assert a.csv.check_same_address_cols == ["address1", "postcode"]
-            assert a.csv.columns_to_keep == ["first_name", "last_name"]
+            assert a.selection_settings is not None
+            assert a.selection_settings.check_same_address is True
+            assert a.selection_settings.check_same_address_cols == ["address1", "postcode"]
+            assert a.selection_settings.columns_to_keep == ["first_name", "last_name"]
 
     def test_save_db_selection_settings_marks_confirmed(self, logged_in_admin, admin_user, postgres_session_factory):
         """Saving selection settings should set settings_confirmed=True."""

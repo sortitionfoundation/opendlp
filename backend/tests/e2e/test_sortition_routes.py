@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from opendlp.domain.assembly import AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.assembly_service import create_assembly
@@ -81,10 +82,13 @@ class TestSortitionRoutes:
             gsheet = AssemblyGSheet(
                 assembly_id=assembly.id,
                 url=VALID_GSHEET_URL,
+            )
+            uow.assembly_gsheets.add(gsheet)
+            assembly.selection_settings = SelectionSettings(
+                assembly_id=assembly.id,
                 check_same_address_cols=["address1", "postcode"],
                 columns_to_keep=["first_name", "last_name", "age"],
             )
-            uow.assembly_gsheets.add(gsheet)
 
             record = SelectionRunRecord(
                 assembly_id=assembly.id,
@@ -120,10 +124,13 @@ class TestSortitionRoutes:
             gsheet = AssemblyGSheet(
                 assembly_id=assembly.id,
                 url=VALID_GSHEET_URL,
+            )
+            uow.assembly_gsheets.add(gsheet)
+            assembly.selection_settings = SelectionSettings(
+                assembly_id=assembly.id,
                 check_same_address_cols=["address1", "postcode"],
                 columns_to_keep=["first_name", "last_name", "age"],
             )
-            uow.assembly_gsheets.add(gsheet)
             uow.commit()
 
         # Try to access task from different assembly
@@ -509,10 +516,13 @@ class TestReplacementRoutes:
             gsheet = AssemblyGSheet(
                 assembly_id=assembly.id,
                 url=VALID_GSHEET_URL,
+            )
+            uow.assembly_gsheets.add(gsheet)
+            assembly.selection_settings = SelectionSettings(
+                assembly_id=assembly.id,
                 check_same_address_cols=["address1", "postcode"],
                 columns_to_keep=["first_name", "last_name", "age"],
             )
-            uow.assembly_gsheets.add(gsheet)
 
             record = SelectionRunRecord(
                 assembly_id=assembly.id,

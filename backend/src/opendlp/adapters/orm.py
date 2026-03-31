@@ -266,6 +266,25 @@ email_confirmation_tokens = Table(
     Column("used_at", TZAwareDatetime(), nullable=True),
 )
 
+# Selection settings table — shared selection algorithm config for all data sources
+selection_settings = Table(
+    "selection_settings",
+    metadata,
+    Column("selection_settings_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    ),
+    Column("id_column", String(100), nullable=False, default="external_id"),
+    Column("check_same_address", Boolean, nullable=False, default=True),
+    Column("check_same_address_cols", JSON, nullable=False, default=list),
+    Column("columns_to_keep", JSON, nullable=False, default=list),
+    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+)
+
 # Assembly GSheets table
 assembly_gsheets = Table(
     "assembly_gsheets",
@@ -285,11 +304,6 @@ assembly_gsheets = Table(
     Column("replace_targets_tab", String(100), nullable=False, default="Replacement Categories"),
     Column("already_selected_tab", String(100), nullable=False, default="Selected"),
     Column("generate_remaining_tab", Boolean, nullable=False, default=True),
-    Column("id_column", String(100), nullable=False, default="nationbuilder_id"),
-    Column("check_same_address", Boolean, nullable=False, default=True),
-    Column("check_same_address_cols", JSON, nullable=False, default=list),
-    Column("columns_to_keep", JSON, nullable=False, default=list),
-    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
 )
 
 # Assembly CSV table
@@ -307,11 +321,7 @@ assembly_csv = Table(
     ),
     Column("last_import_filename", String(500), nullable=False, default=""),
     Column("last_import_timestamp", TZAwareDatetime(), nullable=True),
-    Column("id_column", String(100), nullable=False, default="external_id"),
-    Column("check_same_address", Boolean, nullable=False, default=True),
-    Column("check_same_address_cols", JSON, nullable=False, default=list),
-    Column("columns_to_keep", JSON, nullable=False, default=list),
-    Column("selection_algorithm", String(50), nullable=False, default="maximin"),
+    Column("csv_id_column", String(100), nullable=False, default="external_id"),
     Column("settings_confirmed", Boolean, nullable=False, default=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

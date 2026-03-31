@@ -10,6 +10,7 @@ from sortition_algorithms import GSheetDataSource, RunReport
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
@@ -42,10 +43,16 @@ class TestStartGsheetLoadTask:
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Create selection settings (selection fields moved from gsheet to SelectionSettings)
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address_cols=["address1", "postcode"],  # Required when check_same_address=True
             columns_to_keep=["first_name", "last_name", "age"],  # Required by Settings
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         with patch("opendlp.service_layer.sortition.tasks.load_gsheet.delay") as mock_celery:
             mock_result = Mock()
@@ -115,10 +122,15 @@ class TestStartGsheetLoadTask:
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address_cols=["address1", "postcode"],
             columns_to_keep=["first_name", "last_name", "age"],
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         with pytest.raises(InsufficientPermissions):
             sortition.start_gsheet_load_task(uow, regular_user.id, assembly.id)
@@ -843,16 +855,22 @@ class TestSortitionErrorHandling:
         assembly = Assembly(title="Test Assembly")
         uow.assemblies.add(assembly)
 
-        # Create gsheet configuration with invalid settings
-        # check_same_address=True but no check_same_address_cols will cause ConfigurationError
+        # Create gsheet configuration
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Create selection settings with invalid config:
+        # check_same_address=True but no check_same_address_cols will cause ConfigurationError
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address=True,
             check_same_address_cols=[],  # Empty - will cause ConfigurationError
             columns_to_keep=["first_name", "last_name"],
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         # Should raise InvalidSelection, not ConfigurationError
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
@@ -870,15 +888,21 @@ class TestSortitionErrorHandling:
         assembly = Assembly(title="Test Assembly", number_to_select=10)
         uow.assemblies.add(assembly)
 
-        # Create gsheet configuration with invalid settings
+        # Create gsheet configuration
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Create selection settings with invalid config
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address=True,
             check_same_address_cols=[],  # Empty - will cause ConfigurationError
             columns_to_keep=["first_name", "last_name"],
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         # Should raise InvalidSelection, not ConfigurationError
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
@@ -896,15 +920,21 @@ class TestSortitionErrorHandling:
         assembly = Assembly(title="Test Assembly")
         uow.assemblies.add(assembly)
 
-        # Create gsheet configuration with invalid settings
+        # Create gsheet configuration
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Create selection settings with invalid config
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address=True,
             check_same_address_cols=[],  # Empty - will cause ConfigurationError
             columns_to_keep=["first_name", "last_name"],
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         # Should raise InvalidSelection, not ConfigurationError
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
@@ -922,15 +952,21 @@ class TestSortitionErrorHandling:
         assembly = Assembly(title="Test Assembly")
         uow.assemblies.add(assembly)
 
-        # Create gsheet configuration with invalid settings
+        # Create gsheet configuration
         gsheet = AssemblyGSheet(
             assembly_id=assembly.id,
             url=VALID_GSHEET_URL,
+        )
+        uow.assembly_gsheets.add(gsheet)
+
+        # Create selection settings with invalid config
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
             check_same_address=True,
             check_same_address_cols=[],  # Empty - will cause ConfigurationError
             columns_to_keep=["first_name", "last_name"],
         )
-        uow.assembly_gsheets.add(gsheet)
+        assembly.selection_settings = sel_settings
 
         # Should raise InvalidSelection, not ConfigurationError
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
@@ -948,7 +984,8 @@ class TestStartDbSelectTask:
         uow.users.add(admin_user)
 
         assembly = Assembly(title="Test Assembly", number_to_select=2)
-        assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
         uow.assemblies.add(assembly)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
@@ -997,7 +1034,8 @@ class TestStartDbSelectTask:
         uow.users.add(admin_user)
 
         assembly = Assembly(title="Test Assembly", number_to_select=2)
-        assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
         uow.assemblies.add(assembly)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:

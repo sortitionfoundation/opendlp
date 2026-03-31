@@ -5,7 +5,12 @@ import pytest
 
 from opendlp.adapters.database import start_mappers
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.assembly_service import create_assembly, get_or_create_csv_config, update_csv_config
+from opendlp.service_layer.assembly_service import (
+    create_assembly,
+    get_or_create_csv_config,
+    update_csv_config,
+    update_selection_settings,
+)
 from opendlp.service_layer.exceptions import InvalidSelection
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -79,7 +84,7 @@ user003,Charlie Brown,charlie@example.com,28"""
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=test_assembly.id,
-                id_column="participant_id",
+                csv_id_column="participant_id",
             )
 
         csv_content = """participant_id,name,email,age
@@ -173,7 +178,7 @@ user002,Bob"""
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=test_assembly.id,
-                id_column="old_col",
+                csv_id_column="old_col",
             )
 
         csv_content = """new_col,name
@@ -221,7 +226,7 @@ user001,Alice"""
             )
 
             assert config is not None
-            assert config.id_column == "external_id"
+            assert config.csv_id_column == "external_id"
             assert config.assembly_id == test_assembly.id
 
         # Second call returns existing config
@@ -233,31 +238,38 @@ user001,Alice"""
             )
 
             assert config2.assembly_id == config.assembly_id
-            assert config2.id_column == config.id_column
+            assert config2.csv_id_column == config.csv_id_column
 
     def test_update_csv_config(self, postgres_session_factory, admin_user, test_assembly):
         """Test update_csv_config service function"""
-        # Create initial config
+        # Update CSV-specific field
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             config = update_csv_config(
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=test_assembly.id,
-                id_column="custom_id",
+                csv_id_column="custom_id",
+            )
+            assert config.csv_id_column == "custom_id"
+
+        # Update selection settings separately
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            sel = update_selection_settings(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=test_assembly.id,
                 check_same_address=False,
                 selection_algorithm="nash",
                 columns_to_keep=["name", "email", "age"],
             )
-
-            assert config.id_column == "custom_id"
-            assert config.check_same_address is False
-            assert config.selection_algorithm == "nash"
-            assert config.columns_to_keep == ["name", "email", "age"]
+            assert sel.check_same_address is False
+            assert sel.selection_algorithm == "nash"
+            assert sel.columns_to_keep == ["name", "email", "age"]
 
         # Verify changes persisted
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             assembly = uow.assemblies.get(test_assembly.id)
-            assert assembly.csv.id_column == "custom_id"
-            assert assembly.csv.check_same_address is False
-            assert assembly.csv.selection_algorithm == "nash"
-            assert assembly.csv.columns_to_keep == ["name", "email", "age"]
+            assert assembly.csv.csv_id_column == "custom_id"
+            assert assembly.selection_settings.check_same_address is False
+            assert assembly.selection_settings.selection_algorithm == "nash"
+            assert assembly.selection_settings.columns_to_keep == ["name", "email", "age"]

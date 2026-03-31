@@ -1,7 +1,7 @@
 """ABOUTME: End-to-end AssemblyGSheet CRUD tests
 ABOUTME: Tests complete AssemblyGSheet creation, viewing, editing, and deletion workflows through web interface"""
 
-from opendlp.domain.assembly import DEFAULT_ADDRESS_COLS, DEFAULT_COLS_TO_KEEP, DEFAULT_ID_COLUMN
+from opendlp.domain.selection_settings import DEFAULT_ADDRESS_COLS, DEFAULT_COLS_TO_KEEP, DEFAULT_ID_COLUMN
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -200,17 +200,19 @@ class TestAssemblyGSheetEditView:
             saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
             assert saved_gsheet is not None
 
-            # Check that all form values were properly saved
+            # Check that gsheet-specific form values were properly saved
             assert saved_gsheet.url == updated_url
             assert saved_gsheet.select_registrants_tab == "UpdatedRespondents"
             assert saved_gsheet.select_targets_tab == "UpdatedCategories"
-            assert saved_gsheet.id_column == DEFAULT_ID_COLUMN["eu"]
-            assert saved_gsheet.check_same_address is False
             assert saved_gsheet.generate_remaining_tab is True
 
-            # Check that the string fields were properly converted to lists
-            assert saved_gsheet.check_same_address_cols == DEFAULT_ADDRESS_COLS["eu"]
-            assert saved_gsheet.columns_to_keep == DEFAULT_COLS_TO_KEEP["eu"]
+            # Check that selection settings were properly saved (team defaults applied)
+            saved_assembly = uow.assemblies.get(assembly.id)
+            assert saved_assembly.selection_settings is not None
+            assert saved_assembly.selection_settings.id_column == DEFAULT_ID_COLUMN["eu"]
+            assert saved_assembly.selection_settings.check_same_address is False
+            assert saved_assembly.selection_settings.check_same_address_cols == DEFAULT_ADDRESS_COLS["eu"]
+            assert saved_assembly.selection_settings.columns_to_keep == DEFAULT_COLS_TO_KEEP["eu"]
 
     def test_edit_gsheet_success_with_team_custom(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -250,12 +252,18 @@ class TestAssemblyGSheetEditView:
             saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
             assert saved_gsheet is not None
 
-            # Check that all form values were properly saved
-            assert saved_gsheet.id_column == "updated_id_column"
-
-            # Check that the string fields were properly converted to lists
-            assert saved_gsheet.check_same_address_cols == ["address_line", "postcode"]
-            assert saved_gsheet.columns_to_keep == ["first_name", "last_name", "email", "phone_number", "city"]
+            # Check that selection settings were properly saved
+            saved_assembly = uow.assemblies.get(assembly.id)
+            assert saved_assembly.selection_settings is not None
+            assert saved_assembly.selection_settings.id_column == "updated_id_column"
+            assert saved_assembly.selection_settings.check_same_address_cols == ["address_line", "postcode"]
+            assert saved_assembly.selection_settings.columns_to_keep == [
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "city",
+            ]
 
     def test_edit_gsheet_validation_errors(self, logged_in_admin, assembly_with_gsheet):
         """Test form validation errors on gsheet editing."""

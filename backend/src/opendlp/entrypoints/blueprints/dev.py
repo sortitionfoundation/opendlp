@@ -12,8 +12,10 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.service_layer.assembly_service import (
     get_or_create_csv_config,
+    get_or_create_selection_settings,
     import_targets_from_csv,
     update_csv_config,
+    update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
@@ -203,16 +205,22 @@ def _handle_get_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
                 user_id=current_user.id,
                 assembly_id=assembly_id,
             )
+            sel_settings = get_or_create_selection_settings(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
             return {
                 "status": "success",
                 "config": {
                     "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
                     "assembly_id": str(csv_config.assembly_id),
-                    "id_column": csv_config.id_column,
-                    "check_same_address": csv_config.check_same_address,
-                    "check_same_address_cols": csv_config.check_same_address_cols,
-                    "columns_to_keep": csv_config.columns_to_keep,
-                    "selection_algorithm": csv_config.selection_algorithm,
+                    "csv_id_column": csv_config.csv_id_column,
+                    "id_column": sel_settings.id_column,
+                    "check_same_address": sel_settings.check_same_address,
+                    "check_same_address_cols": sel_settings.check_same_address_cols,
+                    "columns_to_keep": sel_settings.columns_to_keep,
+                    "selection_algorithm": sel_settings.selection_algorithm,
                     "settings_confirmed": csv_config.settings_confirmed,
                     "last_import_filename": csv_config.last_import_filename,
                     "last_import_timestamp": csv_config.last_import_timestamp.isoformat()
@@ -235,22 +243,48 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
 
     with uow:
         try:
+            # Split settings into CSV-specific and selection settings
+            selection_fields = {
+                "id_column",
+                "check_same_address",
+                "check_same_address_cols",
+                "columns_to_keep",
+                "selection_algorithm",
+            }
+            sel_kwargs = {k: v for k, v in settings.items() if k in selection_fields}
+            csv_kwargs = {k: v for k, v in settings.items() if k not in selection_fields}
+
             csv_config = update_csv_config(
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
-                **settings,
+                **csv_kwargs,
             )
+            if sel_kwargs:
+                uow2 = bootstrap.bootstrap()
+                sel_settings = update_selection_settings(
+                    uow=uow2,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    **sel_kwargs,
+                )
+            else:
+                sel_settings = get_or_create_selection_settings(
+                    uow=bootstrap.bootstrap(),
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                )
             return {
                 "status": "success",
                 "config": {
                     "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
                     "assembly_id": str(csv_config.assembly_id),
-                    "id_column": csv_config.id_column,
-                    "check_same_address": csv_config.check_same_address,
-                    "check_same_address_cols": csv_config.check_same_address_cols,
-                    "columns_to_keep": csv_config.columns_to_keep,
-                    "selection_algorithm": csv_config.selection_algorithm,
+                    "csv_id_column": csv_config.csv_id_column,
+                    "id_column": sel_settings.id_column,
+                    "check_same_address": sel_settings.check_same_address,
+                    "check_same_address_cols": sel_settings.check_same_address_cols,
+                    "columns_to_keep": sel_settings.columns_to_keep,
+                    "selection_algorithm": sel_settings.selection_algorithm,
                     "settings_confirmed": csv_config.settings_confirmed,
                     "updated_at": csv_config.updated_at.isoformat() if csv_config.updated_at else None,
                 },

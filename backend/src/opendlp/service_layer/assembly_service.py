@@ -13,8 +13,17 @@ from sortition_algorithms.features import MAX_FLEX_UNSET, FeatureCollection, rea
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
-from opendlp.domain.assembly import VALID_TEAMS, Assembly, AssemblyGSheet, Teams
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.selection_settings import (
+    DEFAULT_ADDRESS_COLS,
+    DEFAULT_COLS_TO_KEEP,
+    DEFAULT_ID_COLUMN,
+    OTHER_TEAM,
+    VALID_TEAMS,
+    SelectionSettings,
+    Teams,
+)
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyStatus
 
@@ -284,14 +293,19 @@ def add_assembly_gsheet(
         if existing_gsheet:
             raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
 
-        # Create the AssemblyGSheet with team defaults
-        assembly_gsheet = AssemblyGSheet(
-            assembly_id=assembly_id, url=url, **AssemblyGSheet.convert_str_kwargs(**gsheet_options)
-        )
-        if team in VALID_TEAMS:
-            assembly_gsheet.update_team_settings(cast(Teams, team))
+        # Split options into gsheet-specific and selection settings
+        sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**gsheet_options)
 
+        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url, **gsheet_kwargs)
         uow.assembly_gsheets.add(assembly_gsheet)
+
+        # Create or update SelectionSettings
+        sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
+        sel_settings.update_from_str_kwargs(**sel_kwargs)
+        if team in VALID_TEAMS:
+            _apply_team_defaults(sel_settings, cast(Teams, team))
+        assembly.selection_settings = sel_settings
+
         uow.commit()
 
         return assembly_gsheet.create_detached_copy()
@@ -343,8 +357,19 @@ def update_assembly_gsheet(
                 f"Assembly {assembly_id} does not have a Google Spreadsheet configuration"
             )
 
-        # Apply updates
-        assembly_gsheet.update_values(**AssemblyGSheet.convert_str_kwargs(**updates))
+        # Split updates into gsheet-specific and selection settings
+        sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**updates)
+
+        # Apply gsheet-specific updates
+        team = gsheet_kwargs.pop("team", OTHER_TEAM)
+        assembly_gsheet.update_values(**gsheet_kwargs)
+
+        # Apply selection settings updates
+        sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
+        sel_settings.update_from_str_kwargs(**sel_kwargs)
+        if team in VALID_TEAMS:
+            _apply_team_defaults(sel_settings, cast(Teams, team))
+        assembly.selection_settings = sel_settings
 
         uow.commit()
 
@@ -438,6 +463,93 @@ def get_assembly_gsheet(
             return assembly_gsheet.create_detached_copy()
 
         return None
+
+
+def _apply_team_defaults(sel_settings: SelectionSettings, team: Teams) -> None:
+    """Apply team-specific defaults to selection settings."""
+    if team != OTHER_TEAM:
+        sel_settings.id_column = DEFAULT_ID_COLUMN[team]
+        sel_settings.check_same_address_cols = DEFAULT_ADDRESS_COLS[team]
+        sel_settings.columns_to_keep = DEFAULT_COLS_TO_KEEP[team]
+
+
+def _split_select_gsheet_kwargs(**kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Split options into gsheet-specific and selection settings"""
+    selection_fields = {
+        "id_column",
+        "check_same_address",
+        "check_same_address_cols",
+        "columns_to_keep",
+        "selection_algorithm",
+        "check_same_address_cols_string",
+        "columns_to_keep_string",
+    }
+    sel_kwargs = {k: v for k, v in kwargs.items() if k in selection_fields}
+    gsheet_kwargs = {k: v for k, v in kwargs.items() if k not in selection_fields}
+    return sel_kwargs, gsheet_kwargs
+
+
+def get_or_create_selection_settings(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> SelectionSettings:
+    """Get or create selection settings for an assembly."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view selection settings",
+                required_role="assembly role or global privileges",
+            )
+
+        if assembly.selection_settings is None:
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+            uow.commit()
+
+        return cast(SelectionSettings, assembly.selection_settings).create_detached_copy()
+
+
+def update_selection_settings(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    **settings: Any,
+) -> SelectionSettings:
+    """Update selection settings for an assembly."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="update selection settings",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        if assembly.selection_settings is None:
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+
+        sel_settings = cast(SelectionSettings, assembly.selection_settings)
+        for key, value in settings.items():
+            if hasattr(sel_settings, key):
+                setattr(sel_settings, key, value)
+
+        uow.commit()
+
+        return sel_settings.create_detached_copy()
 
 
 def create_target_category(

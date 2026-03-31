@@ -272,9 +272,13 @@ class TestBackofficeGSheetFormSubmission:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             saved_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly.id)
             assert saved_gsheet is not None
-            assert saved_gsheet.id_column == "custom_id"
-            assert saved_gsheet.check_same_address_cols == ["address_line", "postcode"]
-            assert saved_gsheet.columns_to_keep == ["first_name", "last_name", "email", "phone"]
+
+            # Selection settings fields are now on SelectionSettings, not GSheet
+            saved_assembly = uow.assemblies.get(assembly.id)
+            assert saved_assembly.selection_settings is not None
+            assert saved_assembly.selection_settings.id_column == "custom_id"
+            assert saved_assembly.selection_settings.check_same_address_cols == ["address_line", "postcode"]
+            assert saved_assembly.selection_settings.columns_to_keep == ["first_name", "last_name", "email", "phone"]
 
     def test_update_gsheet_config_validation_error(self, logged_in_admin, assembly_with_gsheet):
         """Test validation error when updating gsheet config with invalid data."""

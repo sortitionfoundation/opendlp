@@ -13,6 +13,7 @@ from opendlp.domain import (
     email_confirmation,
     password_reset,
     respondents,
+    selection_settings,
     targets,
     totp_attempts,
     two_factor_audit,
@@ -103,6 +104,12 @@ def start_mappers() -> None:
                     cascade="all, delete-orphan",
                     uselist=False,  # Makes this a one-to-one relationship
                 ),
+                "selection_settings": relationship(
+                    selection_settings.SelectionSettings,
+                    back_populates="assembly",
+                    cascade="all, delete-orphan",
+                    uselist=False,
+                ),
                 "target_categories": relationship(
                     targets.TargetCategory,
                     cascade="all, delete-orphan",
@@ -145,6 +152,18 @@ def start_mappers() -> None:
                 "assembly": relationship(
                     assembly.Assembly,
                     back_populates="csv",
+                ),
+            },
+        )
+
+        # Map SelectionSettings domain object to selection_settings table
+        orm.mapper_registry.map_imperatively(
+            selection_settings.SelectionSettings,
+            orm.selection_settings,
+            properties={
+                "assembly": relationship(
+                    assembly.Assembly,
+                    back_populates="selection_settings",
                 ),
             },
         )

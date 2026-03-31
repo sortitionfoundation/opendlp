@@ -134,7 +134,7 @@ class TestViewRespondentsPage:
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=existing_assembly.id,
-                id_column="participant_id",
+                csv_id_column="participant_id",
             )
 
         response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/respondents")
@@ -281,7 +281,7 @@ class TestUploadRespondentsCsv:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assembly = uow.assemblies.get(existing_assembly.id)
             assert assembly.csv is not None
-            assert assembly.csv.id_column == "participant_id"
+            assert assembly.csv.csv_id_column == "participant_id"
 
     def test_upload_without_id_column_saves_first_column(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -302,7 +302,7 @@ class TestUploadRespondentsCsv:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assembly = uow.assemblies.get(existing_assembly.id)
             assert assembly.csv is not None
-            assert assembly.csv.id_column == "external_id"
+            assert assembly.csv.csv_id_column == "external_id"
 
     def test_upload_csv_missing_explicit_id_column_shows_error(self, logged_in_admin, existing_assembly):
         """Test that specifying an id_column not present in CSV shows an error."""

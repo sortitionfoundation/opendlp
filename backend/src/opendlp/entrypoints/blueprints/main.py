@@ -14,6 +14,7 @@ from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_gsheet,
     get_assembly_with_permissions,
+    get_or_create_selection_settings,
     update_assembly,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
@@ -99,6 +100,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
             # Get paginated run history with user information
             run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
@@ -112,6 +114,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "main/view_assembly_data.html",
             assembly=assembly,
             gsheet=gsheet,
+            selection_settings=sel_settings,
             current_tab="data",
             run_history=run_history,
             page=page,

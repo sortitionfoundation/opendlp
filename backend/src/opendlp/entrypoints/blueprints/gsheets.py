@@ -868,14 +868,18 @@ def _handle_gsheet_save_success(
     form_data = _get_gsheet_form_data(form)
 
     if is_update:
-        final_gsheet = update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
+        update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
         flash(_("Google Spreadsheet configuration updated successfully"), "success")
     else:
-        final_gsheet = add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
+        add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
         flash(_("Google Spreadsheet configuration created successfully"), "success")
 
     # Soft validation warning - check if columns_to_keep is empty
-    if not final_gsheet.columns_to_keep:
+    # Team defaults may have populated columns_to_keep even if the form field was empty
+    team = form.team.data if hasattr(form, "team") and form.team else ""
+    columns_to_keep = form.columns_to_keep_string.data or ""
+    has_team_with_defaults = team and team != "other"
+    if not columns_to_keep.strip() and not has_team_with_defaults:
         flash(
             _(
                 "Warning: No columns to keep specified. "

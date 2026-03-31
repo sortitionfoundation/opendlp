@@ -8,6 +8,7 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
@@ -36,8 +37,8 @@ def assembly_with_csv(uow):
     assembly = Assembly(title="Check Test Assembly", number_to_select=10)
     with uow:
         uow.assemblies.add(assembly)
-        csv_config = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
-        assembly.csv = csv_config
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
         detached = assembly.create_detached_copy()
         uow.commit()
         return detached

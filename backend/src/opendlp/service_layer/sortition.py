@@ -20,8 +20,8 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp import config
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
-from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.error_translation import translate_sortition_error_to_html
@@ -45,6 +45,13 @@ def _table_to_csv(table: list[list[str]]) -> str:
     for row in table:
         writer.writerow(row)
     return output.getvalue()
+
+
+def _get_selection_settings(assembly: Assembly) -> SelectionSettings:
+    """Get selection settings from assembly, falling back to defaults."""
+    if assembly.selection_settings is not None:
+        return assembly.selection_settings
+    return SelectionSettings(assembly_id=assembly.id)
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -78,6 +85,8 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     task_id = uuid.uuid4()
 
     # Create SelectionRunRecord for tracking
+    sel_settings = _get_selection_settings(assembly)
+
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
@@ -94,8 +103,8 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     # TODO: should this be behind another adapter? That comes from bootstrap?
     # would be handy for unit tests
     try:
-        data_source = gsheet.to_data_source(for_replacements=False)
-        settings_obj = gsheet.to_settings()
+        data_source = gsheet.to_data_source(for_replacements=False, id_column=sel_settings.id_column)
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
@@ -127,6 +136,8 @@ def start_gsheet_select_task(
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
+    sel_settings = _get_selection_settings(assembly)
+
     # Create unique task ID
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_GSHEET if test_selection else SelectionTaskType.SELECT_GSHEET
@@ -153,8 +164,8 @@ def start_gsheet_select_task(
     # TODO: should this be behind another adapter? That comes from bootstrap?
     # would be handy for unit tests
     try:
-        data_source = gsheet.to_data_source(for_replacements=False)
-        settings_obj = gsheet.to_settings()
+        data_source = gsheet.to_data_source(for_replacements=False, id_column=sel_settings.id_column)
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
@@ -200,6 +211,8 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
+    sel_settings = _get_selection_settings(assembly)
+
     # Create unique task ID
     task_id = uuid.uuid4()
 
@@ -218,8 +231,8 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
 
     # Submit Celery task
     try:
-        data_source = gsheet.to_data_source(for_replacements=True)
-        settings_obj = gsheet.to_settings()
+        data_source = gsheet.to_data_source(for_replacements=True, id_column=sel_settings.id_column)
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
@@ -265,6 +278,8 @@ def start_gsheet_replace_task(
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
+    sel_settings = _get_selection_settings(assembly)
+
     # Create unique task ID
     task_id = uuid.uuid4()
 
@@ -283,8 +298,8 @@ def start_gsheet_replace_task(
 
     # Submit Celery task
     try:
-        data_source = gsheet.to_data_source(for_replacements=True)
-        settings_obj = gsheet.to_settings()
+        data_source = gsheet.to_data_source(for_replacements=True, id_column=sel_settings.id_column)
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
@@ -393,7 +408,7 @@ def check_db_selection_data(
     if not assembly:
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-    csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
+    sel_settings = _get_selection_settings(assembly)
 
     check_errors: list[str] = []
     features = None
@@ -402,7 +417,7 @@ def check_db_selection_data(
     people_report_html = ""
 
     try:
-        settings_obj = csv_config.to_settings()
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         check_errors.append(translate_sortition_error_to_html(e))
         return CheckDataResult(
@@ -454,9 +469,9 @@ def start_db_select_task(
     if assembly.number_to_select < 1:
         raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
 
-    csv_config = assembly.csv if assembly.csv is not None else AssemblyCSV(assembly_id=assembly_id)
+    sel_settings = _get_selection_settings(assembly)
     try:
-        settings_obj = csv_config.to_settings()
+        settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 

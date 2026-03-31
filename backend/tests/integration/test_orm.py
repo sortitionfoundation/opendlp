@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
@@ -372,11 +373,6 @@ class TestAssemblyGSheetORM:
             replace_targets_tab="Replacement Targets",
             already_selected_tab="Already Selected",
             generate_remaining_tab=True,
-            id_column="custom_id",
-            check_same_address=False,
-            check_same_address_cols=["address1", "postcode"],
-            columns_to_keep=["name", "email", "phone"],
-            selection_algorithm="stratified",
         )
 
         postgres_session.add(assembly_gsheet)
@@ -394,11 +390,6 @@ class TestAssemblyGSheetORM:
         assert retrieved_gsheet.replace_targets_tab == "Replacement Targets"
         assert retrieved_gsheet.already_selected_tab == "Already Selected"
         assert retrieved_gsheet.generate_remaining_tab is True
-        assert retrieved_gsheet.id_column == "custom_id"
-        assert retrieved_gsheet.check_same_address is False
-        assert retrieved_gsheet.check_same_address_cols == ["address1", "postcode"]
-        assert retrieved_gsheet.columns_to_keep == ["name", "email", "phone"]
-        assert retrieved_gsheet.selection_algorithm == "stratified"
         assert isinstance(retrieved_gsheet.assembly_gsheet_id, uuid.UUID)
 
     def test_assembly_gsheet_defaults(self, postgres_session: Session):
@@ -432,50 +423,6 @@ class TestAssemblyGSheetORM:
         assert retrieved_gsheet.replace_targets_tab == "Replacement Categories"
         assert retrieved_gsheet.already_selected_tab == "Selected"
         assert retrieved_gsheet.generate_remaining_tab is True
-        assert retrieved_gsheet.id_column == "nationbuilder_id"
-        assert retrieved_gsheet.check_same_address is True
-        assert retrieved_gsheet.check_same_address_cols == []
-        assert retrieved_gsheet.columns_to_keep == []
-        assert retrieved_gsheet.selection_algorithm == "maximin"
-
-    def test_assembly_gsheet_for_team(self, postgres_session: Session):
-        """Test that AssemblyGSheet.for_team() class method works correctly."""
-        # Create assembly first
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-
-        postgres_session.add(assembly)
-        postgres_session.flush()
-
-        # Create AssemblyGSheet using for_team class method
-        assembly_gsheet = AssemblyGSheet.for_team("uk", assembly.id, VALID_GSHEET_URL)
-
-        postgres_session.add(assembly_gsheet)
-        postgres_session.commit()
-
-        # Retrieve and check UK-specific defaults
-        retrieved_gsheet = postgres_session.query(AssemblyGSheet).filter_by(assembly_id=assembly.id).first()
-
-        assert retrieved_gsheet.id_column == "nationbuilder_id"  # UK default
-        assert retrieved_gsheet.check_same_address_cols == ["primary_address1", "zip_royal_mail"]  # UK default
-        expected_uk_columns = [
-            "first_name",
-            "last_name",
-            "mobile_number",
-            "email",
-            "primary_address1",
-            "primary_address2",
-            "primary_city",
-            "zip_royal_mail",
-            "tag_list",
-            "age",
-            "gender",
-        ]
-        assert retrieved_gsheet.columns_to_keep == expected_uk_columns
 
     def test_assembly_gsheet_foreign_key_constraint(self, postgres_session: Session):
         """Test that foreign key constraint works for assembly_id."""
@@ -614,6 +561,170 @@ class TestAssemblyGSheetORM:
         assert retrieved_assembly is not None
         assert hasattr(retrieved_assembly, "gsheet")
         assert retrieved_assembly.gsheet is None  # Should be None for optional one-to-one
+
+
+class TestSelectionSettingsORM:
+    def test_save_and_retrieve_selection_settings(self, postgres_session: Session):
+        """Test that SelectionSettings objects can be saved and retrieved."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionSettings
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
+            id_column="custom_id",
+            check_same_address=False,
+            check_same_address_cols=["address1", "postcode"],
+            columns_to_keep=["name", "email", "phone"],
+            selection_algorithm="stratified",
+        )
+
+        postgres_session.add(sel_settings)
+        postgres_session.commit()
+
+        # Retrieve SelectionSettings
+        retrieved = postgres_session.query(SelectionSettings).filter_by(assembly_id=assembly.id).first()
+
+        assert retrieved is not None
+        assert retrieved.assembly_id == assembly.id
+        assert retrieved.id_column == "custom_id"
+        assert retrieved.check_same_address is False
+        assert retrieved.check_same_address_cols == ["address1", "postcode"]
+        assert retrieved.columns_to_keep == ["name", "email", "phone"]
+        assert retrieved.selection_algorithm == "stratified"
+        assert isinstance(retrieved.selection_settings_id, uuid.UUID)
+
+    def test_selection_settings_defaults(self, postgres_session: Session):
+        """Test that SelectionSettings default values work correctly."""
+        # Create assembly first
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        # Create SelectionSettings with minimal data (defaults should apply)
+        sel_settings = SelectionSettings(assembly_id=assembly.id)
+
+        postgres_session.add(sel_settings)
+        postgres_session.commit()
+
+        # Retrieve and check defaults
+        retrieved = postgres_session.query(SelectionSettings).filter_by(assembly_id=assembly.id).first()
+
+        assert retrieved.id_column == "external_id"
+        assert retrieved.check_same_address is True
+        assert retrieved.check_same_address_cols == []
+        assert retrieved.columns_to_keep == []
+        assert retrieved.selection_algorithm == "maximin"
+
+    def test_selection_settings_foreign_key_constraint(self, postgres_session: Session):
+        """Test that foreign key constraint works for assembly_id."""
+        sel_settings = SelectionSettings(
+            assembly_id=uuid.uuid4(),  # Non-existent assembly
+        )
+
+        postgres_session.add(sel_settings)
+
+        with pytest.raises(IntegrityError):
+            postgres_session.commit()
+
+    def test_selection_settings_unique_constraint(self, postgres_session: Session):
+        """Test that only one SelectionSettings per assembly is allowed."""
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        settings1 = SelectionSettings(assembly_id=assembly.id)
+        postgres_session.add(settings1)
+        postgres_session.commit()
+
+        settings2 = SelectionSettings(assembly_id=assembly.id)
+        postgres_session.add(settings2)
+
+        with pytest.raises(IntegrityError):
+            postgres_session.commit()
+
+    def test_cascade_delete_selection_settings(self, postgres_session: Session):
+        """Test that deleting an assembly cascades to its SelectionSettings."""
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        sel_settings = SelectionSettings(assembly_id=assembly.id)
+        postgres_session.add(sel_settings)
+        postgres_session.commit()
+
+        assert postgres_session.query(SelectionSettings).filter_by(assembly_id=assembly.id).count() == 1
+
+        postgres_session.delete(assembly)
+        postgres_session.commit()
+
+        assert postgres_session.query(SelectionSettings).filter_by(assembly_id=assembly.id).count() == 0
+
+    def test_assembly_selection_settings_relationship(self, postgres_session: Session):
+        """Test that Assembly -> SelectionSettings one-to-one relationship works."""
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
+            id_column="test_id",
+        )
+        postgres_session.add(sel_settings)
+        postgres_session.commit()
+
+        retrieved_assembly = postgres_session.query(Assembly).filter_by(id=assembly.id).first()
+        assert retrieved_assembly is not None
+        assert retrieved_assembly.selection_settings is not None
+        assert retrieved_assembly.selection_settings.id_column == "test_id"
+
+    def test_assembly_without_selection_settings(self, postgres_session: Session):
+        """Test that an Assembly can exist without SelectionSettings."""
+        future_date = date.today() + timedelta(days=30)
+        assembly = Assembly(
+            title="Assembly Without Settings",
+            question="Test question?",
+            first_assembly_date=future_date,
+        )
+
+        postgres_session.add(assembly)
+        postgres_session.commit()
+
+        retrieved_assembly = postgres_session.query(Assembly).filter_by(id=assembly.id).first()
+        assert retrieved_assembly is not None
+        assert retrieved_assembly.selection_settings is None
 
 
 class TestSelectionRunRecordORM:

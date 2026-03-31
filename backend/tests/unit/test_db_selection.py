@@ -11,6 +11,7 @@ from sortition_algorithms.errors import SortitionBaseError
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.blueprints.db_selection import _parse_comma_list
@@ -34,7 +35,8 @@ class TestCheckDbSelectionData:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
         assembly = Assembly(title="Test Assembly", number_to_select=5)
-        assembly.csv = AssemblyCSV(assembly_id=assembly.id, check_same_address=False)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
         uow.assemblies.add(assembly)
         return uow, admin_user, assembly
 
@@ -124,9 +126,9 @@ class TestCheckDbSelectionData:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
         assembly = Assembly(title="Test Assembly", number_to_select=5)
-        # Default AssemblyCSV has check_same_address=True but empty check_same_address_cols
-        # which causes a ConfigurationError from to_settings()
-        assembly.csv = None
+        # No selection_settings set, so _get_selection_settings falls back to defaults:
+        # check_same_address=True but empty check_same_address_cols, which causes
+        # a ConfigurationError from to_settings()
         uow.assemblies.add(assembly)
 
         result = check_db_selection_data(uow=uow, user_id=admin_user.id, assembly_id=assembly.id)

@@ -4,9 +4,9 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Any
 
-from sortition_algorithms import adapters, settings
+from sortition_algorithms import adapters
 from sortition_algorithms.utils import RunReport
 
 from opendlp import config
@@ -17,6 +17,7 @@ from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, Sel
 if TYPE_CHECKING:
     from opendlp.domain.assembly_csv import AssemblyCSV
     from opendlp.domain.respondents import Respondent
+    from opendlp.domain.selection_settings import SelectionSettings
     from opendlp.domain.targets import TargetCategory
 
 
@@ -33,6 +34,7 @@ class Assembly:
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
         gsheet: "AssemblyGSheet | None" = None,
         csv: "AssemblyCSV | None" = None,
+        selection_settings: "SelectionSettings | None" = None,
         target_categories: list["TargetCategory"] | None = None,
         respondents: list["Respondent"] | None = None,
         created_at: datetime | None = None,
@@ -50,6 +52,7 @@ class Assembly:
         self.status = status
         self.gsheet = gsheet
         self.csv = csv
+        self.selection_settings = selection_settings
         self.target_categories = target_categories or []
         self.respondents = respondents or []
         self.created_at = created_at or datetime.now(UTC)
@@ -114,73 +117,13 @@ class Assembly:
             status=self.status,
             gsheet=self.gsheet.create_detached_copy() if self.gsheet else None,
             csv=self.csv.create_detached_copy() if self.csv else None,
+            selection_settings=self.selection_settings.create_detached_copy() if self.selection_settings else None,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
         detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
         detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]
         return detached_assembly
-
-
-Teams = Literal["aus", "eu", "uk", "other"]
-VALID_TEAMS = get_args(Teams)
-OTHER_TEAM = VALID_TEAMS[-1]
-assert OTHER_TEAM == "other"
-DEFAULT_ID_COLUMN = {
-    "uk": "nationbuilder_id",
-    "eu": "unique_id",
-    "aus": "nationbuilder_id",
-}
-DEFAULT_ADDRESS_COLS = {
-    "uk": ["primary_address1", "zip_royal_mail"],
-    "eu": ["address_line1", "postcode"],
-    "aus": ["primary_address1", "primary_zip"],
-}
-DEFAULT_COLS_TO_KEEP = {
-    "uk": [
-        "first_name",
-        "last_name",
-        "mobile_number",
-        "email",
-        "primary_address1",
-        "primary_address2",
-        "primary_city",
-        "zip_royal_mail",
-        "tag_list",
-        "age",
-        "gender",
-    ],
-    "eu": [
-        "first_name",
-        "last_name",
-        "email",
-        "phone_country",
-        "phone_number",
-        "address_line1",
-        "address_line2",
-        "city",
-        "postcode",
-        "country",
-        "LocationNearest",
-        "gender",
-        "age",
-        "nationality",
-        "keep_informed",
-    ],
-    "aus": [
-        "first_name",
-        "last_name",
-        "mobile_number",
-        "email",
-        "primary_address1",
-        "primary_address2",
-        "primary_city",
-        "primary_zip",
-        "tag_list",
-        "age",
-        "gender",
-    ],
-}
 
 
 @dataclass
@@ -196,14 +139,6 @@ class AssemblyGSheet:
     replace_targets_tab: str = "Replacement Categories"
     already_selected_tab: str = "Selected"
     generate_remaining_tab: bool = True
-    id_column: str = "nationbuilder_id"
-    check_same_address: bool = True
-    check_same_address_cols: list[str] = field(default_factory=list)
-    columns_to_keep: list[str] = field(default_factory=list)
-    selection_algorithm: str = "maximin"
-
-    # other things to consider
-    # - number to select - just get that from the sheets?
 
     def __post_init__(self) -> None:
         self.url = self._validate_url(self.url.strip())
@@ -215,38 +150,11 @@ class AssemblyGSheet:
         return url
 
     @classmethod
-    def for_team(cls, team: Teams, assembly_id: uuid.UUID, url: str) -> "AssemblyGSheet":
-        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url)
-        assembly_gsheet.update_team_settings(team)
-        return assembly_gsheet
-
-    @classmethod
     def _updatable_fields(cls) -> list[str]:
         non_updatable = ("assembly_id", "assembly_gsheet_id")
         return [f.name for f in fields(AssemblyGSheet) if f not in non_updatable]
 
-    @staticmethod
-    def _str_to_list_str(string_with_commas: Any) -> list[str]:
-        if string_with_commas is None:
-            return []
-        assert isinstance(string_with_commas, str)
-        return [col.strip() for col in string_with_commas.split(",") if col.strip()]
-
-    @classmethod
-    def convert_str_kwargs(cls, **kwargs: Any) -> dict[str, Any]:
-        """Auto convert string with commas into list of strings for two particular fields"""
-        new_kwargs: dict[str, Any] = {}
-        for field_name, value in kwargs.items():
-            if field_name == "check_same_address_cols_string":
-                field_name = "check_same_address_cols"
-                value = cls._str_to_list_str(value)
-            if field_name == "columns_to_keep_string":
-                field_name = "columns_to_keep"
-                value = cls._str_to_list_str(value)
-            new_kwargs[field_name] = value
-        return new_kwargs
-
-    def update_values(self, url: str = "", team: Teams = OTHER_TEAM, **kwargs: str | bool | list[str]) -> None:
+    def update_values(self, url: str = "", **kwargs: str | bool | list[str]) -> None:
         """Update values of the object."""
         if url:
             self.url = self._validate_url(url)
@@ -254,37 +162,10 @@ class AssemblyGSheet:
             if field_name not in self._updatable_fields():
                 raise ValueError(f"Cannot update field {field_name} in AssemblyGSheet")
             setattr(self, field_name, value)
-        # do this last so it will override anything else set
-        if team != OTHER_TEAM:
-            self.update_team_settings(team)
 
-    def update_team_settings(self, team: Teams) -> None:
-        if team != OTHER_TEAM:
-            self.id_column = DEFAULT_ID_COLUMN[team]
-            self.check_same_address_cols = DEFAULT_ADDRESS_COLS[team]
-            self.columns_to_keep = DEFAULT_COLS_TO_KEEP[team]
-
-    @property
-    def check_same_address_cols_string(self) -> str:
-        """Get check_same_address_cols as a comma-separated string."""
-        return ", ".join(self.check_same_address_cols)
-
-    @property
-    def columns_to_keep_string(self) -> str:
-        """Get columns_to_keep as a comma-separated string."""
-        return ", ".join(self.columns_to_keep)
-
-    def to_settings(self) -> settings.Settings:
-        return settings.Settings(
-            id_column=self.id_column,
-            columns_to_keep=self.columns_to_keep,
-            check_same_address=self.check_same_address,
-            check_same_address_columns=self.check_same_address_cols,
-            selection_algorithm=self.selection_algorithm,
-            solver_backend=config.get_solver_backend(),
-        )
-
-    def to_data_source(self, *, for_replacements: bool = False) -> adapters.GSheetDataSource | CSVGSheetDataSource:
+    def to_data_source(
+        self, *, for_replacements: bool = False, id_column: str = ""
+    ) -> adapters.GSheetDataSource | CSVGSheetDataSource:
         # import here to avoid circular import
         from opendlp.bootstrap import update_data_source_from_assembly_gsheet  # noqa: PLC0415
 
@@ -295,7 +176,7 @@ class AssemblyGSheet:
                 feature_tab_name=self.replace_targets_tab,
                 people_tab_name=self.replace_registrants_tab,
                 already_selected_tab_name=self.already_selected_tab,
-                id_column=self.id_column,
+                id_column=id_column,
                 auth_json_path=config.get_google_auth_json_path(),
             )
         else:
@@ -316,8 +197,7 @@ class AssemblyGSheet:
 
     def create_detached_copy(self) -> "AssemblyGSheet":
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
-        detached_assembly_gsheet = AssemblyGSheet(**asdict(self))
-        return detached_assembly_gsheet
+        return AssemblyGSheet(**asdict(self))
 
     def dict_for_json(self) -> dict[str, Any]:
         """Return a dict that can be serialised to JSON - so convert UUID to str"""

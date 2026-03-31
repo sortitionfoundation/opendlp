@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import pytest
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import assembly_service
@@ -388,8 +389,10 @@ class TestAssemblyGSheetOperations:
 
         assert assembly_gsheet.assembly_id == assembly.id
         assert assembly_gsheet.url == VALID_GSHEET_URL
-        assert assembly_gsheet.id_column == "nationbuilder_id"  # UK default
         assert len(uow.assembly_gsheets.all()) == 1
+        # UK team defaults are applied to selection settings, not to gsheet
+        assert assembly.selection_settings is not None
+        assert assembly.selection_settings.id_column == "nationbuilder_id"  # UK default
         assert uow.committed
 
     def test_add_assembly_gsheet_with_overrides(self):
@@ -417,7 +420,9 @@ class TestAssemblyGSheetOperations:
         )
 
         assert assembly_gsheet.select_registrants_tab == "Custom Registrants"
-        assert assembly_gsheet.id_column == "custom_id"
+        # id_column is now on selection settings, not on gsheet
+        assert assembly.selection_settings is not None
+        assert assembly.selection_settings.id_column == "custom_id"
         assert uow.committed
 
     def test_add_assembly_gsheet_assembly_manager(self):
@@ -531,8 +536,10 @@ class TestAssemblyGSheetOperations:
         )
 
         assert updated_gsheet.select_registrants_tab == "Updated Tab"
-        assert updated_gsheet.id_column == "updated_id"
-        assert updated_gsheet.check_same_address_cols == ["updated", "columns", "here"]
+        # id_column and check_same_address_cols are now on selection settings
+        assert assembly.selection_settings is not None
+        assert assembly.selection_settings.id_column == "updated_id"
+        assert assembly.selection_settings.check_same_address_cols == ["updated", "columns", "here"]
         assert uow.committed
 
     def test_update_assembly_gsheet_not_found(self):
@@ -690,120 +697,108 @@ class TestAssemblyGSheetOperations:
             )
 
 
-class TestAssemblyGSheetDomainModel:
-    """Test AssemblyGSheet domain model functionality."""
+class TestSelectionSettingsDomainModel:
+    """Test SelectionSettings domain model functionality used in assembly service context."""
 
     def test_check_same_address_cols_string_property(self):
         """Test check_same_address_cols_string property converts list to comma-separated string."""
-        gsheet = AssemblyGSheet(
+        sel_settings = SelectionSettings(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             check_same_address_cols=["primary_address1", "zip_royal_mail", "city"],
         )
 
-        assert gsheet.check_same_address_cols_string == "primary_address1, zip_royal_mail, city"
+        assert sel_settings.check_same_address_cols_string == "primary_address1, zip_royal_mail, city"
 
     def test_check_same_address_cols_string_property_empty_list(self):
         """Test check_same_address_cols_string property with empty list."""
-        gsheet = AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL, check_same_address_cols=[])
+        sel_settings = SelectionSettings(assembly_id=uuid.uuid4(), check_same_address_cols=[])
 
-        assert gsheet.check_same_address_cols_string == ""
+        assert sel_settings.check_same_address_cols_string == ""
 
     def test_columns_to_keep_string_property(self):
         """Test columns_to_keep_string property converts list to comma-separated string."""
-        gsheet = AssemblyGSheet(
+        sel_settings = SelectionSettings(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             columns_to_keep=["first_name", "last_name", "email", "mobile_number"],
         )
 
-        assert gsheet.columns_to_keep_string == "first_name, last_name, email, mobile_number"
+        assert sel_settings.columns_to_keep_string == "first_name, last_name, email, mobile_number"
 
     def test_columns_to_keep_string_property_empty_list(self):
         """Test columns_to_keep_string property with empty list."""
-        gsheet = AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL, columns_to_keep=[])
+        sel_settings = SelectionSettings(assembly_id=uuid.uuid4(), columns_to_keep=[])
 
-        assert gsheet.columns_to_keep_string == ""
+        assert sel_settings.columns_to_keep_string == ""
 
     def test_convert_str_kwargs_address_cols(self):
         """Test convert_str_kwargs method updates check_same_address_cols from string."""
         kwargs = dict(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             check_same_address_cols_string="address1, postal_code, city",
         )
-        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+        sel_settings = SelectionSettings(**SelectionSettings.convert_str_kwargs(**kwargs))
 
-        assert gsheet.check_same_address_cols == ["address1", "postal_code", "city"]
+        assert sel_settings.check_same_address_cols == ["address1", "postal_code", "city"]
 
     def test_convert_str_kwargs_columns_to_keep(self):
         """Test convert_str_kwargs method updates columns_to_keep from string."""
         kwargs = dict(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             columns_to_keep_string="first_name, last_name, email",
         )
-        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+        sel_settings = SelectionSettings(**SelectionSettings.convert_str_kwargs(**kwargs))
 
-        assert gsheet.columns_to_keep == ["first_name", "last_name", "email"]
+        assert sel_settings.columns_to_keep == ["first_name", "last_name", "email"]
 
     def test_convert_str_kwargs_both_fields(self):
         """Test convert_str_kwargs method updates both fields simultaneously."""
         kwargs = dict(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             check_same_address_cols_string="street, postcode",
             columns_to_keep_string="name, email, phone",
         )
-        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+        sel_settings = SelectionSettings(**SelectionSettings.convert_str_kwargs(**kwargs))
 
-        assert gsheet.check_same_address_cols == ["street", "postcode"]
-        assert gsheet.columns_to_keep == ["name", "email", "phone"]
+        assert sel_settings.check_same_address_cols == ["street", "postcode"]
+        assert sel_settings.columns_to_keep == ["name", "email", "phone"]
 
     def test_convert_str_kwargs_with_spaces_and_empty_values(self):
         """Test convert_str_kwargs handles extra spaces and empty values."""
         kwargs = dict(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             check_same_address_cols_string="  address1 ,  , postal_code ,  city  ",
             columns_to_keep_string="first_name, , last_name,  email , ",
         )
-        gsheet = AssemblyGSheet(**AssemblyGSheet.convert_str_kwargs(**kwargs))
+        sel_settings = SelectionSettings(**SelectionSettings.convert_str_kwargs(**kwargs))
 
-        assert gsheet.check_same_address_cols == ["address1", "postal_code", "city"]
-        assert gsheet.columns_to_keep == ["first_name", "last_name", "email"]
+        assert sel_settings.check_same_address_cols == ["address1", "postal_code", "city"]
+        assert sel_settings.columns_to_keep == ["first_name", "last_name", "email"]
 
     def test_convert_str_kwargs_empty_strings(self):
-        """Test convert_str_kwargs with empty strings does update fields."""
-        original_address_cols = ["original_address"]
-        original_columns = ["original_column"]
-
-        gsheet = AssemblyGSheet(
+        """Test convert_str_kwargs with empty strings produces empty lists."""
+        sel_settings = SelectionSettings(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
-            check_same_address_cols=original_address_cols.copy(),
-            columns_to_keep=original_columns.copy(),
+            check_same_address_cols=["original_address"],
+            columns_to_keep=["original_column"],
         )
-        gsheet.update_values(
-            **AssemblyGSheet.convert_str_kwargs(check_same_address_cols_string="", columns_to_keep_string="")
-        )
+        converted = SelectionSettings.convert_str_kwargs(check_same_address_cols_string="", columns_to_keep_string="")
+        for key, value in converted.items():
+            setattr(sel_settings, key, value)
 
-        # Should remain unchanged
-        assert gsheet.check_same_address_cols == []
-        assert gsheet.columns_to_keep == []
+        assert sel_settings.check_same_address_cols == []
+        assert sel_settings.columns_to_keep == []
 
     def test_convert_str_kwargs_single_field(self):
         """Test convert_str_kwargs with only one field provided."""
-        gsheet = AssemblyGSheet(
+        sel_settings = SelectionSettings(
             assembly_id=uuid.uuid4(),
-            url=VALID_GSHEET_URL,
             check_same_address_cols=["original_address"],
             columns_to_keep=["original_column"],
         )
         # Update only address columns
-        gsheet.update_values(
-            **AssemblyGSheet.convert_str_kwargs(check_same_address_cols_string="new_address, new_postcode")
-        )
+        converted = SelectionSettings.convert_str_kwargs(check_same_address_cols_string="new_address, new_postcode")
+        for key, value in converted.items():
+            setattr(sel_settings, key, value)
 
-        assert gsheet.check_same_address_cols == ["new_address", "new_postcode"]
-        assert gsheet.columns_to_keep == ["original_column"]  # Should remain unchanged
+        assert sel_settings.check_same_address_cols == ["new_address", "new_postcode"]
+        assert sel_settings.columns_to_keep == ["original_column"]  # Should remain unchanged

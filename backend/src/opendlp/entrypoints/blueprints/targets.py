@@ -126,7 +126,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get the id_column to exclude from the respondent columns list
         id_column = ""
         if assembly.csv is not None:
-            id_column = assembly.csv.id_column
+            id_column = assembly.csv.csv_id_column
 
         column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
 
@@ -754,7 +754,7 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         id_column = ""
         if assembly.csv is not None:
-            id_column = assembly.csv.id_column
+            id_column = assembly.csv.csv_id_column
 
         column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
 

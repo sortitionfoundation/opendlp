@@ -47,7 +47,7 @@
     <div class="govuk-summary-list__row">
         <dt class="govuk-summary-list__key">{{ _("Check Same Address") }}</dt>
         <dd class="govuk-summary-list__value">
-            {{ gsheet.check_same_address }}
+            {{ selection_settings.check_same_address if selection_settings else '' }}
         </dd>
     </div>
     <div class="govuk-summary-list__row">
@@ -59,19 +59,19 @@
     <div class="govuk-summary-list__row">
         <dt class="govuk-summary-list__key">{{ _("ID Column") }}</dt>
         <dd class="govuk-summary-list__value">
-            {{ gsheet.id_column }}
+            {{ selection_settings.id_column if selection_settings else '' }}
         </dd>
     </div>
     <div class="govuk-summary-list__row">
         <dt class="govuk-summary-list__key">{{ _("Address Columns") }}</dt>
         <dd class="govuk-summary-list__value">
-            {{ gsheet.check_same_address_cols_string }}
+            {{ selection_settings.check_same_address_cols_string if selection_settings else '' }}
         </dd>
     </div>
     <div class="govuk-summary-list__row">
         <dt class="govuk-summary-list__key">{{ _("Columns to Keep") }}</dt>
         <dd class="govuk-summary-list__value">
-            {{ gsheet.columns_to_keep_string }}
+            {{ selection_settings.columns_to_keep_string if selection_settings else '' }}
         </dd>
     </div>
 </dl>

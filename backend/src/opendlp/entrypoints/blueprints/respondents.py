@@ -57,8 +57,8 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents = [r.create_detached_copy() for r in all_respondents[start:end]]
 
         form = UploadRespondentsCsvForm()
-        if assembly.csv and assembly.csv.id_column:
-            form.id_column.data = assembly.csv.id_column
+        if assembly.csv and assembly.csv.csv_id_column:
+            form.id_column.data = assembly.csv.csv_id_column
 
         return render_template(
             "respondents/view_respondents.html",
@@ -139,7 +139,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=assembly_id,
             last_import_filename=filename,
             last_import_timestamp=datetime.now(UTC),
-            id_column=resolved_id_column,
+            csv_id_column=resolved_id_column,
         )
 
         msg = _("Successfully imported %(count)s respondents from %(file)s", count=len(respondents), file=filename)
