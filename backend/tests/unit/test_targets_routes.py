@@ -18,7 +18,7 @@ class TestTargetsRoutes:
     def test_targets_blueprint_registered(self) -> None:
         app = create_app("testing")
         blueprint_names = [bp.name for bp in app.blueprints.values()]
-        assert "targets" in blueprint_names
+        assert "targets_legacy" in blueprint_names
 
     def test_targets_route_requires_login(self, client: FlaskClient) -> None:
         assembly_id = uuid.uuid4()

@@ -11,7 +11,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.entrypoints.blueprints.targets import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
+from opendlp.entrypoints.blueprints.targets_legacy import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer import assembly_service
 from opendlp.service_layer.respondent_service import (

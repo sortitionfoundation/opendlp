@@ -86,20 +86,20 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.admin import admin_bp  # noqa: PLC0415
     from .blueprints.auth import auth_bp  # noqa: PLC0415
     from .blueprints.backoffice import backoffice_bp  # noqa: PLC0415
-    from .blueprints.db_selection import db_selection_bp  # noqa: PLC0415
+    from .blueprints.db_selection_legacy import db_selection_legacy_bp  # noqa: PLC0415
     from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
     from .blueprints.gsheets_legacy import gsheets_legacy_bp  # noqa: PLC0415
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
-    from .blueprints.respondents import respondents_bp  # noqa: PLC0415
-    from .blueprints.targets import targets_bp  # noqa: PLC0415
+    from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
+    from .blueprints.targets_legacy import targets_legacy_bp  # noqa: PLC0415
     from .blueprints.wellknown import wellknown_bp  # noqa: PLC0415
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(gsheets_legacy_bp)
-    app.register_blueprint(db_selection_bp)
+    app.register_blueprint(db_selection_legacy_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
@@ -109,8 +109,8 @@ def register_blueprints(app: Flask) -> None:
 
         app.register_blueprint(dev_bp, url_prefix="/backoffice")
     app.register_blueprint(gsheets_bp, url_prefix="/backoffice")
-    app.register_blueprint(targets_bp)
-    app.register_blueprint(respondents_bp)
+    app.register_blueprint(targets_legacy_bp)
+    app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)
 
 

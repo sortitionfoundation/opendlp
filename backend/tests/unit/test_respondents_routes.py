@@ -18,7 +18,7 @@ class TestRespondentsRoutes:
     def test_respondents_blueprint_registered(self) -> None:
         app = create_app("testing")
         blueprint_names = [bp.name for bp in app.blueprints.values()]
-        assert "respondents" in blueprint_names
+        assert "respondents_legacy" in blueprint_names
 
     def test_respondents_route_requires_login(self, client: FlaskClient) -> None:
         assembly_id = uuid.uuid4()

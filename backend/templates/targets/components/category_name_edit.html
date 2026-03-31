@@ -1,8 +1,8 @@
 {# Standalone category name edit form for error display #}
 <div class="govuk-!-margin-bottom-2">
     <form method="post"
-          action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
-          hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          action="{{ url_for('targets_legacy.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-post="{{ url_for('targets_legacy.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
           hx-target="#category-{{ category_id }}"
           hx-swap="outerHTML"
           class="govuk-!-margin-bottom-2">
@@ -17,6 +17,6 @@
                    required />
         </div>
         <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0">{{ _("Save") }}</button>
-        <a href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly_id) }}" class="govuk-link govuk-!-margin-left-2">{{ _("Cancel") }}</a>
+        <a href="{{ url_for('targets_legacy.view_assembly_targets', assembly_id=assembly_id) }}" class="govuk-link govuk-!-margin-left-2">{{ _("Cancel") }}</a>
     </form>
 </div>

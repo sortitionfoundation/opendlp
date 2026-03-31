@@ -14,7 +14,7 @@ from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.entrypoints.blueprints.db_selection import _parse_comma_list
+from opendlp.entrypoints.blueprints.db_selection_legacy import _parse_comma_list
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.exceptions import AssemblyNotFoundError

@@ -32,13 +32,13 @@
                 {% if feature('csv_db_assembly_links') %}
                     <li class="govuk-service-navigation__item {% if current_tab == 'targets' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                           href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}">
+                           href="{{ url_for('targets_legacy.view_assembly_targets', assembly_id=assembly.id) }}">
                             {{ _("Targets") }}
                         </a>
                     </li>
                     <li class="govuk-service-navigation__item {% if current_tab == 'respondents' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}">
+                           href="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id) }}">
                             {{ _("Respondents") }}
                         </a>
                     </li>
@@ -50,7 +50,7 @@
                     </li>
                     <li class="govuk-service-navigation__item {% if current_tab == 'db_selection' %}govuk-service-navigation__item--active{% endif %}">
                         <a class="govuk-service-navigation__link"
-                           href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">
+                           href="{{ url_for('db_selection_legacy.view_db_selection', assembly_id=assembly.id) }}">
                             {{ _("Selection (DB)") }}
                         </a>
                     </li>

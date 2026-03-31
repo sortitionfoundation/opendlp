@@ -4,7 +4,7 @@
     <div id="progress-section"
          data-status="{{ run_record.status.value }}"
          data-task-type="{{ run_record.task_type.value }}"
-         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('db_selection.db_selection_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 2s" hx-swap="outerHTML" {% endif %}>
+         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('db_selection_legacy.db_selection_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 2s" hx-swap="outerHTML" {% endif %}>
         {% if run_record.has_finished %}
             <details class="govuk-details">
                 <summary class="govuk-details__summary">

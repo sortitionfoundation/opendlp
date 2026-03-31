@@ -1093,7 +1093,9 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
                 url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
             )
         elif task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
-            return redirect(url_for("db_selection.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id))
+            return redirect(
+                url_for("db_selection_legacy.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id)
+            )
         else:
             current_app.logger.error(f"Unknown task type {task_type} for run {run_id}")
             flash(_("Unknown task type"), "error")

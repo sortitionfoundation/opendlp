@@ -21,12 +21,12 @@ from opendlp.translations import gettext as _
 
 from ..forms import UploadRespondentsCsvForm
 
-respondents_bp = Blueprint("respondents", __name__)
+respondents_legacy_bp = Blueprint("respondents_legacy", __name__)
 
 PER_PAGE = 50
 
 
-@respondents_bp.route("/assemblies/<uuid:assembly_id>/respondents")
+@respondents_legacy_bp.route("/assemblies/<uuid:assembly_id>/respondents")
 @login_required
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
@@ -87,7 +87,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
 
-@respondents_bp.route("/assemblies/<uuid:assembly_id>/respondents/upload", methods=["POST"])
+@respondents_legacy_bp.route("/assemblies/<uuid:assembly_id>/respondents/upload", methods=["POST"])
 @login_required
 def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
@@ -154,44 +154,44 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 "warning",
             )
 
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid respondents CSV for assembly {assembly_id}: {e}")
         flash(_("CSV import failed: %(error)s", error=str(e)), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to import respondents"), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except UnicodeDecodeError:
         flash(_("Could not read CSV file. Please ensure it is UTF-8 encoded."), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(f"Upload respondents error for assembly {assembly_id}: {e}")
         current_app.logger.exception("stacktrace")
         flash(_("An unexpected error occurred during import"), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
 
 
-@respondents_bp.route("/assemblies/<uuid:assembly_id>/respondents/reset-status", methods=["POST"])
+@respondents_legacy_bp.route("/assemblies/<uuid:assembly_id>/respondents/reset-status", methods=["POST"])
 @login_required
 def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.bootstrap()
         count = reset_selection_status(uow, current_user.id, assembly_id)
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to reset selection status"), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
         current_app.logger.exception("stacktrace")
         flash(_("An unexpected error occurred"), "error")
-        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+        return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))

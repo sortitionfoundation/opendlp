@@ -9,9 +9,9 @@
             {% if can_manage %}
                 <button type="button" class="govuk-link govuk-!-margin-left-2" @click="editing = true">{{ _("Rename") }}</button>
                 <form method="post"
-                      action="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      action="{{ url_for('targets_legacy.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
                       style="display: inline;"
-                      hx-post="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-post="{{ url_for('targets_legacy.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
                       hx-target="#category-{{ category.id }}"
                       hx-swap="outerHTML">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -26,8 +26,8 @@
         {# ── Inline Rename Form ───────────────────────── #}
         <div x-show="editing" x-cloak>
             <form method="post"
-                  action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
-                  hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  action="{{ url_for('targets_legacy.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  hx-post="{{ url_for('targets_legacy.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
                   hx-target="#category-{{ category.id }}"
                   hx-swap="outerHTML"
                   class="govuk-!-margin-bottom-2">
@@ -101,9 +101,9 @@
                                 <td class="govuk-table__cell">
                                     <button type="button" class="govuk-link" @click="editing = true">{{ _("Edit") }}</button>
                                     <form method="post"
-                                          action="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          action="{{ url_for('targets_legacy.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                           style="display: inline;"
-                                          hx-post="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          hx-post="{{ url_for('targets_legacy.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                           hx-target="#category-{{ category.id }}"
                                           hx-swap="outerHTML">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -120,8 +120,8 @@
                         <template x-if="editing">
                             <td colspan="{{ col_count }}" class="govuk-table__cell">
                                 <form method="post"
-                                      action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
-                                      hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                      action="{{ url_for('targets_legacy.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                      hx-post="{{ url_for('targets_legacy.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                       hx-target="#category-{{ category.id }}"
                                       hx-swap="outerHTML"
                                       class="govuk-!-margin-bottom-0">
@@ -224,8 +224,8 @@
                     <strong>{{ missing_values | join(", ") }}</strong>
                 </p>
                 <form method="post"
-                      action="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
-                      hx-post="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                      action="{{ url_for('targets_legacy.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-post="{{ url_for('targets_legacy.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
                       hx-target="#category-{{ category.id }}"
                       hx-swap="outerHTML"
                       class="govuk-!-margin-bottom-0">
@@ -248,8 +248,8 @@
 
             <div x-show="adding" x-cloak>
                 <form method="post"
-                      action="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
-                      hx-post="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                      action="{{ url_for('targets_legacy.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-post="{{ url_for('targets_legacy.add_value', assembly_id=assembly_id, category_id=category.id) }}"
                       hx-target="#category-{{ category.id }}"
                       hx-swap="outerHTML">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

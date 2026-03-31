@@ -28,19 +28,19 @@
             <ul class="govuk-list govuk-list--bullet">
                 {% if not readiness.settings_confirmed %}
                     <li>
-                        <a href="{{ url_for('db_selection.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection settings") }}</a>
+                        <a href="{{ url_for('db_selection_legacy.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection settings") }}</a>
                         {{ _("— need to be reviewed and saved") }}
                     </li>
                 {% endif %}
                 {% if not readiness.has_targets %}
                     <li>
-                        <a href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Target categories") }}</a>
+                        <a href="{{ url_for('targets_legacy.view_assembly_targets', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Target categories") }}</a>
                         {{ _("— none have been set up yet") }}
                     </li>
                 {% endif %}
                 {% if not readiness.has_respondents %}
                     <li>
-                        <a href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Respondents") }}</a>
+                        <a href="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Respondents") }}</a>
                         {{ _("— none have been uploaded yet") }}
                     </li>
                 {% endif %}
@@ -58,7 +58,7 @@
             <p class="govuk-body">{{ _("Your options:") }}</p>
             <ul class="govuk-list govuk-list--bullet">
                 <li>
-                    <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
+                    <a href="{{ url_for('db_selection_legacy.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
                     {{ _("— select replacement members from the remaining pool") }}
                 </li>
                 <li>
@@ -66,7 +66,7 @@
                 </li>
             </ul>
             <form method="post"
-                  action="{{ url_for('db_selection.reset_respondents_for_selection', assembly_id=assembly.id) }}">
+                  action="{{ url_for('db_selection_legacy.reset_respondents_for_selection', assembly_id=assembly.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
                         data-module="govuk-button"
@@ -81,17 +81,17 @@
     <div class="govuk-button-group govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
             {% set selection_disabled = readiness is defined and not readiness.can_run_selection %}
-            <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
+            <form action="{{ url_for('db_selection_legacy.start_db_selection', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="test_selection" value="0">
                 <button type="submit" class="govuk-button" {% if selection_disabled %}disabled{% endif %}>{{ _("Run Selection") }}</button>
             </form>
-            <form action="{{ url_for('db_selection.start_db_selection', assembly_id=assembly.id) }}" method="post">
+            <form action="{{ url_for('db_selection_legacy.start_db_selection', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="test_selection" value="1">
                 <button type="submit" class="govuk-button govuk-button--secondary" {% if selection_disabled %}disabled{% endif %}>{{ _("Run Test Selection") }}</button>
             </form>
-            <form action="{{ url_for('db_selection.check_db_data', assembly_id=assembly.id) }}" method="post">
+            <form action="{{ url_for('db_selection_legacy.check_db_data', assembly_id=assembly.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Check Targets & Respondents") }}</button>
             </form>
@@ -106,7 +106,7 @@
                 {% endif %}
             </button>
             <form method="POST"
-                  action="{{ url_for('db_selection.cancel_db_selection', assembly_id=assembly.id, run_id=run_record.task_id) }}"
+                  action="{{ url_for('db_selection_legacy.cancel_db_selection', assembly_id=assembly.id, run_id=run_record.task_id) }}"
                   style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="govuk-button govuk-button--warning" type="submit" data-module="govuk-button">
@@ -118,9 +118,9 @@
 
     {# ── Links ──────────────────────────────────────────────── #}
     <div class="govuk-!-margin-bottom-6">
-        <a href="{{ url_for('db_selection.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection Settings") }}</a>
+        <a href="{{ url_for('db_selection_legacy.view_db_selection_settings', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Selection Settings") }}</a>
         &nbsp;|&nbsp;
-        <a href="{{ url_for('db_selection.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Replacements") }}</a>
+        <a href="{{ url_for('db_selection_legacy.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Replacements") }}</a>
     </div>
 
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
@@ -176,13 +176,13 @@
                 <ul class="govuk-list">
                     <li>
                         <a class="govuk-link"
-                           href="{{ url_for('db_selection.download_selected_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                           href="{{ url_for('db_selection_legacy.download_selected_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
                             {{ _("Download Selected") }}
                         </a>
                     </li>
                     <li>
                         <a class="govuk-link"
-                           href="{{ url_for('db_selection.download_remaining_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
+                           href="{{ url_for('db_selection_legacy.download_remaining_csv', assembly_id=assembly.id, run_id=run_record.task_id) }}">
                             {{ _("Download Remaining") }}
                         </a>
                     </li>

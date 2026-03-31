@@ -25,7 +25,7 @@
     {% endif %}
 
     <form method="post"
-          action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
+          action="{{ url_for('respondents_legacy.upload_respondents_csv', assembly_id=assembly.id) }}"
           enctype="multipart/form-data"
           novalidate>
         {{ form.hidden_tag() }}
@@ -125,7 +125,7 @@
                 <div class="govuk-form-group">
                     <label class="govuk-label govuk-label--s" for="status-filter">{{ _("Filter by status") }}</label>
                     <select class="govuk-select" id="status-filter"
-                            data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
+                            data-navigate-base-url="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id) }}"
                             data-navigate-param="status">
                         <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
                         <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
@@ -137,7 +137,7 @@
             </div>
             <div class="govuk-grid-column-one-half">
                 <form method="post"
-                      action="{{ url_for('respondents.reset_respondent_status', assembly_id=assembly.id) }}">
+                      action="{{ url_for('respondents_legacy.reset_respondent_status', assembly_id=assembly.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-top-6"
                             data-module="govuk-button"
@@ -195,7 +195,7 @@
                 {% if page > 1 %}
                     <div class="govuk-pagination__prev">
                         <a class="govuk-link govuk-pagination__link"
-                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page-1) }}"
+                           href="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id, page=page-1) }}"
                            rel="prev">
                             <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
                                  xmlns="http://www.w3.org/2000/svg" height="13" width="15"
@@ -216,7 +216,7 @@
                         {% elif (p == 1) or (p == total_pages) or (p >= page - 2 and p <= page + 2) %}
                             <li class="govuk-pagination__item">
                                 <a class="govuk-link govuk-pagination__link"
-                                   href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=p) }}"
+                                   href="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id, page=p) }}"
                                    aria-label="Page {{ p }}">{{ p }}</a>
                             </li>
                         {% elif (p == page - 3) or (p == page + 3) %}
@@ -227,7 +227,7 @@
                 {% if page < total_pages %}
                     <div class="govuk-pagination__next">
                         <a class="govuk-link govuk-pagination__link"
-                           href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id, page=page+1) }}"
+                           href="{{ url_for('respondents_legacy.view_assembly_respondents', assembly_id=assembly.id, page=page+1) }}"
                            rel="next">
                             <span class="govuk-pagination__link-title">{{ _("Next") }}</span>
                             <svg class="govuk-pagination__icon govuk-pagination__icon--next"

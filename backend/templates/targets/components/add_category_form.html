@@ -1,7 +1,7 @@
 <div id="add-category-form">
     <form method="post"
-          action="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
-          hx-post="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
+          action="{{ url_for('targets_legacy.add_category', assembly_id=assembly_id) }}"
+          hx-post="{{ url_for('targets_legacy.add_category', assembly_id=assembly_id) }}"
           hx-target="#add-category-form"
           hx-swap="outerHTML"
           class="govuk-!-margin-top-4">

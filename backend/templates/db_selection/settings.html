@@ -3,7 +3,7 @@
 {% block assembly_breadcrumbs %}
     <li class="govuk-breadcrumbs__list-item">
         <a class="govuk-breadcrumbs__link"
-           href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}">{{ _("Selection (DB)") }}</a>
+           href="{{ url_for('db_selection_legacy.view_db_selection', assembly_id=assembly.id) }}">{{ _("Selection (DB)") }}</a>
     </li>
     <li class="govuk-breadcrumbs__list-item">{{ _("Settings") }}</li>
 {% endblock %}
@@ -14,7 +14,7 @@
     </p>
 
     <form method="post"
-          action="{{ url_for('db_selection.save_db_selection_settings', assembly_id=assembly.id) }}"
+          action="{{ url_for('db_selection_legacy.save_db_selection_settings', assembly_id=assembly.id) }}"
           novalidate>
         {{ form.hidden_tag() }}
 
@@ -73,7 +73,7 @@
 
         <div class="govuk-button-group">
             <button type="submit" class="govuk-button">{{ _("Save Settings") }}</button>
-            <a href="{{ url_for('db_selection.view_db_selection', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Cancel") }}</a>
+            <a href="{{ url_for('db_selection_legacy.view_db_selection', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Cancel") }}</a>
         </div>
     </form>
 {% endblock %}

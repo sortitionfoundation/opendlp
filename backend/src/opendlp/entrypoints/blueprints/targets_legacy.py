@@ -30,7 +30,7 @@ from opendlp.translations import gettext as _
 
 from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueForm, UploadTargetsCsvForm
 
-targets_bp = Blueprint("targets", __name__)
+targets_legacy_bp = Blueprint("targets_legacy", __name__)
 
 MAX_DISTINCT_VALUES_FOR_AUTO_ADD = 20
 
@@ -105,7 +105,7 @@ def _build_respondent_counts(
     return respondent_counts
 
 
-@targets_bp.route("/assemblies/<uuid:assembly_id>/targets")
+@targets_legacy_bp.route("/assemblies/<uuid:assembly_id>/targets")
 @login_required
 def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
@@ -159,7 +159,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.dashboard"))
 
 
-@targets_bp.route("/assemblies/<uuid:assembly_id>/targets/upload", methods=["POST"])
+@targets_legacy_bp.route("/assemblies/<uuid:assembly_id>/targets/upload", methods=["POST"])
 @login_required
 def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
@@ -208,29 +208,29 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "success",
         )
 
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid targets CSV for assembly {assembly_id}: {e}")
         flash(_("CSV import failed: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to import targets"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except UnicodeDecodeError:
         flash(_("Could not read CSV file. Please ensure it is UTF-8 encoded."), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(f"Upload targets error for assembly {assembly_id}: {e}")
         current_app.logger.exception("stacktrace")
         flash(_("An unexpected error occurred during import"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route("/assemblies/<uuid:assembly_id>/targets/categories", methods=["POST"])
+@targets_legacy_bp.route("/assemblies/<uuid:assembly_id>/targets/categories", methods=["POST"])
 @login_required
 def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
     form = AddTargetCategoryForm()
@@ -243,7 +243,7 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     add_category_form=form,
                 ), 422
             flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         uow2 = bootstrap.bootstrap()
@@ -275,7 +275,7 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Category '%(name)s' added", name=category.name), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except ValueError as e:
         if _is_htmx():
@@ -286,13 +286,13 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 add_category_form=form,
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>",
     methods=["POST"],
 )
@@ -310,7 +310,7 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
                     editing=True,
                 ), 422
             flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         assert form.name.data is not None
@@ -336,7 +336,7 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
             )
 
         flash(_("Category renamed to '%(name)s'", name=category.name), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         if _is_htmx():
@@ -349,10 +349,10 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
                 editing=True,
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>/delete",
     methods=["POST"],
 )
@@ -371,14 +371,14 @@ def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseR
             return ""
 
         flash(_("Category deleted"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values",
     methods=["POST"],
 )
@@ -405,7 +405,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                     respondent_counts=counts,
                 ), 422
             flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         assert form.value.data is not None
@@ -435,7 +435,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
             )
 
         flash(_("Value '%(value)s' added", value=form.value.data), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except ValueError as e:
         if _is_htmx():
@@ -457,13 +457,13 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 respondent_counts=counts,
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>",
     methods=["POST"],
 )
@@ -490,7 +490,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                     respondent_counts=counts,
                 ), 422
             flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         assert form.value.data is not None
@@ -521,7 +521,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
             )
 
         flash(_("Value updated"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         if _is_htmx():
@@ -543,10 +543,10 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 respondent_counts=counts,
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>/delete",
     methods=["POST"],
 )
@@ -576,14 +576,14 @@ def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
             )
 
         flash(_("Value deleted"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/add-missing",
     methods=["POST"],
 )
@@ -607,7 +607,7 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
                     value_form=TargetValueForm(),
                     can_manage=True,
                 )
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         category = None
         for value_name in missing_values:
@@ -639,14 +639,14 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
             _("Added %(count)s values", count=len(missing_values)),
             "success",
         )
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route(
+@targets_legacy_bp.route(
     "/assemblies/<uuid:assembly_id>/targets/categories/add-from-columns",
     methods=["POST"],
 )
@@ -657,7 +657,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         selected_columns = request.form.getlist("columns")
         if not selected_columns:
             flash(_("No columns selected"), "warning")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.bootstrap()
         existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
@@ -723,14 +723,14 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         else:
             flash(_("No new categories were created"), "warning")
 
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route("/assemblies/<uuid:assembly_id>/targets/check", methods=["POST"])
+@targets_legacy_bp.route("/assemblies/<uuid:assembly_id>/targets/check", methods=["POST"])
 @login_required
 def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
@@ -785,4 +785,4 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Error checking targets for assembly {assembly_id}: {e}")
         current_app.logger.exception("stacktrace")
         flash(_("An unexpected error occurred while checking targets"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
