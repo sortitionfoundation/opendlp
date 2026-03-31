@@ -640,6 +640,75 @@ class TestCsvSelectionSelectedCount:
         assert b"Run Test Selection" in response.data
 
 
+class TestSaveCsvSettings:
+    """Tests for the save CSV settings endpoint."""
+
+    def test_save_csv_settings_success(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        """Test successfully saving CSV selection settings."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            data={
+                "csrf_token": csrf_token,
+                # check_same_address not included = False (no address columns required)
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "Gender",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Selection settings saved successfully" in response.data
+
+    def test_save_csv_settings_with_address_columns(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        """Test saving settings with address columns specified."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            data={
+                "csrf_token": csrf_token,
+                "check_same_address": "y",
+                "check_same_address_cols_string": "Gender",
+                "columns_to_keep_string": "Gender",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Selection settings saved successfully" in response.data
+
+    def test_save_csv_settings_without_check_address(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        """Test saving settings with check_same_address disabled."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            data={
+                "csrf_token": csrf_token,
+                # check_same_address not included = False
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Selection settings saved successfully" in response.data
+
+    def test_save_csv_settings_requires_auth(self, client, assembly_with_csv_config_unconfirmed):
+        """Test that save settings endpoint requires authentication."""
+        assembly = assembly_with_csv_config_unconfirmed
+        response = client.post(f"/backoffice/assembly/{assembly.id}/data/csv/settings")
+
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
 class TestCsvSelectionSettingsWarning:
     """Tests for CSV selection settings confirmation warning."""
 
