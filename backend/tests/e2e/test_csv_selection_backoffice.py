@@ -10,7 +10,7 @@ import pytest
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import assembly_service, respondent_service
-from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
+from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
 from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -32,11 +32,18 @@ def assembly_with_csv_config(postgres_session_factory, admin_user):
         assembly_id = assembly.id
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        update_csv_config(
+        update_selection_settings(
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly_id,
             check_same_address=False,
+        )
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_csv_config(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly_id,
             settings_confirmed=True,
         )
 
@@ -81,11 +88,18 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
         assembly_id = assembly.id
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        update_csv_config(
+        update_selection_settings(
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly_id,
             check_same_address=False,
+        )
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_csv_config(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly_id,
             settings_confirmed=False,
         )
 
