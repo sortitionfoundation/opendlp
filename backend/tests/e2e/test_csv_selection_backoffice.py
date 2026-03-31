@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import assembly_service, respondent_service
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
@@ -542,3 +542,89 @@ class TestCsvSelectionPageIntegration:
         assert response.status_code == 200
         # CSV progress modal should be shown (not the gsheet one)
         assert b"csv-selection-progress-modal" in response.data
+
+
+class TestCsvSelectionReset:
+    """Tests for the CSV selection reset endpoint."""
+
+    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.reset_selection_status")
+    def test_reset_csv_selection_success(self, mock_reset, logged_in_admin, assembly_with_csv_config):
+        """Test successfully resetting respondents to Pool status."""
+        assembly = assembly_with_csv_config
+        mock_reset.return_value = 10  # 10 respondents reset
+
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/csv/reset",
+            data={"csrf_token": csrf_token},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"Reset 10 respondents" in response.data
+        mock_reset.assert_called_once()
+
+    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.reset_selection_status")
+    def test_reset_csv_selection_handles_not_found(self, mock_reset, logged_in_admin, assembly_with_csv_config):
+        """Test that NotFoundError redirects to dashboard."""
+        assembly = assembly_with_csv_config
+        mock_reset.side_effect = NotFoundError("Assembly not found")
+
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/csv/reset",
+            data={"csrf_token": csrf_token},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"not found" in response.data.lower()
+
+    def test_reset_csv_selection_requires_auth(self, client, assembly_with_csv_config):
+        """Test that reset endpoint requires authentication."""
+        assembly = assembly_with_csv_config
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/csv/reset")
+
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
+class TestCsvSelectionSelectedCount:
+    """Tests for CSV selection page showing selected count and reset button."""
+
+    def test_selection_page_shows_selected_count_when_respondents_selected(
+        self, logged_in_admin, assembly_with_csv_config, postgres_session_factory
+    ):
+        """Test that selection page shows selected count when respondents have been selected."""
+        assembly = assembly_with_csv_config
+
+        # Mark some respondents as selected (not Pool)
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(assembly.id)
+            # Mark 5 respondents as selected
+            for respondent in respondents[:5]:
+                respondent.selection_status = RespondentStatus.SELECTED
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        # Should show warning about selected respondents
+        assert b"5 respondents have been selected" in response.data
+        # Should show reset button
+        assert b"Reset to Pool" in response.data
+        # Should NOT show Run Selection button (only Reset and Check Data)
+        assert b"Run Selection" not in response.data
+
+    def test_selection_page_shows_normal_ui_when_no_selection(self, logged_in_admin, assembly_with_csv_config):
+        """Test that selection page shows normal UI when no selection has been run."""
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        # Should NOT show reset button
+        assert b"Reset to Pool" not in response.data
+        # Should show Run Selection buttons
+        assert b"Run Selection" in response.data
+        assert b"Run Test Selection" in response.data

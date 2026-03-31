@@ -19,6 +19,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
+from opendlp.service_layer.respondent_service import reset_selection_status
 from opendlp.service_layer.sortition import (
     cancel_task,
     check_and_update_task_health,
@@ -341,3 +342,28 @@ def save_csv_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while saving settings"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+
+@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/reset", methods=["POST"])
+@login_required
+@require_assembly_management
+def reset_csv_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Reset all respondents to Pool status, allowing a fresh selection."""
+    try:
+        uow = bootstrap.bootstrap()
+        count = reset_selection_status(uow, current_user.id, assembly_id)
+
+        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to reset selection status"), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Reset CSV selection error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while resetting respondent status"), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))

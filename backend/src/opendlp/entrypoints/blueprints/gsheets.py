@@ -25,6 +25,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
+from opendlp.service_layer.respondent_service import count_non_pool_respondents
 from opendlp.service_layer.sortition import (
     InvalidSelection,
     LoadRunResult,
@@ -220,6 +221,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No CSV data - expected for new assemblies
 
         # Determine data source and tab enabled states
+        csv_selected_count = 0
         if gsheet:
             data_source = "gsheet"
             targets_enabled = True
@@ -230,6 +232,13 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled = csv_status.has_targets
             respondents_enabled = csv_status.has_respondents
             selection_enabled = csv_status.selection_enabled
+            # Get count of respondents that have been selected (not in Pool status)
+            try:
+                uow_count = bootstrap.bootstrap()
+                with uow_count:
+                    csv_selected_count = count_non_pool_respondents(uow_count, assembly_id)
+            except Exception as count_error:
+                current_app.logger.error(f"Error counting non-pool respondents: {count_error}")
         else:
             data_source = ""
             targets_enabled = False
@@ -265,6 +274,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
+            csv_selected_count=csv_selected_count,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
