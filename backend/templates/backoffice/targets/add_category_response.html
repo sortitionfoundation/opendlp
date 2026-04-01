@@ -1,0 +1,10 @@
+{#
+ABOUTME: HTMX response after creating a new target category in the backoffice
+ABOUTME: Returns fresh add form (primary swap) and new category block (OOB swap)
+#}
+{# Primary swap: replaces #add-category-form with a fresh empty form #}
+{% include "backoffice/targets/add_category_form.html" %}
+{# OOB swap: inserts the new category block before #add-category-form #}
+<div hx-swap-oob="beforebegin:#add-category-form">
+    {% include "backoffice/targets/category_block.html" %}
+</div>

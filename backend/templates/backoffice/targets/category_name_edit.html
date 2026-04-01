@@ -1,0 +1,29 @@
+{#
+ABOUTME: Standalone category name edit form for validation error display
+ABOUTME: Rendered when a category rename fails validation
+#}
+{% from "backoffice/components/button.html" import button %}
+
+<div class="flex items-center gap-3">
+    <form method="post"
+          action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-target="#category-{{ category_id }}"
+          hx-swap="outerHTML"
+          class="flex items-center gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="flex flex-col gap-1">
+            {% if edit_category_form.name.errors %}
+                <p class="text-body-sm" style="color: var(--color-error-600);">{{ edit_category_form.name.errors[0] }}</p>
+            {% endif %}
+            <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2"
+                   style="background-color: var(--color-page-background); border: 1px solid {% if edit_category_form.name.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
+                   type="text"
+                   name="name"
+                   value="{{ edit_category_form.name.data or '' }}"
+                   required />
+        </div>
+        {{ button(_("Save"), variant="primary", type="submit") }}
+        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
+    </form>
+</div>
