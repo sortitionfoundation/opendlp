@@ -1,5 +1,5 @@
-"""ABOUTME: Backoffice CSV selection routes for running sortition on DB-stored data
-ABOUTME: Provides /backoffice/assembly/*/selection/csv/* routes for selection, progress, and downloads"""
+"""ABOUTME: Backoffice DB selection routes for running sortition on database-stored data
+ABOUTME: Provides /backoffice/assembly/*/selection/db/* routes for selection, progress, and downloads"""
 
 import uuid
 
@@ -30,14 +30,14 @@ from opendlp.service_layer.sortition import (
 )
 from opendlp.translations import gettext as _
 
-csv_selection_backoffice_bp = Blueprint("csv_selection_backoffice", __name__)
+db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/check", methods=["POST"])
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/check", methods=["POST"])
 @login_required
 @require_assembly_management
-def check_csv_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Validate CSV/database data before running selection."""
+def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Validate database data before running selection."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
@@ -73,17 +73,17 @@ def check_csv_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Check CSV data error for assembly {assembly_id}: {e}")
+        current_app.logger.error(f"Check DB data error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An unexpected error occurred while checking data"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/run", methods=["POST"])
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/run", methods=["POST"])
 @login_required
 @require_assembly_management
-def start_csv_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Start a CSV/database selection task."""
+def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a database selection task."""
     try:
         test_mode = request.args.get("test") == "1"
 
@@ -115,16 +115,16 @@ def start_csv_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Error starting CSV selection for assembly {assembly_id}: {e}")
+        current_app.logger.error(f"Error starting DB selection for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An unexpected error occurred while starting the selection task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/modal-progress/<uuid:run_id>")
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/modal-progress/<uuid:run_id>")
 @login_required
-def csv_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Return modal progress HTML fragment for HTMX polling of CSV selection task status."""
+def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Return modal progress HTML fragment for HTMX polling of DB selection task status."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
@@ -147,7 +147,7 @@ def csv_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
             return "", 404
 
         return render_template(
-            "backoffice/components/csv_selection_progress_modal.html",
+            "backoffice/components/db_selection_progress_modal.html",
             assembly=assembly,
             csv_status=csv_status,
             run_record=result.run_record,
@@ -161,15 +161,15 @@ def csv_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
     except InsufficientPermissions:
         return "", 403
     except Exception as e:
-        current_app.logger.error(f"CSV selection progress modal error: {e}")
+        current_app.logger.error(f"DB selection progress modal error: {e}")
         return "", 500
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/<uuid:run_id>/cancel", methods=["POST"])
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
-def cancel_csv_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
-    """Cancel a running CSV selection task."""
+def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Cancel a running DB selection task."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
@@ -196,18 +196,18 @@ def cancel_csv_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Cancel CSV selection error: {e}")
+        current_app.logger.error(f"Cancel DB selection error: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@csv_selection_backoffice_bp.route(
-    "/assembly/<uuid:assembly_id>/selection/csv/<uuid:run_id>/download/selected", methods=["GET"]
+@db_selection_backoffice_bp.route(
+    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/selected", methods=["GET"]
 )
 @login_required
 @require_assembly_management
-def download_csv_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Download the selected participants as CSV."""
     try:
         uow = bootstrap.bootstrap()
@@ -236,12 +236,12 @@ def download_csv_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@csv_selection_backoffice_bp.route(
-    "/assembly/<uuid:assembly_id>/selection/csv/<uuid:run_id>/download/remaining", methods=["GET"]
+@db_selection_backoffice_bp.route(
+    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/remaining", methods=["GET"]
 )
 @login_required
 @require_assembly_management
-def download_csv_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Download the remaining participants as CSV."""
     try:
         uow = bootstrap.bootstrap()
@@ -270,11 +270,11 @@ def download_csv_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
 @login_required
 @require_assembly_management
-def save_csv_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save CSV selection settings."""
+def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Save DB selection settings."""
     try:
         uow = bootstrap.bootstrap()
         with uow:
@@ -338,16 +338,16 @@ def save_csv_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Save CSV settings error for assembly {assembly_id}: {e}")
+        current_app.logger.error(f"Save DB settings error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while saving settings"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-@csv_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/csv/reset", methods=["POST"])
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/reset", methods=["POST"])
 @login_required
 @require_assembly_management
-def reset_csv_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Reset all respondents to Pool status, allowing a fresh selection."""
     try:
         uow = bootstrap.bootstrap()
@@ -363,7 +363,7 @@ def reset_csv_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to reset selection status"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Reset CSV selection error for assembly {assembly_id}: {e}")
+        current_app.logger.error(f"Reset DB selection error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while resetting respondent status"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))

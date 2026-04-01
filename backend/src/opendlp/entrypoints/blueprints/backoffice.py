@@ -272,7 +272,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
-def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Backoffice assembly data page."""
     try:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
@@ -346,12 +346,14 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 if respondents and respondents[0].attributes:
                     csv_available_columns = sorted(respondents[0].attributes.keys())
 
-            # Create form with current values
+            # Create form with current values from SelectionSettings
             csv_settings_form = DbSelectionSettingsForm(
                 data={
-                    "check_same_address": csv_config.check_same_address,
-                    "check_same_address_cols_string": ", ".join(csv_config.check_same_address_cols),
-                    "columns_to_keep_string": ", ".join(csv_config.columns_to_keep),
+                    "check_same_address": sel_settings.check_same_address if sel_settings else True,
+                    "check_same_address_cols_string": sel_settings.check_same_address_cols_string
+                    if sel_settings
+                    else "",
+                    "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
                 },
                 available_columns=csv_available_columns,
             )
