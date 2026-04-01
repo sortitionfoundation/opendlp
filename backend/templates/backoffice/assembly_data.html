@@ -427,7 +427,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                  style="background-color: var(--color-tables-cards);
                         border: 1px solid var(--color-borders-dividers)">
                 <form method="post"
-                      action="{{ url_for('csv_selection_backoffice.save_csv_settings', assembly_id=assembly.id) }}"
+                      action="{{ url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) }}"
                       class="flex flex-col gap-6">
                     {% if not csv_readonly %}{{ csv_settings_form.hidden_tag() }}{% endif %}
                     {# Check Same Address Checkbox #}

@@ -37,7 +37,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
     {% if current_selection and run_record %}
         {% if data_source == "csv" %}
-            {% include "backoffice/components/csv_selection_progress_modal.html" %}
+            {% include "backoffice/components/db_selection_progress_modal.html" %}
         {% else %}
             {% include "backoffice/components/selection_progress_modal.html" %}
         {% endif %}
@@ -105,32 +105,32 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     {% if csv_selected_count|default(0) > 0 %}
                         {# Show reset button when respondents have been selected #}
                         <form method="post"
-                              action="{{ url_for('csv_selection_backoffice.reset_csv_selection', assembly_id=assembly.id) }}"
+                              action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
                               class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Reset to Pool"), type="submit", variant="danger", disabled=settings_missing) }}
                         </form>
                         <form method="post"
-                              action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
+                              action="{{ url_for('db_selection_backoffice.check_db_data', assembly_id=assembly.id) }}"
                               class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Check Data"), type="submit", variant="outline", disabled=settings_missing) }}
                         </form>
                     {% else %}
                         <form method="post"
-                              action="{{ url_for('csv_selection_backoffice.check_csv_data', assembly_id=assembly.id) }}"
+                              action="{{ url_for('db_selection_backoffice.check_db_data', assembly_id=assembly.id) }}"
                               class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Check Data"), type="submit", variant="outline", disabled=settings_missing) }}
                         </form>
                         <form method="post"
-                              action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}?test=1"
+                              action="{{ url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) }}?test=1"
                               class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Run Test Selection"), type="submit", variant="outline", disabled=settings_missing) }}
                         </form>
                         <form method="post"
-                              action="{{ url_for('csv_selection_backoffice.start_csv_selection', assembly_id=assembly.id) }}"
+                              action="{{ url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) }}"
                               class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Run Selection"), type="submit", variant="primary", disabled=settings_missing) }}

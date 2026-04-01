@@ -1,16 +1,16 @@
-{# ABOUTME: CSV selection task progress modal using design system macros #}
+{# ABOUTME: DB selection task progress modal using design system macros #}
 {# ABOUTME: Pure HTMX approach - server controls all state, includes download buttons for completed selections #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
 
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
-{% set htmx_poll_url = url_for('csv_selection_backoffice.csv_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
+{% set htmx_poll_url = url_for('db_selection_backoffice.db_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% set is_test_selection = run_record.task_type.value == 'test_select_from_db' %}
 {% set is_real_selection = run_record.task_type.value == 'select_from_db' %}
 
 {% call progress_modal(
-id="csv-selection-progress-modal",
+id="db-selection-progress-modal",
 title=_("Task Progress"),
 can_close=can_close,
 close_url=close_url,
@@ -49,12 +49,12 @@ htmx_poll_url=htmx_poll_url
             <div class="flex gap-3 flex-wrap">
                 {{ button(
                 _("Download Selected"),
-                href=url_for('csv_selection_backoffice.download_csv_selected', assembly_id=assembly.id, run_id=current_selection),
+                href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=current_selection),
                 variant="primary"
                 ) }}
                 {{ button(
                 _("Download Remaining"),
-                href=url_for('csv_selection_backoffice.download_csv_remaining', assembly_id=assembly.id, run_id=current_selection),
+                href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
                 variant="outline"
                 ) }}
             </div>
@@ -101,7 +101,7 @@ htmx_poll_url=htmx_poll_url
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if run_record.is_pending or run_record.is_running %}
-    <form method="post" action="{{ url_for('csv_selection_backoffice.cancel_csv_selection', assembly_id=assembly.id, run_id=current_selection) }}" class="inline">
+    <form method="post" action="{{ url_for('db_selection_backoffice.cancel_db_selection', assembly_id=assembly.id, run_id=current_selection) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
     </form>

@@ -1,5 +1,5 @@
-"""ABOUTME: End-to-end tests for backoffice CSV selection routes
-ABOUTME: Tests CSV selection check, run, progress modal, cancel, and download endpoints"""
+"""ABOUTME: End-to-end tests for backoffice DB selection routes
+ABOUTME: Tests DB selection check, run, progress modal, cancel, and download endpoints"""
 
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -121,7 +121,7 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
 class TestCsvSelectionCheckData:
     """Tests for the CSV check data endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.check_db_selection_data")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
     def test_check_csv_data_success(self, mock_check, logged_in_admin, assembly_with_csv_config):
         """Test successful data validation shows success message."""
         assembly = assembly_with_csv_config
@@ -136,7 +136,7 @@ class TestCsvSelectionCheckData:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/check",
+            f"/backoffice/assembly/{assembly.id}/selection/db/check",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -146,7 +146,7 @@ class TestCsvSelectionCheckData:
         assert b"5 targets" in response.data
         assert b"50 respondents" in response.data
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.check_db_selection_data")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
     def test_check_csv_data_failure(self, mock_check, logged_in_admin, assembly_with_csv_config):
         """Test failed data validation shows error messages."""
         assembly = assembly_with_csv_config
@@ -161,7 +161,7 @@ class TestCsvSelectionCheckData:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/check",
+            f"/backoffice/assembly/{assembly.id}/selection/db/check",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -175,7 +175,7 @@ class TestCsvSelectionCheckData:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/check",
+            f"/backoffice/assembly/{assembly.id}/selection/db/check",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -186,7 +186,7 @@ class TestCsvSelectionCheckData:
     def test_check_csv_data_requires_auth(self, client, assembly_with_csv_config):
         """Test that check endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/csv/check")
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/check")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -195,7 +195,7 @@ class TestCsvSelectionCheckData:
 class TestCsvSelectionRun:
     """Tests for the CSV selection run endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
     def test_start_csv_selection_success(self, mock_start, logged_in_admin, assembly_with_csv_config):
         """Test successfully starting a CSV selection task."""
         assembly = assembly_with_csv_config
@@ -204,7 +204,7 @@ class TestCsvSelectionRun:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/run",
+            f"/backoffice/assembly/{assembly.id}/selection/db/run",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -217,7 +217,7 @@ class TestCsvSelectionRun:
         call_kwargs = mock_start.call_args[1] if mock_start.call_args[1] else {}
         assert call_kwargs.get("test_selection", False) is False
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
     def test_start_csv_test_selection_success(self, mock_start, logged_in_admin, assembly_with_csv_config):
         """Test successfully starting a CSV test selection task."""
         assembly = assembly_with_csv_config
@@ -226,7 +226,7 @@ class TestCsvSelectionRun:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/run?test=1",
+            f"/backoffice/assembly/{assembly.id}/selection/db/run?test=1",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -245,7 +245,7 @@ class TestCsvSelectionRun:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/run",
+            f"/backoffice/assembly/{assembly.id}/selection/db/run",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -253,7 +253,7 @@ class TestCsvSelectionRun:
         assert response.status_code == 200
         assert b"review and save" in response.data.lower() or b"settings" in response.data.lower()
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
     def test_start_csv_selection_handles_invalid_selection_error(
         self, mock_start, logged_in_admin, assembly_with_csv_config
     ):
@@ -263,7 +263,7 @@ class TestCsvSelectionRun:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/run",
+            f"/backoffice/assembly/{assembly.id}/selection/db/run",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -274,7 +274,7 @@ class TestCsvSelectionRun:
     def test_start_csv_selection_requires_auth(self, client, assembly_with_csv_config):
         """Test that run endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/csv/run")
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/run")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -302,11 +302,11 @@ class TestCsvSelectionProgressModal:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         # Modal should be present
-        assert b"csv-selection-progress-modal" in response.data
+        assert b"db-selection-progress-modal" in response.data
         # Running status should enable HTMX polling
         assert b"hx-get" in response.data
 
@@ -329,7 +329,7 @@ class TestCsvSelectionProgressModal:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         assert b"hx-get" not in response.data
@@ -339,7 +339,7 @@ class TestCsvSelectionProgressModal:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 404
 
@@ -361,7 +361,7 @@ class TestCsvSelectionProgressModal:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 404
 
@@ -369,7 +369,7 @@ class TestCsvSelectionProgressModal:
 class TestCsvSelectionCancel:
     """Tests for the CSV selection cancel endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.cancel_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.cancel_task")
     def test_cancel_csv_selection_success(self, mock_cancel, logged_in_admin, assembly_with_csv_config):
         """Test successfully cancelling a running CSV selection task."""
         assembly = assembly_with_csv_config
@@ -377,7 +377,7 @@ class TestCsvSelectionCancel:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/cancel",
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -386,7 +386,7 @@ class TestCsvSelectionCancel:
         assert "selection" in response.location
         mock_cancel.assert_called_once()
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.cancel_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.cancel_task")
     def test_cancel_csv_selection_handles_invalid_selection(
         self, mock_cancel, logged_in_admin, assembly_with_csv_config
     ):
@@ -397,7 +397,7 @@ class TestCsvSelectionCancel:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/cancel",
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -409,7 +409,7 @@ class TestCsvSelectionCancel:
         """Test that cancel endpoint requires authentication."""
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/cancel")
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -437,7 +437,7 @@ class TestCsvSelectionDownload:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/selected")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected")
 
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
@@ -462,13 +462,13 @@ class TestCsvSelectionDownload:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/remaining")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/remaining")
 
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
         assert f"remaining-{run_id}.csv" in response.headers["Content-Disposition"]
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
     def test_download_handles_not_found_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):
         """Test that NotFoundError redirects with error message."""
         assembly = assembly_with_csv_config
@@ -476,14 +476,14 @@ class TestCsvSelectionDownload:
         mock_generate.side_effect = NotFoundError("Run not found")
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/selected",
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected",
             follow_redirects=True,
         )
 
         assert response.status_code == 200
         assert b"not found" in response.data.lower()
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
     def test_download_handles_invalid_selection_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):
         """Test that InvalidSelection error redirects with error message."""
         assembly = assembly_with_csv_config
@@ -491,7 +491,7 @@ class TestCsvSelectionDownload:
         mock_generate.side_effect = InvalidSelection("Selection not completed")
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/selected",
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected",
             follow_redirects=True,
         )
 
@@ -503,11 +503,11 @@ class TestCsvSelectionDownload:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/selected")
+        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected")
         assert response.status_code == 302
         assert "login" in response.location
 
-        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/csv/{run_id}/download/remaining")
+        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/remaining")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -551,13 +551,13 @@ class TestCsvSelectionPageIntegration:
 
         assert response.status_code == 200
         # CSV progress modal should be shown (not the gsheet one)
-        assert b"csv-selection-progress-modal" in response.data
+        assert b"db-selection-progress-modal" in response.data
 
 
 class TestCsvSelectionReset:
     """Tests for the CSV selection reset endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.reset_selection_status")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.reset_selection_status")
     def test_reset_csv_selection_success(self, mock_reset, logged_in_admin, assembly_with_csv_config):
         """Test successfully resetting respondents to Pool status."""
         assembly = assembly_with_csv_config
@@ -565,7 +565,7 @@ class TestCsvSelectionReset:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/reset",
+            f"/backoffice/assembly/{assembly.id}/selection/db/reset",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -574,7 +574,7 @@ class TestCsvSelectionReset:
         assert b"Reset 10 respondents" in response.data
         mock_reset.assert_called_once()
 
-    @patch("opendlp.entrypoints.blueprints.csv_selection_backoffice.reset_selection_status")
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.reset_selection_status")
     def test_reset_csv_selection_handles_not_found(self, mock_reset, logged_in_admin, assembly_with_csv_config):
         """Test that NotFoundError redirects to dashboard."""
         assembly = assembly_with_csv_config
@@ -582,7 +582,7 @@ class TestCsvSelectionReset:
 
         csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/csv/reset",
+            f"/backoffice/assembly/{assembly.id}/selection/db/reset",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -593,7 +593,7 @@ class TestCsvSelectionReset:
     def test_reset_csv_selection_requires_auth(self, client, assembly_with_csv_config):
         """Test that reset endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/csv/reset")
+        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset")
 
         assert response.status_code == 302
         assert "login" in response.location
