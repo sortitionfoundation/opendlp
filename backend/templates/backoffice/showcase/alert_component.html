@@ -21,6 +21,11 @@ ABOUTME: Displays alert variants and flash message helper
             {# Dismissible alert (requires Alpine.js) #}
             {{ alert("Can be closed", variant="info", dismissible=true) }}
 
+            {# Alert with HTML content (use caller block) #}
+            {% call alert(variant="warning", use_caller=true) %}
+                Message with <a href="...">link</a>
+            {% endcall %}
+
             {# Render all Flask flash messages automatically #}
             {{ flash_messages() }}') %}
             <div class="space-y-4">
@@ -43,6 +48,13 @@ ABOUTME: Displays alert variants and flash message helper
                 <div>
                     <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Dismissible (click X to close)</span>
                     {{ alert("This alert can be dismissed.", variant="info", dismissible=true, id="alert-dismissible") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">With HTML content (use caller block)</span>
+                    {% call alert(variant="warning", use_caller=true) %}
+                        Please configure your settings before continuing.
+                        <a href="#" class="underline font-medium">Go to Settings</a>
+                    {% endcall %}
                 </div>
             </div>
         {% endcall %}

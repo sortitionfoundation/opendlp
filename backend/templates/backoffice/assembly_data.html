@@ -409,4 +409,103 @@ ABOUTME: Displays data source selection and data management for assemblies
             </div>
         </div>
     </section>
+    {# Selection Settings Section #}
+    {% if csv_settings_form %}
+        {% set csv_readonly = csv_mode == "view" %}
+        {% set csv_is_edit = csv_mode == "edit" %}
+        <section class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Selection Settings") }}</h2>
+                {% if csv_readonly %}
+                    {{ button(_("Edit Settings") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv&mode=edit", variant="outline") }}
+                {% endif %}
+            </div>
+            <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+                {{ _("Configure how the selection algorithm runs for this assembly.") }}
+            </p>
+            <div class="rounded-lg p-6"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers)">
+                <form method="post"
+                      action="{{ url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) }}"
+                      class="flex flex-col gap-6">
+                    {% if not csv_readonly %}{{ csv_settings_form.hidden_tag() }}{% endif %}
+                    {# Check Same Address Checkbox #}
+                    {{ checkbox(name="check_same_address",
+                    label=_("Check Same Address") ,
+                    checked=csv_settings_form.check_same_address.data,
+                    hint=_("Prevent selecting multiple participants from the same address."),
+                    readonly=csv_readonly
+                    ) }}
+                    {# Available Columns Info - only show in edit mode #}
+                    {% if not csv_readonly %}
+                        {% if csv_available_columns %}
+                            <details class="text-body-sm" style="color: var(--color-secondary-text);">
+                                <summary class="cursor-pointer font-medium" style="color: var(--color-headings);">
+                                    {{ _("Available respondent attributes") }}
+                                </summary>
+                                <div class="mt-2 p-3 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                                    <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
+                                    <code class="text-body-sm">{{ csv_available_columns | join(", ") }}</code>
+                                </div>
+                            </details>
+                        {% else %}
+                            <div class="p-3 rounded-lg text-body-sm" style="background-color: var(--color-info-background); color: var(--color-info-text);">
+                                {{ _("No respondent data has been uploaded yet. Attribute validation will be skipped.") }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    {# Address Columns Input #}
+                    {{ input(name="check_same_address_cols_string",
+                    label=_("Address Attributes") ,
+                    value=csv_settings_form.check_same_address_cols_string.data or "",
+                    placeholder=_("e.g., Street, City, PostCode"),
+                    hint=_("Comma-separated respondent attribute names used for address matching."),
+                    readonly=csv_readonly,
+                    error=e(csv_settings_form.check_same_address_cols_string.errors)
+                    ) }}
+                    {# Columns to Keep Input #}
+                    {{ input(name="columns_to_keep_string",
+                    label=_("Attributes to Keep") ,
+                    value=csv_settings_form.columns_to_keep_string.data or "",
+                    placeholder=_("e.g., Name, Email, Phone"),
+                    hint=_("Comma-separated respondent attribute names to include in CSV output."),
+                    readonly=csv_readonly,
+                    error=e(csv_settings_form.columns_to_keep_string.errors)
+                    ) }}
+                    {# Settings Confirmed Status - only show in view mode #}
+                    {% if csv_readonly %}
+                        {% if csv_config and csv_config.settings_confirmed %}
+                            <div class="flex items-center gap-2 p-3 rounded-lg"
+                                 style="background-color: var(--color-subtle-background-panels)">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor"
+                                     style="color: var(--color-success-green)">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span class="text-body-sm" style="color: var(--color-body-text);">
+                                    {{ _("Settings have been confirmed. You can run selection.") }}
+                                </span>
+                            </div>
+                        {% else %}
+                            <div class="p-3 rounded-lg text-body-sm" style="background-color: var(--color-warning-background); color: var(--color-warning-text);">
+                                {{ _("Please review and save these settings before running selection.") }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    {# Form Actions - only show in edit mode #}
+                    {% if not csv_readonly %}
+                        <div class="flex gap-4 pt-4"
+                             style="border-top: 1px solid var(--color-borders-dividers)">
+                            {{ button(_("Save Settings") , type="submit", variant="primary") }}
+                            {{ button(_("Cancel") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv", variant="outline") }}
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </section>
+    {% endif %}
 {% endmacro %}
