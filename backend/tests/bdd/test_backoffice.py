@@ -1201,8 +1201,8 @@ def see_tab_in_navigation(page: Page, tab_name: str):
 @then(parsers.parse('the "{tab_name}" tab should be disabled'))
 def tab_should_be_disabled(page: Page, tab_name: str):
     """Verify a specific tab is disabled (shown as span, not a link)."""
-    # Disabled tabs are rendered as spans with data-disabled attribute, not links
-    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[data-disabled='true']").filter(
+    # Disabled tabs are rendered as spans with aria-disabled attribute, not links
+    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[aria-disabled='true']").filter(
         has_text=tab_name
     )
     expect(disabled_tab).to_be_visible()

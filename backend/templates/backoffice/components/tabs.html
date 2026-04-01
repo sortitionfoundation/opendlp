@@ -28,7 +28,7 @@ ABOUTME: Horizontal tab navigation for switching between page sections
         ) }}
     #}
     <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-data="{}" x-scroll-preserve-links{% endif %}>
-        <ul class="flex gap-1 border-b" style="border-color: var(--color-borders-dividers);">
+        <ul class="tab-bar" role="tablist">
             {% for item in items %}
                 {# Build extra attributes string from non-standard keys #}
                 {% set extra_attrs = [] %}
@@ -37,31 +37,32 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                         {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
                     {% endif %}
                 {% endfor %}
-                <li>
+                <li role="presentation">
                     {% if item.disabled %}
                         {# Disabled tab - rendered as non-clickable span #}
-                        <span class="inline-block px-4 py-3 text-body-md font-medium -mb-px cursor-not-allowed"
-                              style="color: var(--color-secondary-text); opacity: 0.5; border-bottom: 2px solid transparent;"
-                              data-disabled="true"
+                        <span class="tab-item tab-item-disabled"
+                              role="tab"
+                              aria-disabled="true"
+                              tabindex="-1"
                               {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </span>
                     {% elif item.active %}
-                        {# Active tab - directive handles scroll preservation #}
+                        {# Active/selected tab #}
                         <a href="{{ item.href }}"
-                           class="inline-block px-4 py-3 text-body-md font-medium -mb-px"
-                           style="color: var(--color-primary-action); border-bottom: 2px solid var(--color-primary-action);"
+                           class="tab-item tab-item-selected"
+                           role="tab"
+                           aria-selected="true"
                            aria-current="page"
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
                     {% else %}
-                        {# Inactive tab - directive handles scroll preservation #}
+                        {# Inactive tab #}
                         <a href="{{ item.href }}"
-                           class="inline-block px-4 py-3 text-body-md font-medium transition-colors -mb-px"
-                           style="color: var(--color-secondary-text); border-bottom: 2px solid transparent;"
-                           onmouseover="this.style.color='var(--color-headings)'"
-                           onmouseout="this.style.color='var(--color-secondary-text)'"
+                           class="tab-item"
+                           role="tab"
+                           aria-selected="false"
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>

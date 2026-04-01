@@ -8,7 +8,7 @@ ABOUTME: Displays horizontal tab navigation with usage examples
 {% macro tabs_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Tabs Component") }}
-        {{ showcase_description("Horizontal tab navigation for switching between page sections. Active tab is highlighted with primary action color. Additional attributes (like data-proto) are passed through to the anchor element.") }}
+        {{ showcase_description("Horizontal tab navigation for switching between page sections, based on OpenDLP Figma UI specification. Features bold text for selected state, hover background, and proper focus ring for keyboard navigation.") }}
 
         {% call showcase_example('{% from "backoffice/components/tabs.html" import tabs %}
 
@@ -16,6 +16,7 @@ ABOUTME: Displays horizontal tab navigation with usage examples
             items=[
             {"label": _("Details"), "href": url_for(\'...\'), "active": true},
             {"label": _("Data"), "href": "#", "data-proto": "click:show:data-panel"},
+            {"label": _("Targets"), "href": "#", "disabled": true},
             {"label": _("Selection"), "href": "#"},
             {"label": _("Team Members"), "href": url_for(\'...\')}
             ],
@@ -38,15 +39,27 @@ ABOUTME: Displays horizontal tab navigation with usage examples
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <span class="text-label-md" style="color: var(--color-secondary-text);">With custom attributes (inspect HTML)</span>
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With disabled tab</span>
                     {{ tabs(
                     items=[
                     {"label": "Details", "href": "#", "active": true},
-                    {"label": "Data", "href": "#", "data-proto": "click:show:data-panel"},
-                    {"label": "Selection", "href": "#", "data-custom": "example-value"},
-                    {"label": "Team Members", "href": "#"}
+                    {"label": "Data", "href": "#"},
+                    {"label": "Targets", "href": "#", "disabled": true},
+                    {"label": "Selection", "href": "#"}
                     ],
-                    aria_label="Example tabs - with custom attributes"
+                    aria_label="Example tabs - with disabled"
+                    ) }}
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Middle tab selected</span>
+                    {{ tabs(
+                    items=[
+                    {"label": "Overview", "href": "#"},
+                    {"label": "Settings", "href": "#", "active": true},
+                    {"label": "History", "href": "#"}
+                    ],
+                    aria_label="Example tabs - middle selected"
                     ) }}
                 </div>
 
@@ -65,10 +78,13 @@ ABOUTME: Displays horizontal tab navigation with usage examples
 
         {{ showcase_tokens([
         "--color-borders-dividers",
-        "--color-primary-action",
-        "--color-secondary-text",
+        "--color-button-primary-bg",
         "--color-headings",
-        ".text-body-md"
+        "--color-focus-ring",
+        ".tab-bar",
+        ".tab-item",
+        ".tab-item-selected",
+        ".tab-item-disabled"
         ]) }}
     {% endcall %}
 {% endmacro %}

@@ -333,4 +333,154 @@
         letter-spacing: 0.3px;
         color: var(--color-headings);
     }
+
+    /* ========================================
+       SWITCH (TOGGLE) COMPONENT STYLES
+       Custom switch based on Figma spec
+       ======================================== */
+
+    /* Container for switch + label */
+    .switch-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Disabled state */
+    .switch-container.switch-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Hide native checkbox but keep interactable for a11y */
+    .switch-input {
+        position: absolute;
+        width: 44px;
+        height: 24px;
+        margin: 0;
+        padding: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Track (pill-shaped background) */
+    .switch-track {
+        display: flex;
+        align-items: center;
+        width: 44px;
+        height: 24px;
+        padding: 2px;
+        border-radius: 9999px;
+        background-color: var(--color-borders-dividers);
+        transition: background-color 200ms ease;
+        flex-shrink: 0;
+    }
+
+    /* Thumb (sliding knob) */
+    .switch-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: white;
+        box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                    0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transition: transform 200ms ease;
+    }
+
+    /* Checked state - move thumb right and change track color */
+    .switch-input:checked + .switch-track {
+        background-color: var(--color-button-primary-bg);
+    }
+
+    .switch-input:checked + .switch-track .switch-thumb {
+        transform: translateX(20px);
+    }
+
+    /* Hover state (when not disabled) */
+    .switch-container:not(.switch-disabled):hover .switch-track {
+        background-color: var(--color-secondary-text);
+    }
+
+    .switch-container:not(.switch-disabled):hover .switch-input:checked + .switch-track {
+        background-color: var(--color-button-primary-bg-hover);
+    }
+
+    /* Focus ring for keyboard navigation */
+    .switch-input:focus-visible + .switch-track {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+    }
+
+    /* Label text styling */
+    .switch-label {
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: 0.3px;
+        color: var(--color-headings);
+    }
+
+    /* ========================================
+       TAB COMPONENT STYLES
+       Horizontal tab navigation based on Figma spec
+       ======================================== */
+
+    /* Tab bar container */
+    .tab-bar {
+        display: flex;
+        flex-direction: row;
+        gap: 0;
+        border-bottom: 1px solid var(--color-borders-dividers);
+    }
+
+    /* Individual tab item */
+    .tab-item {
+        display: inline-block;
+        padding: 12px 16px;
+        font-family: var(--font-body);
+        font-size: 15px;
+        line-height: 22px;
+        letter-spacing: 0.2px;
+        font-weight: 400;
+        color: var(--color-headings);
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 150ms ease;
+    }
+
+    /* Hover state (not selected, not disabled) */
+    .tab-item:not(.tab-item-selected):not(.tab-item-disabled):hover {
+        background-color: #E1E2E5;
+    }
+
+    /* Selected state */
+    .tab-item-selected {
+        font-weight: 700;
+        border-bottom-color: var(--color-button-primary-bg);
+    }
+
+    /* Focus state for keyboard navigation */
+    .tab-item:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 4px;
+        border-radius: 8px;
+    }
+
+    .tab-item:focus {
+        outline: none;
+    }
+
+    /* Disabled state */
+    .tab-item-disabled {
+        color: #9EA2AC;
+        cursor: not-allowed;
+    }
 }
