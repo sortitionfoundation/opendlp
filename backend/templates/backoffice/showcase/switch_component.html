@@ -1,0 +1,83 @@
+{#
+ABOUTME: Showcase section for switch (toggle) component
+ABOUTME: Displays switch variants and usage examples
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/input.html" import switch %}
+
+{% macro switch_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Switch Component") }}
+        {{ showcase_description("Toggle switch for binary on/off settings, based on OpenDLP Figma UI specification.") }}
+
+        {# Basic States #}
+        {% call showcase_example('{% from "backoffice/components/input.html" import switch %}
+
+{# Basic switch states #}
+            {{ switch("off", label="Switch off") }}
+            {{ switch("on", label="Switch on", checked=true) }}
+            {{ switch("disabled-off", label="Disabled off", disabled=true) }}
+            {{ switch("disabled-on", label="Disabled on", checked=true, disabled=true) }}') %}
+            <div class="flex flex-wrap gap-6 items-start">
+                <div class="flex flex-col gap-2">
+                    {{ switch("demo-off", label="Off") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Default (Off)</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ switch("demo-on", label="On", checked=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Selected (On)</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ switch("demo-disabled-off", label="Disabled", disabled=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled Off</span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    {{ switch("demo-disabled-on", label="Disabled on", checked=true, disabled=true) }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled On</span>
+                </div>
+            </div>
+        {% endcall %}
+
+        {# With Hints and Errors #}
+        {% call showcase_example('{# Switch with hint text #}
+        {{ switch("notifications", label="Email notifications", hint="Receive updates about your assembly.") }}
+
+{# Switch with error #}
+        {{ switch("required", label="Accept terms", error="You must enable this to continue") }}') %}
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-2">
+                <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint</span>
+                {{ switch("demo-hint", label="Email notifications", hint="Receive updates about your assembly.") }}
+            </div>
+            <div class="flex flex-col gap-2">
+                <span class="text-label-md" style="color: var(--color-secondary-text);">With Error</span>
+                {{ switch("demo-error", label="Accept terms", error="You must enable this to continue") }}
+            </div>
+        </div>
+    {% endcall %}
+
+        {# Read-only State #}
+    {% call showcase_example('{# Read-only switch (displays as text) #}
+    {{ switch("readonly-off", label="Dark mode", checked=false, readonly=true) }}
+    {{ switch("readonly-on", label="Notifications", checked=true, readonly=true) }}') %}
+    <div class="flex flex-col gap-4">
+        <span class="text-label-md" style="color: var(--color-secondary-text);">Read-only Display</span>
+        {{ switch("demo-readonly-off", label="Dark mode", checked=false, readonly=true) }}
+        {{ switch("demo-readonly-on", label="Notifications", checked=true, readonly=true) }}
+    </div>
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-button-primary-bg",
+"--color-button-primary-bg-hover",
+"--color-borders-dividers",
+"--color-secondary-text",
+"--color-headings",
+"--color-focus-ring",
+".switch-container",
+".switch-track",
+".switch-thumb",
+".switch-label"
+]) }}
+{% endcall %}
+{% endmacro %}
