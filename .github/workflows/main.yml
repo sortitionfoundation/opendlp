@@ -34,7 +34,7 @@ jobs:
         with:
           working-directory: ./backend
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
 
       - name: Run checks
         run: just check-ci
