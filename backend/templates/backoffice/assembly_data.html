@@ -83,6 +83,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             {% if readonly %}
                 <div class="flex gap-2">
                     {{ button(_("Edit Configuration") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
+                    {# TODO: Replace browser confirm with proper JS confirmation dialog #}
                     <form method="post"
                           action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}"
                           class="inline"
@@ -280,6 +281,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             {% if is_edit %}
                 <div class="flex justify-end mt-4 pt-4"
                      style="border-top: 1px solid var(--color-borders-dividers)">
+                    {# TODO: Replace browser confirm with proper JS confirmation dialog #}
                     <form method="post"
                           action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}"
                           x-data
