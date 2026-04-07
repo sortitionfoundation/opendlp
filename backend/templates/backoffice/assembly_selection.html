@@ -56,7 +56,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {# Show warning when selection settings are not confirmed #}
             {% call alert(variant="warning", use_caller=true) %}
                 {{ _("Please review and save the selection settings before running selection.") }}
-                <a href="{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv') }}"
+                <a href="{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv', mode='edit') }}#selection-settings"
                    class="underline font-medium">{{ _("Go to Data Settings") }}</a>
             {% endcall %}
         {% endif %}

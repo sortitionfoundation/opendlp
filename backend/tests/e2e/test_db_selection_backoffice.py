@@ -723,8 +723,11 @@ class TestCsvSelectionSettingsWarning:
         assert response.status_code == 200
         # Should show warning message
         assert b"review and save the selection settings" in response.data
-        # Should have link to data settings
+        # Should have link to data settings in edit mode with anchor
         assert b"Go to Data Settings" in response.data
+        assert b"source=csv" in response.data
+        assert b"mode=edit" in response.data
+        assert b"#selection-settings" in response.data
 
     def test_selection_page_buttons_disabled_when_settings_not_confirmed(
         self, logged_in_admin, assembly_with_csv_config_unconfirmed

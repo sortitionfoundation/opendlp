@@ -415,7 +415,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         {% set csv_is_edit = csv_mode == "edit" %}
         <section class="mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Selection Settings") }}</h2>
+                <h2 id="selection-settings" class="text-heading-lg" style="color: var(--color-headings);">{{ _("Selection Settings") }}</h2>
                 {% if csv_readonly %}
                     {{ button(_("Edit Settings") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv&mode=edit", variant="outline") }}
                 {% endif %}
