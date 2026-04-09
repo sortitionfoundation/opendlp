@@ -76,6 +76,8 @@ exclude-newer = "1 week"
 sortition-algorithms = "0 days"
 # for security update cryptography 46.0.7 released 2026-04-08 - so can remove after 2026-04-15
 cryptography = "0 days"
+# for security update django 6.0.4 released 2026-04-07 - so can remove after 2026-04-14
+django = "0 days"
 
 [tool.mypy]
 files = ["src"]
