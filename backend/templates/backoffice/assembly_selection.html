@@ -36,7 +36,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {# Selection Progress Modal - shown when current_selection parameter is present #}
     {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
     {% if current_selection and run_record %}
-        {% include "backoffice/components/selection_progress_modal.html" %}
+        {% if data_source == "csv" %}
+            {% include "backoffice/components/db_selection_progress_modal.html" %}
+        {% else %}
+            {% include "backoffice/components/selection_progress_modal.html" %}
+        {% endif %}
     {% endif %}
     {# Replacement Selection Modal - shown when replacement_modal_open is true #}
     {% if replacement_modal_open %}
@@ -47,8 +51,265 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         {% include "backoffice/components/edit_number_to_select_modal.html" %}
     {% endif %}
     {% if data_source == "csv" %}
-        {# CSV source - placeholder for future implementation #}
-        {{ alert(_("CSV based selection will be implemented here."), variant="info") }}
+        {# CSV/Database source - show selection options #}
+        {% if not csv_settings_confirmed|default(true) %}
+            {# Show warning when selection settings are not confirmed #}
+            {% call alert(variant="warning", use_caller=true) %}
+                {{ _("Please review and save the selection settings before running selection.") }}
+                <a href="{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv', mode='edit') }}#selection-settings"
+                   class="underline font-medium">{{ _("Go to Data Settings") }}</a>
+            {% endcall %}
+        {% endif %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {# Initial Selection Card #}
+            {% call card(title=_("Initial Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Run the sortition algorithm to select participants from the uploaded CSV data based on demographic targets.") }}
+                    </p>
+                    {# Number to select info #}
+                    <div class="rounded-lg p-4 mb-4"
+                         style="background-color: var(--color-subtle-background-panels);
+                                border: 1px solid var(--color-borders-dividers)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
+                                <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
+                            </div>
+                            <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
+                               class="text-body-sm font-medium hover:underline"
+                               style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
+                        </div>
+                    </div>
+                    {% if csv_selected_count|default(0) > 0 %}
+                        {# Show selection status when respondents have been selected #}
+                        <div class="rounded-lg p-4 mb-4"
+                             style="background-color: var(--color-warning-background);
+                                    border: 1px solid var(--color-warning-text)">
+                            <p class="text-body-md font-medium mb-2" style="color: var(--color-warning-text);">
+                                {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
+                            </p>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to Pool status.") }}
+                            </p>
+                        </div>
+                    {% else %}
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Use 'Check Data' to validate your data before running the actual selection.") }}
+                        </p>
+                    {% endif %}
+                {% endcall %}
+                {% call card_footer() %}
+                    {% set settings_missing = not csv_settings_confirmed|default(true) %}
+                    {% if csv_selected_count|default(0) > 0 %}
+                        {# Show reset button when respondents have been selected #}
+                        {# TODO: Replace browser confirm with proper JS confirmation dialog #}
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
+                              class="inline"
+                              x-data
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to Pool status? This action cannot be undone.") }}', $el)">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Reset to Pool"), type="submit", variant="danger", disabled=settings_missing) }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.check_db_data', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Check Data"), type="submit", variant="outline", disabled=settings_missing) }}
+                        </form>
+                    {% else %}
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.check_db_data', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Check Data"), type="submit", variant="outline", disabled=settings_missing) }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) }}?test=1"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Test Selection"), type="submit", variant="outline", disabled=settings_missing) }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Selection"), type="submit", variant="primary", disabled=settings_missing) }}
+                        </form>
+                    {% endif %}
+                {% endcall %}
+            {% endcall %}
+            {# Replacement Selection Card #}
+            {% call card(title=_("Replacement Selection"), composed=true) %}
+                {% call card_body() %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                    </p>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Replacement selection for CSV data will be available in a future update.") }}
+                    </p>
+                {% endcall %}
+                {% call card_footer() %}
+                    {{ button(_("Coming Soon") , variant="outline", disabled=true) }}
+                {% endcall %}
+            {% endcall %}
+        </div>
+        {# Selection History - Full Width #}
+        <div class="mb-8">
+            {% call card(title=_("Selection History"), composed=true) %}
+                {% call card_body() %}
+                    {% if run_history %}
+                        {# History Table #}
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Status") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Task Type") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Started By") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Started At") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Completed At") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Comment") }}</th>
+                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                            style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for run_record, user in run_history %}
+                                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                            {# Status #}
+                                            <td class="py-3 px-4">
+                                                <span class="inline-block px-2 py-1 rounded text-body-sm font-medium"
+                                                      {% if run_record.status.value == 'completed' %} style="background-color: var(--color-success-background); color: var(--color-success-text);" {% elif run_record.status.value == 'failed' %} style="background-color: var(--color-error-background); color: var(--color-error-text);" {% elif run_record.status.value == 'cancelled' %} style="background-color: var(--color-warning-background); color: var(--color-warning-text);" {% elif run_record.status.value == 'running' %} style="background-color: var(--color-info-background); color: var(--color-info-text);" {% else %} style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);" {% endif %}>
+                                                    {{ run_record.status.value.capitalize() }}
+                                                </span>
+                                            </td>
+                                            {# Task Type #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</td>
+                                            {# Started By #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ user.display_name if user else _("Unknown") }}
+                                            </td>
+                                            {# Started At #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.created_at.strftime("%Y-%m-%d %H:%M") if run_record.created_at else '-' }}
+                                            </td>
+                                            {# Completed At #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.completed_at.strftime("%Y-%m-%d %H:%M") if run_record.completed_at else '-' }}
+                                            </td>
+                                            {# Comment #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
+                                                {{ run_record.comment if run_record.comment else '-' }}
+                                            </td>
+                                            {# Actions #}
+                                            <td class="py-3 px-4">
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=run_record.task_id) }}"
+                                                       class="text-body-sm font-medium hover:underline"
+                                                       style="color: var(--color-primary-action)">{{ _("View") }}</a>
+                                                    {# Download button for completed DB selections with results #}
+                                                    {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db') and run_record.is_completed and run_record.selected_ids %}
+                                                        {% set download_attrs %}title="{{ _("Download selected CSV") }}"{% endset %}
+                                                        {{ button(
+                                                        variant="icon",
+                                                        href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=run_record.task_id),
+                                                        icon='<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3"/><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>',
+                                                        attrs=download_attrs
+                                                        ) }}
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {# Pagination Controls #}
+                        {% if total_pages > 1 %}
+                            <div class="mt-6 flex items-center justify-between">
+                                {# Results count #}
+                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {% set end_record = page * per_page if page * per_page < total_count else total_count %}
+                                    {{ _("Showing %(start)s-%(end)s of %(total)s runs",
+                                    start=((page - 1) * per_page + 1),
+                                    end=end_record,
+                                    total=total_count) }}
+                                </p>
+                                {# Pagination buttons #}
+                                <nav class="flex items-center gap-2" x-data="{}" x-scroll-preserve-links>
+                                    {# Previous button #}
+                                    {% if page > 1 %}
+                                        <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page - 1) }}"
+                                           class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                           style="border: 1px solid var(--color-borders-dividers);
+                                                  color: var(--color-body-text)"
+                                           onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                           onmouseout="this.style.backgroundColor='transparent'">
+                                            {{ _("Previous") }}
+                                        </a>
+                                    {% else %}
+                                        <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                              style="border: 1px solid var(--color-borders-dividers);
+                                                     color: var(--color-secondary-text);
+                                                     opacity: 0.5">{{ _("Previous") }}</span>
+                                    {% endif %}
+                                    {# Page numbers #}
+                                    {% for page_num in range(1, total_pages + 1) %}
+                                        {% if page_num == page %}
+                                            <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                                  style="background-color: var(--color-primary-action);
+                                                         color: white">{{ page_num }}</span>
+                                        {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
+                                            <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page_num) }}"
+                                               class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                               style="border: 1px solid var(--color-borders-dividers);
+                                                      color: var(--color-body-text)"
+                                               onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                               onmouseout="this.style.backgroundColor='transparent'">{{ page_num }}</a>
+                                        {% elif page_num == page - 3 or page_num == page + 3 %}
+                                            <span class="px-3 py-2 text-body-sm"
+                                                  style="color: var(--color-secondary-text)">...</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {# Next button #}
+                                    {% if page < total_pages %}
+                                        <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, page=page + 1) }}"
+                                           class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                                           style="border: 1px solid var(--color-borders-dividers);
+                                                  color: var(--color-body-text)"
+                                           onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
+                                           onmouseout="this.style.backgroundColor='transparent'">{{ _("Next") }}</a>
+                                    {% else %}
+                                        <span class="px-3 py-2 rounded text-body-sm font-medium"
+                                              style="border: 1px solid var(--color-borders-dividers);
+                                                     color: var(--color-secondary-text);
+                                                     opacity: 0.5">{{ _("Next") }}</span>
+                                    {% endif %}
+                                </nav>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {# Empty state #}
+                        <div class="text-center py-8">
+                            <p class="text-body-md mb-2" style="color: var(--color-secondary-text);">{{ _("No selection runs yet") }}</p>
+                            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                {{ _("Run your first selection above to see the history here.") }}
+                            </p>
+                        </div>
+                    {% endif %}
+                {% endcall %}
+            {% endcall %}
+        </div>
+        {# Actions #}
         <section class="flex gap-4">
             {{ button(_("Back to Dashboard") , href=url_for('backoffice.dashboard'), variant="outline") }}
         </section>

@@ -15,6 +15,7 @@ from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
     CreateAssemblyGSheetForm,
+    DbSelectionSettingsForm,
     EditAssemblyForm,
     EditAssemblyGSheetForm,
 )
@@ -25,6 +26,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_or_create_csv_config,
     get_or_create_selection_settings,
     update_assembly,
 )
@@ -270,7 +272,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
-def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Backoffice assembly data page."""
     try:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
@@ -324,6 +326,38 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             else:
                 gsheet_form = CreateAssemblyGSheetForm()
 
+        # Set up CSV settings form if CSV source is selected
+        csv_settings_form = None
+        csv_available_columns: list[str] = []
+        csv_mode = "view"  # Default to view mode
+        csv_config = None
+        if data_source == "csv":
+            # Determine mode (view or edit)
+            mode_param = request.args.get("mode", "")
+            csv_mode = "edit" if mode_param == "edit" else "view"
+
+            # Get or create CSV config
+            uow_csv_config = bootstrap.bootstrap()
+            with uow_csv_config:
+                csv_config = get_or_create_csv_config(uow_csv_config, current_user.id, assembly_id)
+
+                # Get available columns from respondents for validation hints
+                respondents = uow_csv_config.respondents.get_by_assembly_id(assembly_id)
+                if respondents and respondents[0].attributes:
+                    csv_available_columns = sorted(respondents[0].attributes.keys())
+
+            # Create form with current values from SelectionSettings
+            csv_settings_form = DbSelectionSettingsForm(
+                data={
+                    "check_same_address": sel_settings.check_same_address if sel_settings else True,
+                    "check_same_address_cols_string": sel_settings.check_same_address_cols_string
+                    if sel_settings
+                    else "",
+                    "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
+                },
+                available_columns=csv_available_columns,
+            )
+
         # Determine tab enabled states
         targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
             data_source, gsheet, csv_status
@@ -343,6 +377,10 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
             csv_status=csv_status,
+            csv_settings_form=csv_settings_form,
+            csv_available_columns=csv_available_columns,
+            csv_mode=csv_mode,
+            csv_config=csv_config,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
