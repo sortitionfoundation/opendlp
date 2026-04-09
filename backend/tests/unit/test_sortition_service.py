@@ -173,6 +173,64 @@ class TestGetSelectionRunStatus:
 
         assert result.run_record is None
 
+    def test_get_selection_run_status_returns_log_messages_while_running(self):
+        """While the task is running (PROGRESS state in celery), the result must
+        include log_messages from the DB record so the modal shows live updates."""
+        uow = FakeUnitOfWork()
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-progress",
+            log_messages=["Task submitted", "Loading features", "Loaded 5 features"],
+        )
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.id = "celery-progress"
+            mock_result.state = "PROGRESS"
+            mock_result.successful.return_value = False
+            mock_result.info = {"features_status": "ok"}
+            mock_async_result.return_value = mock_result
+
+            result = sortition.get_selection_run_status(uow, task_id)
+
+        assert result.log_messages == [
+            "Task submitted",
+            "Loading features",
+            "Loaded 5 features",
+        ]
+
+    def test_get_selection_run_status_returns_log_messages_while_pending(self):
+        """While the task is still queued (PENDING in celery), the result must
+        still include the initial submission log message from the DB record."""
+        uow = FakeUnitOfWork()
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            status=SelectionRunStatus.PENDING,
+            celery_task_id="celery-pending",
+            log_messages=["Task submitted"],
+        )
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_result = Mock()
+            mock_result.id = "celery-pending"
+            mock_result.state = "PENDING"
+            mock_result.successful.return_value = False
+            mock_result.info = None
+            mock_async_result.return_value = mock_result
+
+            result = sortition.get_selection_run_status(uow, task_id)
+
+        assert result.log_messages == ["Task submitted"]
+
 
 class TestGetManageOldTabsStatus:
     def get_run_result(self, task_is_list: bool, success: bool | None) -> sortition.RunResult:
