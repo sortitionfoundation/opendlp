@@ -136,6 +136,11 @@
         background-color: var(--color-button-tertiary-bg-hover) !important;
     }
 
+    /* Danger button hover */
+    .btn-danger-hover:hover:not(:disabled) {
+        background-color: var(--color-button-danger-bg-hover) !important;
+    }
+
     /* Focus ring for all buttons - keyboard navigation only */
     .btn-focus:focus-visible {
         outline: 2px solid var(--color-focus-ring);
