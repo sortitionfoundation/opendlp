@@ -732,26 +732,17 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, celery + unit tests pass.
 - [x] **Committed.**
 
-### Phase 5 — emit `read_gsheet` phase from `_internal_load_gsheet`
+### Phase 5 — emit `read_gsheet` phase from `_internal_load_gsheet` ✅
 
-- [ ] **RED:** add
-  `test_internal_load_gsheet_emits_read_gsheet_phase`. Use a recording
-  fake reporter (simple list-backed class in the test file) and call
-  `_internal_load_gsheet(..., progress_reporter=recording)` against
-  an existing gsheet-load test fixture. Assert that the recording
-  reporter received at least one `start_phase("read_gsheet",
-  total=None, ...)` call, and that it happened before the first
-  feature load. Fails — no kwarg, no call.
-- [ ] **GREEN:** add `progress_reporter: ProgressReporter | None = None`
-  to `_internal_load_gsheet` (`tasks.py:170`). At the top of the
-  function body, after logging is set up:
-  ```python
-  reporter = progress_reporter or NullProgressReporter()
-  reporter.start_phase("read_gsheet", total=None)
-  ```
-  Import `NullProgressReporter`. Run the test.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `feat: emit read_gsheet progress phase`.
+- [x] **RED:** `TestInternalLoadGsheetEmitsReadPhase` in
+  `tests/unit/test_celery_tasks_progress.py` — recording reporter,
+  mocked `select_data`, asserts a `start_phase("read_gsheet",
+  total=None)` was emitted.
+- [x] **GREEN:** added `progress_reporter` kwarg to
+  `_internal_load_gsheet`; emits `start_phase("read_gsheet",
+  total=None)` at the top, coerces `None` → `NullProgressReporter`.
+- [x] `just check` clean, celery tests pass.
+- [x] **Committed.**
 
 ### Phase 6 — emit `write_gsheet` phase from `_internal_write_selected`
 

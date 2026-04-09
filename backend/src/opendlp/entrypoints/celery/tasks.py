@@ -17,7 +17,7 @@ from sortition_algorithms import (
     settings,
 )
 from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
-from sortition_algorithms.progress import ProgressReporter
+from sortition_algorithms.progress import NullProgressReporter, ProgressReporter
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
@@ -178,7 +178,10 @@ def _internal_load_gsheet(
     settings: settings.Settings,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
+    reporter = progress_reporter or NullProgressReporter()
+    reporter.start_phase("read_gsheet", total=None)
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()

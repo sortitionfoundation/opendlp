@@ -107,3 +107,64 @@ class TestInternalRunSelectForwardsReporter:
             )
 
         assert mock_run.call_args.kwargs["progress_reporter"] is None
+
+
+class TestInternalLoadGsheetEmitsReadPhase:
+    def _seed(self, session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap_uow(session_factory=session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=task_id,
+                    task_type=SelectionTaskType.LOAD_GSHEET,
+                    status=SelectionRunStatus.PENDING,
+                )
+            )
+            uow.commit()
+        return task_id
+
+    def test_load_gsheet_emits_read_gsheet_phase(self, postgres_session_factory):
+        task_id = self._seed(postgres_session_factory)
+        reporter = RecordingReporter()
+
+        select_data = MagicMock(name="SelectionData")
+        select_data.data_source = MagicMock(spec=tasks.adapters.GSheetDataSource)
+        select_data.data_source.spreadsheet.title = "Fake Spreadsheet"
+        select_data.data_source.feature_tab_name = "Features"
+        select_data.data_source.people_tab_name = "People"
+        select_data.data_source.already_selected_tab_name = ""
+
+        features = MagicMock(name="features")
+        features.__len__.return_value = 0
+        features.values.return_value = []
+        people_loaded = MagicMock(name="people")
+        people_loaded.count = 0
+        already_selected = MagicMock(name="already_selected")
+        already_selected.count = 0
+
+        select_data.load_features.return_value = (features, RunReport())
+        select_data.load_people.return_value = (people_loaded, RunReport())
+        select_data.load_already_selected.return_value = (already_selected, RunReport())
+
+        task_obj = MagicMock(name="task")
+
+        with (
+            patch("opendlp.entrypoints.celery.tasks.minimum_selection", return_value=0),
+            patch("opendlp.entrypoints.celery.tasks.maximum_selection", return_value=0),
+        ):
+            tasks._internal_load_gsheet(
+                task_obj=task_obj,
+                task_id=task_id,
+                select_data=select_data,
+                settings=_empty_settings(),
+                final_task=False,
+                session_factory=postgres_session_factory,
+                progress_reporter=reporter,
+            )
+
+        read_phase_events = [e for e in reporter.events if e[0] == "start_phase" and e[1][0] == "read_gsheet"]
+        assert read_phase_events, f"expected a read_gsheet start_phase, got: {reporter.events}"
+        assert read_phase_events[0][2]["total"] is None
