@@ -777,28 +777,18 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean.
 - [x] **Committed.**
 
-### Phase 9 — wire macro into both modal templates
+### Phase 9 — wire macro into both modal templates ✅
 
-- [ ] **RED:** extend the existing progress-modal render tests (or
-  add new ones) to assert that a modal rendered with
-  `run_record.progress={"phase": "multiplicative_weights", ...}`
-  includes the determinate-bar output. Do the same for the DB modal.
-  Fail.
-- [ ] **GREEN:** in
+- [x] **RED:** `tests/unit/test_progress_modal_wiring.py` — renders
+  the full modal templates with a mock run_record and asserts the
+  progress indicator output appears.
+- [x] **GREEN:** both
   `templates/backoffice/components/db_selection_progress_modal.html`
-  and `templates/backoffice/components/selection_progress_modal.html`,
-  replace the existing `{% if run_record.is_pending or
-  run_record.is_running %}{{ spinner(_("Processing...")) }}{% endif
-  %}` block with a call to the new macro:
-  ```jinja
-  {% if run_record.is_pending or run_record.is_running %}
-      {{ progress_indicator(run_record.progress) }}
-  {% endif %}
-  ```
-  Import the macro at the top of each template.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:**
-  `feat: show live progress phase in selection modal`.
+  and `templates/backoffice/components/selection_progress_modal.html`
+  now import `progress_indicator` and call it in place of the
+  generic spinner.
+- [x] `just check` clean, 1052 tests pass.
+- [x] **Committed.**
 
 ### Phase 10 — translations
 
