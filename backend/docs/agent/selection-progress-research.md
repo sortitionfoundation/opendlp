@@ -698,41 +698,17 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, `just test-nobdd` passes (1949 tests).
 - [x] **Committed.**
 
-### Phase 2 — `DatabaseProgressReporter` in isolation
+### Phase 2 — `DatabaseProgressReporter` in isolation ✅
 
-Build and unit-test the reporter without wiring it anywhere.
-
-- [ ] **RED:** create `tests/unit/adapters/test_sortition_progress.py`
-  with tests (all should fail because the module doesn't exist yet):
-  - `test_constructor_does_not_touch_db`: build the reporter, assert
-    the injected fake session factory was never called.
-  - `test_start_phase_always_writes`: call `start_phase("a")` twice
-    back-to-back, assert two DB writes happened and the second write
-    shows phase `a` with `current=0`.
-  - `test_update_within_min_interval_is_dropped`: monkeypatch
-    `time.monotonic` to a controllable clock, call `start_phase`
-    (flush), then `update(1)` at `t+0.1s`, assert **no** write
-    happened for the update.
-  - `test_update_beyond_min_interval_writes`: same setup, but
-    advance the clock to `t+1.1s` before `update(1)`; assert a
-    write happened with `current=1` and the stored `phase` and
-    `total` match the last `start_phase`.
-  - `test_phase_transition_forces_flush_even_within_interval`: call
-    `start_phase("a")`, advance clock 0.1s, call `start_phase("b")`;
-    assert the second start wrote despite being inside the interval.
-  - `test_missing_record_is_silent_noop`: fake UoW where
-    `selection_run_records.get_by_task_id` returns `None`; reporter
-    methods must not raise.
-  - `test_end_phase_is_noop`: call `end_phase`, assert no DB write.
-  Run the file — all fail with `ImportError` or `AttributeError`.
-- [ ] **GREEN:** create `src/opendlp/adapters/sortition_progress.py`
-  with the `DatabaseProgressReporter` class as drafted above. Keep it
-  minimal — no logging, no extra branches. Run the tests until they
-  all pass.
-- [ ] Run `just test` — just the new file — then the full suite.
-- [ ] Run `just check`.
-- [ ] **Commit:**
-  `feat: add DatabaseProgressReporter for selection progress events`.
+- [x] **RED:** `tests/unit/test_sortition_progress.py` with eight
+  unit tests covering throttling, phase transitions, missing record,
+  and `end_phase` no-op. Monkeypatches `time.monotonic` and
+  `bootstrap` inside the module.
+- [x] **GREEN:** `src/opendlp/adapters/sortition_progress.py`
+  implemented.
+- [x] `just check` clean, unit + integration suite passes (1027
+  tests).
+- [x] **Committed.**
 
 ### Phase 3 — clear progress on terminal status
 
