@@ -473,7 +473,10 @@ def _internal_write_selected(
     settings: settings.Settings,
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> RunReport:
+    reporter = progress_reporter or NullProgressReporter()
+    reporter.start_phase("write_gsheet", total=None)
     report = RunReport()
     _append_run_log(task_id, [_("About to write selected and remaining tabs")], session_factory=session_factory)
     try:

@@ -168,3 +168,51 @@ class TestInternalLoadGsheetEmitsReadPhase:
         read_phase_events = [e for e in reporter.events if e[0] == "start_phase" and e[1][0] == "read_gsheet"]
         assert read_phase_events, f"expected a read_gsheet start_phase, got: {reporter.events}"
         assert read_phase_events[0][2]["total"] is None
+
+
+class TestInternalWriteSelectedEmitsWritePhase:
+    def _seed(self, session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap_uow(session_factory=session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=task_id,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                    status=SelectionRunStatus.RUNNING,
+                )
+            )
+            uow.commit()
+        return task_id
+
+    def test_write_selected_emits_write_gsheet_phase(self, postgres_session_factory):
+        task_id = self._seed(postgres_session_factory)
+        reporter = RecordingReporter()
+
+        select_data = MagicMock(name="SelectionData")
+        select_data.output_selected_remaining.return_value = ([], RunReport())
+
+        features = MagicMock(name="features")
+        people_loaded = MagicMock(name="people")
+
+        with patch(
+            "opendlp.entrypoints.celery.tasks.selected_remaining_tables",
+            return_value=([["header"]], [["header"]], None),
+        ):
+            tasks._internal_write_selected(
+                task_id=task_id,
+                select_data=select_data,
+                features=features,
+                people=people_loaded,
+                already_selected=None,
+                settings=_empty_settings(),
+                selected_panels=[frozenset({"id1"})],
+                session_factory=postgres_session_factory,
+                progress_reporter=reporter,
+            )
+
+        write_phase_events = [e for e in reporter.events if e[0] == "start_phase" and e[1][0] == "write_gsheet"]
+        assert write_phase_events, f"expected a write_gsheet start_phase, got: {reporter.events}"
+        assert write_phase_events[0][2]["total"] is None

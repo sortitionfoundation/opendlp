@@ -744,17 +744,14 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, celery tests pass.
 - [x] **Committed.**
 
-### Phase 6 — emit `write_gsheet` phase from `_internal_write_selected`
+### Phase 6 — emit `write_gsheet` phase from `_internal_write_selected` ✅
 
-- [ ] **RED:** add
-  `test_internal_write_selected_emits_write_gsheet_phase`. Same
-  recording-reporter pattern. Assert `start_phase("write_gsheet",
-  total=None, ...)` was called. Fails.
-- [ ] **GREEN:** add `progress_reporter` kwarg to
-  `_internal_write_selected` (`tasks.py:458`); call
-  `reporter.start_phase("write_gsheet", total=None)` at the top.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `feat: emit write_gsheet progress phase`.
+- [x] **RED:** `TestInternalWriteSelectedEmitsWritePhase` in
+  `tests/unit/test_celery_tasks_progress.py`.
+- [x] **GREEN:** `progress_reporter` kwarg plus
+  `start_phase("write_gsheet", total=None)` at the top.
+- [x] `just check` clean.
+- [x] **Committed.**
 
 ### Phase 7 — instantiate reporter in each Celery task
 
