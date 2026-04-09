@@ -162,7 +162,7 @@ def replacement_task_completes(admin_logged_in_page: Page):
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
     # Wait for Completed status badge to appear
-    expect(modal.get_by_text("Completed")).to_be_visible(timeout=30_000)
+    expect(modal.get_by_text("Selection completed")).to_be_visible(timeout=30_000)
 
 
 @when("the user clicks Cancel Task")
@@ -301,7 +301,7 @@ def modal_shows_completed(admin_logged_in_page: Page):
     """Verify modal shows Completed status."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    expect(modal.get_by_text("Completed")).to_be_visible()
+    expect(modal.get_by_text("Selection completed")).to_be_visible()
 
 
 @then("the result message shows success")
