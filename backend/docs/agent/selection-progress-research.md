@@ -765,43 +765,17 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, 1038 tests pass.
 - [x] **Committed.**
 
-### Phase 8 — template: `progress_indicator` macro
+### Phase 8 — template: `progress_indicator` macro ✅
 
-Pure template work, no Python changes.
-
-- [ ] **RED:** create a Jinja/template test (follow existing
-  `tests/unit/entrypoints/...` template-render patterns, or a
-  Flask-test-client test against a minimal route that renders the
-  macro) with these cases:
-  - `progress=None` → output contains the generic
-    `_("Processing...")` spinner (current behaviour).
-  - `progress={"phase": "read_gsheet", "current": 0, "total": None}`
-    → output contains the translated "Reading spreadsheet" label
-    and a spinner, no `<progress>` / bar element.
-  - `progress={"phase": "multiplicative_weights", "current": 45, "total": 200}`
-    → output contains a determinate bar (look for
-    `role="progressbar"` or the bar's expected CSS class), and the
-    "Finding diverse committees (45 of 200 rounds)" string.
-  - `progress={"phase": "maximin_optimization", "current": 17, "total": None}`
-    → spinner + "Optimising for maximin fairness (iteration 17)",
-    no bar.
-  - `progress={"phase": "mystery_future_phase", "current": 5, "total": 10}`
-    → fallback rendering that includes the raw `phase` name and
-    doesn't raise a template error.
-  All fail — macro doesn't exist.
-- [ ] **GREEN:** add `progress_indicator(progress)` macro to
-  `templates/backoffice/components/modal.html`:
-  - Early-return the existing spinner when `progress` is None.
-  - Dispatch on `progress.phase` using an `{% if/elif %}` chain (or
-    a dict-backed set-variable pattern that's CSP-safe).
-  - For `total` set: render a determinate bar showing
-    `current / total` plus the label.
-  - For `total` None: render the spinner plus the label.
-  - Unknown phase: spinner + raw `phase` name for debuggability.
-  All strings wrapped in `_()` / `gettext`.
-- [ ] Run the new template tests + full suite.
-- [ ] Run `just check`.
-- [ ] **Commit:** `feat: add progress_indicator template macro`.
+- [x] **RED:** `tests/unit/test_progress_indicator_macro.py` — ten
+  Jinja render tests covering None, read/write gsheet, library
+  phases with and without totals, and unknown-phase fallback.
+- [x] **GREEN:** `progress_indicator(progress)` macro in
+  `templates/backoffice/components/modal.html`. If/elif chain over
+  phase names, determinate bar when total is known, spinner-plus-label
+  otherwise.
+- [x] `just check` clean.
+- [x] **Committed.**
 
 ### Phase 9 — wire macro into both modal templates
 
