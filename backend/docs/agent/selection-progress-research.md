@@ -710,40 +710,16 @@ Standalone schema change. No behaviour yet.
   tests).
 - [x] **Committed.**
 
-### Phase 3 — clear progress on terminal status
+### Phase 3 — clear progress on terminal status ✅
 
-Make `_update_selection_record` reset `progress` to `None` when the
-incoming status is terminal.
-
-- [ ] **RED:** in `tests/unit/entrypoints/celery/test_tasks.py` (or
-  wherever `_update_selection_record` is already touched; grep for
-  existing references and colocate), add four tests:
-  - `test_update_to_completed_clears_progress`: seed a record with
-    a non-null progress dict, call `_update_selection_record(...,
-    status=COMPLETED)`, assert `record.progress is None`.
-  - `test_update_to_failed_clears_progress`: same, with `FAILED`.
-  - `test_update_to_cancelled_clears_progress`: same, with
-    `CANCELLED`.
-  - `test_update_to_running_preserves_progress`: seed a record with
-    non-null progress, call `_update_selection_record(...,
-    status=RUNNING)`, assert the progress dict is still intact.
-  Run — the first three fail (progress survives); the fourth
-  already passes.
-- [ ] **GREEN:** inside `_update_selection_record` at
-  `tasks.py:117`, after the existing field updates, add:
-  ```python
-  if status in (
-      SelectionRunStatus.COMPLETED,
-      SelectionRunStatus.FAILED,
-      SelectionRunStatus.CANCELLED,
-  ):
-      record.progress = None
-      if hasattr(record, "_sa_instance_state"):
-          flag_modified(record, "progress")
-  ```
-  Run the tests — all pass.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `feat: clear selection progress on terminal status`.
+- [x] **RED:** `TestUpdateSelectionRecordClearsProgress` in
+  `tests/integration/test_celery_tasks.py` — four tests covering
+  `COMPLETED`, `FAILED`, `CANCELLED` (should clear) and `RUNNING`
+  (should preserve).
+- [x] **GREEN:** added terminal-status clearing to
+  `_update_selection_record` in `entrypoints/celery/tasks.py`.
+- [x] `just check` clean, celery integration tests pass.
+- [x] **Committed.**
 
 ### Phase 4 — wire reporter into `_internal_run_select`
 

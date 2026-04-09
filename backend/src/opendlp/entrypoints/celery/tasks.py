@@ -156,6 +156,9 @@ def _update_selection_record(
         if remaining_ids is not None:
             record.remaining_ids = remaining_ids
             flag_modified(record, "remaining_ids")
+        if status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED):
+            record.progress = None
+            flag_modified(record, "progress")
 
         uow.commit()
 
