@@ -3,6 +3,7 @@ ABOUTME: Inline form to add a target category in the backoffice
 ABOUTME: Used as HTMX swap target when adding categories
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, first_error %}
 
 <div id="add-category-form">
     <form method="post"
@@ -13,19 +14,15 @@ ABOUTME: Used as HTMX swap target when adding categories
           class="mt-6">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="flex items-end gap-3 flex-wrap">
-            <div class="flex flex-col gap-1.5">
-                <label for="new-category-name" class="text-label-lg" style="color: var(--color-headings);">{{ _("New category name") }}</label>
-                {% if add_category_form.name.errors %}
-                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ add_category_form.name.errors[0] }}</p>
-                {% endif %}
-                <input class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                       style="background-color: var(--color-page-background); border: 1px solid {% if add_category_form.name.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                       type="text" name="name"
-                       id="new-category-name"
-                       value="{{ add_category_form.name.data or '' }}"
-                       placeholder="{{ _('e.g. Gender') }}"
-                       required />
-            </div>
+            {{ input(
+            name="name",
+            label=_("New category name"),
+            id="new-category-name",
+            value=add_category_form.name.data or "",
+            placeholder=_("e.g. Gender"),
+            required=true,
+            error=first_error(add_category_form.name.errors),
+            ) }}
             {{ button(_("Add category"), variant="primary", type="submit") }}
         </div>
     </form>
