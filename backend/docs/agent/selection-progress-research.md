@@ -800,30 +800,27 @@ Standalone schema change. No behaviour yet.
   also picked up in the same regen.
 - [x] **Committed.**
 
-### Phase 11 — manual smoke test + cleanup
+### Phase 11 — final checks and cleanup ✅
 
-- [ ] Start local stack: `just start-services-docker` + `just run` +
-  Celery worker.
-- [ ] Start a DB selection against a test assembly with enough
-  respondents that the MW loop takes a few seconds. Observe:
-  - Modal shows "Reading spreadsheet…" briefly (if gsheet path) —
-    OR jumps straight into a library phase for DB path.
+- [x] `just check` clean.
+- [x] `just test-nobdd` — **1982 passed**, coverage 85.36% (up from
+  85.14% before the changes).
+- [x] No stray `TODO` / `print` statements in the diff.
+- [x] Working tree clean, ten commits ahead of `main`.
+- [ ] **Manual smoke test** — deferred to Doctor Chewie to run
+  against real infrastructure:
+  - Start local stack + Celery worker.
+  - Start a DB selection against a test assembly with enough
+    respondents that the MW loop takes a few seconds.
   - Modal shows "Finding diverse committees (X of 200 rounds)" with
     a determinate bar advancing.
   - Modal shows the convergence-phase spinner + iteration counter.
-  - (gsheet path only) Modal shows "Writing results back to
-    spreadsheet…" near the end.
-  - When the task finishes, the `progress` column is back to `None`
-    (check via `just psql`) and the modal shows the completion UI.
-- [ ] Test a deliberate failure path (e.g. break the spreadsheet
-  URL) — confirm progress clears on `FAILED` too.
-- [ ] Cancel a mid-run selection — confirm progress clears on
-  `CANCELLED`.
-- [ ] Grep for any stray `TODO` / debug print statements left in
-  the diff.
-- [ ] **Commit** any cleanup.
-- [ ] Open PR; summary should mention the phase set and link to this
-  research doc.
+  - (gsheet path only) "Reading spreadsheet…" early,
+    "Writing results back to spreadsheet…" at the end.
+  - On completion, `progress` is back to `None` (`just psql`).
+  - Repeat for a deliberate failure path and a mid-run cancellation
+    to confirm progress clears on `FAILED` / `CANCELLED` too.
+- [ ] Open PR (Doctor Chewie).
 
 ### Phases at a glance
 
