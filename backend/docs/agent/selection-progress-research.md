@@ -721,30 +721,16 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, celery integration tests pass.
 - [x] **Committed.**
 
-### Phase 4 — wire reporter into `_internal_run_select`
+### Phase 4 — wire reporter into `_internal_run_select` ✅
 
-Pass the reporter through to `run_stratification()`.
-
-- [ ] **RED:** in the celery task tests, add
-  `test_internal_run_select_forwards_reporter_to_run_stratification`.
-  Monkeypatch `run_stratification` to capture its kwargs, call
-  `_internal_run_select(..., progress_reporter=recording_reporter)`,
-  assert the captured `progress_reporter` kwarg is the reporter we
-  passed. Also add `test_internal_run_select_defaults_reporter_to_none`
-  for the existing call sites that don't pass a reporter. Run — fail
-  (signature doesn't accept the kwarg).
-- [ ] **GREEN:** add `progress_reporter: ProgressReporter | None = None`
-  to `_internal_run_select` (`tasks.py:353`) and pass it through:
-  ```python
-  success, selected_panels, report = run_stratification(
-      ...,
-      progress_reporter=progress_reporter,
-  )
-  ```
-  Import `ProgressReporter` from `sortition_algorithms.progress`.
-  Tests pass.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `feat: thread progress reporter into _internal_run_select`.
+- [x] **RED:** `tests/unit/test_celery_tasks_progress.py` with two
+  tests that mock `run_stratification` and assert the reporter
+  kwarg is forwarded (and defaults to `None`).
+- [x] **GREEN:** added `progress_reporter: ProgressReporter | None`
+  kwarg to `_internal_run_select` and forwarded it into
+  `run_stratification()`.
+- [x] `just check` clean, celery + unit tests pass.
+- [x] **Committed.**
 
 ### Phase 5 — emit `read_gsheet` phase from `_internal_load_gsheet`
 

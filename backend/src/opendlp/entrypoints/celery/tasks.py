@@ -17,6 +17,7 @@ from sortition_algorithms import (
     settings,
 )
 from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
+from sortition_algorithms.progress import ProgressReporter
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
@@ -363,6 +364,7 @@ def _internal_run_select(
     already_selected: people.People | None = None,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     report = RunReport()
     # Update SelectionRunRecord to running status
@@ -400,6 +402,7 @@ def _internal_run_select(
             settings=settings,
             test_selection=test_selection,
             already_selected=already_selected,
+            progress_reporter=progress_reporter,
         )
 
         if success:
