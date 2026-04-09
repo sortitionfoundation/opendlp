@@ -3,7 +3,7 @@ ABOUTME: HTMX partial for a single target category block in the backoffice
 ABOUTME: Displays category header, values table, missing values, and add value form
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/input.html" import input, first_error %}
 
 {% set has_counts = respondent_counts is defined and respondent_counts %}
 {% set col_count = 3 + (1 if has_counts else 0) + (1 if can_manage else 0) %}
@@ -27,10 +27,8 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                       hx-target="#category-{{ category.id }}"
                       hx-swap="outerHTML">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit"
-                            class="btn-focus"
-                            style="font-family: var(--font-button); font-weight: 700; font-size: 14px; line-height: 16px; letter-spacing: 0.4px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; padding: 12px 16px; background: none; border: none; color: var(--color-error-600);"
-                            data-confirm="{{ _('Are you sure you want to delete the category &quot;%(name)s&quot; and all its values?', name=category.name) }}">{{ _("Delete") }}</button>
+                    {% set delete_category_attrs %}data-confirm="{{ _('Are you sure you want to delete the category &quot;%(name)s&quot; and all its values?', name=category.name) }}"{% endset %}
+                    {{ button(_("Delete"), variant="danger", type="submit", attrs=delete_category_attrs) }}
                 </form>
             {% endif %}
         </div>
@@ -44,12 +42,7 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                   hx-swap="outerHTML"
                   class="flex items-center gap-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <input class="text-body-md px-4 py-2.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                       style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                       type="text"
-                       name="name"
-                       value="{{ category.name }}"
-                       required />
+                {{ input(name="name", value=category.name, required=true) }}
                 {{ button(_("Save"), variant="primary", type="submit") }}
                 {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
             </form>
@@ -129,10 +122,8 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                                                   hx-target="#category-{{ category.id }}"
                                                   hx-swap="outerHTML">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                                <button type="submit"
-                                                        class="btn-focus"
-                                                        style="font-family: var(--font-button); font-weight: 700; font-size: 14px; line-height: 16px; letter-spacing: 0.4px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; padding: 12px 16px; background: none; border: none; color: var(--color-error-600);"
-                                                        data-confirm="{{ _('Delete value &quot;%(value)s&quot;?', value=val.value) }}">{{ _("Delete") }}</button>
+                                                {% set delete_value_attrs %}data-confirm="{{ _('Delete value &quot;%(value)s&quot;?', value=val.value) }}"{% endset %}
+                                                {{ button(_("Delete"), variant="danger", type="submit", attrs=delete_value_attrs) }}
                                             </form>
                                         </div>
                                     </td>
@@ -154,42 +145,36 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                                             {% set vf = None %}
                                         {% endif %}
                                         <div class="flex items-start gap-3 flex-wrap">
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-label-md" style="color: var(--color-headings);" for="edit-value-{{ val.value_id }}">{{ _("Value") }}</label>
-                                                {% if vf and vf.value.errors %}
-                                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ vf.value.errors[0] }}</p>
-                                                {% endif %}
-                                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2"
-                                                       style="background-color: var(--color-page-background); border: 1px solid {% if vf and vf.value.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                                       type="text" name="value"
-                                                       id="edit-value-{{ val.value_id }}"
-                                                       value="{{ vf.value.data if vf and vf.value.data else val.value }}"
-                                                       required />
-                                            </div>
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-label-md" style="color: var(--color-headings);" for="edit-min-{{ val.value_id }}">{{ _("Min") }}</label>
-                                                {% if vf and vf.min_count.errors %}
-                                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ vf.min_count.errors[0] }}</p>
-                                                {% endif %}
-                                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 w-20"
-                                                       style="background-color: var(--color-page-background); border: 1px solid {% if vf and vf.min_count.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                                       type="number" name="min_count"
-                                                       id="edit-min-{{ val.value_id }}"
-                                                       value="{{ vf.min_count.data if vf and vf.min_count.data is not none else val.min }}"
-                                                       min="0" required />
-                                            </div>
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-label-md" style="color: var(--color-headings);" for="edit-max-{{ val.value_id }}">{{ _("Max") }}</label>
-                                                {% if vf and vf.max_count.errors %}
-                                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ vf.max_count.errors[0] }}</p>
-                                                {% endif %}
-                                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 w-20"
-                                                       style="background-color: var(--color-page-background); border: 1px solid {% if vf and vf.max_count.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                                       type="number" name="max_count"
-                                                       id="edit-max-{{ val.value_id }}"
-                                                       value="{{ vf.max_count.data if vf and vf.max_count.data is not none else val.max }}"
-                                                       min="0" required />
-                                            </div>
+                                            {{ input(
+                                            name="value",
+                                            label=_("Value"),
+                                            id="edit-value-" ~ val.value_id,
+                                            value=vf.value.data if vf and vf.value.data else val.value,
+                                            required=true,
+                                            error=first_error(vf.value.errors) if vf else "",
+                                            ) }}
+                                            {{ input(
+                                            name="min_count",
+                                            label=_("Min"),
+                                            type="number",
+                                            id="edit-min-" ~ val.value_id,
+                                            value=vf.min_count.data if vf and vf.min_count.data is not none else val.min,
+                                            required=true,
+                                            classes="w-20",
+                                            attrs='min="0"',
+                                            error=first_error(vf.min_count.errors) if vf else "",
+                                            ) }}
+                                            {{ input(
+                                            name="max_count",
+                                            label=_("Max"),
+                                            type="number",
+                                            id="edit-max-" ~ val.value_id,
+                                            value=vf.max_count.data if vf and vf.max_count.data is not none else val.max,
+                                            required=true,
+                                            classes="w-20",
+                                            attrs='min="0"',
+                                            error=first_error(vf.max_count.errors) if vf else "",
+                                            ) }}
                                             <div class="flex items-end gap-2" style="padding-top: 1.5rem;">
                                                 {{ button(_("Save"), variant="primary", type="submit") }}
                                                 {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
@@ -286,43 +271,37 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             {% set af = None %}
                         {% endif %}
                         <div class="flex items-start gap-3 flex-wrap">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-label-md" style="color: var(--color-headings);" for="add-value-{{ category.id }}">{{ _("Value") }}</label>
-                                {% if af and af.value.errors %}
-                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ af.value.errors[0] }}</p>
-                                {% endif %}
-                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2"
-                                       style="background-color: var(--color-page-background); border: 1px solid {% if af and af.value.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                       type="text" name="value"
-                                       id="add-value-{{ category.id }}"
-                                       value="{{ af.value.data if af and af.value.data else '' }}"
-                                       placeholder="{{ _('e.g. Male') }}"
-                                       required />
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-label-md" style="color: var(--color-headings);" for="add-min-{{ category.id }}">{{ _("Min") }}</label>
-                                {% if af and af.min_count.errors %}
-                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ af.min_count.errors[0] }}</p>
-                                {% endif %}
-                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 w-20"
-                                       style="background-color: var(--color-page-background); border: 1px solid {% if af and af.min_count.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                       type="number" name="min_count"
-                                       id="add-min-{{ category.id }}"
-                                       value="{{ af.min_count.data if af and af.min_count.data is not none else '' }}"
-                                       min="0" required />
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-label-md" style="color: var(--color-headings);" for="add-max-{{ category.id }}">{{ _("Max") }}</label>
-                                {% if af and af.max_count.errors %}
-                                    <p class="text-body-sm" style="color: var(--color-error-600);">{{ af.max_count.errors[0] }}</p>
-                                {% endif %}
-                                <input class="text-body-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 w-20"
-                                       style="background-color: var(--color-page-background); border: 1px solid {% if af and af.max_count.errors %}var(--color-error-600){% else %}var(--color-borders-dividers){% endif %}; color: var(--color-body-text); --tw-ring-color: var(--color-focus-ring);"
-                                       type="number" name="max_count"
-                                       id="add-max-{{ category.id }}"
-                                       value="{{ af.max_count.data if af and af.max_count.data is not none else '' }}"
-                                       min="0" required />
-                            </div>
+                            {{ input(
+                            name="value",
+                            label=_("Value"),
+                            id="add-value-" ~ category.id|string,
+                            value=af.value.data if af and af.value.data else "",
+                            placeholder=_("e.g. Male"),
+                            required=true,
+                            error=first_error(af.value.errors) if af else "",
+                            ) }}
+                            {{ input(
+                            name="min_count",
+                            label=_("Min"),
+                            type="number",
+                            id="add-min-" ~ category.id|string,
+                            value=af.min_count.data if af and af.min_count.data is not none else "",
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0"',
+                            error=first_error(af.min_count.errors) if af else "",
+                            ) }}
+                            {{ input(
+                            name="max_count",
+                            label=_("Max"),
+                            type="number",
+                            id="add-max-" ~ category.id|string,
+                            value=af.max_count.data if af and af.max_count.data is not none else "",
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0"',
+                            error=first_error(af.max_count.errors) if af else "",
+                            ) }}
                             <div class="flex items-end gap-2" style="padding-top: 1.5rem;">
                                 {{ button(_("Add"), variant="primary", type="submit") }}
                                 {{ button(_("Cancel"), variant="tertiary", attrs='@click="adding = false"') }}
