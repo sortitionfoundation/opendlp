@@ -790,17 +790,15 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean, 1052 tests pass.
 - [x] **Committed.**
 
-### Phase 10 — translations
+### Phase 10 — translations ✅
 
-- [ ] Run `just translate-regen` to extract the new `_()` strings
-  into the `.pot` and `.po` files.
-- [ ] Eyeball the diff for the new message IDs; confirm no
-  accidentally-extracted strings.
-- [ ] For any language file that has translations, add placeholder
-  translations (or leave fuzzy) per the project's existing
-  convention — follow what `docs/translations.md` says.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `i18n: extract selection progress phase strings`.
+- [x] Ran `just translate-regen`; all 8 new progress-phase strings
+  extracted into `translations/messages.pot` and merged into the
+  Hungarian `.po` with empty `msgstr ""` (or `#, fuzzy` heuristic
+  matches) for the translator to fill in later.
+- [x] Other line-number-only updates from unrelated template churn
+  also picked up in the same regen.
+- [x] **Committed.**
 
 ### Phase 11 — manual smoke test + cleanup
 
