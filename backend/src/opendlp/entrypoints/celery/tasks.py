@@ -26,6 +26,7 @@ import opendlp.logging
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
+from opendlp.adapters.sortition_progress import DatabaseProgressReporter
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
@@ -706,6 +707,7 @@ def run_select_from_db(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
 
     success, features, loaded_people, load_report = _internal_load_db(
@@ -731,6 +733,7 @@ def run_select_from_db(
         already_selected=None,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(select_report)
     if not success:
@@ -757,6 +760,7 @@ def load_gsheet(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
         task_obj=self,
@@ -765,6 +769,7 @@ def load_gsheet(
         settings=settings,
         final_task=True,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
 
 
@@ -781,6 +786,7 @@ def run_select(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
     select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
     success, features, people, already_selected, load_report = _internal_load_gsheet(
@@ -790,6 +796,7 @@ def run_select(
         settings=settings,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(load_report)
     if not success:
@@ -807,6 +814,7 @@ def run_select(
         already_selected=already_selected,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(select_report)
     if not success:
@@ -822,6 +830,7 @@ def run_select(
         settings=settings,
         selected_panels=selected_panels,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(write_report)
 

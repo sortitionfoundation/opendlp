@@ -753,44 +753,17 @@ Standalone schema change. No behaviour yet.
 - [x] `just check` clean.
 - [x] **Committed.**
 
-### Phase 7 — instantiate reporter in each Celery task
+### Phase 7 — instantiate reporter in each Celery task ✅
 
-Thread the real `DatabaseProgressReporter` end-to-end through the
-three tasks that need it.
-
-- [ ] **RED:** add task-level integration tests (using the existing
-  fake UoW / in-memory session infrastructure — look for how existing
-  `run_select`/`run_select_from_db` tests construct their fixtures):
-  - `test_run_select_writes_read_gsheet_progress`: invoke `run_select`
-    directly (not through Celery broker) with a tiny dataset, assert
-    that at some point during the run the `SelectionRunRecord.progress`
-    column contains `phase="read_gsheet"`. Use a mid-task hook or
-    poll the DB in a thread; alternatively, inject a fake
-    `run_stratification` that asserts `record.progress["phase"]` is
-    already `"read_gsheet"` by the time it's called.
-  - `test_run_select_from_db_writes_progress`: same idea, but assert
-    a library phase appears (mock `run_stratification` to immediately
-    call `reporter.start_phase("multiplicative_weights", total=200)`
-    and verify the DB row reflects that mid-call).
-  - `test_load_gsheet_writes_read_gsheet_progress`: invoke
-    `load_gsheet` task directly; assert progress is set to
-    `read_gsheet` during the call.
-  - `test_progress_is_cleared_when_task_completes`: after any
-    successful run, the terminal-status update (Phase 3) should have
-    reset `progress` to `None`. Assert this.
-  Fail — tasks don't instantiate a reporter yet.
-- [ ] **GREEN:** at the top of `run_select`, `run_select_from_db`, and
-  `load_gsheet` (`tasks.py:687`, `:740`, `:760`), after
-  `_set_up_celery_logging(...)`:
-  ```python
-  reporter = DatabaseProgressReporter(
-      task_id=task_id,
-      session_factory=session_factory,
-  )
-  ```
-  Pass `progress_reporter=reporter` into each `_internal_*` call.
-- [ ] Run `just test` + `just check`.
-- [ ] **Commit:** `feat: wire DatabaseProgressReporter into selection tasks`.
+- [x] **RED:** `TestCeleryTasksInstantiateReporter` in
+  `tests/unit/test_celery_tasks_progress.py` — three tests that
+  patch `DatabaseProgressReporter` and the `_internal_*` helpers and
+  assert the same reporter instance is forwarded to each helper.
+- [x] **GREEN:** `run_select`, `run_select_from_db`, and `load_gsheet`
+  now each instantiate a `DatabaseProgressReporter` at the top and
+  pass it through to the `_internal_*` helpers they call.
+- [x] `just check` clean, 1038 tests pass.
+- [x] **Committed.**
 
 ### Phase 8 — template: `progress_indicator` macro
 

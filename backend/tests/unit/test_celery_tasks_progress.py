@@ -216,3 +216,100 @@ class TestInternalWriteSelectedEmitsWritePhase:
         write_phase_events = [e for e in reporter.events if e[0] == "start_phase" and e[1][0] == "write_gsheet"]
         assert write_phase_events, f"expected a write_gsheet start_phase, got: {reporter.events}"
         assert write_phase_events[0][2]["total"] is None
+
+
+class TestCeleryTasksInstantiateReporter:
+    """Verify each Celery task builds a DatabaseProgressReporter and threads it through."""
+
+    def _seed(self, session_factory, task_type):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap_uow(session_factory=session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=task_id,
+                    task_type=task_type,
+                    status=SelectionRunStatus.PENDING,
+                )
+            )
+            uow.commit()
+        return task_id, assembly_id
+
+    def test_run_select_instantiates_reporter_and_forwards_it(self, postgres_session_factory):
+        task_id, _assembly_id = self._seed(postgres_session_factory, SelectionTaskType.SELECT_GSHEET)
+        data_source = MagicMock(name="data_source")
+
+        with (
+            patch.object(tasks, "DatabaseProgressReporter") as mock_reporter_cls,
+            patch.object(tasks, "_internal_load_gsheet") as mock_load,
+            patch.object(tasks, "_internal_run_select") as mock_select,
+            patch.object(tasks, "_internal_write_selected") as mock_write,
+        ):
+            mock_reporter_cls.return_value = MagicMock(name="reporter_instance")
+            mock_load.return_value = (True, MagicMock(), MagicMock(), MagicMock(), RunReport())
+            mock_select.return_value = (True, [frozenset({"id1"})], RunReport())
+            mock_write.return_value = RunReport()
+
+            tasks.run_select(
+                task_id=task_id,
+                data_source=data_source,
+                number_people_wanted=1,
+                settings=_empty_settings(),
+                session_factory=postgres_session_factory,
+            )
+
+        mock_reporter_cls.assert_called_once()
+        reporter_instance = mock_reporter_cls.return_value
+        assert mock_load.call_args.kwargs["progress_reporter"] is reporter_instance
+        assert mock_select.call_args.kwargs["progress_reporter"] is reporter_instance
+        assert mock_write.call_args.kwargs["progress_reporter"] is reporter_instance
+
+    def test_run_select_from_db_instantiates_reporter_and_forwards_it(self, postgres_session_factory):
+        task_id, assembly_id = self._seed(postgres_session_factory, SelectionTaskType.SELECT_FROM_DB)
+
+        with (
+            patch.object(tasks, "DatabaseProgressReporter") as mock_reporter_cls,
+            patch.object(tasks, "_internal_load_db") as mock_load,
+            patch.object(tasks, "_internal_run_select") as mock_select,
+            patch.object(tasks, "_internal_write_db_results") as mock_write,
+        ):
+            mock_reporter_cls.return_value = MagicMock(name="reporter_instance")
+            mock_load.return_value = (True, MagicMock(), MagicMock(), RunReport())
+            mock_select.return_value = (True, [frozenset({"id1"})], RunReport())
+            mock_write.return_value = RunReport()
+
+            tasks.run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=1,
+                settings=_empty_settings(),
+                session_factory=postgres_session_factory,
+            )
+
+        mock_reporter_cls.assert_called_once()
+        reporter_instance = mock_reporter_cls.return_value
+        assert mock_select.call_args.kwargs["progress_reporter"] is reporter_instance
+
+    def test_load_gsheet_instantiates_reporter_and_forwards_it(self, postgres_session_factory):
+        task_id, _assembly_id = self._seed(postgres_session_factory, SelectionTaskType.LOAD_GSHEET)
+        data_source = MagicMock(name="data_source")
+
+        with (
+            patch.object(tasks, "DatabaseProgressReporter") as mock_reporter_cls,
+            patch.object(tasks, "_internal_load_gsheet") as mock_load,
+        ):
+            mock_reporter_cls.return_value = MagicMock(name="reporter_instance")
+            mock_load.return_value = (True, MagicMock(), MagicMock(), MagicMock(), RunReport())
+
+            tasks.load_gsheet(
+                task_id=task_id,
+                data_source=data_source,
+                settings=_empty_settings(),
+                session_factory=postgres_session_factory,
+            )
+
+        mock_reporter_cls.assert_called_once()
+        reporter_instance = mock_reporter_cls.return_value
+        assert mock_load.call_args.kwargs["progress_reporter"] is reporter_instance
