@@ -218,12 +218,12 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                        style="color: var(--color-primary-action)">{{ _("View") }}</a>
                                                     {# Download button for completed DB selections with results #}
                                                     {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db') and run_record.is_completed and run_record.selected_ids %}
-                                                        {% set download_title = _("Download selected CSV") %}
+                                                        {% set download_attrs %}title="{{ _("Download selected CSV") }}"{% endset %}
                                                         {{ button(
                                                         variant="icon",
                                                         href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=run_record.task_id),
                                                         icon='<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3"/><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>',
-                                                        attrs='title="' ~ download_title ~ '"'
+                                                        attrs=download_attrs
                                                         ) }}
                                                     {% endif %}
                                                 </div>
