@@ -13,6 +13,17 @@ from opendlp.bootstrap import bootstrap
 
 
 class DatabaseProgressReporter:
+    """Persist sortition-algorithms progress events to a SelectionRunRecord row.
+
+    Implements the ``ProgressReporter`` Protocol from
+    ``sortition_algorithms.progress`` (see that module for the start_phase /
+    update / end_phase contract). Throttles writes to at most once per
+    ``min_interval_seconds``; phase transitions always force-flush so the UI
+    sees them with polling-interval lag at most. If the record has been
+    deleted while the task is still running (e.g. after a cancel), writes
+    become a silent no-op.
+    """
+
     def __init__(
         self,
         task_id: uuid.UUID,
