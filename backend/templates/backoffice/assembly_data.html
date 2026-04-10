@@ -401,7 +401,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         ) }}
                         {{ input(name="id_column",
                         label=_("ID Column") ,
-                        value="",
+                        value=csv_config.csv_id_column if csv_config and csv_config.csv_id_column else "",
                         placeholder=_("e.g., ID"),
                         hint=_("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.")
                         ) }}

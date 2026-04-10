@@ -2,6 +2,7 @@
 ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source, and team members"""
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
@@ -29,6 +30,7 @@ from opendlp.service_layer.assembly_service import (
     get_or_create_csv_config,
     get_or_create_selection_settings,
     update_assembly,
+    update_csv_config,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
@@ -423,10 +425,12 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get optional id_column from form (empty string means use first column)
         id_column = request.form.get("id_column", "").strip() or None
 
+        filename = file.filename or "unknown.csv"
+
         # Import respondents using service function
         uow = bootstrap.bootstrap()
         with uow:
-            respondents, errors, _id_column = import_respondents_from_csv(
+            respondents, errors, resolved_id_column = import_respondents_from_csv(
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
@@ -434,6 +438,17 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 replace_existing=True,
                 id_column=id_column,
             )
+
+        # Save CSV config with resolved id column
+        uow2 = bootstrap.bootstrap()
+        update_csv_config(
+            uow=uow2,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            last_import_filename=filename,
+            last_import_timestamp=datetime.now(UTC),
+            csv_id_column=resolved_id_column,
+        )
 
         if errors:
             flash(
