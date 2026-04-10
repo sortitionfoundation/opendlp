@@ -7,6 +7,7 @@ from opendlp import bootstrap
 from opendlp.service_layer.respondent_service import (
     get_respondent_attribute_columns,
     get_respondent_attribute_value_counts,
+    get_selected_respondent_attribute_value_counts,
 )
 
 # When looking at respondent data and choosing columns which are reasonable to use
@@ -69,3 +70,35 @@ def build_respondent_counts(
         if counts is not None:
             respondent_counts[category.name] = counts
     return respondent_counts
+
+
+def get_selected_counts_for_category(
+    assembly_id: uuid.UUID,
+    category_name: str,
+    attribute_columns: list[str],
+) -> dict[str, int] | None:
+    """Get selected/confirmed respondent value counts for a category.
+
+    Uses case-insensitive matching. Returns None if no matching column found.
+    """
+    columns_lower = {col.lower(): col for col in attribute_columns}
+    matched_col = columns_lower.get(category_name.lower())
+    if matched_col is None:
+        return None
+    uow = bootstrap.bootstrap()
+    with uow:
+        return get_selected_respondent_attribute_value_counts(uow, assembly_id, matched_col)
+
+
+def build_selected_counts(
+    assembly_id: uuid.UUID,
+    target_categories: list,
+    attribute_columns: list[str],
+) -> dict[str, dict[str, int]]:
+    """Build selected/confirmed respondent value counts for each target category."""
+    selected_counts: dict[str, dict[str, int]] = {}
+    for category in target_categories:
+        counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
+        if counts is not None:
+            selected_counts[category.name] = counts
+    return selected_counts

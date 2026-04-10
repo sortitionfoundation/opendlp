@@ -136,6 +136,7 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
         <div id="target-categories">
             {% for category in target_categories %}
                 {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+                {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
                 {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
                 {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
                 {% include "backoffice/targets/category_block.html" %}

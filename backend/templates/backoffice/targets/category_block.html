@@ -5,7 +5,8 @@ ABOUTME: Displays category header, values table, missing values, and add value f
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, first_error %}
 {% set has_counts = respondent_counts is defined and respondent_counts %}
-{% set col_count = 3 + (1 if has_counts else 0) + (1 if can_manage else 0) %}
+{% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
+{% set col_count = 3 + (1 if has_counts else 0) + (1 if show_selected else 0) + (1 if can_manage else 0) %}
 <div class="mb-8 rounded-lg overflow-hidden"
      id="category-{{ category.id }}"
      style="background-color: var(--color-tables-cards);
@@ -87,6 +88,7 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                     <col style="width: 8rem;" />
                     <col style="width: 8rem;" />
                     {% if has_counts %}<col style="width: 8rem;" />{% endif %}
+                    {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                     {% if can_manage %}<col style="width: 10rem;" />{% endif %}
                 </colgroup>
                 <thead>
@@ -100,6 +102,10 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                         {% if has_counts %}
                             <th class="py-3 px-4 text-right text-label-md"
                                 style="color: var(--color-headings)">{{ _("Respondents") }}</th>
+                        {% endif %}
+                        {% if show_selected %}
+                            <th class="py-3 px-4 text-right text-label-md"
+                                style="color: var(--color-headings)">{{ _("Selected") }}</th>
                         {% endif %}
                         {% if can_manage %}
                             <th class="py-3 pl-4 text-right text-label-md"
@@ -126,6 +132,13 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                                     class="py-3 px-4 text-right"
                                     style="color: var(--color-body-text)">
                                     {{ respondent_counts.get(val.value, 0) }}
+                                </td>
+                            {% endif %}
+                            {% if show_selected %}
+                                <td x-show="!editing"
+                                    class="py-3 px-4 text-right"
+                                    style="color: var(--color-body-text)">
+                                    {{ selected_counts.get(val.value, 0) }}
                                 </td>
                             {% endif %}
                             {% if can_manage %}
@@ -201,6 +214,14 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                                     {{ respondent_counts.get(val.value, 0) }}
                                 </td>
                             {% endif %}
+                            {% if show_selected %}
+                                <td x-show="editing"
+                                    x-cloak
+                                    class="py-3 px-4 text-right"
+                                    style="color: var(--color-body-text)">
+                                    {{ selected_counts.get(val.value, 0) }}
+                                </td>
+                            {% endif %}
                             {% if can_manage %}
                                 <td x-show="editing" x-cloak class="py-3 pl-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
@@ -247,6 +268,10 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                         {% if has_counts %}
                             <td class="py-3 px-4 text-right text-label-md font-bold"
                                 style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td class="py-3 px-4 text-right text-label-md font-bold"
+                                style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
                         {% endif %}
                         {% if can_manage %}<td class="py-3 pl-4"></td>{% endif %}
                     </tr>

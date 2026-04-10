@@ -30,9 +30,11 @@ from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.service_layer.target_respondent_helpers import (
     MAX_DISTINCT_VALUES_FOR_AUTO_ADD,
     build_respondent_counts,
+    build_selected_counts,
     get_assembly_respondent_attribute_columns,
     get_column_distinct_counts,
     get_respondent_counts_for_category,
+    get_selected_counts_for_category,
 )
 from opendlp.translations import gettext as _
 
@@ -107,6 +109,8 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         respondent_counts = build_respondent_counts(assembly_id, target_categories, attribute_columns)
+        selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
+        has_selected = any(selected_counts.values())
 
         # Get the id_column to exclude from the respondent columns list
         id_column = ""
@@ -128,6 +132,8 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             can_manage=can_manage,
             respondent_attribute_columns=attribute_columns,
             all_respondent_counts=respondent_counts,
+            all_selected_counts=selected_counts,
+            has_selected=has_selected,
             id_column=id_column,
             column_distinct_counts=column_distinct_counts,
             **context,
@@ -342,6 +348,7 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             add_category_form = AddTargetCategoryForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/add_category_response.html",
                 assembly_id=assembly_id,
@@ -350,6 +357,8 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 add_category_form=add_category_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(_("Category '%(name)s' added", name=category.name), "success")
@@ -405,6 +414,7 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
             value_form = TargetValueForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -412,6 +422,8 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
                 value_form=value_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(_("Category renamed to '%(name)s'", name=category.name), "success")
@@ -476,6 +488,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                     return "", 404
                 attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
                 counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+                sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
                 return render_template(
                     "backoffice/targets/category_block.html",
                     assembly_id=assembly_id,
@@ -484,6 +497,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                     show_add_value=True,
                     can_manage=True,
                     respondent_counts=counts,
+                    selected_counts=sel_counts,
+                    has_selected=bool(sel_counts),
                 ), 422
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -506,6 +521,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
             value_form = TargetValueForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -513,6 +529,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 value_form=value_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(_("Value '%(value)s' added", value=form.value.data), "success")
@@ -528,6 +546,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 return "", 404
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -536,6 +555,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 show_add_value=True,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -562,6 +583,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                     return "", 404
                 attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
                 counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+                sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
                 return render_template(
                     "backoffice/targets/category_block.html",
                     assembly_id=assembly_id,
@@ -570,6 +592,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                     editing_value_id=value_id,
                     can_manage=True,
                     respondent_counts=counts,
+                    selected_counts=sel_counts,
+                    has_selected=bool(sel_counts),
                 ), 422
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -593,6 +617,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
             value_form = TargetValueForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -600,6 +625,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 value_form=value_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(_("Value updated"), "success")
@@ -615,6 +642,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 return "", 404
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -623,6 +651,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 editing_value_id=value_id,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             ), 422
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -649,6 +679,7 @@ def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
             value_form = TargetValueForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -656,6 +687,8 @@ def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
                 value_form=value_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(_("Value deleted"), "success")
@@ -709,6 +742,7 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
             value_form = TargetValueForm()
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "backoffice/targets/category_block.html",
                 assembly_id=assembly_id,
@@ -716,6 +750,8 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
                 value_form=value_form,
                 can_manage=True,
                 respondent_counts=counts,
+                selected_counts=sel_counts,
+                has_selected=bool(sel_counts),
             )
 
         flash(
@@ -834,6 +870,8 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         respondent_counts = build_respondent_counts(assembly_id, target_categories, attribute_columns)
+        selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
+        has_selected = any(selected_counts.values())
 
         id_column = ""
         if assembly.csv is not None:
@@ -854,6 +892,8 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             can_manage=can_manage,
             respondent_attribute_columns=attribute_columns,
             all_respondent_counts=respondent_counts,
+            all_selected_counts=selected_counts,
+            has_selected=has_selected,
             id_column=id_column,
             column_distinct_counts=column_distinct_counts,
             check_result=check_result,
