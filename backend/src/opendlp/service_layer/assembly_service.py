@@ -576,6 +576,10 @@ def create_target_category(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
+        existing = uow.target_categories.get_by_assembly_id(assembly_id)
+        if any(c.name.lower() == name.lower() for c in existing):
+            raise ValueError(f"A category named '{name}' already exists")
+
         category = TargetCategory(
             assembly_id=assembly_id,
             name=name,
