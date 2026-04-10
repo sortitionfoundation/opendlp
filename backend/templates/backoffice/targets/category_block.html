@@ -137,7 +137,8 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                                           action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                           hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                           hx-target="#category-{{ category.id }}"
-                                          hx-swap="outerHTML">
+                                          hx-swap="outerHTML"
+                                          x-init="htmx.process($el)">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         {% if value_form and editing_value_id is defined and editing_value_id == val.value_id %}
                                             {% set vf = value_form %}
