@@ -185,6 +185,35 @@ class TestAddCategory:
         assert b"Age" in response.data
         assert b"<!DOCTYPE" not in response.data
 
+    def test_add_category_htmx_auto_populates_values_from_respondent_column(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """Adding a category whose name matches a respondent column auto-adds its values."""
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [
+                ("1", {"Gender": "Male"}),
+                ("2", {"Gender": "Female"}),
+                ("3", {"Gender": "Non-binary"}),
+            ],
+        )
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/categories"),
+            data={
+                "name": "Gender",
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Gender" in response.data
+        assert b"Male" in response.data
+        assert b"Female" in response.data
+        assert b"Non-binary" in response.data
+        assert b"<!DOCTYPE" not in response.data
+
 
 class TestDeleteCategory:
     def test_delete_category_redirects(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
