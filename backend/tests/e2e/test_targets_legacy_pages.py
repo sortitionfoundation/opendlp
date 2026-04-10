@@ -442,8 +442,9 @@ class TestAddMissingValues:
             ],
         )
 
+        # Use a name that doesn't match a respondent column to avoid auto-populate
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Sex")
         # Add one value so the others are "missing"
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
@@ -473,8 +474,9 @@ class TestAddMissingValues:
             ],
         )
 
+        # Use a name that doesn't match a respondent column to avoid auto-populate
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Sex")
 
         response = logged_in_admin.post(
             f"/assemblies/{existing_assembly.id}/targets/categories/{category.id}/values/add-missing",
