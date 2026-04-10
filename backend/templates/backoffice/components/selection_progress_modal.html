@@ -1,7 +1,7 @@
 {# ABOUTME: Selection task progress modal using design system macros #}
 {# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator %}
 
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
@@ -20,9 +20,9 @@ htmx_poll_url=htmx_poll_url
     {# Status badge #}
 {{ status_badge(run_record.status.value, _("Status:")) }}
 
-    {# Spinner for pending/running #}
+    {# Live progress indicator for pending/running #}
 {% if run_record.is_pending or run_record.is_running %}
-    {{ spinner(_("Processing...")) }}
+    {{ progress_indicator(run_record.progress_info) }}
 {% endif %}
 
     {# Error message #}

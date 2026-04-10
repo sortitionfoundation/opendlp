@@ -254,6 +254,40 @@ Usage:
 {% endmacro %}
 
 
+{% macro progress_indicator(progress_info) %}
+    {#
+Progress indicator that renders a determinate bar or spinner.
+
+Expects a ProgressInfo dataclass (from opendlp.domain.value_objects) with:
+  - label: str — human-readable description of current activity
+  - current: int | None — current progress count
+  - total: int | None — total count (renders determinate bar when set)
+
+When progress_info is None, renders a generic "Processing..." spinner.
+    #}
+    {% if progress_info is none %}
+        {{ spinner(_("Processing...")) }}
+    {% elif progress_info.total %}
+        <div class="mb-4">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-body-md" style="color: var(--color-secondary-text);">{{ progress_info.label }}</span>
+            </div>
+            <div class="w-full rounded-full h-2 overflow-hidden"
+                 style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);"
+                 role="progressbar"
+                 aria-valuenow="{{ progress_info.current }}"
+                 aria-valuemin="0"
+                 aria-valuemax="{{ progress_info.total }}">
+                <div class="h-full transition-all"
+                     style="width: {{ progress_info.percent }}%; background-color: var(--color-primary-action);"></div>
+            </div>
+        </div>
+    {% else %}
+        {{ spinner(progress_info.label) }}
+    {% endif %}
+{% endmacro %}
+
+
 {% macro labeled_value(label, value, value_style="") %}
     {#
 Label-value pair for displaying task info.
