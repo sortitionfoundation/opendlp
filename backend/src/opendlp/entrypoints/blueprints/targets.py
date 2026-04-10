@@ -3,7 +3,7 @@ ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backo
 
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -349,17 +349,21 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
             counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/add_category_response.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                add_category_form=add_category_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
+            response = make_response(
+                render_template(
+                    "backoffice/targets/add_category_response.html",
+                    assembly_id=assembly_id,
+                    category=category,
+                    value_form=value_form,
+                    add_category_form=add_category_form,
+                    can_manage=True,
+                    respondent_counts=counts,
+                    selected_counts=sel_counts,
+                    has_selected=bool(sel_counts),
+                )
             )
+            response.headers["HX-Trigger"] = "categoriesChanged"
+            return response
 
         flash(_("Category '%(name)s' added", name=category.name), "success")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -460,7 +464,9 @@ def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseR
         )
 
         if _is_htmx():
-            return ""
+            response = make_response("")
+            response.headers["HX-Trigger"] = "categoriesChanged"
+            return response
 
         flash(_("Category deleted"), "success")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -763,6 +769,41 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route(
+    "/assembly/<uuid:assembly_id>/targets/respondent-columns",
+)
+@login_required
+def respondent_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the respondent data columns section (HTMX partial)."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        uow2 = bootstrap.bootstrap()
+        target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+
+        attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
+
+        id_column = ""
+        if assembly.csv is not None:
+            id_column = assembly.csv.csv_id_column
+
+        return render_template(
+            "backoffice/targets/respondent_columns.html",
+            assembly_id=assembly_id,
+            target_categories=target_categories,
+            can_manage=_can_manage(assembly_id),
+            respondent_attribute_columns=attribute_columns,
+            column_distinct_counts=column_distinct_counts,
+            id_column=id_column,
+        )
+
+    except (NotFoundError, InsufficientPermissions):
+        return ""
 
 
 @targets_bp.route(
