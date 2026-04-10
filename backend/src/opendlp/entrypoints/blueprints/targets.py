@@ -55,7 +55,8 @@ def _can_manage(assembly_id: uuid.UUID) -> bool:
             if user and assembly:
                 return can_manage_assembly(user, assembly)
     except Exception:  # noqa: S110
-        pass  # Permission check failure treated as no permission
+        # Permission check failure treated as no permission
+        pass
     return False
 
 
@@ -326,7 +327,7 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow2 = bootstrap.bootstrap()
         existing = get_targets_for_assembly(uow2, current_user.id, assembly_id)
         sort_order = len(existing)
-        assert form.name.data is not None
+        assert form.name.data is not None  # this is basically a type hint
 
         category = create_target_category(
             uow=uow,
