@@ -254,63 +254,36 @@ Usage:
 {% endmacro %}
 
 
-{% macro progress_indicator(progress) %}
+{% macro progress_indicator(progress_info) %}
     {#
-Live progress indicator driven by the selection_run_records.progress JSON.
+Progress indicator that renders a determinate bar or spinner.
 
-Renders a determinate bar when ``progress.total`` is known, otherwise a
-spinner plus an iteration counter. ``progress`` may be None, in which case
-we fall back to the generic "Processing..." spinner used before live
-progress was available.
+Expects a ProgressInfo dataclass (from opendlp.domain.value_objects) with:
+  - label: str — human-readable description of current activity
+  - current: int | None — current progress count
+  - total: int | None — total count (renders determinate bar when set)
 
-Phase → label mapping is embedded here; unknown phases fall back to the
-raw phase name so the UI keeps showing motion even when the
-sortition-algorithms library adds a new phase.
+When progress_info is None, renders a generic "Processing..." spinner.
     #}
-    {% if progress is none %}
+    {% if progress_info is none %}
         {{ spinner(_("Processing...")) }}
-    {% else %}
-        {% set phase = progress.phase %}
-        {% set current = progress.current %}
-        {% set total = progress.total %}
-        {% if phase == "read_gsheet" %}
-            {% set label = _("Reading spreadsheet…") %}
-        {% elif phase == "write_gsheet" %}
-            {% set label = _("Writing results back to spreadsheet…") %}
-        {% elif phase == "legacy_attempt" %}
-            {% set label = _("Running selection attempt %(current)s of %(total)s", current=current, total=total) %}
-        {% elif phase == "multiplicative_weights" %}
-            {% set label = _("Finding diverse committees (%(current)s of %(total)s rounds)", current=current, total=total) %}
-        {% elif phase == "maximin_optimization" %}
-            {% set label = _("Optimising for maximin fairness (iteration %(current)s)", current=current) %}
-        {% elif phase == "nash_optimization" %}
-            {% set label = _("Optimising for Nash fairness (iteration %(current)s)", current=current) %}
-        {% elif phase == "leximin_outer" %}
-            {% set label = _("Optimising for leximin fairness (%(current)s of %(total)s fixed)", current=current, total=total) %}
-        {% elif phase == "diversimax" %}
-            {% set label = _("Running diversimax optimisation") %}
-        {% else %}
-            {% set label = phase %}
-        {% endif %}
-        {% if total %}
-            <div class="mb-4">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-body-md" style="color: var(--color-secondary-text);">{{ label }}</span>
-                </div>
-                {% set pct = (current / total * 100) if total else 0 %}
-                <div class="w-full rounded-full h-2 overflow-hidden"
-                     style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);"
-                     role="progressbar"
-                     aria-valuenow="{{ current }}"
-                     aria-valuemin="0"
-                     aria-valuemax="{{ total }}">
-                    <div class="h-full transition-all"
-                         style="width: {{ pct }}%; background-color: var(--color-primary-action);"></div>
-                </div>
+    {% elif progress_info.total %}
+        <div class="mb-4">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-body-md" style="color: var(--color-secondary-text);">{{ progress_info.label }}</span>
             </div>
-        {% else %}
-            {{ spinner(label) }}
-        {% endif %}
+            <div class="w-full rounded-full h-2 overflow-hidden"
+                 style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);"
+                 role="progressbar"
+                 aria-valuenow="{{ progress_info.current }}"
+                 aria-valuemin="0"
+                 aria-valuemax="{{ progress_info.total }}">
+                <div class="h-full transition-all"
+                     style="width: {{ progress_info.percent }}%; background-color: var(--color-primary-action);"></div>
+            </div>
+        </div>
+    {% else %}
+        {{ spinner(progress_info.label) }}
     {% endif %}
 {% endmacro %}
 

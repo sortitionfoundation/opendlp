@@ -1,6 +1,7 @@
 """ABOUTME: Value objects and enums for OpenDLP domain models
 ABOUTME: Defines shared enums and validation functions used across domain objects"""
 
+from dataclasses import dataclass
 from enum import Enum
 
 from django.core.exceptions import ValidationError
@@ -122,6 +123,27 @@ class RespondentSourceType(Enum):
     CSV_IMPORT = "CSV_IMPORT"
     NATIONBUILDER_SYNC = "NATIONBUILDER_SYNC"
     MANUAL_ENTRY = "MANUAL_ENTRY"
+
+
+@dataclass(frozen=True)
+class ProgressInfo:
+    """Generic progress information for display in UI components.
+
+    Consumed by the progress_indicator Jinja macro in modal.html.
+    When total is set, the macro renders a determinate progress bar.
+    When total is None, it renders a spinner with the label.
+    """
+
+    label: str
+    current: int | None = None
+    total: int | None = None
+
+    @property
+    def percent(self) -> float | None:
+        """Percentage complete, or None if total is not set or zero."""
+        if self.total and self.current is not None:
+            return self.current / self.total * 100
+        return None
 
 
 def validate_email(email: str) -> None:

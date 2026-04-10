@@ -4,7 +4,7 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from sortition_algorithms import adapters
 from sortition_algorithms.utils import RunReport
@@ -12,7 +12,8 @@ from sortition_algorithms.utils import RunReport
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
-from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import AssemblyStatus, ProgressInfo, SelectionRunStatus, SelectionTaskType
+from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
     from opendlp.domain.assembly_csv import AssemblyCSV
@@ -266,6 +267,36 @@ class SelectionRunRecord:
     @property
     def task_type_verbose(self) -> str:
         return self.task_type.value.replace("_", " ").replace("gsheet", "Google Spreadsheet").capitalize()
+
+    # Phase → user-facing label mapping for sortition-algorithms progress.
+    # Labels use gettext format strings with %(current)s and %(total)s placeholders.
+    _PHASE_LABELS: ClassVar[dict[str, str]] = {
+        "read_gsheet": _l("Reading spreadsheet…"),
+        "write_gsheet": _l("Writing results back to spreadsheet…"),
+        "legacy_attempt": _l("Running selection attempt %(current)s of %(total)s"),
+        "multiplicative_weights": _l("Finding diverse committees (%(current)s of %(total)s rounds)"),
+        "maximin_optimization": _l("Optimising for maximin fairness (iteration %(current)s)"),
+        "nash_optimization": _l("Optimising for Nash fairness (iteration %(current)s)"),
+        "leximin_outer": _l("Optimising for leximin fairness (%(current)s of %(total)s fixed)"),
+        "diversimax": _l("Running diversimax optimisation"),
+    }
+
+    _DEFAULT_PROGRESS_LABEL: ClassVar[str] = _l("Processing…")
+
+    @property
+    def progress_info(self) -> ProgressInfo:
+        """Convert the raw progress dict into a ProgressInfo for UI display."""
+        if self.progress is None:
+            return ProgressInfo(label=str(self._DEFAULT_PROGRESS_LABEL))
+
+        phase = self.progress.get("phase", "")
+        current = self.progress.get("current", 0)
+        total = self.progress.get("total")
+
+        raw_label = self._PHASE_LABELS.get(phase, phase or str(self._DEFAULT_PROGRESS_LABEL))
+        label = str(raw_label) % {"current": current, "total": total}
+
+        return ProgressInfo(label=label, current=current, total=total)
 
     def add_report(self, report: RunReport) -> None:
         """

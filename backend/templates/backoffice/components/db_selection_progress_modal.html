@@ -19,7 +19,7 @@ htmx_poll_url=htmx_poll_url
     {# Status badge #}
 {{ status_badge(run_record.status.value, _("Status:") ) }}
     {# Live progress indicator for pending/running #}
-{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress) }}{% endif %}
+{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
     {# Error message #}
 {% if run_record.is_failed and run_record.error_message %}
         {# error_message is HTML rendered by server code that escapes user content #}

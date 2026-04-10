@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from flask import Flask, render_template
 
 from opendlp import config
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import ProgressInfo, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import gettext
 
 
@@ -88,7 +88,7 @@ def _make_app() -> Flask:
     return app
 
 
-def _make_run_record(progress: dict | None, task_type: SelectionTaskType) -> SimpleNamespace:
+def _make_run_record(progress_info: ProgressInfo | None, task_type: SelectionTaskType) -> SimpleNamespace:
     return SimpleNamespace(
         task_type=task_type,
         task_type_verbose=task_type.value.replace("_", " "),
@@ -104,7 +104,7 @@ def _make_run_record(progress: dict | None, task_type: SelectionTaskType) -> Sim
         selected_ids=None,
         created_at=None,
         completed_at=None,
-        progress=progress,
+        progress_info=progress_info,
     )
 
 
@@ -118,7 +118,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            {"phase": "multiplicative_weights", "current": 45, "total": 200, "updated_at": "x"},
+            ProgressInfo(label="Finding diverse committees (45 of 200 rounds)", current=45, total=200),
             SelectionTaskType.SELECT_FROM_DB,
         )
         with app.test_request_context("/"):
@@ -139,7 +139,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         app = _make_app()
         run_id = uuid.uuid4()
         assembly = _make_assembly()
-        run_record = _make_run_record(None, SelectionTaskType.SELECT_FROM_DB)
+        run_record = _make_run_record(ProgressInfo(label="Processing…"), SelectionTaskType.SELECT_FROM_DB)
         with app.test_request_context("/"):
             html = render_template(
                 "backoffice/components/db_selection_progress_modal.html",
@@ -160,7 +160,7 @@ class TestGsheetSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            {"phase": "read_gsheet", "current": 0, "total": None, "updated_at": "x"},
+            ProgressInfo(label="Reading spreadsheet…", current=0, total=None),
             SelectionTaskType.LOAD_GSHEET,
         )
         with app.test_request_context("/"):
@@ -181,7 +181,7 @@ class TestGsheetSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            {"phase": "write_gsheet", "current": 0, "total": None, "updated_at": "x"},
+            ProgressInfo(label="Writing results back to spreadsheet…", current=0, total=None),
             SelectionTaskType.SELECT_GSHEET,
         )
         with app.test_request_context("/"):

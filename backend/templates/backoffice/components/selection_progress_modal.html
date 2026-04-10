@@ -22,7 +22,7 @@ htmx_poll_url=htmx_poll_url
 
     {# Live progress indicator for pending/running #}
 {% if run_record.is_pending or run_record.is_running %}
-    {{ progress_indicator(run_record.progress) }}
+    {{ progress_indicator(run_record.progress_info) }}
 {% endif %}
 
     {# Error message #}
