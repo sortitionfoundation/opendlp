@@ -121,56 +121,65 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             {% endif %}
 
                             {# ── Edit Mode ────── #}
-                            <td x-show="editing" x-cloak colspan="{{ col_count }}" class="py-3">
-                                <form method="post"
+                            {% if value_form and editing_value_id is defined and editing_value_id == val.value_id %}
+                                {% set vf = value_form %}
+                            {% else %}
+                                {% set vf = None %}
+                            {% endif %}
+                            {% set edit_form_id = "edit-form-" ~ val.value_id %}
+                            <td x-show="editing" x-cloak class="py-3 pr-4">
+                                <form id="{{ edit_form_id }}"
+                                      method="post"
                                       action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                       hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
                                       hx-target="#category-{{ category.id }}"
                                       hx-swap="outerHTML">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    {% if value_form and editing_value_id is defined and editing_value_id == val.value_id %}
-                                        {% set vf = value_form %}
-                                    {% else %}
-                                        {% set vf = None %}
-                                    {% endif %}
-                                    <div class="flex items-start gap-3 flex-wrap">
-                                        {{ input(
-                                        name="value",
-                                        label=_("Value"),
-                                        id="edit-value-" ~ val.value_id,
-                                        value=vf.value.data if vf and vf.value.data else val.value,
-                                        required=true,
-                                        error=first_error(vf.value.errors) if vf else "",
-                                        ) }}
-                                        {{ input(
-                                        name="min_count",
-                                        label=_("Min"),
-                                        type="number",
-                                        id="edit-min-" ~ val.value_id,
-                                        value=vf.min_count.data if vf and vf.min_count.data is not none else val.min,
-                                        required=true,
-                                        classes="w-20",
-                                        attrs='min="0"',
-                                        error=first_error(vf.min_count.errors) if vf else "",
-                                        ) }}
-                                        {{ input(
-                                        name="max_count",
-                                        label=_("Max"),
-                                        type="number",
-                                        id="edit-max-" ~ val.value_id,
-                                        value=vf.max_count.data if vf and vf.max_count.data is not none else val.max,
-                                        required=true,
-                                        classes="w-20",
-                                        attrs='min="0"',
-                                        error=first_error(vf.max_count.errors) if vf else "",
-                                        ) }}
-                                        <div class="flex items-end gap-2" style="padding-top: 1.5rem;">
-                                            {{ button(_("Save"), variant="primary", type="submit") }}
-                                            {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
-                                        </div>
-                                    </div>
                                 </form>
+                                {{ input(
+                                name="value",
+                                id="edit-value-" ~ val.value_id,
+                                value=vf.value.data if vf and vf.value.data else val.value,
+                                required=true,
+                                error=first_error(vf.value.errors) if vf else "",
+                                attrs='form="' ~ edit_form_id ~ '"',
+                                ) }}
                             </td>
+                            <td x-show="editing" x-cloak class="py-3 px-4">
+                                {{ input(
+                                name="min_count",
+                                type="number",
+                                id="edit-min-" ~ val.value_id,
+                                value=vf.min_count.data if vf and vf.min_count.data is not none else val.min,
+                                required=true,
+                                classes="w-20",
+                                attrs='min="0" form="' ~ edit_form_id ~ '"',
+                                error=first_error(vf.min_count.errors) if vf else "",
+                                ) }}
+                            </td>
+                            <td x-show="editing" x-cloak class="py-3 px-4">
+                                {{ input(
+                                name="max_count",
+                                type="number",
+                                id="edit-max-" ~ val.value_id,
+                                value=vf.max_count.data if vf and vf.max_count.data is not none else val.max,
+                                required=true,
+                                classes="w-20",
+                                attrs='min="0" form="' ~ edit_form_id ~ '"',
+                                error=first_error(vf.max_count.errors) if vf else "",
+                                ) }}
+                            </td>
+                            {% if has_counts %}
+                                <td x-show="editing" x-cloak class="py-3 px-4 text-right" style="color: var(--color-body-text);">{{ respondent_counts.get(val.value, 0) }}</td>
+                            {% endif %}
+                            {% if can_manage %}
+                                <td x-show="editing" x-cloak class="py-3 pl-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        {{ button(_("Save"), variant="primary", type="submit", attrs='form="' ~ edit_form_id ~ '"') }}
+                                        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
+                                    </div>
+                                </td>
+                            {% endif %}
                         </tr>
                         {# ── Value Annotations Row ── #}
                         {% if value_annotations is defined and value_annotations.get(val.value) %}
