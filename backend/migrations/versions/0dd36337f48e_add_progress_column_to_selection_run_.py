@@ -1,7 +1,7 @@
 """add progress column to selection_run_records
 
 Revision ID: 0dd36337f48e
-Revises: c3d4e5f6a7b8
+Revises: 3027292d7d21
 Create Date: 2026-04-09 16:43:31.024482
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "0dd36337f48e"  # pragma: allowlist secret
-down_revision: str | Sequence[str] | None = "c3d4e5f6a7b8"  # pragma: allowlist secret
+down_revision: str | Sequence[str] | None = "3027292d7d21"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
