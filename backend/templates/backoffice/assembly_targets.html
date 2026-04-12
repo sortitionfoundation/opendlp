@@ -1,12 +1,13 @@
 {#
-ABOUTME: Backoffice assembly targets page
-ABOUTME: Displays target categories configuration for assemblies
+ABOUTME: Backoffice assembly targets page with full editing capabilities
+ABOUTME: Displays target categories, values, respondent data, CSV import, and validation
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/input.html" import file_input, first_error, checkbox %}
 
 {% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
 
@@ -69,29 +70,139 @@ ABOUTME: Displays target categories configuration for assemblies
                         </dl>
 
                         <div class="mt-4">
-                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="secondary") }}
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-    {% elif data_source == "csv" %}
-        {# CSV source - placeholder for future implementation #}
-        <section class="mb-8">
-            {{ alert(_("CSV target details will be visible here."), variant="info") }}
-        </section>
     {% else %}
-        {# No data source selected #}
-        <section class="mb-8">
-            {{ alert(_("Please configure a data source in the Data tab first."), variant="warning") }}
-            <div class="mt-4">
-                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
-            </div>
+        {# CSV source, no source yet, or targets exist - show full editor #}
+
+        {# ── Target Categories Heading ───────────────────── #}
+        <section class="mb-6">
+            <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Target Categories") }}</h2>
+            {% if target_categories %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">
+                    {{ _("%(count)s categories defined.", count=target_categories|length) }}
+                </p>
+            {% else %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">
+                    {{ _("No target categories defined yet.") }}
+                </p>
+            {% endif %}
         </section>
+
+        {# ── Check Targets Button ────────────────────────── #}
+        {% if target_categories %}
+            <section class="mb-6">
+                <form method="post"
+                      action="{{ url_for('targets.check_targets', assembly_id=assembly.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    {{ button(_("Check targets in detail"), variant="secondary", type="submit") }}
+                </form>
+            </section>
+        {% endif %}
+
+        {# ── Check Result Display ────────────────────────── #}
+        {% if check_result is defined and check_result %}
+            <section class="mb-6">
+                {% if check_result.success %}
+                    {{ alert(
+                    _("All checks passed. Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                    num_features=check_result.num_features,
+                    num_people=check_result.num_people),
+                    variant="success"
+                    ) }}
+                {% else %}
+                    {% if check_result.global_errors %}
+                        <div class="mb-4 rounded-lg p-4"
+                             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                            <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("Target check found problems") }}</h3>
+                            <ul class="list-disc pl-5">
+                                {% for error_msg in check_result.global_errors %}
+                                    <li class="text-body-md mb-1" style="color: var(--color-error-600);">{{ error_msg }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        {{ alert(_("Target check found problems. See details below next to the affected targets."), variant="error") }}
+                    {% endif %}
+                {% endif %}
+            </section>
+        {% endif %}
+
+        {# ── Category Blocks ─────────────────────────────── #}
+        <div id="target-categories">
+            {% for category in target_categories %}
+                {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+                {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
+                {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
+                {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
+                {% include "backoffice/targets/category_block.html" %}
+            {% endfor %}
+        </div>
+
+        {# ── Add Category Form ────────────────────────────── #}
+        {% if can_manage %}
+            {% include "backoffice/targets/add_category_form.html" %}
+        {% endif %}
+
+        {# ── Respondent Attribute Columns ─────────────────── #}
+        {% include "backoffice/targets/respondent_columns.html" %}
+
+        {# ── CSV Import (collapsible) ─────────────────────── #}
+        <section class="mt-8 pt-8" style="border-top: 1px solid var(--color-borders-dividers);">
+            <details x-data="{ open: false }">
+                <summary class="text-heading-md cursor-pointer underline mb-4"
+                         style="color: var(--color-links);"
+                         @click="open = !open">
+                    {{ _("Import from CSV") }}
+                </summary>
+                <div x-show="open" x-cloak class="mt-2">
+                    <p class="text-body-md mb-2" style="color: var(--color-body-text);">
+                        {{ _("Upload a CSV file with columns either:") }}
+                    </p>
+                    <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("category, name, min, max.") }}<br />
+                        {{ _("feature, value, min, max.") }}
+                    </p>
+                    {% if target_categories %}
+                        {{ alert(_("Uploading a CSV will replace all existing target categories."), variant="warning") }}
+                    {% endif %}
+
+                    {% if form.errors %}
+                        <div class="mb-4 rounded-lg p-4"
+                             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                            <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h3>
+                            <ul class="list-disc pl-5">
+                                {% for field_name, errors in form.errors.items() %}
+                                    {% for error in errors %}
+                                        <li class="text-body-md" style="color: var(--color-error-600);">{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form method="post"
+                          action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
+                          enctype="multipart/form-data"
+                          novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="mb-4">
+                            {{ file_input("csv_file", label=_("CSV File"), accept=".csv", error=first_error(form.csv_file.errors) if form.csv_file.errors else "") }}
+                        </div>
+                        {{ button(_("Upload CSV"), variant="secondary", type="submit") }}
+                    </form>
+                </div>
+            </details>
+        </section>
+
     {% endif %}
 
     {# Actions #}
-    <section class="flex gap-4">
-        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
+    <section class="mt-8 flex gap-4">
+        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="secondary") }}
     </section>
 {% endblock %}

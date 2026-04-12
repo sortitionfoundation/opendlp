@@ -1,0 +1,25 @@
+{#
+ABOUTME: Standalone category name edit form for validation error display
+ABOUTME: Rendered when a category rename fails validation
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, first_error %}
+
+<div class="flex items-center gap-3">
+    <form method="post"
+          action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category_id) }}"
+          hx-target="#category-{{ category_id }}"
+          hx-swap="outerHTML"
+          class="flex items-center gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {{ input(
+        name="name",
+        value=edit_category_form.name.data or "",
+        required=true,
+        error=first_error(edit_category_form.name.errors),
+        ) }}
+        {{ button(_("Save"), variant="primary", type="submit") }}
+        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editing = false"') }}
+    </form>
+</div>

@@ -441,3 +441,8 @@ class RespondentRepository(AbstractRepository):
     def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         """Get counts of each distinct value for a given attribute across respondents in an assembly."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        """Get counts of each distinct value for a given attribute across selected/confirmed respondents."""
+        raise NotImplementedError

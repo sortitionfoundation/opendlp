@@ -982,3 +982,21 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .group_by(val_col)
         ).all()
         return {row.val: row.cnt for row in rows if row.val is not None}
+
+    def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status.in_([
+                        RespondentStatus.SELECTED.value,
+                        RespondentStatus.CONFIRMED.value,
+                    ]),
+                )
+            )
+            .group_by(val_col)
+        ).all()
+        return {row.val: row.cnt for row in rows if row.val is not None}
