@@ -96,11 +96,8 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
         {# ── Check Targets Button ────────────────────────── #}
         {% if target_categories %}
             <section class="mb-6">
-                <form method="post"
-                      action="{{ url_for('targets.check_targets', assembly_id=assembly.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    {{ button(_("Check targets in detail"), variant="secondary", type="submit") }}
-                </form>
+                {{ button(_("Check targets in detail"), variant="secondary",
+                href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
             </section>
         {% endif %}
 

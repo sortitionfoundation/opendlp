@@ -889,7 +889,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/check", methods=["POST"])
+@targets_bp.route("/assembly/<uuid:assembly_id>/targets/check", methods=["GET"])
 @login_required
 def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run detailed target validation and display results."""
