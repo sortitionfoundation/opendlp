@@ -620,7 +620,7 @@ class TestCheckTargets:
             assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
             uow.commit()
 
-        response = logged_in_admin.post(
+        response = logged_in_admin.get(
             _targets_url(existing_assembly.id, "/check"),
             data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
             follow_redirects=True,
@@ -651,7 +651,7 @@ class TestCheckTargets:
             assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
             uow.commit()
 
-        response = logged_in_admin.post(
+        response = logged_in_admin.get(
             _targets_url(existing_assembly.id, "/check"),
             data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
             follow_redirects=True,
@@ -662,7 +662,7 @@ class TestCheckTargets:
         assert b"respondents match" in response.data
 
     def test_check_requires_login(self, client, existing_assembly):
-        response = client.post(_targets_url(existing_assembly.id, "/check"))
+        response = client.get(_targets_url(existing_assembly.id, "/check"))
         assert response.status_code == 302
         assert "login" in response.location
 
