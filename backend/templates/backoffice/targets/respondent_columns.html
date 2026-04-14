@@ -4,7 +4,6 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import checkbox %}
-
 {% if respondent_attribute_columns is defined and respondent_attribute_columns and can_manage %}
     {% set existing_category_names_lower = target_categories | map(attribute='name') | map('lower') | list %}
     {% set available_columns = [] %}
@@ -28,7 +27,7 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
     {% if available_columns %}
         <section id="respondent-columns"
                  class="mt-8 pt-8"
-                 style="border-top: 1px solid var(--color-borders-dividers);"
+                 style="border-top: 1px solid var(--color-borders-dividers)"
                  hx-get="{{ url_for('targets.respondent_columns', assembly_id=assembly_id) }}"
                  hx-trigger="categoriesChanged from:body"
                  hx-swap="outerHTML">
@@ -36,7 +35,6 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
             <form method="post"
                   action="{{ url_for('targets.add_categories_from_columns', assembly_id=assembly_id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
                 {# ── Recommended columns (< 20 distinct values) ── #}
                 {% if recommended_columns %}
                     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
@@ -45,21 +43,20 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
                     <div class="flex flex-col gap-2 mb-4">
                         {% for col in recommended_columns %}
                             {% set already_defined = col | lower in existing_category_names_lower %}
-                            {{ checkbox(
-                            name="columns",
+                            {{ checkbox(name="columns",
                             label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
                             value=col,
+                            checked=already_defined,
                             disabled=already_defined
                             ) }}
                         {% endfor %}
                     </div>
                 {% endif %}
-
                 {# ── High cardinality columns (>= 20 distinct values) ── #}
                 {% if high_cardinality_columns %}
                     <details class="mb-4" x-data="{ open: false }">
                         <summary class="text-body-md cursor-pointer underline mb-2"
-                                 style="color: var(--color-links);"
+                                 style="color: var(--color-links)"
                                  @click="open = !open">
                             {{ _("Other columns (%(count)s)", count=high_cardinality_columns|length) }}
                         </summary>
@@ -70,8 +67,7 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
                             <div class="flex flex-col gap-2">
                                 {% for col in high_cardinality_columns %}
                                     {% set already_defined = col | lower in existing_category_names_lower %}
-                                    {{ checkbox(
-                                    name="columns",
+                                    {{ checkbox(name="columns",
                                     label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
                                     value=col,
                                     disabled=already_defined
@@ -81,8 +77,7 @@ ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
                         </div>
                     </details>
                 {% endif %}
-
-                {{ button(_("Add selected categories"), variant="secondary", type="submit") }}
+                {{ button(_("Add selected categories") , variant="secondary", type="submit") }}
             </form>
         </section>
     {% endif %}
