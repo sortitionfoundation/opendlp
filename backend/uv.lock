@@ -3,14 +3,14 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-04-07T13:59:52.804527147Z"
+exclude-newer = "2026-04-07T14:49:38.556981973Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-04-14T13:59:52.804540793Z", span = "PT0S" }
-cryptography = { timestamp = "2026-04-14T13:59:52.804552646Z", span = "PT0S" }
-pytest = { timestamp = "2026-04-14T13:59:52.804553828Z", span = "PT0S" }
-django = { timestamp = "2026-04-14T13:59:52.804553307Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-04-14T14:49:38.556994277Z", span = "PT0S" }
+cryptography = { timestamp = "2026-04-14T14:49:38.557004305Z", span = "PT0S" }
+pytest = { timestamp = "2026-04-14T14:49:38.557005438Z", span = "PT0S" }
+django = { timestamp = "2026-04-14T14:49:38.557004917Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -931,7 +931,7 @@ requires-dist = [
     { name = "qrcode", extras = ["pil"], specifier = ">=8.2" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "secure", specifier = ">=1.0.1" },
-    { name = "sortition-algorithms", specifier = "==0.12.4" },
+    { name = "sortition-algorithms", specifier = "==0.12.5" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.43" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
@@ -1458,7 +1458,7 @@ wheels = [
 
 [[package]]
 name = "sortition-algorithms"
-version = "0.12.4"
+version = "0.12.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1472,9 +1472,9 @@ dependencies = [
     { name = "requests" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/4f/5008c85de152b07a69bcd8aedb146897e9924159009c65848f82f2abaa40/sortition_algorithms-0.12.4.tar.gz", hash = "sha256:3ea723018a5dcec4eb7082f9c0eeeda4629c6aa53af4bdd802406cbdfd687f9a", size = 375342, upload-time = "2026-04-09T15:06:39.391Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/6f/b14027463c0f2a6cdc8946bf2210e11f58dfd116d541079475a7749e8cf4/sortition_algorithms-0.12.5.tar.gz", hash = "sha256:c7d79af76685af04c1a456bae5ece5e8847391ed7b3d5f532745d5dd1c638b4b", size = 386264, upload-time = "2026-04-14T14:46:06.077Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/96/fc8b01f6bfa1c94c37c3462647bc14e4bf17710c914bea7aecdc7e474e4b/sortition_algorithms-0.12.4-py3-none-any.whl", hash = "sha256:89152b49f64202ce5e77495657f97dd17699cf49125a512c2b516e9403cfb186", size = 95893, upload-time = "2026-04-09T15:06:38.013Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/d0/3c0f8c19a84ad3e2c9c665b2f8fd23740788239356646287c5ffa808d4b2/sortition_algorithms-0.12.5-py3-none-any.whl", hash = "sha256:5c222ec8ea4b00104b9167157968f76135d6bb525df062150dfe2e837bf78cbf", size = 97074, upload-time = "2026-04-14T14:46:04.614Z" },
 ]
 
 [[package]]
