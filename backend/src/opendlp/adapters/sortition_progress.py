@@ -29,7 +29,7 @@ class DatabaseProgressReporter:
         task_id: uuid.UUID,
         *,
         session_factory: sessionmaker | None = None,
-        min_interval_seconds: float = 1.0,
+        min_interval_seconds: float = 0.5,
     ) -> None:
         self._task_id = task_id
         self._session_factory = session_factory
