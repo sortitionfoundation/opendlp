@@ -78,6 +78,8 @@ sortition-algorithms = "0 days"
 cryptography = "0 days"
 # for security update django 6.0.4 released 2026-04-07 - so can remove after 2026-04-14
 django = "0 days"
+# for security update pytest 9.0.3 released 2026-04-07 - so can remove after 2026-04-14
+pytest = "0 days"
 
 [tool.mypy]
 files = ["src"]
