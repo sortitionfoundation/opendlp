@@ -4,7 +4,7 @@
     <div id="progress-section"
          data-status="{{ run_record.status.value }}"
          data-task-type="{{ run_record.task_type.value }}"
-         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('db_selection_legacy.db_selection_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 2s" hx-swap="outerHTML" {% endif %}>
+         {% if not run_record.has_finished %} hx-get="{{ progress_url if progress_url is defined else url_for('db_selection_legacy.db_selection_progress', assembly_id=assembly.id, run_id=run_id) }}" hx-trigger="every 1s" hx-swap="outerHTML" {% endif %}>
         {% if run_record.has_finished %}
             <details class="govuk-details">
                 <summary class="govuk-details__summary">
@@ -33,9 +33,12 @@
             </div>
         {% endif %}
         {% if run_record.is_pending %}
-            <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
+            <div class="govuk-notification-banner"
+                 role="region"
+                 aria-labelledby="govuk-notification-banner-title">
                 <div class="govuk-notification-banner__header">
-                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task is Pending") }}</h2>
+                    <h2 class="govuk-notification-banner__title"
+                        id="govuk-notification-banner-title">{{ _("Task is Pending") }}</h2>
                 </div>
                 <div class="govuk-notification-banner__content">
                     <p class="govuk-notification-banner__heading">
@@ -44,9 +47,12 @@
                 </div>
             </div>
         {% elif run_record.is_running %}
-            <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title">
+            <div class="govuk-notification-banner"
+                 role="region"
+                 aria-labelledby="govuk-notification-banner-title">
                 <div class="govuk-notification-banner__header">
-                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task in Progress") }}</h2>
+                    <h2 class="govuk-notification-banner__title"
+                        id="govuk-notification-banner-title">{{ _("Task in Progress") }}</h2>
                 </div>
                 <div class="govuk-notification-banner__content">
                     <p class="govuk-notification-banner__heading">
@@ -55,19 +61,23 @@
                 </div>
             </div>
         {% elif run_record.is_completed %}
-            <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title">
+            <div class="govuk-notification-banner govuk-notification-banner--success"
+                 role="alert"
+                 aria-labelledby="govuk-notification-banner-title">
                 <div class="govuk-notification-banner__header">
-                    <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">{{ _("Task Completed") }}</h2>
+                    <h2 class="govuk-notification-banner__title"
+                        id="govuk-notification-banner-title">{{ _("Task Completed") }}</h2>
                 </div>
                 <div class="govuk-notification-banner__content">
-                    <p class="govuk-body">
-                        {{ _('Successfully selected %(num)s participants.', num=assembly.number_to_select) }}
-                    </p>
+                    <p class="govuk-body">{{ _('Successfully selected %(num)s participants.', num=assembly.number_to_select) }}</p>
                 </div>
             </div>
         {% elif run_record.is_failed %}
             <h4 class="govuk-heading-s">{{ _("Error Details") }}</h4>
-            <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1">
+            <div class="govuk-error-summary"
+                 aria-labelledby="error-summary-title"
+                 role="alert"
+                 tabindex="-1">
                 <div class="govuk-error-summary__body">
                     <ul class="govuk-list govuk-error-summary__list">
                         <li>{{ run_record.error_message | safe }}</li>
@@ -83,9 +93,7 @@
                 </strong>
             </div>
             <p class="govuk-body">{{ _("This task was cancelled.") }}</p>
-            {% if run_record.error_message %}
-                <p class="govuk-body-s">{{ run_record.error_message }}</p>
-            {% endif %}
+            {% if run_record.error_message %}<p class="govuk-body-s">{{ run_record.error_message }}</p>{% endif %}
         {% endif %}
     </div>
 {% endif %}

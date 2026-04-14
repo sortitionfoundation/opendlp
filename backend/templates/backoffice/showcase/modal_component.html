@@ -5,18 +5,15 @@ ABOUTME: Displays base modal, progress_modal, and helper macros with interactive
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
-
 {% macro modal_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Modal Components") }}
         {{ showcase_description("Modal dialogs for displaying content, progress tracking, and task status. Includes helper macros for common progress modal patterns.") }}
-
         {{ showcase_subtitle("Progress Modal States") }}
         <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
             The progress_modal is used for long-running tasks. It supports HTMX polling for real-time updates.
             Below are interactive demos showing different task states.
         </p>
-
         {# Interactive state demo using Alpine.js with CSP-compatible methods #}
         <div x-data="progressModalDemo()" class="mb-8">
             <div class="flex gap-2 mb-4">
@@ -24,103 +21,107 @@ ABOUTME: Displays base modal, progress_modal, and helper macros with interactive
                 {{ button("Show Completed State", variant="secondary", attrs='@click="showCompleted()"') }}
                 {{ button("Show Failed State", variant="outline", attrs='@click="showFailed()"') }}
             </div>
-
             {# Modal overlay - controlled by Alpine #}
             <div x-show="modalOpen" x-cloak>
                 {# Backdrop #}
                 <div class="fixed inset-0 z-40"
-                     style="background-color: rgba(0, 0, 0, 0.5); cursor: pointer;"
-                     @click="closeModal()">
-                </div>
-
+                     style="background-color: rgba(0, 0, 0, 0.5);
+                            cursor: pointer"
+                     @click="closeModal()"></div>
                 {# Modal panel #}
                 <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
                      role="dialog"
                      aria-modal="true">
                     <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden"
-                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);"
+                         style="background-color: var(--color-tables-cards);
+                                border: 1px solid var(--color-borders-dividers)"
                          @click.stop>
-
                         {# Header #}
                         <div class="px-6 py-4 flex items-center justify-between"
-                             style="border-bottom: 1px solid var(--color-borders-dividers);">
-                            <h2 class="text-heading-lg" style="color: var(--color-headings);">
-                                Task Progress
-                            </h2>
+                             style="border-bottom: 1px solid var(--color-borders-dividers)">
+                            <h2 class="text-heading-lg" style="color: var(--color-headings);">Task Progress</h2>
                             <button type="button"
                                     @click="closeModal()"
                                     :disabled="!canClose()"
                                     class="p-2 rounded-lg transition-colors"
                                     :class="canClose() ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'"
-                                    style="color: var(--color-secondary-text);"
+                                    style="color: var(--color-secondary-text)"
                                     aria-label="Close">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-
                         {# Content #}
                         <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
                             {# Task type #}
-                            {{ labeled_value("Task:", "Run Selection Algorithm") }}
-
+                            {{ labeled_value('Task:', 'Run Selection Algorithm') }}
                             {# Status badge - dynamic based on state #}
                             <div class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings);">Status:</span>
-                                <span x-show="taskState === 'running'" class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-info-background); color: var(--color-info-text);">
-                                    Running
-                                </span>
-                                <span x-show="taskState === 'completed'" class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-success-background); color: var(--color-success-text);">
-                                    Completed
-                                </span>
-                                <span x-show="taskState === 'failed'" class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-error-background); color: var(--color-error-text);">
-                                    Failed
-                                </span>
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-headings)">Status:</span>
+                                <span x-show="taskState === 'running'"
+                                      class="text-body-md px-2 py-1 rounded"
+                                      style="background-color: var(--color-info-background);
+                                             color: var(--color-info-text)">Running</span>
+                                <span x-show="taskState === 'completed'"
+                                      class="text-body-md px-2 py-1 rounded"
+                                      style="background-color: var(--color-success-background);
+                                             color: var(--color-success-text)">Completed</span>
+                                <span x-show="taskState === 'failed'"
+                                      class="text-body-md px-2 py-1 rounded"
+                                      style="background-color: var(--color-error-background);
+                                             color: var(--color-error-text)">Failed</span>
                             </div>
-
                             {# Spinner - only when running #}
                             <div x-show="taskState === 'running'" class="flex items-center gap-3 mb-4">
-                                <svg class="animate-spin h-5 w-5" style="color: var(--color-primary-action);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg class="animate-spin h-5 w-5"
+                                     style="color: var(--color-primary-action)"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
                                 </svg>
                                 <span class="text-body-md" style="color: var(--color-secondary-text);">Processing...</span>
                             </div>
-
                             {# Success message #}
                             <div x-show="taskState === 'completed'" class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-success-text);">Result:</span>
-                                <span class="text-body-md" style="color: var(--color-success-text);">
-                                    Task completed successfully.
-                                </span>
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-success-text)">Result:</span>
+                                <span class="text-body-md" style="color: var(--color-success-text);">Task completed successfully.</span>
                             </div>
-
                             {# Error message #}
                             <div x-show="taskState === 'failed'" class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-error-text);">Error:</span>
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-error-text)">Error:</span>
                                 <span class="text-body-md" style="color: var(--color-error-text);">
                                     Selection could not be completed. Insufficient candidates in pool.
                                 </span>
                             </div>
-
                             {# Messages log #}
                             <div class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings);">Messages:</span>
+                                <span class="text-body-md font-medium"
+                                      style="color: var(--color-headings)">Messages:</span>
                                 <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
-                                     style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                     style="background-color: var(--color-subtle-background-panels);
+                                            border: 1px solid var(--color-borders-dividers)">
                                     <template x-for="msg in messages" :key="msg">
-                                        <p class="text-body-sm mb-1" style="color: var(--color-body-text);" x-text="msg"></p>
+                                        <p class="text-body-sm mb-1"
+                                           style="color: var(--color-body-text)"
+                                           x-text="msg"></p>
                                     </template>
                                 </div>
                             </div>
-
                             {# Footer #}
                             <div class="px-6 py-3 flex gap-2 justify-end -mx-6 -mb-4 mt-4"
-                                 style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards);">
+                                 style="border-top: 1px solid var(--color-borders-dividers);
+                                        background-color: var(--color-tables-cards)">
                                 <template x-if="isRunning()">
                                     {{ button("Cancel Task", variant="secondary", attrs='@click="cancelTask()"') }}
                                 </template>
@@ -133,88 +134,98 @@ ABOUTME: Displays base modal, progress_modal, and helper macros with interactive
                 </div>
             </div>
         </div>
-
         {{ showcase_subtitle("Helper Macros") }}
-
         {# Status Badge #}
         {% call showcase_example('{% from "backoffice/components/modal.html" import status_badge %}
-
-            {{ status_badge("running", _("Status:")) }}
-            {{ status_badge("completed", _("Status:")) }}
-            {{ status_badge("failed", _("Status:")) }}
-            {{ status_badge("cancelled", _("Status:")) }}') %}
+            {{ status_badge("running", _("Status:") ) }}
+            {{ status_badge("completed", _("Status:") ) }}
+            {{ status_badge("failed", _("Status:") ) }}
+            {{ status_badge("cancelled", _("Status:") ) }}') %}
             <div class="space-y-2">
-                {{ status_badge("running", "Status:") }}
-                {{ status_badge("completed", "Status:") }}
-                {{ status_badge("failed", "Status:") }}
-                {{ status_badge("cancelled", "Status:") }}
+                {{ status_badge('running', 'Status:') }}
+                {{ status_badge('completed', 'Status:') }}
+                {{ status_badge('failed', 'Status:') }}
+                {{ status_badge('cancelled', 'Status:') }}
             </div>
         {% endcall %}
-
         {# Spinner #}
         {{ showcase_subtitle("Spinner") }}
         {% call showcase_example('{% from "backoffice/components/modal.html" import spinner %}
-
             {{ spinner() }}
-            {{ spinner(_("Processing...")) }}
-            {{ spinner(_("Loading data from spreadsheet...")) }}') %}
+            {{ spinner(_("Processing...") ) }}
+            {{ spinner(_("Loading data from spreadsheet...") ) }}') %}
             <div class="space-y-4">
                 <div>
-                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Without text</span>
+                    <span class="text-caption mb-2 block"
+                          style="color: var(--color-secondary-text)">Without text</span>
                     {{ spinner() }}
                 </div>
                 <div>
-                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">With text</span>
+                    <span class="text-caption mb-2 block"
+                          style="color: var(--color-secondary-text)">With text</span>
                     {{ spinner("Processing...") }}
                 </div>
             </div>
         {% endcall %}
-
         {# Message Log #}
         {{ showcase_subtitle("Message Log") }}
         {% call showcase_example('{% from "backoffice/components/modal.html" import message_log %}
-
             {{ message_log(["Loading...", "Processing row 1 of 100", "Processing row 50 of 100"]) }}
-            {{ message_log([], empty_text=_("No activity yet")) }}') %}
+            {{ message_log([], empty_text=_("No activity yet") ) }}') %}
             <div class="space-y-4">
                 <div>
-                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">With messages</span>
-                    {{ message_log(["Loading configuration...", "Connecting to Google Sheets...", "Processing row 1 of 100", "Processing row 50 of 100"]) }}
+                    <span class="text-caption mb-2 block"
+                          style="color: var(--color-secondary-text)">With messages</span>
+                    {{ message_log([
+                    "Loading configuration...",
+                    "Connecting to Google Sheets...",
+                    "Processing row 1 of 100",
+                    "Processing row 50 of 100"
+                    ]) }}
                 </div>
                 <div>
-                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Empty state</span>
+                    <span class="text-caption mb-2 block"
+                          style="color: var(--color-secondary-text)">Empty state</span>
                     {{ message_log([]) }}
                 </div>
             </div>
         {% endcall %}
-
         {# Labeled Value #}
         {{ showcase_subtitle("Labeled Value") }}
         {% call showcase_example('{% from "backoffice/components/modal.html" import labeled_value %}
-
-            {{ labeled_value(_("Task:"), "Run Selection Algorithm") }}
-            {{ labeled_value(_("Error:"), "Connection timeout", "color: var(--color-error-text);") }}') %}
+            {{ labeled_value(_("Task:") , "Run Selection Algorithm") }}
+            {{ labeled_value(_("Error:") , "Connection timeout", "color: var(--color-error-text);") }}') %}
             <div class="space-y-2">
-                {{ labeled_value("Task:", "Run Selection Algorithm") }}
-                {{ labeled_value("Started:", "2024-01-15 14:30:00") }}
-                {{ labeled_value("Error:", "Connection timeout", "color: var(--color-error-text);") }}
+                {{ labeled_value('Task:', 'Run Selection Algorithm') }}
+                {{ labeled_value('Started:', '2024-01-15 14:30:00') }}
+                {{ labeled_value('Error:', 'Connection timeout', 'color: var(--color-error-text);') }}
             </div>
         {% endcall %}
-
         {{ showcase_subtitle("HTMX Polling Behavior") }}
-        <div class="rounded-lg p-4 mb-6" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+        <div class="rounded-lg p-4 mb-6"
+             style="background-color: var(--color-subtle-background-panels);
+                    border: 1px solid var(--color-borders-dividers)">
             <p class="text-body-md mb-3" style="color: var(--color-body-text);">
                 In production, the progress_modal uses HTMX for automatic updates:
             </p>
-            <ul class="list-disc ml-6 space-y-2 text-body-sm" style="color: var(--color-body-text);">
-                <li><code class="px-1 rounded" style="background-color: var(--color-tables-cards);">hx-get</code> - Server endpoint that returns updated modal HTML</li>
-                <li><code class="px-1 rounded" style="background-color: var(--color-tables-cards);">hx-trigger="every 2s"</code> - Polls server every 2 seconds while task is running</li>
-                <li><code class="px-1 rounded" style="background-color: var(--color-tables-cards);">hx-swap="outerHTML"</code> - Replaces entire modal with server response</li>
+            <ul class="list-disc ml-6 space-y-2 text-body-sm"
+                style="color: var(--color-body-text)">
+                <li>
+                    <code class="px-1 rounded"
+                          style="background-color: var(--color-tables-cards)">hx-get</code> - Server endpoint that returns updated modal HTML
+                </li>
+                <li>
+                    <code class="px-1 rounded"
+                          style="background-color: var(--color-tables-cards)">hx-trigger="every 1s"</code> - Polls server every 1 second while task is running
+                </li>
+                <li>
+                    <code class="px-1 rounded"
+                          style="background-color: var(--color-tables-cards)">hx-swap="outerHTML"</code> - Replaces entire modal with server response
+                </li>
                 <li>Polling stops automatically when task completes (server omits hx-get attribute)</li>
                 <li>Auto-scroll keeps message log at bottom as new messages arrive</li>
             </ul>
         </div>
-
         {{ showcase_tokens([
         "--color-tables-cards",
         "--color-borders-dividers",
