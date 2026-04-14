@@ -26,7 +26,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Verify all required workflows passed
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // Query by workflow IDs instead of names to avoid API propagation delays
