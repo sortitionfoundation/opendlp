@@ -200,6 +200,23 @@ def _internal_load_gsheet(
             session_factory=session_factory,
         )
         return False, None, None, None, report
+    except errors.NotNativeGoogleSheetError as error:
+        user_msg = _(
+            "The file '%(file_name)s' is a %(common_name)s, "
+            "not a native Google Sheet. Open it in Google Sheets and choose "
+            "File \u2192 Save as Google Sheets, then use that new file.",
+            file_name=error.file_name,
+            common_name=error.common_name_for(error.mimetype),
+        )
+        _update_selection_record(
+            task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error.message,
+            error_message=user_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, None, report
 
     try:
         _append_run_log(
