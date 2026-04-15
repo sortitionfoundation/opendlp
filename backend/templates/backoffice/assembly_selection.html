@@ -102,7 +102,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                 {% endcall %}
                 {% call card_footer() %}
                     {% set settings_missing = not csv_settings_confirmed|default(true) %}
-                    {% if csv_selected_count|default(0) > 0 %}
+                    {% if active_initial_selection_run_id %}
+                        {{ button(_("View Running Selection"),
+                        href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
+                        variant="primary") }}
+                    {% elif csv_selected_count|default(0) > 0 %}
                         {# Show reset button when respondents have been selected #}
                         {# TODO: Replace browser confirm with proper JS confirmation dialog #}
                         <form method="post"
@@ -349,24 +353,30 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    <form method="post"
-                          action="{{ url_for('gsheets.start_selection_load', assembly_id=assembly.id) }}"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Check Spreadsheet") , type="submit", variant="outline") }}
-                    </form>
-                    <form method="post"
-                          action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}?test=1"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Run Test Selection") , type="submit", variant="outline") }}
-                    </form>
-                    <form method="post"
-                          action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}"
-                          class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        {{ button(_("Run Selection") , type="submit", variant="primary") }}
-                    </form>
+                    {% if active_initial_selection_run_id %}
+                        {{ button(_("View Running Selection"),
+                        href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
+                        variant="primary") }}
+                    {% else %}
+                        <form method="post"
+                              action="{{ url_for('gsheets.start_selection_load', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Check Spreadsheet") , type="submit", variant="outline") }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}?test=1"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Test Selection") , type="submit", variant="outline") }}
+                        </form>
+                        <form method="post"
+                              action="{{ url_for('gsheets.start_selection_run', assembly_id=assembly.id) }}"
+                              class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Selection") , type="submit", variant="primary") }}
+                        </form>
+                    {% endif %}
                 {% endcall %}
             {% endcall %}
             {# Replacement Selection Card #}

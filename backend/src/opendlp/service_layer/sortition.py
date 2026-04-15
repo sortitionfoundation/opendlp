@@ -736,6 +736,31 @@ def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
             return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
 
 
+# Task types corresponding to the Initial Selection card's buttons on the selection page
+# (both GSheet and CSV branches). When a task of one of these types is pending/running for
+# an assembly, the card footer shows a single "View Running Selection" button instead of
+# the check/test/run buttons.
+_INITIAL_SELECTION_TASK_TYPES = frozenset({
+    SelectionTaskType.LOAD_GSHEET,
+    SelectionTaskType.SELECT_GSHEET,
+    SelectionTaskType.TEST_SELECT_GSHEET,
+    SelectionTaskType.SELECT_FROM_DB,
+    SelectionTaskType.TEST_SELECT_FROM_DB,
+})
+
+
+def get_active_initial_selection_run_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> uuid.UUID | None:
+    """Return the task id of an unfinished initial-selection task for this assembly, or None.
+
+    Used by the selection page to swap the check/test/run buttons for a single
+    "View Running Selection" button while a task is pending or running.
+    """
+    latest = uow.selection_run_records.get_latest_for_assembly(assembly_id)
+    if latest is None or latest.has_finished or latest.task_type not in _INITIAL_SELECTION_TASK_TYPES:
+        return None
+    return latest.task_id
+
+
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
     """
     Get the most recent selection run for an assembly.

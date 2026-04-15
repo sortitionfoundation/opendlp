@@ -32,6 +32,7 @@ from opendlp.service_layer.sortition import (
     TabManagementResult,
     cancel_task,
     check_and_update_task_health,
+    get_active_initial_selection_run_id,
     get_manage_old_tabs_status,
     get_selection_run_status,
     start_gsheet_load_task,
@@ -187,6 +188,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 _get_manage_tabs_context(uow, assembly_id, current_manage_tabs_param)
             )
 
+            # If the latest selection run is an unfinished initial-selection task, expose its id
+            # so the Initial Selection card can offer "View Running Selection" instead of the
+            # check/test/run buttons.
+            active_initial_selection_run_id = get_active_initial_selection_run_id(uow, assembly_id)
+
         # Check if gsheet is configured
         gsheet = None
         try:
@@ -278,6 +284,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=selection_enabled,
             csv_selected_count=csv_selected_count,
             csv_settings_confirmed=csv_settings_confirmed,
+            active_initial_selection_run_id=active_initial_selection_run_id,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")

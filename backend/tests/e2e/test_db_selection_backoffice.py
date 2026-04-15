@@ -529,6 +529,34 @@ class TestCsvSelectionPageIntegration:
         # Should not show gsheet-specific elements
         assert b"Check Spreadsheet" not in response.data
 
+    def test_selection_page_shows_view_running_button_when_db_task_running(
+        self, logged_in_admin, assembly_with_csv_config, postgres_session_factory
+    ):
+        """When a SELECT_FROM_DB task is running, the Initial Selection card shows
+        'View Running Selection' instead of the check/test/run buttons."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=run_id,
+                    status=SelectionRunStatus.RUNNING,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"View Running Selection" in response.data
+        assert f"current_selection={run_id}".encode() in response.data
+        # The check/test/run button forms should not be rendered
+        assert f"/backoffice/assembly/{assembly.id}/selection/db/check".encode() not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/db/start".encode() not in response.data
+
     def test_selection_page_shows_csv_progress_modal_when_running(
         self, logged_in_admin, assembly_with_csv_config, postgres_session_factory
     ):

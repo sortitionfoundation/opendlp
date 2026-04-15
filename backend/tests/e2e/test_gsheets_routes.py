@@ -5,9 +5,16 @@ import uuid
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
-from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionTaskType
+from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.value_objects import (
+    ManageOldTabsState,
+    ManageOldTabsStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.sortition import InvalidSelection, LoadRunResult, TabManagementResult
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
 
@@ -802,3 +809,109 @@ class TestSelectionPageWithReplacementContext:
 
         assert response.status_code == 200
         assert b"replacement-modal" in response.data
+
+
+class TestSelectionPageViewRunningButton:
+    """When an initial selection task is pending/running, the Initial Selection card footer
+    should show a single 'View Running Selection' button instead of the check/test/run buttons."""
+
+    def test_gsheet_shows_run_buttons_when_no_active_task(self, logged_in_admin, assembly_with_gsheet):
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"Check Spreadsheet" in response.data
+        assert b"Run Test Selection" in response.data
+        assert b"Run Selection" in response.data
+        assert b"View Running Selection" not in response.data
+
+    def test_gsheet_shows_view_running_button_when_select_task_running(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=run_id,
+                    status=SelectionRunStatus.RUNNING,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"View Running Selection" in response.data
+        assert f"current_selection={run_id}".encode() in response.data
+        # The check/test/run button forms should not be rendered
+        assert f"/backoffice/assembly/{assembly.id}/selection/load".encode() not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() not in response.data
+
+    def test_gsheet_shows_view_running_button_when_load_task_pending(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = uuid.uuid4()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=run_id,
+                    status=SelectionRunStatus.PENDING,
+                    task_type=SelectionTaskType.LOAD_GSHEET,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"View Running Selection" in response.data
+
+    def test_gsheet_ignores_completed_task(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        assembly, _gsheet = assembly_with_gsheet
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=uuid.uuid4(),
+                    status=SelectionRunStatus.COMPLETED,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                    completed_at=datetime.now(UTC),
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"View Running Selection" not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() in response.data
+
+    def test_gsheet_ignores_replacement_task(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
+        """A running replacement-selection task must not hijack the initial-selection card."""
+        assembly, _gsheet = assembly_with_gsheet
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=uuid.uuid4(),
+                    status=SelectionRunStatus.RUNNING,
+                    task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"View Running Selection" not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() in response.data
