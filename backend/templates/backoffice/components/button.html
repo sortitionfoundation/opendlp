@@ -10,8 +10,9 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
 
     Args:
         text: Button label text (or use {% call button() %}content{% endcall %} for custom inner content)
-        variant: "primary" | "secondary" | "tertiary" | "icon" | "outline" (default: "primary")
+        variant: "primary" | "secondary" | "tertiary" | "danger" | "icon" | "outline" (default: "primary")
                  Note: "outline" is deprecated, use "secondary" instead
+                 "danger" is a transparent-background red-text button for destructive actions
         disabled: boolean to disable the button
         type: button type attribute (default: "button")
         href: if provided, renders as <a> instead of <button>
@@ -28,6 +29,7 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
         {{ button("Submit", variant="primary", type="submit") }}
         {{ button("Cancel", variant="secondary") }}
         {{ button("Ghost", variant="tertiary") }}
+        {{ button("Delete", variant="danger", type="submit") }}
         {{ button("Disabled", disabled=true) }}
 
     With icons:
@@ -85,6 +87,9 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
     {% elif variant == "tertiary" %}
         {% set variant_styles = "background-color: var(--color-button-tertiary-bg); color: var(--color-button-tertiary-text); border: none;" %}
         {% set hover_class = "btn-tertiary-hover" %}
+    {% elif variant == "danger" %}
+        {% set variant_styles = "background-color: var(--color-button-danger-bg); color: var(--color-button-danger-text); border: none;" %}
+        {% set hover_class = "btn-danger-hover" %}
     {% elif variant == "icon" %}
         {% set variant_styles = "background-color: var(--color-button-tertiary-bg); color: var(--color-button-tertiary-text); border: none;" %}
         {% set hover_class = "btn-tertiary-hover" %}

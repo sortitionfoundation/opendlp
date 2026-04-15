@@ -45,6 +45,7 @@ ABOUTME: Displays button variants and usage examples
             {{ button("Primary", variant="primary") }}
             {{ button("Secondary", variant="secondary") }}
             {{ button("Tertiary", variant="tertiary") }}
+            {{ button("Delete", variant="danger") }}
             {{ button("Disabled", disabled=true) }}') %}
             <div class="flex flex-wrap gap-4 items-center">
                 <div class="flex flex-col items-center gap-2">
@@ -58,6 +59,10 @@ ABOUTME: Displays button variants and usage examples
                 <div class="flex flex-col items-center gap-2">
                     {{ button("Tertiary", variant="tertiary", id="btn-tertiary") }}
                     <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    {{ button("Delete", variant="danger", id="btn-danger") }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Danger</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
                     {{ button("Disabled", disabled=true, id="btn-disabled") }}
@@ -133,6 +138,9 @@ ABOUTME: Displays button variants and usage examples
 "--color-button-tertiary-bg",
 "--color-button-tertiary-bg-hover",
 "--color-button-tertiary-text",
+"--color-button-danger-bg",
+"--color-button-danger-bg-hover",
+"--color-button-danger-text",
 "--color-focus-ring",
 "--focus-ring-offset"
 ]) }}

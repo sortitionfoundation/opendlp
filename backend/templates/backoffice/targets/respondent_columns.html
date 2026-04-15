@@ -1,0 +1,84 @@
+{#
+ABOUTME: Partial for the "Respondent data columns" section on the targets page
+ABOUTME: Auto-refreshes via HTMX when categories are added or deleted
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import checkbox %}
+{% if respondent_attribute_columns is defined and respondent_attribute_columns and can_manage %}
+    {% set existing_category_names_lower = target_categories | map(attribute='name') | map('lower') | list %}
+    {% set available_columns = [] %}
+    {% for col in respondent_attribute_columns %}
+        {% if col != id_column %}
+            {% if available_columns.append(col) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {# Split into recommended (< 20 distinct values) and high cardinality (>= 20) #}
+    {% set recommended_columns = [] %}
+    {% set high_cardinality_columns = [] %}
+    {% set counts = column_distinct_counts if column_distinct_counts is defined and column_distinct_counts else {} %}
+    {% for col in available_columns %}
+        {% set n = counts.get(col, 0) %}
+        {% if n > 0 and n < 20 %}
+            {% if recommended_columns.append(col) %}{% endif %}
+        {% else %}
+            {% if high_cardinality_columns.append(col) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {% if available_columns %}
+        <section id="respondent-columns"
+                 class="mt-8 pt-8"
+                 style="border-top: 1px solid var(--color-borders-dividers)"
+                 hx-get="{{ url_for('targets.respondent_columns', assembly_id=assembly_id) }}"
+                 hx-trigger="categoriesChanged from:body"
+                 hx-swap="outerHTML">
+            <h3 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Respondent data columns") }}</h3>
+            <form method="post"
+                  action="{{ url_for('targets.add_categories_from_columns', assembly_id=assembly_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                {# ── Recommended columns (< 20 distinct values) ── #}
+                {% if recommended_columns %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("These columns have few distinct values and are likely useful as target categories. Select the categories you want to use as targets.") }}
+                    </p>
+                    <div class="flex flex-col gap-2 mb-4">
+                        {% for col in recommended_columns %}
+                            {% set already_defined = col | lower in existing_category_names_lower %}
+                            {{ checkbox(name="columns",
+                            label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
+                            value=col,
+                            checked=already_defined,
+                            disabled=already_defined
+                            ) }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {# ── High cardinality columns (>= 20 distinct values) ── #}
+                {% if high_cardinality_columns %}
+                    <details class="mb-4" x-data="{ open: false }">
+                        <summary class="text-body-md cursor-pointer underline mb-2"
+                                 style="color: var(--color-links)"
+                                 @click="open = !open">
+                            {{ _("Other columns (%(count)s)", count=high_cardinality_columns|length) }}
+                        </summary>
+                        <div x-show="open" x-cloak class="mt-2">
+                            <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}
+                            </p>
+                            <div class="flex flex-col gap-2">
+                                {% for col in high_cardinality_columns %}
+                                    {% set already_defined = col | lower in existing_category_names_lower %}
+                                    {{ checkbox(name="columns",
+                                    label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
+                                    value=col,
+                                    disabled=already_defined
+                                    ) }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </details>
+                {% endif %}
+                {{ button(_("Add selected categories") , variant="secondary", type="submit") }}
+            </form>
+        </section>
+    {% endif %}
+{% endif %}

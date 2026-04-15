@@ -46,12 +46,12 @@ Feature: Backoffice CSV Upload
     Then I should see "Respondents are configured in Google Sheets"
     And I should see "Respondents"
 
-  Scenario: Targets tab is disabled for CSV source until targets uploaded
+  Scenario: Targets tab is enabled for CSV source until targets uploaded
     Given I am logged in as an admin user
     And there is an assembly called "CSV Targets Assembly"
     When I visit the assembly data page for "CSV Targets Assembly" with source "csv"
     Then I should see a "Targets" tab in the assembly navigation
-    And the "Targets" tab should be disabled
+    And the "Targets" tab should be enabled
 
   # CSV Upload Panel Tests
 

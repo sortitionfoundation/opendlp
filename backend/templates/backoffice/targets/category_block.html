@@ -1,0 +1,386 @@
+{#
+ABOUTME: HTMX partial for a single target category block in the backoffice
+ABOUTME: Displays category header, values table, missing values, and add value form
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, first_error %}
+{% set has_counts = respondent_counts is defined and respondent_counts %}
+{% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
+{% set col_count = 3 + (1 if has_counts else 0) + (1 if show_selected else 0) + (1 if can_manage else 0) %}
+<div class="mb-8 rounded-lg overflow-hidden"
+     id="category-{{ category.id }}"
+     style="background-color: var(--color-tables-cards);
+            border: 1px solid var(--color-borders-dividers)">
+    {# ── Category Header ──────────────────────────────── #}
+    <div class="px-6 py-4 flex items-center justify-between"
+         style="border-bottom: 1px solid var(--color-borders-dividers)"
+         x-data="{ editing: false }">
+        <div x-show="!editing" class="flex items-center gap-3">
+            <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ category.name }}</h3>
+            {% if can_manage %}
+                {{ button(_("Rename") , variant="tertiary", attrs='@click="editing = true"') }}
+                <form method="post"
+                      action="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      style="display: inline"
+                      hx-post="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      hx-target="#category-{{ category.id }}"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    {% set delete_category_attrs %}
+                        data-confirm="{{ _('Are you sure you want to delete the category &quot;%(name)s&quot; and all its values?', name=category.name) }}"
+                    {% endset %}
+                    {{ button(_("Delete") , variant="danger", type="submit", attrs=delete_category_attrs) }}
+                </form>
+            {% endif %}
+        </div>
+        {# ── Inline Rename Form ───────────────────────── #}
+        <div x-show="editing" x-cloak class="flex items-center gap-3">
+            <form method="post"
+                  action="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  hx-post="{{ url_for('targets.edit_category', assembly_id=assembly_id, category_id=category.id) }}"
+                  hx-target="#category-{{ category.id }}"
+                  hx-swap="outerHTML"
+                  class="flex items-center gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                {{ input(name="name", value=category.name, required=true) }}
+                {{ button(_("Save") , variant="primary", type="submit") }}
+                {{ button(_("Cancel") , variant="tertiary", attrs='@click="editing = false"') }}
+            </form>
+        </div>
+    </div>
+    {# ── Category-level Annotations ──────────────────── #}
+    {% if category_annotation_list is defined and category_annotation_list %}
+        <div class="px-6 pt-4">
+            {% for ann in category_annotation_list %}
+                {% if ann.level == "error" %}
+                    <div class="mb-2 rounded-lg p-3 flex items-center gap-2"
+                         style="background-color: var(--color-error-100);
+                                border: 1px solid var(--color-error-400)">
+                        <span style="color: var(--color-error-600);">{{ ann.message }}</span>
+                    </div>
+                {% elif ann.level == "warning" %}
+                    <div class="mb-2 rounded-lg p-3 flex items-center gap-2"
+                         style="background-color: var(--color-warning-100);
+                                border: 1px solid var(--color-warning-400)">
+                        <span style="color: var(--color-warning-600);">{{ ann.message }}</span>
+                    </div>
+                {% elif ann.level == "suggestion" %}
+                    <div class="mb-2 rounded-lg p-3 flex items-center gap-2"
+                         style="background-color: var(--color-info-100);
+                                border: 1px solid var(--color-info-400)">
+                        <span class="text-body-sm font-bold px-2 py-0.5 rounded"
+                              style="background-color: var(--color-warning-400);
+                                     color: white">{{ _("Suggestion") }}</span>
+                        <span style="color: var(--color-info-600);">{{ ann.message }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+    {# ── Values Table ─────────────────────────────────── #}
+    <div class="px-6 py-4">
+        <table class="w-full text-body-md"
+               style="border-collapse: collapse;
+                      table-layout: fixed">
+            <colgroup>
+                <col />
+                <col style="width: 8rem;" />
+                <col style="width: 8rem;" />
+                {% if has_counts %}<col style="width: 8rem;" />{% endif %}
+                {% if show_selected %}<col style="width: 8rem;" />{% endif %}
+                {% if can_manage %}<col style="width: 10rem;" />{% endif %}
+            </colgroup>
+            <thead>
+                <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                    <th class="py-3 pr-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Value") }}</th>
+                    <th class="py-3 px-4 text-right text-label-md"
+                        style="color: var(--color-headings)">{{ _("Min") }}</th>
+                    <th class="py-3 px-4 text-right text-label-md"
+                        style="color: var(--color-headings)">{{ _("Max") }}</th>
+                    {% if has_counts %}
+                        <th class="py-3 px-4 text-right text-label-md"
+                            style="color: var(--color-headings)">{{ _("Respondents") }}</th>
+                    {% endif %}
+                    {% if show_selected %}
+                        <th class="py-3 px-4 text-right text-label-md"
+                            style="color: var(--color-headings)">{{ _("Selected") }}</th>
+                    {% endif %}
+                    {% if can_manage %}
+                        <th class="py-3 pl-4 text-right text-label-md"
+                            style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for val in category.values or [] %}
+                    <tr style="border-bottom: 1px solid var(--color-borders-dividers)"
+                        x-data="{ editing: {{ 'true' if editing_value_id is defined and editing_value_id == val.value_id else 'false' }} }">
+                            {# ── Display Mode ─── #}
+                        <td x-show="!editing"
+                            class="py-3 pr-4"
+                            style="color: var(--color-body-text)">{{ val.value }}</td>
+                        <td x-show="!editing"
+                            class="py-3 px-4 text-right"
+                            style="color: var(--color-body-text)">{{ val.min }}</td>
+                        <td x-show="!editing"
+                            class="py-3 px-4 text-right"
+                            style="color: var(--color-body-text)">{{ val.max }}</td>
+                        {% if has_counts %}
+                            <td x-show="!editing"
+                                class="py-3 px-4 text-right"
+                                style="color: var(--color-body-text)">
+                                {{ respondent_counts.get(val.value, 0) }}
+                            </td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td x-show="!editing"
+                                class="py-3 px-4 text-right"
+                                style="color: var(--color-body-text)">
+                                {{ selected_counts.get(val.value, 0) }}
+                            </td>
+                        {% endif %}
+                        {% if can_manage %}
+                            <td x-show="!editing" class="py-3 pl-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    {{ button(_("Edit") , variant="tertiary", attrs='@click="editing = true"') }}
+                                    <form method="post"
+                                          action="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          style="display: inline"
+                                          hx-post="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                          hx-target="#category-{{ category.id }}"
+                                          hx-swap="outerHTML">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        {% set delete_value_attrs %}
+                                            data-confirm="{{ _('Delete value &quot;%(value)s&quot;?', value=val.value) }}"
+                                        {% endset %}
+                                        {{ button(_("Delete") , variant="danger", type="submit", attrs=delete_value_attrs) }}
+                                    </form>
+                                </div>
+                            </td>
+                        {% endif %}
+                            {# ── Edit Mode ────── #}
+                        {% if value_form and editing_value_id is defined and editing_value_id == val.value_id %}
+                            {% set vf = value_form %}
+                        {% else %}
+                            {% set vf = None %}
+                        {% endif %}
+                        {% set edit_form_id = "edit-form-" ~ val.value_id %}
+                        <td x-show="editing" x-cloak class="py-3 pr-4">
+                            <form id="{{ edit_form_id }}"
+                                  method="post"
+                                  action="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                  hx-post="{{ url_for('targets.edit_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                  hx-target="#category-{{ category.id }}"
+                                  hx-swap="outerHTML">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            </form>
+                            {{ input(name="value",
+                            id="edit-value-" ~ val.value_id,
+                            value=vf.value.data if vf and vf.value.data else val.value,
+                            required=true,
+                            error=first_error(vf.value.errors) if vf else "",
+                            attrs='form="' ~ edit_form_id ~ '"',
+                            ) }}
+                        </td>
+                        <td x-show="editing" x-cloak class="py-3 px-4">
+                            {{ input(name="min_count",
+                            type="number",
+                            id="edit-min-" ~ val.value_id,
+                            value=vf.min_count.data if vf and vf.min_count.data is not none else val.min,
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0" form="' ~ edit_form_id ~ '"',
+                            error=first_error(vf.min_count.errors) if vf else "",
+                            ) }}
+                        </td>
+                        <td x-show="editing" x-cloak class="py-3 px-4">
+                            {{ input(name="max_count",
+                            type="number",
+                            id="edit-max-" ~ val.value_id,
+                            value=vf.max_count.data if vf and vf.max_count.data is not none else val.max,
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0" form="' ~ edit_form_id ~ '"',
+                            error=first_error(vf.max_count.errors) if vf else "",
+                            ) }}
+                        </td>
+                        {% if has_counts %}
+                            <td x-show="editing"
+                                x-cloak
+                                class="py-3 px-4 text-right"
+                                style="color: var(--color-body-text)">
+                                {{ respondent_counts.get(val.value, 0) }}
+                            </td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td x-show="editing"
+                                x-cloak
+                                class="py-3 px-4 text-right"
+                                style="color: var(--color-body-text)">
+                                {{ selected_counts.get(val.value, 0) }}
+                            </td>
+                        {% endif %}
+                        {% if can_manage %}
+                            <td x-show="editing" x-cloak class="py-3 pl-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    {{ button(_("Save") , variant="primary", type="submit", attrs='form="' ~ edit_form_id ~ '"') }}
+                                    {{ button(_("Cancel") , variant="tertiary", attrs='@click="editing = false"') }}
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                        {# ── Value Annotations Row ── #}
+                    {% if value_annotations is defined and value_annotations.get(val.value) %}
+                        <tr>
+                            <td colspan="{{ col_count }}" class="px-0 py-1" style="border: none;">
+                                {% for ann in value_annotations[val.value] %}
+                                    {% if ann.level == "error" %}
+                                        <p class="text-body-sm mb-1" style="color: var(--color-error-600);">{{ ann.message }}</p>
+                                    {% elif ann.level == "suggestion" %}
+                                        <p class="text-body-sm mb-1" style="color: var(--color-info-600);">
+                                            <span class="font-bold px-1.5 py-0.5 rounded text-body-sm"
+                                                  style="background-color: var(--color-warning-400);
+                                                         color: white">{{ _("Suggestion") }}</span> {{ ann.message }}
+                                        </p>
+                                    {% elif ann.level == "warning" %}
+                                        <p class="text-body-sm mb-1" style="color: var(--color-warning-600);">
+                                            <span class="font-bold px-1.5 py-0.5 rounded text-body-sm"
+                                                  style="background-color: var(--color-warning-400);
+                                                         color: white">{{ _("Warning") }}</span> {{ ann.message }}
+                                        </p>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if not category.values and not can_manage %}
+                    <tr>
+                        <td colspan="{{ col_count }}" class="py-3"
+                            style="color: var(--color-secondary-text);">
+                            {{ _("No values defined.") }}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+            {# ── Add Value Form (inline table row) ────────── #}
+            {% if can_manage %}
+                <tbody x-data="{ adding: {{ 'true' if show_add_value is defined and show_add_value else 'false' }} }">
+                    <tr x-show="!adding"
+                        style="border-bottom: 1px solid var(--color-borders-dividers)">
+                        <td colspan="{{ col_count }}" class="py-3 pr-4">
+                            {{ button(_("Add value"), variant="secondary", attrs='@click="adding = true"') }}
+                        </td>
+                    </tr>
+                    {% if show_add_value is defined and show_add_value and value_form %}
+                        {% set af = value_form %}
+                    {% else %}
+                        {% set af = None %}
+                    {% endif %}
+                    {% set add_form_id = "add-form-" ~ category.id %}
+                    <tr x-show="adding" x-cloak
+                        style="border-bottom: 1px solid var(--color-borders-dividers)">
+                        <td class="py-3 pr-4">
+                            <form id="{{ add_form_id }}"
+                                  method="post"
+                                  action="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                                  hx-post="{{ url_for('targets.add_value', assembly_id=assembly_id, category_id=category.id) }}"
+                                  hx-target="#category-{{ category.id }}"
+                                  hx-swap="outerHTML">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            </form>
+                            {{ input(name="value",
+                            id="add-value-" ~ category.id|string,
+                            value=af.value.data if af and af.value.data else "",
+                            placeholder=_("e.g. Male"),
+                            required=true,
+                            error=first_error(af.value.errors) if af else "",
+                            attrs='form="' ~ add_form_id ~ '"') }}
+                        </td>
+                        <td class="py-3 px-4">
+                            {{ input(name="min_count",
+                            type="number",
+                            id="add-min-" ~ category.id|string,
+                            value=af.min_count.data if af and af.min_count.data is not none else "",
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0" form="' ~ add_form_id ~ '"',
+                            error=first_error(af.min_count.errors) if af else "") }}
+                        </td>
+                        <td class="py-3 px-4">
+                            {{ input(name="max_count",
+                            type="number",
+                            id="add-max-" ~ category.id|string,
+                            value=af.max_count.data if af and af.max_count.data is not none else "",
+                            required=true,
+                            classes="w-20",
+                            attrs='min="0" form="' ~ add_form_id ~ '"',
+                            error=first_error(af.max_count.errors) if af else "") }}
+                        </td>
+                        {% if has_counts %}
+                            <td class="py-3 px-4"></td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td class="py-3 px-4"></td>
+                        {% endif %}
+                        <td class="py-3 pl-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                {{ button(_("Add"), variant="primary", type="submit", attrs='form="' ~ add_form_id ~ '"') }}
+                                {{ button(_("Cancel"), variant="tertiary", attrs='@click="adding = false"') }}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            {% endif %}
+            <tfoot>
+                <tr style="border-top: 2px solid var(--color-borders-dividers);">
+                    <th class="py-3 pr-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Total") }}</th>
+                    <td class="py-3 px-4 text-right text-label-md font-bold"
+                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
+                    <td class="py-3 px-4 text-right text-label-md font-bold"
+                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
+                    {% if has_counts %}
+                        <td class="py-3 px-4 text-right text-label-md font-bold"
+                            style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
+                    {% endif %}
+                    {% if show_selected %}
+                        <td class="py-3 px-4 text-right text-label-md font-bold"
+                            style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
+                    {% endif %}
+                    {% if can_manage %}<td class="py-3 pl-4"></td>{% endif %}
+                </tr>
+            </tfoot>
+        </table>
+        {# ── Missing Respondent Values ─────────────────────── #}
+        {% if has_counts and can_manage %}
+            {% set target_value_names = category.values | map(attribute='value') | list %}
+            {% set missing_values = [] %}
+            {% for rv in respondent_counts.keys() %}
+                {% if rv not in target_value_names %}
+                    {% if missing_values.append(rv) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if missing_values %}
+                <div class="mt-4 rounded-lg p-4"
+                     style="background-color: var(--color-info-100);
+                            border: 1px solid var(--color-info-400)">
+                    <p class="text-body-md mb-3" style="color: var(--color-info-600);">
+                        {{ _("Values in respondent data not yet targeted:") }}
+                        <strong>{{ missing_values | join(", ") }}</strong>
+                    </p>
+                    <form method="post"
+                          action="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                          hx-post="{{ url_for('targets.add_missing_values', assembly_id=assembly_id, category_id=category.id) }}"
+                          hx-target="#category-{{ category.id }}"
+                          hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        {% for mv in missing_values %}<input type="hidden" name="missing_values" value="{{ mv }}" />{% endfor %}
+                        {{ button(_("Add all missing values") , variant="secondary", type="submit") }}
+                    </form>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,29 @@
+{#
+ABOUTME: Inline form to add a target category in the backoffice
+ABOUTME: Used as HTMX swap target when adding categories
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, first_error %}
+
+<div id="add-category-form">
+    <form method="post"
+          action="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
+          hx-post="{{ url_for('targets.add_category', assembly_id=assembly_id) }}"
+          hx-target="#add-category-form"
+          hx-swap="outerHTML"
+          class="mt-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="flex items-end gap-3 flex-wrap">
+            {{ input(
+            name="name",
+            label=_("New category name"),
+            id="new-category-name",
+            value=add_category_form.name.data or "",
+            placeholder=_("e.g. Gender"),
+            required=true,
+            error=first_error(add_category_form.name.errors),
+            ) }}
+            {{ button(_("Add category"), variant="primary", type="submit") }}
+        </div>
+    </form>
+</div>

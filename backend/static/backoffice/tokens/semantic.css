@@ -64,6 +64,11 @@
     --color-button-tertiary-bg-hover: var(--color-neutral-200);
     --color-button-tertiary-text: var(--color-neutral-700);
 
+    /* Danger (destructive ghost) Button */
+    --color-button-danger-bg: transparent;
+    --color-button-danger-bg-hover: var(--color-error-100);
+    --color-button-danger-text: var(--color-error-600);
+
     /* ========================================
      ALERT / STATUS COLORS
      100 = background, 400 = border, 600 = text
