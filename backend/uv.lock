@@ -3,14 +3,14 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-04-08T14:50:46.119176118Z"
+exclude-newer = "2026-04-08T14:52:38.789183752Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-04-15T14:50:46.119719975Z", span = "PT0S" }
-cryptography = { timestamp = "2026-04-15T14:50:46.120323755Z", span = "PT0S" }
-pytest = { timestamp = "2026-04-15T14:50:46.120324978Z", span = "PT0S" }
-django = { timestamp = "2026-04-15T14:50:46.120324437Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-04-15T14:52:38.789191487Z", span = "PT0S" }
+cryptography = { timestamp = "2026-04-15T14:52:38.789195975Z", span = "PT0S" }
+pytest = { timestamp = "2026-04-15T14:52:38.789196787Z", span = "PT0S" }
+django = { timestamp = "2026-04-15T14:52:38.789196406Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -932,7 +932,7 @@ requires-dist = [
     { name = "redis", specifier = ">=6.4.0" },
     { name = "secure", specifier = ">=1.0.1" },
     { name = "sortition-algorithms", specifier = "==0.12.5" },
-    { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.43" },
+    { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.49" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "werkzeug", specifier = ">=3.1.3" },
