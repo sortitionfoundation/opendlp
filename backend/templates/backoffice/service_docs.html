@@ -16,7 +16,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
     <div class="mb-6">
         {{ breadcrumbs([
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Developer Tools"), "href": url_for('backoffice.dev_dashboard')},
+        {"label": _("Developer Tools"), "href": url_for('dev.dev_dashboard')},
         {"label": _("Service Docs")}
         ]) }}
     </div>
@@ -42,10 +42,10 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         {# Tabs for service categories #}
         {{ tabs(
         items=[
-        {"label": _("Respondents"), "href": url_for('backoffice.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
-        {"label": _("Targets"), "href": url_for('backoffice.service_docs', tab='targets'), "active": active_tab == 'targets'},
-        {"label": _("CSV Config"), "href": url_for('backoffice.service_docs', tab='config'), "active": active_tab == 'config'},
-        {"label": _("Selection"), "href": url_for('backoffice.service_docs', tab='selection'), "active": active_tab == 'selection'}
+        {"label": _("Respondents"), "href": url_for('dev.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
+        {"label": _("Targets"), "href": url_for('dev.service_docs', tab='targets'), "active": active_tab == 'targets'},
+        {"label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
+        {"label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'}
         ],
         aria_label=_("Service categories")
         ) }}
@@ -1154,7 +1154,7 @@ Age,51+,2,5,1,1`
                     this.responses[key] = null;
 
                     try {
-                        const response = await fetch('{{ url_for("backoffice.service_docs_execute") }}', {
+                        const response = await fetch('{{ url_for("dev.service_docs_execute") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

@@ -637,30 +637,20 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
     # this is the null result, effectively
     result = RunResult(run_record=run_record)
     if run_record:
+        # The DB record is the authoritative source for log messages — every
+        # _append_run_log call commits an update — so always read from there
+        # first. Celery's AsyncResult is only consulted to detect a successful
+        # task whose final return value still lives in the result backend.
+        result.log_messages = list(run_record.log_messages)
+
         celery_result = app.app.AsyncResult(run_record.celery_task_id)
-
-        # We will always get a result object back here, even if celery has no
-        # record of the task id. (By default, celery will forget the results after
-        # 24 hours, so this is quite possible if looking at an old run.) So we:
-        # - first check if it is successful - which means it was successful, and the result
-        #   is still tracked by celery. Then we can get the results of the function that
-        #   was run.
-        # - if not and it is started, then we can check for any log messages that may have
-        #   been written.
-        # - if not, then either it is pending, or long finished and celery forgot it. In that
-        #   case we check if the RunReport was saved on the run record. If it was, that means
-        #   the task was long finished and celery forgot it.
-
         if celery_result.id and celery_result.successful():
-            # The task was successful, celery still has the result.
+            # Celery still has the result — pull the typed final value out so
+            # the caller gets features/people/selected_ids etc.
             return _process_celery_final_result(celery_result, run_record)
-        elif celery_result.id and celery_result.state == "STARTED":
-            # The task has started but not finished.
-            result.log_messages = celery_result.info.get("all_messages", [])
-        elif run_record.run_report:
-            # The task finished long ago and celery has forgotten it. But we still have the run report
+
+        if run_record.run_report:
             result.run_report = run_record.run_report
-            result.log_messages = run_record.log_messages
             # set success - the default is None, for not finished at all
             if run_record.is_completed:
                 result.success = True
@@ -744,6 +734,31 @@ def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
             return ManageOldTabsStatus(ManageOldTabsState.DELETE_COMPLETED)
         else:
             return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
+
+
+# Task types corresponding to the Initial Selection card's buttons on the selection page
+# (both GSheet and CSV branches). When a task of one of these types is pending/running for
+# an assembly, the card footer shows a single "View Running Selection" button instead of
+# the check/test/run buttons.
+_INITIAL_SELECTION_TASK_TYPES = frozenset({
+    SelectionTaskType.LOAD_GSHEET,
+    SelectionTaskType.SELECT_GSHEET,
+    SelectionTaskType.TEST_SELECT_GSHEET,
+    SelectionTaskType.SELECT_FROM_DB,
+    SelectionTaskType.TEST_SELECT_FROM_DB,
+})
+
+
+def get_active_initial_selection_run_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> uuid.UUID | None:
+    """Return the task id of an unfinished initial-selection task for this assembly, or None.
+
+    Used by the selection page to swap the check/test/run buttons for a single
+    "View Running Selection" button while a task is pending or running.
+    """
+    latest = uow.selection_run_records.get_latest_for_assembly(assembly_id)
+    if latest is None or latest.has_finished or latest.task_type not in _INITIAL_SELECTION_TASK_TYPES:
+        return None
+    return latest.task_id
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:

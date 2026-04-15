@@ -3,14 +3,14 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-04-07T14:49:38.556981973Z"
+exclude-newer = "2026-04-02T15:07:42.781050005Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-04-14T14:49:38.556994277Z", span = "PT0S" }
-cryptography = { timestamp = "2026-04-14T14:49:38.557004305Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-04-09T15:07:42.78105794Z", span = "PT0S" }
+cryptography = { timestamp = "2026-04-09T15:07:42.781071877Z", span = "PT0S" }
 pytest = { timestamp = "2026-04-14T14:49:38.557005438Z", span = "PT0S" }
-django = { timestamp = "2026-04-14T14:49:38.557004917Z", span = "PT0S" }
+django = { timestamp = "2026-04-09T15:07:42.781072478Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"

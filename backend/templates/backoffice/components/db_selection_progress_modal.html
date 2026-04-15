@@ -1,7 +1,7 @@
 {# ABOUTME: DB selection task progress modal using design system macros #}
 {# ABOUTME: Pure HTMX approach - server controls all state, includes download buttons for completed selections #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
 {% set htmx_poll_url = url_for('db_selection_backoffice.db_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
@@ -18,8 +18,8 @@ htmx_poll_url=htmx_poll_url
 {{ labeled_value(_("Task:") , run_record.task_type_verbose) }}
     {# Status badge #}
 {{ status_badge(run_record.status.value, _("Status:") ) }}
-    {# Spinner for pending/running #}
-{% if run_record.is_pending or run_record.is_running %}{{ spinner(_("Processing...") ) }}{% endif %}
+    {# Live progress indicator for pending/running #}
+{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
     {# Error message #}
 {% if run_record.is_failed and run_record.error_message %}
         {# error_message is HTML rendered by server code that escapes user content #}
@@ -95,12 +95,20 @@ htmx_poll_url=htmx_poll_url
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if run_record.is_pending or run_record.is_running %}
-    <form method="post"
-          action="{{ url_for('db_selection_backoffice.cancel_db_selection', assembly_id=assembly.id, run_id=current_selection) }}"
-          class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {{ button(_("Cancel Task") , type="submit", variant="secondary") }}
-    </form>
+    <div class="w-full flex flex-col gap-2">
+        <p class="text-body-md mb-2" style="color: var(--color-body-text)">
+            {{ _("If you put the task in the background, you can find it later in the Selection History section below.") }}
+        </p>
+        <div class="flex gap-2 justify-end">
+            <form method="post"
+                  action="{{ url_for('db_selection_backoffice.cancel_db_selection', assembly_id=assembly.id, run_id=current_selection) }}"
+                  class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Cancel Task") , type="submit", variant="secondary") }}
+            </form>
+            {{ button(_("Put Task in Background") , href=close_url, variant="secondary") }}
+        </div>
+    </div>
 {% endif %}
 {% if run_record.has_finished %}{{ button(_("Close") , href=close_url, variant="primary") }}{% endif %}
 {{ modal_footer_end() }}

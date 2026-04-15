@@ -17,6 +17,7 @@ from sortition_algorithms import (
     settings,
 )
 from sortition_algorithms.features import FeatureCollection, maximum_selection, minimum_selection
+from sortition_algorithms.progress import NullProgressReporter, ProgressReporter
 from sortition_algorithms.utils import ReportLevel, override_logging_handlers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
@@ -25,6 +26,7 @@ import opendlp.logging
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
+from opendlp.adapters.sortition_progress import DatabaseProgressReporter
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
@@ -156,6 +158,9 @@ def _update_selection_record(
         if remaining_ids is not None:
             record.remaining_ids = remaining_ids
             flag_modified(record, "remaining_ids")
+        if status in (SelectionRunStatus.COMPLETED, SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED):
+            record.progress = None
+            flag_modified(record, "progress")
 
         uow.commit()
 
@@ -174,7 +179,10 @@ def _internal_load_gsheet(
     settings: settings.Settings,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
+    reporter = progress_reporter or NullProgressReporter()
+    reporter.start_phase("read_gsheet", total=None)
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()
@@ -377,6 +385,7 @@ def _internal_run_select(
     already_selected: people.People | None = None,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     report = RunReport()
     # Update SelectionRunRecord to running status
@@ -414,6 +423,7 @@ def _internal_run_select(
             settings=settings,
             test_selection=test_selection,
             already_selected=already_selected,
+            progress_reporter=progress_reporter,
         )
 
         if success:
@@ -481,7 +491,10 @@ def _internal_write_selected(
     settings: settings.Settings,
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ) -> RunReport:
+    reporter = progress_reporter or NullProgressReporter()
+    reporter.start_phase("write_gsheet", total=None)
     report = RunReport()
     _append_run_log(task_id, [_("About to write selected and remaining tabs")], session_factory=session_factory)
     try:
@@ -711,6 +724,7 @@ def run_select_from_db(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
 
     success, features, loaded_people, load_report = _internal_load_db(
@@ -736,6 +750,7 @@ def run_select_from_db(
         already_selected=None,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(select_report)
     if not success:
@@ -762,6 +777,7 @@ def load_gsheet(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
         task_obj=self,
@@ -770,6 +786,7 @@ def load_gsheet(
         settings=settings,
         final_task=True,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
 
 
@@ -786,6 +803,7 @@ def run_select(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
     select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
     success, features, people, already_selected, load_report = _internal_load_gsheet(
@@ -795,6 +813,7 @@ def run_select(
         settings=settings,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(load_report)
     if not success:
@@ -812,6 +831,7 @@ def run_select(
         already_selected=already_selected,
         final_task=False,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(select_report)
     if not success:
@@ -827,6 +847,7 @@ def run_select(
         settings=settings,
         selected_panels=selected_panels,
         session_factory=session_factory,
+        progress_reporter=reporter,
     )
     report.add_report(write_report)
 

@@ -2,14 +2,12 @@
 {# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
-
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set is_task_running = replacement_run_record and not replacement_run_record.has_finished %}
 {% set task_finished = replacement_run_record and replacement_run_record.has_finished %}
 {% set has_min_max = replacement_min_select and replacement_max_select %}
 {% set can_close = not is_task_running %}
 {% set htmx_poll_url = url_for('gsheets.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
-
 {#
 State logic:
 1. No run_record: show initial form (Check Spreadsheet)
@@ -21,7 +19,6 @@ State logic:
 {% set show_progress = is_task_running %}
 {% set show_form_with_minmax = task_finished and has_min_max %}
 {% set show_result = task_finished and not has_min_max %}
-
 {% call progress_modal(
 id="replacement-modal",
 title=_("Replacement Selection"),
@@ -34,114 +31,109 @@ htmx_poll_url=htmx_poll_url
     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
         {{ _("Select replacement participants when original selections decline or cannot participate.") }}
     </p>
-
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
         {{ _("First check the spreadsheet to see how many replacement participants are available.") }}
     </p>
-
-    <form method="post" action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}">
+    <form method="post"
+          action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {{ button(_("Check Spreadsheet"), type="submit", variant="primary") }}
+        {{ button(_("Check Spreadsheet") , type="submit", variant="primary") }}
     </form>
-
 {% elif show_progress %}
         {# PROGRESS STATE - Task is running #}
-    {{ labeled_value(_("Task:"), replacement_run_record.task_type_verbose) }}
-    {{ status_badge(replacement_run_record.status.value, _("Status:")) }}
-    {{ spinner(_("Processing...")) }}
+    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
+    {{ spinner(_("Processing...") ) }}
     {{ message_log(replacement_log_messages) }}
-
 {% elif show_form_with_minmax %}
         {# FORM STATE - Load task completed successfully, show Run Replacements form #}
     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
         {{ _("Select replacement participants when original selections decline or cannot participate.") }}
     </p>
-
-    <div class="rounded-lg p-4 mb-4" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+    <div class="rounded-lg p-4 mb-4"
+         style="background-color: var(--color-subtle-background-panels);
+                border: 1px solid var(--color-borders-dividers)">
         <div class="flex items-center gap-2 mb-2">
-            <span class="text-body-md font-medium" style="color: var(--color-headings);">{{ _("Available replacements:") }}</span>
+            <span class="text-body-md font-medium"
+                  style="color: var(--color-headings)">{{ _("Available replacements:") }}</span>
             <span class="text-body-md" style="color: var(--color-body-text);">{{ _("%(min)s to %(max)s participants", min=replacement_min_select, max=replacement_max_select) }}</span>
         </div>
     </div>
-
-    <form method="post" action="{{ url_for('gsheets.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
+    <form method="post"
+          action="{{ url_for('gsheets.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
         <div class="mb-4">
-            <label class="text-body-md font-medium mb-2 block" style="color: var(--color-headings);" for="number_to_select">
-                {{ _("Number of people to select") }}
-            </label>
+            <label class="text-body-md font-medium mb-2 block"
+                   style="color: var(--color-headings)"
+                   for="number_to_select">{{ _("Number of people to select") }}</label>
             <div class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
                 {{ _('Enter a number between %(min)s and %(max)s', min=replacement_min_select, max=replacement_max_select) }}
             </div>
-            <input
-                class="px-4 py-2 rounded-lg w-full md:w-1/3"
-                style="border: 1px solid var(--color-borders-dividers); background-color: white; color: var(--color-body-text);"
-                id="number_to_select"
-                name="number_to_select"
-                type="number"
-                min="{{ replacement_min_select }}"
-                max="{{ replacement_max_select }}"
-                value="{{ replacement_min_select }}"
-                required>
+            <input class="px-4 py-2 rounded-lg w-full md:w-1/3"
+                   style="border: 1px solid var(--color-borders-dividers);
+                          background-color: white;
+                          color: var(--color-body-text)"
+                   id="number_to_select"
+                   name="number_to_select"
+                   type="number"
+                   min="{{ replacement_min_select }}"
+                   max="{{ replacement_max_select }}"
+                   value="{{ replacement_min_select }}"
+                   required>
         </div>
-
-        <div class="flex gap-2 flex-wrap">
-            {{ button(_("Run Replacements"), type="submit", variant="primary") }}
-        </div>
+        <div class="flex gap-2 flex-wrap">{{ button(_("Run Replacements") , type="submit", variant="primary") }}</div>
     </form>
-
         {# Re-check spreadsheet as separate form #}
-    <form method="post" action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}" class="mt-4">
+    <form method="post"
+          action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}"
+          class="mt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {{ button(_("Re-check Spreadsheet"), type="submit", variant="outline") }}
+        {{ button(_("Re-check Spreadsheet") , type="submit", variant="outline") }}
     </form>
-
 {% elif show_result %}
         {# RESULT STATE - Task finished (selection completed, failed, or cancelled) #}
-    {{ labeled_value(_("Task:"), replacement_run_record.task_type_verbose) }}
-    {{ status_badge(replacement_run_record.status.value, _("Status:")) }}
-
+    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
         {# Error message #}
     {% if replacement_run_record.is_failed and replacement_run_record.error_message %}
             {# error_message is HTML rendered by server code that escapes user content #}
-        {{ labeled_value(_("Error:"), replacement_run_record.error_message | safe, "color: var(--color-error-text);") }}
+        {{ labeled_value(_("Error:") , replacement_run_record.error_message | safe, "color: var(--color-error-text);") }}
     {% endif %}
-
         {# Success message #}
     {% if replacement_run_record.is_completed %}
         <div class="mb-4">
-            <span class="text-body-md font-medium" style="color: var(--color-success-text);">{{ _("Result:") }}</span>
-            <span class="text-body-md" style="color: var(--color-success-text);">
-                {{ _("Task completed successfully.") }}
-            </span>
+            <span class="text-body-md font-medium"
+                  style="color: var(--color-success-text)">{{ _("Result:") }}</span>
+            <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
             {% if gsheet %}
-                <a href="{{ gsheet.url }}" target="_blank" class="text-body-md font-medium hover:underline ml-2" style="color: var(--color-primary-action);">
-                    {{ _("View spreadsheet") }}
-                </a>
+                <a href="{{ gsheet.url }}"
+                   target="_blank"
+                   class="text-body-md font-medium hover:underline ml-2"
+                   style="color: var(--color-primary-action)">{{ _("View spreadsheet") }}</a>
             {% endif %}
         </div>
     {% endif %}
-
         {# Cancelled message #}
     {% if replacement_run_record.is_cancelled %}
         <div class="mb-4">
-            <span class="text-body-md font-medium" style="color: var(--color-warning-text);">{{ _("Task Cancelled") }}</span>
+            <span class="text-body-md font-medium"
+                  style="color: var(--color-warning-text)">{{ _("Task Cancelled") }}</span>
             {% if replacement_run_record.error_message %}
                     {# error_message is HTML rendered by server code that escapes user content #}
                 <span class="text-body-md ml-2" style="color: var(--color-warning-text);">{{ replacement_run_record.error_message | safe }}</span>
             {% endif %}
         </div>
     {% endif %}
-
         {# Log messages #}
-    {{ message_log(replacement_log_messages, id="replacement-modal-messages", empty_text=_("No messages recorded.")) }}
-
+    {{ message_log(replacement_log_messages, id="replacement-modal-messages", empty_text=_("No messages recorded.") ) }}
         {# Full run report (collapsed) #}
     {% if replacement_translated_report_html %}
         <details class="mb-4">
-            <summary class="text-body-md font-medium cursor-pointer" style="color: var(--color-headings);">{{ _("Full Run Report") }}</summary>
-            <div class="rounded-lg p-4 mt-2" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+            <summary class="text-body-md font-medium cursor-pointer"
+                     style="color: var(--color-headings)">{{ _("Full Run Report") }}</summary>
+            <div class="rounded-lg p-4 mt-2"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
                 <div class="text-body-sm" style="color: var(--color-body-text);">{{ replacement_translated_report_html | safe }}</div>
                 <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
                     {{ _("Started At") }}: {{ replacement_run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if replacement_run_record.created_at }}
@@ -153,17 +145,24 @@ htmx_poll_url=htmx_poll_url
         </details>
     {% endif %}
 {% endif %}
-
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if is_task_running %}
-    <form method="post" action="{{ url_for('gsheets.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}" class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {{ button(_("Cancel Task"), type="submit", variant="secondary") }}
-    </form>
+    <div class="w-full flex flex-col gap-2">
+        <p class="text-body-md mb-2" style="color: var(--color-body-text)">
+            {{ _("If you put the task in the background, you can find it later in the Selection History section below.") }}
+        </p>
+        <div class="flex gap-2 justify-end">
+            <form method="post"
+                  action="{{ url_for('gsheets.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}"
+                  class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Cancel Task") , type="submit", variant="secondary") }}
+            </form>
+            {{ button(_("Put Task in Background") , href=close_url, variant="secondary") }}
+        </div>
+    </div>
 {% endif %}
-{% if can_close %}
-    {{ button(_("Close"), href=close_url, variant="primary") }}
-{% endif %}
+{% if can_close %}{{ button(_("Close") , href=close_url, variant="primary") }}{% endif %}
 {{ modal_footer_end() }}
 {% endcall %}

@@ -262,6 +262,96 @@ class TestUpdateSelectionRecord:
             assert updated_record.selected_ids[1] == ["id4", "id5", "id6"]
 
 
+class TestUpdateSelectionRecordClearsProgress:
+    """Terminal-status transitions should clear the live progress payload."""
+
+    def _seed_running_record_with_progress(self, session_factory, task_id, assembly_id):
+        with bootstrap(session_factory=session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.RUNNING,
+                progress={
+                    "phase": "multiplicative_weights",
+                    "current": 45,
+                    "total": 200,
+                    "updated_at": "2026-04-09T16:00:00+00:00",
+                },
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+
+    def test_update_to_completed_clears_progress(self, postgres_session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        self._seed_running_record_with_progress(postgres_session_factory, task_id, assembly_id)
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            session_factory=postgres_session_factory,
+        )
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.progress is None
+
+    def test_update_to_failed_clears_progress(self, postgres_session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        self._seed_running_record_with_progress(postgres_session_factory, task_id, assembly_id)
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            error_message="boom",
+            session_factory=postgres_session_factory,
+        )
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.progress is None
+
+    def test_update_to_cancelled_clears_progress(self, postgres_session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        self._seed_running_record_with_progress(postgres_session_factory, task_id, assembly_id)
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.CANCELLED,
+            session_factory=postgres_session_factory,
+        )
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.progress is None
+
+    def test_update_to_running_preserves_progress(self, postgres_session_factory):
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        self._seed_running_record_with_progress(postgres_session_factory, task_id, assembly_id)
+
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.RUNNING,
+            log_message="still going",
+            session_factory=postgres_session_factory,
+        )
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.progress is not None
+            assert record.progress["phase"] == "multiplicative_weights"
+            assert record.progress["current"] == 45
+
+
 class TestLoadGSheetTask:
     """Test the load_gsheet Celery task."""
 

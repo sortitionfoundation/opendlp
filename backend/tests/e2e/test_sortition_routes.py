@@ -281,7 +281,7 @@ class TestSortitionRoutes:
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data
         assert b"hx-swap" in response.data
-        assert b"every 2s" in response.data
+        assert b"every 1s" in response.data
 
     def test_progress_endpoint_returns_fragment_for_pending_task(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -309,7 +309,7 @@ class TestSortitionRoutes:
         # Should contain HTMX polling attributes
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data
-        assert b"every 2s" in response.data
+        assert b"every 1s" in response.data
 
     def test_progress_endpoint_returns_fragment_without_polling_for_completed_task(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -338,7 +338,7 @@ class TestSortitionRoutes:
         assert b"Task completed successfully" in response.data
         # Should NOT contain HTMX polling attributes (task is done)
         assert b"hx-trigger" not in response.data
-        assert b"every 2s" not in response.data
+        assert b"every 1s" not in response.data
 
     def test_progress_endpoint_returns_fragment_without_polling_for_failed_task(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -368,7 +368,7 @@ class TestSortitionRoutes:
         assert b"Something went wrong" in response.data
         # Should NOT contain HTMX polling attributes (task is done)
         assert b"hx-trigger" not in response.data
-        assert b"every 2s" not in response.data
+        assert b"every 1s" not in response.data
 
     def test_progress_endpoint_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
         """Test progress endpoint redirects when not authenticated."""
@@ -689,7 +689,7 @@ class TestReplacementRoutes:
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data
         assert b"hx-swap" in response.data
-        assert b"every 2s" in response.data
+        assert b"every 1s" in response.data
 
     def test_gsheet_replace_progress_returns_fragment_without_polling_for_completed_task(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -718,7 +718,7 @@ class TestReplacementRoutes:
         assert b"Task completed successfully" in response.data
         # Should NOT contain HTMX polling attributes (task is done)
         assert b"hx-trigger" not in response.data
-        assert b"every 2s" not in response.data
+        assert b"every 1s" not in response.data
 
     def test_gsheet_replace_progress_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
         """Test replacement progress endpoint redirects when not authenticated."""
@@ -990,7 +990,7 @@ class TestManageTabsRoutes:
         # Should contain HTMX polling attributes
         assert b"hx-get" in response.data
         assert b"hx-trigger" in response.data
-        assert b"every 2s" in response.data
+        assert b"every 1s" in response.data
 
     def test_progress_endpoint_requires_auth(self, client, assembly_with_gsheet, postgres_session_factory):
         """Test progress endpoint redirects when not authenticated."""
