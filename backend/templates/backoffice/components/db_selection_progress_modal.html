@@ -95,12 +95,20 @@ htmx_poll_url=htmx_poll_url
     {# Footer with action buttons #}
 {{ modal_footer_start() }}
 {% if run_record.is_pending or run_record.is_running %}
-    <form method="post"
-          action="{{ url_for('db_selection_backoffice.cancel_db_selection', assembly_id=assembly.id, run_id=current_selection) }}"
-          class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {{ button(_("Cancel Task") , type="submit", variant="secondary") }}
-    </form>
+    <div class="w-full flex flex-col gap-2">
+        <p class="text-body-md mb-2" style="color: var(--color-body-text)">
+            {{ _("If you put the task in the background, you can find it later in the Selection History section below.") }}
+        </p>
+        <div class="flex gap-2 justify-end">
+            <form method="post"
+                  action="{{ url_for('db_selection_backoffice.cancel_db_selection', assembly_id=assembly.id, run_id=current_selection) }}"
+                  class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Cancel Task") , type="submit", variant="secondary") }}
+            </form>
+            {{ button(_("Put Task in Background") , href=close_url, variant="secondary") }}
+        </div>
+    </div>
 {% endif %}
 {% if run_record.has_finished %}{{ button(_("Close") , href=close_url, variant="primary") }}{% endif %}
 {{ modal_footer_end() }}
