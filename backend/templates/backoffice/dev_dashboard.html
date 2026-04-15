@@ -40,7 +40,7 @@ ABOUTME: Links to service docs, frontend patterns, and component showcase
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {# Service Layer Docs #}
             {% call link_card(
-            href=url_for('backoffice.service_docs'),
+            href=url_for('dev.service_docs'),
             title=_("Service Layer Docs"),
             subtitle=_("CSV Upload Services"),
             id="service-docs-card"
@@ -55,7 +55,7 @@ ABOUTME: Links to service docs, frontend patterns, and component showcase
 
             {# Frontend Patterns #}
 {% call link_card(
-href=url_for('backoffice.patterns'),
+href=url_for('dev.patterns'),
 title=_("Frontend Patterns"),
 subtitle=_("Alpine.js & CSP Guidelines"),
 id="patterns-card"
