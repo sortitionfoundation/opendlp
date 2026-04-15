@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-15 11:27+0000\n"
+"POT-Creation-Date: 2026-04-15 14:19+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -23,7 +23,7 @@ msgstr ""
 msgid "Reading spreadsheet…"
 msgstr "Google táblázat módosítása"
 
-#: src/opendlp/domain/assembly.py:275
+#: src/opendlp/domain/assembly.py:275 templates/backoffice/patterns.html:697
 msgid "Writing results back to spreadsheet…"
 msgstr ""
 
@@ -489,7 +489,7 @@ msgstr "Új jelszó"
 #: templates/backoffice/assembly_data.html:348
 #: templates/backoffice/assembly_data.html:397
 #: templates/backoffice/assembly_targets.html:191
-#: templates/backoffice/patterns.html:350
+#: templates/backoffice/patterns.html:351
 msgid "CSV File"
 msgstr ""
 
@@ -922,9 +922,9 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:359
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:430
-#: src/opendlp/entrypoints/blueprints/gsheets.py:317
-#: src/opendlp/entrypoints/blueprints/gsheets.py:722
-#: src/opendlp/entrypoints/blueprints/gsheets.py:991
+#: src/opendlp/entrypoints/blueprints/gsheets.py:295
+#: src/opendlp/entrypoints/blueprints/gsheets.py:700
+#: src/opendlp/entrypoints/blueprints/gsheets.py:969
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:147
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:208
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:256
@@ -963,9 +963,9 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:406
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:427
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:444
-#: src/opendlp/entrypoints/blueprints/gsheets.py:313
-#: src/opendlp/entrypoints/blueprints/gsheets.py:718
-#: src/opendlp/entrypoints/blueprints/gsheets.py:987
+#: src/opendlp/entrypoints/blueprints/gsheets.py:291
+#: src/opendlp/entrypoints/blueprints/gsheets.py:696
+#: src/opendlp/entrypoints/blueprints/gsheets.py:965
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:141
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:202
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:250
@@ -1192,8 +1192,8 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:338
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:195
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:409
-#: src/opendlp/entrypoints/blueprints/gsheets.py:784
-#: src/opendlp/entrypoints/blueprints/gsheets.py:840
+#: src/opendlp/entrypoints/blueprints/gsheets.py:762
+#: src/opendlp/entrypoints/blueprints/gsheets.py:818
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:355
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:392
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:677
@@ -1210,24 +1210,24 @@ msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:178
-#: src/opendlp/entrypoints/blueprints/gsheets.py:509
-#: src/opendlp/entrypoints/blueprints/gsheets.py:654
+#: src/opendlp/entrypoints/blueprints/gsheets.py:487
+#: src/opendlp/entrypoints/blueprints/gsheets.py:632
 #, fuzzy
 msgid "Task cancelled"
 msgstr "Kész"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:188
-#: src/opendlp/entrypoints/blueprints/gsheets.py:519
-#: src/opendlp/entrypoints/blueprints/gsheets.py:664
+#: src/opendlp/entrypoints/blueprints/gsheets.py:497
+#: src/opendlp/entrypoints/blueprints/gsheets.py:642
 #, fuzzy, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:192
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:255
-#: src/opendlp/entrypoints/blueprints/gsheets.py:523
-#: src/opendlp/entrypoints/blueprints/gsheets.py:668
-#: src/opendlp/entrypoints/blueprints/gsheets.py:863
+#: src/opendlp/entrypoints/blueprints/gsheets.py:501
+#: src/opendlp/entrypoints/blueprints/gsheets.py:646
+#: src/opendlp/entrypoints/blueprints/gsheets.py:841
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:418
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:760
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1027
@@ -1238,9 +1238,9 @@ msgstr "Az oldal nem elérhető"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:196
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:263
-#: src/opendlp/entrypoints/blueprints/gsheets.py:527
-#: src/opendlp/entrypoints/blueprints/gsheets.py:672
-#: src/opendlp/entrypoints/blueprints/gsheets.py:873
+#: src/opendlp/entrypoints/blueprints/gsheets.py:505
+#: src/opendlp/entrypoints/blueprints/gsheets.py:650
+#: src/opendlp/entrypoints/blueprints/gsheets.py:851
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:430
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:772
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1039
@@ -1249,9 +1249,9 @@ msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:201
-#: src/opendlp/entrypoints/blueprints/gsheets.py:532
-#: src/opendlp/entrypoints/blueprints/gsheets.py:677
-#: src/opendlp/entrypoints/blueprints/gsheets.py:878
+#: src/opendlp/entrypoints/blueprints/gsheets.py:510
+#: src/opendlp/entrypoints/blueprints/gsheets.py:655
+#: src/opendlp/entrypoints/blueprints/gsheets.py:856
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:435
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:777
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1044
@@ -1315,7 +1315,7 @@ msgid "Please review and save the selection settings before checking targets."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:250
-#: src/opendlp/entrypoints/blueprints/gsheets.py:858
+#: src/opendlp/entrypoints/blueprints/gsheets.py:836
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:411
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:753
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1020
@@ -1342,123 +1342,123 @@ msgstr "Hiba történt a betöltés indítása közben"
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:322
+#: src/opendlp/entrypoints/blueprints/gsheets.py:300
 #, fuzzy
 msgid "An error occurred while loading the selection page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:451
-#: src/opendlp/entrypoints/blueprints/gsheets.py:486
-#: src/opendlp/entrypoints/blueprints/gsheets.py:554
-#: src/opendlp/entrypoints/blueprints/gsheets.py:582
+#: src/opendlp/entrypoints/blueprints/gsheets.py:429
+#: src/opendlp/entrypoints/blueprints/gsheets.py:464
+#: src/opendlp/entrypoints/blueprints/gsheets.py:532
+#: src/opendlp/entrypoints/blueprints/gsheets.py:560
 #, fuzzy
 msgid "Please configure a Google Spreadsheet first"
 msgstr "Adja meg a Google táblázat beállításait"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:455
-#: src/opendlp/entrypoints/blueprints/gsheets.py:490
+#: src/opendlp/entrypoints/blueprints/gsheets.py:433
+#: src/opendlp/entrypoints/blueprints/gsheets.py:468
 #, fuzzy
 msgid "You don't have permission to run selection"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:460
+#: src/opendlp/entrypoints/blueprints/gsheets.py:438
 #, fuzzy
 msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:495
+#: src/opendlp/entrypoints/blueprints/gsheets.py:473
 #, fuzzy
 msgid "An error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:558
-#: src/opendlp/entrypoints/blueprints/gsheets.py:586
+#: src/opendlp/entrypoints/blueprints/gsheets.py:536
+#: src/opendlp/entrypoints/blueprints/gsheets.py:564
 #, fuzzy
 msgid "You don't have permission to manage tabs"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:563
+#: src/opendlp/entrypoints/blueprints/gsheets.py:541
 #, fuzzy
 msgid "An error occurred while starting the list tabs task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:591
+#: src/opendlp/entrypoints/blueprints/gsheets.py:569
 #, fuzzy
 msgid "An error occurred while starting the delete tabs task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:701
+#: src/opendlp/entrypoints/blueprints/gsheets.py:679
 #, fuzzy
 msgid "Selection run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:706
+#: src/opendlp/entrypoints/blueprints/gsheets.py:684
 #, fuzzy
 msgid "Selection run does not belong to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:727
+#: src/opendlp/entrypoints/blueprints/gsheets.py:705
 #, fuzzy
 msgid "An error occurred while loading the run details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:772
+#: src/opendlp/entrypoints/blueprints/gsheets.py:750
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:665
 #, fuzzy, python-format
 msgid "Could not start task to read gsheet: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:777
+#: src/opendlp/entrypoints/blueprints/gsheets.py:755
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:385
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:670
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:789
+#: src/opendlp/entrypoints/blueprints/gsheets.py:767
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:397
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:682
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:804
+#: src/opendlp/entrypoints/blueprints/gsheets.py:782
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:698
 msgid "Number of people to select is required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:810
+#: src/opendlp/entrypoints/blueprints/gsheets.py:788
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:704
 msgid "Number of people to select must be greater than zero"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:813
+#: src/opendlp/entrypoints/blueprints/gsheets.py:791
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:707
 msgid "Number of people to select must be a valid integer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:833
+#: src/opendlp/entrypoints/blueprints/gsheets.py:811
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:727
 #, fuzzy, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:845
+#: src/opendlp/entrypoints/blueprints/gsheets.py:823
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:739
 #, fuzzy
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:915
+#: src/opendlp/entrypoints/blueprints/gsheets.py:893
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:101
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:918
+#: src/opendlp/entrypoints/blueprints/gsheets.py:896
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:83
 msgid "Google Spreadsheet configuration created successfully"
 msgstr "Google táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:928
+#: src/opendlp/entrypoints/blueprints/gsheets.py:906
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:111
 msgid ""
 "Warning: No columns to keep specified. This means the output will only "
@@ -1466,8 +1466,8 @@ msgid ""
 "checking. Is this intentional?"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:953
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1017
+#: src/opendlp/entrypoints/blueprints/gsheets.py:931
+#: src/opendlp/entrypoints/blueprints/gsheets.py:995
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:123
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:173
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
@@ -1475,28 +1475,28 @@ msgstr ""
 "Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
 "megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:957
+#: src/opendlp/entrypoints/blueprints/gsheets.py:935
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:129
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:960
-#: src/opendlp/entrypoints/blueprints/gsheets.py:996
+#: src/opendlp/entrypoints/blueprints/gsheets.py:938
+#: src/opendlp/entrypoints/blueprints/gsheets.py:974
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:134
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1007
+#: src/opendlp/entrypoints/blueprints/gsheets.py:985
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:163
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1013
+#: src/opendlp/entrypoints/blueprints/gsheets.py:991
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:167
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1022
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1000
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:177
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
@@ -1883,7 +1883,7 @@ msgid "An unexpected error occurred while checking targets"
 msgstr "Hiba történt a betöltés indítása közben"
 
 #: src/opendlp/entrypoints/celery/tasks.py:109
-#: src/opendlp/service_layer/sortition.py:794
+#: src/opendlp/service_layer/sortition.py:819
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -2245,16 +2245,16 @@ msgstr ""
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:863
+#: src/opendlp/service_layer/sortition.py:888
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:890
+#: src/opendlp/service_layer/sortition.py:915
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:902
-#: src/opendlp/service_layer/sortition.py:913
+#: src/opendlp/service_layer/sortition.py:927
+#: src/opendlp/service_layer/sortition.py:938
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -2736,8 +2736,8 @@ msgstr ""
 msgid "Showing %(count)s invites (including expired)"
 msgstr ""
 
-#: templates/admin/invites.html:65 templates/backoffice/patterns.html:102
-#: templates/backoffice/patterns.html:214
+#: templates/admin/invites.html:65 templates/backoffice/patterns.html:103
+#: templates/backoffice/patterns.html:215
 msgid "Code"
 msgstr ""
 
@@ -4391,126 +4391,137 @@ msgstr ""
 msgid "File Upload"
 msgstr ""
 
-#: templates/backoffice/patterns.html:47
+#: templates/backoffice/patterns.html:46
+#, fuzzy
+msgid "Progress"
+msgstr "Feladat folyamatban"
+
+#: templates/backoffice/patterns.html:48
 #, fuzzy
 msgid "Pattern categories"
 msgstr "Feladat állapota"
 
-#: templates/backoffice/patterns.html:58
+#: templates/backoffice/patterns.html:59
 msgid ""
 "A dropdown that navigates to a URL when selection changes. Uses the "
 "reusable <code>urlSelect</code> Alpine component with focus restoration "
 "for keyboard users."
 msgstr ""
 
-#: templates/backoffice/patterns.html:63 templates/backoffice/patterns.html:180
+#: templates/backoffice/patterns.html:64 templates/backoffice/patterns.html:181
+#: templates/backoffice/patterns.html:557
 #, fuzzy
 msgid "When to Use"
 msgstr "Módosítsa a számot."
 
-#: templates/backoffice/patterns.html:65
+#: templates/backoffice/patterns.html:66
 msgid "Dropdown selection triggers a page navigation/reload"
 msgstr ""
 
-#: templates/backoffice/patterns.html:66
+#: templates/backoffice/patterns.html:67
 msgid "Value is passed as URL query parameter"
 msgstr ""
 
-#: templates/backoffice/patterns.html:67
+#: templates/backoffice/patterns.html:68
 msgid "Server-side rendering based on selection"
 msgstr ""
 
-#: templates/backoffice/patterns.html:74 templates/backoffice/patterns.html:191
-#: templates/backoffice/patterns.html:341
+#: templates/backoffice/patterns.html:75 templates/backoffice/patterns.html:192
+#: templates/backoffice/patterns.html:342
 msgid "Live Example"
 msgstr ""
 
-#: templates/backoffice/patterns.html:79
+#: templates/backoffice/patterns.html:80
 #, fuzzy
 msgid "Select an option"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:85
+#: templates/backoffice/patterns.html:86
 msgid "Choose..."
 msgstr ""
 
-#: templates/backoffice/patterns.html:86
+#: templates/backoffice/patterns.html:87
 #, fuzzy
 msgid "Option 1"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:87
+#: templates/backoffice/patterns.html:88
 #, fuzzy
 msgid "Option 2"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:88
+#: templates/backoffice/patterns.html:89
 #, fuzzy
 msgid "Option 3"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:92
+#: templates/backoffice/patterns.html:93
 #, python-format
 msgid "Selected: %(value)s (see URL)"
 msgstr ""
 
-#: templates/backoffice/patterns.html:106
-#: templates/backoffice/patterns.html:218
-#: templates/backoffice/patterns.html:400
-#: templates/backoffice/patterns.html:432
+#: templates/backoffice/patterns.html:107
+#: templates/backoffice/patterns.html:219
+#: templates/backoffice/patterns.html:401
+#: templates/backoffice/patterns.html:433
+#: templates/backoffice/patterns.html:616
 msgid "Copy"
 msgstr ""
 
-#: templates/backoffice/patterns.html:125
+#: templates/backoffice/patterns.html:126
 msgid "CSP Compatibility Notes"
 msgstr ""
 
-#: templates/backoffice/patterns.html:136
-#: templates/backoffice/patterns.html:259
-#: templates/backoffice/patterns.html:481
+#: templates/backoffice/patterns.html:137
+#: templates/backoffice/patterns.html:260
+#: templates/backoffice/patterns.html:482
+#: templates/backoffice/patterns.html:713
 #, fuzzy
 msgid "Implementations"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/patterns.html:142
-#: templates/backoffice/patterns.html:265
-#: templates/backoffice/patterns.html:487
-msgid "File"
-msgstr ""
-
 #: templates/backoffice/patterns.html:143
 #: templates/backoffice/patterns.html:266
 #: templates/backoffice/patterns.html:488
-#, fuzzy
-msgid "Line"
-msgstr "Bejelentkezés"
+#: templates/backoffice/patterns.html:719
+msgid "File"
+msgstr ""
 
 #: templates/backoffice/patterns.html:144
 #: templates/backoffice/patterns.html:267
 #: templates/backoffice/patterns.html:489
+#: templates/backoffice/patterns.html:720
+#, fuzzy
+msgid "Line"
+msgstr "Bejelentkezés"
+
+#: templates/backoffice/patterns.html:145
+#: templates/backoffice/patterns.html:268
+#: templates/backoffice/patterns.html:490
+#: templates/backoffice/patterns.html:721
 #, fuzzy
 msgid "Usage"
 msgstr "Vezetéknév"
 
-#: templates/backoffice/patterns.html:175
+#: templates/backoffice/patterns.html:176
 msgid ""
 "A dropdown that binds to Alpine.js state for use in forms or interactive "
 "components. Does NOT navigate — stores value in component state."
 msgstr ""
 
-#: templates/backoffice/patterns.html:182
+#: templates/backoffice/patterns.html:183
 msgid "Selection is part of a larger form"
 msgstr ""
 
-#: templates/backoffice/patterns.html:183
+#: templates/backoffice/patterns.html:184
 msgid "Value used in AJAX request or local computation"
 msgstr ""
 
-#: templates/backoffice/patterns.html:184
+#: templates/backoffice/patterns.html:185
 msgid "No page reload needed"
 msgstr ""
 
-#: templates/backoffice/patterns.html:195
+#: templates/backoffice/patterns.html:196
 #: templates/backoffice/service_docs.html:150
 #: templates/backoffice/service_docs.html:326
 #: templates/backoffice/service_docs.html:453
@@ -4520,7 +4531,7 @@ msgstr ""
 msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
-#: templates/backoffice/patterns.html:199
+#: templates/backoffice/patterns.html:200
 #: templates/backoffice/service_docs.html:154
 #: templates/backoffice/service_docs.html:330
 #: templates/backoffice/service_docs.html:457
@@ -4528,126 +4539,290 @@ msgstr "Közösségi gyűlés"
 msgid "Select an assembly..."
 msgstr "Közösségi gyűlés szerkesztése"
 
-#: templates/backoffice/patterns.html:205
+#: templates/backoffice/patterns.html:206
 #, fuzzy
 msgid "Selected ID:"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:245
+#: templates/backoffice/patterns.html:246
 msgid "Common Mistake"
 msgstr ""
 
-#: templates/backoffice/patterns.html:252
+#: templates/backoffice/patterns.html:253
 msgid ""
 "The CSP-compatible Alpine.js build cannot evaluate nested property paths "
 "in x-model directives."
 msgstr ""
 
-#: templates/backoffice/patterns.html:296
+#: templates/backoffice/patterns.html:297
 msgid "Documentation for form state patterns coming soon..."
 msgstr ""
 
-#: templates/backoffice/patterns.html:309
+#: templates/backoffice/patterns.html:310
 msgid "Documentation for AJAX patterns coming soon..."
 msgstr ""
 
-#: templates/backoffice/patterns.html:324
+#: templates/backoffice/patterns.html:325
 msgid ""
 "Pattern for uploading CSV files with client-side validation and server-"
 "side processing. The file is read as text and passed to service layer "
 "functions."
 msgstr ""
 
-#: templates/backoffice/patterns.html:329
+#: templates/backoffice/patterns.html:330
 msgid "Architecture"
 msgstr ""
 
-#: templates/backoffice/patterns.html:331
+#: templates/backoffice/patterns.html:332
 msgid "UI Component"
 msgstr ""
 
-#: templates/backoffice/patterns.html:331
+#: templates/backoffice/patterns.html:332
 msgid "macro in"
 msgstr ""
 
-#: templates/backoffice/patterns.html:332
+#: templates/backoffice/patterns.html:333
 msgid "Form submission"
 msgstr ""
 
-#: templates/backoffice/patterns.html:333
+#: templates/backoffice/patterns.html:334
 msgid "Server reads file"
 msgstr ""
 
-#: templates/backoffice/patterns.html:334
+#: templates/backoffice/patterns.html:335
 msgid "Service layer"
 msgstr ""
 
-#: templates/backoffice/patterns.html:334
+#: templates/backoffice/patterns.html:335
 msgid "Receives CSV content as string, not file object"
 msgstr ""
 
-#: templates/backoffice/patterns.html:354
+#: templates/backoffice/patterns.html:355
 msgid "Select a CSV file to see the pattern in action"
 msgstr ""
 
-#: templates/backoffice/patterns.html:369
+#: templates/backoffice/patterns.html:370
 #: templates/backoffice/targets/category_block.html:107
 #: templates/respondents/view_respondents.html:132
 #, fuzzy
 msgid "Selected"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/patterns.html:373
+#: templates/backoffice/patterns.html:374
 msgid "Preview"
 msgstr ""
 
-#: templates/backoffice/patterns.html:387
+#: templates/backoffice/patterns.html:388
 msgid "Upload (Demo)"
 msgstr ""
 
-#: templates/backoffice/patterns.html:396
+#: templates/backoffice/patterns.html:397
+#: templates/backoffice/patterns.html:612
 msgid "Template Code"
 msgstr ""
 
-#: templates/backoffice/patterns.html:428
+#: templates/backoffice/patterns.html:429
 msgid "Flask Route Code"
 msgstr ""
 
-#: templates/backoffice/patterns.html:468
+#: templates/backoffice/patterns.html:469
 msgid "Key Points"
 msgstr ""
 
-#: templates/backoffice/patterns.html:470
+#: templates/backoffice/patterns.html:471
 msgid "Required for file uploads"
 msgstr ""
 
-#: templates/backoffice/patterns.html:471
+#: templates/backoffice/patterns.html:472
 msgid "Handles BOM (byte order mark) in CSV files from Excel"
 msgstr ""
 
-#: templates/backoffice/patterns.html:472
+#: templates/backoffice/patterns.html:473
 msgid "Service layer receives string"
 msgstr ""
 
-#: templates/backoffice/patterns.html:472
+#: templates/backoffice/patterns.html:473
 msgid "Not the file object, for testability"
 msgstr ""
 
-#: templates/backoffice/patterns.html:473
+#: templates/backoffice/patterns.html:474
 msgid "CSRF token"
 msgstr ""
 
-#: templates/backoffice/patterns.html:473
+#: templates/backoffice/patterns.html:474
 msgid "form.hidden_tag() includes it automatically for Flask-WTF forms"
 msgstr ""
 
-#: templates/backoffice/patterns.html:474
+#: templates/backoffice/patterns.html:475
 msgid "Plain HTML forms"
 msgstr ""
 
-#: templates/backoffice/patterns.html:474
+#: templates/backoffice/patterns.html:475
 msgid "Add manual CSRF input:"
 msgstr ""
+
+#: templates/backoffice/patterns.html:552
+msgid ""
+"A stateless progress indicator that renders either a determinate progress"
+" bar (when total is known) or an animated spinner (for indeterminate "
+"progress). Used in selection task modals to show real-time algorithm "
+"progress."
+msgstr ""
+
+#: templates/backoffice/patterns.html:559
+msgid "Determinate"
+msgstr ""
+
+#: templates/backoffice/patterns.html:559
+msgid "When you know the total number of steps (e.g., 'iteration 5 of 100')"
+msgstr ""
+
+#: templates/backoffice/patterns.html:560
+msgid "Indeterminate"
+msgstr ""
+
+#: templates/backoffice/patterns.html:560
+msgid "When duration is unknown (e.g., 'Loading data...')"
+msgstr ""
+
+#: templates/backoffice/patterns.html:561
+msgid "Long-running background tasks (selection algorithms, data imports)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:562
+msgid "HTMX-polled modal dialogs that update server-side"
+msgstr ""
+
+#: templates/backoffice/patterns.html:569
+msgid "Live Examples"
+msgstr ""
+
+#: templates/backoffice/patterns.html:574
+#, fuzzy
+msgid "Default (no arguments)"
+msgstr "Kezdés dátuma"
+
+#: templates/backoffice/patterns.html:581
+msgid "Indeterminate with custom label"
+msgstr ""
+
+#: templates/backoffice/patterns.html:582
+#, fuzzy
+msgid "Loading respondent data..."
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/backoffice/patterns.html:588
+#, python-format
+msgid "Determinate (25%%)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:589
+msgid "Finding diverse committees (25 of 100 rounds)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:595
+#, python-format
+msgid "Determinate (60%%)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:596
+msgid "Optimising for maximin fairness (iteration 60)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:602
+#, python-format
+msgid "Determinate (95%%)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:603
+msgid "Optimising for leximin fairness (95 of 100 fixed)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:642
+msgid "Architecture Notes"
+msgstr ""
+
+#: templates/backoffice/patterns.html:644
+msgid "Stateless macro with primitive parameters (label, current, total)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:645
+msgid "Wrapper that accepts a ProgressInfo dataclass object"
+msgstr ""
+
+#: templates/backoffice/patterns.html:646
+msgid "Server-side rendering"
+msgstr ""
+
+#: templates/backoffice/patterns.html:646
+msgid "Progress is polled via HTMX, not WebSocket"
+msgstr ""
+
+#: templates/backoffice/patterns.html:647
+#, fuzzy
+msgid "Database storage"
+msgstr "További beállítások"
+
+#: templates/backoffice/patterns.html:647
+msgid "Progress stored in selection_run_records.progress JSON column"
+msgstr ""
+
+#: templates/backoffice/patterns.html:648
+#, fuzzy
+msgid "Throttled updates"
+msgstr "Utoljára módosítva"
+
+#: templates/backoffice/patterns.html:648
+msgid "DatabaseProgressReporter writes at most every 0.5s"
+msgstr ""
+
+#: templates/backoffice/patterns.html:655
+#, fuzzy
+msgid "Selection Algorithm Phases"
+msgstr "Kiválasztás"
+
+#: templates/backoffice/patterns.html:658
+msgid "The sortition-algorithms library emits these phases during selection:"
+msgstr ""
+
+#: templates/backoffice/patterns.html:664
+#, fuzzy
+msgid "Phase"
+msgstr "Vezetéknév"
+
+#: templates/backoffice/patterns.html:665
+msgid "Label"
+msgstr ""
+
+#: templates/backoffice/patterns.html:666
+msgid "Has Total?"
+msgstr ""
+
+#: templates/backoffice/patterns.html:672
+#, fuzzy
+msgid "Reading from spreadsheet…"
+msgstr "Google táblázat módosítása"
+
+#: templates/backoffice/patterns.html:677
+msgid "Finding diverse committees (X of Y rounds)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:682
+msgid "Optimising for maximin fairness (iteration X)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:687
+msgid "Optimising for Nash fairness (iteration X)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:692
+msgid "Optimising for leximin fairness (X of Y fixed)"
+msgstr ""
+
+#: templates/backoffice/patterns.html:702
+#, fuzzy
+msgid "Running selection attempt X of Y"
+msgstr "Rétegzett kiválasztás"
 
 #: templates/backoffice/service_docs.html:13
 #: templates/backoffice/service_docs.html:31
@@ -5069,7 +5244,7 @@ msgid "Manage Tabs Progress"
 msgstr "Feladat folyamatban"
 
 #: templates/backoffice/components/manage_tabs_progress_modal.html:21
-#: templates/backoffice/components/modal.html:269
+#: templates/backoffice/components/modal.html:274
 #: templates/backoffice/components/replacement_modal.html:46
 msgid "Processing..."
 msgstr ""
