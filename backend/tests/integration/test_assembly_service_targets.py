@@ -103,6 +103,28 @@ class TestCreateTargetCategory:
                 name="Gender",
             )
 
+    def test_create_duplicate_category_raises_value_error(
+        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test creating a category with the same name raises ValueError."""
+        uow1 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
+
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(ValueError, match="already exists"):
+            assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="Gender")
+
+    def test_create_duplicate_category_case_insensitive(
+        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """Test duplicate check is case-insensitive."""
+        uow1 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        assembly_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
+
+        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with pytest.raises(ValueError, match="already exists"):
+            assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="gender")
+
     def test_create_category_without_permission(self, uow, test_assembly: Assembly):
         """Test creating category without permission raises error."""
         # Create non-admin user

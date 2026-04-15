@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import pytest
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
@@ -802,3 +803,69 @@ class TestSelectionSettingsDomainModel:
 
         assert sel_settings.check_same_address_cols == ["new_address", "new_postcode"]
         assert sel_settings.columns_to_keep == ["original_column"]  # Should remain unchanged
+
+
+class TestCreateTargetCategoryAutoPopulate:
+    """Test auto-population of target category values from respondent data."""
+
+    def _setup(self):
+        uow = FakeUnitOfWork()
+        admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin)
+        assembly = Assembly(title="Test", question="?", number_to_select=30)
+        uow.assemblies.add(assembly)
+        return uow, admin, assembly
+
+    def test_auto_populates_values_from_matching_respondent_column(self):
+        """Creating a category whose name matches a respondent column auto-adds its values."""
+        uow, admin, assembly = self._setup()
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="3", attributes={"Gender": "Non-binary"}))
+
+        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
+
+        value_names = sorted(v.value for v in category.values)
+        assert value_names == ["Female", "Male", "Non-binary"]
+        assert all(v.min == 0 for v in category.values)
+        assert all(v.max == 0 for v in category.values)
+
+    def test_auto_populates_case_insensitive(self):
+        """Auto-population matches column names case-insensitively."""
+        uow, admin, assembly = self._setup()
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
+
+        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="gender")
+
+        value_names = sorted(v.value for v in category.values)
+        assert value_names == ["Female", "Male"]
+
+    def test_no_auto_populate_when_no_matching_column(self):
+        """No values are added when category name doesn't match any respondent column."""
+        uow, admin, assembly = self._setup()
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
+
+        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Ethnicity")
+
+        assert category.values == []
+
+    def test_no_auto_populate_when_no_respondents(self):
+        """No values are added when there are no respondents."""
+        uow, admin, assembly = self._setup()
+
+        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
+
+        assert category.values == []
+
+    def test_no_auto_populate_for_high_cardinality_column(self):
+        """Columns with >= 20 distinct values are not auto-populated."""
+        uow, admin, assembly = self._setup()
+        for i in range(25):
+            uow.respondents.add(
+                Respondent(assembly_id=assembly.id, external_id=str(i), attributes={"PostCode": f"PC{i:03d}"})
+            )
+
+        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="PostCode")
+
+        assert category.values == []

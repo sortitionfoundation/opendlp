@@ -278,30 +278,14 @@ class TestAddCategoriesAutoAddValues:
             gender_counts = uow2.respondents.get_attribute_value_counts(assembly_id, "Gender")
             assert len(gender_counts) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 
-        # Create category and manually simulate what add_categories_from_columns does
+        # create_target_category auto-adds values for matching low-cardinality columns
         uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
         category = assembly_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
 
-        # Auto-add values (as the endpoint would)
-        for value_name in sorted(gender_counts.keys()):
-            uow4 = SqlAlchemyUnitOfWork(uow.session_factory)
-            assembly_service.add_target_value(
-                uow=uow4,
-                user_id=admin_user.id,
-                assembly_id=assembly_id,
-                category_id=category.id,
-                value=value_name,
-                min_count=0,
-                max_count=0,
-            )
-
-        # Verify values were added
-        uow5 = SqlAlchemyUnitOfWork(uow.session_factory)
-        categories = assembly_service.get_targets_for_assembly(uow5, admin_user.id, assembly_id)
-        gender_cat = next(c for c in categories if c.name == "Gender")
-        value_names = sorted(v.value for v in gender_cat.values)
+        # Verify values were auto-added
+        value_names = sorted(v.value for v in category.values)
         assert value_names == ["Female", "Male"]
-        assert all(v.min == 0 and v.max == 0 for v in gender_cat.values)
+        assert all(v.min == 0 and v.max == 0 for v in category.values)
 
     def test_no_auto_add_for_high_cardinality_column(
         self,

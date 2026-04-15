@@ -235,7 +235,8 @@ def _get_tab_enabled_states(
         enabled = gsheet is not None
         return enabled, enabled, enabled
     if data_source == "csv" and csv_status:
-        return csv_status.has_targets, csv_status.has_respondents, csv_status.selection_enabled
+        # targets is always enabled, as you can create from blank in the targets tab
+        return True, csv_status.has_respondents, csv_status.selection_enabled
     return False, False, False
 
 

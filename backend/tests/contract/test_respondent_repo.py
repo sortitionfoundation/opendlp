@@ -270,3 +270,43 @@ class TestGetAttributeValueCounts:
 
     def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
         assert respondent_backend.repo.get_attribute_value_counts(uuid.uuid4(), "gender") == {}
+
+
+class TestGetSelectedAttributeValueCounts:
+    def test_counts_only_selected_and_confirmed(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R002",
+            attributes={"gender": "Male"},
+            status=RespondentStatus.SELECTED,
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R003",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.CONFIRMED,
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R004",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.WITHDRAWN,
+        )
+
+        counts = respondent_backend.repo.get_selected_attribute_value_counts(assembly.id, "gender")
+        assert counts == {"Male": 1, "Female": 1}
+
+    def test_returns_empty_when_none_selected(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+
+        counts = respondent_backend.repo.get_selected_attribute_value_counts(assembly.id, "gender")
+        assert counts == {}
+
+    def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
+        assert respondent_backend.repo.get_selected_attribute_value_counts(uuid.uuid4(), "gender") == {}

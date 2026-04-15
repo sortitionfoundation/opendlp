@@ -36,6 +36,8 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
+from .respondent_service import get_respondent_attribute_columns, get_respondent_attribute_value_counts
+from .target_respondent_helpers import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import get_user_assemblies
 
@@ -576,12 +578,26 @@ def create_target_category(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
+        existing = uow.target_categories.get_by_assembly_id(assembly_id)
+        if any(c.name.lower() == name.lower() for c in existing):
+            raise ValueError(f"A category named '{name}' already exists")
+
         category = TargetCategory(
             assembly_id=assembly_id,
             name=name,
             description=description,
             sort_order=sort_order,
         )
+
+        # Auto-add values if category name matches a low-cardinality respondent column
+        attribute_columns = get_respondent_attribute_columns(uow, assembly_id)
+        columns_lower = {col.lower(): col for col in attribute_columns}
+        matched_col = columns_lower.get(name.lower())
+        if matched_col is not None:
+            value_counts = get_respondent_attribute_value_counts(uow, assembly_id, matched_col)
+            if 0 < len(value_counts) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+                for value_name in sorted(value_counts.keys()):
+                    category.add_value(TargetValue(value=value_name, min=0, max=0))
 
         uow.target_categories.add(category)
         uow.commit()

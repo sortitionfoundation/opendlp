@@ -21,18 +21,20 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly
-from opendlp.service_layer.respondent_service import (
-    get_respondent_attribute_columns,
-    get_respondent_attribute_value_counts,
-)
+from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
+from opendlp.service_layer.target_respondent_helpers import (
+    MAX_DISTINCT_VALUES_FOR_AUTO_ADD,
+    build_respondent_counts,
+    get_assembly_respondent_attribute_columns,
+    get_column_distinct_counts,
+    get_respondent_counts_for_category,
+)
 from opendlp.translations import gettext as _
 
 from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueForm, UploadTargetsCsvForm
 
 targets_legacy_bp = Blueprint("targets_legacy", __name__)
-
-MAX_DISTINCT_VALUES_FOR_AUTO_ADD = 20
 
 
 def _is_htmx() -> bool:
@@ -52,59 +54,6 @@ def _can_manage(assembly_id: uuid.UUID) -> bool:
     return False
 
 
-def _get_respondent_counts_for_category(
-    assembly_id: uuid.UUID,
-    category_name: str,
-    attribute_columns: list[str],
-) -> dict[str, int] | None:
-    """Get respondent value counts for a category if its name matches a respondent attribute column.
-
-    Uses case-insensitive matching. Returns None if no matching column found.
-    """
-    columns_lower = {col.lower(): col for col in attribute_columns}
-    matched_col = columns_lower.get(category_name.lower())
-    if matched_col is None:
-        return None
-    uow = bootstrap.bootstrap()
-    with uow:
-        return get_respondent_attribute_value_counts(uow, assembly_id, matched_col)
-
-
-def _get_respondent_attribute_columns(assembly_id: uuid.UUID) -> list[str]:
-    """Get respondent attribute columns for an assembly."""
-    uow = bootstrap.bootstrap()
-    with uow:
-        return get_respondent_attribute_columns(uow, assembly_id)
-
-
-def _get_column_distinct_counts(
-    assembly_id: uuid.UUID,
-    attribute_columns: list[str],
-) -> dict[str, int]:
-    """Get the number of distinct values for each respondent attribute column."""
-    counts: dict[str, int] = {}
-    uow = bootstrap.bootstrap()
-    with uow:
-        for col in attribute_columns:
-            value_counts = get_respondent_attribute_value_counts(uow, assembly_id, col)
-            counts[col] = len(value_counts)
-    return counts
-
-
-def _build_respondent_counts(
-    assembly_id: uuid.UUID,
-    target_categories: list,
-    attribute_columns: list[str],
-) -> dict[str, dict[str, int]]:
-    """Build respondent value counts for each target category that matches a respondent attribute."""
-    respondent_counts: dict[str, dict[str, int]] = {}
-    for category in target_categories:
-        counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-        if counts is not None:
-            respondent_counts[category.name] = counts
-    return respondent_counts
-
-
 @targets_legacy_bp.route("/assemblies/<uuid:assembly_id>/targets")
 @login_required
 def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -120,15 +69,15 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
-        attribute_columns = _get_respondent_attribute_columns(assembly_id)
-        respondent_counts = _build_respondent_counts(assembly_id, target_categories, attribute_columns)
+        attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+        respondent_counts = build_respondent_counts(assembly_id, target_categories, attribute_columns)
 
         # Get the id_column to exclude from the respondent columns list
         id_column = ""
         if assembly.csv is not None:
             id_column = assembly.csv.csv_id_column
 
-        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
 
         return render_template(
             "targets/view_targets.html",
@@ -262,8 +211,8 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if _is_htmx():
             value_form = TargetValueForm()
             add_category_form = AddTargetCategoryForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/add_category_response.html",
                 assembly_id=assembly_id,
@@ -324,8 +273,8 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
 
         if _is_htmx():
             value_form = TargetValueForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -393,8 +342,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
                     return "", 404
-                attribute_columns = _get_respondent_attribute_columns(assembly_id)
-                counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+                attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+                counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
                 return render_template(
                     "targets/components/category_block.html",
                     assembly_id=assembly_id,
@@ -423,8 +372,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
 
         if _is_htmx():
             value_form = TargetValueForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -445,8 +394,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
                 return "", 404
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -478,8 +427,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
                     return "", 404
-                attribute_columns = _get_respondent_attribute_columns(assembly_id)
-                counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+                attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+                counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
                 return render_template(
                     "targets/components/category_block.html",
                     assembly_id=assembly_id,
@@ -509,8 +458,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
 
         if _is_htmx():
             value_form = TargetValueForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -531,8 +480,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
                 return "", 404
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -564,8 +513,8 @@ def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
 
         if _is_htmx():
             value_form = TargetValueForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -624,8 +573,8 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
 
         if _is_htmx() and category is not None:
             value_form = TargetValueForm()
-            attribute_columns = _get_respondent_attribute_columns(assembly_id)
-            counts = _get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
             return render_template(
                 "targets/components/category_block.html",
                 assembly_id=assembly_id,
@@ -664,8 +613,8 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         sort_order = len(existing)
 
         # Compute distinct value counts to decide whether to auto-add values
-        attribute_columns = _get_respondent_attribute_columns(assembly_id)
-        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+        attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
 
         created = []
         values_added_count = 0
@@ -749,14 +698,14 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
-        attribute_columns = _get_respondent_attribute_columns(assembly_id)
-        respondent_counts = _build_respondent_counts(assembly_id, target_categories, attribute_columns)
+        attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+        respondent_counts = build_respondent_counts(assembly_id, target_categories, attribute_columns)
 
         id_column = ""
         if assembly.csv is not None:
             id_column = assembly.csv.csv_id_column
 
-        column_distinct_counts = _get_column_distinct_counts(assembly_id, attribute_columns)
+        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
 
         return render_template(
             "targets/view_targets.html",

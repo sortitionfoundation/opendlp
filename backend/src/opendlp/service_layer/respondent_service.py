@@ -240,3 +240,12 @@ def get_respondent_attribute_value_counts(
 ) -> dict[str, int]:
     """Get counts of each distinct value for a given attribute across respondents in an assembly."""
     return uow.respondents.get_attribute_value_counts(assembly_id, attribute_name)
+
+
+def get_selected_respondent_attribute_value_counts(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    attribute_name: str,
+) -> dict[str, int]:
+    """Get counts of each distinct value for a given attribute across selected/confirmed respondents."""
+    return uow.respondents.get_selected_attribute_value_counts(assembly_id, attribute_name)
