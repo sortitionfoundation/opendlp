@@ -1,0 +1,58 @@
+{#
+ABOUTME: Showcase section for progress bar component
+ABOUTME: Displays spinner and determinate progress bar variants
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/modal.html" import progress_bar, spinner %}
+
+{% macro progress_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Progress Bar Component") }}
+        {{ showcase_description("Progress indicators for long-running tasks. Renders a spinner for indeterminate progress or a bar when total is known. Used in selection task modals.") }}
+
+        {% call showcase_example('{% from "backoffice/components/modal.html" import progress_bar %}
+
+{# Indeterminate spinner (default) #}
+            {{ progress_bar() }}
+
+{# Spinner with custom label #}
+            {{ progress_bar(label="Loading data...") }}
+
+{# Determinate progress bar #}
+            {{ progress_bar(
+            label="Processing item 50 of 100",
+            current=50,
+            total=100
+            ) }}') %}
+            <div class="space-y-6">
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Default (indeterminate)</span>
+                    {{ progress_bar() }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Custom label (indeterminate)</span>
+                    {{ progress_bar(label="Reading from spreadsheet...") }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">25% complete</span>
+                    {{ progress_bar(label="Finding diverse committees (25 of 100 rounds)", current=25, total=100) }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">60% complete</span>
+                    {{ progress_bar(label="Optimising for maximin fairness (iteration 60)", current=60, total=100) }}
+                </div>
+                <div>
+                    <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">95% complete</span>
+                    {{ progress_bar(label="Optimising for leximin fairness (95 of 100 fixed)", current=95, total=100) }}
+                </div>
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-primary-action (bar fill)",
+        "--color-subtle-background-panels (bar background)",
+        "--color-borders-dividers (bar border)",
+        "--color-secondary-text (label text)"
+        ]) }}
+    {% endcall %}
+{% endmacro %}

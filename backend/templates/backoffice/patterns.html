@@ -14,7 +14,7 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
     <div class="mb-6">
         {{ breadcrumbs([
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Developer Tools"), "href": url_for('backoffice.dev_dashboard')},
+        {"label": _("Developer Tools"), "href": url_for('dev.dev_dashboard')},
         {"label": _("Patterns")}
         ]) }}
     </div>
@@ -39,10 +39,11 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
         {# Tabs for pattern categories #}
         {{ tabs(
         items=[
-        {"label": _("Dropdown"), "href": url_for('backoffice.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
-        {"label": _("Form State"), "href": url_for('backoffice.patterns', tab='form'), "active": active_tab == 'form'},
-        {"label": _("AJAX"), "href": url_for('backoffice.patterns', tab='ajax'), "active": active_tab == 'ajax'},
-        {"label": _("File Upload"), "href": url_for('backoffice.patterns', tab='file-upload'), "active": active_tab == 'file-upload'}
+        {"label": _("Dropdown"), "href": url_for('dev.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
+        {"label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
+        {"label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
+        {"label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
+        {"label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'}
         ],
         aria_label=_("Pattern categories")
         ) }}
@@ -75,7 +76,7 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
                             </h4>
                             <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
                                 <div class="max-w-md"
-                                     x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.patterns', tab='dropdown') }}', paramName: 'demo', initialValue: '{{ request.args.get('demo', '') }}' })">
+                                     x-data="urlSelect({ baseUrl: '{{ url_for('dev.patterns', tab='dropdown') }}', paramName: 'demo', initialValue: '{{ request.args.get('demo', '') }}' })">
                                     <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Select an option") }}</label>
                                     <select x-model="selected"
                                             @change="navigate($event)"
@@ -539,6 +540,232 @@ def upload_csv():
             </div>
         {% endif %}
 
+        {# ===== PROGRESS PATTERN ===== #}
+        {% if active_tab == 'progress' %}
+            {% from "backoffice/components/modal.html" import progress_bar, spinner %}
+            <div class="space-y-6">
+                {# Progress Bar Component #}
+                {% call card(title="Progress Bar Component", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("A stateless progress indicator that renders either a determinate progress bar (when total is known) or an animated spinner (for indeterminate progress). Used in selection task modals to show real-time algorithm progress.") }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>{{ _("Determinate") }}:</strong> {{ _("When you know the total number of steps (e.g., 'iteration 5 of 100')") }}</li>
+                                <li><strong>{{ _("Indeterminate") }}:</strong> {{ _("When duration is unknown (e.g., 'Loading data...')") }}</li>
+                                <li>{{ _("Long-running background tasks (selection algorithms, data imports)") }}</li>
+                                <li>{{ _("HTMX-polled modal dialogs that update server-side") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Live Examples #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Examples") }}
+                            </h4>
+                            <div class="p-4 rounded-lg space-y-6" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                {# Example 1: Default spinner #}
+                                <div>
+                                    <p class="text-label-md mb-2" style="color: var(--color-headings);">{{ _("Default (no arguments)") }}</p>
+                                    {{ progress_bar() }}
+                                    <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-page-background);">progress_bar()</code>
+                                </div>
+
+                                {# Example 2: Custom label spinner #}
+                                <div>
+                                    <p class="text-label-md mb-2" style="color: var(--color-headings);">{{ _("Indeterminate with custom label") }}</p>
+                                    {{ progress_bar(label=_("Loading respondent data...")) }}
+                                    <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-page-background);">progress_bar(label="Loading respondent data...")</code>
+                                </div>
+
+                                {# Example 3: Determinate progress bar - early #}
+                                <div>
+                                    <p class="text-label-md mb-2" style="color: var(--color-headings);">{{ _("Determinate (25%%)") }}</p>
+                                    {{ progress_bar(label=_("Finding diverse committees (25 of 100 rounds)"), current=25, total=100) }}
+                                    <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-page-background);">progress_bar(label="...", current=25, total=100)</code>
+                                </div>
+
+                                {# Example 4: Determinate progress bar - mid #}
+                                <div>
+                                    <p class="text-label-md mb-2" style="color: var(--color-headings);">{{ _("Determinate (60%%)") }}</p>
+                                    {{ progress_bar(label=_("Optimising for maximin fairness (iteration 60)"), current=60, total=100) }}
+                                    <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-page-background);">progress_bar(label="...", current=60, total=100)</code>
+                                </div>
+
+                                {# Example 5: Determinate progress bar - near complete #}
+                                <div>
+                                    <p class="text-label-md mb-2" style="color: var(--color-headings);">{{ _("Determinate (95%%)") }}</p>
+                                    {{ progress_bar(label=_("Optimising for leximin fairness (95 of 100 fixed)"), current=95, total=100) }}
+                                    <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-page-background);">progress_bar(label="...", current=95, total=100)</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Template Code") }}</h4>
+                                <button @click="copyProgressBarCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the macro #}
+{% from "backoffice/components/modal.html" import progress_bar %}
+
+{# Indeterminate spinner (default) #}
+{{ progress_bar() }}
+
+{# Indeterminate with custom label #}
+{{ progress_bar(label="Loading data...") }}
+
+{# Determinate progress bar #}
+{{ progress_bar(
+    label="Processing item 50 of 200",
+    current=50,
+    total=200
+) }}
+
+{# With ProgressInfo object, use progress_indicator instead #}
+{% from "backoffice/components/modal.html" import progress_indicator %}
+{{ progress_indicator(run_record.progress_info) }}{% endraw %}</pre>
+                        </div>
+
+                        {# Architecture Notes #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Architecture Notes") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>progress_bar()</strong> — {{ _("Stateless macro with primitive parameters (label, current, total)") }}</li>
+                                <li><strong>progress_indicator()</strong> — {{ _("Wrapper that accepts a ProgressInfo dataclass object") }}</li>
+                                <li><strong>{{ _("Server-side rendering") }}</strong> — {{ _("Progress is polled via HTMX, not WebSocket") }}</li>
+                                <li><strong>{{ _("Database storage") }}</strong> — {{ _("Progress stored in selection_run_records.progress JSON column") }}</li>
+                                <li><strong>{{ _("Throttled updates") }}</strong> — {{ _("DatabaseProgressReporter writes at most every 0.5s") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Phase Labels #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🏷️</span>{{ _("Selection Algorithm Phases") }}
+                            </h4>
+                            <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">
+                                {{ _("The sortition-algorithms library emits these phases during selection:") }}
+                            </p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Phase") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Label") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Has Total?") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">read_gsheet</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Reading from spreadsheet…") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">❌</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">multiplicative_weights</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Finding diverse committees (X of Y rounds)") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">maximin_optimization</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for maximin fairness (iteration X)") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">nash_optimization</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for Nash fairness (iteration X)") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">leximin_outer</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for leximin fairness (X of Y fixed)") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">write_gsheet</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Writing results back to spreadsheet…") }}</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">❌</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">legacy_attempt</td>
+                                            <td class="px-3 py-2">{{ _("Running selection attempt X of Y") }}</td>
+                                            <td class="px-3 py-2">✅</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Line") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">257</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_bar macro definition</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">297</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_indicator wrapper macro</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/db_selection_progress_modal.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">22</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">DB selection progress modal</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/selection_progress_modal.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">25</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">GSheet selection progress modal</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/assembly.py</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">287</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_info property (phase→label mapping)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/value_objects.py</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">129</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">ProgressInfo dataclass</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">src/opendlp/adapters/sortition_progress.py</td>
+                                            <td class="px-3 py-2">15</td>
+                                            <td class="px-3 py-2">DatabaseProgressReporter</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
         {# Toast Notification #}
         <div x-cloak x-show="toast.show" x-transition
              class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
@@ -661,6 +888,26 @@ def upload_csv():
 
                 copyFileUploadRouteCode() {
                     this.copyToClipboard(this.fileUploadRouteCode);
+                },
+
+                // Progress bar pattern code snippet
+                progressBarCode: '{{ "{%" }} from "backoffice/components/modal.html" import progress_bar {{ "%}" }}\n\n' +
+                '{# Indeterminate spinner (default) #}\n' +
+                '{{ "{{" }} progress_bar() {{ "}}" }}\n\n' +
+                '{# Indeterminate with custom label #}\n' +
+                '{{ "{{" }} progress_bar(label="Loading data...") {{ "}}" }}\n\n' +
+                '{# Determinate progress bar #}\n' +
+                '{{ "{{" }} progress_bar(\n' +
+                '    label="Processing item 50 of 200",\n' +
+                '    current=50,\n' +
+                '    total=200\n' +
+                ') {{ "}}" }}\n\n' +
+                '{# With ProgressInfo object, use progress_indicator instead #}\n' +
+                '{{ "{%" }} from "backoffice/components/modal.html" import progress_indicator {{ "%}" }}\n' +
+                '{{ "{{" }} progress_indicator(run_record.progress_info) {{ "}}" }}',
+
+                copyProgressBarCode() {
+                    this.copyToClipboard(this.progressBarCode);
                 }
             }));
 
