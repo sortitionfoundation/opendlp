@@ -1,0 +1,59 @@
+{#
+ABOUTME: Backoffice view-single-respondent page
+ABOUTME: Displays a single respondent's external_id, email and selection status
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{% block title %}{{ respondent.external_id }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Respondents"), "href": url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id)},
+        {"label": respondent.external_id}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent.external_id }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Respondent details") }}
+    </p>
+
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="respondents",
+    data_source=data_source|default(""),
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
+    ) }}
+
+    <section class="mb-8">
+        <dl class="flex flex-col gap-3">
+            <div class="flex gap-2">
+                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("External ID:") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.external_id }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Email:") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.email or _("—") }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Selection status:") }}</dt>
+                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.selection_status.value|title }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="flex gap-4">
+        {{ button(_("Back to Respondents"), href=url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+    </section>
+{% endblock %}

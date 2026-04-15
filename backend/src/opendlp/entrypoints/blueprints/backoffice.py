@@ -32,9 +32,18 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
     update_csv_config,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.exceptions import (
+    InsufficientPermissions,
+    InvalidSelection,
+    NotFoundError,
+    RespondentNotFoundError,
+)
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.respondent_service import import_respondents_from_csv
+from opendlp.service_layer.respondent_service import (
+    get_respondent,
+    get_respondents_for_assembly,
+    import_respondents_from_csv,
+)
 from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
 from opendlp.translations import gettext as _
 
@@ -530,6 +539,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            respondents = get_respondents_for_assembly(uow, user_id=current_user.id, assembly_id=assembly_id)
 
         # Determine data source and whether tabs should be enabled
         gsheet = None
@@ -558,6 +568,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template(
             "backoffice/assembly_respondents.html",
             assembly=assembly,
+            respondents=respondents,
             data_source=data_source,
             gsheet=gsheet,
             targets_enabled=targets_enabled,
@@ -579,6 +590,69 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>")
+@login_required
+def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
+    """View one respondent"""
+    try:
+        # Get assembly with permissions
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+
+        # Determine data source and whether tabs should be enabled
+        gsheet = None
+        try:
+            uow_gsheet = bootstrap.bootstrap()
+            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+        except Exception:  # noqa: S110
+            pass  # No gsheet config exists - this is expected for new assemblies
+
+        # Get CSV status
+        csv_status: CSVUploadStatus | None = None
+        try:
+            uow_csv = bootstrap.bootstrap()
+            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
+        except Exception:  # noqa: S110
+            pass  # No CSV data - expected for new assemblies
+
+        # Determine data source
+        data_source, _locked = _determine_data_source(gsheet, csv_status)
+
+        # Tab enabled states
+        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+            data_source, gsheet, csv_status
+        )
+        return render_template(
+            "backoffice/assembly_view_respondent.html",
+            assembly=assembly,
+            respondent=respondent,
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled,
+        ), 200
+    except RespondentNotFoundError as e:
+        current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
+        flash(_("Respondent not found"), "error")
+        return redirect(url_for("backoffice.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"View respondent error for respondent {respondent_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while loading the respondent"), "error")
+        return redirect(url_for("backoffice.view_assembly_respondents", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")

@@ -150,6 +150,10 @@ class SelectionRunRecordNotFoundError(NotFoundError):
     """A selection run record could not be found in the database"""
 
 
+class RespondentNotFoundError(NotFoundError):
+    """A respondent could not be found in the database"""
+
+
 class OAuthError(ServiceLayerError):
     """Raised when OAuth authentication fails."""
 

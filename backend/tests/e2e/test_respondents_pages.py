@@ -2,9 +2,11 @@
 ABOUTME: Tests viewing respondents tab, uploading CSV files, pagination, and error handling"""
 
 import io
+import uuid
+from datetime import UTC, datetime, timedelta
 
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.service_layer.assembly_service import update_csv_config
+from opendlp.service_layer.assembly_service import create_assembly, update_csv_config
 from opendlp.service_layer.respondent_service import create_respondent, import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -322,6 +324,84 @@ class TestUploadRespondentsCsv:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("CSV import failed" in msg for msg in flash_messages)
+
+
+class TestViewRespondentPage:
+    def test_view_respondent_renders_for_admin(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={},
+                email="alice@example.com",
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        assert b"R001" in response.data
+        assert b"alice@example.com" in response.data
+        assert b"Pool" in response.data
+
+    def test_view_respondent_requires_login(self, client, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={},
+                email="alice@example.com",
+            )
+
+        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_view_respondent_not_found(self, logged_in_admin, existing_assembly):
+        bogus_id = uuid.uuid4()
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/{bogus_id}",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Respondent not found" in msg for msg in flash_messages)
+
+    def test_view_respondent_wrong_assembly(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            other_assembly = create_assembly(
+                uow=uow,
+                title="Other Assembly",
+                created_by_user_id=admin_user.id,
+                question="Other?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            )
+            other_id = other_assembly.id
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                other_id,
+                external_id="R-OTHER",
+                attributes={},
+            )
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Respondent not found" in msg for msg in flash_messages)
 
 
 class TestResetSelectionStatus:
