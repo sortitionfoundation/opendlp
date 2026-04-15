@@ -12,7 +12,7 @@ To work with Google Spreadsheets we need to set up a service account. The high l
 
 - ensure there is a google cloud project
 - create a new service account in that project
-- give that service account access to the Google Sheets API
+- enable the Google Sheets API and Google Drive API on the project
 - generate and save a JSON API Key for that service account
 - share the spreadsheet in question with the service account email address
 
@@ -68,6 +68,22 @@ Go to <https://console.cloud.google.com/apis/library/sheets.googleapis.com?proje
 ```sh
 gcloud services enable sheets.googleapis.com
 ```
+
+## Give project access to the Google Drive API
+
+_Note this is for the project, not per-service-account._
+
+OpenDLP (via the `sortition-algorithms` library) calls the Drive API to verify that a given file is a native Google Sheet before reading it. Without this API enabled, selections against Google Spreadsheets will fail.
+
+Go to <https://console.cloud.google.com/apis/library/drive.googleapis.com?project=PROJECT_ID> - it will either say "API Enabled" (in which case you're fine) or will have a button to enable it.
+
+### gcloud cli
+
+```sh
+gcloud services enable drive.googleapis.com
+```
+
+Note that enabling the Drive API does not grant the service account broad access to your Drive - it can still only access spreadsheets that have been explicitly shared with its email address.
 
 ## JSON API Key for service account
 
