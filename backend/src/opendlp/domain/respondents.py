@@ -1,11 +1,21 @@
 """ABOUTME: Respondent domain model for assembly participant pool management
 ABOUTME: Contains Respondent class for tracking participants in the selection pool"""
 
+import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
+
+
+def normalise_field_name(key: str) -> str:
+    """Normalise a field name for loose matching.
+
+    Lowercases the key and strips everything that isn't ``a-z0-9``.
+    Keys with no alphanumerics normalise to the empty string.
+    """
+    return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
 class Respondent:

@@ -1,7 +1,6 @@
 """ABOUTME: Assembly domain model for Citizens' Assembly management
 ABOUTME: Contains Assembly class representing policy questions and selection configuration"""
 
-import re
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
@@ -13,6 +12,7 @@ from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyStatus, ProgressInfo, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import lazy_gettext as _l
@@ -114,7 +114,7 @@ class Assembly:
             return []
         normalised_to_original: dict[str, str] = {}
         for key in self.respondents[0].attributes:
-            normalised = re.sub(r"[^a-z0-9]", "", key.lower())
+            normalised = normalise_field_name(key)
             if normalised and normalised not in normalised_to_original:
                 normalised_to_original[normalised] = key
         for candidate in (("firstname", "lastname"), ("firstname", "surname"), ("fullname",), ("name",)):
