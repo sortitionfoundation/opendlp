@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import AssemblyStatus
 
 
@@ -225,3 +226,72 @@ class TestAssembly:
         assert assembly1 != assembly3  # Different ID
         assert hash(assembly1) == hash(assembly2)
         assert hash(assembly1) != hash(assembly3)
+
+
+class TestAssemblyNameFields:
+    def _assembly_with_attrs(self, *attribute_dicts: dict[str, object]) -> Assembly:
+        assembly = Assembly(title="Test Assembly")
+        assembly.respondents = [
+            Respondent(assembly_id=assembly.id, external_id=f"R{i:03d}", attributes=attrs)
+            for i, attrs in enumerate(attribute_dicts)
+        ]
+        return assembly
+
+    def test_no_respondents_returns_empty_list(self):
+        assembly = Assembly(title="Empty Assembly")
+        assert assembly.name_fields == []
+
+    def test_first_name_and_last_name(self):
+        assembly = self._assembly_with_attrs({"first_name": "Sarah", "last_name": "Jones", "age": "30"})
+        assert assembly.name_fields == ["first_name", "last_name"]
+
+    def test_firstname_and_surname(self):
+        assembly = self._assembly_with_attrs({"firstname": "Sarah", "surname": "Jones"})
+        assert assembly.name_fields == ["firstname", "surname"]
+
+    def test_full_name_alone(self):
+        assembly = self._assembly_with_attrs({"full_name": "Sarah Jones", "age": "30"})
+        assert assembly.name_fields == ["full_name"]
+
+    def test_name_alone(self):
+        assembly = self._assembly_with_attrs({"name": "Sarah Jones", "age": "30"})
+        assert assembly.name_fields == ["name"]
+
+    def test_first_last_beats_full_name_and_name(self):
+        assembly = self._assembly_with_attrs(
+            {"first_name": "Sarah", "last_name": "Jones", "full_name": "Sarah Jones", "name": "Sarah"},
+        )
+        assert assembly.name_fields == ["first_name", "last_name"]
+
+    def test_first_surname_beats_full_name(self):
+        assembly = self._assembly_with_attrs(
+            {"firstname": "Sarah", "surname": "Jones", "full_name": "Sarah Jones"},
+        )
+        assert assembly.name_fields == ["firstname", "surname"]
+
+    def test_full_name_beats_name(self):
+        assembly = self._assembly_with_attrs({"full_name": "Sarah Jones", "name": "Sarah"})
+        assert assembly.name_fields == ["full_name"]
+
+    def test_normalisation_case_and_separators(self):
+        # Keys that normalise to firstname/lastname should match and be returned as-is.
+        assembly = self._assembly_with_attrs({"First-Name": "Sarah", "LAST_NAME": "Jones"})
+        assert assembly.name_fields == ["First-Name", "LAST_NAME"]
+
+    def test_no_match_returns_empty(self):
+        assembly = self._assembly_with_attrs({"age": "30", "gender": "F"})
+        assert assembly.name_fields == []
+
+    def test_only_uses_first_respondent(self):
+        # First respondent has no name fields; later ones do — we only look at the first.
+        assembly = self._assembly_with_attrs(
+            {"age": "30"},
+            {"first_name": "Sarah", "last_name": "Jones"},
+        )
+        assert assembly.name_fields == []
+
+    def test_result_is_cached(self):
+        assembly = self._assembly_with_attrs({"first_name": "Sarah", "last_name": "Jones"})
+        first = assembly.name_fields
+        second = assembly.name_fields
+        assert first is second
