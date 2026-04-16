@@ -86,6 +86,26 @@ class Respondent:
         """Safely get attribute value"""
         return self.attributes.get(key, default)
 
+    def display_name(self, field_names: list[str]) -> str:
+        """Build a human-readable name from the given attribute fields.
+
+        Joins non-empty values from ``field_names`` with a single space.
+        Falls back to the local-part of the email, then to ``external_id``.
+        """
+        parts = []
+        for field in field_names:
+            value = self.attributes.get(field)
+            if value is None:
+                continue
+            text = str(value).strip()
+            if text:
+                parts.append(text)
+        if parts:
+            return " ".join(parts)
+        if self.email:
+            return self.email.split("@", 1)[0]
+        return self.external_id
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Respondent):
             return False

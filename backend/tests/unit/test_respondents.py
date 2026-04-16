@@ -208,3 +208,47 @@ class TestRespondent:
         assert copy.consent is True
         assert copy.eligible is True
         assert copy is not resp  # Different instance
+
+
+class TestRespondentDisplayName:
+    def _make(self, attributes=None, email="", external_id="R001"):
+        return Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id=external_id,
+            attributes=attributes or {},
+            email=email,
+        )
+
+    def test_joins_multiple_fields_with_space(self):
+        resp = self._make(attributes={"first_name": "Sarah", "last_name": "Jones"})
+        assert resp.display_name(["first_name", "last_name"]) == "Sarah Jones"
+
+    def test_skips_missing_field(self):
+        resp = self._make(attributes={"first_name": "Sarah"})
+        assert resp.display_name(["first_name", "last_name"]) == "Sarah"
+
+    def test_skips_none_and_empty_and_whitespace_values(self):
+        resp = self._make(
+            attributes={"first_name": "Sarah", "middle_name": None, "second_name": "", "last_name": "   "},
+        )
+        assert resp.display_name(["first_name", "middle_name", "second_name", "last_name"]) == "Sarah"
+
+    def test_strips_values_before_joining(self):
+        resp = self._make(attributes={"first_name": "  Sarah  ", "last_name": " Jones "})
+        assert resp.display_name(["first_name", "last_name"]) == "Sarah Jones"
+
+    def test_falls_back_to_email_local_part_when_all_fields_empty(self):
+        resp = self._make(attributes={"first_name": ""}, email="sarah.jones@example.com")
+        assert resp.display_name(["first_name"]) == "sarah.jones"
+
+    def test_falls_back_to_email_local_part_with_empty_field_list(self):
+        resp = self._make(email="bob@example.com")
+        assert resp.display_name([]) == "bob"
+
+    def test_falls_back_to_external_id_when_email_also_empty(self):
+        resp = self._make(external_id="R-ABC-42")
+        assert resp.display_name([]) == "R-ABC-42"
+
+    def test_coerces_non_string_attribute_values(self):
+        resp = self._make(attributes={"age_label": 42})
+        assert resp.display_name(["age_label"]) == "42"
