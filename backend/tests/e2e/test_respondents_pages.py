@@ -372,6 +372,44 @@ class TestViewRespondentPage:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Respondent not found" in msg for msg in flash_messages)
 
+    def test_view_respondent_shows_generated_name_from_attributes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={"first_name": "Sarah", "last_name": "Jones"},
+                email="sarah@example.com",
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        # Generated name appears in h1 and title
+        assert b"Sarah Jones" in response.data
+        # External id still present in the details table
+        assert b"R001" in response.data
+
+    def test_view_respondent_falls_back_to_email_local_part(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={},
+                email="sarah.jones@example.com",
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        # No name attributes → h1 uses email local-part
+        assert b"sarah.jones" in response.data
+
     def test_view_respondent_wrong_assembly(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

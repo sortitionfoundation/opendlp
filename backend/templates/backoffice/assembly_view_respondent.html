@@ -1,6 +1,6 @@
 {#
 ABOUTME: Backoffice view-single-respondent page
-ABOUTME: Displays a single respondent's external_id, email and selection status
+ABOUTME: Displays a single respondent's full details including attributes
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
@@ -8,7 +8,9 @@ ABOUTME: Displays a single respondent's external_id, email and selection status
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
 
-{% block title %}{{ respondent.external_id }} - {{ assembly.title }}{% endblock %}
+{% set respondent_name = respondent.display_name(assembly.name_fields) %}
+
+{% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
 
 {% block breadcrumb_section %}
     <div class="mb-6">
@@ -16,13 +18,13 @@ ABOUTME: Displays a single respondent's external_id, email and selection status
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
         {"label": _("Respondents"), "href": url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id)},
-        {"label": respondent.external_id}
+        {"label": respondent_name}
         ]) }}
     </div>
 {% endblock %}
 
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent.external_id }}</h1>
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("Respondent details") }}
     </p>
