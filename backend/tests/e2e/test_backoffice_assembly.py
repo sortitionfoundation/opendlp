@@ -8,7 +8,6 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
@@ -763,147 +762,6 @@ class TestBackofficeSearchUsers:
 class TestBackofficeCsvUpload:
     """Test CSV upload functionality in backoffice."""
 
-    def test_upload_respondents_with_id_column(
-        self,
-        logged_in_admin,
-        existing_assembly: Assembly,
-        postgres_session_factory,
-    ):
-        """Test uploading respondents CSV with a specified id_column."""
-        csv_content = "name,person_id,age\nAlice,P001,30\nBob,P002,25"
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
-            data={
-                "file": (BytesIO(csv_content.encode()), "respondents.csv"),
-                "id_column": "person_id",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
-                ),
-            },
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "source=csv" in response.location
-
-        # Verify respondents were created with correct external_id
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
-            assert len(respondents) == 2
-            external_ids = {r.external_id for r in respondents}
-            assert external_ids == {"P001", "P002"}
-            # Verify other columns became attributes
-            for r in respondents:
-                assert "name" in r.attributes
-                assert "age" in r.attributes
-                assert "person_id" not in r.attributes  # id_column should not be in attributes
-
-    def test_upload_respondents_without_id_column_uses_first_column(
-        self,
-        logged_in_admin,
-        existing_assembly: Assembly,
-        postgres_session_factory,
-    ):
-        """Test uploading respondents CSV without id_column uses first column as ID."""
-        csv_content = "participant_id,name,city\nID001,Charlie,London\nID002,Diana,Paris"
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
-            data={
-                "file": (BytesIO(csv_content.encode()), "respondents.csv"),
-                "id_column": "",  # Empty means use first column
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
-                ),
-            },
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-
-        # Verify respondents were created using first column as external_id
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
-            assert len(respondents) == 2
-            external_ids = {r.external_id for r in respondents}
-            assert external_ids == {"ID001", "ID002"}
-            # First column should not be in attributes
-            for r in respondents:
-                assert "participant_id" not in r.attributes
-                assert "name" in r.attributes
-                assert "city" in r.attributes
-
-    def test_upload_respondents_with_invalid_id_column_shows_error(
-        self,
-        logged_in_admin,
-        existing_assembly: Assembly,
-    ):
-        """Test uploading respondents CSV with non-existent id_column shows error."""
-        csv_content = "name,email,age\nAlice,alice@example.com,30"
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
-            data={
-                "file": (BytesIO(csv_content.encode()), "respondents.csv"),
-                "id_column": "nonexistent_column",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
-                ),
-            },
-            content_type="multipart/form-data",
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        # Should show error message about invalid column
-        assert b"nonexistent_column" in response.data or b"Invalid CSV" in response.data
-
-    def test_upload_respondents_shows_success_message(
-        self,
-        logged_in_admin,
-        existing_assembly: Assembly,
-    ):
-        """Test that successful upload shows success flash message."""
-        csv_content = "id,name\n1,Test User"
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
-            data={
-                "file": (BytesIO(csv_content.encode()), "respondents.csv"),
-                "id_column": "",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
-                ),
-            },
-            content_type="multipart/form-data",
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"success" in response.data.lower() or b"uploaded" in response.data.lower()
-
-    def test_upload_respondents_redirects_when_not_logged_in(
-        self,
-        client,
-        existing_assembly: Assembly,
-    ):
-        """Test that unauthenticated users are redirected to login."""
-        csv_content = "id,name\n1,Test"
-
-        response = client.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
-            data={
-                "file": (BytesIO(csv_content.encode()), "respondents.csv"),
-            },
-            content_type="multipart/form-data",
-        )
-
-        assert response.status_code == 302
-        assert "login" in response.location
-
     def test_upload_targets_csv_success(
         self,
         logged_in_admin,
@@ -993,51 +851,6 @@ def assembly_with_targets(postgres_session_factory, admin_user):
         return assembly.create_detached_copy()
 
 
-@pytest.fixture
-def assembly_with_respondents(postgres_session_factory, admin_user):
-    """Create an assembly with respondents for testing."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Assembly with Respondents",
-            created_by_user_id=admin_user.id,
-            question="What is the question?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-        )
-        assembly_id = assembly.id
-
-    # Add target categories first (required for respondents to have a data source)
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        category = TargetCategory(
-            assembly_id=assembly_id,
-            name="Gender",
-            sort_order=0,
-        )
-        category.values = [
-            TargetValue(value="Male", min=10, max=20),
-            TargetValue(value="Female", min=10, max=20),
-        ]
-        uow.target_categories.add(category)
-        uow.commit()
-
-    # Add respondents
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        respondents = []
-        for i in range(5):
-            respondent = Respondent(
-                assembly_id=assembly_id,
-                external_id=f"test-{i}",
-                attributes={"name": f"Test Person {i}", "Gender": "Male" if i % 2 == 0 else "Female"},
-            )
-            respondents.append(respondent)
-        uow.respondents.bulk_add(respondents)
-        uow.commit()
-
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        assembly = uow.assemblies.get(assembly_id)
-        return assembly.create_detached_copy()
-
-
 class TestBackofficeCsvDelete:
     """Test CSV delete functionality in backoffice."""
 
@@ -1090,58 +903,9 @@ class TestBackofficeCsvDelete:
         assert response.status_code == 200
         assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
 
-    def test_delete_respondents_success(
-        self,
-        logged_in_admin,
-        assembly_with_respondents: Assembly,
-        postgres_session_factory,
-    ):
-        """Test successfully deleting respondents for an assembly."""
-        # Verify respondents exist before deletion
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            respondents = uow.respondents.get_by_assembly_id(assembly_with_respondents.id)
-            assert len(respondents) > 0
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_respondents.id}/data/delete-respondents",
-            data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly_with_respondents.id}/data?source=csv"
-                ),
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "source=csv" in response.location
-
-        # Verify respondents were deleted
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            respondents = uow.respondents.get_by_assembly_id(assembly_with_respondents.id)
-            assert len(respondents) == 0
-
-    def test_delete_respondents_shows_success_message(
-        self,
-        logged_in_admin,
-        assembly_with_respondents: Assembly,
-    ):
-        """Test that successful respondents deletion shows success flash message."""
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_respondents.id}/data/delete-respondents",
-            data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly_with_respondents.id}/data?source=csv"
-                ),
-            },
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
-
 
 class TestBackofficeCsvViewPages:
-    """Test targets and respondents view pages with CSV data source."""
+    """Test targets view pages with CSV data source."""
 
     def test_view_targets_page_with_csv_source(
         self,
@@ -1155,18 +919,6 @@ class TestBackofficeCsvViewPages:
         # Should see the page title containing "Targets"
         assert b"Targets" in response.data
 
-    def test_view_respondents_page_with_csv_source(
-        self,
-        logged_in_admin,
-        assembly_with_respondents: Assembly,
-    ):
-        """Test that respondents page loads successfully for CSV data source."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_with_respondents.id}/respondents")
-
-        assert response.status_code == 200
-        # Should see the page content
-        assert b"Respondents" in response.data or b"respondents" in response.data.lower()
-
     def test_view_targets_page_redirects_when_not_logged_in(
         self,
         client,
@@ -1174,17 +926,6 @@ class TestBackofficeCsvViewPages:
     ):
         """Test that unauthenticated users are redirected to login."""
         response = client.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
-
-        assert response.status_code == 302
-        assert "login" in response.location
-
-    def test_view_respondents_page_redirects_when_not_logged_in(
-        self,
-        client,
-        assembly_with_respondents: Assembly,
-    ):
-        """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{assembly_with_respondents.id}/respondents")
 
         assert response.status_code == 302
         assert "login" in response.location

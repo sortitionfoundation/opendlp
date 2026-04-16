@@ -7,6 +7,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -76,9 +77,35 @@ ABOUTME: Displays respondent data configuration for assemblies
             </div>
         </section>
     {% elif data_source == "csv" %}
-        {# CSV source - placeholder for future implementation #}
         <section class="mb-8">
-            {{ alert(_("CSV respondents details will be visible here."), variant="info") }}
+            {% if respondents %}
+                {% call table(striped=true) %}
+                    {{ table_head([
+                    {"label": _("External ID")},
+                    {"label": _("Email")},
+                    {"label": _("Name")},
+                    {"label": _("Actions"), "align": "right"}
+                    ]) }}
+                    {% call table_body() %}
+                        {% for respondent in respondents %}
+                            {% call table_row(is_odd=loop.index is odd) %}
+                                {{ table_cell(respondent.external_id, bold=true) }}
+                                {{ table_cell(respondent.email or "—") }}
+                                {{ table_cell(respondent.display_name(assembly.name_fields)) }}
+                                {{ table_cell_link(
+                                _("View"),
+                                href=url_for('respondents.view_respondent',
+                                assembly_id=assembly.id,
+                                respondent_id=respondent.id),
+                                align="right"
+                                ) }}
+                            {% endcall %}
+                        {% endfor %}
+                    {% endcall %}
+                {% endcall %}
+            {% else %}
+                {{ alert(_("No respondents uploaded yet."), variant="info") }}
+            {% endif %}
         </section>
     {% else %}
         {# No data source selected #}

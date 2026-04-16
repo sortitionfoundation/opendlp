@@ -1,0 +1,208 @@
+{#
+ABOUTME: Table component macros for backoffice design system
+ABOUTME: Supports simple tables, striped rows, and responsive horizontal scrolling
+#}
+
+{# Table container with responsive horizontal scroll wrapper #}
+{% macro table(id="", classes="", striped=false, hoverable=false) %}
+    {#
+Table component using semantic design tokens.
+
+Args:
+  id: Optional id attribute
+  classes: Additional CSS classes for the table
+  striped: If true, alternates row background colors
+  hoverable: If true, adds hover effect to rows
+
+Usage:
+  {% call table(striped=true, hoverable=true) %}
+    {{ table_head([
+      {"label": "Name"},
+      {"label": "Age", "align": "center"},
+      {"label": "Action", "align": "right"}
+    ]) }}
+    {% call table_body() %}
+      {% call table_row() %}
+        {{ table_cell("Richard Hendricks", bold=true) }}
+        {{ table_cell("30", align="center") }}
+        {{ table_cell_link("Edit", href="#", align="right") }}
+      {% endcall %}
+    {% endcall %}
+  {% endcall %}
+    #}
+  <div class="flex flex-col">
+    <div class="overflow-x-auto">
+      <div class="inline-block min-w-full">
+        <div class="overflow-hidden rounded-lg"
+             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+          <table {% if id %}id="{{ id }}"{% endif %}
+                 class="min-w-full divide-y {{ classes }}"
+                 style="--table-divide-color: var(--color-borders-dividers);"
+                 data-striped="{{ 'true' if striped else 'false' }}"
+                 data-hoverable="{{ 'true' if hoverable else 'false' }}">
+            {{ caller() }}
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Table head with column definitions #}
+{% macro table_head(columns) %}
+    {#
+Table header row.
+
+Args:
+  columns: List of column definitions, each with:
+    - label: Column header text
+    - align: Text alignment ("left", "center", "right"), default "left"
+    - classes: Additional CSS classes
+
+Usage:
+  {{ table_head([
+    {"label": "Name"},
+    {"label": "Age", "align": "center"},
+    {"label": "Actions", "align": "right"}
+  ]) }}
+    #}
+  <thead>
+    <tr style="color: var(--color-headings);">
+      {% for col in columns %}
+        {% set align = col.align | default("left") %}
+        <th class="px-5 py-3 text-body-sm font-medium uppercase text-{{ align }} {{ col.classes | default('') }}"
+            style="color: var(--color-headings);">
+          {{ col.label }}
+        </th>
+      {% endfor %}
+    </tr>
+  </thead>
+{% endmacro %}
+
+{# Table body wrapper #}
+{% macro table_body() %}
+    {#
+Table body container. Use with {% call %}.
+
+Usage:
+  {% call table_body() %}
+    {% call table_row() %}
+      {{ table_cell("Content") }}
+    {% endcall %}
+  {% endcall %}
+    #}
+  <tbody class="divide-y" style="--tw-divide-opacity: 1; --tw-divide-color: var(--color-borders-dividers);">
+    {{ caller() }}
+  </tbody>
+{% endmacro %}
+
+{# Table row #}
+{% macro table_row(is_odd=false, classes="") %}
+    {#
+Table row. Use within table_body().
+
+Args:
+  is_odd: If true and table is striped, applies alternate background
+  classes: Additional CSS classes
+
+Usage:
+  {% call table_row(is_odd=loop.index is odd) %}
+    {{ table_cell("Content") }}
+  {% endcall %}
+    #}
+  <tr class="{{ classes }}"
+      style="color: var(--color-body-text);{% if is_odd %} background-color: var(--color-subtle-background-panels);{% endif %}">
+    {{ caller() }}
+  </tr>
+{% endmacro %}
+
+{# Standard table cell #}
+{% macro table_cell(content, align="left", bold=false, nowrap=true, classes="") %}
+    {#
+Table cell.
+
+Args:
+  content: Cell content
+  align: Text alignment ("left", "center", "right")
+  bold: If true, applies font-medium
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Usage:
+  {{ table_cell("Richard Hendricks", bold=true) }}
+  {{ table_cell("30", align="center") }}
+    #}
+  <td class="px-5 py-4 text-body-sm text-{{ align }} {{ 'font-medium' if bold else '' }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
+    {{ content }}
+  </td>
+{% endmacro %}
+
+{# Table cell with link #}
+{% macro table_cell_link(text, href, align="left", nowrap=true, classes="") %}
+    {#
+Table cell containing a styled link.
+
+Args:
+  text: Link text
+  href: Link URL
+  align: Text alignment ("left", "center", "right")
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Usage:
+  {{ table_cell_link("Edit", href="/edit/1", align="right") }}
+    #}
+  <td class="px-5 py-4 text-body-sm font-medium text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
+    <a href="{{ href }}"
+       class="transition-colors"
+       style="color: var(--color-primary-action);"
+       onmouseover="this.style.color='var(--color-active-states)'"
+       onmouseout="this.style.color='var(--color-primary-action)'">
+      {{ text }}
+    </a>
+  </td>
+{% endmacro %}
+
+{# Table cell rendering a boolean as Yes / No / — #}
+{% macro table_cell_yes_no(value, align="left", bold=false, nowrap=true, classes="") %}
+    {#
+Table cell for a tri-state boolean (true / false / none).
+
+Args:
+  value: True, False, or None
+  align: Text alignment ("left", "center", "right")
+  bold: If true, applies font-medium
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Usage:
+  {{ table_cell_yes_no(respondent.consent) }}
+    #}
+  {% if value is none %}
+    {{ table_cell("—", align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% elif value %}
+    {{ table_cell(_("Yes"), align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% else %}
+    {{ table_cell(_("No"), align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% endif %}
+{% endmacro %}
+
+{# Table cell with custom content (use with caller) #}
+{% macro table_cell_custom(align="left", nowrap=true, classes="") %}
+    {#
+Table cell with custom content. Use with {% call %}.
+
+Args:
+  align: Text alignment ("left", "center", "right")
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Usage:
+  {% call table_cell_custom(align="right") %}
+    <button>Custom Button</button>
+  {% endcall %}
+    #}
+  <td class="px-5 py-4 text-body-sm text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
+    {{ caller() }}
+  </td>
+{% endmacro %}

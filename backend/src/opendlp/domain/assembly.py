@@ -4,6 +4,7 @@ ABOUTME: Contains Assembly class representing policy questions and selection con
 import uuid
 from dataclasses import asdict, dataclass, field, fields
 from datetime import UTC, date, datetime
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from sortition_algorithms import adapters
@@ -11,6 +12,7 @@ from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyStatus, ProgressInfo, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import lazy_gettext as _l
@@ -98,6 +100,27 @@ class Assembly:
     def is_active(self) -> bool:
         """Check if assembly is active."""
         return self.status == AssemblyStatus.ACTIVE
+
+    @cached_property
+    def name_fields(self) -> list[str]:
+        """Attribute keys on respondents to use for building a display name.
+
+        Inspects the first respondent's attribute keys, normalises them
+        (lowercase, alphanumeric only), and returns the original keys that
+        match one of the supported name schemas, in precedence order:
+        firstname + lastname, firstname + surname, fullname, name.
+        """
+        if not self.respondents:
+            return []
+        normalised_to_original: dict[str, str] = {}
+        for key in self.respondents[0].attributes:
+            normalised = normalise_field_name(key)
+            if normalised and normalised not in normalised_to_original:
+                normalised_to_original[normalised] = key
+        for candidate in (("firstname", "lastname"), ("firstname", "surname"), ("fullname",), ("name",)):
+            if all(part in normalised_to_original for part in candidate):
+                return [normalised_to_original[part] for part in candidate]
+        return []
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Assembly):  # pragma: no cover

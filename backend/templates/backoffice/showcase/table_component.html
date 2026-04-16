@@ -1,0 +1,143 @@
+{#
+ABOUTME: Showcase section for table component
+ABOUTME: Displays table variants with striped rows, actions, and responsive layout
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_custom, table_cell_yes_no %}
+
+{% macro table_section() %}
+  {% call showcase_section() %}
+    {{ showcase_title("Table Component") }}
+    {{ showcase_description("Data tables for displaying structured information. Supports striped rows, alignment options, and action links. Responsive with horizontal scrolling on small screens.") }}
+
+    {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link %}
+
+{# Basic striped table with actions #}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Name"},
+        {"label": "Age"},
+        {"label": "Address"},
+        {"label": "Action", "align": "right"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("Richard Hendricks", bold=true) }}
+            {{ table_cell("30") }}
+            {{ table_cell("Pied Piper HQ, Palo Alto") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell("Erlich Bachman", bold=true) }}
+            {{ table_cell("40") }}
+            {{ table_cell("5230 Penfield Ave, Woodland Hills") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}') %}
+            {# Striped table example #}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Name"},
+        {"label": "Age"},
+        {"label": "Address"},
+        {"label": "Action", "align": "right"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("Richard Hendricks", bold=true) }}
+            {{ table_cell("30") }}
+            {{ table_cell("Pied Piper HQ, Palo Alto") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell("Erlich Bachman", bold=true) }}
+            {{ table_cell("40") }}
+            {{ table_cell("5230 Penfield Ave, Woodland Hills") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("Monica Hall", bold=true) }}
+            {{ table_cell("35") }}
+            {{ table_cell("2030 Stewart Drive, Sunnyvale") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell("Dinesh Chugtai", bold=true) }}
+            {{ table_cell("28") }}
+            {{ table_cell("Pied Piper HQ, Palo Alto") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("Gilfoyle", bold=true) }}
+            {{ table_cell("32") }}
+            {{ table_cell("Pied Piper HQ, Palo Alto") }}
+            {{ table_cell_link("Edit", href="#", align="right") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+
+    {{ showcase_subtitle("Tri-state boolean cells") }}
+    {{ showcase_description("Use table_cell_yes_no for optional booleans. Renders Yes for true, No for false, and an em-dash for none.") }}
+
+    {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
+
+{# Tri-state boolean cells #}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Respondent"},
+        {"label": "Consent"},
+        {"label": "Eligible"},
+        {"label": "Can attend"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(false) }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell_yes_no(none) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(none) }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}') %}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Respondent"},
+        {"label": "Consent"},
+        {"label": "Eligible"},
+        {"label": "Can attend"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(false) }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell_yes_no(none) }}
+            {{ table_cell_yes_no(true) }}
+            {{ table_cell_yes_no(none) }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+
+    {{ showcase_tokens([
+    "--color-tables-cards (table background)",
+    "--color-borders-dividers (borders and dividers)",
+    "--color-headings (header text)",
+    "--color-body-text (cell text)",
+    "--color-subtle-background-panels (striped row background)",
+    "--color-primary-action (link color)",
+    "--color-active-states (link hover)"
+    ]) }}
+  {% endcall %}
+{% endmacro %}

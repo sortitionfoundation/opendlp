@@ -12,6 +12,7 @@ from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
     InvalidSelection,
+    RespondentNotFoundError,
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
@@ -249,3 +250,33 @@ def get_selected_respondent_attribute_value_counts(
 ) -> dict[str, int]:
     """Get counts of each distinct value for a given attribute across selected/confirmed respondents."""
     return uow.respondents.get_selected_attribute_value_counts(assembly_id, attribute_name)
+
+
+def get_respondent(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+) -> Respondent:
+    """Get respondents for an assembly."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        return respondent.create_detached_copy()
