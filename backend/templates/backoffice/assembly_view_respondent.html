@@ -6,6 +6,7 @@ ABOUTME: Displays a single respondent's external_id, email and selection status
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
 
 {% block title %}{{ respondent.external_id }} - {{ assembly.title }}{% endblock %}
 
@@ -37,20 +38,85 @@ ABOUTME: Displays a single respondent's external_id, email and selection status
     ) }}
 
     <section class="mb-8">
-        <dl class="flex flex-col gap-3">
-            <div class="flex gap-2">
-                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("External ID:") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.external_id }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Email:") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.email or _("—") }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Selection status:") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">{{ respondent.selection_status.value|title }}</dd>
-            </div>
-        </dl>
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
+        {% call table(striped=true) %}
+            {{ table_head([
+            {"label": _("Field")},
+            {"label": _("Value")}
+            ]) }}
+            {% call table_body() %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("External ID"), bold=true) }}
+                    {{ table_cell(respondent.external_id) }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Email"), bold=true) }}
+                    {{ table_cell(respondent.email or "—") }}
+                {% endcall %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("Selection status"), bold=true) }}
+                    {{ table_cell(respondent.selection_status.value|title) }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Selection run ID"), bold=true) }}
+                    {{ table_cell(respondent.selection_run_id or "—") }}
+                {% endcall %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("Consent"), bold=true) }}
+                    {{ table_cell_yes_no(respondent.consent) }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Stay on database"), bold=true) }}
+                    {{ table_cell_yes_no(respondent.stay_on_db) }}
+                {% endcall %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("Eligible"), bold=true) }}
+                    {{ table_cell_yes_no(respondent.eligible) }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Can attend"), bold=true) }}
+                    {{ table_cell_yes_no(respondent.can_attend) }}
+                {% endcall %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("Source type"), bold=true) }}
+                    {{ table_cell(respondent.source_type.value|replace("_", " ")|title) }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Source reference"), bold=true) }}
+                    {{ table_cell(respondent.source_reference or "—") }}
+                {% endcall %}
+                {% call table_row(is_odd=true) %}
+                    {{ table_cell(_("Created"), bold=true) }}
+                    {{ table_cell(respondent.created_at.strftime("%d %B %Y at %H:%M") if respondent.created_at else "—") }}
+                {% endcall %}
+                {% call table_row() %}
+                    {{ table_cell(_("Updated"), bold=true) }}
+                    {{ table_cell(respondent.updated_at.strftime("%d %B %Y at %H:%M") if respondent.updated_at else "—") }}
+                {% endcall %}
+            {% endcall %}
+        {% endcall %}
+    </section>
+
+    <section class="mb-8">
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Attributes") }}</h2>
+        {% if respondent.attributes %}
+            {% call table(striped=true) %}
+                {{ table_head([
+                {"label": _("Attribute")},
+                {"label": _("Value")}
+                ]) }}
+                {% call table_body() %}
+                    {% for key, value in respondent.attributes.items() %}
+                        {% call table_row(is_odd=loop.index is odd) %}
+                            {{ table_cell(key, bold=true) }}
+                            {{ table_cell(value if value not in (none, "") else "—") }}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% else %}
+            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
+        {% endif %}
     </section>
 
     <section class="flex gap-4">
