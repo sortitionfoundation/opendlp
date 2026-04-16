@@ -380,7 +380,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     </div>
                     {# Delete button #}
                     <form method="post"
-                          action="{{ url_for('backoffice.delete_respondents', assembly_id=assembly.id) }}"
+                          action="{{ url_for('respondents.delete_respondents', assembly_id=assembly.id) }}"
                           x-data
                           @submit.prevent="$confirm('{{ _("Are you sure you want to delete all respondents? This action cannot be undone.") }}', $el)">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -389,7 +389,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                 {% else %}
                     {# Upload form #}
                     <form method="post"
-                          action="{{ url_for('backoffice.upload_respondents_csv', assembly_id=assembly.id) }}"
+                          action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
                           enctype="multipart/form-data"
                           class="flex flex-col gap-4">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

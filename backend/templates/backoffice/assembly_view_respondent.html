@@ -17,7 +17,7 @@ ABOUTME: Displays a single respondent's full details including attributes
         {{ breadcrumbs([
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Respondents"), "href": url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id)},
+        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
         {"label": respondent_name}
         ]) }}
     </div>
@@ -122,6 +122,6 @@ ABOUTME: Displays a single respondent's full details including attributes
     </section>
 
     <section class="flex gap-4">
-        {{ button(_("Back to Respondents"), href=url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+        {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
     </section>
 {% endblock %}

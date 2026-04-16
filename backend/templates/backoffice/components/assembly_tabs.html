@@ -44,7 +44,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     },
     {
     "label": _("Respondents"),
-    "href": url_for('backoffice.view_assembly_respondents', assembly_id=assembly.id) ~ source_param,
+    "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "respondents",
     "disabled": not respondents_enabled
     },
