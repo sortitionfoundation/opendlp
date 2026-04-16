@@ -17,7 +17,7 @@ This document provides a visual and textual overview of the Flask backend archit
 
 ## High-Level Architecture
 
-The backend follows the DDD layout from *Architecture Patterns with Python*: plain-Python domain objects, imperative SQLAlchemy mappings in adapters, repositories and a UnitOfWork in the service layer, and Flask blueprints as entrypoints.
+The backend follows the DDD layout from _Architecture Patterns with Python_: plain-Python domain objects, imperative SQLAlchemy mappings in adapters, repositories and a UnitOfWork in the service layer, and Flask blueprints as entrypoints.
 
 ```mermaid
 flowchart TB
@@ -85,36 +85,37 @@ All blueprints live in `src/opendlp/entrypoints/blueprints/` and are registered 
 
 The backoffice UI is being rebuilt on the GOV.UK Design System. Several features have paired blueprints during the transition:
 
-| Legacy (Bootstrap UI, top-level URLs) | Backoffice (GOV.UK UI, `/backoffice/...`) |
-|---|---|
-| `gsheets_legacy.py` | `gsheets.py` |
-| `db_selection_legacy.py` | `db_selection_backoffice.py` |
-| `targets_legacy.py` | `targets.py` |
-| `respondents_legacy.py` | *(rolled into `backoffice.py`; dedicated blueprint split-out pending)* |
+| Legacy (Bootstrap UI, top-level URLs) | Backoffice (GOV.UK UI, `/backoffice/...`)                              |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `gsheets_legacy.py`                   | `gsheets.py`                                                           |
+| `db_selection_legacy.py`              | `db_selection_backoffice.py`                                           |
+| `targets_legacy.py`                   | `targets.py`                                                           |
+| `respondents_legacy.py`               | _(rolled into `backoffice.py`; dedicated blueprint split-out pending)_ |
 
 The `*_legacy` blueprints will be retired: first their links are removed from the main navigation, then the code is deleted once the GOV.UK equivalents are trusted.
 
 ### Blueprint summary
 
-| Blueprint | URL prefix | Purpose | Auth | Routes |
-|---|---|---|---|---|
-| `wellknown` | — | robots.txt, security.txt, change-password redirect | Public | 3 |
-| `health` | — | JSON health check (`/health`, `/health/bdd`) | Public | 2 |
-| `auth` | `/auth` | Login, register, password reset, email confirmation, Google/Microsoft OAuth, 2FA verify | Mixed | 18 |
-| `main` | — | Landing page, dashboard, assembly view, legacy member management | Mixed | 11 |
-| `profile` | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup | Login | 15 |
-| `admin` | `/admin` | User and invite management, admin 2FA controls | Admin | 11 |
-| `backoffice` | `/backoffice` | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login | 16 |
-| `gsheets` | `/backoffice` | Google Sheets config, selection, replacement, tab management (GOV.UK UI) | Login + assembly mgr | 19 |
-| `db_selection_backoffice` | `/backoffice` | Database-driven selection (GOV.UK UI) | Login + assembly mgr | 8 |
-| `targets` | `/backoffice` | Target categories/values, CSV upload, target checking (GOV.UK UI) | Login + assembly mgr | 14 |
-| `gsheets_legacy` | — | Legacy Google Sheets workflow | Login + assembly mgr | 21 |
-| `db_selection_legacy` | — | Legacy database selection + settings | Login + assembly mgr | 12 |
-| `targets_legacy` | — | Legacy target management | Login + assembly mgr | 11 |
-| `respondents_legacy` | — | Legacy respondent listing + CSV upload | Login | 3 |
-| `dev` | `/backoffice` | Interactive service-layer docs, frontend pattern showcase (dev builds only) | Admin | 4 |
+| Blueprint                 | URL prefix                   | Purpose                                                                                        | Auth                 | Routes |
+| ------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | -------------------- | ------ |
+| `wellknown`               | —                            | robots.txt, security.txt, change-password redirect                                             | Public               | 3      |
+| `health`                  | —                            | JSON health check (`/health`, `/health/bdd`)                                                   | Public               | 2      |
+| `auth`                    | `/auth`                      | Login, register, password reset, email confirmation, Google/Microsoft OAuth, 2FA verify        | Mixed                | 18     |
+| `main`                    | —                            | Landing page, dashboard, assembly view, legacy member management                               | Mixed                | 11     |
+| `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
+| `admin`                   | `/admin`                     | User and invite management, admin 2FA controls                                                 | Admin                | 11     |
+| `backoffice`              | `/backoffice`                | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login                | 16     |
+| `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (GOV.UK UI)                       | Login + assembly mgr | 19     |
+| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (GOV.UK UI)                                                          | Login + assembly mgr | 8      |
+| `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (GOV.UK UI)                              | Login + assembly mgr | 14     |
+| `gsheets_legacy`          | —                            | Legacy Google Sheets workflow                                                                  | Login + assembly mgr | 21     |
+| `db_selection_legacy`     | —                            | Legacy database selection + settings                                                           | Login + assembly mgr | 12     |
+| `targets_legacy`          | —                            | Legacy target management                                                                       | Login + assembly mgr | 11     |
+| `respondents_legacy`      | —                            | Legacy respondent listing + CSV upload                                                         | Login                | 3      |
+| `dev`                     | `/backoffice`                | Interactive service-layer docs, frontend pattern showcase (dev builds only)                    | Admin                | 4      |
 
 Notes:
+
 - The `dev` blueprint is only registered when `config.is_production()` is false.
 - Legacy URLs use `/assemblies/<id>/...`; newer GOV.UK URLs use `/backoffice/assembly/<id>/...` (note the singular `assembly`).
 - `auth_bp` previously mounted at `/`; it now mounts at `/auth`.
@@ -127,28 +128,28 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 
 ### Service summary
 
-| Module | Purpose | Key dependencies |
-|---|---|---|
-| `assembly_service` | Assembly CRUD, GSheet config, target categories/values, CSV config, selection settings | SQLAlchemy, `sortition-algorithms` |
-| `respondent_service` | Respondent CRUD, CSV import, attribute analysis | CSV parsing, permissions |
-| `sortition` | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
-| `user_service` | User lifecycle, authentication, OAuth linking, assembly role management, profile updates | email adapter, template renderer, URL generator, `security` |
-| `invite_service` | Invite generation (single/batch), validation, revocation, cleanup | user domain, permissions |
-| `permissions` | Role checks (`can_manage_assembly`, `has_global_admin`, …) and decorators | domain value objects |
-| `two_factor_service` | 2FA setup/enable/disable/verify, backup code lifecycle | `totp_service` |
-| `totp_service` | TOTP secret generation, Fernet encryption, QR codes, verification | `pyotp`, `cryptography`, `qrcode` |
-| `email_confirmation_service` | Email verification tokens with rate limiting + anti-enumeration | email adapter, template renderer, URL generator |
-| `password_reset_service` | Reset tokens, rate limiting, reset emails, cleanup | `security`, email adapter |
-| `login_rate_limit_service` | Per-email / per-IP brute-force counters | `redis` |
-| `security` | Password hashing, verification, strength validation | `werkzeug.security`, vendored validators |
-| `target_checking` | Structured validation mapping `sortition-algorithms` errors to category/value UI annotations | `sortition-algorithms` |
-| `target_respondent_helpers` | Shared helpers linking target categories to respondent data | `respondent_service` |
-| `error_translation` | Translates `sortition-algorithms` errors (including `ParseTableMultiError`) to localized text/HTML | `sortition-algorithms`, `gettext` |
-| `report_translation` | Translates `sortition-algorithms` `RunReport` output to HTML | `sortition-algorithms`, `tabulate` |
-| `repositories` | Abstract repository interfaces (one per aggregate) | ABC + domain types |
-| `unit_of_work` | `AbstractUnitOfWork` + `SqlAlchemyUnitOfWork` managing session + repositories | SQLAlchemy |
-| `exceptions` | Service-layer exception hierarchy (auth, permissions, tokens, invites, OAuth) | — |
-| `db_utils` | `create_tables`, `drop_tables`, `seed_database` helpers for dev/test | SQLAlchemy |
+| Module                       | Purpose                                                                                            | Key dependencies                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `assembly_service`           | Assembly CRUD, GSheet config, target categories/values, CSV config, selection settings             | SQLAlchemy, `sortition-algorithms`                                          |
+| `respondent_service`         | Respondent CRUD, CSV import, attribute analysis                                                    | CSV parsing, permissions                                                    |
+| `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
+| `user_service`               | User lifecycle, authentication, OAuth linking, assembly role management, profile updates           | email adapter, template renderer, URL generator, `security`                 |
+| `invite_service`             | Invite generation (single/batch), validation, revocation, cleanup                                  | user domain, permissions                                                    |
+| `permissions`                | Role checks (`can_manage_assembly`, `has_global_admin`, …) and decorators                          | domain value objects                                                        |
+| `two_factor_service`         | 2FA setup/enable/disable/verify, backup code lifecycle                                             | `totp_service`                                                              |
+| `totp_service`               | TOTP secret generation, Fernet encryption, QR codes, verification                                  | `pyotp`, `cryptography`, `qrcode`                                           |
+| `email_confirmation_service` | Email verification tokens with rate limiting + anti-enumeration                                    | email adapter, template renderer, URL generator                             |
+| `password_reset_service`     | Reset tokens, rate limiting, reset emails, cleanup                                                 | `security`, email adapter                                                   |
+| `login_rate_limit_service`   | Per-email / per-IP brute-force counters                                                            | `redis`                                                                     |
+| `security`                   | Password hashing, verification, strength validation                                                | `werkzeug.security`, vendored validators                                    |
+| `target_checking`            | Structured validation mapping `sortition-algorithms` errors to category/value UI annotations       | `sortition-algorithms`                                                      |
+| `target_respondent_helpers`  | Shared helpers linking target categories to respondent data                                        | `respondent_service`                                                        |
+| `error_translation`          | Translates `sortition-algorithms` errors (including `ParseTableMultiError`) to localized text/HTML | `sortition-algorithms`, `gettext`                                           |
+| `report_translation`         | Translates `sortition-algorithms` `RunReport` output to HTML                                       | `sortition-algorithms`, `tabulate`                                          |
+| `repositories`               | Abstract repository interfaces (one per aggregate)                                                 | ABC + domain types                                                          |
+| `unit_of_work`               | `AbstractUnitOfWork` + `SqlAlchemyUnitOfWork` managing session + repositories                      | SQLAlchemy                                                                  |
+| `exceptions`                 | Service-layer exception hierarchy (auth, permissions, tokens, invites, OAuth)                      | —                                                                           |
+| `db_utils`                   | `create_tables`, `drop_tables`, `seed_database` helpers for dev/test                               | SQLAlchemy                                                                  |
 
 ### assembly_service (largest service)
 
@@ -187,17 +188,17 @@ Roughly grouped:
 
 `src/opendlp/adapters/` contains the concrete implementations that bridge the service layer to infrastructure. Everything outside this package (domain, service layer) stays free of framework dependencies where possible.
 
-| Module | Purpose |
-|---|---|
-| `database.py` | Engine + session factory construction; `start_mappers()` hook called during bootstrap |
-| `orm.py` | Imperative SQLAlchemy `Table`/`mapper` definitions for domain aggregates |
-| `sql_repository.py` | `SqlAlchemy*Repository` implementations of the abstract repositories in `service_layer/repositories.py` |
-| `email.py` | `EmailAdapter` interface + `ConsoleEmailAdapter` and `SMTPEmailAdapter` implementations |
-| `template_renderer.py` | `TemplateRenderer` interface + `FlaskTemplateRenderer`; lets services render emails without importing Flask globally |
-| `url_generator.py` | `URLGenerator` interface + `FlaskURLGenerator`; lets services build absolute URLs for emails |
-| `sortition_algorithms.py` | `CSVGSheetDataSource` and related adapters wrapping the `sortition-algorithms` library |
-| `sortition_data_adapter.py` | `OpenDLPDataAdapter` exposing respondent/target data to `sortition-algorithms` for DB-driven selection |
-| `sortition_progress.py` | `DatabaseProgressReporter` — writes `sortition-algorithms` progress into `SelectionRunRecord` rows |
+| Module                      | Purpose                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `database.py`               | Engine + session factory construction; `start_mappers()` hook called during bootstrap                                |
+| `orm.py`                    | Imperative SQLAlchemy `Table`/`mapper` definitions for domain aggregates                                             |
+| `sql_repository.py`         | `SqlAlchemy*Repository` implementations of the abstract repositories in `service_layer/repositories.py`              |
+| `email.py`                  | `EmailAdapter` interface + `ConsoleEmailAdapter` and `SMTPEmailAdapter` implementations                              |
+| `template_renderer.py`      | `TemplateRenderer` interface + `FlaskTemplateRenderer`; lets services render emails without importing Flask globally |
+| `url_generator.py`          | `URLGenerator` interface + `FlaskURLGenerator`; lets services build absolute URLs for emails                         |
+| `sortition_algorithms.py`   | `CSVGSheetDataSource` and related adapters wrapping the `sortition-algorithms` library                               |
+| `sortition_data_adapter.py` | `OpenDLPDataAdapter` exposing respondent/target data to `sortition-algorithms` for DB-driven selection               |
+| `sortition_progress.py`     | `DatabaseProgressReporter` — writes `sortition-algorithms` progress into `SelectionRunRecord` rows                   |
 
 `bootstrap.py` wires these together: it calls `start_mappers()`, builds a session factory, and returns a `SqlAlchemyUnitOfWork` along with an email adapter / template renderer / URL generator selected from config.
 
@@ -295,21 +296,21 @@ flowchart LR
 
 ### Dependency matrix
 
-|                     | assembly | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | perms | target_check |
-|---------------------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **admin**           |    | ✓  |    |    | ✓  | ✓  |    |    |    |    |    |    |
-| **auth**            |    | ✓  |    |    |    |    | ✓  | ✓  | ✓  | ✓  |    |    |
-| **main**            | ✓  | ✓  |    |    |    |    |    |    |    |    | ✓  |    |
-| **profile**         |    | ✓  |    |    |    | ✓  |    |    |    |    |    |    |
-| **backoffice**      | ✓  | ✓  | ✓  |    |    |    |    |    |    |    | ✓  |    |
-| **dev**             | ✓  |    | ✓  |    |    |    |    |    |    |    | ✓  |    |
-| **gsheets**         | ✓  |    | ✓  | ✓  |    |    |    |    |    |    |    |    |
-| **db_sel_bo**       | ✓  |    | ✓  | ✓  |    |    |    |    |    |    |    |    |
-| **targets**         | ✓  |    |    |    |    |    |    |    |    |    |    | ✓  |
-| **gsheets_legacy**  | ✓  |    |    | ✓  |    |    |    |    |    |    |    |    |
-| **db_sel_legacy**   | ✓  |    | ✓  | ✓  |    |    |    |    |    |    |    |    |
-| **targets_legacy**  | ✓  |    |    |    |    |    |    |    |    |    |    | ✓  |
-| **respondents_lg**  | ✓  |    | ✓  |    |    |    |    |    |    |    |    |    |
+|                    | assembly | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | perms | target_check |
+| ------------------ | :------: | :--: | :--------: | :-------: | :----: | :-: | :--------: | :------: | :--: | :------: | :---: | :----------: |
+| **admin**          |          |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |       |              |
+| **auth**           |          |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |       |              |
+| **main**           |    ✓     |  ✓   |            |           |        |     |            |          |      |          |   ✓   |              |
+| **profile**        |          |  ✓   |            |           |        |  ✓  |            |          |      |          |       |              |
+| **backoffice**     |    ✓     |  ✓   |     ✓      |           |        |     |            |          |      |          |   ✓   |              |
+| **dev**            |    ✓     |      |     ✓      |           |        |     |            |          |      |          |   ✓   |              |
+| **gsheets**        |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
+| **db_sel_bo**      |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
+| **targets**        |    ✓     |      |            |           |        |     |            |          |      |          |       |      ✓       |
+| **gsheets_legacy** |    ✓     |      |            |     ✓     |        |     |            |          |      |          |       |              |
+| **db_sel_legacy**  |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
+| **targets_legacy** |    ✓     |      |            |           |        |     |            |          |      |          |       |      ✓       |
+| **respondents_lg** |    ✓     |      |     ✓      |           |        |     |            |          |      |          |       |              |
 
 ---
 
@@ -334,34 +335,34 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 ### Blueprint observations
 
-| Blueprint | Routes | Services | Notes |
-|---|---|---|---|
-| `admin` | 11 | 3 | Well-focused. |
-| `auth` | 18 | 5 | Complex but necessary. |
-| `main` | 11 | 3 | Legacy member-management routes to be moved to backoffice. |
-| `profile` | 15 | 2 | Well-focused. |
-| `backoffice` | 16 | 4 | Currently hosts respondent pages; dedicated `respondents` backoffice blueprint planned. |
-| `gsheets` | 19 | 4 | GOV.UK UI; paired with legacy. |
-| `db_selection_backoffice` | 8 | 4 | GOV.UK UI; paired with legacy. |
-| `targets` | 14 | 2 | GOV.UK UI; paired with legacy. |
-| `gsheets_legacy` | 21 | 3 | To be retired once GOV.UK version is trusted. |
-| `db_selection_legacy` | 12 | 3 | To be retired. |
-| `targets_legacy` | 11 | 2 | To be retired. |
-| `respondents_legacy` | 3 | 2 | To be retired. |
-| `dev` | 4 | 3 | Non-production only; admin-guarded. |
-| `health` | 2 | — | Public. |
-| `wellknown` | 3 | — | Public. |
+| Blueprint                 | Routes | Services | Notes                                                                                   |
+| ------------------------- | ------ | -------- | --------------------------------------------------------------------------------------- |
+| `admin`                   | 11     | 3        | Well-focused.                                                                           |
+| `auth`                    | 18     | 5        | Complex but necessary.                                                                  |
+| `main`                    | 11     | 3        | Legacy member-management routes to be moved to backoffice.                              |
+| `profile`                 | 15     | 2        | Well-focused.                                                                           |
+| `backoffice`              | 16     | 4        | Currently hosts respondent pages; dedicated `respondents` backoffice blueprint planned. |
+| `gsheets`                 | 19     | 4        | New backoffice UI; paired with legacy.                                                  |
+| `db_selection_backoffice` | 8      | 4        | New backoffice UI; paired with legacy.                                                  |
+| `targets`                 | 14     | 2        | New backoffice UI; paired with legacy.                                                  |
+| `gsheets_legacy`          | 21     | 3        | To be retired once New backoffice version is trusted.                                   |
+| `db_selection_legacy`     | 12     | 3        | To be retired.                                                                          |
+| `targets_legacy`          | 11     | 2        | To be retired.                                                                          |
+| `respondents_legacy`      | 3      | 2        | To be retired.                                                                          |
+| `dev`                     | 4      | 3        | Non-production only; admin-guarded.                                                     |
+| `health`                  | 2      | —        | Public.                                                                                 |
+| `wellknown`               | 3      | —        | Public.                                                                                 |
 
 ### Service observations
 
-| Service | Approx. functions | Notes |
-|---|---|---|
-| `assembly_service` | 28 | **Could be split** — assembly CRUD, targets, gsheet config, CSV config, selection settings. |
-| `user_service` | 18+ | Large but well grouped by responsibility. |
-| `sortition` | 12+ | **Could split GSheet vs DB workflows.** Now also shares progress/status helpers with both. |
-| `respondent_service` | 4 | Focused. |
-| `invite_service` | 7 | Focused. |
-| `two_factor_service` / `totp_service` | 4 / 8 | Clear split between orchestration and crypto. |
+| Service                               | Approx. functions | Notes                                                                                       |
+| ------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------- |
+| `assembly_service`                    | 28                | **Could be split** — assembly CRUD, targets, gsheet config, CSV config, selection settings. |
+| `user_service`                        | 18+               | Large but well grouped by responsibility.                                                   |
+| `sortition`                           | 12+               | **Could split GSheet vs DB workflows.** Now also shares progress/status helpers with both.  |
+| `respondent_service`                  | 4                 | Focused.                                                                                    |
+| `invite_service`                      | 7                 | Focused.                                                                                    |
+| `two_factor_service` / `totp_service` | 4 / 8             | Clear split between orchestration and crypto.                                               |
 
 ### Open recommendations
 
