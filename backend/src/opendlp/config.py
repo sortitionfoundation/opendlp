@@ -5,7 +5,6 @@ import base64
 import logging
 import logging.config
 import os
-import platform
 import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
@@ -452,7 +451,9 @@ def get_solver_backend() -> str:
         else:
             return env_value
 
-    # Platform-specific default
-    if platform.system() == "Darwin":
-        return "highspy"
-    return "mip"
+    # Platform-specific default - Macs are particularly bad on cbc, so if we switch
+    # the default back to CBC, and Macs are still affected, we will have to
+    # have the `if platform.system() == "Darwin": return "highspy"` bit reinstated.
+
+    # CBC does occasionally crash, so we default to highspy as that is more reliable
+    return "highspy"
