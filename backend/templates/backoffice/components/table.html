@@ -163,6 +163,30 @@ Usage:
   </td>
 {% endmacro %}
 
+{# Table cell rendering a boolean as Yes / No / — #}
+{% macro table_cell_yes_no(value, align="left", bold=false, nowrap=true, classes="") %}
+    {#
+Table cell for a tri-state boolean (true / false / none).
+
+Args:
+  value: True, False, or None
+  align: Text alignment ("left", "center", "right")
+  bold: If true, applies font-medium
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Usage:
+  {{ table_cell_yes_no(respondent.consent) }}
+    #}
+  {% if value is none %}
+    {{ table_cell("—", align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% elif value %}
+    {{ table_cell(_("Yes"), align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% else %}
+    {{ table_cell(_("No"), align=align, bold=bold, nowrap=nowrap, classes=classes) }}
+  {% endif %}
+{% endmacro %}
+
 {# Table cell with custom content (use with caller) #}
 {% macro table_cell_custom(align="left", nowrap=true, classes="") %}
     {#
