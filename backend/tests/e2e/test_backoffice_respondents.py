@@ -270,6 +270,86 @@ class TestBackofficeViewRespondentsPage:
         assert response.status_code == 302
         assert "login" in response.location
 
+    def test_view_respondents_page_lists_each_respondent(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+        admin_user,
+        postgres_session_factory,
+    ):
+        """Table should show external_id, email, and display name for every respondent."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = [
+                Respondent(
+                    assembly_id=existing_assembly.id,
+                    external_id=f"R-{i:03d}",
+                    email=f"person{i}@example.com",
+                    attributes={"first_name": f"First{i}", "last_name": f"Last{i}"},
+                )
+                for i in range(3)
+            ]
+            uow.respondents.bulk_add(respondents)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+
+        assert response.status_code == 200
+        body = response.data
+        for i in range(3):
+            assert f"R-{i:03d}".encode() in body
+            assert f"person{i}@example.com".encode() in body
+            assert f"First{i} Last{i}".encode() in body
+
+    def test_view_respondents_page_has_view_link_per_respondent(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+        postgres_session_factory,
+    ):
+        """Each row should link to the single-respondent page."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = [
+                Respondent(
+                    assembly_id=existing_assembly.id,
+                    external_id=f"R-{i}",
+                    email=f"p{i}@example.com",
+                    attributes={"name": f"Person {i}"},
+                )
+                for i in range(2)
+            ]
+            uow.respondents.bulk_add(respondents)
+            uow.commit()
+            respondent_ids = [r.id for r in respondents]
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+
+        assert response.status_code == 200
+        for respondent_id in respondent_ids:
+            expected = f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}"
+            assert expected.encode() in response.data
+
+    def test_view_respondents_page_falls_back_to_email_local_part_when_no_name_fields(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+        postgres_session_factory,
+    ):
+        """Display name column should show email local-part when no recognisable name attributes exist."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = Respondent(
+                assembly_id=existing_assembly.id,
+                external_id="R-EMAIL",
+                email="jane.doe@example.com",
+                attributes={"age": "42"},
+            )
+            uow.respondents.bulk_add([respondent])
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+
+        assert response.status_code == 200
+        assert b"jane.doe" in response.data
+
 
 class TestBackofficeViewSingleRespondent:
     """Test backoffice view-single-respondent page."""
