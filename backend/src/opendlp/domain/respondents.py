@@ -3,6 +3,7 @@ ABOUTME: Contains Respondent class for tracking participants in the selection po
 
 import re
 import uuid
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -16,6 +17,48 @@ def normalise_field_name(key: str) -> str:
     Keys with no alphanumerics normalise to the empty string.
     """
     return re.sub(r"[^a-z0-9]", "", key.lower())
+
+
+# Top-level Respondent fields that must not be shadowed by an attribute key.
+# Kept in sync with the Respondent constructor signature.
+_RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
+    normalise_field_name(name)
+    for name in (
+        "id",
+        "assembly_id",
+        "external_id",
+        "selection_status",
+        "selection_run_id",
+        "consent",
+        "stay_on_db",
+        "eligible",
+        "can_attend",
+        "email",
+        "source_type",
+        "source_reference",
+        "created_at",
+        "updated_at",
+    )
+)
+
+
+def validate_no_field_name_collisions(field_names: Iterable[str]) -> None:
+    """Reject attribute field name sets that would collide after normalisation.
+
+    Two keys that normalise to the same value are rejected. Keys that
+    normalise to the empty string are rejected. Keys that normalise to
+    the name of a reserved top-level Respondent field are rejected.
+    """
+    seen: dict[str, str] = {}
+    for name in field_names:
+        normalised = normalise_field_name(name)
+        if not normalised:
+            raise ValueError(f"Field name {name!r} normalises to an empty string")
+        if normalised in _RESERVED_FIELD_NAMES:
+            raise ValueError(f"Field name {name!r} collides with a reserved Respondent field ({normalised!r})")
+        if normalised in seen:
+            raise ValueError(f"Field names {seen[normalised]!r} and {name!r} both normalise to {normalised!r}")
+        seen[normalised] = name
 
 
 class Respondent:
@@ -55,6 +98,7 @@ class Respondent:
         self.source_type = source_type
         self.source_reference = source_reference.strip()
         self.attributes = attributes or {}
+        validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 

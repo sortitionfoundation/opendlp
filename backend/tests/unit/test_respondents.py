@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from opendlp.domain.respondents import Respondent
+from opendlp.domain.respondents import Respondent, validate_no_field_name_collisions
 from opendlp.domain.value_objects import RespondentStatus
 
 
@@ -26,6 +26,30 @@ class TestRespondent:
     def test_validate_empty_external_id(self):
         with pytest.raises(ValueError, match="external_id is required"):
             Respondent(assembly_id=uuid.uuid4(), external_id="")
+
+    def test_rejects_attributes_with_colliding_normalised_keys(self):
+        with pytest.raises(ValueError, match="normalise"):
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id="R001",
+                attributes={"first_name": "Sarah", "FirstName": "Sarah"},
+            )
+
+    def test_rejects_attribute_colliding_with_reserved_field(self):
+        with pytest.raises(ValueError, match="reserved"):
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id="R001",
+                attributes={"Email": "sarah@example.com"},
+            )
+
+    def test_rejects_attribute_key_normalising_to_empty(self):
+        with pytest.raises(ValueError, match="empty"):
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id="R001",
+                attributes={"---": "value"},
+            )
 
     def test_mark_as_selected(self):
         resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
@@ -252,3 +276,47 @@ class TestRespondentDisplayName:
     def test_coerces_non_string_attribute_values(self):
         resp = self._make(attributes={"age_label": 42})
         assert resp.display_name(["age_label"]) == "42"
+
+
+class TestValidateFieldNameCollisions:
+    def test_empty_iterable_is_ok(self):
+        validate_no_field_name_collisions([])
+
+    def test_non_colliding_names_are_ok(self):
+        validate_no_field_name_collisions(["age", "gender", "region"])
+
+    def test_case_only_collision_raises(self):
+        with pytest.raises(ValueError, match=r"first_name.*FirstName|FirstName.*first_name"):
+            validate_no_field_name_collisions(["first_name", "FirstName"])
+
+    def test_separator_only_collision_raises(self):
+        with pytest.raises(ValueError, match=r"age-group.*age_group|age_group.*age-group"):
+            validate_no_field_name_collisions(["age-group", "age_group"])
+
+    def test_three_keys_two_collide_raises(self):
+        with pytest.raises(ValueError, match=r"first_name.*FirstName|FirstName.*first_name"):
+            validate_no_field_name_collisions(["age", "first_name", "FirstName"])
+
+    def test_empty_normalisation_raises(self):
+        with pytest.raises(ValueError, match="---"):
+            validate_no_field_name_collisions(["---"])
+
+    def test_whitespace_only_normalisation_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            validate_no_field_name_collisions(["   "])
+
+    def test_reserved_field_collision_raises(self):
+        with pytest.raises(ValueError, match="reserved"):
+            validate_no_field_name_collisions(["Email"])
+
+    def test_reserved_field_collision_with_separator(self):
+        with pytest.raises(ValueError, match="reserved"):
+            validate_no_field_name_collisions(["external id"])
+
+    def test_exact_duplicate_raises(self):
+        with pytest.raises(ValueError, match="age"):
+            validate_no_field_name_collisions(["age", "age"])
+
+    def test_error_message_includes_normalised_form(self):
+        with pytest.raises(ValueError, match="firstname"):
+            validate_no_field_name_collisions(["first_name", "FirstName"])
