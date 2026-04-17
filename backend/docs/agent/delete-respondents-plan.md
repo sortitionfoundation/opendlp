@@ -612,25 +612,25 @@ Green:
 
 Red (in `tests/contract/test_respondent_repo.py`):
 
-- [ ] `get_by_assembly_id()` (no args) excludes DELETED respondents.
-- [ ] `get_by_assembly_id(include_deleted=True)` includes DELETED respondents.
-- [ ] `get_by_assembly_id(status=RespondentStatus.DELETED)` returns only DELETED respondents (explicit status overrides the exclude).
-- [ ] `count_by_assembly_id()` excludes DELETED; `count_by_assembly_id(include_deleted=True)` includes them.
-- [ ] `count_non_pool` excludes DELETED.
-- [ ] `reset_all_to_pool` does not change DELETED rows and doesn't count them in its return value.
-- [ ] `get_attribute_columns` picks a live (non-DELETED) respondent as the sample.
-- [ ] `get_attribute_value_counts` excludes DELETED.
-- [ ] `count_available_for_selection` excludes DELETED (regression guard — already filters by `POOL`).
+- [x] `get_by_assembly_id()` (no args) excludes DELETED respondents.
+- [x] `get_by_assembly_id(include_deleted=True)` includes DELETED respondents.
+- [x] `get_by_assembly_id(status=RespondentStatus.DELETED)` returns only DELETED respondents (explicit status overrides the exclude).
+- [x] `count_by_assembly_id()` excludes DELETED; `count_by_assembly_id(include_deleted=True)` includes them.
+- [x] `count_non_pool` excludes DELETED.
+- [x] `reset_all_to_pool` does not change DELETED rows and doesn't count them in its return value.
+- [x] `get_attribute_columns` picks a live (non-DELETED) respondent as the sample.
+- [x] `get_attribute_value_counts` excludes DELETED.
+- [x] `count_available_for_selection` excludes DELETED (regression guard — already filters by `POOL`).
 - Run; expect failures for all except the last.
 
 Green:
 
-- [ ] Update `RespondentRepository` abstract interface in `src/opendlp/service_layer/repositories.py` with the new `include_deleted` params.
-- [ ] Update `SqlAlchemyRespondentRepository` in `src/opendlp/adapters/sql_repository.py` per §5.
-- [ ] Update `FakeRespondentRepository` in `tests/fakes.py` per §5.1.
-- [ ] Rerun contract tests; expect green for both SQL and fake fixtures.
-- [ ] Run `just test`; fix any unrelated callers that need to opt in via `include_deleted=True`.
-- [ ] Run `just check`.
+- [x] Update `RespondentRepository` abstract interface in `src/opendlp/service_layer/repositories.py` with the new `include_deleted` params.
+- [x] Update `SqlAlchemyRespondentRepository` in `src/opendlp/adapters/sql_repository.py` per §5.
+- [x] Update `FakeRespondentRepository` in `tests/fakes.py` per §5.1.
+- [x] Rerun contract tests; expect green for both SQL and fake fixtures.
+- [x] Run `just test`; fix any unrelated callers that need to opt in via `include_deleted=True`.
+- [x] Run `just check`.
 
 ### Phase 6 — Service layer: `delete_respondent` and `add_respondent_comment`
 
