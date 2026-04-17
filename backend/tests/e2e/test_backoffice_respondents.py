@@ -10,7 +10,7 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.respondent_service import create_respondent
+from opendlp.service_layer.respondent_service import create_respondent, delete_respondent
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -467,6 +467,51 @@ class TestBackofficeViewSingleRespondent:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Respondent not found" in msg for msg in flash_messages)
+
+
+class TestViewRespondentDeletionUI:
+    """The delete form and DELETED banner on the single-respondent page."""
+
+    def test_admin_sees_delete_form(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-DEL",
+                attributes={},
+                email="x@example.com",
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        assert b"Delete personal data" in response.data
+
+    def test_deleted_respondent_shows_banner_and_comment_list(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-DEAD",
+                attributes={"Gender": "Female"},
+                email="x@example.com",
+            )
+
+        # Delete it via the service so the comment is real
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            delete_respondent(uow, admin_user.id, existing_assembly.id, respondent.id, comment="gdpr")
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        # Banner
+        assert b"Personal data deleted" in response.data
+        # Comment list row with text
+        assert b"gdpr" in response.data
+        # Form should not render for DELETED respondents
+        assert b"Confirm delete" not in response.data
 
 
 class TestDeleteRespondentRoute:

@@ -23,6 +23,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     RespondentNotFoundError,
 )
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import (
     delete_respondent,
     get_respondent,
@@ -269,6 +270,16 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+            viewer = uow.users.get(current_user.id)
+            assembly_obj = uow.assemblies.get(assembly_id)
+            can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
+            # Look up comment authors so the template can show names
+            author_ids = {c.author_id for c in respondent.comments}
+            comment_authors = {}
+            for author_id in author_ids:
+                author = uow.users.get(author_id)
+                if author:
+                    comment_authors[author_id] = author.create_detached_copy()
 
         # Determine data source and whether tabs should be enabled
         gsheet = None
@@ -302,6 +313,8 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
+            can_manage=can_manage,
+            comment_authors=comment_authors,
         ), 200
     except RespondentNotFoundError as e:
         current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
