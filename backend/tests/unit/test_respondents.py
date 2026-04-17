@@ -1,11 +1,12 @@
 """Unit tests for Respondent domain model."""
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondents import Respondent, validate_no_field_name_collisions
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.respondents import Respondent, RespondentComment, validate_no_field_name_collisions
+from opendlp.domain.value_objects import RespondentAction, RespondentStatus
 
 
 class TestRespondent:
@@ -232,6 +233,178 @@ class TestRespondent:
         assert copy.consent is True
         assert copy.eligible is True
         assert copy is not resp  # Different instance
+
+
+class TestRespondentComments:
+    def test_defaults_to_empty_list(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        assert resp.comments == []
+
+    def test_constructor_accepts_comments(self):
+        author = uuid.uuid4()
+        comment = RespondentComment(
+            text="note",
+            author_id=author,
+            created_at=datetime(2026, 4, 17, tzinfo=UTC),
+        )
+        resp = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="NB001",
+            comments=[comment],
+        )
+        assert resp.comments == [comment]
+
+    def test_reserved_name_comments_rejects_attribute_collision(self):
+        with pytest.raises(ValueError, match="reserved"):
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id="NB001",
+                attributes={"Comments": "hi"},
+            )
+
+    def test_add_comment_appends_with_default_action_none(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        author = uuid.uuid4()
+
+        resp.add_comment("first note", author)
+
+        assert len(resp.comments) == 1
+        assert resp.comments[0].text == "first note"
+        assert resp.comments[0].author_id == author
+        assert resp.comments[0].action is RespondentAction.NONE
+
+    def test_add_comment_with_explicit_action(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.add_comment("edit note", uuid.uuid4(), action=RespondentAction.EDIT)
+        assert resp.comments[0].action is RespondentAction.EDIT
+
+    def test_add_comment_updates_updated_at(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        resp.add_comment("note", uuid.uuid4())
+        assert resp.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_add_comment_rejects_empty_text(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        with pytest.raises(ValueError, match="Comment text is required"):
+            resp.add_comment("", uuid.uuid4())
+
+    def test_add_comment_rejects_whitespace_only_text(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        with pytest.raises(ValueError, match="Comment text is required"):
+            resp.add_comment("   ", uuid.uuid4())
+
+    def test_add_comment_strips_text(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.add_comment("  note  ", uuid.uuid4())
+        assert resp.comments[0].text == "note"
+
+
+class TestRespondentDeletePersonalData:
+    def _live_respondent(self):
+        return Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="NB001",
+            attributes={"Gender": "Female", "Age": "30-44"},
+            email="sarah@example.com",
+            consent=True,
+            stay_on_db=True,
+            eligible=True,
+            can_attend=True,
+            source_reference="import 2026",
+            selection_status=RespondentStatus.SELECTED,
+            selection_run_id=uuid.uuid4(),
+        )
+
+    def test_sets_status_deleted(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.selection_status == RespondentStatus.DELETED
+
+    def test_blanks_email_and_source_reference(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.email == ""
+        assert resp.source_reference == ""
+
+    def test_clears_booleans_to_none(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.consent is None
+        assert resp.stay_on_db is None
+        assert resp.eligible is None
+        assert resp.can_attend is None
+
+    def test_clears_selection_run_id(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.selection_run_id is None
+
+    def test_blanks_attribute_values_but_keeps_keys(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.attributes == {"Gender": "", "Age": ""}
+
+    def test_appends_delete_action_comment(self):
+        author = uuid.uuid4()
+        resp = self._live_respondent()
+        resp.delete_personal_data(author, "gdpr request")
+
+        assert len(resp.comments) == 1
+        comment = resp.comments[0]
+        assert comment.text == "gdpr request"
+        assert comment.author_id == author
+        assert comment.action is RespondentAction.DELETE
+
+    def test_preserves_identity_fields(self):
+        resp = self._live_respondent()
+        original_id = resp.id
+        original_external_id = resp.external_id
+        original_assembly_id = resp.assembly_id
+        original_source_type = resp.source_type
+        original_created_at = resp.created_at
+
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+
+        assert resp.id == original_id
+        assert resp.external_id == original_external_id
+        assert resp.assembly_id == original_assembly_id
+        assert resp.source_type == original_source_type
+        assert resp.created_at == original_created_at
+
+    def test_preserves_prior_comments(self):
+        resp = self._live_respondent()
+        earlier_author = uuid.uuid4()
+        resp.add_comment("pre-existing note", earlier_author)
+
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+
+        assert len(resp.comments) == 2
+        assert resp.comments[0].text == "pre-existing note"
+        assert resp.comments[0].author_id == earlier_author
+        assert resp.comments[1].text == "gdpr request"
+        assert resp.comments[1].action is RespondentAction.DELETE
+
+    def test_rejects_empty_comment(self):
+        resp = self._live_respondent()
+        with pytest.raises(ValueError, match="comment is required"):
+            resp.delete_personal_data(uuid.uuid4(), "")
+
+    def test_rejects_whitespace_only_comment(self):
+        resp = self._live_respondent()
+        with pytest.raises(ValueError, match="comment is required"):
+            resp.delete_personal_data(uuid.uuid4(), "   ")
+
+    def test_detached_copy_round_trips_comments(self):
+        resp = self._live_respondent()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+
+        copy = resp.create_detached_copy()
+
+        assert copy.comments == resp.comments
+        assert copy.comments is not resp.comments  # separate list
+        assert copy.selection_status == RespondentStatus.DELETED
+        assert copy.attributes == {"Gender": "", "Age": ""}
 
 
 class TestRespondentDisplayName:

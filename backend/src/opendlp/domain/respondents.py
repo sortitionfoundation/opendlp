@@ -66,6 +66,7 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "source_reference",
         "created_at",
         "updated_at",
+        "comments",
     )
 )
 
@@ -109,6 +110,7 @@ class Respondent:
         respondent_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        comments: list[RespondentComment] | None = None,
     ):
         if not external_id.strip():
             raise ValueError("external_id is required")
@@ -129,6 +131,7 @@ class Respondent:
         validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
+        self.comments: list[RespondentComment] = list(comments) if comments else []
 
     def mark_as_selected(self, selection_run_id: uuid.UUID) -> None:
         """Mark respondent as selected in a specific selection run"""
@@ -149,6 +152,42 @@ class Respondent:
             raise ValueError("Only selected or confirmed respondents can be withdrawn")
         self.selection_status = RespondentStatus.WITHDRAWN
         self.updated_at = datetime.now(UTC)
+
+    def add_comment(
+        self,
+        text: str,
+        author_id: uuid.UUID,
+        action: RespondentAction = RespondentAction.NONE,
+    ) -> None:
+        """Append a comment authored by the given user."""
+        text = text.strip()
+        if not text:
+            raise ValueError("Comment text is required")
+        self.comments.append(
+            RespondentComment(
+                text=text,
+                author_id=author_id,
+                created_at=datetime.now(UTC),
+                action=action,
+            )
+        )
+        self.updated_at = datetime.now(UTC)
+
+    def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
+        """Blank PII, flip status to DELETED, append the deletion comment."""
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required when deleting personal data")
+        self.selection_status = RespondentStatus.DELETED
+        self.selection_run_id = None
+        self.email = ""
+        self.source_reference = ""
+        self.consent = None
+        self.stay_on_db = None
+        self.eligible = None
+        self.can_attend = None
+        self.attributes = dict.fromkeys(self.attributes, "")
+        self.add_comment(comment, author_id, action=RespondentAction.DELETE)
 
     def reset_to_pool(self) -> None:
         """Reset respondent back to pool status, clearing any selection run association"""
@@ -214,4 +253,5 @@ class Respondent:
             respondent_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
+            comments=list(self.comments),
         )
