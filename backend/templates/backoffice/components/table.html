@@ -66,12 +66,12 @@ Usage:
     {"label": "Actions", "align": "right"}
   ]) }}
     #}
-  <thead>
-    <tr style="color: var(--color-headings);">
+  <thead style="background-color: var(--color-subtle-background-panels);">
+    <tr>
       {% for col in columns %}
         {% set align = col.align | default("left") %}
-        <th class="px-5 py-3 text-body-sm font-medium uppercase text-{{ align }} {{ col.classes | default('') }}"
-            style="color: var(--color-headings);">
+        <th class="px-5 py-3 text-body-sm font-semibold text-{{ align }} {{ col.classes | default('') }}"
+            style="color: var(--color-headings); border-bottom: 1px solid var(--color-borders-dividers);">
           {{ col.label }}
         </th>
       {% endfor %}
@@ -160,6 +160,57 @@ Usage:
        onmouseout="this.style.color='var(--color-primary-action)'">
       {{ text }}
     </a>
+  </td>
+{% endmacro %}
+
+{# Table cell with status indicator #}
+{% macro table_cell_status(status, align="left", show_dot=true, nowrap=true, classes="") %}
+    {#
+Table cell with colored status text and optional indicator dot.
+
+Args:
+  status: Status value - one of "pool", "selected", "confirmed", "withdrawn"
+          (case-insensitive, also accepts RespondentStatus enum values)
+  align: Text alignment ("left", "center", "right")
+  show_dot: If true, shows colored dot before the text
+  nowrap: If true, prevents text wrapping
+  classes: Additional CSS classes
+
+Status colors:
+  - pool: green (available for selection)
+  - confirmed: green (confirmed participant)
+  - selected: gray (pending confirmation)
+  - withdrawn: red (no longer participating)
+
+Usage:
+  {{ table_cell_status("pool") }}
+  {{ table_cell_status(respondent.selection_status, show_dot=false) }}
+    #}
+  {% set status_lower = (status.value if status.value is defined else status)|lower %}
+  {% if status_lower == "pool" %}
+    {% set dot_color = "var(--color-success-400)" %}
+    {% set label = _("Pool") %}
+  {% elif status_lower == "confirmed" %}
+    {% set dot_color = "var(--color-success-400)" %}
+    {% set label = _("Confirmed") %}
+  {% elif status_lower == "selected" %}
+    {% set dot_color = "var(--color-borders-dividers)" %}
+    {% set label = _("Selected") %}
+  {% elif status_lower == "withdrawn" %}
+    {% set dot_color = "var(--color-error-400)" %}
+    {% set label = _("Withdrawn") %}
+  {% else %}
+    {% set dot_color = "var(--color-borders-dividers)" %}
+    {% set label = status_lower|capitalize %}
+  {% endif %}
+  <td class="px-5 py-4 text-body-sm text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
+    <span class="inline-flex items-center gap-2">
+      {% if show_dot %}
+        <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style="background-color: {{ dot_color }};"></span>
+      {% endif %}
+      <span style="color: var(--color-body-text);">{{ label }}</span>
+    </span>
   </td>
 {% endmacro %}
 
