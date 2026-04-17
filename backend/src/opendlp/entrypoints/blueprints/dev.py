@@ -10,6 +10,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     get_or_create_csv_config,
     get_or_create_selection_settings,
@@ -19,7 +20,11 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.respondent_service import import_respondents_from_csv
+from opendlp.service_layer.respondent_service import (
+    get_respondents_for_assembly,
+    import_respondents_from_csv,
+    reset_selection_status,
+)
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
@@ -144,6 +149,64 @@ def _handle_import_respondents(uow: Any, params: dict[str, Any]) -> dict[str, An
             }
         except InvalidSelection as e:
             return {"status": "error", "error": str(e), "error_type": "InvalidSelection"}
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_reset_selection_status(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle reset_selection_status service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            count = reset_selection_status(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "respondents_reset": count,
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_get_respondents(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_respondents_for_assembly service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    status_str = params.get("status")
+    status = RespondentStatus(status_str) if status_str else None
+
+    with uow:
+        try:
+            respondents = get_respondents_for_assembly(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                status=status,
+            )
+            return {
+                "status": "success",
+                "total_count": len(respondents),
+                "respondents": [
+                    {
+                        "external_id": r.external_id,
+                        "attributes": r.attributes,
+                        "selection_status": r.selection_status.value if r.selection_status else None,
+                        "email": r.email,
+                        "consent": r.consent,
+                        "eligible": r.eligible,
+                        "can_attend": r.can_attend,
+                    }
+                    for r in respondents[:20]  # Show first 20 as sample
+                ],
+                "showing": min(20, len(respondents)),
+            }
         except InsufficientPermissions as e:
             return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
         except NotFoundError as e:
@@ -298,6 +361,8 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
+    "reset_selection_status": _handle_reset_selection_status,
+    "get_respondents_for_assembly": _handle_get_respondents,
     "import_targets_from_csv": _handle_import_targets,
     "get_or_create_csv_config": _handle_get_csv_config,
     "update_csv_config": _handle_update_csv_config,
