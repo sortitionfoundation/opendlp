@@ -714,9 +714,9 @@ Green:
 
 ### Phase 10 — BDD (optional for this story)
 
-- [ ] If there are existing BDD scenarios for respondent actions, add one covering "Assembly manager deletes a respondent's personal data".
-- [ ] Confirm `delete_all_except_standard_users()` in `tests/bdd/conftest.py` still cleans respondents correctly (no new table, so expected to be a no-op verification).
-- [ ] Run `CI=true uv run pytest tests/bdd/` for any new or touched scenarios.
+- [ ] If there are existing BDD scenarios for respondent actions, add one covering "Assembly manager deletes a respondent's personal data". **Skipped:** coverage at the service / route / template level is comprehensive; no existing BDD scenario exercises the view_respondent page, so adding one is out of scope for this PR.
+- [x] Confirm `delete_all_except_standard_users()` in `tests/bdd/conftest.py` still cleans respondents correctly (no new table, so expected to be a no-op verification).
+- [x] Run `CI=true uv run pytest tests/bdd/` for any new or touched scenarios. **N/A** — no new scenarios.
 
 ### Phase 11 — i18n, final quality gates, commit
 
