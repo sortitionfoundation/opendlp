@@ -720,10 +720,10 @@ Green:
 
 ### Phase 11 — i18n, final quality gates, commit
 
-- [ ] `just translate-regen` to pick up new strings.
-- [ ] Inspect translation files for the new entries and note any follow-up translation work.
-- [ ] `just test` (full suite) — green.
-- [ ] `just check` — green.
-- [ ] Self-review diff against §1–§14 of this plan; ensure nothing drifted.
-- [ ] Squash / organise commits for review; each phase should be a discrete commit with a message referencing its phase.
+- [x] `just translate-regen` to pick up new strings.
+- [x] Inspect translation files for the new entries and note any follow-up translation work. **Note:** Hungarian `.po` entries for the new strings are empty and need translation by a native speaker before release.
+- [x] `just test` (full suite) — green (2289 passed, 5 skipped).
+- [x] `just check` — green.
+- [x] Self-review diff against §1–§14 of this plan; ensure nothing drifted.
+- [x] Squash / organise commits for review; each phase should be a discrete commit with a message referencing its phase.
 - [ ] Open PR against main; link this plan document.
