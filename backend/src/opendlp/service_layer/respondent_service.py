@@ -230,6 +230,36 @@ def get_respondents_for_assembly(
         return [r.create_detached_copy() for r in respondents]
 
 
+def get_respondents_for_assembly_paginated(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    page: int = 1,
+    per_page: int = 50,
+    status: RespondentStatus | None = None,
+) -> tuple[list[Respondent], int]:
+    """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
+            assembly_id, page=page, per_page=per_page, status=status
+        )
+        return [r.create_detached_copy() for r in respondents], total_count
+
+
 def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
     """Count respondents for an assembly that are not in POOL status."""
     return uow.respondents.count_non_pool(assembly_id)

@@ -8,6 +8,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_status %}
+{% from "backoffice/components/pagination.html" import pagination %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -105,6 +106,15 @@ ABOUTME: Displays respondent data configuration for assemblies
                         {% endfor %}
                     {% endcall %}
                 {% endcall %}
+                {# Pagination Controls #}
+                {{ pagination(
+                page=page,
+                total_pages=total_pages,
+                per_page=per_page,
+                total_count=total_count,
+                base_url=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id),
+                item_name=_("respondents")
+                ) }}
             {% else %}
                 {{ alert(_("No respondents uploaded yet."), variant="info") }}
             {% endif %}

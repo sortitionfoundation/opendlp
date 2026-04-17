@@ -518,6 +518,21 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         return results
 
+    def get_by_assembly_id_paginated(
+        self,
+        assembly_id: uuid.UUID,
+        page: int = 1,
+        per_page: int = 50,
+        status: RespondentStatus | None = None,
+    ) -> tuple[list[Respondent], int]:
+        results = [r for r in self._items if r.assembly_id == assembly_id]
+        if status:
+            results = [r for r in results if r.selection_status == status]
+        total_count = len(results)
+        offset = (page - 1) * per_page
+        paginated = results[offset : offset + per_page]
+        return paginated, total_count
+
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         for r in self._items:
             if r.assembly_id == assembly_id and r.external_id == external_id:
