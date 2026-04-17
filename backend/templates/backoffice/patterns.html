@@ -43,7 +43,8 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
         {"label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
         {"label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
         {"label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
-        {"label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'}
+        {"label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
+        {"label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'}
         ],
         aria_label=_("Pattern categories")
         ) }}
@@ -540,6 +541,212 @@ def upload_csv():
             </div>
         {% endif %}
 
+        {# ===== PAGINATION PATTERN ===== #}
+        {% if active_tab == 'pagination' %}
+            {% from "backoffice/components/pagination.html" import pagination %}
+            <div class="space-y-6">
+                {# Pagination Pattern #}
+                {% call card(title="Pagination Pattern", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Server-side pagination using URL query parameters. Page state is managed via the <code>page</code> query parameter, enabling bookmarkable URLs and browser history support.") | safe }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li>{{ _("Listing data that exceeds comfortable single-page viewing") }}</li>
+                                <li>{{ _("Tables with more than ~20-50 rows") }}</li>
+                                <li>{{ _("When users need to share or bookmark specific page positions") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Example") }}
+                            </h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                    {{ _("Try clicking the pagination buttons below. Notice how the URL changes with the page parameter.") }}
+                                </p>
+                                {% set demo_page = request.args.get('demo_page', 1)|int %}
+                                {{ pagination(
+                                page=demo_page,
+                                total_pages=15,
+                                per_page=10,
+                                total_count=142,
+                                base_url=url_for('dev.patterns', tab='pagination'),
+                                item_name=_("items"),
+                                preserve_scroll=true,
+                                page_param="demo_page"
+                                ) }}
+                                {% if demo_page != 1 %}
+                                    <p class="text-body-sm mt-4" style="color: var(--color-success-600);">
+                                        ✅ {{ _("Current page: %(page)s (see URL: demo_page=%(page)s)", page=demo_page) }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Template Code") }}</h4>
+                                <button @click="copyPaginationTemplateCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the component #}
+{% from "backoffice/components/pagination.html" import pagination %}
+
+{# Use with base_url - page param will be appended automatically #}
+{{ pagination(
+    page=page,
+    total_pages=total_pages,
+    per_page=per_page,
+    total_count=total_count,
+    base_url=url_for('my.route', assembly_id=assembly.id),
+    item_name=_("respondents")
+) }}{% endraw %}</pre>
+                        </div>
+
+                        {# Flask Route Code #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Flask Route Code") }}</h4>
+                                <button @click="copyPaginationRouteCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">@bp.route("/items")
+def list_items():
+    # Get page from query param, default to 1
+    page = request.args.get("page", 1, type=int)
+    per_page = 20  # Items per page
+
+    # Paginate query
+    items = Item.query.paginate(page=page, per_page=per_page)
+
+    return render_template(
+        "items/list.html",
+        items=items.items,
+        page=page,
+        total_pages=items.pages,
+        per_page=per_page,
+        total_count=items.total,
+    )</pre>
+                        </div>
+
+                        {# Architecture Notes #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>base_url</strong> — {{ _("Pass a URL without the page param; it will be appended automatically") }}</li>
+                                <li><strong>{{ _("1-indexed pages") }}</strong> — {{ _("Page numbers start at 1, not 0") }}</li>
+                                <li><strong>{{ _("Stateless") }}</strong> — {{ _("Component has no internal state; all values come from server") }}</li>
+                                <li><strong>{{ _("Hidden when single page") }}</strong> — {{ _("Renders nothing when total_pages ≤ 1") }}</li>
+                            </ul>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Scroll Preservation Pattern #}
+                {% call card(title="Scroll Preservation (x-scroll-preserve-links)", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("The <code>x-scroll-preserve-links</code> Alpine.js directive preserves and restores scroll position when navigating between pages. This prevents the jarring experience of scrolling back to find your place after clicking a pagination link.") | safe }}
+                        </p>
+
+                        {# How it works #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("How It Works") }}</h4>
+                            <ol class="list-decimal list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li>{{ _("When a link inside the element is clicked, the current scroll position is saved to sessionStorage") }}</li>
+                                <li>{{ _("On page load, if a saved position exists for this URL, the page scrolls to that position") }}</li>
+                                <li>{{ _("Position is keyed by full URL including query parameters") }}</li>
+                            </ol>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Usage") }}</h4>
+                                <button @click="copyScrollPreserveCode()"
+                                        class="text-body-sm px-2 py-1 rounded transition-colors"
+                                        style="background-color: var(--color-subtle-background-panels);">
+                                    📋 {{ _("Copy") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Add the directive to any container with navigation links #}
+&lt;nav class="pagination" x-data="{}" x-scroll-preserve-links&gt;
+    &lt;a href="?page=1"&gt;1&lt;/a&gt;
+    &lt;a href="?page=2"&gt;2&lt;/a&gt;
+    &lt;a href="?page=3"&gt;3&lt;/a&gt;
+&lt;/nav&gt;
+
+{# The pagination component includes this by default #}
+{{ "{{" }} pagination(..., preserve_scroll=true) {{ "}}" }}
+
+{# Disable scroll preservation if needed #}
+{{ "{{" }} pagination(..., preserve_scroll=false) {{ "}}" }}</pre>
+                        </div>
+
+                        {# Where it's defined #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">📍 {{ _("Definition") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                {{ _("The directive is defined in:") }}
+                                <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">static/backoffice/js/alpine-components.js</code>
+                            </p>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Line") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">—</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Directive definition</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/pagination.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">47</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Pagination component</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_selection.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">252, 474</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Selection run history pagination</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
         {# ===== PROGRESS PATTERN ===== #}
         {% if active_tab == 'progress' %}
             {% from "backoffice/components/modal.html" import progress_bar, spinner %}
@@ -908,6 +1115,56 @@ def upload_csv():
 
                 copyProgressBarCode() {
                     this.copyToClipboard(this.progressBarCode);
+                },
+
+                // Pagination pattern code snippets
+                paginationTemplateCode: '{{ "{%" }} from "backoffice/components/pagination.html" import pagination {{ "%}" }}\n\n' +
+                '{{ "{{" }} pagination(\n' +
+                '    page=page,\n' +
+                '    total_pages=total_pages,\n' +
+                '    per_page=per_page,\n' +
+                '    total_count=total_count,\n' +
+                '    base_url=url_for(\'my.route\', assembly_id=assembly.id),\n' +
+                '    item_name=_("respondents")\n' +
+                ') {{ "}}" }}',
+
+                paginationRouteCode: '@bp.route("/items")\n' +
+                'def list_items():\n' +
+                '    # Get page from query param, default to 1\n' +
+                '    page = request.args.get("page", 1, type=int)\n' +
+                '    per_page = 20  # Items per page\n\n' +
+                '    # Paginate query\n' +
+                '    items = Item.query.paginate(page=page, per_page=per_page)\n\n' +
+                '    return render_template(\n' +
+                '        "items/list.html",\n' +
+                '        items=items.items,\n' +
+                '        page=page,\n' +
+                '        total_pages=items.pages,\n' +
+                '        per_page=per_page,\n' +
+                '        total_count=items.total,\n' +
+                '    )',
+
+                scrollPreserveCode: '{# Add the directive to any container with navigation links #}\n' +
+                '<nav class="pagination" x-data="{}" x-scroll-preserve-links>\n' +
+                '    <a href="?page=1">1</a>\n' +
+                '    <a href="?page=2">2</a>\n' +
+                '    <a href="?page=3">3</a>\n' +
+                '</nav>\n\n' +
+                '{# The pagination component includes this by default #}\n' +
+                '{{ "{{" }} pagination(..., preserve_scroll=true) {{ "}}" }}\n\n' +
+                '{# Disable scroll preservation if needed #}\n' +
+                '{{ "{{" }} pagination(..., preserve_scroll=false) {{ "}}" }}',
+
+                copyPaginationTemplateCode() {
+                    this.copyToClipboard(this.paginationTemplateCode);
+                },
+
+                copyPaginationRouteCode() {
+                    this.copyToClipboard(this.paginationRouteCode);
+                },
+
+                copyScrollPreserveCode() {
+                    this.copyToClipboard(this.scrollPreserveCode);
                 }
             }));
 
