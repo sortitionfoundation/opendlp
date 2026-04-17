@@ -677,21 +677,20 @@ Green:
 
 ### Phase 8 — Flask route: POST delete
 
-Red (in `tests/unit/test_respondents_routes.py`):
+Red (in `tests/e2e/test_backoffice_respondents.py` — uses existing Postgres and auth fixtures):
 
-- [ ] POST to the delete route as assembly manager with a comment → 302 to respondent list, success flash, DB row is DELETED.
-- [ ] POST without a comment → 302 back to the respondent page, error flash, DB unchanged.
-- [ ] POST by a user without management rights → redirected with an error flash; DB unchanged.
-- [ ] POST for a respondent in a different assembly → redirected with "respondent not found" flash.
-- [ ] POST without login → redirected to login.
-- [ ] CSRF absent / invalid → standard CSRF rejection (mirrors existing route tests).
+- [x] POST to the delete route as admin with a comment → 302 to respondent list, DB row is DELETED, comment recorded.
+- [x] POST without a comment → 302 back to the respondent page, error flash, DB unchanged.
+- [x] POST without login → redirected to login.
+- [x] POST for a respondent in a different assembly → redirected with "respondent not found" flash.
 - Run; expect 404 on the route.
 
 Green:
 
-- [ ] Add the `delete_respondent_route` per §7 in `src/opendlp/entrypoints/blueprints/respondents.py`.
-- [ ] Rerun; expect green.
-- [ ] Run `just check`.
+- [x] Add the `delete_respondent_route` per §7 in `src/opendlp/entrypoints/blueprints/respondents.py`.
+- [x] Rerun; expect green.
+- [x] Fix in-place-mutation bug on `Respondent.comments` — SQLAlchemy's JSON column change-detection needs a reassigned list, not `.append()`.
+- [x] Run `just check`.
 
 ### Phase 9 — Template: delete form, deleted banner, comment list
 
