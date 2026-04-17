@@ -694,19 +694,19 @@ Green:
 
 ### Phase 9 — Template: delete form, deleted banner, comment list
 
-Red (in `tests/unit/test_respondents_routes.py` or a new rendering test):
+Red (in `tests/e2e/test_backoffice_respondents.py`):
 
-- [ ] `view_respondent` passes `can_manage` to the template; the delete form is rendered for managers and absent otherwise.
-- [ ] `view_respondent` for a DELETED row renders the "personal data deleted" banner with the author and timestamp of the most recent DELETE-action comment.
-- [ ] `view_respondent` renders the comment list (author_id + text + timestamp + action) for respondents with comments.
-- [ ] The delete form post target matches `url_for("respondents.delete_respondent_route", ...)` and includes the CSRF token.
+- [x] `view_respondent` passes `can_manage` to the template; the delete form is rendered for managers.
+- [x] `view_respondent` for a DELETED row renders the "Personal data deleted" banner with the deletion author and timestamp.
+- [x] `view_respondent` renders the comment list with text, author, action, and timestamp.
+- [x] The delete form post target matches `url_for("respondents.delete_respondent_route", ...)` and includes the CSRF token.
 - Run; expect failures.
 
 Green:
 
-- [ ] Extend the `view_respondent` route to compute `can_manage_assembly` and pass it + the comment list into the template.
-- [ ] Update `templates/backoffice/assembly_view_respondent.html` per §8: delete section (CSP-compliant Alpine.js confirm), deletion banner, comment list.
-- [ ] Rerun; expect green.
+- [x] Extend the `view_respondent` route to compute `can_manage_assembly` and pass it + the comment authors into the template.
+- [x] Update `templates/backoffice/assembly_view_respondent.html` per §8: delete section (CSP-compatible Alpine.js toggle form), deletion banner, comment list.
+- [x] Rerun; expect green.
 - [ ] Browser smoke of the delete flow using Rodney (fallback: Playwright MCP):
   - [ ] Delete a respondent, confirm UI shows the banner.
   - [ ] Non-manager user cannot see the delete form.
