@@ -596,17 +596,17 @@ Green:
 
 Red:
 
-- [ ] Add a contract-test case in `tests/contract/test_respondent_repo.py` asserting that a respondent with a non-empty `comments` list round-trips through the repository (save, fetch, assert comment text / action / author_id / created_at all match). Run against Postgres; expect failure because the column doesn't exist.
+- [x] Add a contract-test case in `tests/contract/test_respondent_repo.py` asserting that a respondent with a non-empty `comments` list round-trips through the repository (save, fetch, assert comment text / action / author_id / created_at all match). Run against Postgres; expect failure because the column doesn't exist.
 
 Green:
 
-- [ ] In `src/opendlp/adapters/orm.py`: add `RespondentCommentListJSON` `TypeDecorator` that serialises `list[RespondentComment]` via `to_dict` / `from_dict`.
-- [ ] Add `comments` column to the `respondents` table using the new decorator, `nullable=False, default=list`.
-- [ ] Generate migration: `uv run alembic revision --autogenerate -m "add comments to respondents"`.
-- [ ] Edit the migration to include `server_default='[]'` so existing rows backfill, then drop the server default in the same migration or a follow-up if we don't want it long-term.
-- [ ] Apply migration to the local test DB and rerun the contract test; expect green.
-- [ ] Run full `just test`; expect green.
-- [ ] Run `just check`.
+- [x] In `src/opendlp/adapters/orm.py`: add `RespondentCommentListJSON` `TypeDecorator` that serialises `list[RespondentComment]` via `to_dict` / `from_dict`.
+- [x] Add `comments` column to the `respondents` table using the new decorator, `nullable=False, default=list`.
+- [x] Generate migration: `uv run alembic revision --autogenerate -m "add comments to respondents"`.
+- [x] Edit the migration to include `server_default='[]'` so existing rows backfill, then drop the server default in the same migration or a follow-up if we don't want it long-term.
+- [x] Apply migration to the local test DB and rerun the contract test; expect green.
+- [x] Run full `just test`; expect green.
+- [x] Run `just check`.
 
 ### Phase 5 — Repo behaviour: `include_deleted` filter + DELETED-aware counts
 
