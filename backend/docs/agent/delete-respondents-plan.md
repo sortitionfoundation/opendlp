@@ -553,20 +553,20 @@ Green:
 
 Red:
 
-- [ ] In `tests/unit/domain/test_respondents.py` (create if missing — existing `tests/unit/test_respondents.py` at top level can also be extended):
-  - [ ] `RespondentAction` has values `NONE`, `EDIT`, `DELETE` with matching string values.
-  - [ ] `RespondentComment(...)` is constructible with text, author_id, created_at, and optional action (defaults to NONE).
-  - [ ] `to_dict` produces a dict with all four fields, `action` as the enum value string.
-  - [ ] `from_dict` round-trips the four-field dict.
-  - [ ] `from_dict` defaults `action` to `NONE` when the key is absent (legacy-row guard).
-  - [ ] Instances are frozen (attempting to mutate raises).
-- [ ] Run tests; expect import errors until the types exist.
+- [x] In `tests/unit/domain/test_respondents.py` (create if missing — existing `tests/unit/test_respondents.py` at top level can also be extended):
+  - [x] `RespondentAction` has values `NONE`, `EDIT`, `DELETE` with matching string values.
+  - [x] `RespondentComment(...)` is constructible with text, author_id, created_at, and optional action (defaults to NONE).
+  - [x] `to_dict` produces a dict with all four fields, `action` as the enum value string.
+  - [x] `from_dict` round-trips the four-field dict.
+  - [x] `from_dict` defaults `action` to `NONE` when the key is absent (legacy-row guard).
+  - [x] Instances are frozen (attempting to mutate raises).
+- [x] Run tests; expect import errors until the types exist.
 
 Green:
 
-- [ ] Add `RespondentAction` enum to `src/opendlp/domain/value_objects.py`.
-- [ ] Add `RespondentComment` dataclass to `src/opendlp/domain/respondents.py`.
-- [ ] Rerun; expect green.
+- [x] Add `RespondentAction` enum to `src/opendlp/domain/value_objects.py`.
+- [x] Add `RespondentComment` dataclass to `src/opendlp/domain/respondents.py`.
+- [x] Rerun; expect green.
 
 ### Phase 3 — Respondent domain: `comments` field + `add_comment` + `delete_personal_data`
 
