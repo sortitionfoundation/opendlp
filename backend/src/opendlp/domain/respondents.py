@@ -163,14 +163,15 @@ class Respondent:
         text = text.strip()
         if not text:
             raise ValueError("Comment text is required")
-        self.comments.append(
-            RespondentComment(
-                text=text,
-                author_id=author_id,
-                created_at=datetime.now(UTC),
-                action=action,
-            )
+        new_comment = RespondentComment(
+            text=text,
+            author_id=author_id,
+            created_at=datetime.now(UTC),
+            action=action,
         )
+        # Reassign rather than mutate in place so SQLAlchemy's JSON column
+        # change-detection sees the new value.
+        self.comments = [*self.comments, new_comment]
         self.updated_at = datetime.now(UTC)
 
     def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:

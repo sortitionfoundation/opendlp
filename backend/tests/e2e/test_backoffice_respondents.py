@@ -467,3 +467,131 @@ class TestBackofficeViewSingleRespondent:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Respondent not found" in msg for msg in flash_messages)
+
+
+class TestDeleteRespondentRoute:
+    """POST /backoffice/assembly/<id>/respondents/<id>/delete"""
+
+    def _delete_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/delete"
+
+    def _view_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def test_admin_can_delete_with_comment(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-DEL",
+                attributes={"Gender": "Female"},
+                email="alice@example.com",
+            )
+
+        response = logged_in_admin.post(
+            self._delete_url(existing_assembly.id, respondent.id),
+            data={
+                "comment": "gdpr request",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, respondent.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert f"/backoffice/assembly/{existing_assembly.id}/respondents" in response.location
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            reloaded = uow.respondents.get(respondent.id)
+            assert reloaded is not None
+            assert reloaded.selection_status.value == "DELETED"
+            assert reloaded.email == ""
+            assert reloaded.attributes == {"Gender": ""}
+            assert len(reloaded.comments) == 1
+            assert reloaded.comments[0].text == "gdpr request"
+
+    def test_missing_comment_rejected(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-KEEP",
+                attributes={},
+                email="keep@example.com",
+            )
+
+        response = logged_in_admin.post(
+            self._delete_url(existing_assembly.id, respondent.id),
+            data={
+                "comment": "",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, respondent.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            reloaded = uow.respondents.get(respondent.id)
+            assert reloaded is not None
+            assert reloaded.selection_status.value == "POOL"
+            assert reloaded.email == "keep@example.com"
+            assert len(reloaded.comments) == 0
+
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("comment is required" in msg.lower() for msg in flash_messages)
+
+    def test_requires_login(self, client, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-NOLOGIN",
+                attributes={},
+            )
+
+        response = client.post(
+            self._delete_url(existing_assembly.id, respondent.id),
+            data={"comment": "gdpr"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_respondent_in_other_assembly(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            other_assembly = create_assembly(
+                uow=uow,
+                title="Other Assembly",
+                created_by_user_id=admin_user.id,
+                question="Other?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            )
+            other_id = other_assembly.id
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                other_id,
+                external_id="R-OTHER",
+                attributes={},
+            )
+
+        response = logged_in_admin.post(
+            self._delete_url(existing_assembly.id, respondent.id),
+            data={
+                "comment": "gdpr",
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
+            assert any("Respondent not found" in msg for msg in flash_messages)
