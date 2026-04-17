@@ -4,10 +4,38 @@ ABOUTME: Contains Respondent class for tracking participants in the selection po
 import re
 import uuid
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+
+
+@dataclass(frozen=True)
+class RespondentComment:
+    """A timestamped note against a respondent, optionally tagged with an action."""
+
+    text: str
+    author_id: uuid.UUID
+    created_at: datetime
+    action: RespondentAction = RespondentAction.NONE
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "text": self.text,
+            "author_id": str(self.author_id),
+            "created_at": self.created_at.isoformat(),
+            "action": self.action.value,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RespondentComment":
+        return cls(
+            text=data["text"],
+            author_id=uuid.UUID(data["author_id"]),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            action=RespondentAction(data.get("action", RespondentAction.NONE.value)),
+        )
 
 
 def normalise_field_name(key: str) -> str:

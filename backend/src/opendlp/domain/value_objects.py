@@ -116,6 +116,19 @@ class RespondentStatus(Enum):
     DELETED = "DELETED"
 
 
+class RespondentAction(Enum):
+    """Type of action a RespondentComment records.
+
+    NONE is a plain comment with no system action attached.
+    EDIT records a change to the respondent's details.
+    DELETE records a GDPR personal-data deletion.
+    """
+
+    NONE = "NONE"
+    EDIT = "EDIT"
+    DELETE = "DELETE"
+
+
 class RespondentSourceType(Enum):
     """Source of respondent data"""
 
