@@ -636,30 +636,30 @@ Green:
 
 Red (in `tests/unit/test_respondent_service.py`):
 
-- [ ] `delete_respondent` as assembly manager: sets status DELETED, appends a DELETE comment authored by the caller.
-- [ ] `delete_respondent` as global admin: succeeds (they have `can_manage_assembly`).
-- [ ] `delete_respondent` as global organiser: succeeds.
-- [ ] `delete_respondent` as confirmation caller: raises `InsufficientPermissions`.
-- [ ] `delete_respondent` as unrelated user: raises `InsufficientPermissions`.
-- [ ] `delete_respondent` with empty / whitespace-only comment: raises `ValueError`.
-- [ ] `delete_respondent` with respondent belonging to a different assembly: raises `RespondentNotFoundError`.
-- [ ] `delete_respondent` with non-existent respondent id: raises `RespondentNotFoundError`.
-- [ ] `delete_respondent` with non-existent user: raises `UserNotFoundError`.
-- [ ] `delete_respondent` with non-existent assembly: raises `AssemblyNotFoundError`.
-- [ ] `add_respondent_comment` as manager: appends a `NONE`-action comment.
-- [ ] `add_respondent_comment` as confirmation caller: raises `InsufficientPermissions`.
-- [ ] `add_respondent_comment` with empty text: raises `ValueError`.
-- [ ] `get_respondents_for_assembly()` excludes DELETED by default.
-- [ ] `get_respondents_for_assembly(include_deleted=True)` includes DELETED.
+- [x] `delete_respondent` as assembly manager: sets status DELETED, appends a DELETE comment authored by the caller.
+- [x] `delete_respondent` as global admin: succeeds (they have `can_manage_assembly`).
+- [x] `delete_respondent` as global organiser: succeeds.
+- [x] `delete_respondent` as confirmation caller: raises `InsufficientPermissions`.
+- [x] `delete_respondent` as unrelated user: raises `InsufficientPermissions`.
+- [x] `delete_respondent` with empty / whitespace-only comment: raises `ValueError`.
+- [x] `delete_respondent` with respondent belonging to a different assembly: raises `RespondentNotFoundError`.
+- [x] `delete_respondent` with non-existent respondent id: raises `RespondentNotFoundError`.
+- [x] `delete_respondent` with non-existent user: raises `UserNotFoundError`.
+- [x] `delete_respondent` with non-existent assembly: raises `AssemblyNotFoundError`.
+- [x] `add_respondent_comment` as manager: appends a `NONE`-action comment.
+- [x] `add_respondent_comment` as confirmation caller: raises `InsufficientPermissions`.
+- [x] `add_respondent_comment` with empty text: raises `ValueError`.
+- [x] `get_respondents_for_assembly()` excludes DELETED by default.
+- [x] `get_respondents_for_assembly(include_deleted=True)` includes DELETED.
 - Run; expect failures / import errors.
 
 Green:
 
-- [ ] Implement `delete_respondent` per §6.1.
-- [ ] Implement `add_respondent_comment` per §6.2.
-- [ ] Extend `get_respondents_for_assembly` with `include_deleted` passthrough.
-- [ ] Rerun; expect green.
-- [ ] Run `just check`.
+- [x] Implement `delete_respondent` per §6.1.
+- [x] Implement `add_respondent_comment` per §6.2.
+- [x] Extend `get_respondents_for_assembly` with `include_deleted` passthrough.
+- [x] Rerun; expect green.
+- [x] Run `just check`.
 
 ### Phase 7 — Sortition integration
 
