@@ -319,6 +319,114 @@ class TestCommentsRoundTrip:
         assert retrieved.comments == []
 
 
+class TestIncludeDeletedFiltering:
+    def test_get_by_assembly_id_hides_deleted_by_default(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        live = _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results = respondent_backend.repo.get_by_assembly_id(assembly.id)
+        assert {r.id for r in results} == {live.id}
+
+    def test_get_by_assembly_id_includes_deleted_when_requested(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        live = _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results = respondent_backend.repo.get_by_assembly_id(assembly.id, include_deleted=True)
+        assert {r.id for r in results} == {live.id, dead.id}
+
+    def test_get_by_assembly_id_explicit_status_deleted_returns_only_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results = respondent_backend.repo.get_by_assembly_id(assembly.id, status=RespondentStatus.DELETED)
+        assert {r.id for r in results} == {dead.id}
+
+    def test_count_by_assembly_id_excludes_deleted_by_default(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        assert respondent_backend.repo.count_by_assembly_id(assembly.id) == 1
+
+    def test_count_by_assembly_id_includes_deleted_when_requested(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        assert respondent_backend.repo.count_by_assembly_id(assembly.id, include_deleted=True) == 2
+
+    def test_count_non_pool_excludes_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-POOL", status=RespondentStatus.POOL)
+        _make_respondent(respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED)
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        assert respondent_backend.repo.count_non_pool(assembly.id) == 1
+
+    def test_reset_all_to_pool_skips_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED)
+        dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        count = respondent_backend.repo.reset_all_to_pool(assembly.id)
+        respondent_backend.commit()
+
+        assert count == 1
+        reloaded_dead = respondent_backend.fresh_get_respondent(dead.id)
+        assert reloaded_dead is not None
+        assert reloaded_dead.selection_status == RespondentStatus.DELETED
+
+    def test_get_attribute_value_counts_excludes_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R-LIVE",
+            attributes={"gender": "Female"},
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R-DEAD",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.DELETED,
+        )
+
+        counts = respondent_backend.repo.get_attribute_value_counts(assembly.id, "gender")
+        assert counts == {"Female": 1}
+
+    def test_get_attribute_columns_skips_deleted_sample(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        # Insert the DELETED respondent first so if the sample picks "first row"
+        # naively it would hit the DELETED one with blanked attrs.
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R-DEAD",
+            attributes={},
+            status=RespondentStatus.DELETED,
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R-LIVE",
+            attributes={"gender": "Female", "age": "30-40"},
+        )
+
+        columns = respondent_backend.repo.get_attribute_columns(assembly.id)
+        assert columns == ["age", "gender"]
+
+    def test_count_available_for_selection_excludes_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-POOL")
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        assert respondent_backend.repo.count_available_for_selection(assembly.id) == 1
+
+
 class TestGetSelectedAttributeValueCounts:
     def test_counts_only_selected_and_confirmed(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
