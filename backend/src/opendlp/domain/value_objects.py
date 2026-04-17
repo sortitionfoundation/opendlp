@@ -113,7 +113,7 @@ class RespondentStatus(Enum):
     CONFIRMED = "CONFIRMED"
     WITHDRAWN = "WITHDRAWN"
     PARTICIPATED = "PARTICIPATED"
-    EXCLUDED = "EXCLUDED"
+    DELETED = "DELETED"
 
 
 class RespondentSourceType(Enum):
