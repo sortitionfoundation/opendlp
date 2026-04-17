@@ -572,25 +572,25 @@ Green:
 
 Red (in `tests/unit/test_respondents.py`):
 
-- [ ] Respondent constructor accepts `comments=[...]` and defaults to `[]`.
-- [ ] An attribute key normalising to `"comments"` is rejected by `validate_no_field_name_collisions`.
-- [ ] `add_comment` appends a `RespondentComment` with `action=NONE` by default and `action=EDIT`/`DELETE` when passed.
-- [ ] `add_comment` rejects empty and whitespace-only text with `ValueError`.
-- [ ] `add_comment` updates `updated_at`.
-- [ ] `delete_personal_data` sets status to `DELETED`, blanks `email` / `source_reference`, zeroes booleans to `None`, clears `selection_run_id`, blanks all attribute *values* to `""` while preserving *keys*, and appends a comment with `action=DELETE`.
-- [ ] `delete_personal_data` preserves `id`, `external_id`, `assembly_id`, `source_type`, `created_at`, and any prior comments.
-- [ ] `delete_personal_data` rejects empty / whitespace-only comment with `ValueError`.
-- [ ] `create_detached_copy` round-trips a non-empty `comments` list (list is copied, not shared).
+- [x] Respondent constructor accepts `comments=[...]` and defaults to `[]`.
+- [x] An attribute key normalising to `"comments"` is rejected by `validate_no_field_name_collisions`.
+- [x] `add_comment` appends a `RespondentComment` with `action=NONE` by default and `action=EDIT`/`DELETE` when passed.
+- [x] `add_comment` rejects empty and whitespace-only text with `ValueError`.
+- [x] `add_comment` updates `updated_at`.
+- [x] `delete_personal_data` sets status to `DELETED`, blanks `email` / `source_reference`, zeroes booleans to `None`, clears `selection_run_id`, blanks all attribute *values* to `""` while preserving *keys*, and appends a comment with `action=DELETE`.
+- [x] `delete_personal_data` preserves `id`, `external_id`, `assembly_id`, `source_type`, `created_at`, and any prior comments.
+- [x] `delete_personal_data` rejects empty / whitespace-only comment with `ValueError`.
+- [x] `create_detached_copy` round-trips a non-empty `comments` list (list is copied, not shared).
 - Run tests; expect failures for all new assertions.
 
 Green:
 
-- [ ] Add `"comments"` to `_RESERVED_FIELD_NAMES` in `respondents.py`.
-- [ ] Extend `Respondent.__init__` to accept and store `comments`.
-- [ ] Implement `add_comment` and `delete_personal_data` per §2.5.
-- [ ] Update `create_detached_copy`.
-- [ ] Rerun; expect green.
-- [ ] Run `just check`; fix any typing issues on the new dataclass / list fields.
+- [x] Add `"comments"` to `_RESERVED_FIELD_NAMES` in `respondents.py`.
+- [x] Extend `Respondent.__init__` to accept and store `comments`.
+- [x] Implement `add_comment` and `delete_personal_data` per §2.5.
+- [x] Update `create_detached_copy`.
+- [x] Rerun; expect green.
+- [x] Run `just check`; fix any typing issues on the new dataclass / list fields.
 
 ### Phase 4 — ORM column + `TypeDecorator` + migration
 
