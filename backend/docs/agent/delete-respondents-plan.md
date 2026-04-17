@@ -665,15 +665,15 @@ Green:
 
 Red (in `tests/integration/test_sortition_data_adapter.py` and/or `test_sortition_db_task.py`; Postgres required):
 
-- [ ] Selection run on a mix of POOL + DELETED respondents: DELETED external_ids never appear in selected or remaining results.
-- [ ] `generate_selection_csvs`: select a respondent, delete them, regenerate the CSV — the selected CSV still contains their external_id; attribute columns are present but values are blank; row count equals the original `selected_ids` length.
+- [x] Selection run on a mix of POOL + DELETED respondents: DELETED external_ids never appear in selected or remaining results.
+- [x] `generate_selection_csvs`: select a respondent, delete them, regenerate the CSV — the selected CSV still contains their external_id; attribute columns are present but values are blank; row count equals the original `selected_ids` length.
 - Run; expect green already (sortition adapter is unchanged). The value of these tests is regression protection.
 
 Green:
 
-- [ ] No code change expected. If a test fails, diagnose before adjusting the adapter — the plan's design is that no adapter change is needed.
-- [ ] Run `just test`; expect green.
-- [ ] Run `just check`.
+- [x] No code change expected. If a test fails, diagnose before adjusting the adapter — the plan's design is that no adapter change is needed. **Revised:** the CSV generator needed a small change (`_person_list_to_table_with_deleted`) because the sortition library's validator rejects blanked rows. DELETED respondents are detected in `generate_selection_csvs` and synthesised into the output table with a `"DATA DELETED"` placeholder.
+- [x] Run `just test`; expect green.
+- [x] Run `just check`.
 
 ### Phase 8 — Flask route: POST delete
 
