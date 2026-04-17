@@ -4,11 +4,12 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.respondents import Respondent, RespondentComment
+from opendlp.domain.value_objects import RespondentAction, RespondentStatus, SelectionRunStatus, SelectionTaskType
 from tests.contract.conftest import ContractBackend
 
 
@@ -270,6 +271,52 @@ class TestGetAttributeValueCounts:
 
     def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
         assert respondent_backend.repo.get_attribute_value_counts(uuid.uuid4(), "gender") == {}
+
+
+class TestCommentsRoundTrip:
+    def test_round_trips_comments_through_repository(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        author = uuid.uuid4()
+        created = datetime(2026, 4, 17, 12, 0, tzinfo=UTC)
+        respondent = Respondent(
+            assembly_id=assembly.id,
+            external_id="RC-001",
+            comments=[
+                RespondentComment(
+                    text="first note",
+                    author_id=author,
+                    created_at=created,
+                    action=RespondentAction.NONE,
+                ),
+                RespondentComment(
+                    text="deleted",
+                    author_id=author,
+                    created_at=created,
+                    action=RespondentAction.DELETE,
+                ),
+            ],
+        )
+        respondent_backend.repo.add(respondent)
+        respondent_backend.commit()
+
+        retrieved = respondent_backend.fresh_get_respondent(respondent.id)
+        assert retrieved is not None
+        assert len(retrieved.comments) == 2
+        assert retrieved.comments[0].text == "first note"
+        assert retrieved.comments[0].author_id == author
+        assert retrieved.comments[0].created_at == created
+        assert retrieved.comments[0].action is RespondentAction.NONE
+        assert retrieved.comments[1].action is RespondentAction.DELETE
+
+    def test_default_comments_is_empty_list(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        respondent = Respondent(assembly_id=assembly.id, external_id="RC-002")
+        respondent_backend.repo.add(respondent)
+        respondent_backend.commit()
+
+        retrieved = respondent_backend.fresh_get_respondent(respondent.id)
+        assert retrieved is not None
+        assert retrieved.comments == []
 
 
 class TestGetSelectedAttributeValueCounts:
