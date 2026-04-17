@@ -221,6 +221,7 @@ def _delete_all_test_data(session_factory):
         session.execute(orm.password_reset_tokens.delete())
         session.execute(orm.selection_run_records.delete())
         session.execute(orm.respondents.delete())
+        session.execute(orm.respondent_field_definitions.delete())
         session.execute(orm.target_categories.delete())
         session.execute(orm.assembly_gsheets.delete())
         session.execute(orm.assembly_csv.delete())

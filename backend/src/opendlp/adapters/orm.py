@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
+from opendlp.domain.respondent_field_schema import RespondentFieldGroup
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
     AssemblyRole,
@@ -455,4 +456,32 @@ respondents = Table(
     Index("ix_respondents_assembly_external", "assembly_id", "external_id", unique=True),
     # Composite index for selection queries
     Index("ix_respondents_selection", "assembly_id", "selection_status", "eligible", "can_attend"),
+)
+
+# Respondent field definitions table — per-assembly schema driving grouped display.
+respondent_field_definitions = Table(
+    "respondent_field_definitions",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("field_key", String(255), nullable=False),
+    Column("label", String(255), nullable=False),
+    Column("field_group", EnumAsString(RespondentFieldGroup, 50), nullable=False),
+    Column("sort_order", Integer, nullable=False, default=0),
+    Column("is_fixed", Boolean, nullable=False, default=False),
+    Column("is_derived", Boolean, nullable=False, default=False),
+    Column("derived_from", JSON, nullable=True),
+    Column("derivation_kind", String(100), nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    # Unique field_key per assembly
+    Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
+    # Composite index for grouped display (ordered read path)
+    Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
 )
