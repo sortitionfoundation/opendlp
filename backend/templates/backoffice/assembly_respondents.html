@@ -7,7 +7,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_status %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -81,6 +81,7 @@ ABOUTME: Displays respondent data configuration for assemblies
             {% if respondents %}
                 {% call table(striped=true) %}
                     {{ table_head([
+                    {"label": _("Status")},
                     {"label": _("External ID")},
                     {"label": _("Email")},
                     {"label": _("Name")},
@@ -89,6 +90,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                     {% call table_body() %}
                         {% for respondent in respondents %}
                             {% call table_row(is_odd=loop.index is odd) %}
+                                {{ table_cell_status(respondent.selection_status) }}
                                 {{ table_cell(respondent.external_id, bold=true) }}
                                 {{ table_cell(respondent.email or "—") }}
                                 {{ table_cell(respondent.display_name(assembly.name_fields)) }}
