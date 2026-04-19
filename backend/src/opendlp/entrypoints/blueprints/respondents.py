@@ -26,7 +26,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import (
     delete_respondent,
-    get_respondent,
+    get_respondent_with_comment_authors,
     get_respondents_for_assembly,
     import_respondents_from_csv,
 )
@@ -269,17 +269,12 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+            respondent, comment_authors = get_respondent_with_comment_authors(
+                uow, current_user.id, assembly_id, respondent_id
+            )
             viewer = uow.users.get(current_user.id)
             assembly_obj = uow.assemblies.get(assembly_id)
             can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
-            # Look up comment authors so the template can show names
-            author_ids = {c.author_id for c in respondent.comments}
-            comment_authors = {}
-            for author_id in author_ids:
-                author = uow.users.get(author_id)
-                if author:
-                    comment_authors[author_id] = author.create_detached_copy()
 
         # Determine data source and whether tabs should be enabled
         gsheet = None

@@ -263,3 +263,96 @@ class TestGetRespondentsIncludeDeleted:
 
         results = respondent_service.get_respondents_for_assembly(uow, user.id, assembly.id, include_deleted=True)
         assert {r.id for r in results} == {live.id, dead.id}
+
+
+class TestGetRespondentWithCommentAuthors:
+    def test_returns_detached_respondent_and_authors(self):
+        uow = FakeUnitOfWork()
+        user, assembly, respondent = _seed(uow)
+        other_author = User(email="author2@example.com", global_role=GlobalRole.USER, password_hash="h")
+        uow.users.add(other_author)
+
+        respondent.add_comment("note by admin", user.id)
+        respondent.add_comment("note by other", other_author.id)
+
+        fetched, authors = respondent_service.get_respondent_with_comment_authors(
+            uow, user.id, assembly.id, respondent.id
+        )
+
+        assert fetched.id == respondent.id
+        assert fetched is not respondent  # detached copy
+        assert set(authors.keys()) == {user.id, other_author.id}
+        assert authors[user.id].email == "admin@example.com"
+        assert authors[other_author.id].email == "author2@example.com"
+
+    def test_returns_empty_authors_when_no_comments(self):
+        uow = FakeUnitOfWork()
+        user, assembly, respondent = _seed(uow)
+
+        fetched, authors = respondent_service.get_respondent_with_comment_authors(
+            uow, user.id, assembly.id, respondent.id
+        )
+
+        assert fetched.id == respondent.id
+        assert authors == {}
+
+    def test_skips_unknown_authors(self):
+        uow = FakeUnitOfWork()
+        user, assembly, respondent = _seed(uow)
+        missing_author_id = uuid.uuid4()
+        # Manually append a comment authored by a user that no longer exists
+        respondent.add_comment("ghost", missing_author_id)
+
+        fetched, authors = respondent_service.get_respondent_with_comment_authors(
+            uow, user.id, assembly.id, respondent.id
+        )
+
+        assert fetched.id == respondent.id
+        assert missing_author_id not in authors
+
+    def test_deduplicates_author_lookups(self):
+        """Multiple comments by the same author should only produce one dict entry."""
+        uow = FakeUnitOfWork()
+        user, assembly, respondent = _seed(uow)
+
+        respondent.add_comment("one", user.id)
+        respondent.add_comment("two", user.id)
+        respondent.add_comment("three", user.id)
+
+        _, authors = respondent_service.get_respondent_with_comment_authors(uow, user.id, assembly.id, respondent.id)
+
+        assert list(authors.keys()) == [user.id]
+
+    def test_raises_when_user_missing(self):
+        uow = FakeUnitOfWork()
+        _, assembly, respondent = _seed(uow)
+
+        with pytest.raises(UserNotFoundError):
+            respondent_service.get_respondent_with_comment_authors(uow, uuid.uuid4(), assembly.id, respondent.id)
+
+    def test_raises_when_assembly_missing(self):
+        uow = FakeUnitOfWork()
+        user, _, respondent = _seed(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            respondent_service.get_respondent_with_comment_authors(uow, user.id, uuid.uuid4(), respondent.id)
+
+    def test_raises_when_user_lacks_permission(self):
+        uow = FakeUnitOfWork()
+        _, assembly, respondent = _seed(uow)
+        outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="h")
+        uow.users.add(outsider)
+
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.get_respondent_with_comment_authors(uow, outsider.id, assembly.id, respondent.id)
+
+    def test_raises_when_respondent_in_other_assembly(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        other = Assembly(title="Other")
+        uow.assemblies.add(other)
+        other_respondent = Respondent(assembly_id=other.id, external_id="R-X")
+        uow.respondents.add(other_respondent)
+
+        with pytest.raises(RespondentNotFoundError):
+            respondent_service.get_respondent_with_comment_authors(uow, user.id, assembly.id, other_respondent.id)

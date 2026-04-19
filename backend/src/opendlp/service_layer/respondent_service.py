@@ -7,6 +7,7 @@ from io import StringIO
 from typing import Any
 
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -345,3 +346,43 @@ def get_respondent(
         assert isinstance(respondent, Respondent)
 
         return respondent.create_detached_copy()
+
+
+def get_respondent_with_comment_authors(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+) -> tuple[Respondent, dict[uuid.UUID, User]]:
+    """Get a respondent plus the User behind each comment's author_id.
+
+    Authors that no longer exist are omitted from the returned dict.
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        author_ids = {c.author_id for c in respondent.comments}
+        authors: dict[uuid.UUID, User] = {}
+        for author_id in author_ids:
+            author = uow.users.get(author_id)
+            if author:
+                authors[author_id] = author.create_detached_copy()
+
+        return respondent.create_detached_copy(), authors
