@@ -100,7 +100,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
             # sortition-algorithms validator rejects blanked attribute values.
             # generate_selection_csvs synthesises blanked rows for them after
             # the fact so historical exports still reference their external_id.
-            respondents = self.uow.respondents.get_by_assembly_id(self.assembly_id)
+            respondents = self.uow.respondents.get_by_assembly_id(self.assembly_id, include_deleted=False)
             if not respondents:
                 raise BadDataError(
                     "No eligible respondents found for selection. Check that respondents have been uploaded."
