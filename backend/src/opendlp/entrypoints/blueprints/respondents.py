@@ -9,6 +9,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.respondent_field_schema import GROUP_DISPLAY_ORDER, GROUP_LABELS
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     delete_respondents_for_assembly,
@@ -23,6 +24,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     RespondentNotFoundError,
 )
+from opendlp.service_layer.respondent_field_schema_service import get_schema_grouped
 from opendlp.service_layer.respondent_service import (
     get_respondent,
     get_respondents_for_assembly,
@@ -247,6 +249,17 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
+
+        # Load the per-assembly field schema and pack it into display sections.
+        # Empty groups are filtered out so the template renders only populated sections.
+        uow_schema = bootstrap.bootstrap()
+        grouped_schema = get_schema_grouped(uow_schema, current_user.id, assembly_id)
+        schema_sections = [
+            {"label": GROUP_LABELS[group], "fields": grouped_schema[group]}
+            for group in GROUP_DISPLAY_ORDER
+            if grouped_schema.get(group)
+        ]
+
         return render_template(
             "backoffice/assembly_view_respondent.html",
             assembly=assembly,
@@ -256,6 +269,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
+            schema_sections=schema_sections,
         ), 200
     except RespondentNotFoundError as e:
         current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
