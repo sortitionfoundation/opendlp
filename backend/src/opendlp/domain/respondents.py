@@ -169,7 +169,15 @@ class Respondent:
         return hash(self.id)
 
     def create_detached_copy(self) -> "Respondent":
-        """Create a detached copy for use outside SQLAlchemy sessions"""
+        """Create a detached copy for use outside SQLAlchemy sessions.
+
+        Note: Filters out any attributes that collide with reserved field names
+        (case-insensitive) for backward compatibility with legacy data.
+        """
+        # Filter out attributes that collide with reserved fields (case-insensitive)
+        sanitized_attributes = {
+            k: v for k, v in self.attributes.items() if normalise_field_name(k) not in _RESERVED_FIELD_NAMES
+        }
         return Respondent(
             assembly_id=self.assembly_id,
             external_id=self.external_id,
@@ -182,7 +190,7 @@ class Respondent:
             email=self.email,
             source_type=self.source_type,
             source_reference=self.source_reference,
-            attributes=self.attributes.copy(),
+            attributes=sanitized_attributes,
             respondent_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

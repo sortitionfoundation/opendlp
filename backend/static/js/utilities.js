@@ -2,13 +2,21 @@
 // ABOUTME: Provides event-driven handlers for common UI interactions without inline handlers
 
 // Handle select elements that navigate on change via data-navigate-base-url
+// Optionally preserves scroll position with data-navigate-preserve-scroll attribute
 document.addEventListener("change", function (e) {
   var baseUrl = e.target.dataset.navigateBaseUrl;
   if (baseUrl) {
     var paramName = e.target.dataset.navigateParam || "value";
+    var preserveScroll = e.target.hasAttribute("data-navigate-preserve-scroll");
     var url = baseUrl;
     if (e.target.value) {
       url += "?" + paramName + "=" + encodeURIComponent(e.target.value);
+    }
+    // Add scroll parameter if preservation is enabled
+    if (preserveScroll) {
+      var currentScroll = Math.round(window.scrollY);
+      var separator = url.includes("?") ? "&" : "?";
+      url += separator + "scroll=" + currentScroll;
     }
     window.location.href = url;
   }

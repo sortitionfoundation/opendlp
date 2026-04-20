@@ -7,7 +7,8 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_status %}
+{% from "backoffice/components/pagination.html" import pagination %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -78,9 +79,30 @@ ABOUTME: Displays respondent data configuration for assemblies
         </section>
     {% elif data_source == "csv" %}
         <section class="mb-8">
+            {# Filter controls - show when there are respondents or when filter is active #}
+            {% if total_count > 0 or status_filter %}
+                <div class="flex justify-end mb-4">
+                    <div class="flex items-center gap-2">
+                        <label for="status-filter" class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Filter by status:") }}</label>
+                        <select id="status-filter"
+                                class="px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
+                                data-navigate-param="status"
+                                data-navigate-preserve-scroll>
+                            <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
+                            <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
+                            <option value="SELECTED" {% if status_filter == "SELECTED" %}selected{% endif %}>{{ _("Selected") }}</option>
+                            <option value="CONFIRMED" {% if status_filter == "CONFIRMED" %}selected{% endif %}>{{ _("Confirmed") }}</option>
+                            <option value="WITHDRAWN" {% if status_filter == "WITHDRAWN" %}selected{% endif %}>{{ _("Withdrawn") }}</option>
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
             {% if respondents %}
                 {% call table(striped=true) %}
                     {{ table_head([
+                    {"label": _("Status")},
                     {"label": _("External ID")},
                     {"label": _("Email")},
                     {"label": _("Name")},
@@ -89,6 +111,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                     {% call table_body() %}
                         {% for respondent in respondents %}
                             {% call table_row(is_odd=loop.index is odd) %}
+                                {{ table_cell_status(respondent.selection_status) }}
                                 {{ table_cell(respondent.external_id, bold=true) }}
                                 {{ table_cell(respondent.email or "—") }}
                                 {{ table_cell(respondent.display_name(assembly.name_fields)) }}
@@ -103,8 +126,25 @@ ABOUTME: Displays respondent data configuration for assemblies
                         {% endfor %}
                     {% endcall %}
                 {% endcall %}
+                {# Pagination Controls #}
+                {% set pagination_base_url = url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) %}
+                {% if status_filter %}
+                    {% set pagination_base_url = pagination_base_url ~ '?status=' ~ status_filter %}
+                {% endif %}
+                {{ pagination(
+                page=page,
+                total_pages=total_pages,
+                per_page=per_page,
+                total_count=total_count,
+                base_url=pagination_base_url,
+                item_name=_("respondents")
+                ) }}
             {% else %}
-                {{ alert(_("No respondents uploaded yet."), variant="info") }}
+                {% if status_filter %}
+                    {{ alert(_("No respondents match the selected status filter."), variant="info") }}
+                {% else %}
+                    {{ alert(_("No respondents uploaded yet."), variant="info") }}
+                {% endif %}
             {% endif %}
         </section>
     {% else %}

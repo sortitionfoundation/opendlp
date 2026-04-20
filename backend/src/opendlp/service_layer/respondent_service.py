@@ -137,17 +137,26 @@ def import_respondents_from_csv(  # noqa: C901
             # All columns except id_column become attributes
             attributes = {k: v for k, v in row.items() if k != id_column}
 
+            # Helper to pop a key case-insensitively from attributes
+            def pop_case_insensitive(attrs: dict[str, Any], key: str, default: Any = None) -> Any:
+                """Pop a key from dict using case-insensitive matching."""
+                key_lower = key.lower()
+                for k in list(attrs.keys()):
+                    if k.lower() == key_lower:
+                        return attrs.pop(k)
+                return default
+
             # Extract boolean flags if present (leave as None if not in CSV)
-            consent_str = attributes.pop("consent", None)
+            consent_str = pop_case_insensitive(attributes, "consent")
             consent = consent_str.lower() == "true" if consent_str else None
 
-            eligible_str = attributes.pop("eligible", None)
+            eligible_str = pop_case_insensitive(attributes, "eligible")
             eligible = eligible_str.lower() == "true" if eligible_str else None
 
-            can_attend_str = attributes.pop("can_attend", None)
+            can_attend_str = pop_case_insensitive(attributes, "can_attend")
             can_attend = can_attend_str.lower() == "true" if can_attend_str else None
 
-            email = attributes.pop("email", "")
+            email = pop_case_insensitive(attributes, "email", "")
 
             respondent = Respondent(
                 assembly_id=assembly_id,
@@ -219,6 +228,36 @@ def get_respondents_for_assembly(
 
         respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status)
         return [r.create_detached_copy() for r in respondents]
+
+
+def get_respondents_for_assembly_paginated(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    page: int = 1,
+    per_page: int = 50,
+    status: RespondentStatus | None = None,
+) -> tuple[list[Respondent], int]:
+    """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
+            assembly_id, page=page, per_page=per_page, status=status
+        )
+        return [r.create_detached_copy() for r in respondents], total_count
 
 
 def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:

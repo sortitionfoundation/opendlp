@@ -3,7 +3,7 @@ ABOUTME: Showcase section for table component
 ABOUTME: Displays table variants with striped rows, actions, and responsive layout
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_custom, table_cell_yes_no %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_custom, table_cell_yes_no, table_cell_status %}
 
 {% macro table_section() %}
   {% call showcase_section() %}
@@ -130,14 +130,82 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
       {% endcall %}
     {% endcall %}
 
+    {{ showcase_subtitle("Status indicator cells") }}
+    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Pool and Confirmed show green, Selected shows gray, Withdrawn shows red.") }}
+
+    {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_status %}
+
+{# Status indicator cells #}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Status"},
+        {"label": "Respondent"},
+        {"label": "Email"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("pool") }}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell("john@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("selected") }}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell("jane@example.com") }}
+          {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("confirmed") }}
+            {{ table_cell("R003", bold=true) }}
+            {{ table_cell("bob@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("withdrawn") }}
+            {{ table_cell("R004", bold=true) }}
+            {{ table_cell("alice@example.com") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}') %}
+      {% call table(striped=true) %}
+        {{ table_head([
+        {"label": "Status"},
+        {"label": "Respondent"},
+        {"label": "Email"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("pool") }}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell("john@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("selected") }}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell("jane@example.com") }}
+          {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("confirmed") }}
+            {{ table_cell("R003", bold=true) }}
+            {{ table_cell("bob@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("withdrawn") }}
+            {{ table_cell("R004", bold=true) }}
+            {{ table_cell("alice@example.com") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+
     {{ showcase_tokens([
     "--color-tables-cards (table background)",
-    "--color-borders-dividers (borders and dividers)",
+    "--color-borders-dividers (borders/dividers, selected status dot)",
     "--color-headings (header text)",
-    "--color-body-text (cell text)",
-    "--color-subtle-background-panels (striped row background)",
+    "--color-body-text (cell text, status labels)",
+    "--color-subtle-background-panels (header and striped row background)",
     "--color-primary-action (link color)",
-    "--color-active-states (link hover)"
+    "--color-active-states (link hover)",
+    "--color-success-400 (pool/confirmed status dot)",
+    "--color-error-400 (withdrawn status dot)"
     ]) }}
   {% endcall %}
 {% endmacro %}

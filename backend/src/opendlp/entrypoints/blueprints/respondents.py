@@ -9,6 +9,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     delete_respondents_for_assembly,
@@ -25,7 +26,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.respondent_service import (
     get_respondent,
-    get_respondents_for_assembly,
+    get_respondents_for_assembly_paginated,
     import_respondents_from_csv,
 )
 from opendlp.translations import gettext as _
@@ -156,11 +157,34 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly respondents page."""
     try:
+        # Get pagination parameters
+        page = request.args.get("page", 1, type=int)
+        per_page = 25
+
+        # Get status filter
+        status_filter_str = request.args.get("status", "")
+        status_filter: RespondentStatus | None = None
+        if status_filter_str:
+            try:
+                status_filter = RespondentStatus(status_filter_str)
+            except ValueError:
+                status_filter = None
+
         # Get assembly with permissions
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            respondents = get_respondents_for_assembly(uow, user_id=current_user.id, assembly_id=assembly_id)
+            respondents, total_count = get_respondents_for_assembly_paginated(
+                uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                page=page,
+                per_page=per_page,
+                status=status_filter,
+            )
+
+        # Calculate pagination info
+        total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
 
         # Determine data source and whether tabs should be enabled
         gsheet = None
@@ -195,6 +219,11 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
+            page=page,
+            per_page=per_page,
+            total_pages=total_pages,
+            total_count=total_count,
+            status_filter=status_filter_str,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")

@@ -1,0 +1,133 @@
+{#
+ABOUTME: Showcase section for pagination component
+ABOUTME: Displays pagination variants with different page counts and states
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
+{% from "backoffice/components/pagination.html" import pagination %}
+
+{% macro pagination_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Pagination Component") }}
+        {{ showcase_description("Pagination controls for navigating through paginated data. Shows result counts, page numbers with ellipsis for large page counts, and Previous/Next buttons. Supports scroll preservation via Alpine.js directive.") }}
+
+        {% call showcase_example('{% from "backoffice/components/pagination.html" import pagination %}
+
+{# Basic usage with base_url #}
+            {{ pagination(
+            page=3,
+            total_pages=10,
+            per_page=20,
+            total_count=195,
+            base_url=url_for("my.route", assembly_id=assembly.id),
+            item_name=_("respondents")
+            ) }}') %}
+      {# Demo: Middle page #}
+            <div class="mb-4">
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Page 3 of 10 (middle page)</p>
+                {{ pagination(
+                page=3,
+                total_pages=10,
+                per_page=20,
+                total_count=195,
+                base_url=url_for('backoffice.showcase'),
+                item_name=_("respondents"),
+                preserve_scroll=false
+                ) }}
+            </div>
+        {% endcall %}
+
+        {{ showcase_subtitle("First page") }}
+        {{ showcase_description("When on the first page, the Previous button is disabled.") }}
+
+        {% call showcase_example('{# First page - Previous disabled #}
+        {{ pagination(page=1, total_pages=10, ...) }}') %}
+        {{ pagination(
+        page=1,
+        total_pages=10,
+        per_page=20,
+        total_count=195,
+        base_url=url_for('backoffice.showcase'),
+        item_name=_("items"),
+        preserve_scroll=false
+        ) }}
+    {% endcall %}
+
+    {{ showcase_subtitle("Last page") }}
+    {{ showcase_description("When on the last page, the Next button is disabled.") }}
+
+    {% call showcase_example('{# Last page - Next disabled #}
+    {{ pagination(page=10, total_pages=10, ...) }}') %}
+    {{ pagination(
+    page=10,
+    total_pages=10,
+    per_page=20,
+    total_count=195,
+    base_url=url_for('backoffice.showcase'),
+    item_name=_("runs"),
+    preserve_scroll=false
+    ) }}
+{% endcall %}
+
+{{ showcase_subtitle("Few pages") }}
+{{ showcase_description("When there are few pages, all page numbers are shown without ellipsis.") }}
+
+{% call showcase_example('{# Few pages - no ellipsis #}
+{{ pagination(page=2, total_pages=4, ...) }}') %}
+{{ pagination(
+page=2,
+total_pages=4,
+per_page=25,
+total_count=87,
+base_url=url_for('backoffice.showcase'),
+item_name=_("entries"),
+preserve_scroll=false
+) }}
+{% endcall %}
+
+{{ showcase_subtitle("Many pages with ellipsis") }}
+{{ showcase_description("For large page counts, ellipsis are shown to keep the pagination compact. Always shows first page, last page, and 2 pages around the current page.") }}
+
+{% call showcase_example('{# Many pages - ellipsis on both sides #}
+{{ pagination(page=25, total_pages=50, ...) }}') %}
+{{ pagination(
+page=25,
+total_pages=50,
+per_page=10,
+total_count=500,
+base_url=url_for('backoffice.showcase'),
+item_name=_("records"),
+preserve_scroll=false
+) }}
+{% endcall %}
+
+{{ showcase_subtitle("Single page (hidden)") }}
+{{ showcase_description("When there's only one page, the pagination component renders nothing.") }}
+
+{% call showcase_example('{# Single page - pagination is hidden #}
+{{ pagination(page=1, total_pages=1, ...) }}
+{# Renders nothing when total_pages <= 1 #}') %}
+<div class="p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+    <p class="text-body-sm" style="color: var(--color-info-600);">
+        ℹ️ {{ _("When total_pages is 1, no pagination is rendered.") }}
+    </p>
+</div>
+{{ pagination(
+page=1,
+total_pages=1,
+per_page=20,
+total_count=15,
+base_url=url_for('backoffice.showcase'),
+item_name=_("items"),
+preserve_scroll=false
+) }}
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-secondary-text (results count, disabled button text)",
+"--color-borders-dividers (button borders)",
+"--color-body-text (button text)",
+"--color-subtle-background-panels (button hover state)",
+"--color-primary-action (active page background)"
+]) }}
+{% endcall %}
+{% endmacro %}
