@@ -88,7 +88,8 @@ ABOUTME: Displays respondent data configuration for assemblies
                                 class="px-3 py-2 rounded-lg text-body-md"
                                 style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
                                 data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
-                                data-navigate-param="status">
+                                data-navigate-param="status"
+                                data-navigate-preserve-scroll>
                             <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
                             <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
                             <option value="SELECTED" {% if status_filter == "SELECTED" %}selected{% endif %}>{{ _("Selected") }}</option>
