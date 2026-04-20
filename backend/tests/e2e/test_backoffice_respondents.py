@@ -10,7 +10,7 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.respondent_service import create_respondent
+from opendlp.service_layer.respondent_service import create_respondent, import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -436,6 +436,39 @@ class TestBackofficeViewSingleRespondent:
         assert response.status_code == 200
         # No name attributes → h1 uses email local-part
         assert b"sarah.jones" in response.data
+
+    def test_view_respondent_renders_grouped_sections_after_csv_import(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = (
+            "external_id,first_name,last_name,gender,postcode,custom_notes\n"
+            "R001,Alice,Jones,Female,SW1A 1AA,extra-info\n"
+        )
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(uow, admin_user.id, existing_assembly.id, csv_content)
+            respondent = uow.respondents.get_by_external_id(existing_assembly.id, "R001")
+            assert respondent is not None
+            respondent_id = respondent.id
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}")
+        assert response.status_code == 200
+        body = response.data
+        # Status block: external_id and selection status tag.
+        assert b"R001" in body
+        assert b"govuk-tag" in body
+        # Schema-driven group headings are present.
+        assert b"Name and contact" in body
+        assert b"About you" in body
+        assert b"Address" in body
+        # Non-fixed values render via attributes lookup.
+        assert b"Alice" in body
+        assert b"Jones" in body
+        assert b"Female" in body
+        assert b"SW1A 1AA" in body
+        assert b"extra-info" in body
+        # Audit block sits in a collapsed details element.
+        assert b"Record metadata" in body
+        assert b"<details" in body
 
     def test_view_respondent_wrong_assembly(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory

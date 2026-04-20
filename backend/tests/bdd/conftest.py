@@ -478,6 +478,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     # First delete tables that reference other tables
     session.execute(orm.selection_run_records.delete())
     session.execute(orm.respondents.delete())
+    session.execute(orm.respondent_field_definitions.delete())
     session.execute(orm.target_categories.delete())
     session.execute(orm.assembly_gsheets.delete())
     session.execute(orm.assembly_csv.delete())

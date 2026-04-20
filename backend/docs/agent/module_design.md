@@ -91,7 +91,7 @@ class ModuleRegistry:
 Three modules to prove the system, all in `src/opendlp/domain/modules/`:
 
 1. **`assembly_module.py`** — always-enabled core module, validates basic assembly fields (title, question)
-2. **`registration_page_module.py`** — registration page feature, requires `registration_deadline` (once that field exists)
+2. **`registration_page_module.py`** — registration page feature, requires `registration_deadline` (once that field exists). Will consume `RespondentFieldDefinition` rows (see [docs/agent/446-grouped-registrant-view/respondent_field_schema.md](446-grouped-registrant-view/respondent_field_schema.md)) as its field catalogue when rendering the public registration form — the per-assembly schema built for the grouped registrant view is intended to seed the form design.
 3. **`selection_module.py`** — selection feature, requires `number_to_select`
 
 ---
