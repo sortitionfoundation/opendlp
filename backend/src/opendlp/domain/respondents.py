@@ -4,10 +4,38 @@ ABOUTME: Contains Respondent class for tracking participants in the selection po
 import re
 import uuid
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+
+
+@dataclass(frozen=True)
+class RespondentComment:
+    """A timestamped note against a respondent, optionally tagged with an action."""
+
+    text: str
+    author_id: uuid.UUID
+    created_at: datetime
+    action: RespondentAction = RespondentAction.NONE
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "text": self.text,
+            "author_id": str(self.author_id),
+            "created_at": self.created_at.isoformat(),
+            "action": self.action.value,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RespondentComment":
+        return cls(
+            text=data["text"],
+            author_id=uuid.UUID(data["author_id"]),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            action=RespondentAction(data.get("action", RespondentAction.NONE.value)),
+        )
 
 
 def normalise_field_name(key: str) -> str:
@@ -38,6 +66,7 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "source_reference",
         "created_at",
         "updated_at",
+        "comments",
     )
 )
 
@@ -81,6 +110,7 @@ class Respondent:
         respondent_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        comments: list[RespondentComment] | None = None,
     ):
         if not external_id.strip():
             raise ValueError("external_id is required")
@@ -101,6 +131,7 @@ class Respondent:
         validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
+        self.comments: list[RespondentComment] = list(comments) if comments else []
 
     def mark_as_selected(self, selection_run_id: uuid.UUID) -> None:
         """Mark respondent as selected in a specific selection run"""
@@ -121,6 +152,43 @@ class Respondent:
             raise ValueError("Only selected or confirmed respondents can be withdrawn")
         self.selection_status = RespondentStatus.WITHDRAWN
         self.updated_at = datetime.now(UTC)
+
+    def add_comment(
+        self,
+        text: str,
+        author_id: uuid.UUID,
+        action: RespondentAction = RespondentAction.NONE,
+    ) -> None:
+        """Append a comment authored by the given user."""
+        text = text.strip()
+        if not text:
+            raise ValueError("Comment text is required")
+        new_comment = RespondentComment(
+            text=text,
+            author_id=author_id,
+            created_at=datetime.now(UTC),
+            action=action,
+        )
+        # Reassign rather than mutate in place so SQLAlchemy's JSON column
+        # change-detection sees the new value.
+        self.comments = [*self.comments, new_comment]
+        self.updated_at = datetime.now(UTC)
+
+    def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
+        """Blank PII, flip status to DELETED, append the deletion comment."""
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required when deleting personal data")
+        self.selection_status = RespondentStatus.DELETED
+        self.selection_run_id = None
+        self.email = ""
+        self.source_reference = ""
+        self.consent = None
+        self.stay_on_db = None
+        self.eligible = None
+        self.can_attend = None
+        self.attributes = dict.fromkeys(self.attributes, "")
+        self.add_comment(comment, author_id, action=RespondentAction.DELETE)
 
     def reset_to_pool(self) -> None:
         """Reset respondent back to pool status, clearing any selection run association"""
@@ -186,4 +254,5 @@ class Respondent:
             respondent_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
+            comments=list(self.comments),
         )

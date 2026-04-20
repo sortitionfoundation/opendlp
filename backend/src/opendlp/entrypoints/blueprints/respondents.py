@@ -23,8 +23,10 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     RespondentNotFoundError,
 )
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import (
-    get_respondent,
+    delete_respondent,
+    get_respondent_with_comment_authors,
     get_respondents_for_assembly,
     import_respondents_from_csv,
 )
@@ -213,6 +215,51 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@respondents_bp.route(
+    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/delete",
+    methods=["POST"],
+)
+@login_required
+def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
+    """Blank personal data for a respondent (GDPR right to be forgotten)."""
+    comment = request.form.get("comment", "").strip()
+    if not comment:
+        flash(_("A comment is required when deleting a respondent"), "error")
+        return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            delete_respondent(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                respondent_id=respondent_id,
+                comment=comment,
+            )
+        flash(_("Respondent personal data deleted"), "success")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(
+            f"Insufficient permissions to delete respondent {respondent_id} "
+            f"in assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("You don't have permission to delete respondents"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except RespondentNotFoundError as e:
+        current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
+        flash(_("Respondent not found"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for respondent deletion: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Delete respondent error for respondent {respondent_id} user {current_user.id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while deleting the respondent"), "error")
+        return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
+
+
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>")
 @login_required
 def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
@@ -222,7 +269,12 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+            respondent, comment_authors = get_respondent_with_comment_authors(
+                uow, current_user.id, assembly_id, respondent_id
+            )
+            viewer = uow.users.get(current_user.id)
+            assembly_obj = uow.assemblies.get(assembly_id)
+            can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
 
         # Determine data source and whether tabs should be enabled
         gsheet = None
@@ -256,6 +308,8 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled,
+            can_manage=can_manage,
+            comment_authors=comment_authors,
         ), 200
     except RespondentNotFoundError as e:
         current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")

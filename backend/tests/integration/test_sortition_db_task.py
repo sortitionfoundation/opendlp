@@ -243,6 +243,65 @@ class TestGenerateSelectionCsvs:
             all_ids.add(line.split(",")[0])
         assert all_ids == {"NB001", "NB002", "NB003", "NB004"}
 
+    def test_includes_deleted_respondents_with_blanked_values(
+        self, postgres_session_factory, assembly_with_data, test_settings
+    ):
+        """A respondent selected then deleted still appears in the historical CSV
+        with their external_id, but attribute values are the DATA DELETED placeholder."""
+        assembly_id = assembly_with_data
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+
+        success, features, loaded_people, _ = _internal_load_db(
+            task_id=task_id,
+            assembly_id=assembly_id,
+            settings=test_settings,
+            final_task=False,
+            session_factory=postgres_session_factory,
+        )
+        assert success and features is not None and loaded_people is not None
+
+        success, selected_panels, _ = _internal_run_select(
+            task_id=task_id,
+            features=features,
+            people=loaded_people,
+            settings=test_settings,
+            number_people_wanted=2,
+            test_selection=False,
+            final_task=False,
+            session_factory=postgres_session_factory,
+        )
+        assert success
+
+        _internal_write_db_results(
+            task_id=task_id,
+            assembly_id=assembly_id,
+            full_people=loaded_people,
+            selected_panels=selected_panels,
+            session_factory=postgres_session_factory,
+        )
+
+        # Delete one of the selected respondents after the fact
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            all_resp = uow.respondents.get_by_assembly_id(assembly_id)
+            selected = [r for r in all_resp if r.selection_status == RespondentStatus.SELECTED]
+            victim = selected[0]
+            victim_ext_id = victim.external_id
+            victim.delete_personal_data(author_id=uuid.uuid4(), comment="gdpr")
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            selected_csv, _remaining_csv = generate_selection_csvs(uow, assembly_id, task_id)
+
+        selected_lines = [line for line in selected_csv.strip().split("\n") if line]
+        # Row count unchanged: header + 2 selected
+        assert len(selected_lines) == 3
+        # The deleted respondent's external_id is still present
+        selected_ids = {line.split(",")[0] for line in selected_lines[1:]}
+        assert victim_ext_id in selected_ids
+        # The row for the deleted respondent contains the placeholder marker
+        deleted_row = next(line for line in selected_lines[1:] if line.split(",")[0] == victim_ext_id)
+        assert "DATA DELETED" in deleted_row
+
 
 class TestRunSelectFromDb:
     def test_run_select_from_db_end_to_end(self, postgres_session_factory, assembly_with_data, test_settings):

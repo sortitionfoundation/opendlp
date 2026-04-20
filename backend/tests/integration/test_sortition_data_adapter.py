@@ -406,3 +406,77 @@ class TestOpenDLPDataAdapter:
 
             assert adapter.people_data_container == "OpenDLP respondents database"
             assert adapter.already_selected_data_container == "OpenDLP already selected respondents"
+
+    def test_eligible_only_excludes_deleted(self, postgres_session_factory, test_assembly: Assembly):
+        """DELETED respondents must never enter a live selection pool."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        alive = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB-ALIVE",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=True,
+        )
+        dead = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB-DEAD",
+            attributes={"Gender": ""},
+            selection_status=RespondentStatus.DELETED,
+        )
+
+        with uow:
+            uow.respondents.add(alive)
+            uow.respondents.add(dead)
+            cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+            cat.add_value(TargetValue(value="Female", min=0, max=1))
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        settings = Settings(id_column="external_id", columns_to_keep=[])
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, eligible_only=True)
+            select_data = SelectionData(adapter)
+
+            features, _ = select_data.load_features(number_to_select=1)
+            people, _ = select_data.load_people(settings, features)
+
+            assert set(people) == {"NB-ALIVE"}
+
+    def test_eligible_only_false_excludes_deleted(self, postgres_session_factory, test_assembly: Assembly):
+        """DELETED rows must be filtered out of the adapter: the sortition
+        validator would reject their blanked attribute values. Historical CSV
+        generation synthesises their rows separately."""
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+
+        alive = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB-ALIVE",
+            attributes={"Gender": "Female"},
+            eligible=True,
+            can_attend=True,
+        )
+        dead = Respondent(
+            assembly_id=test_assembly.id,
+            external_id="NB-DEAD",
+            attributes={"Gender": ""},
+            selection_status=RespondentStatus.DELETED,
+        )
+
+        with uow:
+            uow.respondents.add(alive)
+            uow.respondents.add(dead)
+            cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+            cat.add_value(TargetValue(value="Female", min=0, max=1))
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        settings = Settings(id_column="external_id", columns_to_keep=[])
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, eligible_only=False)
+            select_data = SelectionData(adapter)
+
+            features, _ = select_data.load_features(number_to_select=1)
+            people, _ = select_data.load_people(settings, features)
+
+            assert set(people) == {"NB-ALIVE"}

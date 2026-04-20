@@ -23,11 +23,30 @@ ABOUTME: Displays a single respondent's full details including attributes
     </div>
 {% endblock %}
 
+{% set is_deleted = respondent.selection_status.value == "DELETED" %}
+{% set delete_comment = respondent.comments | selectattr("action.value", "equalto", "DELETE") | list | last if respondent.comments else none %}
+
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("Respondent details") }}
     </p>
+
+    {% if is_deleted and delete_comment %}
+        <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"
+             style="color: var(--color-headings);">
+            <strong>{{ _("Personal data deleted") }}</strong><br>
+            {% set author = comment_authors.get(delete_comment.author_id) if comment_authors else none %}
+            {% if author %}
+                {{ _("Deleted on %(date)s by %(who)s",
+                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M"),
+                who=author.email) }}
+            {% else %}
+                {{ _("Deleted on %(date)s",
+                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M")) }}
+            {% endif %}
+        </div>
+    {% endif %}
 
     {{ assembly_tabs(
     assembly=assembly,
@@ -120,6 +139,64 @@ ABOUTME: Displays a single respondent's full details including attributes
             <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
         {% endif %}
     </section>
+
+    <section class="mb-8">
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Comments") }}</h2>
+        {% if respondent.comments %}
+            {% call table(striped=true) %}
+                {{ table_head([
+                {"label": _("When")},
+                {"label": _("Author")},
+                {"label": _("Action")},
+                {"label": _("Comment")}
+                ]) }}
+                {% call table_body() %}
+                    {% for comment in respondent.comments %}
+                        {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
+                        {% call table_row(is_odd=loop.index is odd) %}
+                            {{ table_cell(comment.created_at.strftime("%d %B %Y at %H:%M")) }}
+                            {{ table_cell(author.email if author else comment.author_id|string) }}
+                            {{ table_cell(comment.action.value|title if comment.action.value != "NONE" else "—") }}
+                            {{ table_cell(comment.text) }}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% else %}
+            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No comments recorded.") }}</p>
+        {% endif %}
+    </section>
+
+    {% if can_manage and not is_deleted %}
+        <section class="mb-8" x-data="{ showing: false }">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Delete personal data") }}</h2>
+            <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                {{ _("Under GDPR, a person may request that their personal data be deleted. This action blanks the respondent's contact details, attribute values, and eligibility flags, while preserving their external ID so any past selection can still reference them. This action is irreversible.") }}
+            </p>
+            <div x-show="!showing">
+                {{ button(_("Delete personal data") , variant="danger", attrs='@click="showing = true"') }}
+            </div>
+            <form x-show="showing"
+                  method="post"
+                  action="{{ url_for('respondents.delete_respondent_route', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                  class="flex flex-col gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <label for="delete-comment" class="font-semibold">
+                    {{ _("Reason (required)") }}
+                </label>
+                <textarea id="delete-comment"
+                          name="comment"
+                          rows="3"
+                          required
+                          class="border border-gray-300 rounded p-2"
+                          placeholder="{{ _('e.g. GDPR deletion request from the participant') }}"></textarea>
+                <div class="flex gap-4">
+                    {{ button(_("Confirm delete") , type="submit", variant="danger") }}
+                    {{ button(_("Cancel") , variant="outline", attrs='@click="showing = false"') }}
+                </div>
+            </form>
+        </section>
+    {% endif %}
 
     <section class="flex gap-4">
         {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}

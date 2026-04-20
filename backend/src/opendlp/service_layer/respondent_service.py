@@ -7,6 +7,7 @@ from io import StringIO
 from typing import Any
 
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -200,8 +201,9 @@ def get_respondents_for_assembly(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     status: RespondentStatus | None = None,
+    include_deleted: bool = False,
 ) -> list[Respondent]:
-    """Get respondents for an assembly."""
+    """Get respondents for an assembly. DELETED excluded unless include_deleted=True."""
     with uow:
         user = uow.users.get(user_id)
         if not user:
@@ -217,7 +219,7 @@ def get_respondents_for_assembly(
                 required_role="assembly role or global privileges",
             )
 
-        respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status)
+        respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status, include_deleted=include_deleted)
         return [r.create_detached_copy() for r in respondents]
 
 
@@ -252,6 +254,70 @@ def get_selected_respondent_attribute_value_counts(
     return uow.respondents.get_selected_attribute_value_counts(assembly_id, attribute_name)
 
 
+def delete_respondent(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+    comment: str,
+) -> None:
+    """Blank personal data on a respondent (GDPR right to be forgotten)."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="delete respondent",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        respondent.delete_personal_data(author_id=user_id, comment=comment)
+        uow.commit()
+
+
+def add_respondent_comment(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+    text: str,
+) -> None:
+    """Append a plain comment to a respondent."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="add respondent comment",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        respondent.add_comment(text=text, author_id=user_id)
+        uow.commit()
+
+
 def get_respondent(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -280,3 +346,43 @@ def get_respondent(
         assert isinstance(respondent, Respondent)
 
         return respondent.create_detached_copy()
+
+
+def get_respondent_with_comment_authors(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+) -> tuple[Respondent, dict[uuid.UUID, User]]:
+    """Get a respondent plus the User behind each comment's author_id.
+
+    Authors that no longer exist are omitted from the returned dict.
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        author_ids = {c.author_id for c in respondent.comments}
+        authors: dict[uuid.UUID, User] = {}
+        for author_id in author_ids:
+            author = uow.users.get(author_id)
+            if author:
+                authors[author_id] = author.create_detached_copy()
+
+        return respondent.create_detached_copy(), authors
