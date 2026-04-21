@@ -1,6 +1,7 @@
 """ABOUTME: End-to-end tests for backoffice assembly CRUD and member management
 ABOUTME: Tests assembly creation, viewing, editing, and user management through the backoffice interface"""
 
+import re
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 
@@ -773,9 +774,9 @@ class TestBackofficeCsvUpload:
         csv_content = "feature,value,min,max\nGender,Male,10,20\nGender,Female,10,20\nAge,18-30,5,15\nAge,31-50,5,15"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-targets",
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
             data={
-                "file": (BytesIO(csv_content.encode()), "targets.csv"),
+                "csv_file": (BytesIO(csv_content.encode()), "targets.csv"),
                 "csrf_token": get_csrf_token(
                     logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
                 ),
@@ -785,7 +786,7 @@ class TestBackofficeCsvUpload:
         )
 
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert f"/backoffice/assembly/{existing_assembly.id}/targets" in response.location
 
         # Verify targets were created
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -804,9 +805,9 @@ class TestBackofficeCsvUpload:
         csv_content = "feature,value,min,max\nRegion,North,5,10\nRegion,South,5,10"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-targets",
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
             data={
-                "file": (BytesIO(csv_content.encode()), "targets.csv"),
+                "csv_file": (BytesIO(csv_content.encode()), "targets.csv"),
                 "csrf_token": get_csrf_token(
                     logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
                 ),
@@ -817,6 +818,119 @@ class TestBackofficeCsvUpload:
 
         assert response.status_code == 200
         assert b"success" in response.data.lower() or b"uploaded" in response.data.lower()
+
+    def test_data_tab_targets_upload_form_field_name_matches_handler(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+    ):
+        """Data-tab targets upload form must use the field name expected by the handler.
+
+        The form posts to targets.upload_targets_csv, which validates with
+        UploadTargetsCsvForm whose file field is named 'csv_file'. If the
+        rendered form uses a different name (e.g. 'file'), validation silently
+        fails and the user lands on the targets tab with a hidden error.
+        """
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/data?source=csv",
+        )
+        assert response.status_code == 200
+        html = response.data.decode()
+
+        target_action = f"/backoffice/assembly/{existing_assembly.id}/targets/upload"
+        form_pattern = re.compile(
+            r'<form[^>]*action="' + re.escape(target_action) + r'"[^>]*>(.*?)</form>',
+            re.DOTALL,
+        )
+        match = form_pattern.search(html)
+        assert match, f"No form posting to {target_action} found in data tab"
+        form_body = match.group(1)
+        assert 'name="csv_file"' in form_body, (
+            "Targets upload form on data tab must use input name 'csv_file' "
+            "to match UploadTargetsCsvForm. Got form body:\n" + form_body[:400]
+        )
+
+    def test_targets_csv_upload_error_keeps_form_visible(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+    ):
+        """When CSV upload validation fails, the <details> wrapping the form must be open.
+
+        The CSV import form lives in a <details> block that defaults to closed.
+        On validation failure the page re-renders inline with errors, but if
+        <details> stays closed those errors are hidden — confusing the user.
+        """
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            data={"csrf_token": "x"},
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert b"Please select a CSV file" in response.data, (
+            "Expected the FileRequired error message in the response body"
+        )
+
+        details_tags = re.findall(r"<details\b[^>]*>", html)
+
+        def has_open_attribute(tag: str) -> bool:
+            # Strip quoted attribute values so we don't match 'open' inside
+            # things like x-data="{ open: false }".
+            stripped = re.sub(r'"[^"]*"|\'[^\']*\'', '""', tag)
+            return re.search(r"\bopen\b", stripped) is not None
+
+        assert any(has_open_attribute(tag) for tag in details_tags), (
+            "Expected the CSV import <details> to be open after a validation "
+            "error so the user can see it. Found: " + repr(details_tags)
+        )
+
+    def test_targets_csv_upload_invalid_format_keeps_form_visible(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+    ):
+        """When the CSV passes WTForms validation but the import service rejects it.
+
+        The page must re-render inline (not redirect to a fresh page) so the
+        <details> stays open with the error visible alongside the form, rather
+        than just flashing a message at the top of an empty page.
+        """
+        # Headers that don't match feature/value/min/max → InvalidSelection
+        # at read_in_features() inside import_targets_from_csv.
+        csv_content = "wrong,headers,here\nfoo,bar,baz"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            data={
+                "csv_file": (BytesIO(csv_content.encode()), "bad.csv"),
+                "csrf_token": "x",
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200, (
+            f"Expected inline re-render (200); got {response.status_code} location={response.location!r}"
+        )
+
+        html = response.data.decode()
+        assert b"CSV import failed" in response.data or b"Failed to parse CSV" in response.data, (
+            "Expected the import error message in the response body"
+        )
+
+        details_tags = re.findall(r"<details\b[^>]*>", html)
+
+        def has_open_attribute(tag: str) -> bool:
+            stripped = re.sub(r'"[^"]*"|\'[^\']*\'', '""', tag)
+            return re.search(r"\bopen\b", stripped) is not None
+
+        assert any(has_open_attribute(tag) for tag in details_tags), (
+            "Expected the CSV import <details> to be open after an import "
+            "error so the user can see it. Found: " + repr(details_tags)
+        )
 
 
 @pytest.fixture

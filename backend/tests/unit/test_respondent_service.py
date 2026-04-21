@@ -356,3 +356,46 @@ class TestGetRespondentWithCommentAuthors:
 
         with pytest.raises(RespondentNotFoundError):
             respondent_service.get_respondent_with_comment_authors(uow, user.id, assembly.id, other_respondent.id)
+
+
+class TestGetRespondentsForAssemblyPaginated:
+    def test_returns_paginated_respondents(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        # Add more respondents (seed already adds one)
+        for i in range(4):
+            uow.respondents.add(Respondent(assembly_id=assembly.id, external_id=f"R{i:03d}"))
+
+        results, total_count = respondent_service.get_respondents_for_assembly_paginated(
+            uow, user.id, assembly.id, page=1, per_page=2
+        )
+
+        assert len(results) == 2
+        assert total_count == 5  # 1 from seed + 4 added
+
+    def test_returns_detached_copies(self):
+        uow = FakeUnitOfWork()
+        user, assembly, respondent = _seed(uow)
+
+        results, _ = respondent_service.get_respondents_for_assembly_paginated(
+            uow, user.id, assembly.id, page=1, per_page=10
+        )
+
+        assert results[0] is not respondent
+
+    def test_filters_by_status(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)  # seed adds one POOL respondent
+        # Add a SELECTED respondent
+        selected = Respondent(
+            assembly_id=assembly.id, external_id="R-SELECTED", selection_status=RespondentStatus.SELECTED
+        )
+        uow.respondents.add(selected)
+
+        results, total_count = respondent_service.get_respondents_for_assembly_paginated(
+            uow, user.id, assembly.id, page=1, per_page=10, status=RespondentStatus.SELECTED
+        )
+
+        assert len(results) == 1
+        assert total_count == 1
+        assert results[0].selection_status == RespondentStatus.SELECTED

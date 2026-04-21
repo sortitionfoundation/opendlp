@@ -6,7 +6,7 @@ import uuid
 from io import StringIO
 from typing import Any
 
-from opendlp.domain.respondents import Respondent
+from opendlp.domain.respondents import Respondent, pop_normalised
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
@@ -139,16 +139,16 @@ def import_respondents_from_csv(  # noqa: C901
             attributes = {k: v for k, v in row.items() if k != id_column}
 
             # Extract boolean flags if present (leave as None if not in CSV)
-            consent_str = attributes.pop("consent", None)
+            consent_str = pop_normalised(attributes, "consent")
             consent = consent_str.lower() == "true" if consent_str else None
 
-            eligible_str = attributes.pop("eligible", None)
+            eligible_str = pop_normalised(attributes, "eligible")
             eligible = eligible_str.lower() == "true" if eligible_str else None
 
-            can_attend_str = attributes.pop("can_attend", None)
+            can_attend_str = pop_normalised(attributes, "can_attend")
             can_attend = can_attend_str.lower() == "true" if can_attend_str else None
 
-            email = attributes.pop("email", "")
+            email = pop_normalised(attributes, "email", "")
 
             respondent = Respondent(
                 assembly_id=assembly_id,
@@ -221,6 +221,36 @@ def get_respondents_for_assembly(
 
         respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status, include_deleted=include_deleted)
         return [r.create_detached_copy() for r in respondents]
+
+
+def get_respondents_for_assembly_paginated(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    page: int = 1,
+    per_page: int = 50,
+    status: RespondentStatus | None = None,
+) -> tuple[list[Respondent], int]:
+    """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="view respondents",
+                required_role="assembly role or global privileges",
+            )
+
+        respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
+            assembly_id, page=page, per_page=per_page, status=status
+        )
+        return [r.create_detached_copy() for r in respondents], total_count
 
 
 def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:

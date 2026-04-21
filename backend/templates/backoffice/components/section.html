@@ -1,0 +1,36 @@
+{#
+ABOUTME: Section component macro for backoffice design system
+ABOUTME: Provides a simple white box container with rounded corners and padding
+#}
+
+{# Section container with white background, rounded corners, and padding #}
+{% macro section(classes="") %}
+    {#
+Section container component using semantic design tokens.
+
+A simple white box for grouping related content on layouts.
+Uses 8px border radius and 24px padding by default.
+
+Args:
+  classes: Additional CSS classes for customization
+
+Usage:
+  {% call section() %}
+    <h2>Section Title</h2>
+    <p>Section content goes here...</p>
+  {% endcall %}
+
+  {% call section(classes="mb-6") %}
+    <p>Section with extra margin bottom</p>
+  {% endcall %}
+
+Design tokens used:
+  --color-tables-cards (background)
+  --radius-lg (border radius - 8px)
+  --spacing-6 (padding - 24px)
+    #}
+  <div class="rounded-lg p-6 {{ classes }}"
+       style="background-color: var(--color-tables-cards);">
+    {{ caller() }}
+  </div>
+{% endmacro %}

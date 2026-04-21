@@ -259,6 +259,51 @@ class TestDeleteAllForAssembly:
         assert respondent_backend.repo.delete_all_for_assembly(uuid.uuid4()) == 0
 
 
+class TestGetByAssemblyIdPaginated:
+    def test_returns_paginated_results(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        for i in range(5):
+            _make_respondent(respondent_backend, assembly.id, external_id=f"R{i:03d}")
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(assembly.id, page=1, per_page=2)
+
+        assert len(results) == 2
+        assert total_count == 5
+
+    def test_returns_correct_page(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        for i in range(5):
+            _make_respondent(respondent_backend, assembly.id, external_id=f"R{i:03d}")
+
+        page1, _ = respondent_backend.repo.get_by_assembly_id_paginated(assembly.id, page=1, per_page=2)
+        page2, _ = respondent_backend.repo.get_by_assembly_id_paginated(assembly.id, page=2, per_page=2)
+
+        # Pages should have different respondents
+        page1_ids = {r.id for r in page1}
+        page2_ids = {r.id for r in page2}
+        assert page1_ids.isdisjoint(page2_ids)
+
+    def test_filters_by_status(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", status=RespondentStatus.POOL)
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", status=RespondentStatus.SELECTED)
+        _make_respondent(respondent_backend, assembly.id, external_id="R003", status=RespondentStatus.POOL)
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(
+            assembly.id, page=1, per_page=10, status=RespondentStatus.POOL
+        )
+
+        assert len(results) == 2
+        assert total_count == 2
+        assert all(r.selection_status == RespondentStatus.POOL for r in results)
+
+    def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(uuid.uuid4(), page=1, per_page=10)
+
+        assert results == []
+        assert total_count == 0
+
+
 class TestGetAttributeValueCounts:
     def test_returns_value_counts(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()

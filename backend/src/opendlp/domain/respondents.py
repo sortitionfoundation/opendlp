@@ -47,6 +47,18 @@ def normalise_field_name(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
+def pop_normalised(attrs: dict[str, Any], key: str, default: Any = None) -> Any:
+    """Pop a key from dict using normalised matching.
+
+    Matches keys like "canAttend", "can_attend", "CAN_ATTEND" to "can_attend".
+    """
+    key_normal = normalise_field_name(key)
+    for k in list(attrs.keys()):
+        if normalise_field_name(k) == key_normal:
+            return attrs.pop(k)
+    return default
+
+
 # Top-level Respondent fields that must not be shadowed by an attribute key.
 # Kept in sync with the Respondent constructor signature.
 _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
@@ -237,7 +249,7 @@ class Respondent:
         return hash(self.id)
 
     def create_detached_copy(self) -> "Respondent":
-        """Create a detached copy for use outside SQLAlchemy sessions"""
+        """Create a detached copy for use outside SQLAlchemy sessions."""
         return Respondent(
             assembly_id=self.assembly_id,
             external_id=self.external_id,
@@ -250,7 +262,7 @@ class Respondent:
             email=self.email,
             source_type=self.source_type,
             source_reference=self.source_reference,
-            attributes=self.attributes.copy(),
+            attributes=self.attributes,
             respondent_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

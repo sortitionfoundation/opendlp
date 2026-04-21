@@ -127,11 +127,8 @@ class TestUploadTargetsCsv:
             content_type="multipart/form-data",
             follow_redirects=False,
         )
-        assert response.status_code == 302
-
-        with logged_in_admin.session_transaction() as session:
-            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("CSV import failed" in msg for msg in flash_messages)
+        assert response.status_code == 200
+        assert b"There is a problem" in response.data
 
     def test_upload_no_file_shows_validation_error(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(

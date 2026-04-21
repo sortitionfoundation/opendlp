@@ -150,7 +150,9 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
         {# ── CSV Import (collapsible) ─────────────────────── #}
         <section class="mt-8 pt-8" style="border-top: 1px solid var(--color-borders-dividers);">
-            <details x-data="{ open: false }">
+            {% set csv_details_open = form.errors %}
+            <details x-data="{ open: {{ 'true' if csv_details_open else 'false' }} }"
+                     {% if csv_details_open %}open{% endif %}>
                 <summary class="text-heading-md cursor-pointer underline mb-4"
                          style="color: var(--color-links);"
                          @click="open = !open">

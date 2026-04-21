@@ -388,6 +388,17 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_by_assembly_id_paginated(
+        self,
+        assembly_id: uuid.UUID,
+        page: int = 1,
+        per_page: int = 50,
+        status: RespondentStatus | None = None,
+    ) -> tuple[list[Respondent], int]:
+        """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         """Get a respondent by assembly and external ID."""
         raise NotImplementedError
