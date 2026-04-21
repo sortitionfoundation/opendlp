@@ -887,6 +887,51 @@ class TestBackofficeCsvUpload:
             "error so the user can see it. Found: " + repr(details_tags)
         )
 
+    def test_targets_csv_upload_invalid_format_keeps_form_visible(
+        self,
+        logged_in_admin,
+        existing_assembly: Assembly,
+    ):
+        """When the CSV passes WTForms validation but the import service rejects it.
+
+        The page must re-render inline (not redirect to a fresh page) so the
+        <details> stays open with the error visible alongside the form, rather
+        than just flashing a message at the top of an empty page.
+        """
+        # Headers that don't match feature/value/min/max → InvalidSelection
+        # at read_in_features() inside import_targets_from_csv.
+        csv_content = "wrong,headers,here\nfoo,bar,baz"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            data={
+                "csv_file": (BytesIO(csv_content.encode()), "bad.csv"),
+                "csrf_token": "x",
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200, (
+            f"Expected inline re-render (200); got {response.status_code} location={response.location!r}"
+        )
+
+        html = response.data.decode()
+        assert b"CSV import failed" in response.data or b"Failed to parse CSV" in response.data, (
+            "Expected the import error message in the response body"
+        )
+
+        details_tags = re.findall(r"<details\b[^>]*>", html)
+
+        def has_open_attribute(tag: str) -> bool:
+            stripped = re.sub(r'"[^"]*"|\'[^\']*\'', '""', tag)
+            return re.search(r"\bopen\b", stripped) is not None
+
+        assert any(has_open_attribute(tag) for tag in details_tags), (
+            "Expected the CSV import <details> to be open after an import "
+            "error so the user can see it. Found: " + repr(details_tags)
+        )
+
 
 @pytest.fixture
 def assembly_with_targets(postgres_session_factory, admin_user):

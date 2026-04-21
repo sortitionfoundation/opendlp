@@ -153,33 +153,37 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvForm) -> ResponseReturnValue:
+    """Re-render the targets page so the user sees their upload error inline."""
+    uow = bootstrap.bootstrap()
+    assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+    uow2 = bootstrap.bootstrap()
+    target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+
+    context = _get_assembly_context(assembly_id)
+
+    return render_template(
+        "backoffice/assembly_targets.html",
+        assembly=assembly,
+        assembly_id=assembly_id,
+        target_categories=target_categories,
+        form=form,
+        add_category_form=AddTargetCategoryForm(),
+        value_form=TargetValueForm(),
+        can_manage=_can_manage(assembly_id),
+        **context,
+    ), 200
+
+
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/upload", methods=["POST"])
 @login_required
 def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Upload targets CSV file for an assembly."""
+    form = UploadTargetsCsvForm()
     try:
-        form = UploadTargetsCsvForm()
-
         if not form.validate_on_submit():
-            uow = bootstrap.bootstrap()
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            uow2 = bootstrap.bootstrap()
-            target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
-
-            context = _get_assembly_context(assembly_id)
-
-            return render_template(
-                "backoffice/assembly_targets.html",
-                assembly=assembly,
-                assembly_id=assembly_id,
-                target_categories=target_categories,
-                form=form,
-                add_category_form=AddTargetCategoryForm(),
-                value_form=TargetValueForm(),
-                can_manage=_can_manage(assembly_id),
-                **context,
-            ), 200
+            return _render_targets_upload_page(assembly_id, form)
 
         csv_file = form.csv_file.data
         csv_content = csv_file.read().decode("utf-8-sig")
@@ -209,8 +213,8 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid targets CSV for assembly {assembly_id}: {e}")
-        flash(_("CSV import failed: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        form.csv_file.errors.append(_("CSV import failed: %(error)s", error=str(e)))
+        return _render_targets_upload_page(assembly_id, form)
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -218,13 +222,13 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to import targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
     except UnicodeDecodeError:
-        flash(_("Could not read CSV file. Please ensure it is UTF-8 encoded."), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        form.csv_file.errors.append(_("Could not read CSV file. Please ensure it is UTF-8 encoded."))
+        return _render_targets_upload_page(assembly_id, form)
     except Exception as e:
         current_app.logger.error(f"Upload targets error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
-        flash(_("An unexpected error occurred during import"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        form.csv_file.errors.append(_("An unexpected error occurred during import"))
+        return _render_targets_upload_page(assembly_id, form)
 
 
 @targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
