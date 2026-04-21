@@ -115,6 +115,16 @@ class RespondentStatus(Enum):
     PARTICIPATED = "PARTICIPATED"
     EXCLUDED = "EXCLUDED"
 
+    @classmethod
+    def from_str(cls, value: str) -> "RespondentStatus | None":
+        """Parse a string to RespondentStatus, returning None for invalid values."""
+        if not value:
+            return None
+        try:
+            return cls(value)
+        except ValueError:
+            return None
+
 
 class RespondentSourceType(Enum):
     """Source of respondent data"""

@@ -1,19 +1,19 @@
 {#
 ABOUTME: Showcase section for table component
-ABOUTME: Displays table variants with striped rows, actions, and responsive layout
+ABOUTME: Displays table variants with hover effect, actions, and responsive layout
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_custom, table_cell_yes_no %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_custom, table_cell_yes_no, table_cell_status %}
 
 {% macro table_section() %}
   {% call showcase_section() %}
     {{ showcase_title("Table Component") }}
-    {{ showcase_description("Data tables for displaying structured information. Supports striped rows, alignment options, and action links. Responsive with horizontal scrolling on small screens.") }}
+    {{ showcase_description("Data tables for displaying structured information. Supports hover effect, alignment options, and action links. Responsive with horizontal scrolling on small screens.") }}
 
     {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link %}
 
-{# Basic striped table with actions #}
-      {% call table(striped=true) %}
+{# Basic table with actions #}
+      {% call table() %}
         {{ table_head([
         {"label": "Name"},
         {"label": "Age"},
@@ -21,7 +21,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
         {"label": "Action", "align": "right"}
         ]) }}
         {% call table_body() %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("Richard Hendricks", bold=true) }}
             {{ table_cell("30") }}
             {{ table_cell("Pied Piper HQ, Palo Alto") }}
@@ -34,9 +34,9 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell_link("Edit", href="#", align="right") }}
           {% endcall %}
         {% endcall %}
-      {% endcall %}') %}
-            {# Striped table example #}
-      {% call table(striped=true) %}
+      {% endcall %}', transparent=true) %}
+            {# Table example #}
+      {% call table() %}
         {{ table_head([
         {"label": "Name"},
         {"label": "Age"},
@@ -44,7 +44,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
         {"label": "Action", "align": "right"}
         ]) }}
         {% call table_body() %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("Richard Hendricks", bold=true) }}
             {{ table_cell("30") }}
             {{ table_cell("Pied Piper HQ, Palo Alto") }}
@@ -56,7 +56,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell("5230 Penfield Ave, Woodland Hills") }}
             {{ table_cell_link("Edit", href="#", align="right") }}
           {% endcall %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("Monica Hall", bold=true) }}
             {{ table_cell("35") }}
             {{ table_cell("2030 Stewart Drive, Sunnyvale") }}
@@ -68,7 +68,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell("Pied Piper HQ, Palo Alto") }}
             {{ table_cell_link("Edit", href="#", align="right") }}
           {% endcall %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("Gilfoyle", bold=true) }}
             {{ table_cell("32") }}
             {{ table_cell("Pied Piper HQ, Palo Alto") }}
@@ -84,7 +84,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
     {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
 
 {# Tri-state boolean cells #}
-      {% call table(striped=true) %}
+      {% call table() %}
         {{ table_head([
         {"label": "Respondent"},
         {"label": "Consent"},
@@ -92,7 +92,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
         {"label": "Can attend"}
         ]) }}
         {% call table_body() %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("R001", bold=true) }}
             {{ table_cell_yes_no(true) }}
             {{ table_cell_yes_no(true) }}
@@ -105,8 +105,8 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell_yes_no(none) }}
           {% endcall %}
         {% endcall %}
-      {% endcall %}') %}
-      {% call table(striped=true) %}
+      {% endcall %}', transparent=true) %}
+      {% call table() %}
         {{ table_head([
         {"label": "Respondent"},
         {"label": "Consent"},
@@ -114,7 +114,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
         {"label": "Can attend"}
         ]) }}
         {% call table_body() %}
-          {% call table_row(is_odd=true) %}
+          {% call table_row() %}
             {{ table_cell("R001", bold=true) }}
             {{ table_cell_yes_no(true) }}
             {{ table_cell_yes_no(true) }}
@@ -130,14 +130,95 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
       {% endcall %}
     {% endcall %}
 
+    {{ showcase_subtitle("Status indicator cells") }}
+    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Uses traffic light pattern: Pool shows gray, Selected shows amber, Confirmed shows green, Withdrawn shows red, Deleted shows light gray.") }}
+
+    {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_status %}
+
+{# Status indicator cells #}
+      {% call table() %}
+        {{ table_head([
+        {"label": "Status"},
+        {"label": "Respondent"},
+        {"label": "Email"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row() %}
+            {{ table_cell_status("pool") }}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell("john@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("selected") }}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell("jane@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("confirmed") }}
+            {{ table_cell("R003", bold=true) }}
+            {{ table_cell("bob@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("withdrawn") }}
+            {{ table_cell("R004", bold=true) }}
+            {{ table_cell("alice@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("deleted") }}
+            {{ table_cell("R005", bold=true) }}
+            {{ table_cell("deleted@example.com") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}', transparent=true) %}
+      {% call table() %}
+        {{ table_head([
+        {"label": "Status"},
+        {"label": "Respondent"},
+        {"label": "Email"}
+        ]) }}
+        {% call table_body() %}
+          {% call table_row() %}
+            {{ table_cell_status("pool") }}
+            {{ table_cell("R001", bold=true) }}
+            {{ table_cell("john@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("selected") }}
+            {{ table_cell("R002", bold=true) }}
+            {{ table_cell("jane@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("confirmed") }}
+            {{ table_cell("R003", bold=true) }}
+            {{ table_cell("bob@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("withdrawn") }}
+            {{ table_cell("R004", bold=true) }}
+            {{ table_cell("alice@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
+            {{ table_cell_status("deleted") }}
+            {{ table_cell("R005", bold=true) }}
+            {{ table_cell("deleted@example.com") }}
+          {% endcall %}
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+
     {{ showcase_tokens([
     "--color-tables-cards (table background)",
-    "--color-borders-dividers (borders and dividers)",
+    "--color-borders-dividers (borders/dividers, deleted status dot)",
     "--color-headings (header text)",
-    "--color-body-text (cell text)",
-    "--color-subtle-background-panels (striped row background)",
+    "--color-body-text (cell text, status labels)",
+    "--color-neutral-50 (header background)",
+    "--color-neutral-100 (row hover background)",
     "--color-primary-action (link color)",
-    "--color-active-states (link hover)"
+    "--color-active-states (link hover)",
+    "--color-secondary-text (pool status dot)",
+    "--color-warning-400 (selected status dot)",
+    "--color-success-400 (confirmed status dot)",
+    "--color-error-400 (withdrawn status dot)"
     ]) }}
   {% endcall %}
 {% endmacro %}
