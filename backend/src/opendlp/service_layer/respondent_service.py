@@ -6,7 +6,7 @@ import uuid
 from io import StringIO
 from typing import Any
 
-from opendlp.domain.respondents import Respondent
+from opendlp.domain.respondents import Respondent, pop_normalised
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -137,26 +137,17 @@ def import_respondents_from_csv(  # noqa: C901
             # All columns except id_column become attributes
             attributes = {k: v for k, v in row.items() if k != id_column}
 
-            # Helper to pop a key case-insensitively from attributes
-            def pop_case_insensitive(attrs: dict[str, Any], key: str, default: Any = None) -> Any:
-                """Pop a key from dict using case-insensitive matching."""
-                key_lower = key.lower()
-                for k in list(attrs.keys()):
-                    if k.lower() == key_lower:
-                        return attrs.pop(k)
-                return default
-
             # Extract boolean flags if present (leave as None if not in CSV)
-            consent_str = pop_case_insensitive(attributes, "consent")
+            consent_str = pop_normalised(attributes, "consent")
             consent = consent_str.lower() == "true" if consent_str else None
 
-            eligible_str = pop_case_insensitive(attributes, "eligible")
+            eligible_str = pop_normalised(attributes, "eligible")
             eligible = eligible_str.lower() == "true" if eligible_str else None
 
-            can_attend_str = pop_case_insensitive(attributes, "can_attend")
+            can_attend_str = pop_normalised(attributes, "can_attend")
             can_attend = can_attend_str.lower() == "true" if can_attend_str else None
 
-            email = pop_case_insensitive(attributes, "email", "")
+            email = pop_normalised(attributes, "email", "")
 
             respondent = Respondent(
                 assembly_id=assembly_id,

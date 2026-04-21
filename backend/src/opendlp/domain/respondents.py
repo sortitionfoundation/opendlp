@@ -19,6 +19,18 @@ def normalise_field_name(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
+def pop_normalised(attrs: dict[str, Any], key: str, default: Any = None) -> Any:
+    """Pop a key from dict using normalised matching.
+
+    Matches keys like "canAttend", "can_attend", "CAN_ATTEND" to "can_attend".
+    """
+    key_normal = normalise_field_name(key)
+    for k in list(attrs.keys()):
+        if normalise_field_name(k) == key_normal:
+            return attrs.pop(k)
+    return default
+
+
 # Top-level Respondent fields that must not be shadowed by an attribute key.
 # Kept in sync with the Respondent constructor signature.
 _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
