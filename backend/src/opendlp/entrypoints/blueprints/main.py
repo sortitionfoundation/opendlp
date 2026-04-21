@@ -291,13 +291,6 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="add_user_to_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
             if form.validate_on_submit():
                 user_id = uuid.UUID(form.user_id.data)
 
@@ -360,13 +353,6 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="remove_user_from_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
             # Call service layer to remove user from assembly
             _assembly_role, target_user = revoke_user_assembly_role(
                 uow=uow,
