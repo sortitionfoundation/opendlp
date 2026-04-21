@@ -64,11 +64,9 @@ Design tokens used:
                 {# Previous button #}
                 {% if page > 1 %}
                     <a href="{{ _page_url(base_url, page - 1, page_param) }}"
-                       class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                       class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
                        style="border: 1px solid var(--color-borders-dividers);
-                              color: var(--color-body-text)"
-                       onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                       onmouseout="this.style.backgroundColor='transparent'">
+                              color: var(--color-body-text)">
                         {{ _("Previous") }}
                     </a>
                 {% else %}
@@ -85,11 +83,9 @@ Design tokens used:
                                      color: white">{{ page_num }}</span>
                     {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
                         <a href="{{ _page_url(base_url, page_num, page_param) }}"
-                           class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                           class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
                            style="border: 1px solid var(--color-borders-dividers);
-                                  color: var(--color-body-text)"
-                           onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                           onmouseout="this.style.backgroundColor='transparent'">{{ page_num }}</a>
+                                  color: var(--color-body-text)">{{ page_num }}</a>
                     {% elif page_num == page - 3 or page_num == page + 3 %}
                         <span class="px-3 py-2 text-body-sm"
                               style="color: var(--color-secondary-text)">...</span>
@@ -98,11 +94,9 @@ Design tokens used:
                 {# Next button #}
                 {% if page < total_pages %}
                     <a href="{{ _page_url(base_url, page + 1, page_param) }}"
-                       class="px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                       class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
                        style="border: 1px solid var(--color-borders-dividers);
-                              color: var(--color-body-text)"
-                       onmouseover="this.style.backgroundColor='var(--color-subtle-background-panels)'"
-                       onmouseout="this.style.backgroundColor='transparent'">{{ _("Next") }}</a>
+                              color: var(--color-body-text)">{{ _("Next") }}</a>
                 {% else %}
                     <span class="px-3 py-2 rounded text-body-sm font-medium"
                           style="border: 1px solid var(--color-borders-dividers);

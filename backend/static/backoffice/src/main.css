@@ -434,6 +434,16 @@
        Horizontal tab navigation based on Figma spec
        ======================================== */
 
+    /* ========================================
+       PAGINATION COMPONENT STYLES
+       Hover states for pagination buttons
+       ======================================== */
+
+    /* Pagination button hover - uses same color as secondary/tertiary buttons */
+    .pagination-btn:hover {
+        background-color: var(--color-button-secondary-bg-hover);
+    }
+
     /* Tab bar container */
     .tab-bar {
         display: flex;
