@@ -1,0 +1,141 @@
+{#
+ABOUTME: Backoffice page for viewing and editing the respondent field schema
+ABOUTME: Grouped field list with per-field label edit, move up/down, and delete actions
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{% block title %}{{ _("Respondent field layout") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
+        {"label": _("Field layout")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Respondent field layout") }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Group, order, and label the fields that describe your respondents. These settings drive how respondent details are displayed and will seed the registration form when it is created.") }}
+    </p>
+
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="respondents",
+    data_source=data_source|default(""),
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
+    ) }}
+
+    {% if not schema_has_rows %}
+        <section class="mb-8">
+            <p class="text-body-md mb-4">
+                {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the reserved fixed fields only (email, consent, eligibility, etc).") }}
+            </p>
+            <form method="post"
+                  action="{{ url_for('respondent_field_schema.initialise_schema', assembly_id=assembly.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Initialise empty schema"), type="submit", variant="primary") }}
+            </form>
+        </section>
+    {% else %}
+        {% for section in sections %}
+            {% if section.fields %}
+                <section class="mb-8">
+                    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr>
+                                <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Field key") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Group") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Order") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in section.fields %}
+                                <tr>
+                                    <td class="py-2">
+                                        <form method="post"
+                                              action="{{ url_for('respondent_field_schema.update_field_view',
+                                                      assembly_id=assembly.id, field_id=field.id) }}"
+                                              class="flex gap-2 items-center">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="text"
+                                                   name="label"
+                                                   value="{{ field.label }}"
+                                                   class="govuk-input"
+                                                   aria-label="{{ _('Label for %(key)s', key=field.field_key) }}">
+                                            <select name="group" class="govuk-select" aria-label="{{ _('Group') }}">
+                                                {% for value, label in group_choices %}
+                                                    <option value="{{ value }}" {% if field.group.value== value %}selected{% endif %}>
+                                                        {{ label }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            {{ button(_("Save"), type="submit", variant="secondary") }}
+                                        </form>
+                                    </td>
+                                    <td class="py-2"><code>{{ field.field_key }}</code></td>
+                                    <td class="py-2">
+                                        {% if field.is_fixed %}
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
+                                        {% endif %}
+                                        {% if field.is_derived %}
+                                            <strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="flex gap-1">
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.move_field',
+                                                          assembly_id=assembly.id, field_id=field.id) }}"
+                                                  class="inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="direction" value="up">
+                                                {{ button("↑", type="submit", variant="tertiary", attrs='aria-label="' + _('Move up') + '"') }}
+                                            </form>
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.move_field',
+                                                          assembly_id=assembly.id, field_id=field.id) }}"
+                                                  class="inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="direction" value="down">
+                                                {{ button("↓", type="submit", variant="tertiary", attrs='aria-label="' + _('Move down') + '"') }}
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td class="py-2">
+                                        {% if not field.is_fixed %}
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.delete_field_view',
+                                                          assembly_id=assembly.id, field_id=field.id) }}"
+                                                  onsubmit="return confirm('{{ _('Remove this field from the schema? Respondent data keeps its values; they just stop being rendered.') }}');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                {{ button(_("Remove"), type="submit", variant="danger") }}
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <section class="flex gap-4">
+        {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+    </section>
+{% endblock %}
