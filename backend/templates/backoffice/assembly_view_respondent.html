@@ -7,123 +7,112 @@ ABOUTME: Displays a single respondent's full details including attributes
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
-
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
-
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
-
 {% block breadcrumb_section %}
     <div class="mb-6">
         {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
         {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
         {"label": respondent_name}
         ]) }}
     </div>
 {% endblock %}
-
 {% set is_deleted = respondent.selection_status.value == "DELETED" %}
 {% set delete_comment = respondent.comments | selectattr("action.value", "equalto", "DELETE") | list | last if respondent.comments else none %}
-
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Respondent details") }}
-    </p>
-
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {% if is_deleted and delete_comment %}
         <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"
-             style="color: var(--color-headings);">
-            <strong>{{ _("Personal data deleted") }}</strong><br>
+             style="color: var(--color-headings)">
+            <strong>{{ _("Personal data deleted") }}</strong>
+            <br>
             {% set author = comment_authors.get(delete_comment.author_id) if comment_authors else none %}
             {% if author %}
                 {{ _("Deleted on %(date)s by %(who)s",
-                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M"),
+                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M") ,
                 who=author.email) }}
             {% else %}
                 {{ _("Deleted on %(date)s",
-                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M")) }}
+                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M") ) }}
             {% endif %}
         </div>
     {% endif %}
-
-    {{ assembly_tabs(
-    assembly=assembly,
+    {{ assembly_tabs(assembly=assembly,
     active_tab="respondents",
-    data_source=data_source|default(""),
+    data_source=data_source|default("") ,
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-
     <section class="mb-8">
         <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
         {% call table() %}
             {{ table_head([
-            {"label": _("Field")},
+            {"label": _("Field") },
             {"label": _("Value")}
             ]) }}
             {% call table_body() %}
                 {% call table_row() %}
-                    {{ table_cell(_("External ID"), bold=true) }}
+                    {{ table_cell(_("External ID") , bold=true) }}
                     {{ table_cell(respondent.external_id) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Email"), bold=true) }}
+                    {{ table_cell(_("Email") , bold=true) }}
                     {{ table_cell(respondent.email or "—") }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Selection status"), bold=true) }}
+                    {{ table_cell(_("Selection status") , bold=true) }}
                     {{ table_cell(respondent.selection_status.value|title) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Selection run ID"), bold=true) }}
+                    {{ table_cell(_("Selection run ID") , bold=true) }}
                     {{ table_cell(respondent.selection_run_id or "—") }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Consent"), bold=true) }}
+                    {{ table_cell(_("Consent") , bold=true) }}
                     {{ table_cell_yes_no(respondent.consent) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Stay on database"), bold=true) }}
+                    {{ table_cell(_("Stay on database") , bold=true) }}
                     {{ table_cell_yes_no(respondent.stay_on_db) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Eligible"), bold=true) }}
+                    {{ table_cell(_("Eligible") , bold=true) }}
                     {{ table_cell_yes_no(respondent.eligible) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Can attend"), bold=true) }}
+                    {{ table_cell(_("Can attend") , bold=true) }}
                     {{ table_cell_yes_no(respondent.can_attend) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Source type"), bold=true) }}
-                    {{ table_cell(respondent.source_type.value|replace("_", " ")|title) }}
+                    {{ table_cell(_("Source type") , bold=true) }}
+                    {{ table_cell(respondent.source_type.value|replace("_", " ") |title) }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Source reference"), bold=true) }}
+                    {{ table_cell(_("Source reference") , bold=true) }}
                     {{ table_cell(respondent.source_reference or "—") }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Created"), bold=true) }}
+                    {{ table_cell(_("Created") , bold=true) }}
                     {{ table_cell(respondent.created_at.strftime("%d %B %Y at %H:%M") if respondent.created_at else "—") }}
                 {% endcall %}
                 {% call table_row() %}
-                    {{ table_cell(_("Updated"), bold=true) }}
+                    {{ table_cell(_("Updated") , bold=true) }}
                     {{ table_cell(respondent.updated_at.strftime("%d %B %Y at %H:%M") if respondent.updated_at else "—") }}
                 {% endcall %}
             {% endcall %}
         {% endcall %}
     </section>
-
     <section class="mb-8">
         <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Attributes") }}</h2>
         {% if respondent.attributes %}
             {% call table() %}
                 {{ table_head([
-                {"label": _("Attribute")},
+                {"label": _("Attribute") },
                 {"label": _("Value")}
                 ]) }}
                 {% call table_body() %}
@@ -139,13 +128,12 @@ ABOUTME: Displays a single respondent's full details including attributes
             <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
         {% endif %}
     </section>
-
     <section class="mb-8">
         <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Comments") }}</h2>
         {% if respondent.comments %}
-            {% call table(striped=true) %}
+            {% call table() %}
                 {{ table_head([
-                {"label": _("When")},
+                {"label": _("When") },
                 {"label": _("Author")},
                 {"label": _("Action")},
                 {"label": _("Comment")}
@@ -153,8 +141,8 @@ ABOUTME: Displays a single respondent's full details including attributes
                 {% call table_body() %}
                     {% for comment in respondent.comments %}
                         {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
-                        {% call table_row(is_odd=loop.index is odd) %}
-                            {{ table_cell(comment.created_at.strftime("%d %B %Y at %H:%M")) }}
+                        {% call table_row() %}
+                            {{ table_cell(comment.created_at.strftime("%d %B %Y at %H:%M") ) }}
                             {{ table_cell(author.email if author else comment.author_id|string) }}
                             {{ table_cell(comment.action.value|title if comment.action.value != "NONE" else "—") }}
                             {{ table_cell(comment.text) }}
@@ -166,7 +154,6 @@ ABOUTME: Displays a single respondent's full details including attributes
             <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No comments recorded.") }}</p>
         {% endif %}
     </section>
-
     {% if can_manage and not is_deleted %}
         <section class="mb-8" x-data="{ showing: false }">
             <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Delete personal data") }}</h2>
@@ -181,9 +168,7 @@ ABOUTME: Displays a single respondent's full details including attributes
                   action="{{ url_for('respondents.delete_respondent_route', assembly_id=assembly.id, respondent_id=respondent.id) }}"
                   class="flex flex-col gap-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <label for="delete-comment" class="font-semibold">
-                    {{ _("Reason (required)") }}
-                </label>
+                <label for="delete-comment" class="font-semibold">{{ _("Reason (required)") }}</label>
                 <textarea id="delete-comment"
                           name="comment"
                           rows="3"
@@ -197,8 +182,7 @@ ABOUTME: Displays a single respondent's full details including attributes
             </form>
         </section>
     {% endif %}
-
     <section class="flex gap-4">
-        {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+        {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
     </section>
 {% endblock %}
