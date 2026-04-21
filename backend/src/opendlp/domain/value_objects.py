@@ -115,6 +115,16 @@ class RespondentStatus(Enum):
     PARTICIPATED = "PARTICIPATED"
     DELETED = "DELETED"
 
+    @classmethod
+    def from_str(cls, value: str) -> "RespondentStatus | None":
+        """Parse a string to RespondentStatus, returning None for invalid values."""
+        if not value:
+            return None
+        try:
+            return cls(value)
+        except ValueError:
+            return None
+
 
 class RespondentAction(Enum):
     """Type of action a RespondentComment records.
@@ -127,16 +137,6 @@ class RespondentAction(Enum):
     NONE = "NONE"
     EDIT = "EDIT"
     DELETE = "DELETE"
-
-    @classmethod
-    def from_str(cls, value: str) -> "RespondentStatus | None":
-        """Parse a string to RespondentStatus, returning None for invalid values."""
-        if not value:
-            return None
-        try:
-            return cls(value)
-        except ValueError:
-            return None
 
 
 class RespondentSourceType(Enum):
