@@ -306,7 +306,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_generator = get_url_generator(current_app)
 
                 # Call service layer to add user to assembly
-                grant_user_assembly_role(
+                _assembly_role, target_user = grant_user_assembly_role(
                     uow=uow,
                     user_id=user_id,
                     assembly_id=assembly_id,
@@ -317,18 +317,14 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     url_generator=url_generator,
                 )
 
-                target_user = uow.users.get(user_id)
-                if target_user:
-                    flash(
-                        _(
-                            "%(user)s added to assembly with role %(role)s",
-                            user=target_user.display_name,
-                            role=role.value,
-                        ),
-                        "success",
-                    )
-                else:
-                    flash(_("User added to assembly successfully"), "success")
+                flash(
+                    _(
+                        "%(user)s added to assembly with role %(role)s",
+                        user=target_user.display_name,
+                        role=role.value,
+                    ),
+                    "success",
+                )
             else:
                 flash(_("Please check the form and try again"), "error")
 
@@ -367,21 +363,17 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
                 )
 
             # Call service layer to remove user from assembly
-            revoke_user_assembly_role(
+            _assembly_role, target_user = revoke_user_assembly_role(
                 uow=uow,
                 user_id=user_id,
                 assembly_id=assembly_id,
                 current_user=current_user,
             )
 
-            target_user = uow.users.get(user_id)
-            if target_user:
-                flash(
-                    _("%(user)s removed from assembly", user=target_user.display_name),
-                    "success",
-                )
-            else:
-                flash(_("User removed from assembly successfully"), "success")
+            flash(
+                _("%(user)s removed from assembly", user=target_user.display_name),
+                "success",
+            )
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 

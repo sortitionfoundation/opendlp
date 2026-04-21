@@ -121,7 +121,7 @@ class TestGrantUserAssemblyRole:
     def test_admin_can_grant_role(self, uow, setup_database):
         """Admin can grant roles to any user on any assembly."""
         data = setup_database
-        result = grant_user_assembly_role(
+        assembly_role, returned_user = grant_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
@@ -129,15 +129,16 @@ class TestGrantUserAssemblyRole:
             current_user=data["admin_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
-        assert result.user_id == data["target_user"].id
-        assert result.assembly_id == data["assembly"].id
-        assert result.role == AssemblyRole.CONFIRMATION_CALLER
+        assert isinstance(assembly_role, UserAssemblyRole)
+        assert assembly_role.user_id == data["target_user"].id
+        assert assembly_role.assembly_id == data["assembly"].id
+        assert assembly_role.role == AssemblyRole.CONFIRMATION_CALLER
+        assert returned_user.id == data["target_user"].id
 
     def test_global_organiser_can_grant_role(self, uow, setup_database):
         """Global organiser can grant roles to any user on any assembly."""
         data = setup_database
-        result = grant_user_assembly_role(
+        assembly_role, _user = grant_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
@@ -145,13 +146,13 @@ class TestGrantUserAssemblyRole:
             current_user=data["organiser_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
-        assert result.role == AssemblyRole.ASSEMBLY_MANAGER
+        assert isinstance(assembly_role, UserAssemblyRole)
+        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
 
     def test_assembly_organiser_can_grant_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can grant roles on their own assembly."""
         data = setup_database
-        result = grant_user_assembly_role(
+        assembly_role, _user = grant_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
@@ -159,8 +160,8 @@ class TestGrantUserAssemblyRole:
             current_user=data["assembly_organiser_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
-        assert result.role == AssemblyRole.CONFIRMATION_CALLER
+        assert isinstance(assembly_role, UserAssemblyRole)
+        assert assembly_role.role == AssemblyRole.CONFIRMATION_CALLER
 
     def test_regular_user_cannot_grant_role(self, uow, setup_database):
         """Regular user cannot grant roles."""
@@ -224,7 +225,7 @@ class TestGrantUserAssemblyRole:
         """Updating existing role replaces the old role."""
         data = setup_database
         # First grant a role
-        first_result = grant_user_assembly_role(
+        first_role, _first_user = grant_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
@@ -233,7 +234,7 @@ class TestGrantUserAssemblyRole:
         )
 
         # Now update to a different role
-        second_result = grant_user_assembly_role(
+        second_role, _second_user = grant_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
@@ -242,8 +243,8 @@ class TestGrantUserAssemblyRole:
         )
 
         # Should be the same ID (updated, not new)
-        assert first_result.id == second_result.id
-        assert second_result.role == AssemblyRole.ASSEMBLY_MANAGER
+        assert first_role.id == second_role.id
+        assert second_role.role == AssemblyRole.ASSEMBLY_MANAGER
 
 
 class TestRevokeUserAssemblyRole:
@@ -262,16 +263,17 @@ class TestRevokeUserAssemblyRole:
         )
 
         # Now revoke it
-        result = revoke_user_assembly_role(
+        assembly_role, returned_user = revoke_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
             current_user=data["admin_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
-        assert result.user_id == data["target_user"].id
-        assert result.assembly_id == data["assembly"].id
+        assert isinstance(assembly_role, UserAssemblyRole)
+        assert assembly_role.user_id == data["target_user"].id
+        assert assembly_role.assembly_id == data["assembly"].id
+        assert returned_user.id == data["target_user"].id
 
     def test_global_organiser_can_revoke_role(self, uow, setup_database):
         """Global organiser can revoke roles from any user on any assembly."""
@@ -284,14 +286,14 @@ class TestRevokeUserAssemblyRole:
             current_user=data["admin_user"],
         )
 
-        result = revoke_user_assembly_role(
+        assembly_role, _user = revoke_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
             current_user=data["organiser_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
+        assert isinstance(assembly_role, UserAssemblyRole)
 
     def test_assembly_organiser_can_revoke_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can revoke roles on their own assembly."""
@@ -304,14 +306,14 @@ class TestRevokeUserAssemblyRole:
             current_user=data["admin_user"],
         )
 
-        result = revoke_user_assembly_role(
+        assembly_role, _user = revoke_user_assembly_role(
             uow=uow,
             user_id=data["target_user"].id,
             assembly_id=data["assembly"].id,
             current_user=data["assembly_organiser_user"],
         )
 
-        assert isinstance(result, UserAssemblyRole)
+        assert isinstance(assembly_role, UserAssemblyRole)
 
     def test_regular_user_cannot_revoke_role(self, uow, setup_database):
         """Regular user cannot revoke roles."""

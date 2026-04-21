@@ -34,7 +34,13 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
+from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
+from opendlp.service_layer.user_service import (
+    get_user_assemblies,
+    grant_user_assembly_role,
+    revoke_user_assembly_role,
+    search_assembly_candidate_users,
+)
 from opendlp.translations import gettext as _
 
 backoffice_bp = Blueprint("backoffice", __name__)
@@ -274,7 +280,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
-def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
+def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
     try:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
@@ -344,9 +350,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: 
                 csv_config = get_or_create_csv_config(uow_csv_config, current_user.id, assembly_id)
 
                 # Get available columns from respondents for validation hints
-                respondents = uow_csv_config.respondents.get_by_assembly_id(assembly_id)
-                if respondents and respondents[0].attributes:
-                    csv_available_columns = sorted(respondents[0].attributes.keys())
+                csv_available_columns = get_respondent_attribute_columns(uow_csv_config, assembly_id)
 
             # Create form with current values from SelectionSettings
             csv_settings_form = DbSelectionSettingsForm(
@@ -495,7 +499,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_generator = get_url_generator(current_app)
 
                 # Call service layer to add user to assembly
-                grant_user_assembly_role(
+                _assembly_role, target_user = grant_user_assembly_role(
                     uow=uow,
                     user_id=user_id,
                     assembly_id=assembly_id,
@@ -506,18 +510,14 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     url_generator=url_generator,
                 )
 
-                target_user = uow.users.get(user_id)
-                if target_user:
-                    flash(
-                        _(
-                            "%(user)s added to assembly with role %(role)s",
-                            user=target_user.display_name,
-                            role=role.value,
-                        ),
-                        "success",
-                    )
-                else:
-                    flash(_("User added to assembly successfully"), "success")
+                flash(
+                    _(
+                        "%(user)s added to assembly with role %(role)s",
+                        user=target_user.display_name,
+                        role=role.value,
+                    ),
+                    "success",
+                )
             else:
                 flash(_("Please select a user and role"), "error")
 
@@ -556,21 +556,17 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
                 )
 
             # Call service layer to remove user from assembly
-            revoke_user_assembly_role(
+            _assembly_role, target_user = revoke_user_assembly_role(
                 uow=uow,
                 user_id=user_id,
                 assembly_id=assembly_id,
                 current_user=current_user,
             )
 
-            target_user = uow.users.get(user_id)
-            if target_user:
-                flash(
-                    _("%(user)s removed from assembly", user=target_user.display_name),
-                    "success",
-                )
-            else:
-                flash(_("User removed from assembly successfully"), "success")
+            flash(
+                _("%(user)s removed from assembly", user=target_user.display_name),
+                "success",
+            )
 
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
@@ -603,13 +599,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
         search_term = request.args.get("q", "").strip()
 
         uow = bootstrap.bootstrap()
-        with uow:
-            # Verify user can manage assembly users
-            if not has_global_admin(current_user):
-                return jsonify([]), 403
-
-            # Search for matching users not in assembly
-            matching_users = uow.users.search_users_not_in_assembly(assembly_id, search_term) if search_term else []
+        matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         # Return JSON array with id, label, sublabel format expected by autocomplete
         results = [
@@ -623,6 +613,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return jsonify(results), 200
 
+    except InsufficientPermissions:
+        return jsonify([]), 403
     except Exception as e:
         current_app.logger.error(f"Error searching users for assembly {assembly_id}: {e}")
         return jsonify([]), 500
