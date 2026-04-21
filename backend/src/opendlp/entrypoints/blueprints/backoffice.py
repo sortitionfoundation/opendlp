@@ -19,15 +19,11 @@ from opendlp.entrypoints.forms import (
     EditAssemblyGSheetForm,
 )
 from opendlp.service_layer.assembly_service import (
-    CSVUploadStatus,
     create_assembly,
-    determine_data_source,
-    get_assembly_gsheet,
+    get_assembly_nav_context,
     get_assembly_with_permissions,
-    get_csv_upload_status,
     get_or_create_csv_config,
     get_or_create_selection_settings,
-    get_tab_enabled_states,
     update_assembly,
 )
 from opendlp.service_layer.exceptions import (
@@ -111,40 +107,21 @@ def new_assembly() -> ResponseReturnValue:
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
     try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        # Get gsheet config for tab state
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception:  # noqa: S110
-            pass  # No gsheet config exists - this is expected for new assemblies
-
-        # Get CSV status
-        csv_status: CSVUploadStatus | None = None
-        try:
-            uow_csv = bootstrap.bootstrap()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception:  # noqa: S110
-            pass  # No CSV data - expected for new assemblies
-
-        # Determine data source and tab enabled states
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
-            data_source, gsheet, csv_status
+        nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            request.args.get("source", ""),
         )
 
         return render_template(
             "backoffice/assembly_details.html",
-            assembly=assembly,
-            data_source=data_source,
-            gsheet=gsheet,
-            targets_enabled=targets_enabled,
-            respondents_enabled=respondents_enabled,
-            selection_enabled=selection_enabled,
+            assembly=nav.assembly,
+            data_source=nav.data_source,
+            gsheet=nav.gsheet,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -261,29 +238,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
-        # Get assembly with permissions
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        # Get gsheet config if exists
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception as gsheet_error:
-            current_app.logger.error(f"Error loading gsheet config: {gsheet_error}")
-
-        # Get CSV upload status
-        try:
-            uow_csv = bootstrap.bootstrap()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception as csv_error:
-            current_app.logger.error(f"Error loading CSV status: {csv_error}")
-            csv_status = CSVUploadStatus(targets_count=0, respondents_count=0, csv_config=None)
-
-        # Determine data source and locking
-        data_source, data_source_locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            request.args.get("source", ""),
+        )
 
         # Get selection settings for gsheet display and form population
         sel_settings = None
@@ -296,12 +256,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Set up gsheet form if gsheet source is selected
         gsheet_mode = "new"
         gsheet_form = None
-        if data_source == "gsheet":
+        if nav.data_source == "gsheet":
             mode_param = request.args.get("mode", "")
-            gsheet_mode = ("edit" if mode_param == "edit" else "view") if gsheet else "new"
-            if gsheet:
+            gsheet_mode = ("edit" if mode_param == "edit" else "view") if nav.gsheet else "new"
+            if nav.gsheet:
                 gsheet_form = EditAssemblyGSheetForm(
-                    obj=gsheet,
+                    obj=nav.gsheet,
                     id_column=sel_settings.id_column if sel_settings else "",
                     check_same_address=sel_settings.check_same_address if sel_settings else True,
                     check_same_address_cols_string=sel_settings.check_same_address_cols_string if sel_settings else "",
@@ -315,7 +275,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         csv_available_columns: list[str] = []
         csv_mode = "view"  # Default to view mode
         csv_config = None
-        if data_source == "csv":
+        if nav.data_source == "csv":
             # Determine mode (view or edit)
             mode_param = request.args.get("mode", "")
             csv_mode = "edit" if mode_param == "edit" else "view"
@@ -340,25 +300,20 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 available_columns=csv_available_columns,
             )
 
-        # Determine tab enabled states
-        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
-            data_source, gsheet, csv_status
-        )
-
         return render_template(
             "backoffice/assembly_data.html",
-            assembly=assembly,
-            data_source=data_source,
-            data_source_locked=data_source_locked,
-            gsheet=gsheet,
+            assembly=nav.assembly,
+            data_source=nav.data_source,
+            data_source_locked=nav.data_source_locked,
+            gsheet=nav.gsheet,
             selection_settings=sel_settings,
             gsheet_mode=gsheet_mode,
             gsheet_form=gsheet_form,
             google_service_account_email=google_service_account_email,
-            targets_enabled=targets_enabled,
-            respondents_enabled=respondents_enabled,
-            selection_enabled=selection_enabled,
-            csv_status=csv_status,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
+            csv_status=nav.csv_status,
             csv_settings_form=csv_settings_form,
             csv_available_columns=csv_available_columns,
             csv_mode=csv_mode,
@@ -384,52 +339,32 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly team members page."""
     try:
-        uow = bootstrap.bootstrap()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Get assembly users with their roles
-            assembly_users = get_assembly_members(uow, assembly_id, current_user)
-
-            # Check if current user can manage this assembly
-            can_manage_assembly_users = has_global_admin(current_user)
-
-        # Get gsheet config for tab state
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception:  # noqa: S110
-            pass  # No gsheet config exists - this is expected for new assemblies
-
-        # Get CSV status
-        csv_status: CSVUploadStatus | None = None
-        try:
-            uow_csv = bootstrap.bootstrap()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception:  # noqa: S110
-            pass  # No CSV data - expected for new assemblies
-
-        # Determine data source and tab enabled states
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
-            data_source, gsheet, csv_status
+        nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            request.args.get("source", ""),
         )
 
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly_users = get_assembly_members(uow, assembly_id, current_user)
+
+        can_manage_assembly_users = has_global_admin(current_user)
         add_user_form = AddUserToAssemblyForm()
 
         return render_template(
             "backoffice/assembly_members.html",
-            assembly=assembly,
+            assembly=nav.assembly,
             assembly_users=assembly_users,
             can_manage_assembly_users=can_manage_assembly_users,
             add_user_form=add_user_form,
             current_tab="members",
-            data_source=data_source,
-            gsheet=gsheet,
-            targets_enabled=targets_enabled,
-            respondents_enabled=respondents_enabled,
-            selection_enabled=selection_enabled,
+            data_source=nav.data_source,
+            gsheet=nav.gsheet,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")

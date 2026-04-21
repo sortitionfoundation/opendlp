@@ -3,6 +3,7 @@ ABOUTME: Provides functions for assembly creation, updates, permissions, and lif
 
 import csv as csv_module
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from io import StringIO
@@ -1111,6 +1112,57 @@ def get_csv_upload_status(
             respondents_count=respondents_count,
             csv_config=csv_config,
         )
+
+
+@dataclass(kw_only=True)
+class AssemblyNavContext:
+    """Everything the backoffice navigation shell needs for an assembly page.
+
+    Bundles the assembly with the derived data-source selection and the
+    targets/respondents/selection tab enablement so routes do not need to
+    re-run the same loading and wiring logic.
+    """
+
+    assembly: Assembly
+    gsheet: AssemblyGSheet | None
+    csv_status: CSVUploadStatus
+    data_source: str
+    data_source_locked: bool
+    targets_enabled: bool
+    respondents_enabled: bool
+    selection_enabled: bool
+
+
+def get_assembly_nav_context(
+    uow_factory: Callable[[], AbstractUnitOfWork],
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    preferred_source: str = "",
+) -> AssemblyNavContext:
+    """Load an assembly along with everything the backoffice nav shell needs.
+
+    The callers are Flask routes that create a fresh UnitOfWork per service
+    call, so this function takes a ``uow_factory`` (typically
+    ``opendlp.bootstrap.bootstrap``) and calls it once per underlying load.
+
+    Raises the same exceptions as the wrapped service functions:
+    UserNotFoundError, AssemblyNotFoundError, InsufficientPermissions.
+    """
+    assembly = get_assembly_with_permissions(uow_factory(), assembly_id, user_id)
+    gsheet = get_assembly_gsheet(uow_factory(), assembly_id, user_id)
+    csv_status = get_csv_upload_status(uow_factory(), user_id, assembly_id)
+    data_source, locked = determine_data_source(gsheet, csv_status, preferred_source)
+    targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
+    return AssemblyNavContext(
+        assembly=assembly,
+        gsheet=gsheet,
+        csv_status=csv_status,
+        data_source=data_source,
+        data_source_locked=locked,
+        targets_enabled=targets_enabled,
+        respondents_enabled=respondents_enabled,
+        selection_enabled=selection_enabled,
+    )
 
 
 def delete_targets_for_assembly(
