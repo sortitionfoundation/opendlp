@@ -15,9 +15,11 @@ from opendlp.service_layer.assembly_service import (
     delete_target_category,
     delete_target_value,
     delete_targets_for_assembly,
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_tab_enabled_states,
     get_targets_for_assembly,
     import_targets_from_csv,
     update_target_category,
@@ -39,7 +41,6 @@ from opendlp.service_layer.target_respondent_helpers import (
 from opendlp.translations import gettext as _
 
 from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueForm, UploadTargetsCsvForm
-from .backoffice import _determine_data_source, _get_tab_enabled_states
 
 targets_bp = Blueprint("targets", __name__)
 
@@ -78,8 +79,8 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     except Exception:  # noqa: S110
         pass  # No CSV data - expected for new assemblies
 
-    data_source, _locked = _determine_data_source(gsheet, csv_status)
-    targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(data_source, gsheet, csv_status)
+    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+    targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
     return {
         "data_source": data_source,
