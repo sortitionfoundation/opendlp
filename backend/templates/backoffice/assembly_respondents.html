@@ -101,7 +101,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                 </div>
             {% endif %}
             {% if respondents %}
-                {% call table(striped=true) %}
+                {% call table() %}
                     {{ table_head([
                     {"label": _("Status")},
                     {"label": _("External ID")},
@@ -111,7 +111,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                     ]) }}
                     {% call table_body() %}
                         {% for respondent in respondents %}
-                            {% call table_row(is_odd=loop.index is odd) %}
+                            {% call table_row() %}
                                 {{ table_cell_status(respondent.selection_status) }}
                                 {{ table_cell(respondent.external_id, bold=true) }}
                                 {{ table_cell(respondent.email or "—") }}

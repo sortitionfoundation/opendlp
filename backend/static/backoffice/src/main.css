@@ -444,6 +444,16 @@
         background-color: var(--color-button-secondary-bg-hover);
     }
 
+    /* ========================================
+       TABLE COMPONENT STYLES
+       Hover states for table rows
+       ======================================== */
+
+    /* Table row hover */
+    .table-row-hover:hover {
+        background-color: var(--color-neutral-100);
+    }
+
     /* Tab bar container */
     .tab-bar {
         display: flex;

@@ -1,21 +1,24 @@
 {#
 ABOUTME: Table component macros for backoffice design system
-ABOUTME: Supports simple tables, striped rows, and responsive horizontal scrolling
+ABOUTME: Supports tables with hover effect and responsive horizontal scrolling
 #}
 
 {# Table container with responsive horizontal scroll wrapper #}
-{% macro table(id="", classes="", striped=false, hoverable=false) %}
+{% macro table(id="", classes="") %}
     {#
 Table component using semantic design tokens.
 
 Args:
   id: Optional id attribute
   classes: Additional CSS classes for the table
-  striped: If true, alternates row background colors
-  hoverable: If true, adds hover effect to rows
+
+Features:
+  - Hover effect on rows (neutral-100 background)
+  - Header background in neutral-50
+  - Responsive with horizontal scrolling
 
 Usage:
-  {% call table(striped=true, hoverable=true) %}
+  {% call table() %}
     {{ table_head([
       {"label": "Name"},
       {"label": "Age", "align": "center"},
@@ -37,9 +40,7 @@ Usage:
              style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
           <table {% if id %}id="{{ id }}"{% endif %}
                  class="min-w-full divide-y {{ classes }}"
-                 style="--table-divide-color: var(--color-borders-dividers);"
-                 data-striped="{{ 'true' if striped else 'false' }}"
-                 data-hoverable="{{ 'true' if hoverable else 'false' }}">
+                 style="--table-divide-color: var(--color-borders-dividers);">
             {{ caller() }}
           </table>
         </div>
@@ -66,7 +67,7 @@ Usage:
     {"label": "Actions", "align": "right"}
   ]) }}
     #}
-  <thead style="background-color: var(--color-subtle-background-panels);">
+  <thead style="background-color: var(--color-neutral-50);">
     <tr>
       {% for col in columns %}
         {% set align = col.align | default("left") %}
@@ -97,21 +98,20 @@ Usage:
 {% endmacro %}
 
 {# Table row #}
-{% macro table_row(is_odd=false, classes="") %}
+{% macro table_row(classes="") %}
     {#
 Table row. Use within table_body().
 
 Args:
-  is_odd: If true and table is striped, applies alternate background
   classes: Additional CSS classes
 
 Usage:
-  {% call table_row(is_odd=loop.index is odd) %}
+  {% call table_row() %}
     {{ table_cell("Content") }}
   {% endcall %}
     #}
-  <tr class="{{ classes }}"
-      style="color: var(--color-body-text);{% if is_odd %} background-color: var(--color-subtle-background-panels);{% endif %}">
+  <tr class="table-row-hover {{ classes }}"
+      style="color: var(--color-body-text);">
     {{ caller() }}
   </tr>
 {% endmacro %}
