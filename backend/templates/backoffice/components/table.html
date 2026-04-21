@@ -181,6 +181,7 @@ Status colors:
   - confirmed: green (confirmed participant)
   - selected: gray (pending confirmation)
   - withdrawn: red (no longer participating)
+  - deleted: dark gray (GDPR deletion)
 
 Usage:
   {{ table_cell_status("pool") }}
@@ -199,6 +200,9 @@ Usage:
   {% elif status_lower == "withdrawn" %}
     {% set dot_color = "var(--color-error-400)" %}
     {% set label = _("Withdrawn") %}
+  {% elif status_lower == "deleted" %}
+    {% set dot_color = "var(--color-secondary-text)" %}
+    {% set label = _("Deleted") %}
   {% else %}
     {% set dot_color = "var(--color-borders-dividers)" %}
     {% set label = status_lower|capitalize %}

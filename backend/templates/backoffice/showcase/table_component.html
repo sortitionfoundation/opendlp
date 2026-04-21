@@ -131,7 +131,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
     {% endcall %}
 
     {{ showcase_subtitle("Status indicator cells") }}
-    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Pool and Confirmed show green, Selected shows gray, Withdrawn shows red.") }}
+    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Pool and Confirmed show green, Selected shows gray, Withdrawn shows red, Deleted shows dark gray.") }}
 
     {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_status %}
 
@@ -163,6 +163,11 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell("R004", bold=true) }}
             {{ table_cell("alice@example.com") }}
           {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("deleted") }}
+            {{ table_cell("R005", bold=true) }}
+            {{ table_cell("deleted@example.com") }}
+          {% endcall %}
         {% endcall %}
       {% endcall %}') %}
       {% call table(striped=true) %}
@@ -191,6 +196,11 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell_status("withdrawn") }}
             {{ table_cell("R004", bold=true) }}
             {{ table_cell("alice@example.com") }}
+          {% endcall %}
+          {% call table_row(is_odd=true) %}
+            {{ table_cell_status("deleted") }}
+            {{ table_cell("R005", bold=true) }}
+            {{ table_cell("deleted@example.com") }}
           {% endcall %}
         {% endcall %}
       {% endcall %}

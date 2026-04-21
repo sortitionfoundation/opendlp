@@ -9,6 +9,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
@@ -161,21 +162,28 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         page = request.args.get("page", 1, type=int)
         per_page = 25
 
-        # Get status filter
-        status_filter = RespondentStatus.from_str(request.args.get("status", ""))
+        # Get status filter - keep raw value for template, parse for service
+        status_filter_str = request.args.get("status", "")
+        status_filter = RespondentStatus.from_str(status_filter_str)
 
         # Get assembly with permissions
         uow = bootstrap.bootstrap()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            respondents, total_count = get_respondents_for_assembly_paginated(
-                uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                page=page,
-                per_page=per_page,
-                status=status_filter,
-            )
+
+            # If filter string provided but not a valid enum, return empty results
+            if status_filter_str and status_filter is None:
+                respondents: list[Respondent] = []
+                total_count = 0
+            else:
+                respondents, total_count = get_respondents_for_assembly_paginated(
+                    uow,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    page=page,
+                    per_page=per_page,
+                    status=status_filter,
+                )
 
         # Calculate pagination info
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
@@ -217,7 +225,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             per_page=per_page,
             total_pages=total_pages,
             total_count=total_count,
-            status_filter=status_filter.value if status_filter else "",
+            status_filter=status_filter_str,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
