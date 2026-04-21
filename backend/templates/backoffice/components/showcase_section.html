@@ -42,8 +42,9 @@
 {#
   Showcase example with tab toggle between Preview and Code
   Use with {% call %} - the caller content is the preview, code param is the code example
+  Set transparent=true to remove the gray background panel (useful for tables that have their own background)
 #}
-{% macro showcase_example(code) %}
+{% macro showcase_example(code, transparent=false) %}
     <div class="mt-6" x-data="{ tab: 'preview' }">
         {# Tab buttons #}
         <div class="flex gap-1 mb-3">
@@ -76,17 +77,31 @@
         </div>
 
         {# Tab content #}
-        <div class="p-4 rounded-lg rounded-tl-none" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
-            {# Preview panel #}
-            <div x-show="tab === 'preview'" x-cloak>
-                {{ caller() }}
+        {% if transparent %}
+            <div>
+            {# Preview panel - no background #}
+                <div x-show="tab === 'preview'" x-cloak>
+                    {{ caller() }}
+                </div>
+
+            {# Code panel - always has background #}
+                <div x-show="tab === 'code'" x-cloak class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                <pre class="text-body-sm overflow-x-auto" style="color: var(--color-body-text);"><code>{{ code | e }}</code></pre>
+                </div>
             </div>
+        {% else %}
+            <div class="p-4 rounded-lg rounded-tl-none" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+            {# Preview panel #}
+                <div x-show="tab === 'preview'" x-cloak>
+                    {{ caller() }}
+                </div>
 
             {# Code panel #}
-            <div x-show="tab === 'code'" x-cloak>
+                <div x-show="tab === 'code'" x-cloak>
                 <pre class="text-body-sm overflow-x-auto" style="color: var(--color-body-text);"><code>{{ code | e }}</code></pre>
+                </div>
             </div>
-        </div>
+        {% endif %}
     </div>
 {% endmacro %}
 

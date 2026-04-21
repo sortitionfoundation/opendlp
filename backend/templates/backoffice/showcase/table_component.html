@@ -34,7 +34,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell_link("Edit", href="#", align="right") }}
           {% endcall %}
         {% endcall %}
-      {% endcall %}') %}
+      {% endcall %}', transparent=true) %}
             {# Striped table example #}
       {% call table(striped=true) %}
         {{ table_head([
@@ -105,7 +105,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell_yes_no(none) }}
           {% endcall %}
         {% endcall %}
-      {% endcall %}') %}
+      {% endcall %}', transparent=true) %}
       {% call table(striped=true) %}
         {{ table_head([
         {"label": "Respondent"},
@@ -169,7 +169,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
             {{ table_cell("deleted@example.com") }}
           {% endcall %}
         {% endcall %}
-      {% endcall %}') %}
+      {% endcall %}', transparent=true) %}
       {% call table(striped=true) %}
         {{ table_head([
         {"label": "Status"},
