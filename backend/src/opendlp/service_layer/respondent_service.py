@@ -109,9 +109,7 @@ def import_respondents_from_csv(  # noqa: C901
 
         # Replace existing if requested
         if replace_existing:
-            existing_respondents = uow.respondents.get_by_assembly_id(assembly_id)
-            for resp in existing_respondents:
-                uow.respondents.delete(resp)
+            uow.respondents.delete_all_for_assembly(assembly_id)
 
         # Create respondents
         respondents = []
