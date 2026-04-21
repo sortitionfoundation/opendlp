@@ -1022,6 +1022,50 @@ class CSVUploadStatus:
         return self.respondents_count > 0 and self.targets_count > 0
 
 
+VALID_DATA_SOURCES = ("gsheet", "csv", "")
+
+
+def determine_data_source(
+    gsheet: AssemblyGSheet | None,
+    csv_status: CSVUploadStatus | None,
+    preferred_source: str = "",
+) -> tuple[str, bool]:
+    """Determine the active data source for an assembly and whether it is locked.
+
+    Once an assembly has a gsheet config or CSV data, that source is locked in.
+    Before any data exists the caller may express a preference (typically from
+    a ?source= query parameter), which is returned unlocked so the UI can
+    offer the other options.
+
+    Returns:
+        Tuple of (data_source, locked). data_source is one of "gsheet", "csv",
+        or "" (no source chosen yet). locked indicates whether the source is
+        fixed by existing data.
+    """
+    if gsheet:
+        return "gsheet", True
+    if csv_status and csv_status.has_data:
+        return "csv", True
+    if preferred_source not in VALID_DATA_SOURCES:
+        preferred_source = ""
+    return preferred_source, False
+
+
+def get_tab_enabled_states(
+    data_source: str,
+    gsheet: AssemblyGSheet | None,
+    csv_status: CSVUploadStatus | None,
+) -> tuple[bool, bool, bool]:
+    """Return which of the (targets, respondents, selection) tabs are enabled."""
+    if data_source == "gsheet":
+        enabled = gsheet is not None
+        return enabled, enabled, enabled
+    if data_source == "csv" and csv_status:
+        # targets is always enabled, as you can create from blank in the targets tab
+        return True, csv_status.has_respondents, csv_status.selection_enabled
+    return False, False, False
+
+
 def get_csv_upload_status(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

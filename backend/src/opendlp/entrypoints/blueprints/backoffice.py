@@ -2,7 +2,6 @@
 ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source, and team members"""
 
 import uuid
-from typing import Any
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
@@ -22,11 +21,13 @@ from opendlp.entrypoints.forms import (
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     create_assembly,
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_or_create_csv_config,
     get_or_create_selection_settings,
+    get_tab_enabled_states,
     update_assembly,
 )
 from opendlp.service_layer.exceptions import (
@@ -131,8 +132,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No CSV data - expected for new assemblies
 
         # Determine data source and tab enabled states
-        data_source, _locked = _determine_data_source(gsheet, csv_status)
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 
@@ -220,32 +221,6 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-def _determine_data_source(gsheet: Any, csv_status: CSVUploadStatus | None) -> tuple[str, bool]:
-    """Determine data source and whether it's locked based on existing configs."""
-    if gsheet:
-        return "gsheet", True
-    if csv_status and csv_status.has_data:
-        return "csv", True
-    # No config exists - allow user to choose source from query param
-    data_source = request.args.get("source", "")
-    if data_source not in ("gsheet", "csv", ""):
-        data_source = ""
-    return data_source, False
-
-
-def _get_tab_enabled_states(
-    data_source: str, gsheet: Any, csv_status: CSVUploadStatus | None
-) -> tuple[bool, bool, bool]:
-    """Determine whether targets, respondents, and selection tabs should be enabled."""
-    if data_source == "gsheet":
-        enabled = gsheet is not None
-        return enabled, enabled, enabled
-    if data_source == "csv" and csv_status:
-        # targets is always enabled, as you can create from blank in the targets tab
-        return True, csv_status.has_respondents, csv_status.selection_enabled
-    return False, False, False
-
-
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
 @login_required
 def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -308,7 +283,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_status = CSVUploadStatus(targets_count=0, respondents_count=0, csv_config=None)
 
         # Determine data source and locking
-        data_source, data_source_locked = _determine_data_source(gsheet, csv_status)
+        data_source, data_source_locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
 
         # Get selection settings for gsheet display and form population
         sel_settings = None
@@ -366,7 +341,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         # Determine tab enabled states
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 
@@ -436,8 +411,8 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No CSV data - expected for new assemblies
 
         # Determine data source and tab enabled states
-        data_source, _locked = _determine_data_source(gsheet, csv_status)
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 
