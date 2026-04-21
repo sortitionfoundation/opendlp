@@ -52,7 +52,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {# ===== RESPONDENTS TAB ===== #}
         {% if active_tab == 'respondents' %}
-            <div>
+            <div class="space-y-6">
             {# import_respondents_from_csv #}
                 {% call card(title="import_respondents_from_csv()", composed=true) %}
                     {% call card_body() %}
@@ -223,6 +223,257 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                                         </button>
                                     </div>
                                 <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.import_respondents, null, 2)"></pre>
+                                </div>
+                            </template>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# reset_selection_status #}
+                {% call card(title="reset_selection_status()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                respondent_service.py:171
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                    🔒 can_manage_assembly()
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Resets all respondents for an assembly back to POOL status. Use this to clear selection results and start fresh. Returns the count of respondents updated.") }}
+                        </p>
+
+                        {# Parameters Table #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Name</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Type</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Required</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">assembly_id</td>
+                                            <td class="px-3 py-2">UUID</td>
+                                            <td class="px-3 py-2">✅</td>
+                                            <td class="px-3 py-2">Target assembly ID</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                int  →  Count of respondents reset to POOL status
+                            </code>
+                        </div>
+
+                        {# Error Cases #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">InsufficientPermissions</code> — User lacks can_manage_assembly() permission</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">UserNotFoundError</code> — User not found</li>
+                                <li><code class="px-1 rounded" style="background-color: var(--color-error-100);">AssemblyNotFoundError</code> — Assembly not found</li>
+                            </ul>
+                        </div>
+
+                        {# Used By #}
+                        <div class="mb-6 p-3 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                            <p class="text-body-sm" style="color: var(--color-body-text);">
+                                <code>respondents_legacy.reset_respondent_status</code> — POST /assemblies/&lt;id&gt;/respondents/reset-status
+                            </p>
+                        </div>
+
+                        {# Try It Section #}
+                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                            <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Try It") }}
+                            </h4>
+
+                            {# Assembly Select #}
+                            <div class="mb-4">
+                                <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                <select x-model="resetStatusAssemblyId"
+                                        class="w-full px-3 py-2 rounded-lg text-body-md"
+                                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                    <option value="">{{ _("Select an assembly...") }}</option>
+                                    {% for assembly in assemblies %}
+                                        <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {# Warning #}
+                            <div class="mb-4 p-3 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                                <p class="text-body-sm" style="color: var(--color-warning-600);">
+                                    ⚠️ {{ _("This operation resets ALL respondents to POOL status, clearing any selection results.") }}
+                                </p>
+                            </div>
+
+                            {# Action Buttons #}
+                            <div class="flex gap-2 mb-4">
+                                <button @click="executeResetStatus()"
+                                        :disabled="loading.reset_status"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: var(--color-warning-400); color: var(--color-page-background);">
+                                    <span x-show="!loading.reset_status">▶️ {{ _("Execute") }}</span>
+                                    <span x-cloak x-show="loading.reset_status">⏳ {{ _("Running...") }}</span>
+                                </button>
+                            </div>
+
+                            {# Response Display #}
+                            <template x-if="responses.reset_status">
+                                <div class="rounded-lg p-4" :style="responses.reset_status.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-heading-sm" :style="responses.reset_status.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                            <span x-text="responses.reset_status.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                        </span>
+                                        <button @click="copyResetStatusResponse()"
+                                                class="text-body-sm px-2 py-1 rounded"
+                                                style="background-color: var(--color-page-background);">
+                                            📋 {{ _("Copy JSON") }}
+                                        </button>
+                                    </div>
+                                    <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.reset_status, null, 2)"></pre>
+                                </div>
+                            </template>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# get_respondents_for_assembly #}
+                {% call card(title="get_respondents_for_assembly()", composed=true) %}
+                    {% call card_body() %}
+                        {# Code Reference #}
+                        <div class="flex items-center justify-between mb-4">
+                            <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">
+                                respondent_service.py:197
+                            </code>
+                            <div class="flex gap-2">
+                                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                    👁️ can_view_assembly()
+                                </span>
+                            </div>
+                        </div>
+
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Retrieves respondents for an assembly with optional status filtering. Returns detached copies safe for use outside the unit of work context.") }}
+                        </p>
+
+                        {# Parameters Table #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Name</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Type</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Required</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">assembly_id</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UUID</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Target assembly ID</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">status</td>
+                                            <td class="px-3 py-2">RespondentStatus | None</td>
+                                            <td class="px-3 py-2">❌</td>
+                                            <td class="px-3 py-2">Filter by status: POOL, SELECTED, CONFIRMED, WITHDRAWN</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {# Returns #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                            <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels);">
+                                list[Respondent]  →  List of respondent objects with external_id, attributes, status, etc.
+                            </code>
+                        </div>
+
+                        {# Try It Section #}
+                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                            <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Try It") }}
+                            </h4>
+
+                            {# Assembly and Status Select #}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Assembly") }}</label>
+                                    <select x-model="getRespondentsAssemblyId"
+                                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("Select an assembly...") }}</option>
+                                        {% for assembly in assemblies %}
+                                            <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Status Filter") }}</label>
+                                    <select x-model="getRespondentsStatus"
+                                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("All statuses") }}</option>
+                                        <option value="POOL">POOL</option>
+                                        <option value="SELECTED">SELECTED</option>
+                                        <option value="CONFIRMED">CONFIRMED</option>
+                                        <option value="WITHDRAWN">WITHDRAWN</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {# Action Buttons #}
+                            <div class="flex gap-2 mb-4">
+                                <button @click="executeGetRespondents()"
+                                        :disabled="loading.get_respondents"
+                                        class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                        style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                    <span x-show="!loading.get_respondents">▶️ {{ _("Execute") }}</span>
+                                    <span x-cloak x-show="loading.get_respondents">⏳ {{ _("Running...") }}</span>
+                                </button>
+                            </div>
+
+                            {# Response Display #}
+                            <template x-if="responses.get_respondents">
+                                <div class="rounded-lg p-4" :style="responses.get_respondents.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-heading-sm" :style="responses.get_respondents.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                            <span x-text="responses.get_respondents.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                        </span>
+                                        <button @click="copyGetRespondentsResponse()"
+                                                class="text-body-sm px-2 py-1 rounded"
+                                                style="background-color: var(--color-page-background);">
+                                            📋 {{ _("Copy JSON") }}
+                                        </button>
+                                    </div>
+                                    <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap" style="color: var(--color-body-text);" x-text="JSON.stringify(responses.get_respondents, null, 2)"></pre>
                                 </div>
                             </template>
                         </div>
@@ -1090,6 +1341,11 @@ Age,51+,2,5,1,1</pre>
                 importRespondentsCsvContent: '',
                 importRespondentsReplaceExisting: false,
                 importRespondentsIdColumn: '',
+                // Reset Status form
+                resetStatusAssemblyId: '',
+                // Get Respondents form
+                getRespondentsAssemblyId: '',
+                getRespondentsStatus: '',
                 // Import Targets form
                 importTargetsAssemblyId: '',
                 importTargetsCsvContent: '',
@@ -1105,6 +1361,8 @@ Age,51+,2,5,1,1</pre>
             // Loading state for each service
                 loading: {
                     import_respondents: false,
+                    reset_status: false,
+                    get_respondents: false,
                     import_targets: false,
                     get_csv_config: false,
                     update_csv_config: false
@@ -1113,6 +1371,8 @@ Age,51+,2,5,1,1</pre>
             // Response data for each service
                 responses: {
                     import_respondents: null,
+                    reset_status: null,
+                    get_respondents: null,
                     import_targets: null,
                     get_csv_config: null,
                     update_csv_config: null
@@ -1138,6 +1398,8 @@ Age,51+,2,5,1,1`
                 // Map service name to loading/response key
                     const keyMap = {
                         'import_respondents_from_csv': 'import_respondents',
+                        'reset_selection_status': 'reset_status',
+                        'get_respondents_for_assembly': 'get_respondents',
                         'import_targets_from_csv': 'import_targets',
                         'get_or_create_csv_config': 'get_csv_config',
                         'update_csv_config': 'update_csv_config'
@@ -1209,6 +1471,17 @@ Age,51+,2,5,1,1`
                         id_column: this.importRespondentsIdColumn
                     });
                 },
+                executeResetStatus() {
+                    this.executeService('reset_selection_status', {
+                        assembly_id: this.resetStatusAssemblyId
+                    });
+                },
+                executeGetRespondents() {
+                    this.executeService('get_respondents_for_assembly', {
+                        assembly_id: this.getRespondentsAssemblyId,
+                        status: this.getRespondentsStatus || null
+                    });
+                },
                 executeImportTargets() {
                     this.executeService('import_targets_from_csv', {
                         assembly_id: this.importTargetsAssemblyId,
@@ -1266,6 +1539,12 @@ Age,51+,2,5,1,1`
                 // Copy response JSON
                 copyImportRespondentsResponse() {
                     this.copyToClipboard(JSON.stringify(this.responses.import_respondents, null, 2));
+                },
+                copyResetStatusResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.reset_status, null, 2));
+                },
+                copyGetRespondentsResponse() {
+                    this.copyToClipboard(JSON.stringify(this.responses.get_respondents, null, 2));
                 },
                 copyImportTargetsResponse() {
                     this.copyToClipboard(JSON.stringify(this.responses.import_targets, null, 2));

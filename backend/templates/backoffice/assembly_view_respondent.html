@@ -7,9 +7,7 @@ ABOUTME: Renders a grouped detail page driven by RespondentFieldDefinition schem
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
-
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
-
 {#
 Map RespondentStatus enum values to GOV.UK tag colour modifiers. POOL is
 rendered as the default (blue) tag, so it's absent from this dict.
@@ -24,45 +22,38 @@ rendered as the default (blue) tag, so it's absent from this dict.
 } %}
 {% set status_key = respondent.selection_status.value %}
 {% set status_colour = selection_status_colours.get(status_key, "grey") %}
-
 {# Reserved field keys with boolean values — rendered via table_cell_yes_no. #}
-{% set boolean_fixed_keys = ("consent", "stay_on_db", "eligible", "can_attend") %}
-
+{% set boolean_fixed_keys = 'consent', 'stay_on_db', 'eligible', 'can_attend' %}
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
-
 {% block breadcrumb_section %}
     <div class="mb-6">
         {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
         {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
         {"label": respondent_name}
         ]) }}
     </div>
 {% endblock %}
-
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Respondent details") }}
-    </p>
-
-    {{ assembly_tabs(
-    assembly=assembly,
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
+    {{ assembly_tabs(assembly=assembly,
     active_tab="respondents",
-    data_source=data_source|default(""),
+    data_source=data_source|default("") ,
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-
     {# Status block — hardcoded, identity + current selection state. #}
     <section class="mb-8">
         <dl class="flex flex-col gap-2 mb-6">
             <div class="flex items-baseline gap-3">
                 <dt class="text-body-md font-bold">{{ _("External ID:") }}</dt>
-                <dd class="text-body-md">{{ respondent.external_id }}</dd>
+                <dd class="text-body-md">
+                    {{ respondent.external_id }}
+                </dd>
             </div>
             <div class="flex items-baseline gap-3">
                 <dt class="text-body-md font-bold">{{ _("Selection status:") }}</dt>
@@ -73,31 +64,32 @@ rendered as the default (blue) tag, so it's absent from this dict.
             {% if respondent.selection_run_id %}
                 <div class="flex items-baseline gap-3">
                     <dt class="text-body-md font-bold">{{ _("Selection run ID:") }}</dt>
-                    <dd class="text-body-md">{{ respondent.selection_run_id }}</dd>
+                    <dd class="text-body-md">
+                        {{ respondent.selection_run_id }}
+                    </dd>
                 </div>
             {% endif %}
         </dl>
     </section>
-
     {# Schema-driven middle — one table per populated group. #}
     {% if schema_sections %}
         {% for section in schema_sections %}
             <section class="mb-8">
                 <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
-                {% call table(striped=true) %}
+                {% call table() %}
                     {{ table_head([
-                    {"label": _("Field")},
+                    {"label": _("Field") },
                     {"label": _("Value")}
                     ]) }}
                     {% call table_body() %}
                         {% for field in section.fields %}
-                            {% call table_row(is_odd=loop.index is odd) %}
+                            {% call table_row() %}
                                 {{ table_cell(field.label, bold=true) }}
                                 {% if field.is_derived %}
-                                    {{ table_cell("— " + _("(derivation not yet implemented)")) }}
+                                    {{ table_cell("— " + _("(derivation not yet implemented)") ) }}
                                 {% elif field.is_fixed %}
                                     {% if field.field_key in boolean_fixed_keys %}
-                                        {{ table_cell_yes_no(respondent|attr(field.field_key)) }}
+                                        {{ table_cell_yes_no(respondent|attr(field.field_key) ) }}
                                     {% else %}
                                         {{ table_cell(respondent|attr(field.field_key) or "—") }}
                                     {% endif %}
@@ -120,47 +112,46 @@ rendered as the default (blue) tag, so it's absent from this dict.
         #}
         <section class="mb-8">
             <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Contact and eligibility") }}</h2>
-            {% call table(striped=true) %}
+            {% call table() %}
                 {{ table_head([
-                {"label": _("Field")},
+                {"label": _("Field") },
                 {"label": _("Value")}
                 ]) }}
                 {% call table_body() %}
-                    {% call table_row(is_odd=true) %}
-                        {{ table_cell(_("Email"), bold=true) }}
+                    {% call table_row() %}
+                        {{ table_cell(_("Email") , bold=true) }}
                         {{ table_cell(respondent.email or "—") }}
                     {% endcall %}
                     {% call table_row() %}
-                        {{ table_cell(_("Eligible"), bold=true) }}
+                        {{ table_cell(_("Eligible") , bold=true) }}
                         {{ table_cell_yes_no(respondent.eligible) }}
                     {% endcall %}
-                    {% call table_row(is_odd=true) %}
-                        {{ table_cell(_("Can attend"), bold=true) }}
+                    {% call table_row() %}
+                        {{ table_cell(_("Can attend") , bold=true) }}
                         {{ table_cell_yes_no(respondent.can_attend) }}
                     {% endcall %}
                     {% call table_row() %}
-                        {{ table_cell(_("Consent"), bold=true) }}
+                        {{ table_cell(_("Consent") , bold=true) }}
                         {{ table_cell_yes_no(respondent.consent) }}
                     {% endcall %}
-                    {% call table_row(is_odd=true) %}
-                        {{ table_cell(_("Stay on database"), bold=true) }}
+                    {% call table_row() %}
+                        {{ table_cell(_("Stay on database") , bold=true) }}
                         {{ table_cell_yes_no(respondent.stay_on_db) }}
                     {% endcall %}
                 {% endcall %}
             {% endcall %}
         </section>
-
         <section class="mb-8">
             <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Attributes") }}</h2>
             {% if respondent.attributes %}
-                {% call table(striped=true) %}
+                {% call table() %}
                     {{ table_head([
-                    {"label": _("Attribute")},
+                    {"label": _("Attribute") },
                     {"label": _("Value")}
                     ]) }}
                     {% call table_body() %}
                         {% for key, value in respondent.attributes.items() %}
-                            {% call table_row(is_odd=loop.index is odd) %}
+                            {% call table_row() %}
                                 {{ table_cell(key, bold=true) }}
                                 {{ table_cell(value if value not in (none, "") else "—") }}
                             {% endcall %}
@@ -168,47 +159,43 @@ rendered as the default (blue) tag, so it's absent from this dict.
                     {% endcall %}
                 {% endcall %}
             {% else %}
-                <p class="text-body-md" style="color: var(--color-secondary-text);">
-                    {{ _("No attributes recorded.") }}
-                </p>
+                <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
             {% endif %}
         </section>
     {% endif %}
-
     {# Audit block — provenance and timestamps, collapsed by default. #}
     <details class="govuk-details mb-8">
         <summary class="govuk-details__summary">
             <span class="govuk-details__summary-text">{{ _("Record metadata") }}</span>
         </summary>
         <div class="govuk-details__text">
-            {% call table(striped=true) %}
+            {% call table() %}
                 {{ table_head([
-                {"label": _("Field")},
+                {"label": _("Field") },
                 {"label": _("Value")}
                 ]) }}
                 {% call table_body() %}
-                    {% call table_row(is_odd=true) %}
-                        {{ table_cell(_("Source type"), bold=true) }}
-                        {{ table_cell(respondent.source_type.value|replace("_", " ")|title) }}
+                    {% call table_row() %}
+                        {{ table_cell(_("Source type") , bold=true) }}
+                        {{ table_cell(respondent.source_type.value|replace("_", " ") |title) }}
                     {% endcall %}
                     {% call table_row() %}
-                        {{ table_cell(_("Source reference"), bold=true) }}
+                        {{ table_cell(_("Source reference") , bold=true) }}
                         {{ table_cell(respondent.source_reference or "—") }}
                     {% endcall %}
-                    {% call table_row(is_odd=true) %}
-                        {{ table_cell(_("Created"), bold=true) }}
+                    {% call table_row() %}
+                        {{ table_cell(_("Created") , bold=true) }}
                         {{ table_cell(respondent.created_at.strftime("%d %B %Y at %H:%M") if respondent.created_at else "—") }}
                     {% endcall %}
                     {% call table_row() %}
-                        {{ table_cell(_("Updated"), bold=true) }}
+                        {{ table_cell(_("Updated") , bold=true) }}
                         {{ table_cell(respondent.updated_at.strftime("%d %B %Y at %H:%M") if respondent.updated_at else "—") }}
                     {% endcall %}
                 {% endcall %}
             {% endcall %}
         </div>
     </details>
-
     <section class="flex gap-4">
-        {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+        {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
     </section>
 {% endblock %}

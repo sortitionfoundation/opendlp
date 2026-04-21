@@ -83,16 +83,16 @@ All blueprints live in `src/opendlp/entrypoints/blueprints/` and are registered 
 
 ### Legacy vs. backoffice blueprints
 
-The backoffice UI is being rebuilt on the GOV.UK Design System. Several features have paired blueprints during the transition:
+The backoffice UI is being rebuilt on a Tailwind CSS design; the legacy UI (and auth, profile, admin) uses the GOV.UK Design System. Both UIs use Alpine.js and some HTMX. Several features have paired blueprints during the transition:
 
-| Legacy (Bootstrap UI, top-level URLs) | Backoffice (GOV.UK UI, `/backoffice/...`)                              |
-| ------------------------------------- | ---------------------------------------------------------------------- |
-| `gsheets_legacy.py`                   | `gsheets.py`                                                           |
-| `db_selection_legacy.py`              | `db_selection_backoffice.py`                                           |
-| `targets_legacy.py`                   | `targets.py`                                                           |
-| `respondents_legacy.py`               | _(rolled into `backoffice.py`; dedicated blueprint split-out pending)_ |
+| Legacy (GOV.UK Design System, top-level URLs) | Backoffice (Tailwind CSS, `/backoffice/...`)                           |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `gsheets_legacy.py`                           | `gsheets.py`                                                           |
+| `db_selection_legacy.py`                      | `db_selection_backoffice.py`                                           |
+| `targets_legacy.py`                           | `targets.py`                                                           |
+| `respondents_legacy.py`                       | _(rolled into `backoffice.py`; dedicated blueprint split-out pending)_ |
 
-The `*_legacy` blueprints will be retired: first their links are removed from the main navigation, then the code is deleted once the GOV.UK equivalents are trusted.
+The `*_legacy` blueprints will be retired: first their links are removed from the main navigation, then the code is deleted once the Tailwind equivalents are trusted.
 
 ### Blueprint summary
 
@@ -105,9 +105,9 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 | `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
 | `admin`                   | `/admin`                     | User and invite management, admin 2FA controls                                                 | Admin                | 11     |
 | `backoffice`              | `/backoffice`                | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login                | 16     |
-| `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (GOV.UK UI)                       | Login + assembly mgr | 19     |
-| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (GOV.UK UI)                                                          | Login + assembly mgr | 8      |
-| `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (GOV.UK UI)                              | Login + assembly mgr | 14     |
+| `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (Tailwind UI)                       | Login + assembly mgr | 19     |
+| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 8      |
+| `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (Tailwind UI)                              | Login + assembly mgr | 14     |
 | `gsheets_legacy`          | —                            | Legacy Google Sheets workflow                                                                  | Login + assembly mgr | 21     |
 | `db_selection_legacy`     | —                            | Legacy database selection + settings                                                           | Login + assembly mgr | 12     |
 | `targets_legacy`          | —                            | Legacy target management                                                                       | Login + assembly mgr | 11     |
@@ -117,7 +117,7 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 Notes:
 
 - The `dev` blueprint is only registered when `config.is_production()` is false.
-- Legacy URLs use `/assemblies/<id>/...`; newer GOV.UK URLs use `/backoffice/assembly/<id>/...` (note the singular `assembly`).
+- Legacy URLs use `/assemblies/<id>/...`; newer backoffice URLs use `/backoffice/assembly/<id>/...` (note the singular `assembly`).
 - `auth_bp` previously mounted at `/`; it now mounts at `/auth`.
 
 ---
@@ -331,7 +331,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 ## Observations and Recommendations
 
-> _Note (2026-04-16): this section predates the GOV.UK rebuild. Some items are now addressed; others remain open. Review and prune._
+> _Note (2026-04-16): this section predates the Tailwind backoffice rebuild. Some items are now addressed; others remain open. Review and prune._
 
 ### Blueprint observations
 
@@ -366,7 +366,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 ### Open recommendations
 
-1. **Retire legacy blueprints:** remove from main nav, then delete `*_legacy.py` once the GOV.UK equivalents are trusted in production.
+1. **Retire legacy blueprints:** remove from main nav, then delete `*_legacy.py` once the Tailwind backoffice equivalents are trusted in production.
 2. **Split out respondents backoffice blueprint** from `backoffice.py`.
 3. **Consider splitting `assembly_service`** — target management and CSV config are distinct concerns.
 4. **Consider splitting `sortition`** — GSheet and DB selection workflows share only status helpers.

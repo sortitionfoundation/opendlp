@@ -1,0 +1,109 @@
+{#
+ABOUTME: Stateless pagination component macro for backoffice design system
+ABOUTME: Provides page navigation with ellipsis, result counts, and scroll preservation
+#}
+
+{# Helper macro to build page URL #}
+{% macro _page_url(base_url, page_num, page_param="page") %}
+    {#- Check if base_url already has query params -#}
+    {%- if '?' in base_url -%}
+        {{ base_url }}&{{ page_param }}={{ page_num }}
+    {%- else -%}
+        {{ base_url }}?{{ page_param }}={{ page_num }}
+    {%- endif -%}
+{% endmacro %}
+
+{# Pagination component with result count and page navigation #}
+{% macro pagination(page, total_pages, per_page, total_count, base_url, item_name="items", preserve_scroll=true, page_param="page") %}
+    {#
+Stateless pagination component with result count and page navigation.
+
+Args:
+  page: Current page number (1-indexed)
+  total_pages: Total number of pages
+  per_page: Number of items per page
+  total_count: Total number of items
+  base_url: Base URL for pagination links. The page query parameter will be appended.
+            Example: url_for('my.route', assembly_id=assembly.id)
+  item_name: Label for items being paginated (default: "items")
+  preserve_scroll: If true, adds x-scroll-preserve-links directive for scroll restoration (default: true)
+  page_param: Name of the query parameter for page number (default: "page")
+
+Usage:
+  {{ pagination(
+      page=page,
+      total_pages=total_pages,
+      per_page=per_page,
+      total_count=total_count,
+      base_url=url_for('backoffice.view_respondents', assembly_id=assembly.id),
+      item_name=_("respondents")
+  ) }}
+
+Design tokens used:
+  --color-secondary-text (results count)
+  --color-borders-dividers (button borders)
+  --color-body-text (button text)
+  --color-subtle-background-panels (hover state)
+  --color-primary-action (active page background)
+    #}
+    {% if total_pages > 1 %}
+        <div class="mt-6 flex items-center justify-between">
+            {# Results count #}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                {% set start_record = (page - 1) * per_page + 1 %}
+                {% set end_record = page * per_page if page * per_page < total_count else total_count %}
+                {{ _("Showing %(start)s-%(end)s of %(total)s %(items)s",
+                start=start_record,
+                end=end_record,
+                total=total_count,
+                items=item_name) }}
+            </p>
+            {# Pagination buttons #}
+            <nav class="flex items-center gap-2"
+                 {% if preserve_scroll %}x-data="{}" x-scroll-preserve-links{% endif %}>
+                {# Previous button #}
+                {% if page > 1 %}
+                    <a href="{{ _page_url(base_url, page - 1, page_param) }}"
+                       class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                       style="border: 1px solid var(--color-borders-dividers);
+                              color: var(--color-body-text)">
+                        {{ _("Previous") }}
+                    </a>
+                {% else %}
+                    <span class="px-3 py-2 rounded text-body-sm font-medium"
+                          style="border: 1px solid var(--color-borders-dividers);
+                                 color: var(--color-secondary-text);
+                                 opacity: 0.5">{{ _("Previous") }}</span>
+                {% endif %}
+                {# Page numbers #}
+                {% for page_num in range(1, total_pages + 1) %}
+                    {% if page_num == page %}
+                        <span class="px-3 py-2 rounded text-body-sm font-medium"
+                              style="background-color: var(--color-primary-action);
+                                     color: white">{{ page_num }}</span>
+                    {% elif page_num == 1 or page_num == total_pages or (page_num >= page - 2 and page_num <= page + 2) %}
+                        <a href="{{ _page_url(base_url, page_num, page_param) }}"
+                           class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                           style="border: 1px solid var(--color-borders-dividers);
+                                  color: var(--color-body-text)">{{ page_num }}</a>
+                    {% elif page_num == page - 3 or page_num == page + 3 %}
+                        <span class="px-3 py-2 text-body-sm"
+                              style="color: var(--color-secondary-text)">...</span>
+                    {% endif %}
+                {% endfor %}
+                {# Next button #}
+                {% if page < total_pages %}
+                    <a href="{{ _page_url(base_url, page + 1, page_param) }}"
+                       class="pagination-btn px-3 py-2 rounded text-body-sm font-medium transition-colors"
+                       style="border: 1px solid var(--color-borders-dividers);
+                              color: var(--color-body-text)">{{ _("Next") }}</a>
+                {% else %}
+                    <span class="px-3 py-2 rounded text-body-sm font-medium"
+                          style="border: 1px solid var(--color-borders-dividers);
+                                 color: var(--color-secondary-text);
+                                 opacity: 0.5">{{ _("Next") }}</span>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
+{% endmacro %}

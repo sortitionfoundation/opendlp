@@ -1,0 +1,52 @@
+{#
+ABOUTME: Showcase section for section component
+ABOUTME: Displays section container examples with white background and padding
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
+{% from "backoffice/components/section.html" import section %}
+
+{% macro section_section() %}
+  {% call showcase_section() %}
+    {{ showcase_title("Section Component") }}
+    {{ showcase_description("A simple white box container for grouping related content on page layouts. Uses 8px border radius and 24px padding.") }}
+
+    {% call showcase_example('{% from "backoffice/components/section.html" import section %}
+
+{# Basic section #}
+      {% call section() %}
+        <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">Section Title</h3>
+        <p class="text-body-md" style="color: var(--color-body-text);">
+          Section content goes here. Use sections to visually group related content.
+        </p>
+      {% endcall %}
+
+{# Section with additional classes #}
+      {% call section(classes="mb-6") %}
+        <p>Section with margin bottom</p>
+      {% endcall %}') %}
+      {# Basic section example #}
+      {% call section(classes="mb-4") %}
+        <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">Section Title</h3>
+        <p class="text-body-md" style="color: var(--color-body-text);">
+          Section content goes here. Use sections to visually group related content on layouts.
+        </p>
+      {% endcall %}
+
+      {# Nested content example #}
+      {% call section() %}
+        <h3 class="text-heading-md mb-3" style="color: var(--color-headings);">With Rich Content</h3>
+        <ul class="list-disc list-inside text-body-md space-y-1" style="color: var(--color-body-text);">
+          <li>Sections work great for dashboard widgets</li>
+          <li>Form groups and fieldsets</li>
+          <li>Content panels and sidebars</li>
+        </ul>
+      {% endcall %}
+    {% endcall %}
+
+    {{ showcase_tokens([
+    "--color-tables-cards (background)",
+    "--radius-lg (border radius - 8px)",
+    "--spacing-6 (padding - 24px via p-6)"
+    ]) }}
+  {% endcall %}
+{% endmacro %}

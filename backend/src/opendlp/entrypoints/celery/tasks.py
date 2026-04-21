@@ -210,8 +210,8 @@ def _internal_load_gsheet(
         return False, None, None, None, report
     except errors.NotNativeGoogleSheetError as error:
         user_msg = _(
-            "The file '%(file_name)s' is a %(common_name)s, "
-            "not a native Google Sheet. Open it in Google Sheets and choose "
+            "The file '%(file_name)s' has the format '%(common_name)s', "
+            "rather than being a native Google Sheet. Open it in Google Sheets and choose "
             "File \u2192 Save as Google Sheets, then use that new file.",
             file_name=error.file_name,
             common_name=error.common_name_for(error.mimetype),
