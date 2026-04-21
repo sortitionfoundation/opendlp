@@ -162,13 +162,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         per_page = 25
 
         # Get status filter
-        status_filter_str = request.args.get("status", "")
-        status_filter: RespondentStatus | None = None
-        if status_filter_str:
-            try:
-                status_filter = RespondentStatus(status_filter_str)
-            except ValueError:
-                status_filter = None
+        status_filter = RespondentStatus.from_str(request.args.get("status", ""))
 
         # Get assembly with permissions
         uow = bootstrap.bootstrap()
@@ -223,7 +217,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             per_page=per_page,
             total_pages=total_pages,
             total_count=total_count,
-            status_filter=status_filter_str,
+            status_filter=status_filter.value if status_filter else "",
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
