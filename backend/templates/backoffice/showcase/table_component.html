@@ -131,7 +131,7 @@ ABOUTME: Displays table variants with striped rows, actions, and responsive layo
     {% endcall %}
 
     {{ showcase_subtitle("Status indicator cells") }}
-    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Pool and Confirmed show green, Selected shows gray, Withdrawn shows red, Deleted shows dark gray.") }}
+    {{ showcase_description("Use table_cell_status for colored status text with optional dot indicator. Uses traffic light pattern: Pool shows gray, Selected shows amber, Confirmed shows green, Withdrawn shows red, Deleted shows light gray.") }}
 
     {% call showcase_example('{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_status %}
 
