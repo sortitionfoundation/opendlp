@@ -36,6 +36,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.service_layer.user_service import (
+    get_assembly_members,
     get_user_assemblies,
     grant_user_assembly_role,
     revoke_user_assembly_role,
@@ -413,7 +414,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
             # Get assembly users with their roles
-            assembly_users = uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
+            assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
             # Check if current user can manage this assembly
             can_manage_assembly_users = has_global_admin(current_user)

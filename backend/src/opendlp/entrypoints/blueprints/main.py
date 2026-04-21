@@ -19,7 +19,12 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
+from opendlp.service_layer.user_service import (
+    get_assembly_members,
+    get_user_assemblies,
+    grant_user_assembly_role,
+    revoke_user_assembly_role,
+)
 from opendlp.translations import gettext as _
 
 from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
@@ -146,7 +151,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
             # Get assembly users with their roles (efficient database query)
-            assembly_users = uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
+            assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
             # Get all users not already assigned to this assembly (for add form)
             available_users = list(uow.users.get_users_not_in_assembly(assembly_id))

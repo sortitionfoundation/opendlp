@@ -27,7 +27,7 @@ from .exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, has_global_admin
+from .permissions import can_manage_assembly, can_view_assembly, has_global_admin
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -728,6 +728,40 @@ def revoke_user_assembly_role(
         detached_user = target_user.create_detached_copy()
         uow.commit()
         return existing_role, detached_user
+
+
+def get_assembly_members(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    current_user: User,
+) -> list[tuple[User, UserAssemblyRole]]:
+    """
+    Get all users with their roles for a given assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: Assembly to fetch members for
+        current_user: User requesting the data (must be able to view the assembly)
+
+    Returns:
+        List of (User, UserAssemblyRole) tuples for every member of the assembly
+
+    Raises:
+        AssemblyNotFoundError: If assembly not found
+        InsufficientPermissions: If current_user cannot view the assembly
+    """
+    with uow:
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(current_user, assembly):
+            raise InsufficientPermissions(
+                action="get_assembly_members",
+                required_role="assembly role or global privileges",
+            )
+
+        return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
 
 
 def search_assembly_candidate_users(
