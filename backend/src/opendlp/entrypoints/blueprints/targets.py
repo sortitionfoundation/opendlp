@@ -227,59 +227,6 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/data/upload-targets", methods=["POST"])
-@login_required
-def upload_targets_csv_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Upload targets CSV file from the data tab (redirects back to data tab)."""
-    try:
-        if "file" not in request.files:
-            flash(_("No file selected"), "error")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-
-        file = request.files["file"]
-        if file.filename == "":
-            flash(_("No file selected"), "error")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-
-        csv_content = file.read().decode("utf-8")
-
-        uow = bootstrap.bootstrap()
-        with uow:
-            categories = import_targets_from_csv(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                csv_content=csv_content,
-                replace_existing=True,
-            )
-
-        flash(
-            _("Targets uploaded successfully: %(count)d categories", count=len(categories)),
-            "success",
-        )
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-
-    except InvalidSelection as e:
-        current_app.logger.warning(f"Invalid CSV format for targets upload assembly {assembly_id}: {e}")
-        flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-    except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to upload targets for assembly {assembly_id} user {current_user.id}: {e}"
-        )
-        flash(_("You don't have permission to upload targets"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-    except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for targets upload: {e}")
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        current_app.logger.error(f"Upload targets error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
-        flash(_("An error occurred while uploading targets"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-
-
 @targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
