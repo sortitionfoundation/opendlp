@@ -1,5 +1,24 @@
 """ABOUTME: Per-assembly respondent field schema — groups, labels, and display order.
-ABOUTME: Drives grouping on the view_registrant detail page and seeds the future registration form."""
+ABOUTME: Shared infrastructure consumed by any module that needs respondent field metadata.
+
+This module defines the canonical schema describing the fields that make up a
+respondent for a given assembly. It is intentionally framework-agnostic and
+module-agnostic: modules read from it, they do not each build a parallel one.
+
+Current and anticipated consumers:
+
+- The grouped view_registrant detail page (current): renders fields in the order
+  and groups defined here.
+- The registration form module (planned): will read the schema as its field
+  catalogue when rendering the public form — see docs/agent/module_design.md.
+- The targets module (potential): could eventually reference schema fields
+  instead of matching by attribute name.
+- Confirmation calling, export column ordering, etc. (potential): same pattern.
+
+If you are adding a new module that reasons about respondent fields, read the
+schema from here via ``respondent_field_schema_service`` rather than introducing
+a parallel configuration. See docs/agent/446-grouped-registrant-view/respondent_field_schema.md
+for the design rationale."""
 
 import uuid
 from datetime import UTC, datetime
