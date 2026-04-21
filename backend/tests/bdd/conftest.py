@@ -349,7 +349,7 @@ def assembly_user_role_creator(test_database, admin_user):
     ) -> UserAssemblyRole:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        role = grant_user_assembly_role(
+        role, _user = grant_user_assembly_role(
             uow=uow, user_id=user.id, assembly_id=assembly.id, role=assembly_role, current_user=admin_user
         )
         return role

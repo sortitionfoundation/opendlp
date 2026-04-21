@@ -27,7 +27,7 @@ from .exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, has_global_admin
+from .permissions import can_manage_assembly, can_view_assembly, has_global_admin
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -579,7 +579,7 @@ def grant_user_assembly_role(
     email_adapter: EmailAdapter | None = None,
     template_renderer: TemplateRenderer | None = None,
     url_generator: URLGenerator | None = None,
-) -> UserAssemblyRole:
+) -> tuple[UserAssemblyRole, User]:
     """
     Grant or update a user's role on an assembly.
 
@@ -594,7 +594,7 @@ def grant_user_assembly_role(
         url_generator: Optional URL generator for creating assembly URLs
 
     Returns:
-        Created or updated UserAssemblyRole instance
+        Tuple of (created or updated UserAssemblyRole, detached copy of target User)
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to grant roles
@@ -648,6 +648,7 @@ def grant_user_assembly_role(
             uow.user_assembly_roles.add(assembly_role)
             target_user.assembly_roles.append(assembly_role)
 
+        detached_user = target_user.create_detached_copy()
         uow.commit()
 
         # Send email notification if this is a new role assignment and all adapters are provided
@@ -656,12 +657,12 @@ def grant_user_assembly_role(
                 email_adapter=email_adapter,
                 template_renderer=template_renderer,
                 url_generator=url_generator,
-                user=target_user,
+                user=detached_user,
                 assembly=assembly,
                 role=role,
             )
 
-        return assembly_role
+        return assembly_role, detached_user
 
 
 def revoke_user_assembly_role(
@@ -669,7 +670,7 @@ def revoke_user_assembly_role(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     current_user: User,
-) -> UserAssemblyRole:
+) -> tuple[UserAssemblyRole, User]:
     """
     Revoke a user's role on an assembly.
 
@@ -680,7 +681,7 @@ def revoke_user_assembly_role(
         current_user: User performing the action (must have permission)
 
     Returns:
-        The revoked UserAssemblyRole instance
+        Tuple of (revoked UserAssemblyRole, detached copy of target User)
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to revoke roles
@@ -724,8 +725,79 @@ def revoke_user_assembly_role(
         target_user.assembly_roles.remove(existing_role)
         uow.user_assembly_roles.remove_role(user_id, assembly_id)
 
+        detached_user = target_user.create_detached_copy()
         uow.commit()
-        return existing_role
+        return existing_role, detached_user
+
+
+def get_assembly_members(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    current_user: User,
+) -> list[tuple[User, UserAssemblyRole]]:
+    """
+    Get all users with their roles for a given assembly.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: Assembly to fetch members for
+        current_user: User requesting the data (must be able to view the assembly)
+
+    Returns:
+        List of (User, UserAssemblyRole) tuples for every member of the assembly
+
+    Raises:
+        AssemblyNotFoundError: If assembly not found
+        InsufficientPermissions: If current_user cannot view the assembly
+    """
+    with uow:
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_view_assembly(current_user, assembly):
+            raise InsufficientPermissions(
+                action="get_assembly_members",
+                required_role="assembly role or global privileges",
+            )
+
+        return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
+
+
+def search_assembly_candidate_users(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    search_term: str,
+    current_user: User,
+) -> list[User]:
+    """
+    Search for users who can be added to an assembly (i.e. not already members).
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: Assembly to search candidates for
+        search_term: Term to match against email and display_name (case-insensitive)
+        current_user: User performing the search (must have permission)
+
+    Returns:
+        List of matching users who do not already have a role on the assembly.
+        Empty list when search_term is blank.
+
+    Raises:
+        InsufficientPermissions: If current_user lacks permission to manage members
+    """
+    with uow:
+        if not has_global_admin(current_user):
+            raise InsufficientPermissions(
+                action="search_assembly_candidate_users",
+                required_role="admin or global-organiser",
+            )
+
+        if not search_term:
+            return []
+
+        matching = uow.users.search_users_not_in_assembly(assembly_id, search_term)
+        return [user.create_detached_copy() for user in matching]
 
 
 def update_own_profile(

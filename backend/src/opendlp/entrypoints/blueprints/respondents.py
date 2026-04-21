@@ -16,9 +16,11 @@ from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     delete_respondents_for_assembly,
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_tab_enabled_states,
     update_csv_config,
 )
 from opendlp.service_layer.csv_upload_stash import StashedUpload
@@ -41,8 +43,6 @@ from opendlp.service_layer.respondent_service import (
     import_respondents_from_csv,
 )
 from opendlp.translations import gettext as _
-
-from .backoffice import _determine_data_source, _get_tab_enabled_states
 
 respondents_bp = Blueprint("respondents", __name__)
 
@@ -351,10 +351,10 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             pass  # No CSV data - expected for new assemblies
 
         # Determine data source
-        data_source, _locked = _determine_data_source(gsheet, csv_status)
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
 
         # Tab enabled states
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 
@@ -418,10 +418,10 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             pass  # No CSV data - expected for new assemblies
 
         # Determine data source
-        data_source, _locked = _determine_data_source(gsheet, csv_status)
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
 
         # Tab enabled states
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 

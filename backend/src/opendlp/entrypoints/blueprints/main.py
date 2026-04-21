@@ -19,7 +19,12 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
-from opendlp.service_layer.user_service import get_user_assemblies, grant_user_assembly_role, revoke_user_assembly_role
+from opendlp.service_layer.user_service import (
+    get_assembly_members,
+    get_user_assemblies,
+    grant_user_assembly_role,
+    revoke_user_assembly_role,
+)
 from opendlp.translations import gettext as _
 
 from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
@@ -146,7 +151,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
             # Get assembly users with their roles (efficient database query)
-            assembly_users = uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
+            assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
             # Get all users not already assigned to this assembly (for add form)
             available_users = list(uow.users.get_users_not_in_assembly(assembly_id))
@@ -286,13 +291,6 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="add_user_to_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
             if form.validate_on_submit():
                 user_id = uuid.UUID(form.user_id.data)
 
@@ -306,7 +304,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_generator = get_url_generator(current_app)
 
                 # Call service layer to add user to assembly
-                grant_user_assembly_role(
+                _assembly_role, target_user = grant_user_assembly_role(
                     uow=uow,
                     user_id=user_id,
                     assembly_id=assembly_id,
@@ -317,18 +315,14 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     url_generator=url_generator,
                 )
 
-                target_user = uow.users.get(user_id)
-                if target_user:
-                    flash(
-                        _(
-                            "%(user)s added to assembly with role %(role)s",
-                            user=target_user.display_name,
-                            role=role.value,
-                        ),
-                        "success",
-                    )
-                else:
-                    flash(_("User added to assembly successfully"), "success")
+                flash(
+                    _(
+                        "%(user)s added to assembly with role %(role)s",
+                        user=target_user.display_name,
+                        role=role.value,
+                    ),
+                    "success",
+                )
             else:
                 flash(_("Please check the form and try again"), "error")
 
@@ -359,29 +353,18 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="remove_user_from_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
             # Call service layer to remove user from assembly
-            revoke_user_assembly_role(
+            _assembly_role, target_user = revoke_user_assembly_role(
                 uow=uow,
                 user_id=user_id,
                 assembly_id=assembly_id,
                 current_user=current_user,
             )
 
-            target_user = uow.users.get(user_id)
-            if target_user:
-                flash(
-                    _("%(user)s removed from assembly", user=target_user.display_name),
-                    "success",
-                )
-            else:
-                flash(_("User removed from assembly successfully"), "success")
+            flash(
+                _("%(user)s removed from assembly", user=target_user.display_name),
+                "success",
+            )
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
