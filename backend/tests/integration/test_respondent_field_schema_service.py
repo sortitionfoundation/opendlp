@@ -11,7 +11,8 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import respondent_field_schema_service, respondent_service
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.assembly_service import update_csv_config
+from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
 )
@@ -357,6 +358,72 @@ class TestReconciliation:
         after_first_name = next(f for f in after if f.field_key == "first_name")
         assert after_first_name.id == original_first_name.id
         assert {f.field_key for f in after} >= {"first_name", "city"}
+
+    def test_compute_diff_for_pending_csv_auto_detects_id_column(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+            replace_existing=True,
+        )
+
+        diff = respondent_field_schema_service.compute_diff_for_pending_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+            explicit_id_column=None,
+        )
+        assert diff is not None
+        assert {k for k, _ in diff.new_keys} == {"postcode"}
+
+    def test_compute_diff_for_pending_csv_flags_id_column_change(self, uow, admin_user, test_assembly):
+        # Seed the schema and record the id column in AssemblyCSV (matching what
+        # the upload route does after a successful import).
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+            replace_existing=True,
+        )
+        update_csv_config(
+            uow,
+            user_id=admin_user.id,
+            assembly_id=test_assembly.id,
+            csv_id_column="external_id",
+        )
+
+        diff = respondent_field_schema_service.compute_diff_for_pending_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "participant_id,first_name\nP001,Alice\n",
+            explicit_id_column="participant_id",
+        )
+        assert diff is not None
+        assert diff.id_column_changed == ("external_id", "participant_id")
+
+    def test_compute_diff_for_pending_csv_returns_none_when_no_schema(self, uow, admin_user, test_assembly):
+        diff = respondent_field_schema_service.compute_diff_for_pending_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+            explicit_id_column=None,
+        )
+        assert diff is None
+
+    def test_compute_diff_for_pending_csv_rejects_empty_csv(self, uow, admin_user, test_assembly):
+        with pytest.raises(InvalidSelection):
+            respondent_field_schema_service.compute_diff_for_pending_csv(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                "",
+                explicit_id_column=None,
+            )
 
     def test_re_upload_with_removed_column_keeps_absent_row(self, uow, admin_user, test_assembly):
         respondent_service.import_respondents_from_csv(

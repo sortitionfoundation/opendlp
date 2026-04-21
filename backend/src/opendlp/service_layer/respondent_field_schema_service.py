@@ -3,9 +3,11 @@ ABOUTME: Read, populate, edit, and initialise field schemas."""
 
 from __future__ import annotations
 
+import csv as csv_module
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from io import StringIO
 
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
@@ -18,6 +20,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
+    InvalidSelection,
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
@@ -391,3 +394,73 @@ def update_schema_from_headers(
         uow, assembly_id, headers, id_column, target_category_names=target_category_names
     )
     return apply_reconciliation(uow, assembly_id, diff)
+
+
+def _parse_csv_headers(csv_content: str) -> list[str]:
+    """Read the header row from a CSV and return the column names in order.
+
+    Raises ``InvalidSelection`` if the CSV has no header row at all.
+    """
+    reader = csv_module.DictReader(StringIO(csv_content))
+    headers = list(reader.fieldnames or [])
+    if not headers:
+        raise InvalidSelection("CSV file is empty or has no header row")
+    return headers
+
+
+def _auto_detect_id_column(headers: list[str], explicit_id_column: str | None) -> str:
+    """Mirror ``import_respondents_from_csv``'s id-column rule.
+
+    If the caller supplies a column name, use it verbatim; otherwise the first
+    column wins. Returns the empty string only when ``headers`` is empty (in
+    practice that can't happen because ``_parse_csv_headers`` rejects it).
+    """
+    if explicit_id_column:
+        return explicit_id_column
+    return headers[0] if headers else ""
+
+
+def compute_diff_for_pending_csv(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    csv_content: str,
+    explicit_id_column: str | None,
+) -> ReconciliationDiff | None:
+    """Compute the reconciliation diff for a pending CSV upload.
+
+    Read-only. Parses the CSV header row, resolves the id column via the same
+    auto-detect rule the importer uses, pulls the existing schema and target
+    categories, and compares. Returns ``None`` when the assembly has no schema
+    yet — the caller interprets that as "skip the confirmation page entirely".
+
+    Raises ``InvalidSelection`` if the CSV has no header row.
+    """
+    headers = _parse_csv_headers(csv_content)
+    id_column = _auto_detect_id_column(headers, explicit_id_column)
+
+    with uow:
+        _ensure_view_permission(uow, user_id, assembly_id)
+        if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
+            return None
+
+        target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
+
+        # Pull the previous id column from the assembly's CSV config so we can
+        # flag column renames. ``assembly.csv`` is the ORM relationship, so we
+        # read it inside the same uow rather than reopening another one.
+        assembly = uow.assemblies.get(assembly_id)
+        if assembly is None:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+        previous_id_column: str | None = None
+        if assembly.csv is not None:
+            previous_id_column = assembly.csv.csv_id_column
+
+        return compute_reconciliation_diff(
+            uow,
+            assembly_id,
+            headers,
+            id_column,
+            target_category_names=target_category_names,
+            previous_id_column=previous_id_column,
+        )

@@ -1,11 +1,8 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly respondents
 ABOUTME: Provides respondent viewing, CSV upload, and deletion under /backoffice/assembly/*/respondents"""
 
-import contextlib
-import csv as csv_module
 import uuid
 from datetime import UTC, datetime
-from io import StringIO
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
@@ -35,8 +32,7 @@ from opendlp.service_layer.exceptions import (
     RespondentNotFoundError,
 )
 from opendlp.service_layer.respondent_field_schema_service import (
-    ReconciliationDiff,
-    compute_reconciliation_diff,
+    compute_diff_for_pending_csv,
     get_schema_grouped,
 )
 from opendlp.service_layer.respondent_service import (
@@ -101,16 +97,6 @@ def _run_csv_import(
     return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-def _resolve_id_column_for_diff(headers: list[str], explicit_id_column: str | None) -> str:
-    """Mirror the auto-detect rule used by ``import_respondents_from_csv``.
-
-    Used to compute the reconciliation diff before we commit to importing.
-    """
-    if explicit_id_column:
-        return explicit_id_column
-    return headers[0] if headers else ""
-
-
 @respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents", methods=["POST"])
 @login_required
 def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -147,7 +133,14 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # If a schema already exists, compute the diff against the new headers.
         # When the diff has changes the organiser sees a confirmation page first;
         # otherwise we proceed straight to the import as before.
-        diff = _compute_pending_diff(assembly_id, csv_content, id_column)
+        uow_diff = bootstrap.bootstrap()
+        diff = compute_diff_for_pending_csv(
+            uow_diff,
+            current_user.id,
+            assembly_id,
+            csv_content,
+            id_column,
+        )
         if diff is not None and diff.has_changes:
             stash_pending_upload(
                 user_id=current_user.id,
@@ -193,45 +186,6 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-def _compute_pending_diff(
-    assembly_id: uuid.UUID,
-    csv_content: str,
-    explicit_id_column: str | None,
-) -> "ReconciliationDiff | None":
-    """Return the reconciliation diff for this upload, or None if no schema exists.
-
-    Reads the CSV header row and the existing schema; does no writes. Returns
-    None when the assembly has no schema (so the caller knows to skip the diff
-    page entirely). Errors in CSV parsing propagate to the caller.
-    """
-    reader = csv_module.DictReader(StringIO(csv_content))
-    headers = list(reader.fieldnames or [])
-    if not headers:
-        raise InvalidSelection("CSV file is empty or has no header row")
-    id_column = _resolve_id_column_for_diff(headers, explicit_id_column)
-
-    uow = bootstrap.bootstrap()
-    with uow:
-        if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
-            return None
-        target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
-        existing_status: CSVUploadStatus | None = None
-        # No prior CSV config is fine; we just won't flag id-column changes.
-        with contextlib.suppress(Exception):
-            existing_status = get_csv_upload_status(uow, current_user.id, assembly_id)
-        previous_id_column: str | None = None
-        if existing_status and existing_status.csv_config is not None:
-            previous_id_column = existing_status.csv_config.csv_id_column
-        return compute_reconciliation_diff(
-            uow,
-            assembly_id,
-            headers,
-            id_column,
-            target_category_names=target_category_names,
-            previous_id_column=previous_id_column,
-        )
-
-
 @respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["GET"])
 @login_required
 def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -242,7 +196,14 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
     try:
-        diff = _compute_pending_diff(assembly_id, pending.csv_content, pending.id_column)
+        uow_diff = bootstrap.bootstrap()
+        diff = compute_diff_for_pending_csv(
+            uow_diff,
+            current_user.id,
+            assembly_id,
+            pending.csv_content,
+            pending.id_column,
+        )
     except InvalidSelection as e:
         flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
