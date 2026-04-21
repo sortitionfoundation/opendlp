@@ -3,11 +3,16 @@
   Internal macros for structuring the component showcase page.
   Not intended for use outside of showcase.html.
 #}
+{% from "backoffice/components/section.html" import section %}
 
 {# Section wrapper - use with {% call %} #}
 {% macro showcase_section(id="") %}
-    <section{% if id %} id="{{ id }}"{% endif %} class="mb-24">
-        {{ caller() }}
+    {# Capture caller content before nested call to avoid scoping issues #}
+    {% set content = caller() %}
+    <section{% if id %} id="{{ id }}"{% endif %} class="mb-12">
+        {% call section() %}
+            {{ content }}
+        {% endcall %}
     </section>
 {% endmacro %}
 
