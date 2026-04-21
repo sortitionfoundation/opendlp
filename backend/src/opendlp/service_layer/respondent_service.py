@@ -16,7 +16,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
-from opendlp.service_layer.respondent_field_schema_service import populate_schema_from_headers
+from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -166,11 +166,10 @@ def import_respondents_from_csv(  # noqa: C901
         # Bulk add for performance
         uow.respondents.bulk_add(respondents)
 
-        # Seed the field schema on first import. If the assembly already has a
-        # schema (from a prior upload or manual init), the service layer will
-        # reconcile changes — that path is implemented in a later step.
+        # Seed the field schema on first import; reconcile (add new keys,
+        # preserve absent ones) on subsequent imports.
         target_category_names = [cat.name for cat in uow.target_categories.get_by_assembly_id(assembly_id)]
-        populate_schema_from_headers(
+        update_schema_from_headers(
             uow,
             assembly_id,
             list(reader.fieldnames),

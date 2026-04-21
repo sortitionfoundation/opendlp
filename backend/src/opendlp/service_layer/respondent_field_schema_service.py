@@ -4,6 +4,7 @@ ABOUTME: Read, populate, edit, and initialise field schemas."""
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from opendlp.domain.respondent_field_schema import (
@@ -84,8 +85,8 @@ def get_schema_grouped(
     """
     fields = get_schema(uow, user_id, assembly_id)
     grouped: dict[RespondentFieldGroup, list[RespondentFieldDefinition]] = {group: [] for group in GROUP_DISPLAY_ORDER}
-    for field in fields:
-        grouped.setdefault(field.group, []).append(field)
+    for f in fields:
+        grouped.setdefault(f.group, []).append(f)
     return grouped
 
 
@@ -258,3 +259,135 @@ def delete_field(
             raise FieldDefinitionConflictError(f"Fixed field '{field.field_key}' cannot be deleted")
         uow.respondent_field_definitions.delete(field)
         uow.commit()
+
+
+# ---------------------------------------------------------------------------
+# Reconciliation: comparing an existing schema against a new CSV's headers.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ReconciliationDiff:
+    """Summary of how a new set of CSV headers compares to an existing schema.
+
+    ``unchanged`` and ``absent_keys`` exclude the in-schema fixed-field keys
+    (``email``, ``consent``, ``stay_on_db``, ``eligible``, ``can_attend``) and
+    the id column — those are never reconciled.
+
+    ``new_keys`` carries each new key paired with its heuristic-suggested group
+    so the UI can show where it will land if applied.
+
+    ``has_changes`` returns True iff applying the diff would mutate the schema.
+    """
+
+    assembly_id: uuid.UUID
+    unchanged: list[str] = field(default_factory=list)
+    new_keys: list[tuple[str, RespondentFieldGroup]] = field(default_factory=list)
+    absent_keys: list[str] = field(default_factory=list)
+    id_column_changed: tuple[str, str] | None = None
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(self.new_keys) or bool(self.absent_keys) or self.id_column_changed is not None
+
+
+def compute_reconciliation_diff(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    headers: list[str],
+    id_column: str,
+    target_category_names: list[str] | None = None,
+    previous_id_column: str | None = None,
+) -> ReconciliationDiff:
+    """Compare a CSV's headers against the existing schema. Read-only.
+
+    Excludes the id column and the in-schema fixed-field keys from comparison
+    (those are always present and not reconciled). New keys are classified via
+    heuristics so the UI can surface the suggested group.
+
+    ``previous_id_column`` lets the caller supply the id column from the prior
+    upload so a column rename can be flagged. Pass ``None`` to skip that check.
+    """
+    diff = ReconciliationDiff(assembly_id=assembly_id)
+    if previous_id_column and previous_id_column != id_column:
+        diff.id_column_changed = (previous_id_column, id_column)
+
+    fixed_keys = {key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS}
+    target_names = target_category_names or []
+
+    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    existing_keys = {f.field_key for f in existing if not f.is_fixed}
+
+    seen_in_csv: set[str] = set()
+    for header in headers:
+        key = header.strip()
+        if not key or key == id_column or key in fixed_keys or key in seen_in_csv:
+            continue
+        seen_in_csv.add(key)
+        if key in existing_keys:
+            diff.unchanged.append(key)
+        else:
+            diff.new_keys.append((key, classify_field_key(key, target_names)))
+
+    diff.absent_keys = sorted(existing_keys - seen_in_csv)
+    return diff
+
+
+def apply_reconciliation(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    diff: ReconciliationDiff,
+) -> int:
+    """Insert schema rows for new keys discovered by the reconciliation.
+
+    Absent keys are intentionally left in place — their data is gone but the
+    schema row is preserved so the layout sticks if the column reappears, and
+    so the organiser can still see what was lost. Does not commit; the caller
+    owns the transaction.
+
+    Returns the number of new rows inserted.
+    """
+    if not diff.new_keys:
+        return 0
+
+    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    per_group_next: dict[RespondentFieldGroup, int] = {}
+    for f in existing:
+        per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
+
+    new_rows: list[RespondentFieldDefinition] = []
+    for key, group in diff.new_keys:
+        new_rows.append(
+            RespondentFieldDefinition(
+                assembly_id=assembly_id,
+                field_key=key,
+                label=humanise_field_key(key),
+                group=group,
+                sort_order=_next_sort_order(per_group_next, group),
+            )
+        )
+    uow.respondent_field_definitions.bulk_add(new_rows)
+    return len(new_rows)
+
+
+def update_schema_from_headers(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    headers: list[str],
+    id_column: str,
+    target_category_names: list[str] | None = None,
+) -> int:
+    """Bring the schema in line with a CSV's headers.
+
+    Wraps the populate / reconcile branch: if no schema exists for the
+    assembly, seed a fresh one; otherwise add rows for any new headers and
+    leave absent keys in place. Returns the number of rows inserted.
+    """
+    if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
+        return populate_schema_from_headers(
+            uow, assembly_id, headers, id_column, target_category_names=target_category_names
+        )
+    diff = compute_reconciliation_diff(
+        uow, assembly_id, headers, id_column, target_category_names=target_category_names
+    )
+    return apply_reconciliation(uow, assembly_id, diff)

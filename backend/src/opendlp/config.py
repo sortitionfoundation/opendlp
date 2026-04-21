@@ -164,6 +164,39 @@ def bool_environ_get(env_key: str, default: bool = False) -> bool:
     return to_bool(os.environ.get(env_key, default_str), context_str=f"{env_key}=")
 
 
+def get_max_csv_upload_mb() -> int:
+    """Maximum allowed size for an uploaded respondent CSV, in megabytes.
+
+    Default 50 MB. Real production CSVs sit comfortably under 2 MB so 50 MB
+    leaves generous headroom. Bounded to [1, 500] — values outside the range
+    are clamped and a warning is logged so the operator sees the override.
+
+    Environment variable: ``MAX_CSV_UPLOAD_MB``.
+    """
+    raw = os.environ.get("MAX_CSV_UPLOAD_MB", "")
+    if not raw:
+        return 50
+
+    try:
+        value = int(raw)
+    except ValueError:
+        logging.warning(f"Invalid MAX_CSV_UPLOAD_MB value '{raw}'. Using default 50 MB.")
+        return 50
+
+    if value < 1:
+        logging.warning(f"MAX_CSV_UPLOAD_MB={value} is below the minimum (1). Using 1 MB.")
+        return 1
+    if value > 500:
+        logging.warning(f"MAX_CSV_UPLOAD_MB={value} is above the hard ceiling (500). Using 500 MB.")
+        return 500
+    return value
+
+
+def get_max_csv_upload_bytes() -> int:
+    """Convenience: ``get_max_csv_upload_mb()`` expressed in bytes."""
+    return get_max_csv_upload_mb() * 1024 * 1024
+
+
 def get_task_timeout_hours() -> int:
     """
     Get task timeout in hours from environment.
@@ -235,8 +268,10 @@ class FlaskBaseConfig:
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
         self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
 
-        # File upload limits (10 MB)
-        self.MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+        # File upload limit — driven by MAX_CSV_UPLOAD_MB so the WSGI layer
+        # rejects oversize requests before we allocate memory. CSV upload is
+        # the largest expected request body; smaller forms are unaffected.
+        self.MAX_CONTENT_LENGTH = get_max_csv_upload_bytes()
 
         # Deployment configuration
         self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")

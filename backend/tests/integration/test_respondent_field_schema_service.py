@@ -213,3 +213,167 @@ class TestPermissions:
             respondent_field_schema_service.update_field(
                 uow, regular_user.id, test_assembly.id, field.id, label="Hacked"
             )
+
+
+class TestReconciliation:
+    def test_no_schema_yet_reports_all_keys_as_new(self, uow, admin_user, test_assembly):
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["external_id", "first_name", "gender"],
+                "external_id",
+            )
+        assert diff.unchanged == []
+        assert {k for k, _g in diff.new_keys} == {"first_name", "gender"}
+        assert diff.absent_keys == []
+        assert diff.has_changes is True
+
+    def test_identical_headers_produce_empty_diff(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name,gender\nR001,Alice,F\n",
+        )
+
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["external_id", "first_name", "gender"],
+                "external_id",
+            )
+
+        assert set(diff.unchanged) == {"first_name", "gender"}
+        assert diff.new_keys == []
+        assert diff.absent_keys == []
+        assert diff.has_changes is False
+
+    def test_added_column_is_new(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+        )
+
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["external_id", "first_name", "postcode"],
+                "external_id",
+            )
+
+        assert "first_name" in diff.unchanged
+        new_keys = {k for k, _g in diff.new_keys}
+        assert new_keys == {"postcode"}
+        new_groups = dict(diff.new_keys)
+        # postcode is recognised by the address heuristic.
+        assert new_groups["postcode"] == RespondentFieldGroup.ADDRESS
+        assert diff.absent_keys == []
+        assert diff.has_changes is True
+
+    def test_removed_column_is_absent(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name,gender,postcode\nR001,Alice,F,SW1A\n",
+        )
+
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["external_id", "first_name", "gender"],
+                "external_id",
+            )
+
+        assert diff.absent_keys == ["postcode"]
+        assert diff.new_keys == []
+
+    def test_id_column_change_is_flagged(self, uow, admin_user, test_assembly):
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["participant_id", "first_name"],
+                "participant_id",
+                previous_id_column="external_id",
+            )
+        assert diff.id_column_changed == ("external_id", "participant_id")
+        assert diff.has_changes is True
+
+    def test_apply_reconciliation_inserts_only_new_rows(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+        )
+        before = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        before_keys = {f.field_key for f in before}
+
+        with uow:
+            diff = respondent_field_schema_service.compute_reconciliation_diff(
+                uow,
+                test_assembly.id,
+                ["external_id", "first_name", "postcode", "favourite_colour"],
+                "external_id",
+            )
+            inserted = respondent_field_schema_service.apply_reconciliation(uow, test_assembly.id, diff)
+            uow.commit()
+
+        assert inserted == 2
+        after = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        after_keys = {f.field_key for f in after}
+        assert after_keys == before_keys | {"postcode", "favourite_colour"}
+
+    def test_re_upload_with_added_column_extends_existing_schema(self, uow, admin_user, test_assembly):
+        # First import seeds the schema.
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+            replace_existing=True,
+        )
+        original = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        original_first_name = next(f for f in original if f.field_key == "first_name")
+
+        # Re-upload with a new column should preserve the existing first_name row's id
+        # (no replace-from-scratch), and add a row for the new column.
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name,city\nR001,Alice,London\n",
+            replace_existing=True,
+        )
+
+        after = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        after_first_name = next(f for f in after if f.field_key == "first_name")
+        assert after_first_name.id == original_first_name.id
+        assert {f.field_key for f in after} >= {"first_name", "city"}
+
+    def test_re_upload_with_removed_column_keeps_absent_row(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name,city\nR001,Alice,London\n",
+            replace_existing=True,
+        )
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+            replace_existing=True,
+        )
+
+        after = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        # city's schema row is preserved even though no respondent now has data for it.
+        assert "city" in {f.field_key for f in after}
