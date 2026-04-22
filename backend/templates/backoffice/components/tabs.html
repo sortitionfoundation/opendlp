@@ -5,6 +5,7 @@ ABOUTME: Horizontal tab navigation for switching between page sections
 {% macro tabs(items=[], aria_label="", id="", preserve_scroll=true) %}
     {#
     Accessible tabs component following WAI-ARIA Authoring Practices.
+    Includes focus preservation for keyboard navigation across page reloads.
 
     items: Array of tab items, each with:
         - label: Display text (required)
@@ -15,13 +16,14 @@ ABOUTME: Horizontal tab navigation for switching between page sections
         - Any additional attributes are passed through to the anchor element (e.g., data-proto)
 
     aria_label: Accessible label for the tablist (required)
-    id: Base ID for generating tab and panel IDs (required for proper ARIA relationships)
+    id: Base ID for generating tab/panel IDs and focus preservation (REQUIRED)
     preserve_scroll: Whether to preserve scroll position when switching tabs (default: true)
 
     Keyboard navigation:
         - Arrow Left/Right: Move to previous/next tab
         - Home: Move to first tab
         - End: Move to last tab
+        - Focus is preserved across page reloads via #focus hash
 
     Tab panels should have:
         - role="tabpanel"
@@ -81,8 +83,11 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                            role="tab"
                            {% if tab_id %}id="{{ tab_id }}"{% endif %}
                            {% if panel_id %}aria-controls="{{ panel_id }}"{% endif %}
+                           {% if tab_id %}data-focus-id="{{ tab_id }}"{% endif %}
                            aria-selected="true"
                            tabindex="0"
+                           x-data
+                           x-focus-preserve
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
@@ -93,8 +98,11 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                            role="tab"
                            {% if tab_id %}id="{{ tab_id }}"{% endif %}
                            {% if panel_id %}aria-controls="{{ panel_id }}"{% endif %}
+                           {% if tab_id %}data-focus-id="{{ tab_id }}"{% endif %}
                            aria-selected="false"
                            tabindex="-1"
+                           x-data
+                           x-focus-preserve
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
