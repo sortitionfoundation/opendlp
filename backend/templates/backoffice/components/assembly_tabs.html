@@ -25,36 +25,43 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     {% set source_param = "?source=" ~ data_source if data_source else "" %}
 
     {{ tabs(
+    id="assembly-tabs",
     items=[
     {
+    "key": "details",
     "label": _("Details"),
     "href": url_for('backoffice.view_assembly', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "details"
     },
     {
+    "key": "data",
     "label": _("Data"),
     "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "data"
     },
     {
+    "key": "targets",
     "label": _("Targets"),
     "href": url_for('targets.view_assembly_targets', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "targets",
     "disabled": not targets_enabled
     },
     {
+    "key": "respondents",
     "label": _("Respondents"),
     "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "respondents",
     "disabled": not respondents_enabled
     },
     {
+    "key": "selection",
     "label": _("Selection"),
     "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "selection",
     "disabled": not selection_enabled
     },
     {
+    "key": "members",
     "label": _("Team Members"),
     "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "members"

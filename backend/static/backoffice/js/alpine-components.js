@@ -311,6 +311,75 @@ document.addEventListener("alpine:init", function () {
     });
 
     /**
+     * Tabs keyboard navigation component
+     *
+     * Implements WAI-ARIA compliant keyboard navigation for tabs:
+     * - Arrow Left/Right: Move to previous/next tab
+     * - Home: Move to first tab
+     * - End: Move to last tab
+     *
+     * Uses automatic activation (focus moves and navigates simultaneously).
+     *
+     * Usage:
+     *   <ul role="tablist" x-data="tabsKeyboard()" @keydown="handleKeydown($event)">
+     *     <li role="presentation">
+     *       <a role="tab" href="?tab=one" tabindex="0">Tab 1</a>
+     *     </li>
+     *   </ul>
+     */
+    Alpine.data("tabsKeyboard", function () {
+        return {
+            handleKeydown: function (event) {
+                var key = event.key;
+
+                // Only handle arrow keys, Home, and End
+                if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(key) === -1) {
+                    return;
+                }
+
+                // Get all focusable tabs (exclude disabled)
+                // Use event.currentTarget (the element with @keydown) to find tabs
+                var tablist = event.currentTarget;
+                var tabs = Array.prototype.slice.call(
+                    tablist.querySelectorAll('[role="tab"]:not([aria-disabled="true"])')
+                );
+
+                if (tabs.length === 0) {
+                    return;
+                }
+
+                // Find current tab index
+                var currentIndex = tabs.indexOf(document.activeElement);
+                if (currentIndex === -1) {
+                    return;
+                }
+
+                var newIndex;
+
+                if (key === "ArrowLeft") {
+                    // Move to previous tab, wrap to end
+                    newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+                } else if (key === "ArrowRight") {
+                    // Move to next tab, wrap to start
+                    newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+                } else if (key === "Home") {
+                    newIndex = 0;
+                } else if (key === "End") {
+                    newIndex = tabs.length - 1;
+                }
+
+                if (newIndex !== undefined && newIndex !== currentIndex) {
+                    event.preventDefault();
+                    var targetTab = tabs[newIndex];
+                    targetTab.focus();
+                    // Automatic activation - navigate when focus moves
+                    targetTab.click();
+                }
+            },
+        };
+    });
+
+    /**
      * Progress modal demo for design system showcase
      *
      * Interactive demo component that simulates different task states

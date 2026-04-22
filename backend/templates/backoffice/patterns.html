@@ -38,14 +38,15 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
 
         {# Tabs for pattern categories #}
         {{ tabs(
+        id="pattern-tabs",
         items=[
-        {"label": _("Dropdown"), "href": url_for('dev.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
-        {"label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
-        {"label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
-        {"label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
-        {"label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
-        {"label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'},
-        {"label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'}
+        {"key": "dropdown", "label": _("Dropdown"), "href": url_for('dev.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
+        {"key": "form", "label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
+        {"key": "ajax", "label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
+        {"key": "file-upload", "label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
+        {"key": "progress", "label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
+        {"key": "pagination", "label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'},
+        {"key": "scroll", "label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'}
         ],
         aria_label=_("Pattern categories")
         ) }}
