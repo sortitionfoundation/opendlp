@@ -246,7 +246,12 @@ def get_respondents_for_assembly_paginated(
             )
 
         respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
-            assembly_id, page=page, per_page=per_page, status=status
+            assembly_id,
+            page=page,
+            per_page=per_page,
+            status=status,
+            eligible_only=False,
+            include_deleted=True,
         )
         return [r.create_detached_copy() for r in respondents], total_count
 

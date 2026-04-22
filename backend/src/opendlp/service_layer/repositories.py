@@ -394,6 +394,8 @@ class RespondentRepository(AbstractRepository):
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
         raise NotImplementedError

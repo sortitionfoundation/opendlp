@@ -527,10 +527,16 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         results = [r for r in self._items if r.assembly_id == assembly_id]
         if status:
             results = [r for r in results if r.selection_status == status]
+        elif not include_deleted:
+            results = [r for r in results if r.selection_status != RespondentStatus.DELETED]
+        if eligible_only:
+            results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         total_count = len(results)
         offset = (page - 1) * per_page
         paginated = results[offset : offset + per_page]

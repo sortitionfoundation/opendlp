@@ -885,12 +885,26 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
         query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
 
         if status:
             query = query.filter(orm.respondents.c.selection_status == status)
+        elif not include_deleted:
+            query = query.filter(orm.respondents.c.selection_status != RespondentStatus.DELETED)
+
+        if eligible_only:
+            # These are three-way states: True=yes, False=no, None=not yet set.
+            # Only exclude respondents explicitly marked as False.
+            query = query.filter(
+                and_(
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
+                )
+            )
 
         total_count = query.count()
         offset = (page - 1) * per_page

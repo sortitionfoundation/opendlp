@@ -297,6 +297,58 @@ class TestGetByAssemblyIdPaginated:
         assert total_count == 2
         assert all(r.selection_status == RespondentStatus.POOL for r in results)
 
+    def test_filters_eligible_only(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        # eligible=None (unknown) should be included
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", eligible=None, can_attend=None)
+        # eligible=True should be included
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", eligible=True, can_attend=True)
+        # eligible=False should be excluded
+        _make_respondent(respondent_backend, assembly.id, external_id="R003", eligible=False)
+        # can_attend=False should be excluded
+        _make_respondent(respondent_backend, assembly.id, external_id="R004", can_attend=False)
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(
+            assembly.id, page=1, per_page=10, eligible_only=True
+        )
+
+        assert len(results) == 2
+        assert total_count == 2
+
+    def test_hides_deleted_by_default(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        live = _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(assembly.id, page=1, per_page=10)
+
+        assert {r.id for r in results} == {live.id}
+        assert total_count == 1
+
+    def test_includes_deleted_when_requested(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        live = _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(
+            assembly.id, page=1, per_page=10, include_deleted=True
+        )
+
+        assert {r.id for r in results} == {live.id, dead.id}
+        assert total_count == 2
+
+    def test_explicit_status_deleted_returns_only_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-LIVE")
+        dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
+
+        results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(
+            assembly.id, page=1, per_page=10, status=RespondentStatus.DELETED
+        )
+
+        assert {r.id for r in results} == {dead.id}
+        assert total_count == 1
+
     def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
         results, total_count = respondent_backend.repo.get_by_assembly_id_paginated(uuid.uuid4(), page=1, per_page=10)
 
