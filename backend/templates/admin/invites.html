@@ -96,8 +96,8 @@
                                 <strong class="govuk-tag govuk-tag--red">{{ _("Expired") }}</strong>
                             {% endif %}
                         </td>
-                        <td class="govuk-table__cell">{{ invite.created_at.strftime("%d %b %Y") }}</td>
-                        <td class="govuk-table__cell">{{ invite.expires_at.strftime("%d %b %Y") }}</td>
+                        <td class="govuk-table__cell">{{ invite.created_at|dateformat('medium') }}</td>
+                        <td class="govuk-table__cell">{{ invite.expires_at|dateformat('medium') }}</td>
                         <td class="govuk-table__cell">
                             <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}"
                                class="govuk-link">{{ _("View") }}</a>

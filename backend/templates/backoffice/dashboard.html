@@ -22,7 +22,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
         {% if assemblies %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for assembly in assemblies %}
-                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle="Created: " ~ assembly.created_at.strftime("%b %d, %Y"), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle="Created: " ~ (assembly.created_at|dateformat('medium')), id="assembly-" ~ assembly.id, classes="assembly-card") %}
                         {% if assembly.question %}
                             <p style="color: var(--color-body-text);" class="text-body-md mb-4">
                                 {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
@@ -30,7 +30,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
                         {% endif %}
                         {% if assembly.first_assembly_date %}
                             <p style="color: var(--color-secondary-text);" class="text-body-sm">
-                                Starts: {{ assembly.first_assembly_date.strftime("%b %d, %Y") }}
+                                Starts: {{ assembly.first_assembly_date|dateformat('medium') }}
                             </p>
                         {% endif %}
                     {% endcall %}

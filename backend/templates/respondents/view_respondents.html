@@ -94,7 +94,7 @@
                 <dt class="govuk-summary-list__key">{{ _("Last import date") }}</dt>
                 <dd class="govuk-summary-list__value">
                     {% if assembly.csv.last_import_timestamp %}
-                        {{ assembly.csv.last_import_timestamp.strftime("%d %B %Y at %H:%M") }}
+                        {{ assembly.csv.last_import_timestamp|datetimeformat('long') }}
                     {% else %}
                         <span class="govuk-hint">{{ _("N/A") }}</span>
                     {% endif %}

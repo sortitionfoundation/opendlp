@@ -154,7 +154,7 @@
                                 <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
                             {% endif %}
                         </td>
-                        <td class="govuk-table__cell">{{ user.created_at.strftime("%d %b %Y") }}</td>
+                        <td class="govuk-table__cell">{{ user.created_at|dateformat('medium') }}</td>
                         <td class="govuk-table__cell">
                             <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
                                class="govuk-link">{{ _("View") }}</a>

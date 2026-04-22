@@ -86,7 +86,7 @@
                                 {% if user.totp_enabled_at %}
                                     <br>
                                     <span class="govuk-hint govuk-!-margin-top-2">
-                                        {{ _("Enabled on") }} {{ user.totp_enabled_at.strftime("%d %B %Y at %H:%M") }}
+                                        {{ _("Enabled on") }} {{ user.totp_enabled_at|datetimeformat('long') }}
                                     </span>
                                 {% endif %}
                                 <br>
@@ -104,7 +104,7 @@
                         <dt class="govuk-summary-list__key">{{ _("Data Agreement") }}</dt>
                         <dd class="govuk-summary-list__value">
                             {% if user.user_data_agreement_agreed_at %}
-                                {{ _("Agreed on") }} {{ user.user_data_agreement_agreed_at.strftime("%d %B %Y at %H:%M") }}
+                                {{ _("Agreed on") }} {{ user.user_data_agreement_agreed_at|datetimeformat('long') }}
                             {% else %}
                                 <span class="govuk-hint">{{ _("Not agreed") }}</span>
                             {% endif %}
@@ -113,7 +113,7 @@
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _("Account Created") }}</dt>
                         <dd class="govuk-summary-list__value">
-                            {{ user.created_at.strftime("%d %B %Y at %H:%M") }}
+                            {{ user.created_at|datetimeformat('long') }}
                         </dd>
                     </div>
                 </dl>

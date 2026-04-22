@@ -32,11 +32,11 @@ ABOUTME: Displays a single respondent's full details including attributes
             {% set author = comment_authors.get(delete_comment.author_id) if comment_authors else none %}
             {% if author %}
                 {{ _("Deleted on %(date)s by %(who)s",
-                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M") ,
+                date=delete_comment.created_at|datetimeformat('long'),
                 who=author.email) }}
             {% else %}
                 {{ _("Deleted on %(date)s",
-                date=delete_comment.created_at.strftime("%d %B %Y at %H:%M") ) }}
+                date=delete_comment.created_at|datetimeformat('long')) }}
             {% endif %}
         </div>
     {% endif %}
@@ -98,11 +98,11 @@ ABOUTME: Displays a single respondent's full details including attributes
                 {% endcall %}
                 {% call table_row() %}
                     {{ table_cell(_("Created") , bold=true) }}
-                    {{ table_cell(respondent.created_at.strftime("%d %B %Y at %H:%M") if respondent.created_at else "—") }}
+                    {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "—") }}
                 {% endcall %}
                 {% call table_row() %}
                     {{ table_cell(_("Updated") , bold=true) }}
-                    {{ table_cell(respondent.updated_at.strftime("%d %B %Y at %H:%M") if respondent.updated_at else "—") }}
+                    {{ table_cell(respondent.updated_at|datetimeformat('long') if respondent.updated_at else "—") }}
                 {% endcall %}
             {% endcall %}
         {% endcall %}
@@ -142,7 +142,7 @@ ABOUTME: Displays a single respondent's full details including attributes
                     {% for comment in respondent.comments %}
                         {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
                         {% call table_row() %}
-                            {{ table_cell(comment.created_at.strftime("%d %B %Y at %H:%M") ) }}
+                            {{ table_cell(comment.created_at|datetimeformat('long')) }}
                             {{ table_cell(author.email if author else comment.author_id|string) }}
                             {{ table_cell(comment.action.value|title if comment.action.value != "NONE" else "—") }}
                             {{ table_cell(comment.text) }}

@@ -19,7 +19,7 @@
             <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key">{{ _("First Assembly Date") }}</dt>
                 <dd class="govuk-summary-list__value">
-                    {{ assembly.first_assembly_date.strftime("%d %B %Y") }}
+                    {{ assembly.first_assembly_date|dateformat('long') }}
                 </dd>
             </div>
         {% endif %}
@@ -32,13 +32,13 @@
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">{{ _("Created") }}</dt>
             <dd class="govuk-summary-list__value">
-                {{ assembly.created_at.strftime("%d %B %Y") }}
+                {{ assembly.created_at|dateformat('long') }}
             </dd>
         </div>
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">{{ _("Last Updated") }}</dt>
             <dd class="govuk-summary-list__value">
-                {{ assembly.updated_at.strftime("%d %B %Y at %H:%M") }}
+                {{ assembly.updated_at|datetimeformat('long') }}
             </dd>
         </div>
     </dl>
