@@ -60,3 +60,14 @@ repos:
         #    check all the files, even though they are in the exclude.
         #    See https://github.com/crate-ci/typos/issues/347 for details.
         args: ["--force-exclude", "-c", "backend/pyproject.toml"]
+
+  # Forbid .strftime() in Jinja templates - use flask-babel's
+  # dateformat/datetimeformat/timeformat filters instead so month names,
+  # date ordering and timezone handling respect the active locale.
+  - repo: local
+    hooks:
+      - id: no-strftime-in-templates
+        name: No .strftime() in Jinja templates (use babel filters)
+        language: pygrep
+        files: ^backend/templates/.*\.html$
+        entry: '\.strftime\s*\('
