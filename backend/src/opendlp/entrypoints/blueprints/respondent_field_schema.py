@@ -15,9 +15,11 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.service_layer.assembly_service import (
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_tab_enabled_states,
 )
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
@@ -34,8 +36,6 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_field,
 )
 from opendlp.translations import gettext as _
-
-from .backoffice import _determine_data_source, _get_tab_enabled_states
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
@@ -83,8 +83,8 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         csv_status = None
         with contextlib.suppress(Exception):
             csv_status = get_csv_upload_status(bootstrap.bootstrap(), current_user.id, assembly_id)
-        data_source, _locked = _determine_data_source(gsheet, csv_status)
-        targets_enabled, respondents_enabled, selection_enabled = _get_tab_enabled_states(
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
         )
 
