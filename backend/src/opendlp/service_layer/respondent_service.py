@@ -352,7 +352,7 @@ def get_respondent(
     assembly_id: uuid.UUID,
     respondent_id: uuid.UUID,
 ) -> Respondent:
-    """Get respondents for an assembly."""
+    """Get single respondent for an assembly."""
     with uow:
         user = uow.users.get(user_id)
         if not user:
