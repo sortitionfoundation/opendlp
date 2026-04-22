@@ -510,10 +510,13 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         assembly_id: uuid.UUID,
         status: RespondentStatus | None = None,
         eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> list[Respondent]:
         results = [r for r in self._items if r.assembly_id == assembly_id]
         if status:
             results = [r for r in results if r.selection_status == status]
+        elif not include_deleted:
+            results = [r for r in results if r.selection_status != RespondentStatus.DELETED]
         if eligible_only:
             results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         return results
@@ -524,10 +527,16 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         results = [r for r in self._items if r.assembly_id == assembly_id]
         if status:
             results = [r for r in results if r.selection_status == status]
+        elif not include_deleted:
+            results = [r for r in results if r.selection_status != RespondentStatus.DELETED]
+        if eligible_only:
+            results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         total_count = len(results)
         offset = (page - 1) * per_page
         paginated = results[offset : offset + per_page]
@@ -539,8 +548,12 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 return r
         return None
 
-    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
-        return sum(1 for r in self._items if r.assembly_id == assembly_id)
+    def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
+        return sum(
+            1
+            for r in self._items
+            if r.assembly_id == assembly_id and (include_deleted or r.selection_status != RespondentStatus.DELETED)
+        )
 
     def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
         return sum(
@@ -576,26 +589,30 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count = 0
         for r in self._items:
-            if r.assembly_id == assembly_id:
+            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED:
                 r.reset_to_pool()
                 count += 1
         return count
 
     def count_non_pool(self, assembly_id: uuid.UUID) -> int:
         return sum(
-            1 for r in self._items if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.POOL
+            1
+            for r in self._items
+            if r.assembly_id == assembly_id
+            and r.selection_status != RespondentStatus.POOL
+            and r.selection_status != RespondentStatus.DELETED
         )
 
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         for r in self._items:
-            if r.assembly_id == assembly_id and r.attributes:
+            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and r.attributes:
                 return sorted(r.attributes.keys())
         return []
 
     def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         counts: dict[str, int] = {}
         for r in self._items:
-            if r.assembly_id == assembly_id and r.attributes:
+            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and r.attributes:
                 val = r.attributes.get(attribute_name)
                 if val is not None:
                     counts[val] = counts.get(val, 0) + 1

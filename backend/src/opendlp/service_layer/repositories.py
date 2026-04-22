@@ -378,8 +378,13 @@ class RespondentRepository(AbstractRepository):
         assembly_id: uuid.UUID,
         status: RespondentStatus | None = None,
         eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> list[Respondent]:
-        """Get respondents for an assembly, optionally filtered."""
+        """Get respondents for an assembly, optionally filtered.
+
+        DELETED respondents are excluded unless include_deleted=True or
+        status=RespondentStatus.DELETED is passed explicitly.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -389,6 +394,8 @@ class RespondentRepository(AbstractRepository):
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
         raise NotImplementedError
@@ -399,8 +406,8 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
-        """Count all respondents for an assembly."""
+    def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
+        """Count all respondents for an assembly. DELETED excluded unless include_deleted=True."""
         raise NotImplementedError
 
     @abc.abstractmethod

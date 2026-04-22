@@ -513,6 +513,32 @@ def start_db_select_task(
     return task_id
 
 
+DELETED_CSV_PLACEHOLDER = "DATA DELETED"
+
+
+def _person_list_to_table_with_deleted(
+    person_keys: list[str],
+    people: People,
+    features: FeatureCollection,
+    settings_obj: sa_settings.Settings,
+    deleted_ext_ids: set[str],
+) -> list[list[str]]:
+    """Wrap person_list_to_table, inserting blanked rows for DELETED external_ids.
+
+    DELETED respondents aren't loaded into `people` (their blanked attributes
+    would fail sortition-algorithms validation). We still need to represent
+    them in the historical CSV so the selection output references a known ID.
+    """
+    live_keys = [k for k in person_keys if k not in deleted_ext_ids]
+    table = person_list_to_table(live_keys, people, features, settings_obj)
+    header = table[0]
+    column_count = len(header)
+    for ext_id in person_keys:
+        if ext_id in deleted_ext_ids:
+            table.append([ext_id, *[DELETED_CSV_PLACEHOLDER] * (column_count - 1)])
+    return table
+
+
 def generate_selection_csvs(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
@@ -524,8 +550,8 @@ def generate_selection_csvs(
     if not record.selected_ids or record.remaining_ids is None:
         raise InvalidSelection(_("Selection has not completed — no results to download"))
 
-    selected_ext_ids = record.selected_ids[0]
-    remaining_ext_ids = record.remaining_ids
+    selected_ext_ids = list(record.selected_ids[0])
+    remaining_ext_ids = list(record.remaining_ids)
 
     # Reconstruct settings from what was stored at selection time
     stored = record.settings_used
@@ -544,8 +570,15 @@ def generate_selection_csvs(
     features, _feat_report = select_data.load_features()
     full_people, _ppl_report = select_data.load_people(settings_obj, features)
 
-    selected_table = person_list_to_table(selected_ext_ids, full_people, features, settings_obj)
-    remaining_table = person_list_to_table(remaining_ext_ids, full_people, features, settings_obj)
+    all_ext_ids = set(selected_ext_ids) | set(remaining_ext_ids)
+    deleted_ext_ids = {ext_id for ext_id in all_ext_ids if ext_id not in full_people}
+
+    selected_table = _person_list_to_table_with_deleted(
+        selected_ext_ids, full_people, features, settings_obj, deleted_ext_ids
+    )
+    remaining_table = _person_list_to_table_with_deleted(
+        remaining_ext_ids, full_people, features, settings_obj, deleted_ext_ids
+    )
 
     return _table_to_csv(selected_table), _table_to_csv(remaining_table)
 

@@ -852,11 +852,14 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         assembly_id: uuid.UUID,
         status: RespondentStatus | None = None,
         eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> list[Respondent]:
         query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
 
         if status:
             query = query.filter(orm.respondents.c.selection_status == status)
+        elif not include_deleted:
+            query = query.filter(orm.respondents.c.selection_status != RespondentStatus.DELETED)
 
         if eligible_only:
             # These are three-way states: True=yes, False=no, None=not yet set.
@@ -870,27 +873,44 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
         return query.order_by(orm.respondents.c.created_at.desc()).all()
 
+    def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
+        query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
+        if not include_deleted:
+            query = query.filter(orm.respondents.c.selection_status != RespondentStatus.DELETED)
+        return query.count()
+
     def get_by_assembly_id_paginated(
         self,
         assembly_id: uuid.UUID,
         page: int = 1,
         per_page: int = 50,
         status: RespondentStatus | None = None,
+        eligible_only: bool = False,
+        include_deleted: bool = False,
     ) -> tuple[list[Respondent], int]:
         """Get paginated respondents for an assembly. Returns (respondents, total_count)."""
         query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
 
         if status:
             query = query.filter(orm.respondents.c.selection_status == status)
+        elif not include_deleted:
+            query = query.filter(orm.respondents.c.selection_status != RespondentStatus.DELETED)
+
+        if eligible_only:
+            # These are three-way states: True=yes, False=no, None=not yet set.
+            # Only exclude respondents explicitly marked as False.
+            query = query.filter(
+                and_(
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
+                )
+            )
 
         total_count = query.count()
         offset = (page - 1) * per_page
         respondents = query.order_by(orm.respondents.c.created_at.desc()).offset(offset).limit(per_page).all()
 
         return respondents, total_count
-
-    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
-        return self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).count()
 
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         return (
@@ -956,11 +976,26 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         )
 
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
-        count: int = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).count()
+        count: int = (
+            self.session
+            .query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                )
+            )
+            .count()
+        )
         if count:
             self.session.execute(
                 update(orm.respondents)
-                .where(orm.respondents.c.assembly_id == assembly_id)
+                .where(
+                    and_(
+                        orm.respondents.c.assembly_id == assembly_id,
+                        orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                    )
+                )
                 .values(
                     selection_status=RespondentStatus.POOL,
                     selection_run_id=None,
@@ -977,13 +1012,24 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.selection_status != RespondentStatus.POOL,
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
                 )
             )
             .count()
         )
 
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
-        respondent = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id).first()
+        respondent = (
+            self.session
+            .query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                )
+            )
+            .first()
+        )
         if respondent is None or not respondent.attributes:
             return []
         return sorted(respondent.attributes.keys())
@@ -996,6 +1042,7 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
                 )
             )
             .group_by(val_col)

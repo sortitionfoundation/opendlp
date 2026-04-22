@@ -113,7 +113,7 @@ class RespondentStatus(Enum):
     CONFIRMED = "CONFIRMED"
     WITHDRAWN = "WITHDRAWN"
     PARTICIPATED = "PARTICIPATED"
-    EXCLUDED = "EXCLUDED"
+    DELETED = "DELETED"
 
     @classmethod
     def from_str(cls, value: str) -> "RespondentStatus | None":
@@ -124,6 +124,19 @@ class RespondentStatus(Enum):
             return cls(value)
         except ValueError:
             return None
+
+
+class RespondentAction(Enum):
+    """Type of action a RespondentComment records.
+
+    NONE is a plain comment with no system action attached.
+    EDIT records a change to the respondent's details.
+    DELETE records a GDPR personal-data deletion.
+    """
+
+    NONE = "NONE"
+    EDIT = "EDIT"
+    DELETE = "DELETE"
 
 
 class RespondentSourceType(Enum):
