@@ -29,6 +29,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
 )
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
     AssemblyStatus,
@@ -122,6 +123,10 @@ class ContractBackend:
         """Persist domain objects that the repo under test depends on (e.g. Users for FK)."""
         raise NotImplementedError
 
+    def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
+        """Fetch a respondent from storage without any instance-cache effects."""
+        raise NotImplementedError
+
     def make_user(self, **kwargs: Any) -> User:
         user = make_user(**kwargs)
         self.persist(user)
@@ -141,18 +146,27 @@ class FakeContractBackend(ContractBackend):
     def persist(self, *items: Any) -> None:
         pass  # fakes don't need FK objects persisted
 
+    def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
+        return self.repo.get(respondent_id)  # type: ignore[no-any-return]
+
 
 class SqlContractBackend(ContractBackend):
     """Backend using real SqlAlchemy repositories with a Postgres session."""
 
-    def __init__(self, repo: Any, session: Session) -> None:
+    def __init__(self, repo: Any, session: Session, session_factory: Any = None) -> None:
         self._session = session
+        self._session_factory = session_factory
         super().__init__(repo=repo, commit=session.commit)
 
     def persist(self, *items: Any) -> None:
         for item in items:
             self._session.add(item)
         self._session.flush()
+
+    def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
+        assert self._session_factory is not None, "session_factory required for fresh reads"
+        with self._session_factory() as fresh_session:
+            return SqlAlchemyRespondentRepository(fresh_session).get(respondent_id)
 
 
 # ---------------------------------------------------------------------------
@@ -243,10 +257,14 @@ def target_category_backend(request, postgres_session) -> ContractBackend:
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def respondent_backend(request, postgres_session) -> ContractBackend:
+def respondent_backend(request, postgres_session, postgres_session_factory) -> ContractBackend:
     if request.param == "fake":
         return FakeContractBackend(repo=FakeRespondentRepository(), commit=lambda: None)
-    return SqlContractBackend(repo=SqlAlchemyRespondentRepository(postgres_session), session=postgres_session)
+    return SqlContractBackend(
+        repo=SqlAlchemyRespondentRepository(postgres_session),
+        session=postgres_session,
+        session_factory=postgres_session_factory,
+    )
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])

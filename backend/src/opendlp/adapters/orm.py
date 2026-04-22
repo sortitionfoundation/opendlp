@@ -15,6 +15,7 @@ from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
 from opendlp.domain.respondent_field_schema import RespondentFieldGroup
+from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
     AssemblyRole,
@@ -154,6 +155,25 @@ class TargetValueListJSON(TypeDecorator):
             else:
                 result.append(item)
         return result
+
+
+class RespondentCommentListJSON(TypeDecorator):
+    """Custom type for storing a list of RespondentComment dataclasses as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [c.to_dict() if isinstance(c, RespondentComment) else c for c in value]
+        return value
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> list[RespondentComment]:
+        if not value:
+            return []
+        return [RespondentComment.from_dict(item) if isinstance(item, dict) else item for item in value]
 
 
 # Create a registry for imperative mapping
@@ -450,6 +470,7 @@ respondents = Table(
     Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
     Column("source_reference", String(500), nullable=False, default=""),
     Column("attributes", JSON, nullable=False, default=dict),
+    Column("comments", RespondentCommentListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique constraint: external_id per assembly
