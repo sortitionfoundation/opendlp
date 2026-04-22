@@ -39,9 +39,15 @@ rendered as the default (blue) tag, so it's absent from this dict.
 {% set is_deleted = respondent.selection_status.value == "DELETED" %}
 {% set delete_comment = respondent.comments | selectattr("action.value", "equalto", "DELETE") | list | last if respondent.comments else none %}
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {{ assembly_tabs(assembly=assembly,
+    active_tab="respondents",
+    data_source=data_source|default("") ,
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
+    ) }}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {% if is_deleted and delete_comment %}
         <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"
@@ -59,14 +65,6 @@ rendered as the default (blue) tag, so it's absent from this dict.
             {% endif %}
         </div>
     {% endif %}
-    {{ assembly_tabs(assembly=assembly,
-    active_tab="respondents",
-    data_source=data_source|default("") ,
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
     {# Status block — hardcoded, identity + current selection state. #}
     <section class="mb-8">
         <dl class="flex flex-col gap-2 mb-6">
