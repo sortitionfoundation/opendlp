@@ -32,7 +32,7 @@
                         <div class="govuk-summary-list__row">
                             <dt class="govuk-summary-list__key">{{ _("Enabled on") }}</dt>
                             <dd class="govuk-summary-list__value">
-                                {{ status.enabled_at.strftime('%Y-%m-%d %H:%M') }}
+                                {{ status.enabled_at|datetimeformat('short') }}
                             </dd>
                         </div>
                         <div class="govuk-summary-list__row">

@@ -205,11 +205,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             </td>
                                             {# Started At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.created_at.strftime("%Y-%m-%d %H:%M") if run_record.created_at else '-' }}
+                                                {{ run_record.created_at|datetimeformat('short') if run_record.created_at else '-' }}
                                             </td>
                                             {# Completed At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.completed_at.strftime("%Y-%m-%d %H:%M") if run_record.completed_at else '-' }}
+                                                {{ run_record.completed_at|datetimeformat('short') if run_record.completed_at else '-' }}
                                             </td>
                                             {# Comment #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
@@ -384,11 +384,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             </td>
                                             {# Started At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.created_at.strftime("%Y-%m-%d %H:%M") if run_record.created_at else '-' }}
+                                                {{ run_record.created_at|datetimeformat('short') if run_record.created_at else '-' }}
                                             </td>
                                             {# Completed At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.completed_at.strftime("%Y-%m-%d %H:%M") if run_record.completed_at else '-' }}
+                                                {{ run_record.completed_at|datetimeformat('short') if run_record.completed_at else '-' }}
                                             </td>
                                             {# Comment #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">

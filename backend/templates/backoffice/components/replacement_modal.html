@@ -136,10 +136,10 @@ htmx_poll_url=htmx_poll_url
                         border: 1px solid var(--color-borders-dividers)">
                 <div class="text-body-sm" style="color: var(--color-body-text);">{{ replacement_translated_report_html | safe }}</div>
                 <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
-                    {{ _("Started At") }}: {{ replacement_run_record.created_at.strftime("%Y-%m-%d %H:%M:%S") if replacement_run_record.created_at }}
+                    {{ _("Started At") }}: {{ replacement_run_record.created_at|datetimeformat('medium') if replacement_run_record.created_at }}
                 </p>
                 <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Completed At") }}: {{ replacement_run_record.completed_at.strftime("%Y-%m-%d %H:%M:%S") if replacement_run_record.completed_at }}
+                    {{ _("Completed At") }}: {{ replacement_run_record.completed_at|datetimeformat('medium') if replacement_run_record.completed_at }}
                 </p>
             </div>
         </details>
