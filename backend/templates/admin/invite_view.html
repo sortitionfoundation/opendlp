@@ -75,13 +75,13 @@
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _("Created At") }}</dt>
                         <dd class="govuk-summary-list__value">
-                            {{ invite.created_at.strftime("%d %B %Y at %H:%M") }}
+                            {{ invite.created_at|datetimeformat('long') }}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _("Expires At") }}</dt>
                         <dd class="govuk-summary-list__value">
-                            {{ invite.expires_at.strftime("%d %B %Y at %H:%M") }}
+                            {{ invite.expires_at|datetimeformat('long') }}
                         </dd>
                     </div>
                     {% if invite.used_by %}
@@ -95,7 +95,7 @@
                             <dt class="govuk-summary-list__key">{{ _("Used At") }}</dt>
                             <dd class="govuk-summary-list__value">
                                 {% if invite.used_at %}
-                                    {{ invite.used_at.strftime("%d %B %Y at %H:%M") }}
+                                    {{ invite.used_at|datetimeformat('long') }}
                                 {% else %}
                                     <span class="govuk-hint">{{ _("Unknown") }}</span>
                                 {% endif %}

@@ -86,14 +86,14 @@
                         </td>
                         <td class="govuk-table__cell">
                             {% if run_record.created_at %}
-                                {{ run_record.created_at.strftime("%d %b %Y %H:%M") }}
+                                {{ run_record.created_at|datetimeformat('medium') }}
                             {% else %}
                                 <span class="govuk-hint">{{ _("N/A") }}</span>
                             {% endif %}
                         </td>
                         <td class="govuk-table__cell">
                             {% if run_record.completed_at %}
-                                {{ run_record.completed_at.strftime("%d %b %Y %H:%M") }}
+                                {{ run_record.completed_at|datetimeformat('medium') }}
                             {% else %}
                                 <span class="govuk-hint">{{ _("N/A") }}</span>
                             {% endif %}

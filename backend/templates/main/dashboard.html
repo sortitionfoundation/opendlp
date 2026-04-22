@@ -45,14 +45,14 @@
                                 <div class="govuk-summary-list__row">
                                     <dt class="govuk-summary-list__key">{{ _("Created") }}</dt>
                                     <dd class="govuk-summary-list__value">
-                                        {{ assembly.created_at.strftime("%b %d, %Y") }}
+                                        {{ assembly.created_at|dateformat('medium') }}
                                     </dd>
                                 </div>
                                 {% if assembly.first_assembly_date %}
                                     <div class="govuk-summary-list__row">
                                         <dt class="govuk-summary-list__key">{{ _("Starts") }}</dt>
                                         <dd class="govuk-summary-list__value">
-                                            {{ assembly.first_assembly_date.strftime("%b %d") }}
+                                            {{ assembly.first_assembly_date|dateformat('MMM d') }}
                                         </dd>
                                     </div>
                                 {% endif %}

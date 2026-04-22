@@ -62,7 +62,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                 <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
                     <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.first_assembly_date.strftime("%d %B %Y") }}
+                        {{ assembly.first_assembly_date|dateformat('long') }}
                     </dd>
                 </div>
             {% endif %}
@@ -79,7 +79,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
             <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
                 <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
                 <dd class="text-body-md" style="color: var(--color-body-text);">
-                    {{ assembly.created_at.strftime("%d %B %Y") }}
+                    {{ assembly.created_at|dateformat('long') }}
                 </dd>
             </div>
 
@@ -87,7 +87,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
             <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
                 <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
                 <dd class="text-body-md" style="color: var(--color-body-text);">
-                    {{ assembly.updated_at.strftime("%d %B %Y at %H:%M") }}
+                    {{ assembly.updated_at|datetimeformat('long') }}
                 </dd>
             </div>
         </dl>

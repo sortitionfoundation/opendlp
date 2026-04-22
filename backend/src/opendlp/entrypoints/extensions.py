@@ -110,7 +110,18 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
 
 
 def get_locale() -> str:
-    """Get the best language match for the user."""
+    """Get the best language match for the user.
+
+    The chosen base language is upgraded with any matching region tag the
+    browser supplied (e.g. ``en`` + ``Accept-Language: en-GB`` -> ``en_GB``)
+    so that date and number formatting follow the user's regional
+    conventions. Translations fall back automatically from ``en_GB`` to ``en``.
+    """
+    return _add_browser_region(_pick_base_locale())
+
+
+def _pick_base_locale() -> str:
+    """Select the base language code from URL, session, user profile or browser."""
     from flask import current_app  # noqa: PLC0415
 
     supported_languages = current_app.config.get("LANGUAGES", ["en"])
@@ -137,6 +148,21 @@ def get_locale() -> str:
 
     # Fall back to browser language detection
     return request.accept_languages.best_match(supported_languages) or supported_languages[0]
+
+
+def _add_browser_region(base: str) -> str:
+    """Return ``base`` qualified with a region tag if the browser offered one.
+
+    Walks the Accept-Language header in quality order and returns the first
+    ``<base>-<region>`` variant it finds (e.g. ``en_GB``). If no region
+    variant of ``base`` was advertised, ``base`` is returned unchanged.
+    """
+    base_lower = base.lower()
+    for accepted, _quality in request.accept_languages:
+        lang, _, region = accepted.replace("-", "_").partition("_")
+        if region and lang.lower() == base_lower:
+            return f"{lang.lower()}_{region.upper()}"
+    return base
 
 
 @login_manager.user_loader
