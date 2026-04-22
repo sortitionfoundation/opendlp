@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+from opendlp.translations import gettext as _
 
 
 @dataclass(frozen=True)
@@ -226,6 +227,8 @@ class Respondent:
         Joins non-empty values from ``field_names`` with a single space.
         Falls back to the local-part of the email, then to ``external_id``.
         """
+        if self.selection_status == RespondentStatus.DELETED:
+            return _("Name deleted")
         parts = []
         for field in field_names:
             value = self.attributes.get(field)

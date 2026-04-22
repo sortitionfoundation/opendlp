@@ -450,6 +450,11 @@ class TestRespondentDisplayName:
         resp = self._make(attributes={"age_label": 42})
         assert resp.display_name(["age_label"]) == "42"
 
+    def test_returns_name_deleted_when_status_is_deleted(self):
+        resp = self._make(attributes={"first_name": "Sarah", "last_name": "Jones"}, email="sarah@example.com")
+        resp.delete_personal_data(uuid.uuid4(), "gdpr request")
+        assert resp.display_name(["first_name", "last_name"]) == "Name deleted"
+
 
 class TestValidateFieldNameCollisions:
     def test_empty_iterable_is_ok(self):
