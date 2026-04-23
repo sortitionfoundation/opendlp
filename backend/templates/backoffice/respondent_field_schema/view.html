@@ -6,36 +6,30 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-
 {% block title %}{{ _("Respondent field layout") }} - {{ assembly.title }}{% endblock %}
-
 {% block breadcrumb_section %}
     <div class="mb-6">
         {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
         {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
         {"label": _("Field layout")}
         ]) }}
     </div>
 {% endblock %}
-
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Respondent field layout") }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("Group, order, and label the fields that describe your respondents. These settings drive how respondent details are displayed and will seed the registration form when it is created.") }}
     </p>
-
-    {{ assembly_tabs(
-    assembly=assembly,
+    {{ assembly_tabs(assembly=assembly,
     active_tab="respondents",
-    data_source=data_source|default(""),
+    data_source=data_source|default("") ,
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-
     {% if not schema_has_rows %}
         <section class="mb-8">
             <p class="text-body-md mb-4">
@@ -44,7 +38,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             <form method="post"
                   action="{{ url_for('respondent_field_schema.initialise_schema', assembly_id=assembly.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {{ button(_("Initialise empty schema"), type="submit", variant="primary") }}
+                {{ button(_("Initialise empty schema") , type="submit", variant="primary") }}
             </form>
         </section>
     {% else %}
@@ -57,9 +51,9 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                   table-layout: fixed">
                         <colgroup>
                             <col />
-                            <col style="width: 12rem;" />
+                            <col style="width: 16rem;" />
                             <col style="width: 8rem;" />
-                            <col style="width: 6rem;" />
+                            <col style="width: 8rem;" />
                             <col style="width: 8rem;" />
                         </colgroup>
                         <thead>
@@ -76,8 +70,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 <tr>
                                     <td class="py-2">
                                         <form method="post"
-                                              action="{{ url_for('respondent_field_schema.update_field_view',
-                                                      assembly_id=assembly.id, field_id=field.id) }}"
+                                              action="{{ url_for('respondent_field_schema.update_field_view', assembly_id=assembly.id, field_id=field.id) }}"
                                               class="flex gap-2 items-center">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="text"
@@ -87,36 +80,33 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                                    aria-label="{{ _('Label for %(key)s', key=field.field_key) }}">
                                             <select name="group" class="govuk-select" aria-label="{{ _('Group') }}">
                                                 {% for value, label in group_choices %}
-                                                    <option value="{{ value }}" {% if field.group.value== value %}selected{% endif %}>
+                                                    <option value="{{ value }}"
+                                                            {% if field.group.value== value %}selected{% endif %}>
                                                         {{ label }}
                                                     </option>
                                                 {% endfor %}
                                             </select>
-                                            {{ button(_("Save"), type="submit", variant="secondary") }}
+                                            {{ button(_("Save") , type="submit", variant="secondary") }}
                                         </form>
                                     </td>
-                                    <td class="py-2"><code>{{ field.field_key }}</code></td>
                                     <td class="py-2">
-                                        {% if field.is_fixed %}
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
-                                        {% endif %}
-                                        {% if field.is_derived %}
-                                            <strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>
-                                        {% endif %}
+                                        <code>{{ field.field_key }}</code>
+                                    </td>
+                                    <td class="py-2">
+                                        {% if field.is_fixed %}<strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
+                                        {% if field.is_derived %}<strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
                                     </td>
                                     <td class="py-2">
                                         <div class="flex gap-1">
                                             <form method="post"
-                                                  action="{{ url_for('respondent_field_schema.move_field',
-                                                          assembly_id=assembly.id, field_id=field.id) }}"
+                                                  action="{{ url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id) }}"
                                                   class="inline">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="direction" value="up">
                                                 {{ button("↑", type="submit", variant="tertiary", attrs='aria-label="' + _('Move up') + '"') }}
                                             </form>
                                             <form method="post"
-                                                  action="{{ url_for('respondent_field_schema.move_field',
-                                                          assembly_id=assembly.id, field_id=field.id) }}"
+                                                  action="{{ url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id) }}"
                                                   class="inline">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="direction" value="down">
@@ -127,11 +117,10 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                     <td class="py-2">
                                         {% if not field.is_fixed %}
                                             <form method="post"
-                                                  action="{{ url_for('respondent_field_schema.delete_field_view',
-                                                          assembly_id=assembly.id, field_id=field.id) }}"
-                                                  onsubmit="return confirm('{{ _('Remove this field from the schema? Respondent data keeps its values; they just stop being rendered.') }}');">
+                                                  action="{{ url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  onsubmit="return confirm('{{ _("Remove this field from the schema? Respondent data keeps its values; they just stop being rendered.") }}');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                {{ button(_("Remove"), type="submit", variant="danger") }}
+                                                {{ button(_("Remove") , type="submit", variant="danger") }}
                                             </form>
                                         {% endif %}
                                     </td>
@@ -143,8 +132,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             {% endif %}
         {% endfor %}
     {% endif %}
-
     <section class="flex gap-4">
-        {{ button(_("Back to Respondents"), href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
+        {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
     </section>
 {% endblock %}
