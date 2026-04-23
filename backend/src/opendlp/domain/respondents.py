@@ -11,6 +11,8 @@ from typing import Any
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
 from opendlp.translations import gettext as _
 
+_UNSET: Any = object()
+
 
 @dataclass(frozen=True)
 class RespondentComment:
@@ -186,6 +188,72 @@ class Respondent:
         # change-detection sees the new value.
         self.comments = [*self.comments, new_comment]
         self.updated_at = datetime.now(UTC)
+
+    def _apply_flag_edits(
+        self,
+        email: str | None,
+        eligible: bool | None,
+        can_attend: bool | None,
+        consent: bool | None,
+        stay_on_db: bool | None,
+    ) -> bool:
+        changed = False
+        if email is not _UNSET:
+            new_email = (email or "").strip()
+            if new_email != self.email:
+                self.email = new_email
+                changed = True
+        flag_updates = (
+            ("eligible", eligible),
+            ("can_attend", can_attend),
+            ("consent", consent),
+            ("stay_on_db", stay_on_db),
+        )
+        for attr_name, new_value in flag_updates:
+            if new_value is _UNSET:
+                continue
+            if getattr(self, attr_name) != new_value:
+                setattr(self, attr_name, new_value)
+                changed = True
+        return changed
+
+    def apply_edit(
+        self,
+        *,
+        author_id: uuid.UUID,
+        comment: str,
+        email: str | None = _UNSET,
+        eligible: bool | None = _UNSET,
+        can_attend: bool | None = _UNSET,
+        consent: bool | None = _UNSET,
+        stay_on_db: bool | None = _UNSET,
+        attributes: dict[str, Any] | None = None,
+    ) -> None:
+        """Apply an edit from the backoffice. `comment` is required.
+
+        Sentinels on email/eligible/can_attend/consent/stay_on_db let callers
+        distinguish "leave alone" from "set to None". Attributes, when passed,
+        are merged into the existing dict.
+        """
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required on edit")
+        if self.selection_status == RespondentStatus.DELETED:
+            raise ValueError("Cannot edit a DELETED respondent")
+
+        changed = self._apply_flag_edits(email, eligible, can_attend, consent, stay_on_db)
+        if attributes:
+            merged = {**self.attributes, **attributes}
+            validate_no_field_name_collisions(merged.keys())
+            if merged != self.attributes:
+                self.attributes = merged
+                changed = True
+
+        if not changed:
+            raise ValueError("No changes submitted")
+
+        self.updated_at = datetime.now(UTC)
+        self.add_comment(comment, author_id, action=RespondentAction.EDIT)
 
     def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
         """Blank PII, flip status to DELETED, append the deletion comment."""

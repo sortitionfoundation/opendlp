@@ -686,16 +686,16 @@ Run `just test` after every green step and `just check` before every commit.
 
 **3.2 · Domain method** (target commit at end of 3.2)
 
-- [ ] Write failing test `test_apply_edit_requires_non_blank_comment`.
-- [ ] Write failing test `test_apply_edit_refuses_on_deleted_status`.
-- [ ] Write failing test `test_apply_edit_updates_email_and_flags_when_passed`.
-- [ ] Write failing test `test_apply_edit_leaves_unpassed_flags_alone_via_sentinel` (distinguishes "leave alone" from "set to None").
-- [ ] Write failing test `test_apply_edit_sets_flag_to_none_when_explicit_none_passed`.
-- [ ] Write failing test `test_apply_edit_merges_attributes_and_validates_keys`.
-- [ ] Write failing test `test_apply_edit_raises_when_no_field_changed_but_comment_supplied`.
-- [ ] Write failing test `test_apply_edit_appends_edit_comment`.
-- [ ] Implement `Respondent.apply_edit(...)`; confirm tests green.
-- [ ] **Commit**: "Add Respondent.apply_edit domain method".
+- [x] Write failing test `test_apply_edit_requires_non_blank_comment`.
+- [x] Write failing test `test_apply_edit_refuses_on_deleted_status`.
+- [x] Write failing test `test_apply_edit_updates_email_and_flags_when_passed`.
+- [x] Write failing test `test_apply_edit_leaves_unpassed_flags_alone_via_sentinel` (distinguishes "leave alone" from "set to None").
+- [x] Write failing test `test_apply_edit_sets_flag_to_none_when_explicit_none_passed`.
+- [x] Write failing test `test_apply_edit_merges_attributes_and_validates_keys`.
+- [x] Write failing test `test_apply_edit_raises_when_no_field_changed_but_comment_supplied`.
+- [x] Write failing test `test_apply_edit_appends_edit_comment`.
+- [x] Implement `Respondent.apply_edit(...)`; confirm tests green.
+- [x] **Commit**: "Add Respondent.apply_edit domain method".
 
 **3.3 · Service function** (target commit at end of 3.3)
 
