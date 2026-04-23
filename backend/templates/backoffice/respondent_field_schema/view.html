@@ -52,7 +52,16 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             {% if section.fields %}
                 <section class="mb-8">
                     <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
-                    <table class="w-full text-left">
+                    <table class="w-full text-left"
+                           style="border-collapse: collapse;
+                                  table-layout: fixed">
+                        <colgroup>
+                            <col />
+                            <col style="width: 12rem;" />
+                            <col style="width: 8rem;" />
+                            <col style="width: 6rem;" />
+                            <col style="width: 8rem;" />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
