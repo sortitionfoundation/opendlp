@@ -675,14 +675,14 @@ Run `just test` after every green step and `just check` before every commit.
 
 **3.1 · Permission function** (target commit at end of 3.1)
 
-- [ ] Write failing test `test_can_edit_respondent_allows_admin`.
-- [ ] Write failing test `test_can_edit_respondent_allows_global_organiser`.
-- [ ] Write failing test `test_can_edit_respondent_allows_assembly_manager`.
-- [ ] Write failing test `test_can_edit_respondent_allows_confirmation_caller`.
-- [ ] Write failing test `test_can_edit_respondent_denies_user_without_role`.
-- [ ] (READ_ONLY denial test deferred to Phase 4 where the role exists.)
-- [ ] Implement `can_edit_respondent` in `permissions.py`; confirm tests green.
-- [ ] **Commit**: "Add can_edit_respondent permission".
+- [x] Write failing test `test_can_edit_respondent_allows_admin`.
+- [x] Write failing test `test_can_edit_respondent_allows_global_organiser`.
+- [x] Write failing test `test_can_edit_respondent_allows_assembly_manager`.
+- [x] Write failing test `test_can_edit_respondent_allows_confirmation_caller`.
+- [x] Write failing test `test_can_edit_respondent_denies_user_without_role`.
+- [x] (READ_ONLY denial test deferred to Phase 4 where the role exists.)
+- [x] Implement `can_edit_respondent` in `permissions.py`; confirm tests green.
+- [x] **Commit**: "Add can_edit_respondent permission".
 
 **3.2 · Domain method** (target commit at end of 3.2)
 

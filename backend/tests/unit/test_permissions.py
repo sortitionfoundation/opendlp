@@ -12,6 +12,7 @@ from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions, UserNotFoundError
 from opendlp.service_layer.permissions import (
     can_call_confirmations,
+    can_edit_respondent,
     can_manage_assembly,
     can_view_assembly,
     has_global_admin,
@@ -249,6 +250,51 @@ class TestCanCallConfirmations:
         )
 
         assert can_call_confirmations(regular_user, assembly) is False
+
+
+class TestCanEditRespondent:
+    def _assembly(self) -> Assembly:
+        return Assembly(
+            title="Test Assembly",
+            question="Test question?",
+            first_assembly_date=date.today() + timedelta(days=30),
+        )
+
+    def test_admin_can_edit(self) -> None:
+        user = User(email="a@example.com", global_role=GlobalRole.ADMIN, password_hash="h")
+        assert can_edit_respondent(user, self._assembly()) is True
+
+    def test_global_organiser_can_edit(self) -> None:
+        user = User(email="o@example.com", global_role=GlobalRole.GLOBAL_ORGANISER, password_hash="h")
+        assert can_edit_respondent(user, self._assembly()) is True
+
+    def test_assembly_manager_can_edit(self) -> None:
+        user = User(email="m@example.com", global_role=GlobalRole.USER, password_hash="h")
+        assembly = self._assembly()
+        user.assembly_roles.append(
+            UserAssemblyRole(
+                user_id=user.id,
+                assembly_id=assembly.id,
+                role=AssemblyRole.ASSEMBLY_MANAGER,
+            )
+        )
+        assert can_edit_respondent(user, assembly) is True
+
+    def test_confirmation_caller_can_edit(self) -> None:
+        user = User(email="c@example.com", global_role=GlobalRole.USER, password_hash="h")
+        assembly = self._assembly()
+        user.assembly_roles.append(
+            UserAssemblyRole(
+                user_id=user.id,
+                assembly_id=assembly.id,
+                role=AssemblyRole.CONFIRMATION_CALLER,
+            )
+        )
+        assert can_edit_respondent(user, assembly) is True
+
+    def test_user_without_role_cannot_edit(self) -> None:
+        user = User(email="u@example.com", global_role=GlobalRole.USER, password_hash="h")
+        assert can_edit_respondent(user, self._assembly()) is False
 
 
 class TestGlobalRoleChecks:
