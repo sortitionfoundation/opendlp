@@ -7,7 +7,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
 from opendlp.service_layer import respondent_service
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import InsufficientPermissions, RespondentNotFoundError
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -421,3 +421,83 @@ NB002,Male"""
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.get_respondents_for_assembly(uow, user_id, test_assembly.id)
+
+
+class TestUpdateRespondent:
+    def _create(self, uow, admin_user, assembly):
+        return respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            assembly.id,
+            external_id="NB_EDIT",
+            attributes={"gender": "Female"},
+            email="a@b.com",
+            eligible=True,
+        )
+
+    def test_round_trips_through_repo(self, uow, admin_user, test_assembly):
+        resp = self._create(uow, admin_user, test_assembly)
+        respondent_service.update_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            resp.id,
+            comment="fix email",
+            email="new@b.com",
+        )
+        with uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved is not None
+            assert retrieved.email == "new@b.com"
+            assert len(retrieved.comments) == 1
+            assert retrieved.comments[0].text == "fix email"
+
+    def test_raises_for_mismatched_assembly(self, uow, admin_user, test_assembly):
+        resp = self._create(uow, admin_user, test_assembly)
+        other_assembly = Assembly(title="other", question="?", number_to_select=1)
+        with uow:
+            uow.assemblies.add(other_assembly)
+            other_id = other_assembly.id
+            uow.commit()
+        with pytest.raises(RespondentNotFoundError):
+            respondent_service.update_respondent(
+                uow,
+                admin_user.id,
+                other_id,
+                resp.id,
+                comment="try",
+                email="x@y.com",
+            )
+
+    def test_refuses_when_permission_denied(self, uow, test_assembly):
+        # Create respondent as admin first
+        admin = User(email="admin_for_edit@test.com", global_role=GlobalRole.ADMIN, password_hash="h")
+        with uow:
+            uow.users.add(admin)
+            admin_id = admin.id
+            uow.commit()
+        resp = respondent_service.create_respondent(
+            uow, admin_id, test_assembly.id, external_id="NB_PERM", attributes={}
+        )
+
+        # Now try with a user with no role
+        user = User(email="noedit@test.com", global_role=GlobalRole.USER, password_hash="h")
+        with uow:
+            uow.users.add(user)
+            user_id = user.id
+            uow.commit()
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.update_respondent(uow, user_id, test_assembly.id, resp.id, comment="x", email="z@z.com")
+
+    def test_refuses_on_deleted_status(self, uow, admin_user, test_assembly):
+        resp = self._create(uow, admin_user, test_assembly)
+        respondent_service.delete_respondent(uow, admin_user.id, test_assembly.id, resp.id, comment="gdpr")
+        with pytest.raises(ValueError):
+            respondent_service.update_respondent(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                resp.id,
+                comment="try",
+                email="x@y.com",
+            )

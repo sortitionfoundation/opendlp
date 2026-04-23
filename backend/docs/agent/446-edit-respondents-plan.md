@@ -699,12 +699,12 @@ Run `just test` after every green step and `just check` before every commit.
 
 **3.3 · Service function** (target commit at end of 3.3)
 
-- [ ] Write failing test `test_update_respondent_round_trips_through_repo`.
-- [ ] Write failing test `test_update_respondent_raises_for_mismatched_assembly`.
-- [ ] Write failing test `test_update_respondent_refuses_when_permission_denied`.
-- [ ] Write failing test `test_update_respondent_refuses_on_deleted_status`.
-- [ ] Implement `update_respondent` service function; confirm tests green.
-- [ ] **Commit**: "Add update_respondent service function".
+- [x] Write failing test `test_update_respondent_round_trips_through_repo`.
+- [x] Write failing test `test_update_respondent_raises_for_mismatched_assembly`.
+- [x] Write failing test `test_update_respondent_refuses_when_permission_denied`.
+- [x] Write failing test `test_update_respondent_refuses_on_deleted_status`.
+- [x] Implement `update_respondent` service function; confirm tests green.
+- [x] **Commit**: "Add update_respondent service function".
 
 **3.4 · Form builder** (target commit at end of 3.4)
 

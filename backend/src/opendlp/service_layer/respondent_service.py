@@ -6,6 +6,7 @@ import uuid
 from io import StringIO
 from typing import Any
 
+from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent, pop_normalised
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
@@ -16,7 +17,7 @@ from opendlp.service_layer.exceptions import (
     RespondentNotFoundError,
     UserNotFoundError,
 )
-from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -329,6 +330,54 @@ def delete_respondent(
         assert isinstance(respondent, Respondent)
 
         respondent.delete_personal_data(author_id=user_id, comment=comment)
+        uow.commit()
+
+
+def update_respondent(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+    comment: str,
+    *,
+    email: str | None = _RESPONDENT_UNSET,
+    eligible: bool | None = _RESPONDENT_UNSET,
+    can_attend: bool | None = _RESPONDENT_UNSET,
+    consent: bool | None = _RESPONDENT_UNSET,
+    stay_on_db: bool | None = _RESPONDENT_UNSET,
+    attributes: dict[str, Any] | None = None,
+) -> None:
+    """Apply a backoffice edit to a respondent. Requires `can_edit_respondent`."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_edit_respondent(user, assembly):
+            raise InsufficientPermissions(
+                action="edit respondent",
+                required_role="assembly-manager, confirmation-caller, global-organiser or admin",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        respondent.apply_edit(
+            author_id=user_id,
+            comment=comment,
+            email=email,
+            eligible=eligible,
+            can_attend=can_attend,
+            consent=consent,
+            stay_on_db=stay_on_db,
+            attributes=attributes,
+        )
         uow.commit()
 
 
