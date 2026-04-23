@@ -708,19 +708,19 @@ Run `just test` after every green step and `just check` before every commit.
 
 **3.4 · Form builder** (target commit at end of 3.4)
 
-- [ ] Write failing test `test_build_form_text_renders_string_field`.
-- [ ] Write failing test `test_build_form_longtext_renders_textarea`.
-- [ ] Write failing test `test_build_form_integer_renders_integer_field_optional`.
-- [ ] Write failing test `test_build_form_bool_renders_two_radios_required`.
-- [ ] Write failing test `test_build_form_bool_or_none_renders_three_radios_with_not_set`.
-- [ ] Write failing test `test_build_form_choice_radio_renders_radio_field_with_options`.
-- [ ] Write failing test `test_build_form_choice_dropdown_renders_select_field_with_empty_first_option`.
-- [ ] Write failing test `test_build_form_choice_help_text_reachable_on_field`.
-- [ ] Write failing test `test_build_form_email_renders_string_field_with_domain_email_validator`.
-- [ ] Write failing test `test_build_form_comment_field_is_required`.
-- [ ] Write failing test `test_build_form_merges_drifted_value_into_choices` (current value not in options list appears as an extra choice).
-- [ ] Implement `build_edit_respondent_form` in `forms.py`; confirm tests green.
-- [ ] **Commit**: "Add edit respondent form builder".
+- [x] Write failing test `test_build_form_text_renders_string_field`.
+- [x] Write failing test `test_build_form_longtext_renders_textarea`.
+- [x] Write failing test `test_build_form_integer_renders_integer_field_optional`.
+- [x] Write failing test `test_build_form_bool_renders_two_radios_required`.
+- [x] Write failing test `test_build_form_bool_or_none_renders_three_radios_with_not_set`.
+- [x] Write failing test `test_build_form_choice_radio_renders_radio_field_with_options`.
+- [x] Write failing test `test_build_form_choice_dropdown_renders_select_field_with_empty_first_option`.
+- [x] Write failing test `test_build_form_choice_help_text_reachable_on_field`.
+- [x] Write failing test `test_build_form_email_renders_string_field_with_domain_email_validator`.
+- [x] Write failing test `test_build_form_comment_field_is_required`.
+- [x] Write failing test `test_build_form_merges_drifted_value_into_choices` (current value not in options list appears as an extra choice).
+- [x] Implement `build_edit_respondent_form` (new module `entrypoints/edit_respondent_form.py`); confirm tests green.
+- [x] **Commit**: "Add edit respondent form builder".
 
 **3.5 · Macro adaptations** (commit either here or folded into 3.6)
 
