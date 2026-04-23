@@ -19,12 +19,12 @@ from opendlp.service_layer.assembly_service import (
     update_target_category,
     update_target_value,
 )
+from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.service_layer.target_respondent_helpers import (
-    MAX_DISTINCT_VALUES_FOR_AUTO_ADD,
     build_respondent_counts,
     get_assembly_respondent_attribute_columns,
     get_column_distinct_counts,

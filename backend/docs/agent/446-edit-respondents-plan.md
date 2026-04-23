@@ -827,8 +827,9 @@ Run `just test` after every green step and `just check` before every commit.
 
 ### Phase 6 — Relocate `MAX_DISTINCT_VALUES_FOR_AUTO_ADD`
 
-- [ ] Decide the new module (`src/opendlp/service_layer/constants.py` unless a more appropriate existing one surfaces).
-- [ ] Move the constant; leave a deprecated re-export in `target_respondent_helpers.py` only if removing it creates import churn across tests.
-- [ ] Update imports in `target_respondent_helpers.py`, `assembly_service.py`, `entrypoints/blueprints/targets.py`, `entrypoints/blueprints/targets_legacy.py`, the new Phase 2 consumer, and `tests/integration/test_targets_respondent_data.py`.
-- [ ] Run `just check` and `just test` — no new tests needed; existing coverage catches regressions.
-- [ ] **Commit**: "Relocate MAX_DISTINCT_VALUES_FOR_AUTO_ADD to shared constants module".
+- [x] New module `src/opendlp/service_layer/constants.py`.
+- [x] Moved the constant. `target_respondent_helpers.py` re-exports via `__all__` and keeps its `from ...constants import` so existing imports still resolve if anything slips through.
+- [x] Updated imports in `target_respondent_helpers.py`, `assembly_service.py`, `entrypoints/blueprints/targets.py`, `entrypoints/blueprints/targets_legacy.py`, `respondent_field_schema_service.py`, and `tests/integration/test_targets_respondent_data.py`.
+- [x] `respondent_field_schema_service.py` now imports at top level (the old circular import via `target_respondent_helpers` is no longer a concern).
+- [x] Run `just check` and `just test` — all green.
+- [x] **Commit**: "Relocate MAX_DISTINCT_VALUES_FOR_AUTO_ADD to shared constants module".

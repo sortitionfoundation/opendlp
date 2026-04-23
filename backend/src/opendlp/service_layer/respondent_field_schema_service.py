@@ -22,6 +22,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
     humanise_field_key,
 )
+from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -275,10 +276,6 @@ def guess_field_types(
     """Overwrite field_type for non-fixed, non-derived, text-typed fields based
     on the attribute-value distribution. Returns a map of field_key -> new type
     for rows that were changed."""
-    # Local import to avoid a circular import:
-    # target_respondent_helpers -> respondent_service -> respondent_field_schema_service.
-    from opendlp.service_layer.target_respondent_helpers import MAX_DISTINCT_VALUES_FOR_AUTO_ADD  # noqa: PLC0415
-
     changed: dict[str, FieldType] = {}
     with uow:
         _ensure_manage_permission(uow, user_id, assembly_id)
