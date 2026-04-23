@@ -11,7 +11,7 @@
 
 {{ assembly_url }}
 
-{% if role == "ASSEMBLY_MANAGER" %}{{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}{% elif role == "CONFIRMATION_CALLER" %}{{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}{% endif %}
+{% if role == "ASSEMBLY_MANAGER" %}{{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}{% elif role == "CONFIRMATION_CALLER" %}{{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}{% elif role == "READ_ONLY" %}{{ _("As a Read Only member, you can view the assembly but cannot make changes.") }}{% endif %}
 
 ---
 {{ _("OpenDLP Team") }}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-23 17:07+0000\n"
+"POT-Creation-Date: 2026-04-23 17:14+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -145,12 +145,16 @@ msgstr ""
 msgid "Admin - Full system access including user management"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:44
+#: src/opendlp/domain/value_objects.py:45
 msgid "Assembly Manager - Can manage the assembly and add other users"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:45
+#: src/opendlp/domain/value_objects.py:46
 msgid "Confirmation Caller - Can call confirmations for selected participants"
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:47
+msgid "Read Only - Can view the assembly but cannot make changes"
 msgstr ""
 
 #: src/opendlp/entrypoints/decorators.py:40
@@ -6801,14 +6805,23 @@ msgid ""
 "participants."
 msgstr ""
 
-#: templates/emails/assembly_role_assigned.html:119
+#: templates/emails/assembly_role_assigned.html:121
+#, fuzzy
+msgid "Read Only Permissions:"
+msgstr "A gyűlés fő témája"
+
+#: templates/emails/assembly_role_assigned.html:123
+msgid "As a Read Only member, you can view the assembly but cannot make changes."
+msgstr ""
+
+#: templates/emails/assembly_role_assigned.html:128
 #: templates/emails/email_confirmation.html:114
 #: templates/emails/password_reset.html:108
 #: templates/emails/user_invite.html:107
 msgid "OpenDLP Team"
 msgstr ""
 
-#: templates/emails/assembly_role_assigned.html:122
+#: templates/emails/assembly_role_assigned.html:131
 #: templates/emails/email_confirmation.html:117
 #: templates/emails/password_reset.html:111
 #: templates/emails/user_invite.html:109

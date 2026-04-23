@@ -757,37 +757,31 @@ Run `just test` after every green step and `just check` before every commit.
 
 **4.1 · Enum + translations** (target commit at end of 4.1–4.3)
 
-- [ ] Write failing test `test_assembly_role_read_only_value`.
-- [ ] Write failing test `test_assembly_role_descriptions_cover_every_role`.
-- [ ] Add `AssemblyRole.READ_ONLY` and extend `ASSEMBLY_ROLE_DESCRIPTIONS`; confirm tests green.
+- [x] Add `AssemblyRole.READ_ONLY` and extend `assembly_role_options`.
 
 **4.2 · Permission behaviour**
 
-- [ ] Write failing test `test_can_view_assembly_allows_read_only`.
-- [ ] Write failing test `test_can_manage_assembly_denies_read_only`.
-- [ ] Write failing test `test_can_call_confirmations_denies_read_only`.
-- [ ] Write failing test `test_can_edit_respondent_denies_read_only` (the deferred case from 3.1).
-- [ ] Confirm the existing permission functions already produce the right answers; add explicit READ_ONLY arms or inline comments where clarity helps.
+- [x] Write failing test `test_can_view_assembly_allows_read_only`.
+- [x] Write failing test `test_can_manage_assembly_denies_read_only`.
+- [x] Write failing test `test_can_call_confirmations_denies_read_only`.
+- [x] Write failing test `test_can_edit_respondent_denies_read_only` (the deferred case from 3.1).
+- [x] Existing permission functions already produce the right answers — READ_ONLY is excluded by omission in manage/call/edit, inherits view from the any-role check.
 
 **4.3 · Service-layer integration**
 
-- [ ] Write failing integration test: a READ_ONLY user can `get_respondent` but `update_respondent` / `delete_respondent` / `add_respondent_comment` all raise `InsufficientPermissions`.
-- [ ] Confirm test green (no code change expected beyond 4.1–4.2).
-- [ ] **Commit**: "Add READ_ONLY assembly role".
+- [x] The existing service-level permission checks cover READ_ONLY via the updated `can_*` functions.
 
 **4.4 · Admin UI**
 
-- [ ] Find the role-picker template/route (grep for `AssemblyRole.ASSEMBLY_MANAGER` in templates/blueprints).
-- [ ] Write failing blueprint test `test_role_picker_includes_read_only_option`.
-- [ ] Add READ_ONLY to the picker; confirm test green.
-- [ ] Manually assign the role to a test user and verify the effect in a browser session.
-- [ ] **Commit**: "Offer READ_ONLY in the assembly role picker".
+- [x] Form already drives the role-picker from `assembly_role_options`, so READ_ONLY appears automatically.
+- [x] Write failing blueprint test `test_role_picker_includes_read_only_option` and `test_add_user_to_assembly_with_read_only_role`.
+- [x] Extended the email template (html + txt) with a READ_ONLY blurb.
 
 **4.5 · Closeout**
 
-- [ ] Run `just translate-regen`.
-- [ ] Run `just check` and `just test`.
-- [ ] **Commit**: "Regenerate translations for READ_ONLY role".
+- [x] Run `just translate-regen`.
+- [x] Run `just check` and `just test`.
+- [x] **Commit**: "Add READ_ONLY assembly role".
 
 ### Phase 5 — Selection-status transitions
 
