@@ -624,21 +624,21 @@ Run `just test` after every green step and `just check` before every commit.
 
 **1.6 · Schema page UI** (target commit at end of 1.6)
 
-- [ ] Write failing blueprint test `test_schema_page_renders_type_column`.
-- [ ] Write failing blueprint test `test_schema_page_post_accepts_field_type_and_options_with_help_text`.
-- [ ] Write failing blueprint test `test_schema_page_options_editor_hidden_for_fixed_rows`.
-- [ ] Extend `update_field_view` route to parse `field_type` and the repeating options rows; call the extended service.
-- [ ] Update the schema page template (`respondent_field_schema/view.html`): add the Type column, the type `<select>`, and the repeating options editor under an `x-show` on a flat Alpine property.
-- [ ] If the Alpine repeating-row UX proves fiddly under CSP rules, fall back to server-rendered rows + form-submission add/remove (see open question 3).
+- [x] Write failing blueprint test `test_schema_page_renders_type_column`.
+- [x] Write failing blueprint test `test_schema_page_post_accepts_field_type_and_options_with_help_text`.
+- [x] Write failing blueprint test `test_schema_page_options_editor_hidden_for_fixed_rows`.
+- [x] Extend `update_field_view` route to parse `field_type` and the repeating options rows; call the extended service.
+- [x] Update the schema page template (`respondent_field_schema/view.html`): add the Type column, the type `<select>`, and a server-rendered options editor (add/remove forms per option). No Alpine needed for this shape.
+- [x] Took the structured server-rendered fallback from open question 3 — no Alpine for this UI — each add/remove is its own POST.
 - [ ] Manually verify the page in a browser (use rodney per CLAUDE.md guidance).
-- [ ] Confirm blueprint tests green.
-- [ ] **Commit**: "Add type/options editor to respondent schema page".
+- [x] Confirm blueprint tests green.
+- [x] **Commit**: "Add type/options editor to respondent schema page".
 
 **1.7 · Translations + closeout**
 
-- [ ] Run `just translate-regen`; commit regenerated `.po` files.
-- [ ] Run `just check` and `just test`; fix anything that surfaces.
-- [ ] **Commit** (if not already included above): "Regenerate translations for respondent field schema types".
+- [x] Run `just translate-regen`; commit regenerated `.po` files.
+- [x] Run `just check` and `just test`; fix anything that surfaces.
+- [x] **Commit** (if not already included above): "Regenerate translations for respondent field schema types".
 
 ### Phase 2 — Guess field types from data
 

@@ -234,6 +234,60 @@ def update_field(
         return detached
 
 
+def add_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    value: str,
+    help_text: str = "",
+) -> RespondentFieldDefinition:
+    """Append a ChoiceOption to a choice field's options list."""
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        if field.field_type not in {FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}:
+            raise FieldDefinitionConflictError("Options can only be set on choice fields")
+        value = value.strip()
+        if not value:
+            raise FieldDefinitionConflictError("Option value cannot be blank")
+        new_options = list(field.options or [])
+        if any(o.value == value for o in new_options):
+            raise FieldDefinitionConflictError(f"Option '{value}' already exists")
+        new_options.append(ChoiceOption(value=value, help_text=help_text))
+        field.update(options=new_options)
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
+def remove_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    value: str,
+) -> RespondentFieldDefinition:
+    """Remove a ChoiceOption from a choice field's options list."""
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        existing = list(field.options or [])
+        remaining = [o for o in existing if o.value != value]
+        if len(remaining) == len(existing):
+            raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
+        if not remaining:
+            raise FieldDefinitionConflictError("A choice field must keep at least one option")
+        field.update(options=remaining)
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
 def reorder_group(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

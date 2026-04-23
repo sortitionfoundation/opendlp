@@ -51,15 +51,17 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                   table-layout: fixed">
                         <colgroup>
                             <col />
-                            <col style="width: 16rem;" />
-                            <col style="width: 8rem;" />
-                            <col style="width: 8rem;" />
-                            <col style="width: 8rem;" />
+                            <col style="width: 14rem;" />
+                            <col style="width: 10rem;" />
+                            <col style="width: 6rem;" />
+                            <col style="width: 6rem;" />
+                            <col style="width: 6rem;" />
                         </colgroup>
                         <thead>
                             <tr>
                                 <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Field key") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Type") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Group") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Order") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Actions") }}</th>
@@ -86,6 +88,16 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                                     </option>
                                                 {% endfor %}
                                             </select>
+                                            {% if not field.is_fixed %}
+                                                <select name="field_type" class="govuk-select" aria-label="{{ _('Type') }}">
+                                                    {% for value, label in field_type_choices %}
+                                                        <option value="{{ value }}"
+                                                                {% if field.field_type.value == value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% endif %}
                                             {{ button(_("Save") , type="submit", variant="secondary") }}
                                         </form>
                                     </td>
@@ -93,9 +105,11 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                         <code>{{ field.field_key }}</code>
                                     </td>
                                     <td class="py-2">
-                                        {% if field.is_fixed %}<strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
-                                        {% if field.is_derived %}<strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
+                                        {{ field_type_labels_by_value[field.effective_field_type.value] }}
+                                        {% if field.is_fixed %}<br><strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
+                                        {% if field.is_derived %}<br><strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
                                     </td>
+                                    <td class="py-2">{{ field.group.value | replace('_', ' ') | title }}</td>
                                     <td class="py-2">
                                         <div class="flex gap-1">
                                             <form method="post"
@@ -125,6 +139,46 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                         {% endif %}
                                     </td>
                                 </tr>
+                                {% if not field.is_fixed and field.field_type.value in choice_type_values %}
+                                    <tr>
+                                        <td colspan="6" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
+                                            <div class="text-body-sm font-bold mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
+                                            {% if field.options %}
+                                                <ul class="mb-2">
+                                                    {% for option in field.options %}
+                                                        <li class="flex gap-2 items-center mb-1">
+                                                            <code>{{ option.value }}</code>
+                                                            {% if option.help_text %}<span class="text-body-sm">— {{ option.help_text }}</span>{% endif %}
+                                                            <form method="post"
+                                                                  action="{{ url_for('respondent_field_schema.remove_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                                  class="inline">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <input type="hidden" name="value" value="{{ option.value }}">
+                                                                {{ button(_("Remove"), type="submit", variant="tertiary") }}
+                                                            </form>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.add_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  class="flex gap-2 items-center">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="text"
+                                                       name="value"
+                                                       placeholder="{{ _('value') }}"
+                                                       class="govuk-input"
+                                                       aria-label="{{ _('Option value') }}">
+                                                <input type="text"
+                                                       name="help_text"
+                                                       placeholder="{{ _('help text (optional)') }}"
+                                                       class="govuk-input"
+                                                       aria-label="{{ _('Option help text') }}">
+                                                {{ button(_("Add option"), type="submit", variant="secondary") }}
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
