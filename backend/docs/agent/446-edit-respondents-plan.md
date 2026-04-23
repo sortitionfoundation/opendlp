@@ -565,39 +565,39 @@ Run `just test` after every green step and `just check` before every commit.
 
 **1.1 · `FieldType` enum** (target commit at end of 1.1–1.2)
 
-- [ ] Write failing domain test `test_field_type_enum_values` asserting all 8 values exist with the expected string values.
-- [ ] Add `FieldType` enum to `src/opendlp/domain/respondent_field_schema.py`; confirm test green.
-- [ ] Write failing test `test_field_type_labels_cover_every_value` asserting `FIELD_TYPE_LABELS` has one entry per enum value.
-- [ ] Add `FIELD_TYPE_LABELS` dict; confirm test green.
-- [ ] Write failing test `test_bool_types_and_choice_types_groupings` asserting `BOOL_TYPES == {BOOL, BOOL_OR_NONE}` and `CHOICE_TYPES == {CHOICE_RADIO, CHOICE_DROPDOWN}`.
-- [ ] Add `BOOL_TYPES` and `CHOICE_TYPES` frozensets; confirm test green.
-- [ ] Write failing test `test_fixed_field_types_overrides` covering each of the five fixed keys.
-- [ ] Add `FIXED_FIELD_TYPES` dict; confirm test green.
+- [x] Write failing domain test `test_field_type_enum_values` asserting all 8 values exist with the expected string values.
+- [x] Add `FieldType` enum to `src/opendlp/domain/respondent_field_schema.py`; confirm test green.
+- [x] Write failing test `test_field_type_labels_cover_every_value` asserting `FIELD_TYPE_LABELS` has one entry per enum value.
+- [x] Add `FIELD_TYPE_LABELS` dict; confirm test green.
+- [x] Write failing test `test_bool_types_and_choice_types_groupings` asserting `BOOL_TYPES == {BOOL, BOOL_OR_NONE}` and `CHOICE_TYPES == {CHOICE_RADIO, CHOICE_DROPDOWN}`.
+- [x] Add `BOOL_TYPES` and `CHOICE_TYPES` frozensets; confirm test green.
+- [x] Write failing test `test_fixed_field_types_overrides` covering each of the five fixed keys.
+- [x] Add `FIXED_FIELD_TYPES` dict; confirm test green.
 
 **1.2 · `ChoiceOption` dataclass**
 
-- [ ] Write failing test `test_choice_option_requires_non_blank_value`.
-- [ ] Write failing test `test_choice_option_defaults_help_text_to_empty`.
-- [ ] Write failing test `test_choice_option_to_dict_round_trip` (dict → ChoiceOption → dict).
-- [ ] Implement `ChoiceOption` frozen dataclass with `__post_init__` validation and `to_dict`/`from_dict`; confirm all three tests green.
-- [ ] **Commit**: "Add FieldType and ChoiceOption to respondent field schema domain".
+- [x] Write failing test `test_choice_option_requires_non_blank_value`.
+- [x] Write failing test `test_choice_option_defaults_help_text_to_empty`.
+- [x] Write failing test `test_choice_option_to_dict_round_trip` (dict → ChoiceOption → dict).
+- [x] Implement `ChoiceOption` frozen dataclass with `__post_init__` validation and `to_dict`/`from_dict`; confirm all three tests green.
+- [x] **Commit**: "Add FieldType and ChoiceOption to respondent field schema domain".
 
 **1.3 · Extend `RespondentFieldDefinition`** (target commit at end of 1.3–1.4)
 
-- [ ] Write failing test `test_definition_defaults_to_text_type`.
-- [ ] Write failing test `test_definition_rejects_choice_without_options`.
-- [ ] Write failing test `test_definition_rejects_options_on_non_choice_type`.
-- [ ] Write failing test `test_definition_accepts_choice_radio_with_options`.
-- [ ] Write failing test `test_definition_accepts_choice_dropdown_with_options`.
-- [ ] Extend constructor to accept `field_type` and `options`, validate invariant; confirm tests green.
-- [ ] Write failing test `test_update_refuses_type_change_on_fixed_row`.
-- [ ] Write failing test `test_update_changes_type_and_options_together_for_non_fixed_row`.
-- [ ] Write failing test `test_update_clears_options_when_switching_away_from_choice` (explicit `None`).
-- [ ] Extend `update()` to accept `field_type` and `options` with `_UNSET` sentinel; add fixed-row guard; confirm tests green.
-- [ ] Write failing test `test_effective_field_type_uses_override_for_fixed_keys_even_if_db_row_disagrees`.
-- [ ] Add `effective_field_type` property; confirm green.
-- [ ] Write failing test `test_create_detached_copy_preserves_field_type_and_options`.
-- [ ] Update `create_detached_copy`; confirm green.
+- [x] Write failing test `test_definition_defaults_to_text_type`.
+- [x] Write failing test `test_definition_rejects_choice_without_options`.
+- [x] Write failing test `test_definition_rejects_options_on_non_choice_type`.
+- [x] Write failing test `test_definition_accepts_choice_radio_with_options`.
+- [x] Write failing test `test_definition_accepts_choice_dropdown_with_options`.
+- [x] Extend constructor to accept `field_type` and `options`, validate invariant; confirm tests green.
+- [x] Write failing test `test_update_refuses_type_change_on_fixed_row`.
+- [x] Write failing test `test_update_changes_type_and_options_together_for_non_fixed_row`.
+- [x] Write failing test `test_update_clears_options_when_switching_away_from_choice` (explicit `None`).
+- [x] Extend `update()` to accept `field_type` and `options` with `_UNSET` sentinel; add fixed-row guard; confirm tests green.
+- [x] Write failing test `test_effective_field_type_uses_override_for_fixed_keys_even_if_db_row_disagrees`.
+- [x] Add `effective_field_type` property; confirm green.
+- [x] Write failing test `test_create_detached_copy_preserves_field_type_and_options`.
+- [x] Update `create_detached_copy`; confirm green.
 
 **1.4 · ORM + migration**
 
