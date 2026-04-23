@@ -6,6 +6,8 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     IN_SCHEMA_FIXED_FIELDS,
+    ChoiceOption,
+    FieldType,
     RespondentFieldGroup,
 )
 from opendlp.domain.users import User
@@ -151,6 +153,117 @@ class TestUpdateField:
         )
         assert updated.label == "Custom notes"
         assert updated.group == RespondentFieldGroup.ABOUT_YOU
+
+    def _custom_field_id(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,gender\nR001,Female\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        return next(f for f in schema if f.field_key == "gender").id
+
+    def test_update_field_accepts_field_type_and_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+        )
+        assert updated.field_type == FieldType.CHOICE_RADIO
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Female", "Male"]
+
+    def test_update_field_refuses_type_change_on_fixed_row(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,foo\nR001,v\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        email_field = next(f for f in schema if f.field_key == "email")
+        with pytest.raises(FieldDefinitionConflictError, match="fixed"):
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                email_field.id,
+                field_type=FieldType.TEXT,
+            )
+
+    def test_update_field_unset_sentinel_preserves_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        # Update label only — options should be preserved (sentinel semantics).
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            label="Gender identity",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["a", "b"]
+
+    def test_update_field_explicit_none_clears_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.TEXT,
+            options=None,
+        )
+        assert updated.field_type == FieldType.TEXT
+        assert updated.options is None
+
+
+class TestPopulateSchemaFieldTypes:
+    def test_fixed_keys_get_hardcoded_types(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,custom\nR001,val\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        email_field = next(f for f in schema if f.field_key == "email")
+        eligible_field = next(f for f in schema if f.field_key == "eligible")
+        assert email_field.field_type == FieldType.EMAIL
+        assert eligible_field.field_type == FieldType.BOOL_OR_NONE
+
+    def test_new_non_fixed_rows_default_to_text(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,custom\nR001,val\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        custom_field = next(f for f in schema if f.field_key == "custom")
+        assert custom_field.field_type == FieldType.TEXT
+        assert custom_field.options is None
 
 
 class TestReorderGroup:

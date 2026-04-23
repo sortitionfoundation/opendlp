@@ -9,10 +9,14 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import StringIO
 
+from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
+    FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     SORT_ORDER_STEP,
+    ChoiceOption,
+    FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
@@ -112,6 +116,7 @@ def _build_fixed_rows(assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]
                 group=group,
                 sort_order=(idx + 1) * SORT_ORDER_STEP,
                 is_fixed=True,
+                field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
             )
         )
     return rows
@@ -200,14 +205,30 @@ def update_field(
     label: str | None = None,
     group: RespondentFieldGroup | None = None,
     sort_order: int | None = None,
+    field_type: FieldType | None = None,
+    options: list[ChoiceOption] | None = _UNSET_OPTIONS,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, or sort_order."""
+    """Update a field's label, group, sort_order, field_type, or options.
+
+    ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
+    """
     with uow:
         _ensure_manage_permission(uow, user_id, assembly_id)
         field = uow.respondent_field_definitions.get(field_id)
         if field is None or field.assembly_id != assembly_id:
             raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        field.update(label=label, group=group, sort_order=sort_order)
+        try:
+            field.update(
+                label=label,
+                group=group,
+                sort_order=sort_order,
+                field_type=field_type,
+                options=options,
+            )
+        except ValueError as exc:
+            if "fixed" in str(exc):
+                raise FieldDefinitionConflictError(str(exc)) from exc
+            raise
         uow.commit()
         detached: RespondentFieldDefinition = field.create_detached_copy()
         return detached

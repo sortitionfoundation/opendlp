@@ -612,15 +612,15 @@ Run `just test` after every green step and `just check` before every commit.
 
 **1.5 · Service layer** (target commit at end of 1.5)
 
-- [ ] Write failing test `test_update_field_accepts_field_type_and_options`.
-- [ ] Write failing test `test_update_field_refuses_type_change_on_fixed_row` raising `FieldDefinitionConflictError`.
-- [ ] Write failing test `test_update_field_unset_sentinel_preserves_existing_options_when_type_unchanged`.
-- [ ] Write failing test `test_update_field_explicit_none_clears_options_when_switching_to_text`.
-- [ ] Extend `update_field` signature with `field_type` and `options`, use `_UNSET` sentinel, add fixed-row guard; confirm tests green.
-- [ ] Write failing test `test_populate_schema_from_headers_sets_hardcoded_types_for_fixed_keys`.
-- [ ] Write failing test `test_populate_schema_from_headers_defaults_new_rows_to_text`.
-- [ ] Update `populate_schema_from_headers` / `apply_reconciliation` to apply the defaults; confirm green.
-- [ ] **Commit**: "Let update_field set field_type and options with fixed-row guard".
+- [x] Write failing test `test_update_field_accepts_field_type_and_options`.
+- [x] Write failing test `test_update_field_refuses_type_change_on_fixed_row` raising `FieldDefinitionConflictError`.
+- [x] Write failing test `test_update_field_unset_sentinel_preserves_existing_options_when_type_unchanged`.
+- [x] Write failing test `test_update_field_explicit_none_clears_options_when_switching_to_text`.
+- [x] Extend `update_field` signature with `field_type` and `options`, use `_UNSET` sentinel, add fixed-row guard; confirm tests green.
+- [x] Write failing test `test_populate_schema_from_headers_sets_hardcoded_types_for_fixed_keys`.
+- [x] Write failing test `test_populate_schema_from_headers_defaults_new_rows_to_text`.
+- [x] Update `populate_schema_from_headers` / `apply_reconciliation` to apply the defaults; confirm green.
+- [x] **Commit**: "Let update_field set field_type and options with fixed-row guard".
 
 **1.6 · Schema page UI** (target commit at end of 1.6)
 
