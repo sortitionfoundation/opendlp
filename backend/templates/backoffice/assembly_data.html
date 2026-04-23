@@ -310,7 +310,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             <div class="rounded-lg p-6"
                  style="background-color: var(--color-tables-cards);
                         border: 1px solid var(--color-borders-dividers)">
-                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Target") }}</h3>
+                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                     {{ _("Upload target categories for selection criteria.") }}
                 </p>
@@ -417,7 +417,9 @@ ABOUTME: Displays data source selection and data management for assemblies
         {% set csv_is_edit = csv_mode == "edit" %}
         <section class="mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 id="selection-settings" class="text-heading-lg" style="color: var(--color-headings);">{{ _("Selection Settings") }}</h2>
+                <h2 id="selection-settings"
+                    class="text-heading-lg"
+                    style="color: var(--color-headings)">{{ _("Selection Settings") }}</h2>
                 {% if csv_readonly %}
                     {{ button(_("Edit Settings") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv&mode=edit", variant="outline") }}
                 {% endif %}
@@ -443,16 +445,20 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {% if not csv_readonly %}
                         {% if csv_available_columns %}
                             <details class="text-body-sm" style="color: var(--color-secondary-text);">
-                                <summary class="cursor-pointer font-medium" style="color: var(--color-headings);">
+                                <summary class="cursor-pointer font-medium"
+                                         style="color: var(--color-headings)">
                                     {{ _("Available respondent attributes") }}
                                 </summary>
-                                <div class="mt-2 p-3 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                                <div class="mt-2 p-3 rounded-lg"
+                                     style="background-color: var(--color-subtle-background-panels)">
                                     <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
                                     <code class="text-body-sm">{{ csv_available_columns | join(", ") }}</code>
                                 </div>
                             </details>
                         {% else %}
-                            <div class="p-3 rounded-lg text-body-sm" style="background-color: var(--color-info-background); color: var(--color-info-text);">
+                            <div class="p-3 rounded-lg text-body-sm"
+                                 style="background-color: var(--color-info-background);
+                                        color: var(--color-info-text)">
                                 {{ _("No respondent data has been uploaded yet. Attribute validation will be skipped.") }}
                             </div>
                         {% endif %}
@@ -493,7 +499,9 @@ ABOUTME: Displays data source selection and data management for assemblies
                                 </span>
                             </div>
                         {% else %}
-                            <div class="p-3 rounded-lg text-body-sm" style="background-color: var(--color-warning-background); color: var(--color-warning-text);">
+                            <div class="p-3 rounded-lg text-body-sm"
+                                 style="background-color: var(--color-warning-background);
+                                        color: var(--color-warning-text)">
                                 {{ _("Please review and save these settings before running selection.") }}
                             </div>
                         {% endif %}
