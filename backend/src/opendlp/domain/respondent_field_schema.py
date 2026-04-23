@@ -220,7 +220,10 @@ class RespondentFieldDefinition:
             if self.is_fixed:
                 raise ValueError("Cannot change field_type or options on a fixed field")
             new_type = field_type if field_type is not None else self.field_type
-            new_options = self.options if options is _UNSET else options
+            # When the caller didn't pass options explicitly, preserve the
+            # current list across choice<->choice transitions, but drop it
+            # when switching to a non-choice type so the invariant holds.
+            new_options = (None if new_type not in CHOICE_TYPES else self.options) if options is _UNSET else options
             _validate_type_and_options(new_type, new_options)
             self.field_type = new_type
             self.options = list(new_options) if new_options else None

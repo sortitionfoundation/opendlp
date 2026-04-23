@@ -317,6 +317,26 @@ class TestRespondentFieldDefinitionTyping:
         assert field.field_type == FieldType.TEXT
         assert field.options is None
 
+    def test_update_auto_clears_options_when_switching_to_non_choice_without_explicit_none(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a")],
+        )
+        # Note: options argument NOT passed — default sentinel.
+        field.update(field_type=FieldType.TEXT)
+        assert field.field_type == FieldType.TEXT
+        assert field.options is None
+
+    def test_update_switches_between_choice_types_preserves_options(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        field.update(field_type=FieldType.CHOICE_DROPDOWN)
+        assert field.field_type == FieldType.CHOICE_DROPDOWN
+        assert field.options is not None
+        assert [o.value for o in field.options] == ["a", "b"]
+
     def test_effective_field_type_uses_override_for_fixed_keys(self) -> None:
         field = self._field(field_key="email", is_fixed=True, field_type=FieldType.TEXT)
         assert field.effective_field_type == FieldType.EMAIL

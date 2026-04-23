@@ -435,6 +435,43 @@ class TestFieldTypeAndOptions:
             voted = next(f for f in schema if f.field_key == "voted")
             assert voted.field_type == FieldType.BOOL_OR_NONE
 
+    def test_switch_choice_back_to_text_clears_options(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom = next(f for f in schema if f.field_key == "custom_notes")
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                custom.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+            )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
+            data={
+                "label": custom.label,
+                "group": custom.group.value,
+                "field_type": FieldType.TEXT.value,
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            updated = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in updated if f.field_key == "custom_notes")
+            assert field.field_type == FieldType.TEXT
+            assert field.options is None
+
     def test_fixed_row_rejects_field_type_change(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
