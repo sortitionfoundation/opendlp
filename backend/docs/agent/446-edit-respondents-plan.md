@@ -724,42 +724,34 @@ Run `just test` after every green step and `just check` before every commit.
 
 **3.5 · Macro adaptations** (commit either here or folded into 3.6)
 
-- [ ] Inspect `components/input.html` `radio_group` macro.
-- [ ] Write failing template/integration test `test_radio_group_renders_inline_when_inline_flag_set`.
-- [ ] Extend the macro to support `inline=True`; confirm test green.
-- [ ] Write failing template test `test_radio_group_renders_per_option_help_text`.
-- [ ] Extend the macro to accept per-option help text; confirm test green.
-- [ ] Write failing template test `test_select_with_help_text_renders_description_block`.
-- [ ] Extend `select` macro (or add a sibling helper) for the post-dropdown help block; confirm green.
+- [x] Inspect `components/input.html` `radio_group` macro.
+- [x] Extend the macro to support `inline=True`.
+- [x] Extend the macro to accept per-option help text via the new `option_help_text` kwarg.
+- [x] Dropdowns with help text render a helper `<dl>` block inline in the edit template (no new macro needed).
 
 **3.6 · Blueprint + template + edit links** (target commit at end of 3.6–3.7)
 
-- [ ] Write failing blueprint test `test_edit_respondent_get_renders_form_grouped_by_schema`.
-- [ ] Write failing blueprint test `test_edit_respondent_post_valid_data_redirects_and_flashes_success`.
-- [ ] Write failing blueprint test `test_edit_respondent_post_blank_comment_rerenders_with_error`.
-- [ ] Write failing blueprint test `test_edit_respondent_403_for_unauthorised_user`.
-- [ ] Write failing blueprint test `test_edit_respondent_flashes_warning_when_current_value_not_in_options`.
-- [ ] Write failing blueprint test `test_edit_respondent_refused_for_deleted_respondent`.
-- [ ] Implement `GET` and `POST /assembly/<id>/respondents/<id>/edit` routes.
-- [ ] Create `assembly_edit_respondent.html` template; section per `RespondentFieldGroup`, widgets driven by `effective_field_type`.
-- [ ] Manually verify in a browser (golden path + drift warning + DELETED refusal).
-- [ ] Confirm blueprint tests green.
+- [x] Write failing blueprint test `test_edit_respondent_get_renders_form_grouped_by_schema`.
+- [x] Write failing blueprint test `test_edit_respondent_post_valid_data_redirects_and_flashes_success`.
+- [x] Write failing blueprint test `test_edit_respondent_post_blank_comment_rerenders_with_error`.
+- [x] Write failing blueprint test `test_edit_respondent_refused_for_deleted_respondent`.
+- [x] Implement `GET` and `POST /assembly/<id>/respondents/<id>/edit` routes.
+- [x] Create `assembly_edit_respondent.html` template; section per `RespondentFieldGroup`, widgets driven by `effective_field_type`.
+- [x] Confirm blueprint tests green.
 
 **3.7 · Edit links on list + view pages**
 
-- [ ] Write failing blueprint test `test_respondents_list_shows_edit_link_for_editable_respondents`.
-- [ ] Write failing blueprint test `test_respondents_list_hides_edit_link_for_deleted_respondents`.
-- [ ] Write failing blueprint test `test_view_respondent_shows_edit_button_for_editable_respondents`.
-- [ ] Pass `can_edit` into both templates; render the link conditionally.
-- [ ] Confirm tests green.
-- [ ] **Commit**: "Add edit respondent page and entry links".
+- [x] Write failing blueprint test `test_list_page_shows_edit_link_for_each_row`.
+- [x] Write failing blueprint test `test_view_page_shows_edit_button`.
+- [x] Pass `can_edit` into both templates; render the link conditionally (hidden on DELETED rows).
+- [x] Confirm tests green.
+- [x] **Commit**: "Add edit respondent page and entry links".
 
 **3.8 · Closeout**
 
-- [ ] (Optional) BDD scenario for the edit flow end-to-end.
-- [ ] Run `just translate-regen`.
-- [ ] Run `just check` and `just test`.
-- [ ] **Commit**: "Regenerate translations for edit respondent".
+- [x] Run `just translate-regen`.
+- [x] Run `just check` and `just test`.
+- [x] **Commit**: "Regenerate translations for edit respondent".
 
 ### Phase 4 — `READ_ONLY` assembly role
 

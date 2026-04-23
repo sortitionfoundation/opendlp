@@ -7,7 +7,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_link, table_cell_status %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_link, table_cell_status %}
 {% from "backoffice/components/pagination.html" import pagination %}
 {% from "backoffice/components/section.html" import section %}
 
@@ -119,13 +119,13 @@ ABOUTME: Displays respondent data configuration for assemblies
                                     {{ table_cell(respondent.external_id, bold=true) }}
                                     {{ table_cell(respondent.email or "—") }}
                                     {{ table_cell(respondent.display_name(assembly.name_fields)) }}
-                                    {{ table_cell_link(
-                                    _("View"),
-                                    href=url_for('respondents.view_respondent',
-                                    assembly_id=assembly.id,
-                                    respondent_id=respondent.id),
-                                    align="right"
-                                    ) }}
+                                    {% call table_cell_custom(align="right") %}
+                                        <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("View") }}</a>
+                                        {% if can_edit and respondent.selection_status.value != "DELETED" %}
+                                            &nbsp;|&nbsp;
+                                            <a href="{{ url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("Edit") }}</a>
+                                        {% endif %}
+                                    {% endcall %}
                                 {% endcall %}
                             {% endfor %}
                         {% endcall %}

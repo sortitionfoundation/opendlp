@@ -47,7 +47,13 @@ rendered as the default (blue) tag, so it's absent from this dict.
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
+    <div class="flex items-start justify-between gap-4 mb-2">
+        <h1 class="text-display-lg" style="color: var(--color-headings);">{{ respondent_name }}</h1>
+        {% if can_edit and not is_deleted %}
+            <a class="govuk-button govuk-button--secondary"
+               href="{{ url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("Edit") }}</a>
+        {% endif %}
+    </div>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {% if is_deleted and delete_comment %}
         <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"

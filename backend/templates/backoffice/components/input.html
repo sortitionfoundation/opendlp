@@ -359,7 +359,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
+{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="", inline=false, option_help_text={}) %}
     {#
     Radio button group component based on Figma OpenDLP UI specification.
 
@@ -407,7 +407,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% endfor %}
         {% else %}
             {# Editable radio buttons with custom styling #}
-            <div class="flex flex-col gap-2">
+            <div class="flex {% if inline %}flex-row flex-wrap gap-4{% else %}flex-col gap-2{% endif %}">
                 {% for option in options %}
                     <label class="radio-container{% if disabled %} radio-disabled{% endif %}">
                         {# Hidden native radio for accessibility #}
@@ -427,6 +427,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                         </span>
                         {# Label text #}
                         <span class="radio-label">{{ option.label }}</span>
+                        {% set help_text = option_help_text.get(option.value, "") if option_help_text else "" %}
+                        {% if help_text %}
+                            <span class="radio-option-help text-body-sm" style="color: var(--color-secondary-text);">— {{ help_text }}</span>
+                        {% endif %}
                     </label>
                 {% endfor %}
             </div>
