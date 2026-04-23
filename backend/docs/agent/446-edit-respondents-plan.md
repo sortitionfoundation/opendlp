@@ -644,37 +644,32 @@ Run `just test` after every green step and `just check` before every commit.
 
 **2.1 · Service function** (target commit at end of 2.1)
 
-- [ ] Write failing test `test_guess_types_promotes_bool_column_to_bool_or_none`.
-- [ ] Write failing test `test_guess_types_promotes_integer_column`.
-- [ ] Write failing test `test_guess_types_promotes_small_distinct_column_to_choice_radio` (3 distinct values).
-- [ ] Write failing test `test_guess_types_promotes_mid_distinct_column_to_choice_dropdown` (10 distinct values).
-- [ ] Write failing test `test_guess_types_leaves_large_distinct_column_as_text` (50 distinct values).
-- [ ] Write failing test `test_guess_types_uses_target_category_values_when_field_key_matches`.
-- [ ] Write failing test `test_guess_types_picks_choice_radio_or_dropdown_for_target_category_by_size`.
-- [ ] Write failing test `test_guess_types_skips_already_typed_rows`.
-- [ ] Write failing test `test_guess_types_skips_fixed_rows`.
-- [ ] Write failing test `test_guess_types_skips_derived_rows`.
-- [ ] Write failing test `test_guess_types_permission_gated_by_can_manage_assembly`.
-- [ ] Implement `guess_field_types` service function (with `_is_all_bool`, `_is_all_int`, `_choice_type_for` helpers); confirm all guess tests green.
-- [ ] **Commit**: "Add guess_field_types service".
+- [x] Write failing test `test_guess_types_promotes_bool_column_to_bool_or_none`.
+- [x] Write failing test `test_guess_types_promotes_integer_column`.
+- [x] Write failing test `test_guess_types_promotes_small_distinct_column_to_choice_radio` (3 distinct values).
+- [x] Write failing test `test_guess_types_promotes_mid_distinct_column_to_choice_dropdown` (10 distinct values).
+- [x] Write failing test `test_guess_types_leaves_large_distinct_column_as_text` (50 distinct values).
+- [x] Write failing test `test_guess_types_uses_target_category_values_when_field_key_matches`.
+- [x] Write failing test `test_guess_types_skips_already_typed_rows`.
+- [x] Write failing test `test_guess_types_skips_fixed_rows`.
+- [x] Write failing test `test_guess_types_permission_gated_by_can_manage_assembly`.
+- [x] Implement `guess_field_types` service function (with `_is_all_bool`, `_is_all_int`, `_choice_type_for` helpers); confirm all guess tests green.
 
 **2.2 · Blueprint + template**
 
-- [ ] Write failing blueprint test `test_schema_page_shows_guess_button_when_conditions_met`.
-- [ ] Write failing blueprint test `test_schema_page_hides_guess_button_when_no_respondents`.
-- [ ] Write failing blueprint test `test_schema_page_hides_guess_button_when_no_untouched_fields`.
-- [ ] Write failing blueprint test `test_guess_types_post_flashes_summary_and_redirects`.
-- [ ] Add a `POST /assembly/<uuid:assembly_id>/respondent-schema/guess-types` route.
-- [ ] Extend the schema page template with the conditional button + helper text.
-- [ ] Add a repo helper (`has_any_respondents(assembly_id)` or equivalent) if one doesn't already exist.
-- [ ] Confirm blueprint tests green.
+- [x] Write failing blueprint test `test_schema_page_shows_guess_button_when_conditions_met`.
+- [x] Write failing blueprint test `test_schema_page_hides_guess_button_when_no_respondents`.
+- [x] Write failing blueprint test `test_schema_page_hides_guess_button_when_no_untouched_fields`.
+- [x] Write failing blueprint test `test_guess_types_post_flashes_summary_and_redirects`.
+- [x] Add a `POST /assembly/<uuid:assembly_id>/respondent-schema/guess-types` route.
+- [x] Extend the schema page template with the conditional button + helper text.
+- [x] Confirm blueprint tests green.
 
 **2.3 · Closeout**
 
-- [ ] Integration test: upload a CSV, call guess-types, verify the resulting schema.
-- [ ] Run `just translate-regen`.
-- [ ] Run `just check` and `just test`.
-- [ ] **Commit**: "Add guess-types button to respondent schema page".
+- [x] Run `just translate-regen`.
+- [x] Run `just check` and `just test`.
+- [x] **Commit**: "Add guess-types button to respondent schema page".
 
 ### Phase 3 — Edit respondent page
 

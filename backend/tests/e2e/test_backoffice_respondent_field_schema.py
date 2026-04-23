@@ -365,6 +365,76 @@ class TestFieldTypeAndOptions:
             assert field.options is not None
             assert [o.value for o in field.options] == ["b"]
 
+    def test_guess_button_shown_when_conditions_met(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        assert b"Guess field types from data" in response.data
+
+    def test_guess_button_hidden_when_no_respondents(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        assert b"Guess field types from data" not in response.data
+
+    def test_guess_button_hidden_when_no_text_fields(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            # Flip every non-fixed row away from TEXT so there's nothing to guess.
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            for f in schema:
+                if not f.is_fixed and f.field_type == FieldType.TEXT:
+                    respondent_field_schema_service.update_field(
+                        uow,
+                        admin_user.id,
+                        existing_assembly.id,
+                        f.id,
+                        field_type=FieldType.LONGTEXT,
+                    )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        assert b"Guess field types from data" not in response.data
+
+    def test_guess_post_round_trips_and_flashes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,voted\nR1,true\nR2,false\n",
+                replace_existing=True,
+            )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/guess-types",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            voted = next(f for f in schema if f.field_key == "voted")
+            assert voted.field_type == FieldType.BOOL_OR_NONE
+
     def test_fixed_row_rejects_field_type_change(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

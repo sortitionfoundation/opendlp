@@ -10,6 +10,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldGroup,
 )
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import respondent_field_schema_service, respondent_service
@@ -237,6 +238,135 @@ class TestUpdateField:
         )
         assert updated.field_type == FieldType.TEXT
         assert updated.options is None
+
+
+class TestGuessFieldTypes:
+    def _setup_custom_csv(self, uow, admin_user, assembly, csv_content):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            assembly.id,
+            csv_content,
+            replace_existing=True,
+        )
+
+    def test_bool_column_guessed_as_bool_or_none(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,voted\nR1,true\nR2,false\nR3,yes\n",
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+
+        assert changed.get("voted") == FieldType.BOOL_OR_NONE
+
+    def test_integer_column_guessed(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,age\nR1,30\nR2,45\nR3,62\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("age") == FieldType.INTEGER
+
+    def test_small_distinct_column_guessed_as_choice_radio(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,region\nR1,North\nR2,South\nR3,East\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("region") == FieldType.CHOICE_RADIO
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        region = next(f for f in schema if f.field_key == "region")
+        assert region.options is not None
+        assert sorted(o.value for o in region.options) == ["East", "North", "South"]
+
+    def test_mid_distinct_column_guessed_as_choice_dropdown(self, uow, admin_user, test_assembly):
+        rows = "\n".join(f"R{i},region_{i}" for i in range(10))
+        csv_content = "external_id,region\n" + rows + "\n"
+        self._setup_custom_csv(uow, admin_user, test_assembly, csv_content)
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("region") == FieldType.CHOICE_DROPDOWN
+
+    def test_many_distinct_left_as_text(self, uow, admin_user, test_assembly):
+        rows = "\n".join(f"R{i},name_{i}" for i in range(50))
+        csv_content = "external_id,fullname\n" + rows + "\n"
+        self._setup_custom_csv(uow, admin_user, test_assembly, csv_content)
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "fullname" not in changed  # untouched
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        fullname = next(f for f in schema if f.field_key == "fullname")
+        assert fullname.field_type == FieldType.TEXT
+
+    def test_target_category_name_match_uses_target_values(self, uow, admin_user, test_assembly):
+        # Pre-seed target category with 4 values
+        category = TargetCategory(
+            assembly_id=test_assembly.id,
+            name="Region",
+            values=[
+                TargetValue(value="North", min=0, max=10),
+                TargetValue(value="South", min=0, max=10),
+                TargetValue(value="East", min=0, max=10),
+                TargetValue(value="West", min=0, max=10),
+            ],
+        )
+        with uow:
+            uow.target_categories.add(category)
+            uow.commit()
+
+        # CSV has only "North" in the data but target has 4 values
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,Region\nR1,North\n",
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("Region") == FieldType.CHOICE_RADIO
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        region = next(f for f in schema if f.field_key == "Region")
+        assert region.options is not None
+        assert sorted(o.value for o in region.options) == ["East", "North", "South", "West"]
+
+    def test_skips_already_typed_rows(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,voted\nR1,true\nR2,false\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        voted = next(f for f in schema if f.field_key == "voted")
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            voted.id,
+            field_type=FieldType.LONGTEXT,
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "voted" not in changed
+
+    def test_skips_fixed_rows(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,email\nR1,a@b.com\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "email" not in changed
+
+    def test_permission_gated(self, uow, regular_user, test_assembly):
+        with pytest.raises(InsufficientPermissions):
+            respondent_field_schema_service.guess_field_types(uow, regular_user.id, test_assembly.id)
 
 
 class TestPopulateSchemaFieldTypes:

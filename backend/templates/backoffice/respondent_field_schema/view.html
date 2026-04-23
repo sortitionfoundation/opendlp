@@ -42,6 +42,19 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             </form>
         </section>
     {% else %}
+        {% if show_guess_button %}
+            <section class="mb-6">
+                <form method="post"
+                      action="{{ url_for('respondent_field_schema.guess_types_view', assembly_id=assembly.id) }}"
+                      class="flex items-center gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ button(_("Guess field types from data") , type="submit", variant="secondary") }}
+                    <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Only fields still set to Text will be updated; explicitly-typed fields are left alone.") }}
+                    </span>
+                </form>
+            </section>
+        {% endif %}
         {% for section in sections %}
             {% if section.fields %}
                 <section class="mb-8">

@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import StringIO
 
+from opendlp.config import to_bool
 from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
     FIXED_FIELD_TYPES,
@@ -30,6 +31,8 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+
+_MAX_RADIO_OPTIONS = 6
 
 
 class FieldDefinitionNotFoundError(Exception):
@@ -232,6 +235,100 @@ def update_field(
         uow.commit()
         detached: RespondentFieldDefinition = field.create_detached_copy()
         return detached
+
+
+def _choice_type_for(n_options: int) -> FieldType:
+    return FieldType.CHOICE_RADIO if n_options <= _MAX_RADIO_OPTIONS else FieldType.CHOICE_DROPDOWN
+
+
+def _non_empty(values: list[str]) -> list[str]:
+    return [v.strip() for v in values if v is not None and v.strip()]
+
+
+def _is_all_bool(values: list[str]) -> bool:
+    if not values:
+        return False
+    for v in values:
+        try:
+            to_bool(v)
+        except ValueError:
+            return False
+    return True
+
+
+def _is_all_int(values: list[str]) -> bool:
+    if not values:
+        return False
+    for v in values:
+        try:
+            int(v)
+        except ValueError:
+            return False
+    return True
+
+
+def guess_field_types(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> dict[str, FieldType]:
+    """Overwrite field_type for non-fixed, non-derived, text-typed fields based
+    on the attribute-value distribution. Returns a map of field_key -> new type
+    for rows that were changed."""
+    # Local import to avoid a circular import:
+    # target_respondent_helpers -> respondent_service -> respondent_field_schema_service.
+    from opendlp.service_layer.target_respondent_helpers import MAX_DISTINCT_VALUES_FOR_AUTO_ADD  # noqa: PLC0415
+
+    changed: dict[str, FieldType] = {}
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+        target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
+        target_by_name = {cat.name.lower(): cat for cat in target_categories}
+
+        for f in fields:
+            if f.is_fixed or f.is_derived or f.field_type != FieldType.TEXT:
+                continue
+
+            # Target-category name match wins first.
+            cat = target_by_name.get(f.field_key.lower())
+            if cat is not None and cat.values:
+                option_values = sorted(v.value for v in cat.values)
+                new_type = _choice_type_for(len(option_values))
+                f.update(
+                    field_type=new_type,
+                    options=[ChoiceOption(value=v) for v in option_values],
+                )
+                changed[f.field_key] = new_type
+                continue
+
+            value_counts = uow.respondents.get_attribute_value_counts(assembly_id, f.field_key)
+            distinct = _non_empty(list(value_counts.keys()))
+            if not distinct:
+                continue
+
+            if _is_all_bool(distinct):
+                f.update(field_type=FieldType.BOOL_OR_NONE)
+                changed[f.field_key] = FieldType.BOOL_OR_NONE
+                continue
+
+            if _is_all_int(distinct):
+                f.update(field_type=FieldType.INTEGER)
+                changed[f.field_key] = FieldType.INTEGER
+                continue
+
+            if 0 < len(distinct) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+                option_values = sorted(distinct)
+                new_type = _choice_type_for(len(option_values))
+                f.update(
+                    field_type=new_type,
+                    options=[ChoiceOption(value=v) for v in option_values],
+                )
+                changed[f.field_key] = new_type
+                continue
+
+        uow.commit()
+    return changed
 
 
 def add_choice_option(

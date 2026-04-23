@@ -36,6 +36,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     delete_field,
     get_schema,
     get_schema_grouped,
+    guess_field_types,
     initialise_empty_schema,
     remove_choice_option,
     reorder_group,
@@ -109,6 +110,15 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         field_type_labels_by_value = {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType}
         choice_type_values = {ft.value for ft in CHOICE_TYPES}
 
+        all_fields = [f for group_fields in grouped.values() for f in group_fields]
+        has_guessable_text_rows = any(
+            not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
+        )
+        uow_count = bootstrap.bootstrap()
+        with uow_count:
+            has_respondents = uow_count.respondents.count_by_assembly_id(assembly_id) > 0
+        show_guess_button = has_guessable_text_rows and has_respondents
+
         return render_template(
             "backoffice/respondent_field_schema/view.html",
             assembly=assembly,
@@ -118,6 +128,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             field_type_labels_by_value=field_type_labels_by_value,
             choice_type_values=choice_type_values,
             schema_has_rows=schema_has_rows,
+            show_guess_button=show_guess_button,
             data_source=data_source,
             gsheet=gsheet,
             targets_enabled=targets_enabled,
@@ -206,6 +217,28 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found."), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/guess-types",
+    methods=["POST"],
+)
+@login_required
+def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Overwrite TEXT-typed schema rows with guessed types based on respondent data."""
+    try:
+        uow = bootstrap.bootstrap()
+        changed = guess_field_types(uow, current_user.id, assembly_id)
+        if changed:
+            flash(_("Guessed types for %(count)d fields.", count=len(changed)), "success")
+        else:
+            flash(_("No fields were guessed — no untouched text rows to update."), "info")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-23 16:27+0000\n"
+"POT-Creation-Date: 2026-04-23 16:35+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1013,7 +1013,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:136
 #: src/opendlp/entrypoints/blueprints/main.py:179
 #: src/opendlp/entrypoints/blueprints/main.py:278
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:133
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:145
 #: src/opendlp/entrypoints/blueprints/respondents.py:384
 #: src/opendlp/entrypoints/blueprints/respondents.py:513
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:81
@@ -1054,13 +1054,14 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/main.py:132
 #: src/opendlp/entrypoints/blueprints/main.py:175
 #: src/opendlp/entrypoints/blueprints/main.py:272
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:129
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:151
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:212
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:240
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:267
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:316
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:339
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:141
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:163
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:224
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:246
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:274
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:301
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:350
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:373
 #: src/opendlp/entrypoints/blueprints/respondents.py:182
 #: src/opendlp/entrypoints/blueprints/respondents.py:295
 #: src/opendlp/entrypoints/blueprints/respondents.py:380
@@ -1716,77 +1717,87 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:145
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:157
 #, python-format
 msgid "Schema initialised with %(count)d fixed fields."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:147
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:159
 #, fuzzy
 msgid "Schema already exists."
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:149
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:161
 #, fuzzy
 msgid "You don't have permission to initialise the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:168
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:180
 msgid "No changes submitted."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:216
 #, fuzzy
 msgid "Field updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:208
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:236
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:293
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:335
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:220
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:270
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:327
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:369
 #, fuzzy
 msgid "Field not found."
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:210
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:238
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:265
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:337
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:222
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:244
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:272
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:299
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:371
 #, fuzzy
 msgid "You don't have permission to edit the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:227
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:254
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:240
+#, python-format
+msgid "Guessed types for %(count)d fields."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:242
+msgid "No fields were guessed — no untouched text rows to update."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:261
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:288
 msgid "Option value is required."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:232
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:266
 #, fuzzy
 msgid "Option added."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:259
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:293
 #, fuzzy
 msgid "Option removed."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:263
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:297
 #, fuzzy
 msgid "Option not found."
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:285
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:319
 #, fuzzy
 msgid "Invalid move direction."
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:314
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:348
 #, fuzzy
 msgid "You don't have permission to reorder fields"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:331
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:365
 msgid "Field removed."
 msgstr ""
 
@@ -2947,7 +2958,7 @@ msgstr ""
 #: templates/backoffice/assembly_respondents.html:113
 #: templates/backoffice/assembly_selection.html:187
 #: templates/backoffice/assembly_selection.html:366
-#: templates/backoffice/respondent_field_schema/view.html:67
+#: templates/backoffice/respondent_field_schema/view.html:80
 #: templates/backoffice/targets/category_block.html:111
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
@@ -3955,8 +3966,8 @@ msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
 #: templates/backoffice/assembly_members.html:83
-#: templates/backoffice/respondent_field_schema/view.html:137
-#: templates/backoffice/respondent_field_schema/view.html:157
+#: templates/backoffice/respondent_field_schema/view.html:150
+#: templates/backoffice/respondent_field_schema/view.html:170
 #: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
 msgid "Remove"
 msgstr ""
@@ -4613,7 +4624,7 @@ msgid "Updated"
 msgstr "Utoljára módosítva"
 
 #: templates/backoffice/assembly_view_respondent.html:272
-#: templates/backoffice/respondent_field_schema/view.html:190
+#: templates/backoffice/respondent_field_schema/view.html:203
 #, fuzzy
 msgid "Back to Respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
@@ -5326,7 +5337,7 @@ msgid "Phase"
 msgstr "Vezetéknév"
 
 #: templates/backoffice/patterns.html:873
-#: templates/backoffice/respondent_field_schema/view.html:62
+#: templates/backoffice/respondent_field_schema/view.html:75
 msgid "Label"
 msgstr ""
 
@@ -5957,7 +5968,7 @@ msgid "Enter a positive number"
 msgstr ""
 
 #: templates/backoffice/components/edit_number_to_select_modal.html:38
-#: templates/backoffice/respondent_field_schema/view.html:101
+#: templates/backoffice/respondent_field_schema/view.html:114
 #: templates/backoffice/targets/category_block.html:46
 #: templates/backoffice/targets/category_block.html:227
 #: templates/backoffice/targets/category_name_edit.html:22
@@ -6116,76 +6127,86 @@ msgstr ""
 msgid "Initialise empty schema"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:63
+#: templates/backoffice/respondent_field_schema/view.html:51
+msgid "Guess field types from data"
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:53
+msgid ""
+"Only fields still set to Text will be updated; explicitly-typed fields "
+"are left alone."
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:76
 msgid "Field key"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:64
-#: templates/backoffice/respondent_field_schema/view.html:92
+#: templates/backoffice/respondent_field_schema/view.html:77
+#: templates/backoffice/respondent_field_schema/view.html:105
 #, fuzzy
 msgid "Type"
 msgstr "Kész"
 
-#: templates/backoffice/respondent_field_schema/view.html:65
-#: templates/backoffice/respondent_field_schema/view.html:83
+#: templates/backoffice/respondent_field_schema/view.html:78
+#: templates/backoffice/respondent_field_schema/view.html:96
 msgid "Group"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:66
+#: templates/backoffice/respondent_field_schema/view.html:79
 msgid "Order"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:82
+#: templates/backoffice/respondent_field_schema/view.html:95
 #, python-format
 msgid "Label for %(key)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:109
+#: templates/backoffice/respondent_field_schema/view.html:122
 msgid "Fixed"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:110
+#: templates/backoffice/respondent_field_schema/view.html:123
 msgid "Derived"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:120
+#: templates/backoffice/respondent_field_schema/view.html:133
 msgid "Move up"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:127
+#: templates/backoffice/respondent_field_schema/view.html:140
 msgid "Move down"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:135
+#: templates/backoffice/respondent_field_schema/view.html:148
 msgid ""
 "Remove this field from the schema? Respondent data keeps its values; they"
 " just stop being rendered."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:145
+#: templates/backoffice/respondent_field_schema/view.html:158
 #, python-format
 msgid "Options for %(label)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:169
+#: templates/backoffice/respondent_field_schema/view.html:182
 msgid "value"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:171
+#: templates/backoffice/respondent_field_schema/view.html:184
 #, fuzzy
 msgid "Option value"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/respondent_field_schema/view.html:174
+#: templates/backoffice/respondent_field_schema/view.html:187
 #, fuzzy
 msgid "help text (optional)"
 msgstr "Email cím"
 
-#: templates/backoffice/respondent_field_schema/view.html:176
+#: templates/backoffice/respondent_field_schema/view.html:189
 msgid "Option help text"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:177
+#: templates/backoffice/respondent_field_schema/view.html:190
 #, fuzzy
 msgid "Add option"
 msgstr "Kiválasztás"
