@@ -14,7 +14,7 @@ from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentStatus
 from opendlp.entrypoints.edit_respondent_form import (
     ATTR_FIELD_PREFIX,
     build_edit_respondent_form,
@@ -53,6 +53,7 @@ from opendlp.service_layer.respondent_service import (
     get_respondent_with_comment_authors,
     get_respondents_for_assembly_paginated,
     import_respondents_from_csv,
+    transition_respondent_status,
     update_respondent,
 )
 from opendlp.translations import gettext as _
@@ -503,6 +504,10 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             if grouped_schema.get(group)
         ]
 
+        allowed_transitions = [
+            s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
+        ]
+
         return render_template(
             "backoffice/assembly_view_respondent.html",
             assembly=assembly,
@@ -516,6 +521,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             can_manage=can_manage,
             can_edit=can_edit,
             comment_authors=comment_authors,
+            allowed_transitions=allowed_transitions,
         ), 200
     except RespondentNotFoundError as e:
         current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
@@ -673,3 +679,47 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
     except InsufficientPermissions:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@respondents_bp.route(
+    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/transition-status",
+    methods=["POST"],
+)
+@login_required
+def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
+    """Apply a selection-status transition with a required comment."""
+    raw_status = request.form.get("new_status", "").strip()
+    comment = request.form.get("comment", "").strip()
+    view_url = url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
+
+    if not comment:
+        flash(_("A comment is required when changing selection status"), "error")
+        return redirect(view_url)
+
+    new_status = RespondentStatus.from_str(raw_status)
+    if new_status is None:
+        flash(_("Invalid target status"), "error")
+        return redirect(view_url)
+
+    try:
+        uow = bootstrap.bootstrap()
+        transition_respondent_status(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            respondent_id=respondent_id,
+            new_status=new_status,
+            comment=comment,
+        )
+        flash(_("Status updated."), "success")
+    except ValueError as e:
+        flash(str(e), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to change this respondent's status"), "error")
+    except RespondentNotFoundError:
+        flash(_("Respondent not found"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return redirect(view_url)

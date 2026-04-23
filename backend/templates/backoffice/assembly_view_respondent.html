@@ -95,6 +95,41 @@ rendered as the default (blue) tag, so it's absent from this dict.
                 </div>
             {% endif %}
         </dl>
+        {% if can_edit and not is_deleted and allowed_transitions %}
+            <div class="flex flex-wrap gap-3" x-data="{ open_target: '' }">
+                {% for target in allowed_transitions %}
+                    {{ button(_("Change to %(status)s", status=target|title), variant="secondary", attrs='@click="open_target = \'' + target + '\'"') }}
+                {% endfor %}
+                {% for target in allowed_transitions %}
+                    <div x-show="open_target === '{{ target }}'"
+                         class="mt-4 p-4 border border-gray-300 rounded bg-white"
+                         style="max-width: 36rem;">
+                        <p class="text-body-md mb-3">
+                            {{ _("This will mark the respondent as %(status)s. The change is logged with your comment.", status=target|title) }}
+                        </p>
+                        <form method="post"
+                              action="{{ url_for('respondents.transition_status', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                              class="flex flex-col gap-3">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <input type="hidden" name="new_status" value="{{ target }}" />
+                            <label class="text-body-sm font-bold" for="transition-comment-{{ target }}">
+                                {{ _("Reason (required)") }}
+                            </label>
+                            <textarea id="transition-comment-{{ target }}"
+                                      name="comment"
+                                      rows="3"
+                                      required
+                                      class="border border-gray-300 rounded p-2"
+                                      placeholder="{{ _('e.g. confirmed on call with participant') }}"></textarea>
+                            <div class="flex gap-3">
+                                {{ button(_("Confirm"), type="submit", variant="primary") }}
+                                {{ button(_("Cancel"), variant="outline", attrs='@click="open_target = \'\'"') }}
+                            </div>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </section>
     {# Schema-driven middle — one table per populated group. #}
     {% if schema_sections %}

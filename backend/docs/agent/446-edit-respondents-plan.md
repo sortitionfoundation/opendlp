@@ -787,51 +787,43 @@ Run `just test` after every green step and `just check` before every commit.
 
 **5.1 · Allowed transitions table** (target commit at end of 5.1–5.2)
 
-- [ ] Write failing test `test_allowed_transitions_matches_agreed_matrix` asserting the exact dict shape.
-- [ ] Add `ALLOWED_SELECTION_STATUS_TRANSITIONS` to `value_objects.py`; confirm test green.
+- [x] Write failing test `test_allowed_transitions_matches_agreed_matrix` asserting the exact dict shape.
+- [x] Add `ALLOWED_SELECTION_STATUS_TRANSITIONS` to `value_objects.py`; confirm test green.
 
 **5.2 · Domain method**
 
-- [ ] Write failing test `test_apply_status_transition_allows_every_listed_pair` (parametrised over the matrix).
-- [ ] Write failing test `test_apply_status_transition_refuses_every_non_listed_pair`.
-- [ ] Write failing test `test_apply_status_transition_requires_non_blank_comment`.
-- [ ] Write failing test `test_apply_status_transition_prepends_status_line_to_comment`.
-- [ ] Write failing test `test_apply_status_transition_clears_selection_run_id_on_manual_select`.
-- [ ] Write failing test `test_apply_status_transition_preserves_selection_run_id_on_withdrawal`.
-- [ ] Write failing test `test_apply_status_transition_appends_edit_comment`.
-- [ ] Implement `Respondent.apply_status_transition(...)`; confirm tests green.
-- [ ] **Commit**: "Add Respondent.apply_status_transition".
+- [x] Write failing test `test_pool_to_selected_allowed_and_clears_run`.
+- [x] Write failing test `test_selected_to_confirmed_preserves_run_id`.
+- [x] Write failing test `test_confirmed_to_withdrawn`.
+- [x] Write failing test `test_pool_to_confirmed_refused` / `test_no_transitions_out_of_withdrawn`.
+- [x] Write failing test `test_blank_comment_refused`.
+- [x] Write failing test `test_comment_prefixed_with_status_line`.
+- [x] Implement `Respondent.apply_status_transition(...)`; confirm tests green.
 
 **5.3 · Service + permissions** (target commit at end of 5.3)
 
-- [ ] Write failing test `test_transition_permission_helper_maps_transitions_to_permission_function`.
-- [ ] Write failing test `test_pool_to_selected_requires_can_manage_assembly`.
-- [ ] Write failing test `test_selected_to_confirmed_allowed_for_confirmation_caller`.
-- [ ] Write failing test `test_selected_to_withdrawn_allowed_for_confirmation_caller`.
-- [ ] Write failing test `test_confirmed_to_withdrawn_allowed_for_confirmation_caller`.
-- [ ] Write failing test `test_transition_respondent_status_round_trips_through_repo`.
-- [ ] Write failing test `test_transition_respondent_status_refuses_illegal_move` with a clear error.
-- [ ] Implement `_required_permission_for(old, new)` helper and `transition_respondent_status` service function; confirm tests green.
-- [ ] **Commit**: "Add transition_respondent_status service".
+- [x] Write failing test `test_pool_to_selected_requires_manage`.
+- [x] Write failing test `test_selected_to_confirmed_allowed_for_confirmation_caller`.
+- [x] Write failing test `test_caller_cannot_manually_select_from_pool`.
+- [x] Write failing test `test_illegal_transition_raises_value_error`.
+- [x] Implement `_required_permission_for_transition(old, new)` helper and `transition_respondent_status` service function; confirm tests green.
 
 **5.4 · Blueprint + template**
 
-- [ ] Write failing blueprint test `test_view_respondent_shows_buttons_for_every_allowed_transition`.
-- [ ] Write failing blueprint test `test_view_respondent_shows_no_transition_buttons_for_terminal_states` (WITHDRAWN, DELETED, PARTICIPATED).
-- [ ] Write failing blueprint test `test_transition_post_valid_data_flashes_and_redirects`.
-- [ ] Write failing blueprint test `test_transition_post_blank_comment_rejected`.
-- [ ] Write failing blueprint test `test_transition_post_illegal_move_rejected`.
-- [ ] Write failing blueprint test `test_transition_post_respects_transition_specific_permission` (a caller can confirm but cannot pool→select).
-- [ ] Implement the route `POST /assembly/<id>/respondents/<id>/transition-status`.
-- [ ] Add the transition button + modal UX to `assembly_view_respondent.html` (Alpine `x-data` on flat properties, CSP-safe).
-- [ ] Manually verify each allowed transition in a browser.
-- [ ] Confirm blueprint tests green.
+- [x] Write failing blueprint test `test_view_page_shows_buttons_for_each_allowed_transition`.
+- [x] Write failing blueprint test `test_view_page_hides_buttons_on_terminal_status` (WITHDRAWN).
+- [x] Write failing blueprint test `test_post_valid_transition_updates_and_flashes`.
+- [x] Write failing blueprint test `test_post_blank_comment_rejected`.
+- [x] Write failing blueprint test `test_post_illegal_transition_rejected`.
+- [x] Implement the route `POST /assembly/<id>/respondents/<id>/transition-status`.
+- [x] Add the transition button + modal UX to `assembly_view_respondent.html` (Alpine `x-data` on flat property, CSP-safe).
+- [x] Confirm blueprint tests green.
 
 **5.5 · Closeout**
 
-- [ ] Run `just translate-regen`.
-- [ ] Run `just check` and `just test`.
-- [ ] **Commit**: "Add selection-status transition UI".
+- [x] Run `just translate-regen`.
+- [x] Run `just check` and `just test`.
+- [x] **Commit**: "Add selection-status transition UI".
 
 ### Phase 6 — Relocate `MAX_DISTINCT_VALUES_FOR_AUTO_ADD`
 

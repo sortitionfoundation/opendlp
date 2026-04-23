@@ -8,7 +8,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentAction,
+    RespondentSourceType,
+    RespondentStatus,
+)
 from opendlp.translations import gettext as _
 
 _UNSET: Any = object()
@@ -254,6 +259,36 @@ class Respondent:
 
         self.updated_at = datetime.now(UTC)
         self.add_comment(comment, author_id, action=RespondentAction.EDIT)
+
+    def apply_status_transition(
+        self,
+        *,
+        new_status: RespondentStatus,
+        author_id: uuid.UUID,
+        comment: str,
+    ) -> None:
+        """Transition selection_status via a backoffice action.
+
+        Only moves listed in ALLOWED_SELECTION_STATUS_TRANSITIONS succeed.
+        Records an EDIT comment prefixed with 'Status: OLD -> NEW. '.
+        """
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required when changing selection status")
+        allowed = ALLOWED_SELECTION_STATUS_TRANSITIONS.get(self.selection_status, [])
+        if new_status not in allowed:
+            raise ValueError(f"Transition {self.selection_status.value} -> {new_status.value} is not allowed")
+        old = self.selection_status
+        self.selection_status = new_status
+        if old == RespondentStatus.POOL and new_status == RespondentStatus.SELECTED:
+            # Manual override — no algorithmic run is responsible.
+            self.selection_run_id = None
+        self.updated_at = datetime.now(UTC)
+        self.add_comment(
+            f"Status: {old.value} → {new_status.value}. {comment}",
+            author_id,
+            action=RespondentAction.EDIT,
+        )
 
     def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
         """Blank PII, flip status to DELETED, append the deletion comment."""

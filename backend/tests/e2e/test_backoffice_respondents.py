@@ -10,6 +10,7 @@ import pytest
 from opendlp import config as _config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.respondent_field_schema_service import get_schema, initialise_empty_schema
 from opendlp.service_layer.respondent_service import create_respondent, delete_respondent, import_respondents_from_csv
@@ -844,6 +845,136 @@ class TestDeleteRespondentRoute:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Respondent not found" in msg for msg in flash_messages)
+
+
+class TestSelectionStatusTransition:
+    """Transition buttons + POST /.../transition-status."""
+
+    def _transition_url(self, assembly_id, respondent_id):
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/transition-status"
+
+    def _view_url(self, assembly_id, respondent_id):
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def test_view_page_shows_buttons_for_each_allowed_transition(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T1",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        assert b"CONFIRMED" in response.data
+        assert b"WITHDRAWN" in response.data
+
+    def test_view_page_hides_buttons_on_terminal_status(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T2",
+                attributes={},
+                selection_status=RespondentStatus.WITHDRAWN,
+            )
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        # No "Change to" buttons (no allowed transitions)
+        assert b"Change to" not in response.data
+
+    def test_post_valid_transition_updates_and_flashes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T3",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.CONFIRMED.value,
+                "comment": "confirmed on call",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.CONFIRMED
+
+    def test_post_blank_comment_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T4",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.CONFIRMED.value,
+                "comment": "",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.SELECTED
+
+    def test_post_illegal_transition_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T5",
+                attributes={},
+                selection_status=RespondentStatus.POOL,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.CONFIRMED.value,
+                "comment": "try",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.POOL
 
 
 class TestEditRespondentPage:

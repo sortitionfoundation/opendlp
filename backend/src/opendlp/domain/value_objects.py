@@ -128,6 +128,19 @@ class RespondentStatus(Enum):
             return None
 
 
+# Manual transitions allowed from the backoffice view-respondent page.
+# Moves to DELETED happen via the GDPR delete form only; returning the whole
+# pool to POOL happens via the batch reset action only.
+ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+    RespondentStatus.POOL: [RespondentStatus.SELECTED],
+    RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
+    RespondentStatus.WITHDRAWN: [],
+    RespondentStatus.PARTICIPATED: [],
+    RespondentStatus.DELETED: [],
+}
+
+
 class RespondentAction(Enum):
     """Type of action a RespondentComment records.
 

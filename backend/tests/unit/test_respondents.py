@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 import pytest
 
 from opendlp.domain.respondents import Respondent, RespondentComment, validate_no_field_name_collisions
-from opendlp.domain.value_objects import RespondentAction, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentAction,
+    RespondentStatus,
+)
 
 
 class TestRespondent:
@@ -474,6 +478,99 @@ class TestRespondentApplyEdit:
         assert c.text == "fix email"
         assert c.author_id == author
         assert c.action is RespondentAction.EDIT
+
+
+class TestApplyStatusTransition:
+    def _at(self, status: RespondentStatus, selection_run_id=None) -> Respondent:
+        return Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="R-ST",
+            selection_status=status,
+            selection_run_id=selection_run_id,
+        )
+
+    def test_allowed_transitions_matches_agreed_matrix(self):
+        expected = {
+            RespondentStatus.POOL: [RespondentStatus.SELECTED],
+            RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+            RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
+            RespondentStatus.WITHDRAWN: [],
+            RespondentStatus.PARTICIPATED: [],
+            RespondentStatus.DELETED: [],
+        }
+        assert expected == ALLOWED_SELECTION_STATUS_TRANSITIONS
+
+    def test_pool_to_selected_allowed_and_clears_run(self):
+        resp = self._at(RespondentStatus.POOL)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.SELECTED,
+            author_id=uuid.uuid4(),
+            comment="manual add",
+        )
+        assert resp.selection_status == RespondentStatus.SELECTED
+        assert resp.selection_run_id is None
+
+    def test_selected_to_confirmed_preserves_run_id(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.SELECTED, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="confirmed on call",
+        )
+        assert resp.selection_status == RespondentStatus.CONFIRMED
+        assert resp.selection_run_id == run_id
+
+    def test_confirmed_to_withdrawn(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.CONFIRMED, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.WITHDRAWN,
+            author_id=uuid.uuid4(),
+            comment="withdrew after confirmation",
+        )
+        assert resp.selection_status == RespondentStatus.WITHDRAWN
+        assert resp.selection_run_id == run_id
+
+    def test_pool_to_confirmed_refused(self):
+        resp = self._at(RespondentStatus.POOL)
+        with pytest.raises(ValueError, match="not allowed"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="try",
+            )
+
+    def test_no_transitions_out_of_withdrawn(self):
+        resp = self._at(RespondentStatus.WITHDRAWN)
+        with pytest.raises(ValueError, match="not allowed"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="try",
+            )
+
+    def test_blank_comment_refused(self):
+        resp = self._at(RespondentStatus.SELECTED)
+        with pytest.raises(ValueError, match="comment"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="   ",
+            )
+
+    def test_comment_prefixed_with_status_line(self):
+        resp = self._at(RespondentStatus.SELECTED)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="confirmed on the phone",
+        )
+        assert len(resp.comments) == 1
+        c = resp.comments[0]
+        assert c.action == RespondentAction.EDIT
+        assert "SELECTED" in c.text and "CONFIRMED" in c.text
+        assert "confirmed on the phone" in c.text
 
 
 class TestRespondentDisplayName:

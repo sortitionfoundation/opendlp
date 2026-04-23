@@ -1,14 +1,17 @@
 """ABOUTME: Integration tests for respondent service functions
 ABOUTME: Tests respondent creation, CSV import, and retrieval service functions"""
 
+import uuid
+
 import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole, RespondentStatus
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
 from opendlp.service_layer import respondent_service
 from opendlp.service_layer.exceptions import InsufficientPermissions, RespondentNotFoundError
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from opendlp.service_layer.user_service import grant_user_assembly_role
 
 
 @pytest.fixture
@@ -421,6 +424,92 @@ NB002,Male"""
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.get_respondents_for_assembly(uow, user_id, test_assembly.id)
+
+
+class TestTransitionRespondentStatus:
+    def _create(self, uow, admin_user, assembly, status=RespondentStatus.POOL):
+        return respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            assembly.id,
+            external_id=f"R-ST-{uuid.uuid4().hex[:4]}",
+            attributes={},
+            selection_status=status,
+        )
+
+    def test_pool_to_selected_requires_manage(self, uow, admin_user, test_assembly):
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.POOL)
+        respondent_service.transition_respondent_status(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            resp.id,
+            new_status=RespondentStatus.SELECTED,
+            comment="manual override",
+        )
+        with uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved is not None
+            assert retrieved.selection_status == RespondentStatus.SELECTED
+
+    def _make_caller(self, uow, admin_user, assembly, email: str) -> uuid.UUID:
+        caller = User(email=email, global_role=GlobalRole.USER, password_hash="h")
+        with uow:
+            uow.users.add(caller)
+            caller_id = caller.id
+            uow.commit()
+        with uow:
+            granter = uow.users.get(admin_user.id)
+            grant_user_assembly_role(
+                uow,
+                user_id=caller_id,
+                assembly_id=assembly.id,
+                role=AssemblyRole.CONFIRMATION_CALLER,
+                current_user=granter,
+            )
+        return caller_id
+
+    def test_selected_to_confirmed_allowed_for_confirmation_caller(self, uow, admin_user, test_assembly):
+        caller_id = self._make_caller(uow, admin_user, test_assembly, "caller@test.com")
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.SELECTED)
+
+        respondent_service.transition_respondent_status(
+            uow,
+            caller_id,
+            test_assembly.id,
+            resp.id,
+            new_status=RespondentStatus.CONFIRMED,
+            comment="confirmed on call",
+        )
+        with uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.CONFIRMED
+
+    def test_caller_cannot_manually_select_from_pool(self, uow, admin_user, test_assembly):
+        caller_id = self._make_caller(uow, admin_user, test_assembly, "caller2@test.com")
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.POOL)
+
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.transition_respondent_status(
+                uow,
+                caller_id,
+                test_assembly.id,
+                resp.id,
+                new_status=RespondentStatus.SELECTED,
+                comment="try override",
+            )
+
+    def test_illegal_transition_raises_value_error(self, uow, admin_user, test_assembly):
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.POOL)
+        with pytest.raises(ValueError, match="not allowed"):
+            respondent_service.transition_respondent_status(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                resp.id,
+                new_status=RespondentStatus.CONFIRMED,
+                comment="try",
+            )
 
 
 class TestUpdateRespondent:
