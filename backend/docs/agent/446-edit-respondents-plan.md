@@ -630,7 +630,7 @@ Run `just test` after every green step and `just check` before every commit.
 - [x] Extend `update_field_view` route to parse `field_type` and the repeating options rows; call the extended service.
 - [x] Update the schema page template (`respondent_field_schema/view.html`): add the Type column, the type `<select>`, and a server-rendered options editor (add/remove forms per option). No Alpine needed for this shape.
 - [x] Took the structured server-rendered fallback from open question 3 — no Alpine for this UI — each add/remove is its own POST.
-- [ ] Manually verify the page in a browser (use rodney per CLAUDE.md guidance).
+- [ ] Manually verify the page in a browser (use rodney per CLAUDE.md guidance). **Deferred — relies on interactive browser testing; covered by automated blueprint/template tests.**
 - [x] Confirm blueprint tests green.
 - [x] **Commit**: "Add type/options editor to respondent schema page".
 
