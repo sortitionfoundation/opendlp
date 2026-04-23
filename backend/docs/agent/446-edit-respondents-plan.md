@@ -601,14 +601,14 @@ Run `just test` after every green step and `just check` before every commit.
 
 **1.4 · ORM + migration**
 
-- [ ] Write failing integration test `test_field_definition_round_trip_with_choice_options_and_help_text` (save then reload through SQLAlchemy).
-- [ ] Add `field_type` and `options` columns to `respondent_field_definitions` in `src/opendlp/adapters/orm.py`.
-- [ ] Add the mapper-side serialization for options (`list[ChoiceOption]` ↔ `list[dict]`).
-- [ ] Run `uv run alembic revision --autogenerate -m "Add field_type and options to respondent_field_definitions"`; review and tidy the generated migration.
-- [ ] Add a deterministic backfill to the migration: default everything to `'text'`/`NULL`, then UPDATE fixed-field keys to their hardcoded types.
-- [ ] Run migration against a local DB with pre-existing schema rows; inspect the result manually.
-- [ ] Confirm the integration test is green.
-- [ ] **Commit**: "Add field_type and options columns to respondent field definitions".
+- [x] Write failing integration test `test_field_definition_round_trip_with_choice_options_and_help_text` (save then reload through SQLAlchemy).
+- [x] Add `field_type` and `options` columns to `respondent_field_definitions` in `src/opendlp/adapters/orm.py`.
+- [x] Add the mapper-side serialization for options (`list[ChoiceOption]` ↔ `list[dict]`).
+- [x] Run `uv run alembic revision --autogenerate -m "Add field_type and options to respondent_field_definitions"`; review and tidy the generated migration.
+- [x] Add a deterministic backfill to the migration: default everything to `'text'`/`NULL`, then UPDATE fixed-field keys to their hardcoded types.
+- [x] Run migration against a local DB with pre-existing schema rows; inspect the result manually.
+- [x] Confirm the integration test is green.
+- [x] **Commit**: "Add field_type and options columns to respondent field definitions".
 
 **1.5 · Service layer** (target commit at end of 1.5)
 

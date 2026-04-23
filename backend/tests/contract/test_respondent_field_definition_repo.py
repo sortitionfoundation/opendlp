@@ -6,6 +6,8 @@ from __future__ import annotations
 import uuid
 
 from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
 )
@@ -202,3 +204,41 @@ class TestDeleteAllForAssembly:
 
     def test_returns_zero_when_none_to_delete(self, respondent_field_definition_backend: ContractBackend) -> None:
         assert respondent_field_definition_backend.repo.delete_all_for_assembly(uuid.uuid4()) == 0
+
+
+class TestFieldTypeAndOptions:
+    def test_defaults_to_text_type_with_no_options(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = _make_field(respondent_field_definition_backend, assembly.id, field_key="freeform")
+
+        retrieved = respondent_field_definition_backend.repo.get(field.id)
+        assert retrieved is not None
+        assert retrieved.field_type == FieldType.TEXT
+        assert retrieved.options is None
+
+    def test_round_trip_choice_options_with_help_text(
+        self, respondent_field_definition_backend: ContractBackend
+    ) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="education_level",
+            label="Education level",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[
+                ChoiceOption(value="level_0", help_text="None"),
+                ChoiceOption(value="level_3", help_text="Post-secondary non-tertiary"),
+            ],
+        )
+        respondent_field_definition_backend.repo.add(field)
+        respondent_field_definition_backend.commit()
+
+        retrieved = respondent_field_definition_backend.repo.get(field.id)
+        assert retrieved is not None
+        assert retrieved.field_type == FieldType.CHOICE_RADIO
+        assert retrieved.options == [
+            ChoiceOption(value="level_0", help_text="None"),
+            ChoiceOption(value="level_3", help_text="Post-secondary non-tertiary"),
+        ]
