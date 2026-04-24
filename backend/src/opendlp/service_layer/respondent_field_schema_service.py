@@ -357,6 +357,41 @@ def add_choice_option(
         return detached
 
 
+def update_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    old_value: str,
+    new_value: str,
+    new_help_text: str = "",
+) -> RespondentFieldDefinition:
+    """Update the value and/or help_text of an existing ChoiceOption.
+
+    Pass ``new_value`` equal to ``old_value`` to edit help text only.
+    """
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        new_value = new_value.strip()
+        if not new_value:
+            raise FieldDefinitionConflictError("Option value cannot be blank")
+        existing = list(field.options or [])
+        if not any(o.value == old_value for o in existing):
+            raise FieldDefinitionNotFoundError(f"Option '{old_value}' not found on field {field_id}")
+        if new_value != old_value and any(o.value == new_value for o in existing):
+            raise FieldDefinitionConflictError(f"Option '{new_value}' already exists")
+        updated_options = [
+            ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
+        ]
+        field.update(options=updated_options)
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
 def remove_choice_option(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

@@ -18,6 +18,7 @@ from opendlp.service_layer.assembly_service import update_csv_config
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -394,6 +395,130 @@ class TestPopulateSchemaFieldTypes:
         custom_field = next(f for f in schema if f.field_key == "custom")
         assert custom_field.field_type == FieldType.TEXT
         assert custom_field.options is None
+
+
+class TestUpdateChoiceOption:
+    def _choice_field_id(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,gender\nR001,Female\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        field = next(f for f in schema if f.field_key == "gender")
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field.id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[
+                ChoiceOption(value="Female", help_text="women and girls"),
+                ChoiceOption(value="Male"),
+            ],
+        )
+        return field.id
+
+    def test_update_value_and_help_text(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Woman",
+            new_help_text="women and girls",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Woman", "Male"]
+        assert updated.options[0].help_text == "women and girls"
+
+    def test_update_help_text_only_preserves_value(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Male",
+            new_value="Male",
+            new_help_text="men and boys",
+        )
+        assert updated.options is not None
+        by_value = {o.value: o for o in updated.options}
+        assert by_value["Male"].help_text == "men and boys"
+        # Other option is untouched.
+        assert by_value["Female"].help_text == "women and girls"
+
+    def test_update_preserves_option_order(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Woman",
+            new_help_text="",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Woman", "Male"]
+
+    def test_update_clears_help_text_when_empty(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Female",
+            new_help_text="",
+        )
+        assert updated.options is not None
+        by_value = {o.value: o for o in updated.options}
+        assert by_value["Female"].help_text == ""
+
+    def test_update_rejects_blank_new_value(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionConflictError, match="blank"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Female",
+                new_value="   ",
+                new_help_text="",
+            )
+
+    def test_update_rejects_rename_clash(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionConflictError, match="already exists"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Female",
+                new_value="Male",
+                new_help_text="",
+            )
+
+    def test_update_raises_when_option_missing(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionNotFoundError, match="Nonexistent"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Nonexistent",
+                new_value="Whatever",
+                new_help_text="",
+            )
 
 
 class TestReorderGroup:

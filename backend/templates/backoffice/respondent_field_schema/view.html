@@ -160,8 +160,24 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                                 <ul class="mb-2">
                                                     {% for option in field.options %}
                                                         <li class="flex gap-2 items-center mb-1">
-                                                            <code>{{ option.value }}</code>
-                                                            {% if option.help_text %}<span class="text-body-sm">— {{ option.help_text }}</span>{% endif %}
+                                                            <form method="post"
+                                                                  action="{{ url_for('respondent_field_schema.update_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                                  class="flex gap-2 items-center">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <input type="hidden" name="old_value" value="{{ option.value }}">
+                                                                <input type="text"
+                                                                       name="value"
+                                                                       value="{{ option.value }}"
+                                                                       class="govuk-input"
+                                                                       aria-label="{{ _('Option value') }}">
+                                                                <input type="text"
+                                                                       name="help_text"
+                                                                       value="{{ option.help_text }}"
+                                                                       class="govuk-input"
+                                                                       aria-label="{{ _('Option help text') }}"
+                                                                       placeholder="{{ _('help text (optional)') }}">
+                                                                {{ button(_("Save"), type="submit", variant="secondary") }}
+                                                            </form>
                                                             <form method="post"
                                                                   action="{{ url_for('respondent_field_schema.remove_option_view', assembly_id=assembly.id, field_id=field.id) }}"
                                                                   class="inline">

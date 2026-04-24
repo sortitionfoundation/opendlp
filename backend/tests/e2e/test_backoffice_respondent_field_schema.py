@@ -365,6 +365,72 @@ class TestFieldTypeAndOptions:
             assert field.options is not None
             assert [o.value for o in field.options] == ["b"]
 
+    def test_update_option_changes_value_and_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom = next(f for f in schema if f.field_key == "custom_notes")
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                custom.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="old", help_text="original help"),
+                    ChoiceOption(value="other"),
+                ],
+            )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/update",
+            data={
+                "old_value": "old",
+                "value": "renamed",
+                "help_text": "updated help",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            updated = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in updated if f.field_key == "custom_notes")
+            assert field.options is not None
+            assert [o.value for o in field.options] == ["renamed", "other"]
+            assert field.options[0].help_text == "updated help"
+
+    def test_update_option_renders_edit_form(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom = next(f for f in schema if f.field_key == "custom_notes")
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                custom.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="one", help_text="first option")],
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        body = response.data
+        # The option value and help_text should both appear as editable input values.
+        assert b'value="one"' in body
+        assert b'value="first option"' in body
+        # The update action URL should be wired up.
+        assert f"/respondent-schema/fields/{custom.id}/options/update".encode() in body
+
     def test_guess_button_shown_when_conditions_met(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

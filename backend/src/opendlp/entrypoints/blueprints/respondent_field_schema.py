@@ -40,6 +40,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     initialise_empty_schema,
     remove_choice_option,
     reorder_group,
+    update_choice_option,
     update_field,
 )
 from opendlp.translations import gettext as _
@@ -267,6 +268,46 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found."), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/update",
+    methods=["POST"],
+)
+@login_required
+def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Update the value and/or help_text of an existing ChoiceOption."""
+    old_value = request.form.get("old_value", "").strip()
+    new_value = request.form.get("value", "").strip()
+    new_help_text = request.form.get("help_text", "")
+    if not old_value:
+        flash(_("Original option value is required."), "error")
+        return _schema_page_redirect(assembly_id)
+    if not new_value:
+        flash(_("Option value cannot be blank."), "error")
+        return _schema_page_redirect(assembly_id)
+    try:
+        uow = bootstrap.bootstrap()
+        update_choice_option(
+            uow,
+            current_user.id,
+            assembly_id,
+            field_id,
+            old_value=old_value,
+            new_value=new_value,
+            new_help_text=new_help_text,
+        )
+        flash(_("Option updated."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except FieldDefinitionNotFoundError:
+        flash(_("Option not found."), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
