@@ -218,11 +218,18 @@ class TestDeleteField:
             assert fixed_field.field_key in {f.field_key for f in schema}
 
 
-class TestManageLayoutLink:
-    def test_link_appears_on_data_tab(self, logged_in_admin, existing_assembly):
+class TestFieldsTab:
+    def test_fields_tab_appears_in_assembly_tab_bar(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
-        assert b"Manage field layout" in response.data
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+
+    def test_fields_tab_is_never_disabled(self, logged_in_admin, existing_assembly):
+        # Visit the Data tab before any data source is chosen — the Fields tab
+        # must still be a live link, not a disabled placeholder.
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+        assert response.status_code == 200
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
 
 
 class TestFieldTypeAndOptions:

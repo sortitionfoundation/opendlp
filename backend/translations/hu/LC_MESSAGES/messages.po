@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-24 08:38+0000\n"
+"POT-Creation-Date: 2026-04-24 12:54+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -121,7 +121,7 @@ msgstr "Módosítsa a számot."
 #: templates/admin/invite_view.html:47 templates/admin/invites.html:66
 #: templates/admin/user_view.html:22 templates/admin/users.html:113
 #: templates/backoffice/assembly_members.html:53
-#: templates/backoffice/assembly_respondents.html:111
+#: templates/backoffice/assembly_respondents.html:112
 #: templates/backoffice/assembly_view_respondent.html:182
 #: templates/main/view_assembly_members.html:11
 #: templates/respondents/view_respondents.html:163
@@ -421,7 +421,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:315 src/opendlp/entrypoints/forms.py:625
 #: templates/backoffice/assembly_data.html:186
-#: templates/backoffice/assembly_data.html:445
+#: templates/backoffice/assembly_data.html:439
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
@@ -692,7 +692,7 @@ msgid "Prevent selecting multiple participants from the same address"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:631
-#: templates/backoffice/assembly_data.html:470
+#: templates/backoffice/assembly_data.html:468
 #, fuzzy
 msgid "Address Attributes"
 msgstr "Cím oszlopok"
@@ -702,7 +702,7 @@ msgid "Comma-separated respondent attribute names used for address matching"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:637
-#: templates/backoffice/assembly_data.html:479
+#: templates/backoffice/assembly_data.html:477
 #, fuzzy
 msgid "Attributes to Keep"
 msgstr "Megtartandó oszlopok"
@@ -3064,7 +3064,7 @@ msgstr ""
 #: templates/backoffice/assembly_respondents.html:113
 #: templates/backoffice/assembly_selection.html:187
 #: templates/backoffice/assembly_selection.html:366
-#: templates/backoffice/respondent_field_schema/view.html:80
+#: templates/backoffice/respondent_field_schema/view.html:126
 #: templates/backoffice/targets/category_block.html:111
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
@@ -3384,7 +3384,7 @@ msgid "Showing %(start)s to %(end)s of %(total)s users"
 msgstr ""
 
 #: templates/admin/users.html:112
-#: templates/backoffice/assembly_respondents.html:112
+#: templates/backoffice/assembly_respondents.html:110
 #, fuzzy
 msgid "Name"
 msgstr "Vezetéknév"
@@ -3836,7 +3836,7 @@ msgid "Options"
 msgstr "Kiválasztás"
 
 #: templates/backoffice/assembly_data.html:188
-#: templates/backoffice/assembly_data.html:447
+#: templates/backoffice/assembly_data.html:441
 msgid "Prevent selecting multiple participants from the same address."
 msgstr ""
 
@@ -3859,7 +3859,7 @@ msgid "Column name containing unique participant identifiers."
 msgstr ""
 
 #: templates/backoffice/assembly_data.html:230
-#: templates/backoffice/assembly_data.html:472
+#: templates/backoffice/assembly_data.html:470
 msgid "e.g., Street, City, PostCode"
 msgstr ""
 
@@ -3869,7 +3869,7 @@ msgid "Comma-separated column names used for address matching."
 msgstr ""
 
 #: templates/backoffice/assembly_data.html:238
-#: templates/backoffice/assembly_data.html:481
+#: templates/backoffice/assembly_data.html:479
 msgid "e.g., Name, Email, Phone"
 msgstr ""
 
@@ -3902,8 +3902,14 @@ msgid "Upload CSV files to import participant data."
 msgstr ""
 
 #: templates/backoffice/assembly_data.html:313
+#: templates/backoffice/assembly_targets.html:12
+#: templates/backoffice/assembly_targets.html:19
+#: templates/backoffice/components/assembly_tabs.html:45
+#: templates/backoffice/service_docs.html:46
+#: templates/main/view_assembly_base.html:36
+#: templates/targets/view_targets.html:2
 #, fuzzy
-msgid "Target"
+msgid "Targets"
 msgstr "Kezdés dátuma"
 
 #: templates/backoffice/assembly_data.html:315
@@ -3970,11 +3976,7 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Select a CSV file with respondent data."
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:416
-msgid "Manage field layout"
-msgstr ""
-
-#: templates/backoffice/assembly_data.html:428
+#: templates/backoffice/assembly_data.html:422
 #: templates/db_selection/select.html:121
 #: templates/db_selection/settings.html:2
 #: templates/db_selection/settings.html:11
@@ -3982,44 +3984,44 @@ msgstr ""
 msgid "Selection Settings"
 msgstr "További beállítások"
 
-#: templates/backoffice/assembly_data.html:430
+#: templates/backoffice/assembly_data.html:424
 #, fuzzy
 msgid "Edit Settings"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_data.html:434
+#: templates/backoffice/assembly_data.html:428
 #, fuzzy
 msgid "Configure how the selection algorithm runs for this assembly."
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: templates/backoffice/assembly_data.html:455
+#: templates/backoffice/assembly_data.html:450
 #: templates/db_selection/settings.html:33
 msgid "Available respondent attributes"
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:458
+#: templates/backoffice/assembly_data.html:454
 #: templates/db_selection/settings.html:36
 msgid ""
 "The following attribute names are available from the uploaded respondent "
 "data:"
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:464
+#: templates/backoffice/assembly_data.html:462
 #: templates/db_selection/settings.html:42
 msgid ""
 "No respondent data has been uploaded yet. Attribute validation will be "
 "skipped."
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:473
+#: templates/backoffice/assembly_data.html:471
 msgid "Comma-separated respondent attribute names used for address matching."
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:482
+#: templates/backoffice/assembly_data.html:480
 msgid "Comma-separated respondent attribute names to include in CSV output."
 msgstr ""
 
-#: templates/backoffice/assembly_data.html:500
+#: templates/backoffice/assembly_data.html:498
 msgid "Settings have been confirmed. You can run selection."
 msgstr ""
 
@@ -4063,8 +4065,7 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 #: templates/backoffice/assembly_respondents.html:21
 #: templates/backoffice/assembly_respondents.html:84
 #: templates/backoffice/assembly_view_respondent.html:34
-#: templates/backoffice/components/assembly_tabs.html:46
-#: templates/backoffice/respondent_field_schema/view.html:15
+#: templates/backoffice/components/assembly_tabs.html:51
 #: templates/backoffice/service_docs.html:45
 #: templates/backoffice/targets/category_block.html:103
 #: templates/db_selection/select.html:43
@@ -4088,7 +4089,7 @@ msgstr "Módosítások mentése"
 #: templates/backoffice/assembly_members.html:13
 #: templates/backoffice/assembly_members.html:20
 #: templates/backoffice/assembly_members.html:44
-#: templates/backoffice/components/assembly_tabs.html:58
+#: templates/backoffice/components/assembly_tabs.html:63
 #: templates/main/view_assembly_base.html:68
 #: templates/main/view_assembly_members.html:2
 #: templates/main/view_assembly_members.html:4
@@ -4108,8 +4109,8 @@ msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
 #: templates/backoffice/assembly_members.html:83
-#: templates/backoffice/respondent_field_schema/view.html:150
-#: templates/backoffice/respondent_field_schema/view.html:186
+#: templates/backoffice/respondent_field_schema/view.html:196
+#: templates/backoffice/respondent_field_schema/view.html:232
 #: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
 msgid "Remove"
 msgstr ""
@@ -4154,6 +4155,7 @@ msgid ""
 msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:61
+#: templates/backoffice/respondent_field_schema/view.html:58
 #, fuzzy
 msgid "Initial Selection Respondents Tab:"
 msgstr "Kezdeti/Teszt kiválasztás"
@@ -4162,17 +4164,21 @@ msgstr "Kezdeti/Teszt kiválasztás"
 #: templates/backoffice/assembly_respondents.html:69
 #: templates/backoffice/assembly_targets.html:61
 #: templates/backoffice/assembly_targets.html:67
+#: templates/backoffice/respondent_field_schema/view.html:61
+#: templates/backoffice/respondent_field_schema/view.html:68
 #, fuzzy
 msgid "Not configured"
 msgstr "Új jelszó"
 
 #: templates/backoffice/assembly_respondents.html:67
+#: templates/backoffice/respondent_field_schema/view.html:65
 #, fuzzy
 msgid "Replacement Respondents Tab:"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
 #: templates/backoffice/assembly_respondents.html:75
 #: templates/backoffice/assembly_targets.html:73
+#: templates/backoffice/respondent_field_schema/view.html:73
 #, fuzzy
 msgid "View Data Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
@@ -4215,9 +4221,8 @@ msgstr ""
 msgid "Deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_respondents.html:110
-#: templates/respondents/view_respondents.html:162
-msgid "External ID"
+#: templates/backoffice/assembly_respondents.html:111
+msgid "ID"
 msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:144
@@ -4248,7 +4253,7 @@ msgstr "További beállítások"
 
 #: templates/backoffice/assembly_selection.html:12
 #: templates/backoffice/assembly_selection.html:18
-#: templates/backoffice/components/assembly_tabs.html:52
+#: templates/backoffice/components/assembly_tabs.html:57
 #: templates/backoffice/service_docs.html:48
 #: templates/db_selection/select.html:7 templates/gsheets/select.html:2
 #: templates/gsheets/select.html:8 templates/gsheets/select.html:11
@@ -4499,16 +4504,6 @@ msgstr ""
 #: templates/gsheets/manage_tabs.html:41
 msgid "List Old Tabs"
 msgstr ""
-
-#: templates/backoffice/assembly_targets.html:12
-#: templates/backoffice/assembly_targets.html:19
-#: templates/backoffice/components/assembly_tabs.html:40
-#: templates/backoffice/service_docs.html:46
-#: templates/main/view_assembly_base.html:36
-#: templates/targets/view_targets.html:2
-#, fuzzy
-msgid "Targets"
-msgstr "Kezdés dátuma"
 
 #: templates/backoffice/assembly_targets.html:28
 #, fuzzy
@@ -4772,7 +4767,6 @@ msgid "Updated"
 msgstr "Utoljára módosítva"
 
 #: templates/backoffice/assembly_view_respondent.html:313
-#: templates/backoffice/respondent_field_schema/view.html:219
 #, fuzzy
 msgid "Back to Respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
@@ -5485,7 +5479,7 @@ msgid "Phase"
 msgstr "Vezetéknév"
 
 #: templates/backoffice/patterns.html:873
-#: templates/backoffice/respondent_field_schema/view.html:75
+#: templates/backoffice/respondent_field_schema/view.html:121
 msgid "Label"
 msgstr ""
 
@@ -5968,7 +5962,13 @@ msgstr ""
 msgid "Dismiss"
 msgstr ""
 
-#: templates/backoffice/components/assembly_tabs.html:63
+#: templates/backoffice/components/assembly_tabs.html:40
+#: templates/backoffice/respondent_field_schema/view.html:9
+#: templates/backoffice/respondent_field_schema/view.html:15
+msgid "Fields"
+msgstr ""
+
+#: templates/backoffice/components/assembly_tabs.html:68
 #: templates/main/view_assembly_base.html:26
 #, fuzzy
 msgid "Assembly sections"
@@ -6116,8 +6116,8 @@ msgid "Enter a positive number"
 msgstr ""
 
 #: templates/backoffice/components/edit_number_to_select_modal.html:38
-#: templates/backoffice/respondent_field_schema/view.html:114
-#: templates/backoffice/respondent_field_schema/view.html:179
+#: templates/backoffice/respondent_field_schema/view.html:160
+#: templates/backoffice/respondent_field_schema/view.html:225
 #: templates/backoffice/targets/category_block.html:46
 #: templates/backoffice/targets/category_block.html:227
 #: templates/backoffice/targets/category_name_edit.html:22
@@ -6237,24 +6237,26 @@ msgstr ""
 msgid "No results found"
 msgstr "Az oldal nem elérhető"
 
-#: templates/backoffice/respondent_field_schema/view.html:9
-#: templates/backoffice/respondent_field_schema/view.html:21
-#, fuzzy
-msgid "Respondent field layout"
-msgstr "Az oldal nem elérhető"
-
-#: templates/backoffice/respondent_field_schema/view.html:16
-msgid "Field layout"
-msgstr ""
-
-#: templates/backoffice/respondent_field_schema/view.html:23
+#: templates/backoffice/respondent_field_schema/view.html:22
 msgid ""
 "Group, order, and label the fields that describe your respondents. These "
 "settings drive how respondent details are displayed and will seed the "
 "registration form when it is created."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:36
+#: templates/backoffice/respondent_field_schema/view.html:52
+#, fuzzy
+msgid "Fields are defined by your Google Spreadsheet"
+msgstr "Adja meg a Google táblázat beállításait"
+
+#: templates/backoffice/respondent_field_schema/view.html:54
+msgid ""
+"The fields for this assembly are the columns in the respondent tabs of "
+"your Google Spreadsheet. Edit the spreadsheet to add, remove, or rename "
+"fields."
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:82
 msgid ""
 "No schema has been set up for this assembly yet. Upload a CSV of "
 "respondents to seed one automatically from the CSV headers, or click "
@@ -6262,93 +6264,93 @@ msgid ""
 "consent, eligibility, etc)."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:41
+#: templates/backoffice/respondent_field_schema/view.html:87
 msgid "Initialise empty schema"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:51
+#: templates/backoffice/respondent_field_schema/view.html:97
 msgid "Guess field types from data"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:53
+#: templates/backoffice/respondent_field_schema/view.html:99
 msgid ""
 "Only fields still set to Text will be updated; explicitly-typed fields "
 "are left alone."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:76
+#: templates/backoffice/respondent_field_schema/view.html:122
 msgid "Field key"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:77
-#: templates/backoffice/respondent_field_schema/view.html:105
+#: templates/backoffice/respondent_field_schema/view.html:123
+#: templates/backoffice/respondent_field_schema/view.html:151
 #, fuzzy
 msgid "Type"
 msgstr "Kész"
 
-#: templates/backoffice/respondent_field_schema/view.html:78
-#: templates/backoffice/respondent_field_schema/view.html:96
+#: templates/backoffice/respondent_field_schema/view.html:124
+#: templates/backoffice/respondent_field_schema/view.html:142
 msgid "Group"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:79
+#: templates/backoffice/respondent_field_schema/view.html:125
 msgid "Order"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:95
+#: templates/backoffice/respondent_field_schema/view.html:141
 #, python-format
 msgid "Label for %(key)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:122
+#: templates/backoffice/respondent_field_schema/view.html:168
 msgid "Fixed"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:123
+#: templates/backoffice/respondent_field_schema/view.html:169
 msgid "Derived"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:133
+#: templates/backoffice/respondent_field_schema/view.html:179
 msgid "Move up"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:140
+#: templates/backoffice/respondent_field_schema/view.html:186
 msgid "Move down"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:148
+#: templates/backoffice/respondent_field_schema/view.html:194
 msgid ""
 "Remove this field from the schema? Respondent data keeps its values; they"
 " just stop being rendered."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:158
+#: templates/backoffice/respondent_field_schema/view.html:204
 #, python-format
 msgid "Options for %(label)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:172
-#: templates/backoffice/respondent_field_schema/view.html:200
+#: templates/backoffice/respondent_field_schema/view.html:218
+#: templates/backoffice/respondent_field_schema/view.html:246
 #, fuzzy
 msgid "Option value"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/respondent_field_schema/view.html:177
-#: templates/backoffice/respondent_field_schema/view.html:205
+#: templates/backoffice/respondent_field_schema/view.html:223
+#: templates/backoffice/respondent_field_schema/view.html:251
 msgid "Option help text"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:178
-#: templates/backoffice/respondent_field_schema/view.html:203
+#: templates/backoffice/respondent_field_schema/view.html:224
+#: templates/backoffice/respondent_field_schema/view.html:249
 #, fuzzy
 msgid "help text (optional)"
 msgstr "Email cím"
 
-#: templates/backoffice/respondent_field_schema/view.html:198
+#: templates/backoffice/respondent_field_schema/view.html:244
 msgid "value"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:206
+#: templates/backoffice/respondent_field_schema/view.html:252
 #, fuzzy
 msgid "Add option"
 msgstr "Kiválasztás"
@@ -7921,6 +7923,10 @@ msgstr "További beállítások"
 #: templates/respondents/view_respondents.html:153
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(total)s respondents"
+msgstr ""
+
+#: templates/respondents/view_respondents.html:162
+msgid "External ID"
 msgstr ""
 
 #: templates/respondents/view_respondents.html:167
@@ -11104,4 +11110,16 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Showing %(start)s-%(end)s of %(total)s runs"
+#~ msgstr ""
+
+#~ msgid "Target"
+#~ msgstr "Kezdés dátuma"
+
+#~ msgid "Manage field layout"
+#~ msgstr ""
+
+#~ msgid "Respondent field layout"
+#~ msgstr "Az oldal nem elérhető"
+
+#~ msgid "Field layout"
 #~ msgstr ""

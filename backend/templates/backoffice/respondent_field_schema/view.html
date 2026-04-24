@@ -6,31 +6,77 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% block title %}{{ _("Respondent field layout") }} - {{ assembly.title }}{% endblock %}
+{% block title %}{{ _("Fields") }} - {{ assembly.title }}{% endblock %}
 {% block breadcrumb_section %}
     <div class="mb-6">
         {{ breadcrumbs([
         {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
-        {"label": _("Field layout")}
+        {"label": _("Fields")}
         ]) }}
     </div>
 {% endblock %}
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Respondent field layout") }}</h1>
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("Group, order, and label the fields that describe your respondents. These settings drive how respondent details are displayed and will seed the registration form when it is created.") }}
     </p>
     {{ assembly_tabs(assembly=assembly,
-    active_tab="respondents",
+    active_tab="fields",
     data_source=data_source|default("") ,
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-    {% if not schema_has_rows %}
+    {% if data_source == "gsheet" and gsheet %}
+        {# Google Sheet source - fields come from the spreadsheet columns, not from this UI. #}
+        <section class="mb-8">
+            <div class="rounded-lg p-6"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers);">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <svg class="w-6 h-6"
+                             style="color: var(--color-primary-action);"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Spreadsheet") }}</h2>
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                        </p>
+                        <dl class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded"
+                                          style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded"
+                                          style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                        </dl>
+                        <div class="mt-4">
+                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% elif not schema_has_rows %}
         <section class="mb-8">
             <p class="text-body-md mb-4">
                 {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the reserved fixed fields only (email, consent, eligibility, etc).") }}
@@ -215,7 +261,4 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             {% endif %}
         {% endfor %}
     {% endif %}
-    <section class="flex gap-4">
-        {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
-    </section>
 {% endblock %}

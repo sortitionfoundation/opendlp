@@ -408,14 +408,6 @@ ABOUTME: Displays data source selection and data management for assemblies
                         <div>{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>
                 {% endif %}
-                {# Always offer access to the schema editor — it also works before any CSV has been uploaded. #}
-                <div class="mt-4 pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
-                    <a href="{{ url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) }}"
-                       class="text-body-sm"
-                       style="color: var(--color-link);">
-                        {{ _("Manage field layout") }}
-                    </a>
-                </div>
             </div>
         </div>
     </section>
