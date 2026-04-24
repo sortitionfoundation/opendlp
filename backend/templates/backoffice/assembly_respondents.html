@@ -107,18 +107,18 @@ ABOUTME: Displays respondent data configuration for assemblies
                     {% call table() %}
                         {{ table_head([
                         {"label": _("Status")},
-                        {"label": _("External ID")},
-                        {"label": _("Email")},
                         {"label": _("Name")},
+                        {"label": _("ID")},
+                        {"label": _("Email")},
                         {"label": _("Actions"), "align": "right"}
                         ]) }}
                         {% call table_body() %}
                             {% for respondent in respondents %}
                                 {% call table_row() %}
                                     {{ table_cell_status(respondent.selection_status) }}
+                                    {{ table_cell(respondent.display_name(assembly.name_fields)) }}
                                     {{ table_cell(respondent.external_id, bold=true) }}
                                     {{ table_cell(respondent.email or "—") }}
-                                    {{ table_cell(respondent.display_name(assembly.name_fields)) }}
                                     {% call table_cell_custom(align="right") %}
                                         <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("View") }}</a>
                                         {% if can_edit and respondent.selection_status.value != "DELETED" %}
