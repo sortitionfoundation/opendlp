@@ -50,10 +50,23 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            existing_sel_settings = (
+                get_or_create_selection_settings(uow, current_user.id, assembly_id) if existing_gsheet else None
+            )
 
         # Choose form based on whether gsheet exists
         if existing_gsheet:
-            form = EditAssemblyGSheetForm(obj=existing_gsheet)
+            # Fields on AssemblyGSheet populate via ``obj=``; fields that live on the
+            # SelectionSettings aggregate (id_column, check_same_address, the *_string
+            # comma-list fields) need to be supplied explicitly as kwargs.
+            assert existing_sel_settings is not None
+            form = EditAssemblyGSheetForm(
+                obj=existing_gsheet,
+                id_column=existing_sel_settings.id_column,
+                check_same_address=existing_sel_settings.check_same_address,
+                check_same_address_cols_string=existing_sel_settings.check_same_address_cols_string,
+                columns_to_keep_string=existing_sel_settings.columns_to_keep_string,
+            )
             template = "gsheets/edit_config.html"
             action = "edit"
         else:
