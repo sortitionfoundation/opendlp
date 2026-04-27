@@ -247,7 +247,6 @@ class SelectionRunRecord:
     completed_at: datetime | None = None
     user_id: uuid.UUID | None = None  # foreign key to User - who started the run
     comment: str = ""  # comment when starting the selection (max 512 chars)
-    status_stages: list[dict[str, str]] | None = None  # JSON: list of stage dicts with "name" and "status" keys
     selected_ids: list[list[str]] | None = None  # JSON: list of panels, each panel is list of IDs
     run_report: RunReport = field(default_factory=RunReport)  # serialized RunReport for persistence
     remaining_ids: list[str] | None = None  # JSON: external IDs of remaining pool at selection time
