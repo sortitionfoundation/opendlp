@@ -393,7 +393,6 @@ selection_run_records = Table(
         "user_id", PostgresUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     ),
     Column("comment", Text, nullable=False, default=""),
-    Column("status_stages", JSON, nullable=True),
     Column("selected_ids", JSON, nullable=True),
     Column("run_report", RunReportJSON(), nullable=True),
     Column("remaining_ids", JSON, nullable=True),
