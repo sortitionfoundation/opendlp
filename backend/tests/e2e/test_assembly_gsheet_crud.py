@@ -167,6 +167,42 @@ class TestAssemblyGSheetEditView:
         assert b"Save Changes" in response.data
         assert b"Remove Configuration" in response.data
 
+    def test_edit_gsheet_get_form_populates_selection_settings_fields(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """The edit form must show the SelectionSettings values that are actually saved.
+
+        Regression: previously the form was built with ``obj=existing_gsheet`` which only
+        populated AssemblyGSheet fields, leaving ``id_column``, ``check_same_address_cols_string``
+        and ``columns_to_keep_string`` rendering as static form defaults rather than the values
+        saved on the assembly's SelectionSettings.
+        """
+        assembly, _gsheet = assembly_with_gsheet
+
+        # Confirm the saved SelectionSettings (team="uk" applied UK defaults in the fixture).
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved_assembly = uow.assemblies.get(assembly.id)
+            assert saved_assembly.selection_settings is not None
+            sel_settings = saved_assembly.selection_settings
+            assert sel_settings.id_column == DEFAULT_ID_COLUMN["uk"]
+            assert sel_settings.check_same_address_cols == DEFAULT_ADDRESS_COLS["uk"]
+            assert sel_settings.columns_to_keep == DEFAULT_COLS_TO_KEEP["uk"]
+            address_cols_string = sel_settings.check_same_address_cols_string
+            columns_to_keep_string = sel_settings.columns_to_keep_string
+
+        response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
+        assert response.status_code == 200
+
+        # The rendered form must contain the actual saved SelectionSettings values.
+        # These fields live on SelectionSettings, not AssemblyGSheet, so they are not
+        # populated by ``obj=existing_gsheet`` alone.
+        assert f'value="{address_cols_string}"'.encode() in response.data, (
+            "Address columns string from SelectionSettings should pre-populate the form"
+        )
+        assert f'value="{columns_to_keep_string}"'.encode() in response.data, (
+            "Columns to keep string from SelectionSettings should pre-populate the form"
+        )
+
     def test_edit_gsheet_success_with_team_eu(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """Test successful gsheet editing with eu team overriding some settings."""
         assembly, _gsheet = assembly_with_gsheet
