@@ -6,7 +6,7 @@ import uuid
 import pytest
 from sortition_algorithms.features import MAX_FLEX_UNSET
 
-from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.targets import TargetCategory, TargetValue, target_categories_to_snapshot
 
 
 class TestTargetValue:
@@ -156,3 +156,60 @@ class TestTargetValueInPlaceUpdate:
         val.min = 15
         with pytest.raises(ValueError, match="max must be >= min"):
             val._validate()
+
+
+class TestTargetCategoriesToSnapshot:
+    def test_empty_list(self):
+        assert target_categories_to_snapshot([]) == []
+
+    def test_single_category_single_value(self):
+        cat = TargetCategory(assembly_id=uuid.uuid4(), name="Gender", description="Gender split", sort_order=2)
+        cat.add_value(TargetValue(value="Man", min=29, max=31, percentage_target=48.5, description="men"))
+
+        snapshot = target_categories_to_snapshot([cat])
+
+        assert snapshot == [
+            {
+                "name": "Gender",
+                "description": "Gender split",
+                "sort_order": 2,
+                "values": [
+                    {
+                        "value": "Man",
+                        "min": 29,
+                        "max": 31,
+                        "min_flex": 0,
+                        "max_flex": MAX_FLEX_UNSET,
+                        "percentage_target": 48.5,
+                        "description": "men",
+                    },
+                ],
+            },
+        ]
+
+    def test_multi_category_multi_value(self):
+        a = TargetCategory(assembly_id=uuid.uuid4(), name="Gender")
+        a.add_value(TargetValue(value="Man", min=10, max=12))
+        a.add_value(TargetValue(value="Woman", min=10, max=12))
+        b = TargetCategory(assembly_id=uuid.uuid4(), name="Age")
+        b.add_value(TargetValue(value="18-29", min=5, max=7, min_flex=3, max_flex=10))
+
+        snapshot = target_categories_to_snapshot([a, b])
+
+        assert [c["name"] for c in snapshot] == ["Gender", "Age"]
+        assert [v["value"] for v in snapshot[0]["values"]] == ["Man", "Woman"]
+        assert snapshot[1]["values"][0]["min_flex"] == 3
+        assert snapshot[1]["values"][0]["max_flex"] == 10
+
+    def test_snapshot_excludes_uuids_and_timestamps(self):
+        cat = TargetCategory(assembly_id=uuid.uuid4(), name="Gender")
+        cat.add_value(TargetValue(value="Man", min=1, max=2))
+
+        snapshot = target_categories_to_snapshot([cat])
+
+        assert "id" not in snapshot[0]
+        assert "category_id" not in snapshot[0]
+        assert "assembly_id" not in snapshot[0]
+        assert "created_at" not in snapshot[0]
+        assert "updated_at" not in snapshot[0]
+        assert "value_id" not in snapshot[0]["values"][0]

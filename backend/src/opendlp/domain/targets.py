@@ -130,3 +130,31 @@ class TargetCategory:
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
+
+
+def target_categories_to_snapshot(categories: list[TargetCategory]) -> list[dict[str, Any]]:
+    """Serialise target categories for storage on a SelectionRunRecord.
+
+    Excludes UUIDs and timestamps so the snapshot only carries the
+    category/value data the algorithm consumed at selection time.
+    """
+    return [
+        {
+            "name": cat.name,
+            "description": cat.description,
+            "sort_order": cat.sort_order,
+            "values": [
+                {
+                    "value": v.value,
+                    "min": v.min,
+                    "max": v.max,
+                    "min_flex": v.min_flex,
+                    "max_flex": v.max_flex,
+                    "percentage_target": v.percentage_target,
+                    "description": v.description,
+                }
+                for v in cat.values
+            ],
+        }
+        for cat in categories
+    ]

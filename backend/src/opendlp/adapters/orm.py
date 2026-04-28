@@ -375,6 +375,7 @@ selection_run_records = Table(
     Column("run_report", RunReportJSON(), nullable=True),
     Column("remaining_ids", JSON, nullable=True),
     Column("progress", JSON, nullable=True),
+    Column("targets_used", JSON, nullable=False, default=list),
 )
 
 # User backup codes table for 2FA recovery
