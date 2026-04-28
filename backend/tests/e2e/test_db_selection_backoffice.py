@@ -650,7 +650,7 @@ class TestCsvSelectionSelectedCount:
         # Should show warning about selected respondents
         assert b"5 respondents have been selected" in response.data
         # Should show reset button
-        assert b"Reset to Pool" in response.data
+        assert b"Reset Selected People" in response.data
         # Should NOT show Run Selection button (only Reset and Check Data)
         assert b"Run Selection" not in response.data
 
@@ -662,7 +662,7 @@ class TestCsvSelectionSelectedCount:
 
         assert response.status_code == 200
         # Should NOT show reset button
-        assert b"Reset to Pool" not in response.data
+        assert b"Reset Selected People" not in response.data
         # Should show Run Selection buttons
         assert b"Run Selection" in response.data
         assert b"Run Test Selection" in response.data
