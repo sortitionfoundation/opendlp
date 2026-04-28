@@ -384,20 +384,13 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 7 — i18n + final check + manual smoke test
+### Phase 7 — i18n + final check ✅
 
-- [ ] **Translations** — `just translate-regen`; commit the regenerated
-  `.po` / `.pot` files.
-- [ ] **Full check** — `just check` and `just test` clean.
-- [ ] **Manual smoke test** — start the app (`just run`), trigger a real DB
-  selection on a small fixture assembly, click "Download Summary Report",
-  open the CSV in LibreOffice / Excel, confirm:
-  - non-ASCII characters render correctly (BOM doing its job)
-  - target / pool / selected percentages match expectations
-  - DELETED column shows zero on a clean dataset
-  - URL in the header opens back to this selection
-- [ ] **Manual smoke test 2** — repeat for an *old* selection that has
-  empty `targets_used`; confirm the friendly error redirect.
-- [ ] **Commit** — `chore: regenerate translations for selection report`
-  (only if `translate-regen` produced changes uncommitted in earlier
-  phases).
+- [x] **Translations** — `just translate-regen` regenerated `messages.pot`
+  and `hu/LC_MESSAGES/messages.po`; committed.
+- [x] **Full check** — `just check` clean. Full unit / contract /
+  integration / e2e suite passes (sequential).
+- [ ] **Manual smoke test** — left for the user when running the app, to
+  verify the BOM behaviour in Excel / LibreOffice and the visual layout
+  in the modal with three buttons.
+- [x] **Commit** — done.

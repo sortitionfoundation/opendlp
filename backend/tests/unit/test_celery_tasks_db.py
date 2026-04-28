@@ -3,6 +3,8 @@ ABOUTME: Tests the _table_to_csv helper function used for on-demand CSV generati
 
 from opendlp.service_layer.sortition import _table_to_csv
 
+_BOM = "﻿"
+
 
 class TestTableToCsv:
     """Test the _table_to_csv helper function."""
@@ -15,21 +17,23 @@ class TestTableToCsv:
             ["NB002", "Female", "16-29"],
         ]
         result = _table_to_csv(table)
-        lines = result.strip().split("\n")
+        assert result.startswith(_BOM)
+        lines = result.removeprefix(_BOM).strip().split("\n")
         assert lines[0] == "id,Gender,Age"
         assert lines[1] == "NB001,Male,30-44"
         assert lines[2] == "NB002,Female,16-29"
 
     def test_empty_table(self):
-        """Test that an empty table produces an empty string."""
+        """Test that an empty table produces just the BOM."""
         result = _table_to_csv([])
-        assert result == ""
+        assert result == _BOM
 
     def test_header_only(self):
         """Test that a single row produces a single line."""
         table = [["id", "Gender"]]
         result = _table_to_csv(table)
-        lines = result.strip().split("\n")
+        assert result.startswith(_BOM)
+        lines = result.removeprefix(_BOM).strip().split("\n")
         assert len(lines) == 1
         assert lines[0] == "id,Gender"
 
@@ -40,6 +44,7 @@ class TestTableToCsv:
             ["NB001", "123 High Street, London"],
         ]
         result = _table_to_csv(table)
-        lines = result.strip().split("\n")
+        assert result.startswith(_BOM)
+        lines = result.removeprefix(_BOM).strip().split("\n")
         assert lines[0] == "id,address"
         assert '"123 High Street, London"' in lines[1]
