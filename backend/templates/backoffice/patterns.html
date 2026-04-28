@@ -38,14 +38,16 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
 
         {# Tabs for pattern categories #}
         {{ tabs(
+        id="pattern-tabs",
         items=[
-        {"label": _("Dropdown"), "href": url_for('dev.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
-        {"label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
-        {"label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
-        {"label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
-        {"label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
-        {"label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'},
-        {"label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'}
+        {"key": "dropdown", "label": _("Dropdown"), "href": url_for('dev.patterns', tab='dropdown'), "active": active_tab == 'dropdown'},
+        {"key": "form", "label": _("Form State"), "href": url_for('dev.patterns', tab='form'), "active": active_tab == 'form'},
+        {"key": "ajax", "label": _("AJAX"), "href": url_for('dev.patterns', tab='ajax'), "active": active_tab == 'ajax'},
+        {"key": "file-upload", "label": _("File Upload"), "href": url_for('dev.patterns', tab='file-upload'), "active": active_tab == 'file-upload'},
+        {"key": "progress", "label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
+        {"key": "pagination", "label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'},
+        {"key": "scroll", "label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'},
+        {"key": "focus", "label": _("Focus"), "href": url_for('dev.patterns', tab='focus'), "active": active_tab == 'focus'}
         ],
         aria_label=_("Pattern categories")
         ) }}
@@ -1241,6 +1243,194 @@ def list_items():
                                             <td class="px-3 py-2 font-mono">templates/backoffice/assembly_selection.html</td>
                                             <td class="px-3 py-2">252, 474</td>
                                             <td class="px-3 py-2">Selection history pagination</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
+        {# ===== FOCUS PRESERVATION PATTERN ===== #}
+        {% if active_tab == 'focus' %}
+            <div class="space-y-6">
+                {# Focus Preservation Overview #}
+                {% call card(title="Focus Preservation", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Preserves keyboard focus across page reloads. When a control like a dropdown triggers a page reload, the focus is automatically restored to that element after the page loads. This improves accessibility for keyboard users.") }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">💡 {{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>{{ _("Filter dropdowns") }}</strong> — {{ _("When selecting a filter value reloads the page") }}</li>
+                                <li><strong>{{ _("Navigation controls") }}</strong> — {{ _("Any control that navigates to the same page with different params") }}</li>
+                                <li><strong>{{ _("Data source selectors") }}</strong> — {{ _("Like the assembly data source dropdown") }}</li>
+                            </ul>
+                        </div>
+
+                        {# How it Works #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("How it Works") }}</h4>
+                            <ol class="list-decimal list-inside text-body-sm space-y-2" style="color: var(--color-body-text);">
+                                <li>{{ _("Add <code>data-focus-id=\"unique-id\"</code> to the focusable element") | safe }}</li>
+                                <li>{{ _("When navigating, append <code>#focus=unique-id</code> to the URL") | safe }}</li>
+                                <li>{{ _("On page load, the system finds and focuses the element with that ID") }}</li>
+                                <li>{{ _("The URL hash is cleaned up after focus is restored") }}</li>
+                            </ol>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Method 1: $focusUrl Magic Helper #}
+                {% call card(title="$focusUrl Magic Helper", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Use the <code>$focusUrl</code> magic helper when you need to build URLs with focus preservation in custom handlers.") | safe }}
+                        </p>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Live Example") }}</h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <div class="max-w-md" x-data="{ selected: '{{ request.args.get('demo_focus', '') }}' }">
+                                    <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Select an option (Tab here, then change value)") }}</label>
+                                    <select x-model="selected"
+                                            @change="window.location.href = $focusUrl('{{ url_for('dev.patterns', tab='focus') }}?demo_focus=' + selected)"
+                                            data-focus-id="demo-focus-select"
+                                            class="px-3 py-2 rounded-lg text-body-md w-full"
+                                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                        <option value="">{{ _("Choose...") }}</option>
+                                        <option value="option1">{{ _("Option 1") }}</option>
+                                        <option value="option2">{{ _("Option 2") }}</option>
+                                        <option value="option3">{{ _("Option 3") }}</option>
+                                    </select>
+                                </div>
+                                {% if request.args.get('demo_focus') %}
+                                    <p class="text-body-sm mt-3" style="color: var(--color-success-600);">
+                                        ✅ {{ _("Selected: %(value)s — Focus was restored to the dropdown!", value=request.args.get('demo_focus')) }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;select x-data="{ selected: '' }"
+        x-model="selected"
+        @change="window.location.href = $focusUrl('/page?param=' + selected)"
+        data-focus-id="my-select"&gt;
+    &lt;option value="a"&gt;Option A&lt;/option&gt;
+    &lt;option value="b"&gt;Option B&lt;/option&gt;
+&lt;/select&gt;</pre>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Method 2: x-focus-preserve Directive #}
+                {% call card(title="x-focus-preserve Directive", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("For simple links, use the <code>x-focus-preserve</code> directive. It automatically appends the focus hash when the link is clicked via keyboard.") | safe }}
+                        </p>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Live Example") }}</h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">
+                                    {{ _("Tab to the link below and press Enter. Focus will be restored after the page reloads.") }}
+                                </p>
+                                <a href="{{ url_for('dev.patterns', tab='focus', via_directive='1') }}"
+                                   data-focus-id="demo-directive-link"
+                                   x-data
+                                   x-focus-preserve
+                                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-button-md transition-colors"
+                                   style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);">
+                                    {{ _("Reload with Focus") }}
+                                </a>
+                                {% if request.args.get('via_directive') %}
+                                    <p class="text-body-sm mt-3" style="color: var(--color-success-600);">
+                                        ✅ {{ _("Page reloaded via directive — Focus was restored to the link!") }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;a href="/page"
+   data-focus-id="my-link"
+   x-data
+   x-focus-preserve&gt;
+    Reload Page
+&lt;/a&gt;</pre>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Method 3: urlSelect Component #}
+                {% call card(title="urlSelect Component (Built-in Support)", composed=true) %}
+                    {% call card_body() %}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("The <code>urlSelect</code> component has focus preservation built-in. Just add <code>data-focus-id</code> to the select element.") | safe }}
+                        </p>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
+    baseUrl: '{% raw %}{{ url_for(...) }}{% endraw %}',
+    paramName: 'source',
+    initialValue: '{% raw %}{{ current_value }}{% endraw %}'
+})"&gt;
+    &lt;select x-model="selected"
+            @change="navigate($event)"
+            data-focus-id="data-source"&gt;
+        &lt;option value="csv"&gt;CSV&lt;/option&gt;
+        &lt;option value="gsheet"&gt;Google Sheets&lt;/option&gt;
+    &lt;/select&gt;
+&lt;/div&gt;</pre>
+                        </div>
+
+                        {# Key Points #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>data-focus-id</strong> — {{ _("Must be unique on the page") }}</li>
+                                <li><strong>{{ _("Only on keyboard focus") }}</strong> — {{ _("Focus hash is only added when element has keyboard focus (not mouse click)") }}</li>
+                                <li><strong>{{ _("URL cleanup") }}</strong> — {{ _("The #focus hash is removed from URL after focus is restored") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Implementations") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">$focusUrl magic, x-focus-preserve directive, urlSelect component</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Data source selector with urlSelect</td>
                                         </tr>
                                     </tbody>
                                 </table>

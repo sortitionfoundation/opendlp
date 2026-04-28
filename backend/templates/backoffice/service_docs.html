@@ -41,11 +41,12 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {# Tabs for service categories #}
         {{ tabs(
+        id="service-tabs",
         items=[
-        {"label": _("Respondents"), "href": url_for('dev.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
-        {"label": _("Targets"), "href": url_for('dev.service_docs', tab='targets'), "active": active_tab == 'targets'},
-        {"label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
-        {"label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'}
+        {"key": "respondents", "label": _("Respondents"), "href": url_for('dev.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
+        {"key": "targets", "label": _("Targets"), "href": url_for('dev.service_docs', tab='targets'), "active": active_tab == 'targets'},
+        {"key": "config", "label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
+        {"key": "selection", "label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'}
         ],
         aria_label=_("Service categories")
         ) }}

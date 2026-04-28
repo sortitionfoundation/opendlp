@@ -2,38 +2,64 @@
 ABOUTME: Tabs component macro for backoffice design system
 ABOUTME: Horizontal tab navigation for switching between page sections
 #}
-{% macro tabs(items=[], aria_label="", preserve_scroll=true) %}
+{% macro tabs(items=[], aria_label="", id="", preserve_scroll=true) %}
     {#
+    Accessible tabs component following WAI-ARIA Authoring Practices.
+    Includes focus preservation for keyboard navigation across page reloads.
+
     items: Array of tab items, each with:
         - label: Display text (required)
         - href: Link URL (required)
+        - key: Unique identifier for this tab, used for aria-controls (optional, auto-generated from index)
         - active: Whether this tab is currently active (optional, default false)
         - disabled: Whether this tab is disabled/unclickable (optional, default false)
         - Any additional attributes are passed through to the anchor element (e.g., data-proto)
 
-    aria_label: Accessible label for the navigation (required)
+    aria_label: Accessible label for the tablist (required)
+    id: Base ID for generating tab/panel IDs and focus preservation (REQUIRED)
     preserve_scroll: Whether to preserve scroll position when switching tabs (default: true)
+
+    Keyboard navigation:
+        - Arrow Left/Right: Move to previous/next tab
+        - Home: Move to first tab
+        - End: Move to last tab
+        - Focus is preserved across page reloads via #focus hash
+
+    Tab panels should have:
+        - role="tabpanel"
+        - id="{{ id }}-panel-{{ key }}"
+        - aria-labelledby="{{ id }}-tab-{{ key }}"
+        - tabindex="0"
 
     Example:
         {{ tabs(
+            id="assembly-tabs",
             items=[
-                {"label": "Details", "href": url_for('backoffice.view_assembly', assembly_id=assembly.id), "active": true},
-                {"label": "Data", "href": "#", "data-proto": "click:show:data-panel"},
-                {"label": "Targets", "href": "#", "disabled": true},
-                {"label": "Selection", "href": "#"},
-                {"label": "Team Members", "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id)}
+                {"key": "details", "label": "Details", "href": "?tab=details", "active": true},
+                {"key": "data", "label": "Data", "href": "?tab=data"},
+                {"key": "targets", "label": "Targets", "href": "?tab=targets", "disabled": true},
+                {"key": "selection", "label": "Selection", "href": "?tab=selection"},
+                {"key": "members", "label": "Team Members", "href": "?tab=members"}
             ],
-            aria_label=_("Assembly sections"),
-            preserve_scroll=true
+            aria_label=_("Assembly sections")
         ) }}
+
+        <div id="assembly-tabs-panel-details" role="tabpanel" aria-labelledby="assembly-tabs-tab-details" tabindex="0">
+            Panel content here
+        </div>
     #}
-    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-data="{}" x-scroll-preserve-links{% endif %}>
-        <ul class="tab-bar" role="tablist">
+    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-scroll-preserve-links{% endif %}>
+        <ul class="tab-bar" role="tablist" x-data="tabsKeyboard()" @keydown="handleKeydown($event)">
             {% for item in items %}
+                {# Generate key from index if not provided #}
+                {% set item_key = item.key | default('tab-' ~ loop.index0) %}
+                {% set tab_id = id ~ '-tab-' ~ item_key if id else '' %}
+                {% set panel_id = id ~ '-panel-' ~ item_key if id else '' %}
+
                 {# Build extra attributes string from non-standard keys #}
                 {% set extra_attrs = [] %}
                 {% for key, value in item.items() %}
-                    {% if key not in ['label', 'href', 'active', 'disabled'] %}
+                    {% if key not in ['label', 'href', 'active', 'disabled', 'key'] %}
                         {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
                     {% endif %}
                 {% endfor %}
@@ -42,6 +68,9 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                         {# Disabled tab - rendered as non-clickable span #}
                         <span class="tab-item tab-item-disabled"
                               role="tab"
+                              {% if tab_id %}id="{{ tab_id }}"{% endif %}
+                              {% if panel_id %}aria-controls="{{ panel_id }}"{% endif %}
+                              aria-selected="false"
                               aria-disabled="true"
                               tabindex="-1"
                               {{ extra_attrs | join(' ') | safe }}>
@@ -52,8 +81,13 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                         <a href="{{ item.href }}"
                            class="tab-item tab-item-selected"
                            role="tab"
+                           {% if tab_id %}id="{{ tab_id }}"{% endif %}
+                           {% if panel_id %}aria-controls="{{ panel_id }}"{% endif %}
+                           {% if tab_id %}data-focus-id="{{ tab_id }}"{% endif %}
                            aria-selected="true"
-                           aria-current="page"
+                           tabindex="0"
+                           x-data
+                           x-focus-preserve
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
@@ -62,7 +96,13 @@ ABOUTME: Horizontal tab navigation for switching between page sections
                         <a href="{{ item.href }}"
                            class="tab-item"
                            role="tab"
+                           {% if tab_id %}id="{{ tab_id }}"{% endif %}
+                           {% if panel_id %}aria-controls="{{ panel_id }}"{% endif %}
+                           {% if tab_id %}data-focus-id="{{ tab_id }}"{% endif %}
                            aria-selected="false"
+                           tabindex="-1"
+                           x-data
+                           x-focus-preserve
                            {{ extra_attrs | join(' ') | safe }}>
                             {{ item.label }}
                         </a>
