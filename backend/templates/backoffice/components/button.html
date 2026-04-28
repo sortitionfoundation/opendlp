@@ -1,12 +1,13 @@
 {#
 ABOUTME: Button component macro for backoffice design system
-ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
+ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and full a11y support
 #}
 
-{% macro button(text="", variant="primary", disabled=false, type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false) %}
+{% macro button(text="", variant="primary", disabled=false, type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false, aria_label="", aria_pressed="", aria_haspopup="", aria_expanded="", aria_describedby="") %}
     {#
     Button component based on Figma OpenDLP UI specification.
     Renders as <a> when href is provided, otherwise <button>.
+    Follows WAI-ARIA button pattern for accessibility.
 
     Args:
         text: Button label text (or use {% call button() %}content{% endcall %} for custom inner content)
@@ -24,6 +25,16 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
         icon: HTML/SVG for icon-only variant (16x16)
         full_width: if true, button stretches to 100% width
 
+    Accessibility Args (WAI-ARIA):
+        aria_label: Accessible name for icon-only buttons or to override visible text.
+                    REQUIRED for icon-only variant when no text is provided.
+                    Note: aria-label is not translated by browsers, so prefer visible text when possible.
+        aria_pressed: For toggle buttons - "true", "false", or "mixed". Omit for non-toggle buttons.
+                      The visible label should NOT change based on pressed state.
+        aria_haspopup: For menu buttons - "true", "menu", "listbox", "tree", "grid", or "dialog".
+        aria_expanded: For expandable buttons - "true" or "false". Use with aria_haspopup.
+        aria_describedby: ID of element(s) that describe the button's function.
+
     Usage:
         {{ button("Click me") }}
         {{ button("Submit", variant="primary", type="submit") }}
@@ -35,10 +46,16 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
     With icons:
         {{ button("Edit", leading_icon='<svg>...</svg>') }}
         {{ button("Options", trailing_icon='<svg>...</svg>') }}
-        {{ button(variant="icon", icon='<svg>...</svg>') }}
+        {{ button(variant="icon", icon='<svg>...</svg>', aria_label="Add item") }}
 
     As a link:
         {{ button("Go to Dashboard", href="/dashboard") }}
+
+    Toggle button:
+        {{ button("Mute", aria_pressed="true") }}
+
+    Menu button:
+        {{ button("Actions", trailing_icon=chevron, aria_haspopup="menu", aria_expanded="false") }}
     #}
 
     {# Base styles shared by all variants #}
@@ -127,7 +144,13 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
     {% if href and not disabled %}
         <a
             href="{{ href }}"
+            role="button"
             {% if id %}id="{{ id }}"{% endif %}
+            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+            {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
+            {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
+            {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
+            {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             style="{{ all_styles }}"
             class="{{ hover_class }} {{ focus_class }} {{ classes }}"
@@ -136,7 +159,12 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons
         <button
             type="{{ type }}"
             {% if id %}id="{{ id }}"{% endif %}
-            {% if disabled %}disabled{% endif %}
+            {% if disabled %}disabled aria-disabled="true"{% endif %}
+            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+            {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
+            {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
+            {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
+            {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             style="{{ all_styles }}"
             class="{{ hover_class }} {{ focus_class }} {{ classes }}"

@@ -141,16 +141,8 @@
         background-color: var(--color-button-danger-bg-hover) !important;
     }
 
-    /* Focus ring for all buttons - keyboard navigation only */
-    .btn-focus:focus-visible {
-        outline: 2px solid var(--color-focus-ring);
-        outline-offset: var(--focus-ring-offset);
-    }
-
-    /* Remove default focus outline */
-    .btn-focus:focus {
-        outline: none;
-    }
+    /* Focus ring for buttons - use browser default outline for keyboard navigation */
+    /* The .btn-focus class enables :focus-visible styling (no custom override needed) */
 
     /* Icon sizing within buttons */
     .btn-icon {

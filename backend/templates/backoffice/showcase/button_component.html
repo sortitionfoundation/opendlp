@@ -78,8 +78,8 @@ ABOUTME: Displays button variants and usage examples
 {# With trailing icon (dropdown) #}
         {{ button("Options", variant="secondary", trailing_icon=chevron_icon) }}
 
-{# Icon-only button #}
-        {{ button(variant="icon", icon=plus_icon) }}') %}
+{# Icon-only button - aria_label is REQUIRED for accessibility #}
+        {{ button(variant="icon", icon=plus_icon, aria_label="Add item") }}') %}
         <div class="flex flex-wrap gap-4 items-center">
             <div class="flex flex-col items-center gap-2">
                 {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
@@ -94,11 +94,11 @@ ABOUTME: Displays button variants and usage examples
                 <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary + icon</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button(variant="icon", icon=edit_icon) }}
+                {{ button(variant="icon", icon=edit_icon, aria_label="Edit") }}
                 <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button(variant="icon", icon=trash_icon) }}
+                {{ button(variant="icon", icon=trash_icon, aria_label="Delete") }}
                 <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
             </div>
         </div>
@@ -125,6 +125,51 @@ ABOUTME: Displays button variants and usage examples
     <div class="w-full max-w-md">
         {{ button("Full Width Button", variant="primary", full_width=true) }}
     </div>
+{% endcall %}
+
+        {# Accessibility Section #}
+{% call showcase_example('{# Toggle button - aria_pressed indicates current state #}
+{# Important: The label should NOT change based on pressed state #}
+{{ button("Mute", aria_pressed="true") }}
+{{ button("Mute", aria_pressed="false") }}
+
+{# Menu button - indicates popup will appear #}
+{{ button("Actions", trailing_icon=chevron, aria_haspopup="menu", aria_expanded="false") }}
+
+{# Button with description #}
+{{ button("Delete account", variant="danger", aria_describedby="delete-warning") }}
+<p id="delete-warning">This action cannot be undone.</p>') %}
+<div class="flex flex-col gap-6">
+    <div>
+        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Toggle Buttons</h4>
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Mute", aria_pressed="true") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Pressed</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Mute", aria_pressed="false") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Not pressed</span>
+            </div>
+        </div>
+    </div>
+    <div>
+        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Menu Button</h4>
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex flex-col items-center gap-2">
+                {{ button("Actions", variant="secondary", trailing_icon=chevron_down_icon, aria_haspopup="menu", aria_expanded="false") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">aria-haspopup="menu"</span>
+            </div>
+        </div>
+    </div>
+    <div>
+        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Button with Description</h4>
+        <div class="flex flex-col gap-2">
+            {{ button("Delete account", variant="danger", aria_describedby="delete-warning-demo") }}
+            <p id="delete-warning-demo" class="text-caption" style="color: var(--color-secondary-text);">This action cannot be undone. Screen readers will announce this description.</p>
+        </div>
+    </div>
+</div>
 {% endcall %}
 
 {{ showcase_tokens([
