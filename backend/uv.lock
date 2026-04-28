@@ -3,13 +3,13 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-04-13T15:49:48.999564725Z"
+exclude-newer = "2026-04-20T01:56:18.816653353Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "2026-04-20T15:49:48.9995778Z", span = "PT0S" }
-authlib = { timestamp = "2026-04-20T15:49:48.999586917Z", span = "PT0S" }
-mako = { timestamp = "2026-04-20T15:49:48.999587328Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-04-27T01:56:18.816663963Z", span = "PT0S" }
+authlib = { timestamp = "2026-04-27T01:56:18.816670765Z", span = "PT0S" }
+mako = { timestamp = "2026-04-27T01:56:18.816671186Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -969,7 +969,7 @@ dev = [
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "time-machine", specifier = ">=2.19.0" },
-    { name = "types-authlib", specifier = ">=1.6.6.20251220" },
+    { name = "types-authlib", specifier = ">=1.6.11.20260418" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
     { name = "types-markdown", specifier = ">=3.8.0.20250809" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
@@ -1599,14 +1599,14 @@ wheels = [
 
 [[package]]
 name = "types-authlib"
-version = "1.6.9.20260408"
+version = "1.6.11.20260418"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/a9/dff8ddb8381c6443e9c9d7c29af63a5942774d5eccc622f2ffdd2663ec8d/types_authlib-1.6.9.20260408.tar.gz", hash = "sha256:1a9ac9802d8912ad66f5480b1ff3890df57fb54bcd1cdddb2ae1383fd11ab819", size = 46797, upload-time = "2026-04-08T04:35:00.817Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/1f/1916a7cfc5482e2e29da1752c55b7d93ba58fc39972368d0f1fcd26a943b/types_authlib-1.6.11.20260418.tar.gz", hash = "sha256:591f11924f63ae85665ebd7f0524e8a2a4d141adeaf5204828e62bf08f4a956f", size = 46861, upload-time = "2026-04-18T04:21:49.139Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/77/af617d1404e3069fc2db359d48a9d6812cf569188ac4be61c98e811a4bf1/types_authlib-1.6.9.20260408-py3-none-any.whl", hash = "sha256:8179cd7c6f98cefc4bd138318beedee48cecb55c7665a31196a4291cd4fe2cf7", size = 103932, upload-time = "2026-04-08T04:34:59.759Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/97/0ab68862ba1a939bdaefbbf53f2e9ececb0fd9941570dc24b861ec0670fb/types_authlib-1.6.11.20260418-py3-none-any.whl", hash = "sha256:44534bf7d85b9a27579c26e044b7ef96a13b8d179f8492f0531a4649ab250814", size = 103942, upload-time = "2026-04-18T04:21:47.838Z" },
 ]
 
 [[package]]
