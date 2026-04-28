@@ -16,8 +16,12 @@ from opendlp.domain.value_objects import (
     SelectionTaskType,
 )
 from opendlp.service_layer.selection_report import (
+    CategoryReport,
+    CategoryReportRow,
+    SelectionReport,
     SelectionReportError,
     build_selection_report,
+    selection_report_to_csv,
 )
 from tests.fakes import FakeUnitOfWork
 
@@ -340,3 +344,90 @@ class TestRunNotFound:
 
         with pytest.raises(SelectionReportError, match="not found"):
             build_selection_report(uow, assembly.id, uuid.uuid4(), _StubURLGenerator())
+
+
+class TestCsvSerialisation:
+    def _report(self) -> SelectionReport:
+        return SelectionReport(
+            assembly_title="Climate Assembly",
+            selection_url="https://example.test/sel",
+            number_selected=2,
+            pool_size=4,
+            categories=[
+                CategoryReport(
+                    name="Gender",
+                    rows=[
+                        CategoryReportRow(
+                            value="Man",
+                            target_min=1,
+                            target_max=1,
+                            target_pct=50.0,
+                            pool_count=2,
+                            pool_pct=50.0,
+                            selected_count=1,
+                            selected_pct=50.0,
+                            deleted_count=0,
+                        ),
+                        CategoryReportRow(
+                            value="Woman",
+                            target_min=1,
+                            target_max=1,
+                            target_pct=50.0,
+                            pool_count=2,
+                            pool_pct=50.0,
+                            selected_count=1,
+                            selected_pct=50.0,
+                            deleted_count=0,
+                        ),
+                    ],
+                ),
+            ],
+        )
+
+    def test_starts_with_bom(self):
+        csv_text = selection_report_to_csv(self._report())
+        assert csv_text.startswith("﻿")
+
+    def test_header_section_contains_metadata(self):
+        csv_text = selection_report_to_csv(self._report())
+        assert "Climate Assembly" in csv_text
+        assert "https://example.test/sel" in csv_text
+        assert "2" in csv_text
+        assert "4" in csv_text
+
+    def test_category_section_layout(self):
+        csv_text = selection_report_to_csv(self._report())
+        lines = csv_text.lstrip("﻿").splitlines()
+        assert "Gender,Target,,,,All respondents,,Selected,,Deleted" in lines
+        assert ",%,#,Min,Max,%,#,%,#,#" in lines
+        assert "Man,50.0,1,1,1,50.0,2,50.0,1,0" in lines
+        assert "Woman,50.0,1,1,1,50.0,2,50.0,1,0" in lines
+
+    def test_blank_line_between_sections(self):
+        report = self._report()
+        report.categories.append(
+            CategoryReport(
+                name="Age",
+                rows=[
+                    CategoryReportRow(
+                        value="18-29",
+                        target_min=1,
+                        target_max=1,
+                        target_pct=50.0,
+                        pool_count=2,
+                        pool_pct=50.0,
+                        selected_count=1,
+                        selected_pct=50.0,
+                        deleted_count=0,
+                    ),
+                ],
+            ),
+        )
+        csv_text = selection_report_to_csv(report)
+        assert "\n\n" in csv_text or ",,,,,,,,," in csv_text
+
+    def test_quoting_for_values_with_commas(self):
+        report = self._report()
+        report.categories[0].rows[0].value = "Aspley, Bilborough"
+        csv_text = selection_report_to_csv(report)
+        assert '"Aspley, Bilborough"' in csv_text

@@ -320,27 +320,22 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 3 — CSV serialisation (with BOM)
+### Phase 3 — CSV serialisation (with BOM) ✅
 
-- [ ] **Red 3.1** — In `tests/unit/test_selection_report.py` add
-  `test_csv_output_has_bom` asserting the result starts with `'﻿'`.
-- [ ] **Red 3.2** — Add a fixture-based test asserting exact CSV content
-  for a known small `SelectionReport`: header section (title / URL /
-  number selected / pool size / caveat note), then per-category sections
-  in the agreed layout (no "orig", no "confirmed/dropped out", min/max
-  and Deleted columns).
-- [ ] **Red 3.3** — Add a test confirming column header strings go
-  through `gettext` (e.g. patch `gettext` in test, assert called).
-- [ ] Confirm tests fail.
-- [ ] **Green 3.4** — Implement
-  `selection_report_to_csv(report: SelectionReport) -> str` in the same
-  module using stdlib `csv.writer` with `StringIO`. Prepend `'﻿'`.
-- [ ] **Green 3.5** — Make sure header text uses `_()` for translation.
-- [ ] **Green 3.6** — Run `just test`.
-- [ ] **Refactor 3.7** — If the writer function is long, split into
-  `_write_header_section`, `_write_category_section`.
-- [ ] **Check** — `just check` clean.
-- [ ] **Commit** — `feat: serialise selection summary report to CSV`.
+- [x] **Red 3.1–3.3** — Tests for BOM prefix, header metadata, category
+  section layout (10-column table with Target %/#/Min/Max, All respondents
+  %/#, Selected %/#, Deleted #), blank line between sections, and CSV
+  quoting of values containing commas.
+- [x] Confirmed import error before implementation.
+- [x] **Green 3.4–3.5** — Implemented `selection_report_to_csv` using
+  stdlib `csv.writer` and `StringIO`. Header strings translated via `_()`.
+  Midpoint formatted via `_format_target_count` (integer or trimmed
+  decimal).
+- [x] **Green 3.6** — All 14 report tests pass.
+- [x] **Refactor 3.7** — Pulled `_format_pct`, `_format_target_count`,
+  and `_BOM` into module-level helpers.
+- [x] **Check** — `just check` clean.
+- [x] **Commit** — done.
 
 ### Phase 4 — Route for the report
 

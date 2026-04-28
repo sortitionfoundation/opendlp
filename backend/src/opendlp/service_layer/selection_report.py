@@ -3,14 +3,17 @@ ABOUTME: Computes target / pool / selected breakdowns per target category"""
 
 from __future__ import annotations
 
+import csv
 import uuid
 from dataclasses import dataclass, field
+from io import StringIO
 from typing import Any
 
 from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.respondents import Respondent, normalise_field_name
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.translations import gettext as _
 
 
 class SelectionReportError(Exception):
@@ -166,3 +169,81 @@ def build_selection_report(
         pool_size=len(pool_ext_ids),
         categories=categories,
     )
+
+
+_BOM = "﻿"
+
+
+def _format_pct(value: float) -> str:
+    return f"{value:.1f}"
+
+
+def _format_target_count(target_min: int, target_max: int) -> str:
+    midpoint = (target_min + target_max) / 2
+    if midpoint.is_integer():
+        return str(int(midpoint))
+    return f"{midpoint:g}"
+
+
+def selection_report_to_csv(report: SelectionReport) -> str:
+    output = StringIO()
+    writer = csv.writer(output, lineterminator="\n")
+
+    writer.writerow([_("Assembly"), report.assembly_title])
+    writer.writerow([_("Selection URL"), report.selection_url])
+    writer.writerow([_("Number selected"), report.number_selected])
+    writer.writerow([_("Pool size at selection time"), report.pool_size])
+    writer.writerow(
+        [
+            _("Note: pool / selected counts are computed live and reflect any later edits to respondent data"),
+        ],
+    )
+    writer.writerow([])
+
+    for category in report.categories:
+        writer.writerow(
+            [
+                category.name,
+                _("Target"),
+                "",
+                "",
+                "",
+                _("All respondents"),
+                "",
+                _("Selected"),
+                "",
+                _("Deleted"),
+            ],
+        )
+        writer.writerow(
+            [
+                "",
+                _("%"),
+                _("#"),
+                _("Min"),
+                _("Max"),
+                _("%"),
+                _("#"),
+                _("%"),
+                _("#"),
+                _("#"),
+            ],
+        )
+        for row in category.rows:
+            writer.writerow(
+                [
+                    row.value,
+                    _format_pct(row.target_pct),
+                    _format_target_count(row.target_min, row.target_max),
+                    row.target_min,
+                    row.target_max,
+                    _format_pct(row.pool_pct),
+                    row.pool_count,
+                    _format_pct(row.selected_pct),
+                    row.selected_count,
+                    row.deleted_count,
+                ],
+            )
+        writer.writerow([])
+
+    return _BOM + output.getvalue()
