@@ -353,25 +353,22 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 5 — Add BOM to existing Selected / Remaining downloads
+### Phase 5 — Add BOM to existing Selected / Remaining downloads ✅
 
-- [ ] **Red 5.1** — Update existing E2E tests for `download_db_selected`
-  and `download_db_remaining` (in `tests/e2e/test_db_selection_backoffice.py`
-  and any legacy mirror in `tests/e2e/test_db_selection_routes.py` —
-  inspect first; modern blueprint is the priority) to assert the response
-  body starts with `'﻿'` and mimetype includes `charset=utf-8`.
-- [ ] Confirm tests fail.
-- [ ] **Green 5.2** — Modify `generate_selection_csvs` (or wrap its
-  outputs) in `src/opendlp/service_layer/sortition.py` so both returned
-  strings are BOM-prefixed.
-- [ ] **Green 5.3** — Update `download_db_selected` and
-  `download_db_remaining` in `db_selection_backoffice.py` to set
-  `mimetype="text/csv; charset=utf-8"`.
-- [ ] **Green 5.4** — Run `just test`.
-- [ ] **Refactor 5.5** — If BOM-prefixing happens in two places, extract
-  a private `_with_bom(csv: str) -> str` helper.
-- [ ] **Check** — `just check` clean.
-- [ ] **Commit** — `feat: add UTF-8 BOM to selection CSV downloads`.
+- [x] **Red 5.1** — Existing `TestCsvSelectionDownload` tests now assert
+  `response.data.startswith("﻿".encode())`.
+- [x] Confirmed both tests failed before implementation.
+- [x] **Green 5.2** — `_table_to_csv` in
+  `service_layer/sortition.py` BOM-prefixes its output (single helper
+  `_CSV_BOM` constant).
+- [x] **Green 5.3** — Existing routes already serve `mimetype="text/csv"`
+  which Flask renders as `text/csv; charset=utf-8`, no change needed
+  there.
+- [x] **Green 5.4** — All download tests pass.
+- [x] **Refactor 5.5** — Single helper covers both downloads via the
+  shared `_table_to_csv` codepath.
+- [x] **Check** — `just check` clean.
+- [x] **Commit** — done.
 
 ### Phase 6 — Link the report from the success modal
 

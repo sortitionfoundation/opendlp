@@ -442,6 +442,7 @@ class TestCsvSelectionDownload:
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
         assert f"selected-{run_id}.csv" in response.headers["Content-Disposition"]
+        assert response.data.startswith("﻿".encode())
 
     def test_download_remaining_csv_success(self, logged_in_admin, assembly_with_csv_config, postgres_session_factory):
         """Test successfully downloading remaining participants CSV."""
@@ -467,6 +468,7 @@ class TestCsvSelectionDownload:
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
         assert f"remaining-{run_id}.csv" in response.headers["Content-Disposition"]
+        assert response.data.startswith("﻿".encode())
 
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
     def test_download_handles_not_found_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):

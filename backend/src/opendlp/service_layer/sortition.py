@@ -40,12 +40,15 @@ from opendlp.translations import gettext as _
 logger = structlog.get_logger(__name__)
 
 
+_CSV_BOM = "﻿"
+
+
 def _table_to_csv(table: list[list[str]]) -> str:
     output = StringIO()
     writer = csv.writer(output, lineterminator="\n")
     for row in table:
         writer.writerow(row)
-    return output.getvalue()
+    return _CSV_BOM + output.getvalue()
 
 
 def _get_selection_settings(assembly: Assembly) -> SelectionSettings:
