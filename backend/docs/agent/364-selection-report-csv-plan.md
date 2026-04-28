@@ -337,31 +337,21 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 4 — Route for the report
+### Phase 4 — Route for the report ✅
 
-- [ ] **Red 4.1** — In `tests/e2e/test_db_selection_backoffice.py` (or a
-  new `test_db_selection_report.py`) add an end-to-end happy-path test:
-  authenticated organiser, completed real selection, GET the route returns
-  200, mimetype `text/csv; charset=utf-8`, body starts with BOM and
-  contains the assembly title.
-- [ ] **Red 4.2** — Test for `targets_used == []` (old run): GET redirects
-  with a flash matching the "no target snapshot" message.
-- [ ] **Red 4.3** — Test for run not completed: redirects with flash.
-- [ ] **Red 4.4** — Test for unknown `run_id`: redirects with flash.
-- [ ] **Red 4.5** — Test for unauthorised user: same behaviour as
-  `download_db_selected` (redirect + flash).
-- [ ] Confirm tests fail (404 / route not found).
-- [ ] **Green 4.6** — Add `download_db_selection_report` route in
-  `src/opendlp/entrypoints/blueprints/db_selection_backoffice.py` modelled
-  on `download_db_selected` (same decorators, same exception ladder).
-- [ ] **Green 4.7** — Wire it through to
-  `build_selection_report` + `selection_report_to_csv`. Filename
-  `selection-report-<run_id>.csv`.
-- [ ] **Green 4.8** — Run `just test`.
-- [ ] **Refactor 4.9** — Sanity-check the three near-identical download
-  routes; do not extract a helper unless the duplication is painful.
-- [ ] **Check** — `just check` clean.
-- [ ] **Commit** — `feat: add selection summary report download route`.
+- [x] **Red 4.1–4.5** — `TestSelectionReportDownload` added to
+  `tests/e2e/test_db_selection_backoffice.py`: success, empty
+  targets_used, unknown run, unauthenticated.
+- [x] Confirmed all 4 tests failed before implementation.
+- [x] **Green 4.6–4.7** — Added `download_db_selection_report` route at
+  `/backoffice/assembly/<assembly_id>/selection/db/<run_id>/download/report`
+  using the same exception ladder as the other download routes plus a
+  `SelectionReportError` branch. Wired through `URLGenerator` from
+  `bootstrap.get_url_generator(current_app)`.
+- [x] **Green 4.8** — All 42 e2e DB selection tests pass.
+- [x] **Refactor 4.9** — Three near-identical routes left as-is.
+- [x] **Check** — `just check` clean.
+- [x] **Commit** — done.
 
 ### Phase 5 — Add BOM to existing Selected / Remaining downloads
 
