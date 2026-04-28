@@ -370,27 +370,19 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 6 — Link the report from the success modal
+### Phase 6 — Link the report from the success modal ✅
 
-- [ ] **Red 6.1** — Extend
-  `tests/unit/test_progress_modal_wiring.py` (or add a sibling test): for a
-  completed real (non-test) DB selection, rendered modal HTML contains
-  a link to the new route via `url_for`.
-- [ ] **Red 6.2** — Test that a *test* selection (`task_type =
-  TEST_SELECT_FROM_DB`) **also** renders the report link — test selections
-  exist precisely to check whether targets can be met and how the
-  distribution will look, so the summary report is more useful here than
-  for real runs.
-- [ ] Confirm tests fail.
-- [ ] **Green 6.3** — Add a third button in
-  `templates/backoffice/components/db_selection_progress_modal.html`
-  next to "Download Selected" / "Download Remaining". Label:
-  `_("Download Summary Report")`.
-- [ ] **Green 6.4** — Run `just test`.
-- [ ] **Refactor 6.5** — None expected; verify modal layout still looks
-  sensible (no horizontal overflow with three buttons).
-- [ ] **Check** — `just check` clean.
-- [ ] **Commit** — `feat: link summary report from selection results modal`.
+- [x] **Red 6.1–6.2** — Added `TestDbSelectionModalReportLink` covering
+  completed real and test selections. Added a fake URL rule for
+  `download_db_selection_report` to the test app.
+- [x] Confirmed both tests failed before implementation.
+- [x] **Green 6.3** — Added a "Download Summary Report" button next to
+  the existing two in `db_selection_progress_modal.html`.
+- [x] **Green 6.4** — All 6 progress-modal-wiring tests pass.
+- [x] **Refactor 6.5** — Three outline-style buttons in a `.flex.gap-3
+  flex-wrap` container — wraps cleanly.
+- [x] **Check** — `just check` clean.
+- [x] **Commit** — done.
 
 ### Phase 7 — i18n + final check + manual smoke test
 

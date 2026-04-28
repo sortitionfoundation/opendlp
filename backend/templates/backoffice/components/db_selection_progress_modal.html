@@ -57,6 +57,10 @@ htmx_poll_url=htmx_poll_url
                 href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
                 variant="outline"
                 ) }}
+                {{ button(_("Download Summary Report") ,
+                href=url_for('db_selection_backoffice.download_db_selection_report', assembly_id=assembly.id, run_id=current_selection),
+                variant="outline"
+                ) }}
             </div>
         </div>
     {% endif %}
