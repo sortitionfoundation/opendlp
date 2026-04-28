@@ -304,42 +304,21 @@ green test suite and one commit before the next phase starts.
 - [x] **Check** — `just check` clean.
 - [x] **Commit** — done.
 
-### Phase 2 — Build the selection report data structure
+### Phase 2 — Build the selection report data structure ✅
 
-- [ ] **Red 2.1** — Create `tests/unit/test_selection_report.py` with a
-  `FakeUnitOfWork` (or reuse `tests/fakes.py`) and a happy-path test: one
-  category, two values, three respondents — assert
-  `SelectionReport.categories[0].rows` matches expected counts and pcts.
-- [ ] **Red 2.2** — Add multi-category test (e.g. Gender + Age) covering
-  per-category isolation.
-- [ ] **Red 2.3** — Add DELETED respondent test: respondent with status
-  DELETED is counted in `deleted_count` and NOT in `pool_count`.
-- [ ] **Red 2.4** — Add zero-respondent edge case test: empty pool returns
-  zeroed counts and `0.0` pcts (no ZeroDivisionError).
-- [ ] **Red 2.5** — Add unknown-attribute-value test: respondent has a
-  category attribute value not present in `targets_used` → builder raises
-  a domain-defined exception (e.g. `SelectionReportError`).
-- [ ] **Red 2.6** — Add empty-`targets_used` test: builder raises
-  `SelectionReportError("no target snapshot recorded for this run")`.
-- [ ] **Red 2.7** — Add header-fields test: `assembly_title`,
-  `selection_url`, `number_selected`, `pool_size` populated correctly. Use a
-  Flask test app to exercise `url_for(_external=True)`.
-- [ ] Confirm all seven tests fail (module doesn't exist yet).
-- [ ] **Green 2.8** — Create
-  `src/opendlp/service_layer/selection_report.py` with the dataclasses
-  (`CategoryReportRow`, `CategoryReport`, `SelectionReport`) and a
-  `SelectionReportError` exception.
-- [ ] **Green 2.9** — Implement
-  `build_selection_report(uow, assembly_id, task_id) -> SelectionReport`:
-  fetch run record, validate `targets_used` non-empty, fetch respondents,
-  bucket by `(category_name, value)`, compute pcts, build dataclasses.
-- [ ] **Green 2.10** — Use `normalise_field_name` to match category names
-  to respondent attribute keys.
-- [ ] **Green 2.11** — Run `just test` and confirm the new tests pass.
-- [ ] **Refactor 2.12** — If the bucket-and-count logic is gnarly, extract
-  a `_count_by_value(respondents, category)` private helper.
-- [ ] **Check** — `just check` clean.
-- [ ] **Commit** — `feat: build selection summary report data structure`.
+- [x] **Red 2.1–2.7** — `tests/unit/test_selection_report.py` covers happy
+  path, multi-category, DELETED handling, empty pool, unknown attribute
+  raise, empty targets_used raise, URL generator wiring, normalised
+  attribute keys, missing run.
+- [x] Confirmed module not found before implementation.
+- [x] **Green 2.8–2.10** — Created `service_layer/selection_report.py`
+  with dataclasses, `SelectionReportError`, and `build_selection_report`.
+  Uses `URLGenerator` so the route can pass Flask's `url_for`.
+- [x] **Green 2.11** — All 9 report tests + 1269 unit/contract tests pass.
+- [x] **Refactor 2.12** — Per-category logic factored into
+  `_build_category_report` helper.
+- [x] **Check** — `just check` clean.
+- [x] **Commit** — done.
 
 ### Phase 3 — CSV serialisation (with BOM)
 
