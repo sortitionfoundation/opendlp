@@ -44,6 +44,12 @@ _CSV_BOM = "﻿"
 
 
 def _table_to_csv(table: list[list[str]]) -> str:
+    """
+    Convert tabular data to a CSV.
+
+    We use the BOM because non-ASCII CSVs without a BOM will not be loaded
+    properly by Excel.
+    """
     output = StringIO()
     writer = csv.writer(output, lineterminator="\n")
     for row in table:
