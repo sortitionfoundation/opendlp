@@ -144,7 +144,7 @@ class TestHappyPath:
         assert man.pool_pct == pytest.approx(50.0)
         assert man.selected_count == 1
         assert man.selected_pct == pytest.approx(50.0)
-        assert man.deleted_count == 0
+        assert report.deleted_count == 0
         woman = cat.rows[1]
         assert woman.target_min == 1
         assert woman.target_max == 2
@@ -204,7 +204,7 @@ class TestMultiCategory:
 
 
 class TestDeletedRespondents:
-    def test_deleted_counted_separately_for_selected(self):
+    def test_deleted_counted_at_top_level_when_in_selected(self):
         uow = FakeUnitOfWork()
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
@@ -228,13 +228,13 @@ class TestDeletedRespondents:
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
 
         cat = report.categories[0]
-        assert sum(r.deleted_count for r in cat.rows) == 0
         assert sum(r.pool_count for r in cat.rows) == 3
         assert cat.rows[0].pool_count == 1
         assert cat.rows[1].pool_count == 2
         assert report.pool_size == 4
+        assert report.deleted_count == 1
 
-    def test_deleted_counted_separately_for_remaining(self):
+    def test_deleted_counted_at_top_level_when_in_remaining(self):
         uow = FakeUnitOfWork()
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
@@ -258,11 +258,11 @@ class TestDeletedRespondents:
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
 
         cat = report.categories[0]
-        assert sum(r.deleted_count for r in cat.rows) == 0
         assert sum(r.pool_count for r in cat.rows) == 3
         assert cat.rows[0].pool_count == 1
         assert cat.rows[1].pool_count == 2
         assert report.pool_size == 4
+        assert report.deleted_count == 1
 
 
 class TestZeroPool:
@@ -387,6 +387,7 @@ class TestCsvSerialisation:
             selection_url="https://example.test/sel",
             number_selected=2,
             pool_size=4,
+            deleted_count=1,
             categories=[
                 CategoryReport(
                     name="Gender",
@@ -400,7 +401,6 @@ class TestCsvSerialisation:
                             pool_pct=50.0,
                             selected_count=1,
                             selected_pct=50.0,
-                            deleted_count=0,
                         ),
                         CategoryReportRow(
                             value="Woman",
@@ -411,7 +411,6 @@ class TestCsvSerialisation:
                             pool_pct=50.0,
                             selected_count=1,
                             selected_pct=50.0,
-                            deleted_count=0,
                         ),
                     ],
                 ),
@@ -429,13 +428,18 @@ class TestCsvSerialisation:
         assert "2" in csv_text
         assert "4" in csv_text
 
+    def test_header_section_contains_deleted_total(self):
+        csv_text = selection_report_to_csv(self._report())
+        lines = csv_text.lstrip("﻿").splitlines()
+        assert "Deleted from pool,1" in lines
+
     def test_category_section_layout(self):
         csv_text = selection_report_to_csv(self._report())
         lines = csv_text.lstrip("﻿").splitlines()
-        assert "Gender,Target,,,,All respondents,,Selected,,Deleted" in lines
-        assert ",%,#,Min,Max,%,#,%,#,#" in lines
-        assert "Man,50.0,1,1,1,50.0,2,50.0,1,0" in lines
-        assert "Woman,75.0,1.5,1,2,50.0,2,50.0,1,0" in lines
+        assert "Gender,Target,,,,All respondents,,Selected," in lines
+        assert ",%,#,Min,Max,%,#,%,#" in lines
+        assert "Man,50.0,1,1,1,50.0,2,50.0,1" in lines
+        assert "Woman,75.0,1.5,1,2,50.0,2,50.0,1" in lines
 
     def test_blank_line_between_sections(self):
         report = self._report()
@@ -452,7 +456,6 @@ class TestCsvSerialisation:
                         pool_pct=50.0,
                         selected_count=1,
                         selected_pct=50.0,
-                        deleted_count=0,
                     ),
                 ],
             ),

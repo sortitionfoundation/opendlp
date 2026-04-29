@@ -30,7 +30,6 @@ class CategoryReportRow:
     pool_pct: float
     selected_count: int
     selected_pct: float
-    deleted_count: int
 
 
 @dataclass
@@ -45,6 +44,7 @@ class SelectionReport:
     selection_url: str
     number_selected: int
     pool_size: int
+    deleted_count: int
     categories: list[CategoryReport] = field(default_factory=list)
 
 
@@ -79,7 +79,6 @@ def _build_category_report(
     known_values = {v["value"] for v in category["values"]}
     pool_counts: dict[str, int] = dict.fromkeys(known_values, 0)
     selected_counts: dict[str, int] = dict.fromkeys(known_values, 0)
-    deleted_counts: dict[str, int] = dict.fromkeys(known_values, 0)
 
     for resp in pool_respondents:
         if resp.selection_status == RespondentStatus.DELETED:
@@ -116,7 +115,6 @@ def _build_category_report(
             pool_pct=_pct(pool_counts[v["value"]], pool_total),
             selected_count=selected_counts[v["value"]],
             selected_pct=_pct(selected_counts[v["value"]], selected_total),
-            deleted_count=deleted_counts[v["value"]],
         )
         for v in category["values"]
     ]
@@ -150,6 +148,8 @@ def build_selection_report(
     pool_respondents = [respondents_by_id[ext_id] for ext_id in pool_ext_ids if ext_id in respondents_by_id]
     selected_respondents = [respondents_by_id[ext_id] for ext_id in selected_ext_ids if ext_id in respondents_by_id]
 
+    deleted_count = sum(1 for r in pool_respondents if r.selection_status == RespondentStatus.DELETED)
+
     categories = [
         _build_category_report(cat, pool_respondents, selected_respondents, assembly.number_to_select)
         for cat in record.targets_used
@@ -167,6 +167,7 @@ def build_selection_report(
         selection_url=selection_url,
         number_selected=len(selected_ext_ids),
         pool_size=len(pool_ext_ids),
+        deleted_count=deleted_count,
         categories=categories,
     )
 
@@ -193,6 +194,7 @@ def selection_report_to_csv(report: SelectionReport) -> str:
     writer.writerow([_("Selection URL"), report.selection_url])
     writer.writerow([_("Number selected"), report.number_selected])
     writer.writerow([_("Pool size at selection time"), report.pool_size])
+    writer.writerow([_("Deleted from pool"), report.deleted_count])
     writer.writerow(
         [
             _("Note: pool / selected counts are computed live and reflect any later edits to respondent data"),
@@ -212,7 +214,6 @@ def selection_report_to_csv(report: SelectionReport) -> str:
                 "",
                 _("Selected"),
                 "",
-                _("Deleted"),
             ],
         )
         writer.writerow(
@@ -225,7 +226,6 @@ def selection_report_to_csv(report: SelectionReport) -> str:
                 _("%"),
                 _("#"),
                 _("%"),
-                _("#"),
                 _("#"),
             ],
         )
@@ -241,7 +241,6 @@ def selection_report_to_csv(report: SelectionReport) -> str:
                     row.pool_count,
                     _format_pct(row.selected_pct),
                     row.selected_count,
-                    row.deleted_count,
                 ],
             )
         writer.writerow([])

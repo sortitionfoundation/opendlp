@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-28 17:53+0000\n"
+"POT-Creation-Date: 2026-04-29 15:44+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -534,7 +534,7 @@ msgid "e.g. Male, Female, 16-29"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:581
-#: src/opendlp/service_layer/selection_report.py:223
+#: src/opendlp/service_layer/selection_report.py:224
 #: templates/backoffice/targets/category_block.html:98
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
@@ -543,7 +543,7 @@ msgid "Min"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:586
-#: src/opendlp/service_layer/selection_report.py:224
+#: src/opendlp/service_layer/selection_report.py:225
 #: templates/backoffice/targets/category_block.html:100
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
@@ -1178,7 +1178,7 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:431
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:773
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1040
-#: src/opendlp/service_layer/sortition.py:722
+#: src/opendlp/service_layer/sortition.py:728
 #, fuzzy
 msgid "Task not found"
 msgstr "Az oldal nem elérhető"
@@ -1895,7 +1895,7 @@ msgid "An unexpected error occurred while checking targets"
 msgstr "Hiba történt a betöltés indítása közben"
 
 #: src/opendlp/entrypoints/celery/tasks.py:109
-#: src/opendlp/service_layer/sortition.py:858
+#: src/opendlp/service_layer/sortition.py:864
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -2245,7 +2245,7 @@ msgstr ""
 msgid "login"
 msgstr "Bejelentkezés"
 
-#: src/opendlp/service_layer/selection_report.py:192
+#: src/opendlp/service_layer/selection_report.py:193
 #: templates/backoffice/patterns.html:198
 #: templates/backoffice/service_docs.html:191
 #: templates/backoffice/service_docs.html:386
@@ -2258,37 +2258,41 @@ msgstr "Bejelentkezés"
 msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/service_layer/selection_report.py:193
+#: src/opendlp/service_layer/selection_report.py:194
 #, fuzzy
 msgid "Selection URL"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/selection_report.py:194
+#: src/opendlp/service_layer/selection_report.py:195
 #, fuzzy
 msgid "Number selected"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:195
+#: src/opendlp/service_layer/selection_report.py:196
 msgid "Pool size at selection time"
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:198
+#: src/opendlp/service_layer/selection_report.py:197
+msgid "Deleted from pool"
+msgstr ""
+
+#: src/opendlp/service_layer/selection_report.py:200
 msgid ""
 "Note: pool / selected counts are computed live and reflect any later "
 "edits to respondent data"
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:207
+#: src/opendlp/service_layer/selection_report.py:209
 #, fuzzy
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/service_layer/selection_report.py:211
+#: src/opendlp/service_layer/selection_report.py:213
 #, fuzzy
 msgid "All respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/service_layer/selection_report.py:213
+#: src/opendlp/service_layer/selection_report.py:215
 #: templates/backoffice/assembly_respondents.html:98
 #: templates/backoffice/components/table.html:199
 #: templates/backoffice/patterns.html:372
@@ -2298,56 +2302,48 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Selected"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/selection_report.py:215
-#: templates/backoffice/assembly_respondents.html:101
-#: templates/backoffice/components/table.html:205
-#, fuzzy
-msgid "Deleted"
-msgstr "Kiválasztás"
-
-#: src/opendlp/service_layer/selection_report.py:221
-#: src/opendlp/service_layer/selection_report.py:225
-#: src/opendlp/service_layer/selection_report.py:227
-msgid "%"
-msgstr ""
-
 #: src/opendlp/service_layer/selection_report.py:222
 #: src/opendlp/service_layer/selection_report.py:226
 #: src/opendlp/service_layer/selection_report.py:228
+msgid "%"
+msgstr ""
+
+#: src/opendlp/service_layer/selection_report.py:223
+#: src/opendlp/service_layer/selection_report.py:227
 #: src/opendlp/service_layer/selection_report.py:229
 msgid "#"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:137
-#: src/opendlp/service_layer/sortition.py:474
+#: src/opendlp/service_layer/sortition.py:143
+#: src/opendlp/service_layer/sortition.py:480
 msgid ""
 "The assembly needs to have a non-zero number to select before we can do "
 "selection"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:557
+#: src/opendlp/service_layer/sortition.py:563
 msgid "Selection has not completed — no results to download"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:726
+#: src/opendlp/service_layer/sortition.py:732
 msgid "Cannot cancel task - it has already finished"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:743
+#: src/opendlp/service_layer/sortition.py:749
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:927
+#: src/opendlp/service_layer/sortition.py:933
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:954
+#: src/opendlp/service_layer/sortition.py:960
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:966
-#: src/opendlp/service_layer/sortition.py:977
+#: src/opendlp/service_layer/sortition.py:972
+#: src/opendlp/service_layer/sortition.py:983
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -3974,6 +3970,12 @@ msgstr "Új jelszó"
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr ""
+
+#: templates/backoffice/assembly_respondents.html:101
+#: templates/backoffice/components/table.html:205
+#, fuzzy
+msgid "Deleted"
+msgstr "Kiválasztás"
 
 #: templates/backoffice/assembly_respondents.html:111
 msgid "ID"
