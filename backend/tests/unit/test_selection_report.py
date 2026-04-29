@@ -124,7 +124,7 @@ class TestHappyPath:
             assembly.id,
             selected=["p1", "p3"],
             remaining=["p2", "p4"],
-            targets_used=_gender_snapshot(),
+            targets_used=_gender_snapshot(woman_min=1, woman_max=2),
         )
 
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
@@ -145,6 +145,10 @@ class TestHappyPath:
         assert man.selected_count == 1
         assert man.selected_pct == pytest.approx(50.0)
         assert man.deleted_count == 0
+        woman = cat.rows[1]
+        assert woman.target_min == 1
+        assert woman.target_max == 2
+        assert woman.target_pct == pytest.approx(75.0)
 
 
 class TestMultiCategory:
@@ -401,8 +405,8 @@ class TestCsvSerialisation:
                         CategoryReportRow(
                             value="Woman",
                             target_min=1,
-                            target_max=1,
-                            target_pct=50.0,
+                            target_max=2,
+                            target_pct=75.0,
                             pool_count=2,
                             pool_pct=50.0,
                             selected_count=1,
@@ -431,7 +435,7 @@ class TestCsvSerialisation:
         assert "Gender,Target,,,,All respondents,,Selected,,Deleted" in lines
         assert ",%,#,Min,Max,%,#,%,#,#" in lines
         assert "Man,50.0,1,1,1,50.0,2,50.0,1,0" in lines
-        assert "Woman,50.0,1,1,1,50.0,2,50.0,1,0" in lines
+        assert "Woman,75.0,1.5,1,2,50.0,2,50.0,1,0" in lines
 
     def test_blank_line_between_sections(self):
         report = self._report()
