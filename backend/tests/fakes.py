@@ -9,6 +9,10 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.respondent_field_schema import (
+    GROUP_DISPLAY_ORDER,
+    RespondentFieldDefinition,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
@@ -23,6 +27,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -629,6 +634,38 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         return counts
 
 
+class FakeRespondentFieldDefinitionRepository(FakeRepository, RespondentFieldDefinitionRepository):
+    """Fake in-memory RespondentFieldDefinitionRepository."""
+
+    def bulk_add(self, items: list[RespondentFieldDefinition]) -> None:
+        self._items.extend(items)
+
+    def get_by_assembly_and_key(self, assembly_id: uuid.UUID, field_key: str) -> RespondentFieldDefinition | None:
+        for f in self._items:
+            if f.assembly_id == assembly_id and f.field_key == field_key:
+                return f
+        return None
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
+        group_index = {group: i for i, group in enumerate(GROUP_DISPLAY_ORDER)}
+        fields = [f for f in self._items if f.assembly_id == assembly_id]
+        return sorted(
+            fields,
+            key=lambda f: (group_index.get(f.group, len(GROUP_DISPLAY_ORDER)), f.sort_order, f.field_key),
+        )
+
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return sum(1 for f in self._items if f.assembly_id == assembly_id)
+
+    def delete(self, item: RespondentFieldDefinition) -> None:
+        self._items = [f for f in self._items if f.id != item.id]
+
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        before = len(self._items)
+        self._items = [f for f in self._items if f.assembly_id != assembly_id]
+        return before - len(self._items)
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -646,6 +683,9 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.email_confirmation_tokens = self.fake_email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
         self.target_categories = self.fake_target_categories = FakeTargetCategoryRepository()
         self.respondents = self.fake_respondents = FakeRespondentRepository()
+        self.respondent_field_definitions = self.fake_respondent_field_definitions = (
+            FakeRespondentFieldDefinitionRepository()
+        )
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -675,6 +715,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_email_confirmation_tokens._items.clear()
         self.fake_target_categories._items.clear()
         self.fake_respondents._items.clear()
+        self.fake_respondent_field_definitions._items.clear()
         self.committed = False
 
 

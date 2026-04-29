@@ -17,6 +17,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -163,6 +164,18 @@ def import_respondents_from_csv(  # noqa: C901
 
         # Bulk add for performance
         uow.respondents.bulk_add(respondents)
+
+        # Seed the field schema on first import; reconcile (add new keys,
+        # preserve absent ones) on subsequent imports.
+        target_category_names = [cat.name for cat in uow.target_categories.get_by_assembly_id(assembly_id)]
+        update_schema_from_headers(
+            uow,
+            assembly_id,
+            list(reader.fieldnames),
+            id_column,
+            target_category_names=target_category_names,
+        )
+
         uow.commit()
 
         return [r.create_detached_copy() for r in respondents], errors, id_column

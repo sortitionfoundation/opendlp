@@ -1,6 +1,6 @@
 {#
 ABOUTME: Backoffice view-single-respondent page
-ABOUTME: Displays a single respondent's full details including attributes
+ABOUTME: Renders a grouped detail page driven by RespondentFieldDefinition schema
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
@@ -8,6 +8,23 @@ ABOUTME: Displays a single respondent's full details including attributes
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_yes_no %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
+{#
+Map RespondentStatus enum values to GOV.UK tag colour modifiers. POOL is
+rendered as the default (blue) tag, so it's absent from this dict.
+#}
+{% set selection_status_colours = {
+"POOL": "grey",
+"SELECTED": "blue",
+"CONFIRMED": "green",
+"WITHDRAWN": "yellow",
+"PARTICIPATED": "turquoise",
+"EXCLUDED": "red"
+} %}
+{% set status_key = respondent.selection_status.value %}
+{% set status_colour = selection_status_colours.get(status_key, "grey") %}
+{# Reserved field keys with boolean values — rendered via table_cell_yes_no. #}
+{% set boolean_fixed_keys = 'consent', 'stay_on_db', 'eligible', 'can_attend' %}
+
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
 {% block breadcrumb_section %}
     <div class="mb-6">
@@ -22,6 +39,14 @@ ABOUTME: Displays a single respondent's full details including attributes
 {% set is_deleted = respondent.selection_status.value == "DELETED" %}
 {% set delete_comment = respondent.comments | selectattr("action.value", "equalto", "DELETE") | list | last if respondent.comments else none %}
 {% block page_content %}
+    {{ assembly_tabs(assembly=assembly,
+    active_tab="respondents",
+    data_source=data_source|default("") ,
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
+    ) }}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ respondent_name }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {% if is_deleted and delete_comment %}
@@ -40,94 +65,123 @@ ABOUTME: Displays a single respondent's full details including attributes
             {% endif %}
         </div>
     {% endif %}
-    {{ assembly_tabs(assembly=assembly,
-    active_tab="respondents",
-    data_source=data_source|default("") ,
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
+    {# Status block — hardcoded, identity + current selection state. #}
     <section class="mb-8">
-        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
-        {% call table() %}
-            {{ table_head([
-            {"label": _("Field") },
-            {"label": _("Value")}
-            ]) }}
-            {% call table_body() %}
-                {% call table_row() %}
-                    {{ table_cell(_("External ID") , bold=true) }}
-                    {{ table_cell(respondent.external_id) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Email") , bold=true) }}
-                    {{ table_cell(respondent.email or "—") }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Selection status") , bold=true) }}
-                    {{ table_cell(respondent.selection_status.value|title) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Selection run ID") , bold=true) }}
-                    {{ table_cell(respondent.selection_run_id or "—") }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Consent") , bold=true) }}
-                    {{ table_cell_yes_no(respondent.consent) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Stay on database") , bold=true) }}
-                    {{ table_cell_yes_no(respondent.stay_on_db) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Eligible") , bold=true) }}
-                    {{ table_cell_yes_no(respondent.eligible) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Can attend") , bold=true) }}
-                    {{ table_cell_yes_no(respondent.can_attend) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Source type") , bold=true) }}
-                    {{ table_cell(respondent.source_type.value|replace("_", " ") |title) }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Source reference") , bold=true) }}
-                    {{ table_cell(respondent.source_reference or "—") }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Created") , bold=true) }}
-                    {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "—") }}
-                {% endcall %}
-                {% call table_row() %}
-                    {{ table_cell(_("Updated") , bold=true) }}
-                    {{ table_cell(respondent.updated_at|datetimeformat('long') if respondent.updated_at else "—") }}
-                {% endcall %}
-            {% endcall %}
-        {% endcall %}
+        <dl class="flex flex-col gap-2 mb-6">
+            <div class="flex items-baseline gap-3">
+                <dt class="text-body-md font-bold">{{ _("External ID:") }}</dt>
+                <dd class="text-body-md">
+                    {{ respondent.external_id }}
+                </dd>
+            </div>
+            <div class="flex items-baseline gap-3">
+                <dt class="text-body-md font-bold">{{ _("Selection status:") }}</dt>
+                <dd>
+                    <strong class="govuk-tag govuk-tag--{{ status_colour }}">{{ status_key|title }}</strong>
+                </dd>
+            </div>
+            {% if respondent.selection_run_id %}
+                <div class="flex items-baseline gap-3">
+                    <dt class="text-body-md font-bold">{{ _("Selection run ID:") }}</dt>
+                    <dd class="text-body-md">
+                        {{ respondent.selection_run_id }}
+                    </dd>
+                </div>
+            {% endif %}
+        </dl>
     </section>
-    <section class="mb-8">
-        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Attributes") }}</h2>
-        {% if respondent.attributes %}
+    {# Schema-driven middle — one table per populated group. #}
+    {% if schema_sections %}
+        {% for section in schema_sections %}
+            <section class="mb-8">
+                <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
+                {% call table() %}
+                    {{ table_head([
+                    {"label": _("Field") },
+                    {"label": _("Value")}
+                    ]) }}
+                    {% call table_body() %}
+                        {% for field in section.fields %}
+                            {% call table_row() %}
+                                {{ table_cell(field.label, bold=true) }}
+                                {% if field.is_derived %}
+                                    {{ table_cell("— " + _("(derivation not yet implemented)") ) }}
+                                {% elif field.is_fixed %}
+                                    {% if field.field_key in boolean_fixed_keys %}
+                                        {{ table_cell_yes_no(respondent|attr(field.field_key) ) }}
+                                    {% else %}
+                                        {{ table_cell(respondent|attr(field.field_key) or "—") }}
+                                    {% endif %}
+                                {% else %}
+                                    {% set attr_value = respondent.attributes.get(field.field_key) %}
+                                    {{ table_cell(attr_value if attr_value not in (none, "") else "—") }}
+                                {% endif %}
+                            {% endcall %}
+                        {% endfor %}
+                    {% endcall %}
+                {% endcall %}
+            </section>
+        {% endfor %}
+    {% else %}
+        {#
+        Fallback rendering for assemblies without a schema (legacy data or
+        respondents created outside a CSV import). Renders the editable fixed
+        fields plus the raw attributes dict so nothing is hidden — the status
+        and audit blocks already cover the remaining fixed fields.
+        #}
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Contact and eligibility") }}</h2>
             {% call table() %}
                 {{ table_head([
-                {"label": _("Attribute") },
+                {"label": _("Field") },
                 {"label": _("Value")}
                 ]) }}
                 {% call table_body() %}
-                    {% for key, value in respondent.attributes.items() %}
-                        {% call table_row() %}
-                            {{ table_cell(key, bold=true) }}
-                            {{ table_cell(value if value not in (none, "") else "—") }}
-                        {% endcall %}
-                    {% endfor %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Email") , bold=true) }}
+                        {{ table_cell(respondent.email or "—") }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Eligible") , bold=true) }}
+                        {{ table_cell_yes_no(respondent.eligible) }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Can attend") , bold=true) }}
+                        {{ table_cell_yes_no(respondent.can_attend) }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Consent") , bold=true) }}
+                        {{ table_cell_yes_no(respondent.consent) }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Stay on database") , bold=true) }}
+                        {{ table_cell_yes_no(respondent.stay_on_db) }}
+                    {% endcall %}
                 {% endcall %}
             {% endcall %}
-        {% else %}
-            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
-        {% endif %}
-    </section>
+        </section>
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Attributes") }}</h2>
+            {% if respondent.attributes %}
+                {% call table() %}
+                    {{ table_head([
+                    {"label": _("Attribute") },
+                    {"label": _("Value")}
+                    ]) }}
+                    {% call table_body() %}
+                        {% for key, value in respondent.attributes.items() %}
+                            {% call table_row() %}
+                                {{ table_cell(key, bold=true) }}
+                                {{ table_cell(value if value not in (none, "") else "—") }}
+                            {% endcall %}
+                        {% endfor %}
+                    {% endcall %}
+                {% endcall %}
+            {% else %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
+            {% endif %}
+        </section>
+    {% endif %}
     <section class="mb-8">
         <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Comments") }}</h2>
         {% if respondent.comments %}
@@ -182,6 +236,38 @@ ABOUTME: Displays a single respondent's full details including attributes
             </form>
         </section>
     {% endif %}
+    {# Audit block — provenance and timestamps, collapsed by default. #}
+    <details class="govuk-details mb-8">
+        <summary class="govuk-details__summary">
+            <span class="govuk-details__summary-text">{{ _("Record metadata") }}</span>
+        </summary>
+        <div class="govuk-details__text">
+            {% call table() %}
+                {{ table_head([
+                {"label": _("Field") },
+                {"label": _("Value")}
+                ]) }}
+                {% call table_body() %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Source type") , bold=true) }}
+                        {{ table_cell(respondent.source_type.value|replace("_", " ") |title) }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Source reference") , bold=true) }}
+                        {{ table_cell(respondent.source_reference or "—") }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Created") , bold=true) }}
+                        {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "—") }}
+                    {% endcall %}
+                    {% call table_row() %}
+                        {{ table_cell(_("Updated") , bold=true) }}
+                        {{ table_cell(respondent.updated_at|datetimeformat('long') if respondent.updated_at else "—") }}
+                    {% endcall %}
+                {% endcall %}
+            {% endcall %}
+        </div>
+    </details>
     <section class="flex gap-4">
         {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
     </section>

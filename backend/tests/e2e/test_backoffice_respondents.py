@@ -7,10 +7,12 @@ from io import BytesIO
 
 import pytest
 
+from opendlp import config as _config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.respondent_service import create_respondent, delete_respondent
+from opendlp.service_layer.respondent_field_schema_service import get_schema
+from opendlp.service_layer.respondent_service import create_respondent, delete_respondent, import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -244,6 +246,175 @@ class TestBackofficeDeleteRespondents:
         assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
 
 
+class TestUploadDiffConfirmation:
+    """Test the schema-diff confirmation flow on CSV re-upload."""
+
+    def _upload(self, client, assembly_id, csv_text, filename="respondents.csv"):
+        return client.post(
+            f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+            data={
+                "file": (BytesIO(csv_text.encode()), filename),
+                "id_column": "",
+                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{assembly_id}/data?source=csv"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+    def test_first_upload_imports_directly_no_diff_page(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """An assembly with no schema yet skips the diff page entirely."""
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+        )
+        assert response.status_code == 302
+        # Goes back to data tab, not the confirm-diff page.
+        assert "confirm-diff" not in response.location
+        assert "source=csv" in response.location
+
+    def test_re_upload_with_unchanged_columns_skips_diff(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """If the new CSV has identical columns the diff is empty so no confirmation."""
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        response = self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR002,Bob\n")
+        assert response.status_code == 302
+        assert "confirm-diff" not in response.location
+
+    def test_re_upload_with_added_column_redirects_to_diff_page(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+        )
+        assert response.status_code == 303
+        assert "confirm-diff" in response.location
+
+    def test_diff_page_shows_added_and_absent_columns(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,city\nR001,Alice,London\n",
+        )
+        # Re-upload: drop city, add postcode.
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+        )
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff"
+        )
+        assert response.status_code == 200
+        body = response.data
+        assert b"New columns" in body
+        assert b"postcode" in body
+        assert b"Columns no longer in CSV" in body
+        assert b"city" in body
+
+    def test_confirm_applies_import_and_extends_schema(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+        )
+
+        confirm_response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+                ),
+                "action": "confirm",
+            },
+            follow_redirects=False,
+        )
+        assert confirm_response.status_code == 302
+        assert "source=csv" in confirm_response.location
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert {r.external_id for r in respondents} == {"R002"}
+
+            admin_id = next(u.id for u in uow.users.all() if u.global_role.value == "admin")
+            schema = get_schema(uow, admin_id, existing_assembly.id)
+            assert "postcode" in {f.field_key for f in schema}
+
+    def test_cancel_discards_pending_upload_and_does_not_import(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        # Seed: one respondent in DB.
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        # Re-upload with a new column → pending diff.
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR999,Cancelled,XX\n",
+        )
+
+        cancel_response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            data={
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+                ),
+                "action": "cancel",
+            },
+            follow_redirects=False,
+        )
+        assert cancel_response.status_code == 302
+        assert "confirm-diff" not in cancel_response.location
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert {r.external_id for r in respondents} == {"R001"}
+
+    def test_confirm_diff_after_session_expiry_redirects_with_warning(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        # No prior upload — visiting the confirm page should redirect.
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert "source=csv" in response.location
+
+    def test_oversized_upload_is_rejected_with_friendly_error(self, logged_in_admin, existing_assembly, monkeypatch):
+        # Force the limit to 1 byte so a tiny CSV trips it.
+        monkeypatch.setenv("MAX_CSV_UPLOAD_MB", "1")
+        # Patch the per-request bytes lookup so the route enforces the override.
+        monkeypatch.setattr(_config, "get_max_csv_upload_bytes", lambda: 1)
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.respondents.get_max_csv_upload_bytes",
+            lambda: 1,
+        )
+
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name\nR001,Alice\n",
+        )
+        # Friendly redirect-with-flash, not a raw 413.
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            messages = [msg[1] for msg in session.get("_flashes", [])]
+        assert any("too large" in m.lower() for m in messages)
+
+
 class TestBackofficeViewRespondentsPage:
     """Test backoffice respondents list page."""
 
@@ -436,6 +607,39 @@ class TestBackofficeViewSingleRespondent:
         assert response.status_code == 200
         # No name attributes → h1 uses email local-part
         assert b"sarah.jones" in response.data
+
+    def test_view_respondent_renders_grouped_sections_after_csv_import(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = (
+            "external_id,first_name,last_name,gender,postcode,custom_notes\n"
+            "R001,Alice,Jones,Female,SW1A 1AA,extra-info\n"
+        )
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(uow, admin_user.id, existing_assembly.id, csv_content)
+            respondent = uow.respondents.get_by_external_id(existing_assembly.id, "R001")
+            assert respondent is not None
+            respondent_id = respondent.id
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}")
+        assert response.status_code == 200
+        body = response.data
+        # Status block: external_id and selection status tag.
+        assert b"R001" in body
+        assert b"govuk-tag" in body
+        # Schema-driven group headings are present.
+        assert b"Name and contact" in body
+        assert b"About you" in body
+        assert b"Address" in body
+        # Non-fixed values render via attributes lookup.
+        assert b"Alice" in body
+        assert b"Jones" in body
+        assert b"Female" in body
+        assert b"SW1A 1AA" in body
+        assert b"extra-info" in body
+        # Audit block sits in a collapsed details element.
+        assert b"Record metadata" in body
+        assert b"<details" in body
 
     def test_view_respondent_wrong_assembly(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory

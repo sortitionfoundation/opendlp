@@ -23,6 +23,7 @@
 ### Design Decisions Already Made
 
 - **Targets and Respondents** are core infrastructure, always available to every assembly. Modules that need them (e.g. selection, registration) just use them — they are not themselves modules.
+- **Respondent field schema** (`RespondentFieldDefinition`, implemented on branch `446-grouped-registrant-view`) is likewise core infrastructure. It is the single per-assembly source of truth for the fields that make up a respondent — their groups, display labels, and ordering. Any module that reasons about respondent fields (registration form, selection admin, confirmation calling, export column ordering, etc.) reads from it via `respondent_field_schema_service` rather than introducing a parallel configuration. See [docs/agent/446-grouped-registrant-view/respondent_field_schema.md](446-grouped-registrant-view/respondent_field_schema.md) for the design, and the docstring on `src/opendlp/domain/respondent_field_schema.py` for the consumer contract.
 - **Permissions**: assembly organiser role required to enable/disable any module. No per-module role requirements.
 - **No family constraints**: the "one module per family" concept is dropped. Can be revisited if needed.
 - **Disable behaviour**: warn and require confirmation when a module has data, then disable while preserving the data. Module can be re-enabled.
@@ -91,7 +92,7 @@ class ModuleRegistry:
 Three modules to prove the system, all in `src/opendlp/domain/modules/`:
 
 1. **`assembly_module.py`** — always-enabled core module, validates basic assembly fields (title, question)
-2. **`registration_page_module.py`** — registration page feature, requires `registration_deadline` (once that field exists)
+2. **`registration_page_module.py`** — registration page feature, requires `registration_deadline` (once that field exists). Consumes the respondent field schema (see the "Design Decisions Already Made" note above) as its field catalogue.
 3. **`selection_module.py`** — selection feature, requires `number_to_select`
 
 ---

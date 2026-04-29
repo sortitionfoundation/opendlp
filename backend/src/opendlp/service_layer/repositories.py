@@ -12,6 +12,7 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
@@ -463,4 +464,43 @@ class RespondentRepository(AbstractRepository):
     @abc.abstractmethod
     def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         """Get counts of each distinct value for a given attribute across selected/confirmed respondents."""
+        raise NotImplementedError
+
+
+class RespondentFieldDefinitionRepository(AbstractRepository):
+    """Repository interface for RespondentFieldDefinition domain objects."""
+
+    @abc.abstractmethod
+    def add(self, item: RespondentFieldDefinition) -> None:
+        """Add a field definition."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def bulk_add(self, items: list[RespondentFieldDefinition]) -> None:
+        """Add multiple field definitions in bulk."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_assembly_and_key(self, assembly_id: uuid.UUID, field_key: str) -> RespondentFieldDefinition | None:
+        """Get a field definition by its assembly and field_key."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
+        """Return all field definitions for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        """Count field definitions for an assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RespondentFieldDefinition) -> None:
+        """Delete a field definition."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        """Delete all field definitions for an assembly. Returns count deleted."""
         raise NotImplementedError
