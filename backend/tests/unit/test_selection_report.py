@@ -200,7 +200,37 @@ class TestMultiCategory:
 
 
 class TestDeletedRespondents:
-    def test_deleted_counted_separately(self):
+    def test_deleted_counted_separately_for_selected(self):
+        uow = FakeUnitOfWork()
+        assembly = _make_assembly(uow, number_to_select=2)
+        _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
+        _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
+        _make_respondent(uow, assembly.id, "p3", {"Gender": "Woman"})
+        _make_respondent(
+            uow,
+            assembly.id,
+            "p4",
+            {"Gender": ""},
+            status=RespondentStatus.DELETED,
+        )
+        record = _make_run_record(
+            uow,
+            assembly.id,
+            selected=["p1", "p4"],
+            remaining=["p3", "p2"],
+            targets_used=_gender_snapshot(),
+        )
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        cat = report.categories[0]
+        assert sum(r.deleted_count for r in cat.rows) == 0
+        assert sum(r.pool_count for r in cat.rows) == 3
+        assert cat.rows[0].pool_count == 1
+        assert cat.rows[1].pool_count == 2
+        assert report.pool_size == 4
+
+    def test_deleted_counted_separately_for_remaining(self):
         uow = FakeUnitOfWork()
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
