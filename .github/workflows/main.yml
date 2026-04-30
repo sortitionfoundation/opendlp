@@ -1,15 +1,12 @@
 name: Main
 
 on:
-  push:
-    paths:
-      - "backend/**"
-      - ".github/**"
-      - ".grype.yaml"
-    branches:
-      - main
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
 
 jobs:
   quality:

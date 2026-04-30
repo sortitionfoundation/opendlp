@@ -1,15 +1,9 @@
 name: Docker Security Scan
 
 on:
-  push:
-    paths:
-      - "backend/**"
-      - ".github/**"
-      - ".grype.yaml"
-    branches:
-      - main
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
 
 jobs:
   build-and-scan:

@@ -1,115 +1,46 @@
 name: Docker Publish
 
 on:
-  workflow_run:
-    workflows: ["Main", "BDD Tests", "Docker Security Scan"]
-    types:
-      - completed
+  push:
+    paths:
+      - "backend/**"
+      - ".github/**"
+      - ".grype.yaml"
     branches:
       - main
 
 jobs:
-  check-and-publish:
+  quality:
+    uses: ./.github/workflows/main.yml
     permissions:
       contents: read
       pull-requests: write
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  bdd-tests:
+    uses: ./.github/workflows/bdd.yml
+    permissions:
+      contents: read
+      pull-requests: write
+
+  docker-security:
+    uses: ./.github/workflows/docker-security.yml
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
+  publish:
+    needs: [quality, bdd-tests, docker-security]
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
-    # Only run if all workflows succeeded and this is on main branch
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.event != 'pull_request'
     steps:
       - name: Check out
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Verify all required workflows passed
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        env:
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        with:
-          script: |
-            // Query by workflow IDs instead of names to avoid API propagation delays
-            const requiredWorkflows = [
-              { id: 181008149, name: 'Main' },
-              { id: 183031324, name: 'BDD Tests' },
-              { id: 214955651, name: 'Docker Security Scan' }
-            ];
-            const maxRetries = 5;
-            const initialDelay = 5000; // 5 seconds
-
-            async function sleep(ms) {
-              return new Promise(resolve => setTimeout(resolve, ms));
-            }
-
-            async function checkWorkflows() {
-              const results = {};
-
-              // Query each workflow individually by ID for more reliable results
-              for (const workflow of requiredWorkflows) {
-                try {
-                  const { data } = await github.rest.actions.listWorkflowRuns({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    workflow_id: workflow.id,
-                    head_sha: process.env.HEAD_SHA,
-                    per_page: 1
-                  });
-
-                  if (data.workflow_runs.length > 0) {
-                    results[workflow.name] = data.workflow_runs[0].conclusion;
-                  }
-                } catch (error) {
-                  console.log(`Error querying workflow ${workflow.name}: ${error.message}`);
-                }
-              }
-
-              return results;
-            }
-
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-              console.log(`Attempt ${attempt}/${maxRetries}: Checking workflow status...`);
-
-              const completedWorkflows = await checkWorkflows();
-              console.log('Completed workflows:', completedWorkflows);
-
-              let allPassed = true;
-              let missingWorkflows = [];
-
-              for (const workflow of requiredWorkflows) {
-                if (completedWorkflows[workflow.name] !== 'success') {
-                  allPassed = false;
-                  if (!completedWorkflows[workflow.name]) {
-                    missingWorkflows.push(workflow.name);
-                  }
-                }
-              }
-
-              if (allPassed) {
-                console.log('All required workflows passed successfully');
-                return;
-              }
-
-              if (attempt < maxRetries) {
-                const delay = initialDelay * Math.pow(2, attempt - 1);
-                console.log(`Not all workflows ready yet. Missing: ${missingWorkflows.join(', ')}. Retrying in ${delay/1000}s...`);
-                await sleep(delay);
-              }
-            }
-
-            // After all retries exhausted, fail with details
-            const finalWorkflows = await checkWorkflows();
-            console.log('Final workflow status:', finalWorkflows);
-
-            for (const workflow of requiredWorkflows) {
-              if (finalWorkflows[workflow.name] !== 'success') {
-                core.setFailed(`Required workflow "${workflow.name}" has not succeeded after ${maxRetries} attempts. Status: ${finalWorkflows[workflow.name] || 'not found'}`);
-                return;
-              }
-            }
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
