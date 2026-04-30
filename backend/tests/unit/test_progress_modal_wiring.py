@@ -75,6 +75,11 @@ def _make_app() -> Flask:
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
+        "/db/download-report/<uuid:assembly_id>/<uuid:run_id>",
+        endpoint="db_selection_backoffice.download_db_selection_report",
+        view_func=lambda assembly_id, run_id: "",
+    )
+    app.add_url_rule(
         "/gsheets/modal-progress/<uuid:assembly_id>/<uuid:run_id>",
         endpoint="gsheets.selection_progress_modal",
         view_func=lambda assembly_id, run_id: "",
@@ -152,6 +157,62 @@ class TestDbSelectionModalWiringsProgressIndicator:
                 current_selection=run_id,
             )
         assert "Processing" in html
+
+
+class TestDbSelectionModalReportLink:
+    def _completed_run_record(self, task_type: SelectionTaskType) -> SimpleNamespace:
+        return SimpleNamespace(
+            task_type=task_type,
+            task_type_verbose=task_type.value.replace("_", " "),
+            status=SelectionRunStatus.COMPLETED,
+            is_pending=False,
+            is_running=False,
+            is_completed=True,
+            is_failed=False,
+            is_cancelled=False,
+            has_finished=True,
+            error_message="",
+            log_messages=[],
+            selected_ids=[["p1", "p2"]],
+            created_at=None,
+            completed_at=None,
+            progress_info=None,
+        )
+
+    def _render(self, app: Flask, run_record: SimpleNamespace, run_id: uuid.UUID, assembly: SimpleNamespace) -> str:
+        with app.test_request_context("/"):
+            return render_template(
+                "backoffice/components/db_selection_progress_modal.html",
+                assembly=assembly,
+                csv_status=None,
+                run_record=run_record,
+                log_messages=[],
+                run_report=None,
+                translated_report_html="",
+                current_selection=run_id,
+            )
+
+    def test_real_selection_renders_report_download_link(self):
+        app = _make_app()
+        run_id = uuid.uuid4()
+        assembly = _make_assembly()
+        run_record = self._completed_run_record(SelectionTaskType.SELECT_FROM_DB)
+
+        html = self._render(app, run_record, run_id, assembly)
+
+        assert f"/db/download-report/{assembly.id}/{run_id}" in html
+        assert "Download Summary Report" in html
+
+    def test_test_selection_renders_report_download_link(self):
+        app = _make_app()
+        run_id = uuid.uuid4()
+        assembly = _make_assembly()
+        run_record = self._completed_run_record(SelectionTaskType.TEST_SELECT_FROM_DB)
+
+        html = self._render(app, run_record, run_id, assembly)
+
+        assert f"/db/download-report/{assembly.id}/{run_id}" in html
+        assert "Download Summary Report" in html
 
 
 class TestGsheetSelectionModalWiringsProgressIndicator:

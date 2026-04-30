@@ -8,6 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.bootstrap import get_url_generator
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.assembly_service import (
@@ -20,6 +21,11 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import reset_selection_status
+from opendlp.service_layer.selection_report import (
+    SelectionReportError,
+    build_selection_report,
+    selection_report_to_csv,
+)
 from opendlp.service_layer.sortition import (
     cancel_task,
     check_and_update_task_health,
@@ -265,6 +271,43 @@ def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         current_app.logger.error(f"Download remaining CSV error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full stacktrace:")
+        flash(_("An error occurred while generating the download"), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+
+
+@db_selection_backoffice_bp.route(
+    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/report",
+    methods=["GET"],
+)
+@login_required
+@require_assembly_management
+def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+    """Download the selection summary report as CSV."""
+    try:
+        uow = bootstrap.bootstrap()
+        url_generator = get_url_generator(current_app)
+        with uow:
+            get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            report = build_selection_report(uow, assembly_id, run_id, url_generator)
+            csv_text = selection_report_to_csv(report)
+
+        return Response(
+            csv_text,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=selection-report-{run_id}.csv"},
+        )
+    except NotFoundError as e:
+        flash(str(e), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+    except SelectionReportError as e:
+        flash(str(e), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to download this data"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Download selection report error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while generating the download"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))

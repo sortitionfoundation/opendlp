@@ -11,6 +11,7 @@ from sortition_algorithms import GSheetDataSource, RunReport
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import sortition
@@ -1110,6 +1111,57 @@ class TestStartDbSelectTask:
 
         call_kwargs = mock_celery.call_args[1]
         assert call_kwargs["test_selection"] is True
+
+    def test_start_db_select_task_snapshots_targets(self):
+        uow = FakeUnitOfWork()
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=2)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+        uow.assemblies.add(assembly)
+        gender = TargetCategory(assembly_id=assembly.id, name="Gender", description="men/women", sort_order=1)
+        gender.add_value(TargetValue(value="Man", min=1, max=1, percentage_target=50.0))
+        gender.add_value(TargetValue(value="Woman", min=1, max=1, percentage_target=50.0))
+        uow.target_categories.add(gender)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_celery.return_value = mock_result
+
+            task_id = sortition.start_db_select_task(uow, admin_user.id, assembly.id)
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.targets_used == [
+            {
+                "name": "Gender",
+                "description": "men/women",
+                "sort_order": 1,
+                "values": [
+                    {
+                        "value": "Man",
+                        "min": 1,
+                        "max": 1,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                    {
+                        "value": "Woman",
+                        "min": 1,
+                        "max": 1,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                ],
+            },
+        ]
 
     def test_start_db_select_task_assembly_not_found_raises(self):
         """Test that AssemblyNotFoundError is raised for non-existent assembly."""
