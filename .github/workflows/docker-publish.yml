@@ -28,6 +28,8 @@ jobs:
 
       - name: Verify all required workflows passed
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           script: |
             // Query by workflow IDs instead of names to avoid API propagation delays
@@ -53,7 +55,7 @@ jobs:
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     workflow_id: workflow.id,
-                    head_sha: '${{ github.event.workflow_run.head_sha }}',
+                    head_sha: process.env.HEAD_SHA,
                     per_page: 1
                   });
 
@@ -143,6 +145,8 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Image published
+        env:
+          STEPS_META_OUTPUTS_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           echo "Docker image published successfully to hamishsortition/opendlp"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Tags: ${STEPS_META_OUTPUTS_TAGS}"
