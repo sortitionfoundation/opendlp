@@ -54,11 +54,11 @@ class PostgresCfg:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
 
     @classmethod
-    def from_env(cls, default_db_name: str = "opendlp", user: str = "opendlp") -> "PostgresCfg":
+    def from_env(cls, default_db_name: str = "opendlp", default_user: str = "opendlp") -> "PostgresCfg":
         host = os.environ.get("DB_HOST", "localhost")
         default_port = 54321 if host == "localhost" else 5432
         return PostgresCfg(
-            user=user,
+            user=os.environ.get("DB_USER", default_user),
             password=os.environ.get("DB_PASSWORD", "abc123"),
             host=host,
             port=int(os.environ.get("DB_PORT", default_port)),

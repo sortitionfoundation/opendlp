@@ -6,31 +6,77 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% block title %}{{ _("Respondent field layout") }} - {{ assembly.title }}{% endblock %}
+{% block title %}{{ _("Fields") }} - {{ assembly.title }}{% endblock %}
 {% block breadcrumb_section %}
     <div class="mb-6">
         {{ breadcrumbs([
         {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
         {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
-        {"label": _("Field layout")}
+        {"label": _("Fields")}
         ]) }}
     </div>
 {% endblock %}
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Respondent field layout") }}</h1>
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("Group, order, and label the fields that describe your respondents. These settings drive how respondent details are displayed and will seed the registration form when it is created.") }}
     </p>
     {{ assembly_tabs(assembly=assembly,
-    active_tab="respondents",
+    active_tab="fields",
     data_source=data_source|default("") ,
     gsheet=gsheet|default(none),
     targets_enabled=targets_enabled|default(false),
     respondents_enabled=respondents_enabled|default(false),
     selection_enabled=selection_enabled|default(false)
     ) }}
-    {% if not schema_has_rows %}
+    {% if data_source == "gsheet" and gsheet %}
+        {# Google Sheet source - fields come from the spreadsheet columns, not from this UI. #}
+        <section class="mb-8">
+            <div class="rounded-lg p-6"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers);">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <svg class="w-6 h-6"
+                             style="color: var(--color-primary-action);"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Spreadsheet") }}</h2>
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                        </p>
+                        <dl class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded"
+                                          style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
+                                <dd class="text-body-md" style="color: var(--color-body-text);">
+                                    <code class="px-2 py-0.5 rounded"
+                                          style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
+                                </dd>
+                            </div>
+                        </dl>
+                        <div class="mt-4">
+                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% elif not schema_has_rows %}
         <section class="mb-8">
             <p class="text-body-md mb-4">
                 {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the reserved fixed fields only (email, consent, eligibility, etc).") }}
@@ -42,6 +88,19 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             </form>
         </section>
     {% else %}
+        {% if show_guess_button %}
+            <section class="mb-6">
+                <form method="post"
+                      action="{{ url_for('respondent_field_schema.guess_types_view', assembly_id=assembly.id) }}"
+                      class="flex items-center gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ button(_("Guess field types from data") , type="submit", variant="secondary") }}
+                    <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Only fields still set to Text will be updated; explicitly-typed fields are left alone.") }}
+                    </span>
+                </form>
+            </section>
+        {% endif %}
         {% for section in sections %}
             {% if section.fields %}
                 <section class="mb-8">
@@ -51,15 +110,17 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                   table-layout: fixed">
                         <colgroup>
                             <col />
-                            <col style="width: 16rem;" />
-                            <col style="width: 8rem;" />
-                            <col style="width: 8rem;" />
-                            <col style="width: 8rem;" />
+                            <col style="width: 14rem;" />
+                            <col style="width: 10rem;" />
+                            <col style="width: 6rem;" />
+                            <col style="width: 6rem;" />
+                            <col style="width: 6rem;" />
                         </colgroup>
                         <thead>
                             <tr>
                                 <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Field key") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("Type") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Group") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Order") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Actions") }}</th>
@@ -86,6 +147,16 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                                     </option>
                                                 {% endfor %}
                                             </select>
+                                            {% if not field.is_fixed %}
+                                                <select name="field_type" class="govuk-select" aria-label="{{ _('Type') }}">
+                                                    {% for value, label in field_type_choices %}
+                                                        <option value="{{ value }}"
+                                                                {% if field.field_type.value == value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% endif %}
                                             {{ button(_("Save") , type="submit", variant="secondary") }}
                                         </form>
                                     </td>
@@ -93,9 +164,11 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                         <code>{{ field.field_key }}</code>
                                     </td>
                                     <td class="py-2">
-                                        {% if field.is_fixed %}<strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
-                                        {% if field.is_derived %}<strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
+                                        {{ field_type_labels_by_value[field.effective_field_type.value] }}
+                                        {% if field.is_fixed %}<br><strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
+                                        {% if field.is_derived %}<br><strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
                                     </td>
+                                    <td class="py-2">{{ field.group.value | replace('_', ' ') | title }}</td>
                                     <td class="py-2">
                                         <div class="flex gap-1">
                                             <form method="post"
@@ -125,6 +198,62 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                         {% endif %}
                                     </td>
                                 </tr>
+                                {% if not field.is_fixed and field.field_type.value in choice_type_values %}
+                                    <tr>
+                                        <td colspan="6" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
+                                            <div class="text-body-sm font-bold mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
+                                            {% if field.options %}
+                                                <ul class="mb-2">
+                                                    {% for option in field.options %}
+                                                        <li class="flex gap-2 items-center mb-1">
+                                                            <form method="post"
+                                                                  action="{{ url_for('respondent_field_schema.update_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                                  class="flex gap-2 items-center">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <input type="hidden" name="old_value" value="{{ option.value }}">
+                                                                <input type="text"
+                                                                       name="value"
+                                                                       value="{{ option.value }}"
+                                                                       class="govuk-input"
+                                                                       aria-label="{{ _('Option value') }}">
+                                                                <input type="text"
+                                                                       name="help_text"
+                                                                       value="{{ option.help_text }}"
+                                                                       class="govuk-input"
+                                                                       aria-label="{{ _('Option help text') }}"
+                                                                       placeholder="{{ _('help text (optional)') }}">
+                                                                {{ button(_("Save"), type="submit", variant="secondary") }}
+                                                            </form>
+                                                            <form method="post"
+                                                                  action="{{ url_for('respondent_field_schema.remove_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                                  class="inline">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <input type="hidden" name="value" value="{{ option.value }}">
+                                                                {{ button(_("Remove"), type="submit", variant="tertiary") }}
+                                                            </form>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.add_option_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  class="flex gap-2 items-center">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="text"
+                                                       name="value"
+                                                       placeholder="{{ _('value') }}"
+                                                       class="govuk-input"
+                                                       aria-label="{{ _('Option value') }}">
+                                                <input type="text"
+                                                       name="help_text"
+                                                       placeholder="{{ _('help text (optional)') }}"
+                                                       class="govuk-input"
+                                                       aria-label="{{ _('Option help text') }}">
+                                                {{ button(_("Add option"), type="submit", variant="secondary") }}
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -132,7 +261,4 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
             {% endif %}
         {% endfor %}
     {% endif %}
-    <section class="flex gap-4">
-        {{ button(_("Back to Respondents") , href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id), variant="outline") }}
-    </section>
 {% endblock %}

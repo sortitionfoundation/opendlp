@@ -113,6 +113,15 @@
                     <br>
                     {{ _("As a Confirmation Caller, you can call confirmations for selected participants.") }}
                 </p>
+            {% elif role == "READ_ONLY" %}
+                <p style="background-color: #e9ecef;
+                          border-left: 4px solid #6c757d;
+                          padding: 15px;
+                          border-radius: 4px">
+                    <strong>{{ _("Read Only Permissions:") }}</strong>
+                    <br>
+                    {{ _("As a Read Only member, you can view the assembly but cannot make changes.") }}
+                </p>
             {% endif %}
             <div class="footer">
                 <p>

@@ -14,7 +14,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
-from opendlp.domain.respondent_field_schema import RespondentFieldGroup
+from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType, RespondentFieldGroup
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
@@ -174,6 +174,27 @@ class RespondentCommentListJSON(TypeDecorator):
         if not value:
             return []
         return [RespondentComment.from_dict(item) if isinstance(item, dict) else item for item in value]
+
+
+class ChoiceOptionListJSON(TypeDecorator):
+    """Custom type for storing a list of ChoiceOption dataclasses as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [o.to_dict() if isinstance(o, ChoiceOption) else o for o in value]
+        return value
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> list[ChoiceOption] | None:
+        if value is None:
+            return None
+        if not value:
+            return None
+        return [ChoiceOption.from_dict(item) if isinstance(item, dict) else item for item in value]
 
 
 # Create a registry for imperative mapping
@@ -498,6 +519,8 @@ respondent_field_definitions = Table(
     Column("is_derived", Boolean, nullable=False, default=False),
     Column("derived_from", JSON, nullable=True),
     Column("derivation_kind", String(100), nullable=False, default=""),
+    Column("field_type", EnumAsString(FieldType, 32), nullable=False, default=FieldType.TEXT),
+    Column("options", ChoiceOptionListJSON, nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique field_key per assembly

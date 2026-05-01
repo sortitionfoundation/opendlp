@@ -6,9 +6,10 @@ import uuid
 from io import StringIO
 from typing import Any
 
+from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent, pop_normalised
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentSourceType, RespondentStatus
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -16,7 +17,12 @@ from opendlp.service_layer.exceptions import (
     RespondentNotFoundError,
     UserNotFoundError,
 )
-from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.permissions import (
+    can_call_confirmations,
+    can_edit_respondent,
+    can_manage_assembly,
+    can_view_assembly,
+)
 from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -332,6 +338,54 @@ def delete_respondent(
         uow.commit()
 
 
+def update_respondent(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+    comment: str,
+    *,
+    email: str | None = _RESPONDENT_UNSET,
+    eligible: bool | None = _RESPONDENT_UNSET,
+    can_attend: bool | None = _RESPONDENT_UNSET,
+    consent: bool | None = _RESPONDENT_UNSET,
+    stay_on_db: bool | None = _RESPONDENT_UNSET,
+    attributes: dict[str, Any] | None = None,
+) -> None:
+    """Apply a backoffice edit to a respondent. Requires `can_edit_respondent`."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_edit_respondent(user, assembly):
+            raise InsufficientPermissions(
+                action="edit respondent",
+                required_role="assembly-manager, confirmation-caller, global-organiser or admin",
+            )
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        respondent.apply_edit(
+            author_id=user_id,
+            comment=comment,
+            email=email,
+            eligible=eligible,
+            can_attend=can_attend,
+            consent=consent,
+            stay_on_db=stay_on_db,
+            attributes=attributes,
+        )
+        uow.commit()
+
+
 def add_respondent_comment(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -432,3 +486,52 @@ def get_respondent_with_comment_authors(
                 authors[author_id] = author.create_detached_copy()
 
         return respondent.create_detached_copy(), authors
+
+
+def _required_permission_for_transition(old: RespondentStatus, new: RespondentStatus) -> Any:
+    """Map a (from, to) transition to the permission function that must authorise it."""
+    if old == RespondentStatus.POOL and new == RespondentStatus.SELECTED:
+        return can_manage_assembly
+    return can_call_confirmations
+
+
+def transition_respondent_status(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+    new_status: RespondentStatus,
+    comment: str,
+) -> None:
+    """Apply a selection-status transition driven from the backoffice UI."""
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        respondent = uow.respondents.get(respondent_id)
+        if not respondent or respondent.assembly_id != assembly_id:
+            raise RespondentNotFoundError(f"Respondent {respondent_id} not found in assembly {assembly_id}")
+        assert isinstance(respondent, Respondent)
+
+        allowed = ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
+        if new_status not in allowed:
+            raise ValueError(f"Transition {respondent.selection_status.value} -> {new_status.value} is not allowed")
+
+        check = _required_permission_for_transition(respondent.selection_status, new_status)
+        if not check(user, assembly):
+            raise InsufficientPermissions(
+                action="transition respondent status",
+                required_role=check.__name__,
+            )
+
+        respondent.apply_status_transition(
+            new_status=new_status,
+            author_id=user_id,
+            comment=comment,
+        )
+        uow.commit()

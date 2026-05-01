@@ -1,0 +1,124 @@
+{#
+ABOUTME: Backoffice edit-single-respondent page
+ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-note comment
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, textarea, select, radio_group, first_error %}
+{% set respondent_name = respondent.display_name(assembly.name_fields) %}
+{% block title %}{{ _("Edit respondent") }} - {{ respondent_name }}{% endblock %}
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
+        {"label": respondent_name, "href": url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id)},
+        {"label": _("Edit")}
+        ]) }}
+    </div>
+{% endblock %}
+{% block page_content %}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Edit respondent") }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ respondent_name }}</p>
+
+    <form method="post" class="flex flex-col gap-6">
+        {{ form.hidden_tag() }}
+
+        {% for section in ordered_sections %}
+            <section class="mb-4">
+                <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
+                <div class="flex flex-col gap-4">
+                    {% for field in section.fields %}
+                        {% if field.is_fixed %}
+                            {% set form_field_name = field.field_key %}
+                        {% else %}
+                            {% set form_field_name = attr_prefix ~ field.field_key %}
+                        {% endif %}
+                        {% set wt = form[form_field_name] if form_field_name in form else none %}
+                        {% if wt %}
+                            {% set effective = field.effective_field_type.value %}
+                            {% if effective == "bool" %}
+                                {{ radio_group(
+                                name=form_field_name,
+                                label=field.label,
+                                options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}],
+                                value=wt.data,
+                                inline=true
+                                ) }}
+                            {% elif effective == "bool_or_none" %}
+                                {{ radio_group(
+                                name=form_field_name,
+                                label=field.label,
+                                options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}, {"value": "", "label": _("Not set")}],
+                                value=wt.data,
+                                inline=true
+                                ) }}
+                            {% elif effective == "choice_radio" %}
+                                {% set choice_options = [{"value": "", "label": _("— none —")}] %}
+                                {% for opt in (field.options or []) %}
+                                    {% set _ = choice_options.append({"value": opt.value, "label": opt.value}) %}
+                                {% endfor %}
+                                {% set help_map = {} %}
+                                {% for opt in (field.options or []) %}
+                                    {% set _ = help_map.update({opt.value: opt.help_text}) %}
+                                {% endfor %}
+                                {{ radio_group(
+                                name=form_field_name,
+                                label=field.label,
+                                options=choice_options,
+                                value=wt.data or "",
+                                option_help_text=help_map
+                                ) }}
+                            {% elif effective == "choice_dropdown" %}
+                                {% set choice_options = [{"value": "", "label": _("— none —")}] %}
+                                {% for opt in (field.options or []) %}
+                                    {% set _ = choice_options.append({"value": opt.value, "label": opt.value}) %}
+                                {% endfor %}
+                                {{ select(
+                                name=form_field_name,
+                                label=field.label,
+                                options=choice_options,
+                                value=wt.data or ""
+                                ) }}
+                                {% set help_block = field.options | selectattr("help_text") | list %}
+                                {% if help_block %}
+                                    <dl class="text-body-sm" style="color: var(--color-secondary-text);">
+                                        {% for opt in help_block %}
+                                            <div><dt class="inline"><strong>{{ opt.value }}</strong></dt><dd class="inline">— {{ opt.help_text }}</dd></div>
+                                        {% endfor %}
+                                    </dl>
+                                {% endif %}
+                            {% elif effective == "longtext" %}
+                                {{ textarea(name=form_field_name, label=field.label, value=wt.data or "") }}
+                            {% elif effective == "integer" %}
+                                {{ input(name=form_field_name, label=field.label, type="number", value=(wt.data|string if wt.data is not none else "")) }}
+                            {% elif effective == "email" %}
+                                {{ input(name=form_field_name, label=field.label, type="email", value=wt.data or "") }}
+                            {% else %}
+                                {{ input(name=form_field_name, label=field.label, value=wt.data or "") }}
+                            {% endif %}
+                            {% if wt.errors %}
+                                {{ first_error(wt.errors) }}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+
+        <section class="mb-4">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Change note") }}</h2>
+            {{ textarea(name="comment", label=_("Why are you making this change?") , value=form.comment.data or "", required=true, rows=3) }}
+            {% if form.comment.errors %}
+                {{ first_error(form.comment.errors) }}
+            {% endif %}
+        </section>
+
+        <section class="flex gap-4">
+            {{ button(_("Save changes"), type="submit", variant="primary") }}
+            {{ button(_("Cancel"), href=url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id), variant="outline") }}
+        </section>
+    </form>
+{% endblock %}

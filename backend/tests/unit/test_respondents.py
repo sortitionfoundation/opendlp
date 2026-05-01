@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 import pytest
 
 from opendlp.domain.respondents import Respondent, RespondentComment, validate_no_field_name_collisions
-from opendlp.domain.value_objects import RespondentAction, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentAction,
+    RespondentStatus,
+)
 
 
 class TestRespondent:
@@ -405,6 +409,168 @@ class TestRespondentDeletePersonalData:
         assert copy.comments is not resp.comments  # separate list
         assert copy.selection_status == RespondentStatus.DELETED
         assert copy.attributes == {"Gender": "", "Age": ""}
+
+
+class TestRespondentApplyEdit:
+    def _live(self) -> Respondent:
+        return Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="NB001",
+            attributes={"gender": "Female", "age": "30"},
+            email="a@b.com",
+            consent=True,
+            stay_on_db=True,
+            eligible=True,
+            can_attend=True,
+        )
+
+    def test_requires_non_blank_comment(self):
+        resp = self._live()
+        with pytest.raises(ValueError, match="comment"):
+            resp.apply_edit(author_id=uuid.uuid4(), comment="   ", email="new@b.com")
+
+    def test_refuses_on_deleted_status(self):
+        resp = self._live()
+        resp.delete_personal_data(uuid.uuid4(), "gdpr")
+        with pytest.raises(ValueError, match=r"DELETED|deleted"):
+            resp.apply_edit(author_id=uuid.uuid4(), comment="try", email="x@y.com")
+
+    def test_updates_email_and_flags(self):
+        resp = self._live()
+        author = uuid.uuid4()
+        resp.apply_edit(
+            author_id=author,
+            comment="fix email",
+            email="new@b.com",
+            eligible=False,
+        )
+        assert resp.email == "new@b.com"
+        assert resp.eligible is False
+
+    def test_sentinel_leaves_unpassed_flags_alone(self):
+        resp = self._live()
+        resp.apply_edit(author_id=uuid.uuid4(), comment="no-op flag test", email="other@b.com")
+        assert resp.eligible is True  # unpassed => untouched
+        assert resp.consent is True
+
+    def test_explicit_none_sets_flag_to_none(self):
+        resp = self._live()
+        resp.apply_edit(author_id=uuid.uuid4(), comment="clear eligible", eligible=None)
+        assert resp.eligible is None
+
+    def test_merges_attributes(self):
+        resp = self._live()
+        resp.apply_edit(author_id=uuid.uuid4(), comment="fix age", attributes={"age": "31"})
+        assert resp.attributes["age"] == "31"
+        assert resp.attributes["gender"] == "Female"  # preserved
+
+    def test_rejects_when_nothing_changes(self):
+        resp = self._live()
+        with pytest.raises(ValueError, match="changes"):
+            resp.apply_edit(author_id=uuid.uuid4(), comment="no-op")
+
+    def test_appends_edit_comment(self):
+        resp = self._live()
+        author = uuid.uuid4()
+        resp.apply_edit(author_id=author, comment="fix email", email="new@b.com")
+        assert len(resp.comments) == 1
+        c = resp.comments[0]
+        assert c.text == "fix email"
+        assert c.author_id == author
+        assert c.action is RespondentAction.EDIT
+
+
+class TestApplyStatusTransition:
+    def _at(self, status: RespondentStatus, selection_run_id=None) -> Respondent:
+        return Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="R-ST",
+            selection_status=status,
+            selection_run_id=selection_run_id,
+        )
+
+    def test_allowed_transitions_matches_agreed_matrix(self):
+        expected = {
+            RespondentStatus.POOL: [RespondentStatus.SELECTED],
+            RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+            RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
+            RespondentStatus.WITHDRAWN: [],
+            RespondentStatus.PARTICIPATED: [],
+            RespondentStatus.DELETED: [],
+        }
+        assert expected == ALLOWED_SELECTION_STATUS_TRANSITIONS
+
+    def test_pool_to_selected_allowed_and_clears_run(self):
+        resp = self._at(RespondentStatus.POOL)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.SELECTED,
+            author_id=uuid.uuid4(),
+            comment="manual add",
+        )
+        assert resp.selection_status == RespondentStatus.SELECTED
+        assert resp.selection_run_id is None
+
+    def test_selected_to_confirmed_preserves_run_id(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.SELECTED, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="confirmed on call",
+        )
+        assert resp.selection_status == RespondentStatus.CONFIRMED
+        assert resp.selection_run_id == run_id
+
+    def test_confirmed_to_withdrawn(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.CONFIRMED, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.WITHDRAWN,
+            author_id=uuid.uuid4(),
+            comment="withdrew after confirmation",
+        )
+        assert resp.selection_status == RespondentStatus.WITHDRAWN
+        assert resp.selection_run_id == run_id
+
+    def test_pool_to_confirmed_refused(self):
+        resp = self._at(RespondentStatus.POOL)
+        with pytest.raises(ValueError, match="not allowed"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="try",
+            )
+
+    def test_no_transitions_out_of_withdrawn(self):
+        resp = self._at(RespondentStatus.WITHDRAWN)
+        with pytest.raises(ValueError, match="not allowed"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="try",
+            )
+
+    def test_blank_comment_refused(self):
+        resp = self._at(RespondentStatus.SELECTED)
+        with pytest.raises(ValueError, match="comment"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.CONFIRMED,
+                author_id=uuid.uuid4(),
+                comment="   ",
+            )
+
+    def test_comment_prefixed_with_status_line(self):
+        resp = self._at(RespondentStatus.SELECTED)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="confirmed on the phone",
+        )
+        assert len(resp.comments) == 1
+        c = resp.comments[0]
+        assert c.action == RespondentAction.EDIT
+        assert "SELECTED" in c.text and "CONFIRMED" in c.text
+        assert "confirmed on the phone" in c.text
 
 
 class TestRespondentDisplayName:

@@ -5,9 +5,15 @@ import uuid
 import pytest
 
 from opendlp.domain.respondent_field_schema import (
+    BOOL_TYPES,
+    CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
+    FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
+    ChoiceOption,
+    FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
@@ -199,6 +205,156 @@ class TestGroupMetadata:
     def test_in_schema_fixed_fields_have_unique_keys(self) -> None:
         keys = [key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS]
         assert len(keys) == len(set(keys))
+
+
+class TestFieldType:
+    def test_field_type_enum_values(self) -> None:
+        assert FieldType.TEXT.value == "text"
+        assert FieldType.LONGTEXT.value == "longtext"
+        assert FieldType.BOOL.value == "bool"
+        assert FieldType.BOOL_OR_NONE.value == "bool_or_none"
+        assert FieldType.CHOICE_RADIO.value == "choice_radio"
+        assert FieldType.CHOICE_DROPDOWN.value == "choice_dropdown"
+        assert FieldType.INTEGER.value == "integer"
+        assert FieldType.EMAIL.value == "email"
+        assert len(list(FieldType)) == 8
+
+    def test_field_type_labels_cover_every_value(self) -> None:
+        assert set(FIELD_TYPE_LABELS) == set(FieldType)
+
+    def test_bool_types_and_choice_types_groupings(self) -> None:
+        assert frozenset({FieldType.BOOL, FieldType.BOOL_OR_NONE}) == BOOL_TYPES
+        assert frozenset({FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}) == CHOICE_TYPES
+
+    def test_fixed_field_types_overrides(self) -> None:
+        assert FIXED_FIELD_TYPES["email"] == FieldType.EMAIL
+        assert FIXED_FIELD_TYPES["eligible"] == FieldType.BOOL_OR_NONE
+        assert FIXED_FIELD_TYPES["can_attend"] == FieldType.BOOL_OR_NONE
+        assert FIXED_FIELD_TYPES["consent"] == FieldType.BOOL_OR_NONE
+        assert FIXED_FIELD_TYPES["stay_on_db"] == FieldType.BOOL_OR_NONE
+
+
+class TestChoiceOption:
+    def test_requires_non_blank_value(self) -> None:
+        with pytest.raises(ValueError, match="value cannot be blank"):
+            ChoiceOption(value="   ")
+
+    def test_defaults_help_text_to_empty(self) -> None:
+        opt = ChoiceOption(value="yes")
+        assert opt.help_text == ""
+
+    def test_to_dict_round_trip(self) -> None:
+        original = ChoiceOption(value="level_3", help_text="Post-secondary non-tertiary")
+        data = original.to_dict()
+        assert data == {"value": "level_3", "help_text": "Post-secondary non-tertiary"}
+        assert ChoiceOption.from_dict(data) == original
+
+    def test_from_dict_defaults_help_text_when_missing(self) -> None:
+        assert ChoiceOption.from_dict({"value": "a"}) == ChoiceOption(value="a")
+
+
+class TestRespondentFieldDefinitionTyping:
+    def _field(self, **overrides) -> RespondentFieldDefinition:
+        base: dict = dict(
+            assembly_id=uuid.uuid4(),
+            field_key="x",
+            label="X",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+        )
+        base.update(overrides)
+        return RespondentFieldDefinition(**base)
+
+    def test_defaults_to_text_type(self) -> None:
+        field = self._field()
+        assert field.field_type == FieldType.TEXT
+        assert field.options is None
+
+    def test_rejects_choice_without_options(self) -> None:
+        with pytest.raises(ValueError, match="options"):
+            self._field(field_type=FieldType.CHOICE_RADIO)
+
+    def test_rejects_options_on_non_choice_type(self) -> None:
+        with pytest.raises(ValueError, match="options"):
+            self._field(field_type=FieldType.TEXT, options=[ChoiceOption(value="a")])
+
+    def test_accepts_choice_radio_with_options(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b", help_text="second")],
+        )
+        assert field.field_type == FieldType.CHOICE_RADIO
+        assert len(field.options or []) == 2
+
+    def test_accepts_choice_dropdown_with_options(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        assert field.field_type == FieldType.CHOICE_DROPDOWN
+
+    def test_update_refuses_type_change_on_fixed_row(self) -> None:
+        field = self._field(field_key="email", is_fixed=True)
+        with pytest.raises(ValueError, match="fixed"):
+            field.update(field_type=FieldType.TEXT)
+
+    def test_update_changes_type_and_options_together_for_non_fixed_row(self) -> None:
+        field = self._field()
+        field.update(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        assert field.field_type == FieldType.CHOICE_RADIO
+        assert field.options is not None
+        assert [o.value for o in field.options] == ["a", "b"]
+
+    def test_update_clears_options_when_switching_away_from_choice(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a")],
+        )
+        field.update(field_type=FieldType.TEXT, options=None)
+        assert field.field_type == FieldType.TEXT
+        assert field.options is None
+
+    def test_update_auto_clears_options_when_switching_to_non_choice_without_explicit_none(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a")],
+        )
+        # Note: options argument NOT passed — default sentinel.
+        field.update(field_type=FieldType.TEXT)
+        assert field.field_type == FieldType.TEXT
+        assert field.options is None
+
+    def test_update_switches_between_choice_types_preserves_options(self) -> None:
+        field = self._field(
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        field.update(field_type=FieldType.CHOICE_DROPDOWN)
+        assert field.field_type == FieldType.CHOICE_DROPDOWN
+        assert field.options is not None
+        assert [o.value for o in field.options] == ["a", "b"]
+
+    def test_effective_field_type_uses_override_for_fixed_keys(self) -> None:
+        field = self._field(field_key="email", is_fixed=True, field_type=FieldType.TEXT)
+        assert field.effective_field_type == FieldType.EMAIL
+
+    def test_effective_field_type_returns_own_type_for_non_fixed_keys(self) -> None:
+        field = self._field(field_key="somefield", field_type=FieldType.INTEGER)
+        assert field.effective_field_type == FieldType.INTEGER
+
+    def test_create_detached_copy_preserves_field_type_and_options(self) -> None:
+        original = self._field(
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b", help_text="h")],
+        )
+        copy = original.create_detached_copy()
+        assert copy.field_type == FieldType.CHOICE_DROPDOWN
+        assert copy.options is not None
+        assert copy.options == original.options
+        assert copy.options is not original.options
 
 
 class TestHumaniseFieldKey:

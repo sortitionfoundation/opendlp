@@ -37,12 +37,14 @@ def get_role_level(role: GlobalRole) -> int:
 class AssemblyRole(Enum):
     ASSEMBLY_MANAGER = "assembly-manager"
     CONFIRMATION_CALLER = "confirmation-caller"
+    READ_ONLY = "read-only"
 
 
 # for forms etc
 assembly_role_options = {
     AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager - Can manage the assembly and add other users"),
     AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller - Can call confirmations for selected participants"),
+    AssemblyRole.READ_ONLY.name: _l("Read Only - Can view the assembly but cannot make changes"),
 }
 
 
@@ -124,6 +126,19 @@ class RespondentStatus(Enum):
             return cls(value)
         except ValueError:
             return None
+
+
+# Manual transitions allowed from the backoffice view-respondent page.
+# Moves to DELETED happen via the GDPR delete form only; returning the whole
+# pool to POOL happens via the batch reset action only.
+ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+    RespondentStatus.POOL: [RespondentStatus.SELECTED],
+    RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
+    RespondentStatus.WITHDRAWN: [],
+    RespondentStatus.PARTICIPATED: [],
+    RespondentStatus.DELETED: [],
+}
 
 
 class RespondentAction(Enum):

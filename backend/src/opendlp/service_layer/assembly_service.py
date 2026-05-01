@@ -28,6 +28,7 @@ from opendlp.domain.selection_settings import (
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyStatus
 
+from .constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from .exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -38,7 +39,6 @@ from .exceptions import (
 )
 from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
 from .respondent_service import get_respondent_attribute_columns, get_respondent_attribute_value_counts
-from .target_respondent_helpers import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import get_user_assemblies
 

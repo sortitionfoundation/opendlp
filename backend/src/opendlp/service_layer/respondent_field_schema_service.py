@@ -9,14 +9,20 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import StringIO
 
+from opendlp.config import to_bool
+from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
+    FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     SORT_ORDER_STEP,
+    ChoiceOption,
+    FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
 )
+from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -26,6 +32,8 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+
+_MAX_RADIO_OPTIONS = 6
 
 
 class FieldDefinitionNotFoundError(Exception):
@@ -112,6 +120,7 @@ def _build_fixed_rows(assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]
                 group=group,
                 sort_order=(idx + 1) * SORT_ORDER_STEP,
                 is_fixed=True,
+                field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
             )
         )
     return rows
@@ -200,14 +209,209 @@ def update_field(
     label: str | None = None,
     group: RespondentFieldGroup | None = None,
     sort_order: int | None = None,
+    field_type: FieldType | None = None,
+    options: list[ChoiceOption] | None = _UNSET_OPTIONS,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, or sort_order."""
+    """Update a field's label, group, sort_order, field_type, or options.
+
+    ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
+    """
     with uow:
         _ensure_manage_permission(uow, user_id, assembly_id)
         field = uow.respondent_field_definitions.get(field_id)
         if field is None or field.assembly_id != assembly_id:
             raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        field.update(label=label, group=group, sort_order=sort_order)
+        try:
+            field.update(
+                label=label,
+                group=group,
+                sort_order=sort_order,
+                field_type=field_type,
+                options=options,
+            )
+        except ValueError as exc:
+            if "fixed" in str(exc):
+                raise FieldDefinitionConflictError(str(exc)) from exc
+            raise
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
+def _choice_type_for(n_options: int) -> FieldType:
+    return FieldType.CHOICE_RADIO if n_options <= _MAX_RADIO_OPTIONS else FieldType.CHOICE_DROPDOWN
+
+
+def _non_empty(values: list[str]) -> list[str]:
+    return [v.strip() for v in values if v is not None and v.strip()]
+
+
+def _is_all_bool(values: list[str]) -> bool:
+    if not values:
+        return False
+    for v in values:
+        try:
+            to_bool(v)
+        except ValueError:
+            return False
+    return True
+
+
+def _is_all_int(values: list[str]) -> bool:
+    if not values:
+        return False
+    for v in values:
+        try:
+            int(v)
+        except ValueError:
+            return False
+    return True
+
+
+def guess_field_types(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> dict[str, FieldType]:
+    """Overwrite field_type for non-fixed, non-derived, text-typed fields based
+    on the attribute-value distribution. Returns a map of field_key -> new type
+    for rows that were changed."""
+    changed: dict[str, FieldType] = {}
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+        target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
+        target_by_name = {cat.name.lower(): cat for cat in target_categories}
+
+        for f in fields:
+            if f.is_fixed or f.is_derived or f.field_type != FieldType.TEXT:
+                continue
+
+            # Target-category name match wins first.
+            cat = target_by_name.get(f.field_key.lower())
+            if cat is not None and cat.values:
+                option_values = sorted(v.value for v in cat.values)
+                new_type = _choice_type_for(len(option_values))
+                f.update(
+                    field_type=new_type,
+                    options=[ChoiceOption(value=v) for v in option_values],
+                )
+                changed[f.field_key] = new_type
+                continue
+
+            value_counts = uow.respondents.get_attribute_value_counts(assembly_id, f.field_key)
+            distinct = _non_empty(list(value_counts.keys()))
+            if not distinct:
+                continue
+
+            if _is_all_bool(distinct):
+                f.update(field_type=FieldType.BOOL_OR_NONE)
+                changed[f.field_key] = FieldType.BOOL_OR_NONE
+                continue
+
+            if _is_all_int(distinct):
+                f.update(field_type=FieldType.INTEGER)
+                changed[f.field_key] = FieldType.INTEGER
+                continue
+
+            if 0 < len(distinct) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+                option_values = sorted(distinct)
+                new_type = _choice_type_for(len(option_values))
+                f.update(
+                    field_type=new_type,
+                    options=[ChoiceOption(value=v) for v in option_values],
+                )
+                changed[f.field_key] = new_type
+                continue
+
+        uow.commit()
+    return changed
+
+
+def add_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    value: str,
+    help_text: str = "",
+) -> RespondentFieldDefinition:
+    """Append a ChoiceOption to a choice field's options list."""
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        if field.field_type not in {FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}:
+            raise FieldDefinitionConflictError("Options can only be set on choice fields")
+        value = value.strip()
+        if not value:
+            raise FieldDefinitionConflictError("Option value cannot be blank")
+        new_options = list(field.options or [])
+        if any(o.value == value for o in new_options):
+            raise FieldDefinitionConflictError(f"Option '{value}' already exists")
+        new_options.append(ChoiceOption(value=value, help_text=help_text))
+        field.update(options=new_options)
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
+def update_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    old_value: str,
+    new_value: str,
+    new_help_text: str = "",
+) -> RespondentFieldDefinition:
+    """Update the value and/or help_text of an existing ChoiceOption.
+
+    Pass ``new_value`` equal to ``old_value`` to edit help text only.
+    """
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        new_value = new_value.strip()
+        if not new_value:
+            raise FieldDefinitionConflictError("Option value cannot be blank")
+        existing = list(field.options or [])
+        if not any(o.value == old_value for o in existing):
+            raise FieldDefinitionNotFoundError(f"Option '{old_value}' not found on field {field_id}")
+        if new_value != old_value and any(o.value == new_value for o in existing):
+            raise FieldDefinitionConflictError(f"Option '{new_value}' already exists")
+        updated_options = [
+            ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
+        ]
+        field.update(options=updated_options)
+        uow.commit()
+        detached: RespondentFieldDefinition = field.create_detached_copy()
+        return detached
+
+
+def remove_choice_option(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_id: uuid.UUID,
+    value: str,
+) -> RespondentFieldDefinition:
+    """Remove a ChoiceOption from a choice field's options list."""
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+        field = uow.respondent_field_definitions.get(field_id)
+        if field is None or field.assembly_id != assembly_id:
+            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+        existing = list(field.options or [])
+        remaining = [o for o in existing if o.value != value]
+        if len(remaining) == len(existing):
+            raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
+        if not remaining:
+            raise FieldDefinitionConflictError("A choice field must keep at least one option")
+        field.update(options=remaining)
         uow.commit()
         detached: RespondentFieldDefinition = field.create_detached_copy()
         return detached

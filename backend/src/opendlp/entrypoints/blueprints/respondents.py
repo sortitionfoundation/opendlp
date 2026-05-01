@@ -3,6 +3,7 @@ ABOUTME: Provides respondent viewing, CSV upload, and deletion under /backoffice
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
@@ -10,9 +11,16 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
-from opendlp.domain.respondent_field_schema import GROUP_DISPLAY_ORDER, GROUP_LABELS
+from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
+from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentStatus
+from opendlp.entrypoints.edit_respondent_form import (
+    ATTR_FIELD_PREFIX,
+    build_edit_respondent_form,
+    radio_or_none_to_bool,
+    radio_to_bool,
+)
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     delete_respondents_for_assembly,
@@ -33,16 +41,20 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     RespondentNotFoundError,
 )
-from opendlp.service_layer.permissions import can_manage_assembly
+from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly
 from opendlp.service_layer.respondent_field_schema_service import (
     compute_diff_for_pending_csv,
+    get_schema,
     get_schema_grouped,
 )
 from opendlp.service_layer.respondent_service import (
     delete_respondent,
+    get_respondent,
     get_respondent_with_comment_authors,
     get_respondents_for_assembly_paginated,
     import_respondents_from_csv,
+    transition_respondent_status,
+    update_respondent,
 )
 from opendlp.translations import gettext as _
 
@@ -332,6 +344,9 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     per_page=per_page,
                     status=status_filter,
                 )
+            viewer = uow.users.get(current_user.id)
+            assembly_obj = uow.assemblies.get(assembly_id)
+            can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
 
         # Calculate pagination info
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
@@ -374,6 +389,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             total_pages=total_pages,
             total_count=total_count,
             status_filter=status_filter_str,
+            can_edit=can_edit,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
@@ -452,6 +468,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             viewer = uow.users.get(current_user.id)
             assembly_obj = uow.assemblies.get(assembly_id)
             can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
+            can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
 
         # Determine data source and whether tabs should be enabled
         gsheet = None
@@ -487,6 +504,10 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             if grouped_schema.get(group)
         ]
 
+        allowed_transitions = [
+            s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
+        ]
+
         return render_template(
             "backoffice/assembly_view_respondent.html",
             assembly=assembly,
@@ -498,7 +519,9 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             selection_enabled=selection_enabled,
             schema_sections=schema_sections,
             can_manage=can_manage,
+            can_edit=can_edit,
             comment_authors=comment_authors,
+            allowed_transitions=allowed_transitions,
         ), 200
     except RespondentNotFoundError as e:
         current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
@@ -517,3 +540,186 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading the respondent"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+
+
+def _collect_bool_updates(form: Any, schema: list) -> dict[str, Any]:
+    """Pull each fixed-field bool radio value out of the submitted form.
+
+    Returns a dict suitable for splatting into update_respondent — only
+    includes keys that were actually present in the schema.
+    """
+    updates: dict[str, Any] = {}
+    schema_by_key = {f.field_key: f for f in schema}
+    for field_name in ("eligible", "can_attend", "consent", "stay_on_db"):
+        field_def = schema_by_key.get(field_name)
+        if field_def is None or field_def.effective_field_type != FieldType.BOOL_OR_NONE:
+            continue
+        raw = form[field_name].data if field_name in form else None
+        updates[field_name] = radio_or_none_to_bool(raw)
+    return updates
+
+
+def _collect_attribute_updates(form: Any, schema: list) -> dict[str, Any]:
+    """Build the attributes dict from attr_* form fields."""
+    attrs: dict[str, Any] = {}
+    for field_def in schema:
+        if field_def.is_fixed or field_def.is_derived:
+            continue
+        effective = field_def.effective_field_type
+        form_name = f"{ATTR_FIELD_PREFIX}{field_def.field_key}"
+        if form_name not in form:
+            continue
+        raw = form[form_name].data
+        if effective == FieldType.BOOL:
+            attrs[field_def.field_key] = "true" if radio_to_bool(raw) else "false"
+        elif effective == FieldType.BOOL_OR_NONE:
+            coerced = radio_or_none_to_bool(raw)
+            attrs[field_def.field_key] = "" if coerced is None else ("true" if coerced else "false")
+        elif effective == FieldType.INTEGER:
+            attrs[field_def.field_key] = "" if raw is None else str(raw)
+        elif effective in CHOICE_TYPES:
+            attrs[field_def.field_key] = raw or ""
+        else:
+            attrs[field_def.field_key] = raw or ""
+    return attrs
+
+
+def _edit_respondent_post(
+    form: Any,
+    schema: list,
+    assembly_id: uuid.UUID,
+    respondent_id: uuid.UUID,
+) -> ResponseReturnValue | None:
+    """Handle the POST branch of edit_respondent. Returns a response or None to re-render."""
+    kwargs: dict[str, Any] = {}
+    if "email" in form:
+        kwargs["email"] = form["email"].data or ""
+    else:
+        kwargs["email"] = _RESPONDENT_UNSET
+    kwargs.update(_collect_bool_updates(form, schema))
+    attribute_updates = _collect_attribute_updates(form, schema)
+    try:
+        update_respondent(
+            uow=bootstrap.bootstrap(),
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            respondent_id=respondent_id,
+            comment=form["comment"].data or "",
+            attributes=attribute_updates,
+            **kwargs,
+        )
+    except ValueError as e:
+        flash(str(e), "error")
+        return None
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit respondents"), "error")
+        return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
+    flash(_("Respondent updated."), "success")
+    return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
+
+
+@respondents_bp.route(
+    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/edit",
+    methods=["GET", "POST"],
+)
+@login_required
+def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
+    """Edit respondent attributes with a required change-note comment."""
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            viewer = uow.users.get(current_user.id)
+            assembly_obj = uow.assemblies.get(assembly_id)
+            if not (viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj)):
+                flash(_("You don't have permission to edit respondents"), "error")
+                return redirect(
+                    url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
+                )
+
+        respondent = get_respondent(bootstrap.bootstrap(), current_user.id, assembly_id, respondent_id)
+        if respondent.selection_status == RespondentStatus.DELETED:
+            flash(_("Cannot edit a deleted respondent"), "error")
+            return redirect(
+                url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
+            )
+
+        schema = get_schema(bootstrap.bootstrap(), current_user.id, assembly_id)
+        form, warnings = build_edit_respondent_form(schema, respondent)
+
+        if request.method == "POST" and form.validate_on_submit():
+            response = _edit_respondent_post(form, schema, assembly_id, respondent_id)
+            if response is not None:
+                return response
+
+        for warning in warnings:
+            flash(warning, "warning")
+
+        grouped_schema = get_schema_grouped(bootstrap.bootstrap(), current_user.id, assembly_id)
+        ordered_sections = []
+        for group in GROUP_DISPLAY_ORDER:
+            fields_in_group = [f for f in grouped_schema.get(group, []) if not f.is_derived]
+            if fields_in_group:
+                ordered_sections.append({"label": GROUP_LABELS[group], "fields": fields_in_group})
+
+        return render_template(
+            "backoffice/assembly_edit_respondent.html",
+            assembly=assembly,
+            respondent=respondent,
+            form=form,
+            ordered_sections=ordered_sections,
+            attr_prefix=ATTR_FIELD_PREFIX,
+        ), 200
+    except RespondentNotFoundError:
+        flash(_("Respondent not found"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+@respondents_bp.route(
+    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/transition-status",
+    methods=["POST"],
+)
+@login_required
+def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
+    """Apply a selection-status transition with a required comment."""
+    raw_status = request.form.get("new_status", "").strip()
+    comment = request.form.get("comment", "").strip()
+    view_url = url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
+
+    if not comment:
+        flash(_("A comment is required when changing selection status"), "error")
+        return redirect(view_url)
+
+    new_status = RespondentStatus.from_str(raw_status)
+    if new_status is None:
+        flash(_("Invalid target status"), "error")
+        return redirect(view_url)
+
+    try:
+        uow = bootstrap.bootstrap()
+        transition_respondent_status(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            respondent_id=respondent_id,
+            new_status=new_status,
+            comment=comment,
+        )
+        flash(_("Status updated."), "success")
+    except ValueError as e:
+        flash(str(e), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to change this respondent's status"), "error")
+    except RespondentNotFoundError:
+        flash(_("Respondent not found"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return redirect(view_url)

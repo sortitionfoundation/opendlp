@@ -6,8 +6,11 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     IN_SCHEMA_FIXED_FIELDS,
+    ChoiceOption,
+    FieldType,
     RespondentFieldGroup,
 )
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import respondent_field_schema_service, respondent_service
@@ -15,6 +18,7 @@ from opendlp.service_layer.assembly_service import update_csv_config
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -151,6 +155,370 @@ class TestUpdateField:
         )
         assert updated.label == "Custom notes"
         assert updated.group == RespondentFieldGroup.ABOUT_YOU
+
+    def _custom_field_id(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,gender\nR001,Female\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        return next(f for f in schema if f.field_key == "gender").id
+
+    def test_update_field_accepts_field_type_and_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+        )
+        assert updated.field_type == FieldType.CHOICE_RADIO
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Female", "Male"]
+
+    def test_update_field_refuses_type_change_on_fixed_row(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,foo\nR001,v\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        email_field = next(f for f in schema if f.field_key == "email")
+        with pytest.raises(FieldDefinitionConflictError, match="fixed"):
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                email_field.id,
+                field_type=FieldType.TEXT,
+            )
+
+    def test_update_field_unset_sentinel_preserves_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        # Update label only — options should be preserved (sentinel semantics).
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            label="Gender identity",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["a", "b"]
+
+    def test_update_field_explicit_none_clears_options(self, uow, admin_user, test_assembly):
+        field_id = self._custom_field_id(uow, admin_user, test_assembly)
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="a"), ChoiceOption(value="b")],
+        )
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            field_type=FieldType.TEXT,
+            options=None,
+        )
+        assert updated.field_type == FieldType.TEXT
+        assert updated.options is None
+
+
+class TestGuessFieldTypes:
+    def _setup_custom_csv(self, uow, admin_user, assembly, csv_content):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            assembly.id,
+            csv_content,
+            replace_existing=True,
+        )
+
+    def test_bool_column_guessed_as_bool_or_none(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,voted\nR1,true\nR2,false\nR3,yes\n",
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+
+        assert changed.get("voted") == FieldType.BOOL_OR_NONE
+
+    def test_integer_column_guessed(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,age\nR1,30\nR2,45\nR3,62\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("age") == FieldType.INTEGER
+
+    def test_small_distinct_column_guessed_as_choice_radio(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,region\nR1,North\nR2,South\nR3,East\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("region") == FieldType.CHOICE_RADIO
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        region = next(f for f in schema if f.field_key == "region")
+        assert region.options is not None
+        assert sorted(o.value for o in region.options) == ["East", "North", "South"]
+
+    def test_mid_distinct_column_guessed_as_choice_dropdown(self, uow, admin_user, test_assembly):
+        rows = "\n".join(f"R{i},region_{i}" for i in range(10))
+        csv_content = "external_id,region\n" + rows + "\n"
+        self._setup_custom_csv(uow, admin_user, test_assembly, csv_content)
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("region") == FieldType.CHOICE_DROPDOWN
+
+    def test_many_distinct_left_as_text(self, uow, admin_user, test_assembly):
+        rows = "\n".join(f"R{i},name_{i}" for i in range(50))
+        csv_content = "external_id,fullname\n" + rows + "\n"
+        self._setup_custom_csv(uow, admin_user, test_assembly, csv_content)
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "fullname" not in changed  # untouched
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        fullname = next(f for f in schema if f.field_key == "fullname")
+        assert fullname.field_type == FieldType.TEXT
+
+    def test_target_category_name_match_uses_target_values(self, uow, admin_user, test_assembly):
+        # Pre-seed target category with 4 values
+        category = TargetCategory(
+            assembly_id=test_assembly.id,
+            name="Region",
+            values=[
+                TargetValue(value="North", min=0, max=10),
+                TargetValue(value="South", min=0, max=10),
+                TargetValue(value="East", min=0, max=10),
+                TargetValue(value="West", min=0, max=10),
+            ],
+        )
+        with uow:
+            uow.target_categories.add(category)
+            uow.commit()
+
+        # CSV has only "North" in the data but target has 4 values
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,Region\nR1,North\n",
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert changed.get("Region") == FieldType.CHOICE_RADIO
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        region = next(f for f in schema if f.field_key == "Region")
+        assert region.options is not None
+        assert sorted(o.value for o in region.options) == ["East", "North", "South", "West"]
+
+    def test_skips_already_typed_rows(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,voted\nR1,true\nR2,false\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        voted = next(f for f in schema if f.field_key == "voted")
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            voted.id,
+            field_type=FieldType.LONGTEXT,
+        )
+
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "voted" not in changed
+
+    def test_skips_fixed_rows(self, uow, admin_user, test_assembly):
+        self._setup_custom_csv(
+            uow,
+            admin_user,
+            test_assembly,
+            "external_id,email\nR1,a@b.com\n",
+        )
+        changed = respondent_field_schema_service.guess_field_types(uow, admin_user.id, test_assembly.id)
+        assert "email" not in changed
+
+    def test_permission_gated(self, uow, regular_user, test_assembly):
+        with pytest.raises(InsufficientPermissions):
+            respondent_field_schema_service.guess_field_types(uow, regular_user.id, test_assembly.id)
+
+
+class TestPopulateSchemaFieldTypes:
+    def test_fixed_keys_get_hardcoded_types(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,custom\nR001,val\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        email_field = next(f for f in schema if f.field_key == "email")
+        eligible_field = next(f for f in schema if f.field_key == "eligible")
+        assert email_field.field_type == FieldType.EMAIL
+        assert eligible_field.field_type == FieldType.BOOL_OR_NONE
+
+    def test_new_non_fixed_rows_default_to_text(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,custom\nR001,val\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        custom_field = next(f for f in schema if f.field_key == "custom")
+        assert custom_field.field_type == FieldType.TEXT
+        assert custom_field.options is None
+
+
+class TestUpdateChoiceOption:
+    def _choice_field_id(self, uow, admin_user, test_assembly):
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "external_id,gender\nR001,Female\n",
+        )
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        field = next(f for f in schema if f.field_key == "gender")
+        respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field.id,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[
+                ChoiceOption(value="Female", help_text="women and girls"),
+                ChoiceOption(value="Male"),
+            ],
+        )
+        return field.id
+
+    def test_update_value_and_help_text(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Woman",
+            new_help_text="women and girls",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Woman", "Male"]
+        assert updated.options[0].help_text == "women and girls"
+
+    def test_update_help_text_only_preserves_value(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Male",
+            new_value="Male",
+            new_help_text="men and boys",
+        )
+        assert updated.options is not None
+        by_value = {o.value: o for o in updated.options}
+        assert by_value["Male"].help_text == "men and boys"
+        # Other option is untouched.
+        assert by_value["Female"].help_text == "women and girls"
+
+    def test_update_preserves_option_order(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Woman",
+            new_help_text="",
+        )
+        assert updated.options is not None
+        assert [o.value for o in updated.options] == ["Woman", "Male"]
+
+    def test_update_clears_help_text_when_empty(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        updated = respondent_field_schema_service.update_choice_option(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_id,
+            old_value="Female",
+            new_value="Female",
+            new_help_text="",
+        )
+        assert updated.options is not None
+        by_value = {o.value: o for o in updated.options}
+        assert by_value["Female"].help_text == ""
+
+    def test_update_rejects_blank_new_value(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionConflictError, match="blank"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Female",
+                new_value="   ",
+                new_help_text="",
+            )
+
+    def test_update_rejects_rename_clash(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionConflictError, match="already exists"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Female",
+                new_value="Male",
+                new_help_text="",
+            )
+
+    def test_update_raises_when_option_missing(self, uow, admin_user, test_assembly):
+        field_id = self._choice_field_id(uow, admin_user, test_assembly)
+        with pytest.raises(FieldDefinitionNotFoundError, match="Nonexistent"):
+            respondent_field_schema_service.update_choice_option(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                field_id,
+                old_value="Nonexistent",
+                new_value="Whatever",
+                new_help_text="",
+            )
 
 
 class TestReorderGroup:
