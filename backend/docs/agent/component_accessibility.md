@@ -136,6 +136,8 @@ Components with accessibility support implemented:
 |-----------|----------|---------------|
 | Tabs | `components/tabs.html` | ARIA roles, keyboard nav, roving tabindex, focus preservation |
 | Button | `components/button.html` | `aria-label`, `aria-pressed`, `aria-haspopup`, `aria-expanded`, `aria-describedby`, `role="button"` on links |
+| Search Dropdown | `components/search_dropdown.html` | WAI-ARIA combobox pattern: `role="combobox/listbox/option"`, `aria-expanded`, `aria-activedescendant`, `aria-selected`, live region for results count, keyboard nav (arrows/enter/escape) |
+| Select Dropdown | `components/select_dropdown.html` | Native `<select>` with built-in a11y, `aria-describedby` for hints/errors, `aria-required`, `aria-invalid`, `aria-disabled`, keyboard nav (arrows/enter/space/escape/type-ahead) |
 
 ## Common Mistakes to Avoid
 

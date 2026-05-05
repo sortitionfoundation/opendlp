@@ -104,19 +104,68 @@ ABOUTME: Displays autocomplete search with Alpine.js data component
             </div>
         {% endcall %}
 
-        {{ showcase_tokens([
-        "--color-page-background",
-        "--color-borders-dividers",
-        "--color-body-text",
-        "--color-headings",
-        "--color-secondary-text",
-        "--color-primary-action",
-        "--color-focus-ring",
-        "--color-tables-cards",
-        "--color-subtle-background-panels",
-        ".text-label-lg",
-        ".text-body-md",
-        ".text-body-sm"
-        ]) }}
+        {# Accessibility Section #}
+        {% call showcase_example('{# Accessibility Features (WAI-ARIA Combobox Pattern) #}
+
+{# The component implements full WAI-ARIA combobox accessibility: #}
+{# - role="combobox" on input with aria-expanded, aria-controls, aria-activedescendant #}
+{# - role="listbox" on dropdown with aria-label from label parameter #}
+{# - role="option" on each result with aria-selected for highlighted item #}
+{# - Live region announces result count ("3 results available") #}
+{# - Keyboard: Arrow Up/Down to navigate, Enter to select, Escape to close #}
+
+        {{ search_dropdown(
+        name="accessible_demo",
+        label="Accessible Search",
+        fetch_url=url_for("backoffice.search_demo"),
+        placeholder="Type to search..."
+        ) }}') %}
+        <div class="flex flex-col gap-6">
+            <div>
+                <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Accessibility Features (Built-in)</h4>
+                <ul class="text-body-sm list-disc pl-5 space-y-1" style="color: var(--color-body-text);">
+                    <li><strong>Combobox pattern:</strong> <code>role="combobox"</code> on input with <code>aria-autocomplete="list"</code></li>
+                    <li><strong>Listbox:</strong> <code>role="listbox"</code> on dropdown with <code>aria-label</code> from label parameter</li>
+                    <li><strong>Options:</strong> <code>role="option"</code> with <code>aria-selected</code> indicating highlighted item</li>
+                    <li><strong>Live region:</strong> Screen reader announces result count (e.g., "3 results available")</li>
+                    <li><strong>Active descendant:</strong> <code>aria-activedescendant</code> tracks highlighted option</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Keyboard Navigation</h4>
+                <ul class="text-body-sm list-disc pl-5 space-y-1" style="color: var(--color-body-text);">
+                    <li><strong>Arrow Down:</strong> Move to next option</li>
+                    <li><strong>Arrow Up:</strong> Move to previous option</li>
+                    <li><strong>Enter:</strong> Select highlighted option</li>
+                    <li><strong>Escape:</strong> Close dropdown</li>
+                </ul>
+            </div>
+            <div>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Try it: Type "example" and use arrow keys</span>
+                {{ search_dropdown(
+                name="a11y-demo",
+                label="Accessible Search Demo",
+                fetch_url=url_for("backoffice.search_demo"),
+                placeholder="Type to search...",
+                hint="Use arrow keys to navigate results, Enter to select, Escape to close"
+                ) }}
+            </div>
+        </div>
     {% endcall %}
+
+    {{ showcase_tokens([
+    "--color-page-background",
+    "--color-borders-dividers",
+    "--color-body-text",
+    "--color-headings",
+    "--color-secondary-text",
+    "--color-primary-action",
+    "--color-focus-ring",
+    "--color-tables-cards",
+    "--color-subtle-background-panels",
+    ".text-label-lg",
+    ".text-body-md",
+    ".text-body-sm"
+    ]) }}
+{% endcall %}
 {% endmacro %}

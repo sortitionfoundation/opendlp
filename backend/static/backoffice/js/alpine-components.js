@@ -118,24 +118,36 @@ document.addEventListener("alpine:init", function () {
     });
 
     /**
-   * Autocomplete search component
+   * Autocomplete search component with WAI-ARIA combobox pattern
+   *
+   * Implements accessible combobox pattern with:
+   * - role="combobox" on input with aria-expanded, aria-controls, aria-activedescendant
+   * - role="listbox" on dropdown with role="option" on each item
+   * - Live region announces result count to screen readers
+   * - Keyboard navigation: Arrow Up/Down, Enter to select, Escape to close
    *
    * Usage:
    *   <div x-data="autocomplete({
    *     fetchUrl: '/api/search',
    *     minChars: 2,
    *     debounceMs: 300,
-   *     paramName: 'q'
+   *     paramName: 'q',
+   *     inputId: 'user_search'
    *   })">
-   *     <input type="text" x-model="query" @input="onInput()" @keydown="onKeydown($event)">
-   *     <div x-show="isOpen">
+   *     <input type="text" x-model="query" @input="onInput()" @keydown="onKeydown($event)"
+   *            role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+   *            :aria-expanded="isOpen" :aria-activedescendant="activeDescendantId">
+   *     <ul role="listbox" x-show="isOpen">
    *       <template x-for="(item, index) in results" :key="item.id">
-   *         <button @click="selectItem(item)" :class="{ 'highlighted': index === highlightedIndex }">
+   *         <li role="option" :id="'user_search_option_' + index"
+   *             :aria-selected="index === highlightedIndex"
+   *             @click="selectItem(item)">
    *           <span x-text="item.label"></span>
-   *         </button>
+   *         </li>
    *       </template>
-   *     </div>
+   *     </ul>
    *     <input type="hidden" :value="selectedId">
+   *     <div aria-live="polite" class="sr-only" x-text="statusMessage"></div>
    *   </div>
    *
    * Options:
@@ -143,6 +155,11 @@ document.addEventListener("alpine:init", function () {
    *   - minChars: Minimum characters before searching (default: 2)
    *   - debounceMs: Debounce delay in milliseconds (default: 300)
    *   - paramName: Query parameter name for search term (default: 'q')
+   *   - inputId: Unique ID prefix for generating option IDs (default: 'autocomplete')
+   *
+   * Reactive Properties:
+   *   - activeDescendantId: Computed ID of highlighted option for aria-activedescendant
+   *   - statusMessage: Status text for live region announcements
    *
    * The fetch URL should return JSON array: [{ id, label, sublabel? }, ...]
    */
@@ -151,6 +168,7 @@ document.addEventListener("alpine:init", function () {
         var minChars = options.minChars || 2;
         var debounceMs = options.debounceMs || 300;
         var paramName = options.paramName || "q";
+        var inputId = options.inputId || "autocomplete";
 
         return {
             query: "",
@@ -161,6 +179,15 @@ document.addEventListener("alpine:init", function () {
             selectedLabel: "",
             highlightedIndex: -1,
             debounceTimer: null,
+            statusMessage: "",
+
+            // Computed property for aria-activedescendant
+            get activeDescendantId() {
+                if (this.highlightedIndex >= 0 && this.highlightedIndex < this.results.length) {
+                    return inputId + "_option_" + this.highlightedIndex;
+                }
+                return "";
+            },
 
             onInput: function () {
                 var self = this;
@@ -209,6 +236,14 @@ document.addEventListener("alpine:init", function () {
                         self.isOpen = data.length > 0;
                         self.highlightedIndex = -1;
                         self.isLoading = false;
+                        // Announce results count to screen readers
+                        if (data.length === 0) {
+                            self.statusMessage = "No results found";
+                        } else if (data.length === 1) {
+                            self.statusMessage = "1 result available";
+                        } else {
+                            self.statusMessage = data.length + " results available";
+                        }
                     })
                     .catch(function (error) {
                         console.error("Autocomplete fetch error:", error);
