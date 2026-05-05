@@ -16,6 +16,7 @@
 # deploy the latest github docker image build to the test/demo server
 deploy-opendlp-test:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
@@ -25,6 +26,7 @@ deploy-opendlp-test:
 # deploy the latest github docker image build to production
 deploy-opendlp-production:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
@@ -34,11 +36,13 @@ deploy-opendlp-production:
 # build docker with the current code, copy the image to the preview server and run on hd.preview
 deploy-preview-hd:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
   echo "*** Building docker image ***"
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
   docker build -t opendlp:hdpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
@@ -49,6 +53,7 @@ deploy-preview-hd:
 # for hd.preview - reset the database with the one from the main demo instance
 deploy-preview-hd-resetdb:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
@@ -58,11 +63,13 @@ deploy-preview-hd-resetdb:
 # build docker with the current code, copy the image to the preview server and run on gg.preview
 deploy-preview-gg:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
   echo "*** Building docker image ***"
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
   docker build -t opendlp:ggpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
@@ -73,6 +80,7 @@ deploy-preview-gg:
 # for gg.preview - reset the database with the one from the main demo instance
 deploy-preview-gg-resetdb:
   #!/usr/bin/env bash
+  set -euxo pipefail
   if [ "$CLAUDECODE" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
