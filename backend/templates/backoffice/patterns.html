@@ -49,7 +49,8 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
         {"key": "scroll", "label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'},
         {"key": "focus", "label": _("Focus"), "href": url_for('dev.patterns', tab='focus'), "active": active_tab == 'focus'}
         ],
-        aria_label=_("Pattern categories")
+        aria_label=_("Pattern categories"),
+        preserve_scroll=true
         ) }}
 
         {# ===== DROPDOWN PATTERN ===== #}

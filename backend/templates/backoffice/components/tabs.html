@@ -2,7 +2,7 @@
 ABOUTME: Tabs component macro for backoffice design system
 ABOUTME: Horizontal tab navigation for switching between page sections
 #}
-{% macro tabs(items=[], aria_label="", id="", preserve_scroll=true) %}
+{% macro tabs(items=[], aria_label="", id="", preserve_scroll=false) %}
     {#
     Accessible tabs component following WAI-ARIA Authoring Practices.
     Includes focus preservation for keyboard navigation across page reloads.
@@ -17,7 +17,8 @@ ABOUTME: Horizontal tab navigation for switching between page sections
 
     aria_label: Accessible label for the tablist (required)
     id: Base ID for generating tab/panel IDs and focus preservation (REQUIRED)
-    preserve_scroll: Whether to preserve scroll position when switching tabs (default: true)
+    preserve_scroll: Whether to preserve scroll position when switching tabs (default: false)
+        Set to true to add x-scroll-preserve-links directive to tab container.
 
     Keyboard navigation:
         - Arrow Left/Right: Move to previous/next tab
@@ -48,7 +49,7 @@ ABOUTME: Horizontal tab navigation for switching between page sections
             Panel content here
         </div>
     #}
-    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-scroll-preserve-links{% endif %}>
+    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-data x-scroll-preserve-links{% endif %}>
         <ul class="tab-bar" role="tablist" x-data="tabsKeyboard()" @keydown="handleKeydown($event)">
             {% for item in items %}
                 {# Generate key from index if not provided #}
