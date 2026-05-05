@@ -230,7 +230,7 @@ def register_after_request_handlers(app: Flask) -> None:
         """
         Add security headers to the response, replacing CSP nonce placeholder with actual nonce.
         """
-        secure_headers.set_headers(response)  # type: ignore[arg-type]
+        secure_headers.set_headers(response)
 
         # Replace nonce placeholder with actual nonce for this request
         nonce = g.get("csp_nonce", "")
