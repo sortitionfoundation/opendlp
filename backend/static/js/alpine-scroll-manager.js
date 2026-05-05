@@ -12,43 +12,45 @@
  *   - URL-based state (testable, shareable, bookmarkable)
  *   - Zero configuration required
  *   - CSP-safe (no inline scripts)
+ *
+ * Note: Requires url-utils.js to be loaded before this file
  */
 
 // =============================================================================
 // Part 1: Global Scroll Restoration (runs before Alpine initializes)
 // =============================================================================
 
-(function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const scrollPos = urlParams.get('scroll');
+(function () {
+  const urlParams = new URLSearchParams(window.location.search);
+  const scrollPos = urlParams.get("scroll");
 
-    if (scrollPos) {
-        const restoreScroll = () => {
-            // Restore scroll position
-            window.scrollTo(0, parseInt(scrollPos, 10));
+  if (scrollPos) {
+    const restoreScroll = () => {
+      // Restore scroll position
+      window.scrollTo(0, parseInt(scrollPos, 10));
 
-            // Immediately clean URL (remove scroll parameter)
-            const url = new URL(window.location.href);
-            url.searchParams.delete('scroll');
-            window.history.replaceState({}, '', url.toString());
-        };
+      // Immediately clean URL (remove scroll parameter)
+      const url = new URL(window.location.href);
+      url.searchParams.delete("scroll");
+      window.history.replaceState({}, "", url.toString());
+    };
 
-        // Execute as early as possible
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', restoreScroll);
-        } else {
-            // DOM already loaded, restore immediately
-            requestAnimationFrame(restoreScroll);
-        }
+    // Execute as early as possible
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", restoreScroll);
+    } else {
+      // DOM already loaded, restore immediately
+      requestAnimationFrame(restoreScroll);
     }
+  }
 })();
 
 // =============================================================================
 // Part 2: Alpine.js Magic Helper
 // =============================================================================
 
-document.addEventListener('alpine:init', () => {
-    /**
+document.addEventListener("alpine:init", () => {
+  /**
    * Magic: $preserveScroll
    *
    * Adds current scroll position to a URL for preservation across page reload.
@@ -60,17 +62,16 @@ document.addEventListener('alpine:init', () => {
    * <a :href="$preserveScroll('/page?foo=bar')">Link</a>
    * Result: /page?foo=bar&scroll=1250
    */
-    Alpine.magic('preserveScroll', () => {
-        return (url) => {
-            if (!url) return url;
+  Alpine.magic("preserveScroll", () => {
+    return (url) => {
+      if (!url) return url;
 
-            const currentScroll = Math.round(window.scrollY);
-            const separator = url.includes('?') ? '&' : '?';
-            return `${url}${separator}scroll=${currentScroll}`;
-        };
-    });
+      const currentScroll = Math.round(window.scrollY);
+      return urlSetParam(url, "scroll", currentScroll.toString());
+    };
+  });
 
-    /**
+  /**
    * Directive: x-scroll-preserve-links
    *
    * Auto-applies scroll preservation to all links within an element.
@@ -82,54 +83,64 @@ document.addEventListener('alpine:init', () => {
    *   <a href="/page2" data-no-scroll-preserve>Not preserved</a>
    * </nav>
    */
-    Alpine.directive('scroll-preserve-links', (el) => {
-        el.addEventListener('click', (e) => {
-            const link = e.target.closest('a[href]');
+  Alpine.directive("scroll-preserve-links", (el) => {
+    el.addEventListener(
+      "click",
+      (e) => {
+        const link = e.target.closest("a[href]");
 
-            // Skip if no link, or link opts out
-            if (!link || link.hasAttribute('data-no-scroll-preserve')) {
-                return;
-            }
+        // Skip if no link, or link opts out
+        if (!link || link.hasAttribute("data-no-scroll-preserve")) {
+          return;
+        }
 
-            // Skip external links and hash links
-            const href = link.getAttribute('href');
-            if (href.startsWith('http') || href.startsWith('#')) {
-                return;
-            }
+        // Skip external links and hash links
+        const href = link.getAttribute("href");
+        if (href.startsWith("http") || href.startsWith("#")) {
+          return;
+        }
 
-            // Add scroll parameter
-            const currentScroll = Math.round(window.scrollY);
-            const separator = href.includes('?') ? '&' : '?';
-            link.setAttribute('href', `${href}${separator}scroll=${currentScroll}`);
-        }, true); // Use capture phase to run before navigation
-    });
+        // Add scroll parameter using URL utilities
+        const currentScroll = Math.round(window.scrollY);
+        link.setAttribute(
+          "href",
+          urlSetParam(href, "scroll", currentScroll.toString()),
+        );
+      },
+      true,
+    ); // Use capture phase to run before navigation
+  });
 });
 
 // =============================================================================
 // Part 3: Manual Scroll Cleanup (safety net)
 // =============================================================================
 
-(function() {
-    let scrollTimeout;
-    let justRestored = true; // Ignore first scroll event after restoration
+(function () {
+  let scrollTimeout;
+  let justRestored = true; // Ignore first scroll event after restoration
 
-    const cleanupScrollParam = () => {
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('scroll')) {
-            url.searchParams.delete('scroll');
-            window.history.replaceState({}, '', url.toString());
-        }
-    };
+  const cleanupScrollParam = () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("scroll")) {
+      url.searchParams.delete("scroll");
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
-    window.addEventListener('scroll', () => {
-        // Skip cleanup immediately after restoration
-        if (justRestored) {
-            justRestored = false;
-            return;
-        }
+  window.addEventListener(
+    "scroll",
+    () => {
+      // Skip cleanup immediately after restoration
+      if (justRestored) {
+        justRestored = false;
+        return;
+      }
 
-        // Debounce: wait for scroll to settle
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(cleanupScrollParam, 150);
-    }, { passive: true }); // Passive listener for better performance
+      // Debounce: wait for scroll to settle
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(cleanupScrollParam, 150);
+    },
+    { passive: true },
+  ); // Passive listener for better performance
 })();
