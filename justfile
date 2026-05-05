@@ -17,7 +17,7 @@
 deploy-opendlp-test:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -27,7 +27,7 @@ deploy-opendlp-test:
 deploy-opendlp-production:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -37,7 +37,7 @@ deploy-opendlp-production:
 deploy-preview-hd:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -54,7 +54,7 @@ deploy-preview-hd:
 deploy-preview-hd-resetdb:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -64,7 +64,7 @@ deploy-preview-hd-resetdb:
 deploy-preview-gg:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -81,7 +81,7 @@ deploy-preview-gg:
 deploy-preview-gg-resetdb:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
