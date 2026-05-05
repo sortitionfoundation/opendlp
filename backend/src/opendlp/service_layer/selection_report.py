@@ -193,13 +193,9 @@ def selection_report_to_csv(report: SelectionReport) -> str:
     writer.writerow([_("Assembly"), report.assembly_title])
     writer.writerow([_("Selection URL"), report.selection_url])
     writer.writerow([_("Number selected"), report.number_selected])
-    writer.writerow([_("Pool size at selection time"), report.pool_size])
-    writer.writerow([_("Deleted from pool"), report.deleted_count])
-    writer.writerow(
-        [
-            _("Note: pool / selected counts are computed live and reflect any later edits to respondent data"),
-        ],
-    )
+    writer.writerow([_("Number of people available to select from"), report.pool_size])
+    writer.writerow([_("Number of people who have had their details deleted"), report.deleted_count])
+    writer.writerow([_("Note: counts are affected by edits and deletions after the selection was run.")])
     writer.writerow([])
 
     for category in report.categories:
