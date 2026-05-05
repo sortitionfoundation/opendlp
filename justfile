@@ -17,7 +17,7 @@
 deploy-opendlp-test:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -27,7 +27,7 @@ deploy-opendlp-test:
 deploy-opendlp-production:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -37,12 +37,12 @@ deploy-opendlp-production:
 deploy-preview-hd:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
   echo "*** Building docker image ***"
-  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
   docker build -t opendlp:hdpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
@@ -54,7 +54,7 @@ deploy-preview-hd:
 deploy-preview-hd-resetdb:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
@@ -64,12 +64,12 @@ deploy-preview-hd-resetdb:
 deploy-preview-gg:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
   echo "*** Building docker image ***"
-  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
   docker build -t opendlp:ggpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
@@ -81,7 +81,7 @@ deploy-preview-gg:
 deploy-preview-gg-resetdb:
   #!/usr/bin/env bash
   set -euxo pipefail
-  if [ "$CLAUDECODE" == "1" ]; then
+  if [ "${CLAUDECODE:-}" == "1" ]; then
     echo "claude code is not allowed to deploy"
     exit 1
   fi
