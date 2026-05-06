@@ -431,7 +431,7 @@ class TestCsvSerialisation:
     def test_header_section_contains_deleted_total(self):
         csv_text = selection_report_to_csv(self._report())
         lines = csv_text.lstrip("﻿").splitlines()
-        assert "Deleted from pool,1" in lines
+        assert "Number of people who have had their details deleted,1" in lines
 
     def test_category_section_layout(self):
         csv_text = selection_report_to_csv(self._report())
