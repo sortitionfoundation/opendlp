@@ -29,6 +29,7 @@ Add ARIA attributes when semantic HTML alone is insufficient:
 | Menu button | `aria-haspopup="menu"`, `aria-expanded="true/false"` |
 | Expandable section | `aria-expanded="true/false"`, `aria-controls="panel-id"` |
 | Tabs | `role="tablist"`, `role="tab"`, `role="tabpanel"`, `aria-selected` |
+| Breadcrumbs | `<nav aria-label="Breadcrumb">`, `<ol>`, `aria-current="page"` on current |
 | Modal/Dialog | `role="dialog"`, `aria-modal="true"`, `aria-labelledby` |
 | Loading state | `aria-busy="true"`, `aria-live="polite"` |
 | Disabled elements | `aria-disabled="true"` (in addition to `disabled` attribute) |
@@ -134,7 +135,8 @@ Components with accessibility support implemented:
 
 | Component | Location | A11y Features |
 |-----------|----------|---------------|
-| Tabs | `components/tabs.html` | ARIA roles, keyboard nav, roving tabindex, focus preservation |
+| Tabs | `components/tabs.html` | ARIA roles, keyboard nav, roving tabindex, focus preservation, scroll preservation |
+| Breadcrumbs | `components/breadcrumbs.html` | `<nav>` landmark with `aria-label`, semantic `<ol>` list, `aria-current="page"`, CSS-based separators |
 | Button | `components/button.html` | `aria-label`, `aria-pressed`, `aria-haspopup`, `aria-expanded`, `aria-describedby`, `role="button"` on links |
 | Search Dropdown | `components/search_dropdown.html` | WAI-ARIA combobox pattern: `role="combobox/listbox/option"`, `aria-expanded`, `aria-activedescendant`, `aria-selected`, live region for results count, keyboard nav (arrows/enter/escape) |
 | Select Dropdown | `components/select_dropdown.html` | Native `<select>` with built-in a11y, `aria-describedby` for hints/errors, `aria-required`, `aria-invalid`, `aria-disabled`, keyboard nav (arrows/enter/space/escape/type-ahead) |

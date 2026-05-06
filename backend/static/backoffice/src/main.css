@@ -499,4 +499,29 @@
         color: #9EA2AC;
         cursor: not-allowed;
     }
+
+    /* ========================================
+       BREADCRUMB COMPONENT STYLES
+       Navigation trail with CSS-based separators
+       ======================================== */
+
+    /* Breadcrumb list - flex container for items */
+    .breadcrumb-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Breadcrumb item with CSS separator */
+    .breadcrumb-item:not(:last-child)::after {
+        content: "";
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: 0 8px;
+        vertical-align: middle;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
 }
