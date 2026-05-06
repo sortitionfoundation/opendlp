@@ -42,7 +42,7 @@ deploy-preview-hd:
     exit 1
   fi
   echo "*** Building docker image ***"
-  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
   docker build -t opendlp:hdpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
@@ -69,7 +69,7 @@ deploy-preview-gg:
     exit 1
   fi
   echo "*** Building docker image ***"
-  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
   docker build -t opendlp:ggpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
