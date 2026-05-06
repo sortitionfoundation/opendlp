@@ -22,6 +22,7 @@ from opendlp import config
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.targets import target_categories_to_snapshot
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.error_translation import translate_sortition_error_to_html
@@ -39,12 +40,21 @@ from opendlp.translations import gettext as _
 logger = structlog.get_logger(__name__)
 
 
+_CSV_BOM = "﻿"
+
+
 def _table_to_csv(table: list[list[str]]) -> str:
+    """
+    Convert tabular data to a CSV.
+
+    We use the BOM because non-ASCII CSVs without a BOM will not be loaded
+    properly by Excel.
+    """
     output = StringIO()
     writer = csv.writer(output, lineterminator="\n")
     for row in table:
         writer.writerow(row)
-    return output.getvalue()
+    return _CSV_BOM + output.getvalue()
 
 
 def _get_selection_settings(assembly: Assembly) -> SelectionSettings:
@@ -481,6 +491,7 @@ def start_db_select_task(
         "Task submitted for database TEST selection" if test_selection else "Task submitted for database selection"
     )
 
+    target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
@@ -494,6 +505,7 @@ def start_db_select_task(
             "check_same_address_columns": settings_obj.check_same_address_columns,
             "columns_to_keep": settings_obj.columns_to_keep,
         },
+        targets_used=target_categories_to_snapshot(target_categories),
         user_id=user_id,
     )
     uow.selection_run_records.add(record)

@@ -251,7 +251,7 @@ class SelectionRunRecord:
     run_report: RunReport = field(default_factory=RunReport)  # serialized RunReport for persistence
     remaining_ids: list[str] | None = None  # JSON: external IDs of remaining pool at selection time
     progress: dict[str, Any] | None = None  # JSON: live progress payload written by DatabaseProgressReporter
-    # TODO: save the targets used for the selection, maybe other settings (address check, algorithm ...)
+    targets_used: list[dict[str, Any]] = field(default_factory=list)  # JSON: snapshot of target categories
 
     def __post_init__(self) -> None:
         if self.created_at is None:

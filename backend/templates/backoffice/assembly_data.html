@@ -41,7 +41,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {% if data_source_locked %}
                         {{ _("Data source is locked because a configuration already exists. Delete the configuration to change the data source.") }}
                     {% else %}
-                        {{ _("Choose how you want to import participant data for this assembly.") }}
+                        {{ _("Choose how you want to import targets and people data for this assembly.") }}
                     {% endif %}
                 </p>
                 <select name="data_source"
@@ -303,7 +303,7 @@ ABOUTME: Displays data source selection and data management for assemblies
     <section class="mb-8">
         <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("CSV Files Upload") }}</h2>
         <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-            {{ _("Upload CSV files to import participant data.") }}
+            {{ _("Upload CSV files to import targets and people data.") }}
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {# Target Upload Card #}

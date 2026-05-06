@@ -1,7 +1,7 @@
 Feature: Backoffice Assembly Google Sheet Configuration
   As an administrator
   I want to configure Google Spreadsheet data sources for assemblies
-  So that I can import participant data for selection.
+  So that I can import targets and people data for selection.
 
   Scenario: User can navigate to data tab from assembly details
     Given I am logged in as an admin user

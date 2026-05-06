@@ -1,7 +1,7 @@
 Feature: Backoffice CSV Upload
   As an administrator
   I want to upload CSV files for assemblies
-  So that I can import participant data without using Google Spreadsheets.
+  So that I can import targets and people data without using Google Spreadsheets.
 
   Scenario: Targets and Respondents tabs are always visible
     Given I am logged in as an admin user

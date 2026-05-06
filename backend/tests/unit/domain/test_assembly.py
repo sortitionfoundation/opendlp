@@ -7,9 +7,9 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import AssemblyStatus
+from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
 
 
 class TestAssembly:
@@ -295,3 +295,45 @@ class TestAssemblyNameFields:
         first = assembly.name_fields
         second = assembly.name_fields
         assert first is second
+
+
+class TestSelectionRunRecordTargetsUsed:
+    def _record(self, **overrides) -> SelectionRunRecord:
+        kwargs = {
+            "assembly_id": uuid.uuid4(),
+            "task_id": uuid.uuid4(),
+            "status": SelectionRunStatus.PENDING,
+            "task_type": SelectionTaskType.SELECT_FROM_DB,
+        }
+        kwargs.update(overrides)
+        return SelectionRunRecord(**kwargs)
+
+    def test_default_is_empty_list(self):
+        record = self._record()
+        assert record.targets_used == []
+
+    def test_round_trip_through_create_detached_copy(self):
+        snapshot = [
+            {
+                "name": "Gender",
+                "description": "",
+                "sort_order": 0,
+                "values": [
+                    {
+                        "value": "Man",
+                        "min": 1,
+                        "max": 2,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                ],
+            },
+        ]
+        record = self._record(targets_used=snapshot)
+
+        copy = record.create_detached_copy()
+
+        assert copy.targets_used == snapshot
+        assert copy.targets_used is not record.targets_used
