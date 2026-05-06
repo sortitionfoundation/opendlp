@@ -7,8 +7,8 @@ Feature: Respondent field schema
     Given there is an assembly with respondents imported from CSV called "Grouped Schema Demo"
     And I am signed in as an admin user
     When I open the first respondent for "Grouped Schema Demo"
-    Then I should see the "Name and contact" group heading
-    And I should see the "About you" group heading
+    Then I should see the "Name and contact" collapsible block
+    And I should see the "About you" collapsible block
     And I should see the "Record metadata" collapsible block
 
   Scenario: Schema editor lists fields in their groups
