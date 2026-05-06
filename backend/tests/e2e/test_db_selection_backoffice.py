@@ -442,6 +442,7 @@ class TestCsvSelectionDownload:
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
         assert f"selected-{run_id}.csv" in response.headers["Content-Disposition"]
+        assert response.data.startswith("﻿".encode())
 
     def test_download_remaining_csv_success(self, logged_in_admin, assembly_with_csv_config, postgres_session_factory):
         """Test successfully downloading remaining participants CSV."""
@@ -467,6 +468,7 @@ class TestCsvSelectionDownload:
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
         assert f"remaining-{run_id}.csv" in response.headers["Content-Disposition"]
+        assert response.data.startswith("﻿".encode())
 
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
     def test_download_handles_not_found_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):
@@ -508,6 +510,168 @@ class TestCsvSelectionDownload:
         assert "login" in response.location
 
         response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/remaining")
+        assert response.status_code == 302
+        assert "login" in response.location
+
+
+class TestSelectionReportDownload:
+    """Tests for the selection summary report download endpoint."""
+
+    def _completed_run_with_targets(
+        self,
+        postgres_session_factory,
+        assembly_id,
+    ):
+        run_id = uuid.uuid4()
+        snapshot = [
+            {
+                "name": "Gender",
+                "description": "",
+                "sort_order": 0,
+                "values": [
+                    {
+                        "value": "Male",
+                        "min": 4,
+                        "max": 6,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                    {
+                        "value": "Female",
+                        "min": 4,
+                        "max": 6,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                ],
+            },
+            {
+                "name": "Age",
+                "description": "",
+                "sort_order": 1,
+                "values": [
+                    {
+                        "value": "18-30",
+                        "min": 3,
+                        "max": 5,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 40.0,
+                        "description": "",
+                    },
+                    {
+                        "value": "31-50",
+                        "min": 3,
+                        "max": 5,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 40.0,
+                        "description": "",
+                    },
+                    {
+                        "value": "51+",
+                        "min": 2,
+                        "max": 4,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 20.0,
+                        "description": "",
+                    },
+                ],
+            },
+        ]
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=run_id,
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                selected_ids=[["1", "3", "5", "7", "9"]],
+                remaining_ids=["2", "4", "6", "8", "10"],
+                targets_used=snapshot,
+                completed_at=datetime.now(UTC),
+            )
+            uow.selection_run_records.add(record)
+            uow.commit()
+        return run_id
+
+    def test_download_report_success(
+        self,
+        logged_in_admin,
+        assembly_with_csv_config,
+        postgres_session_factory,
+    ):
+        assembly = assembly_with_csv_config
+        run_id = self._completed_run_with_targets(postgres_session_factory, assembly.id)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+        )
+
+        assert response.status_code == 200
+        assert response.content_type == "text/csv; charset=utf-8"
+        assert f"selection-report-{run_id}.csv" in response.headers["Content-Disposition"]
+        assert response.data.startswith("﻿".encode())
+        assert b"CSV Selection Assembly" in response.data
+        assert b"Gender" in response.data
+        assert b"Age" in response.data
+
+    def test_download_report_when_targets_empty_redirects(
+        self,
+        logged_in_admin,
+        assembly_with_csv_config,
+        postgres_session_factory,
+    ):
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly.id,
+                    task_id=run_id,
+                    status=SelectionRunStatus.COMPLETED,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    selected_ids=[["1"]],
+                    remaining_ids=["2"],
+                    targets_used=[],
+                    completed_at=datetime.now(UTC),
+                ),
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"no target snapshot" in response.data.lower()
+
+    def test_download_report_unknown_run_redirects(
+        self,
+        logged_in_admin,
+        assembly_with_csv_config,
+    ):
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"not found" in response.data.lower()
+
+    def test_download_report_requires_auth(self, client, assembly_with_csv_config):
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+
+        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report")
         assert response.status_code == 302
         assert "login" in response.location
 

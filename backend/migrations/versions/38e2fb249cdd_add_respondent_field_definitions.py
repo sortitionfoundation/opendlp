@@ -18,7 +18,7 @@ from opendlp.domain.respondent_field_schema import RespondentFieldGroup
 
 # revision identifiers, used by Alembic.
 revision: str = "38e2fb249cdd"  # pragma: allowlist secret
-down_revision: str | Sequence[str] | None = "f34431334932"  # pragma: allowlist secret
+down_revision: str | Sequence[str] | None = "e6b16af27da3"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -54,6 +54,59 @@ class TestAddAndGet:
         assert r2.task_id in task_ids
 
 
+class TestTargetsUsedRoundTrip:
+    def test_targets_used_persists_and_round_trips(self, selection_run_backend: ContractBackend):
+        assembly = selection_run_backend.make_assembly()
+        snapshot = [
+            {
+                "name": "Gender",
+                "description": "",
+                "sort_order": 0,
+                "values": [
+                    {
+                        "value": "Man",
+                        "min": 5,
+                        "max": 7,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                    {
+                        "value": "Woman",
+                        "min": 5,
+                        "max": 7,
+                        "min_flex": 0,
+                        "max_flex": -1,
+                        "percentage_target": 50.0,
+                        "description": "",
+                    },
+                ],
+            },
+        ]
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            targets_used=snapshot,
+        )
+        selection_run_backend.repo.add(record)
+        selection_run_backend.commit()
+
+        retrieved = selection_run_backend.repo.get_by_task_id(record.task_id)
+        assert retrieved is not None
+        assert retrieved.targets_used == snapshot
+
+    def test_targets_used_default_empty(self, selection_run_backend: ContractBackend):
+        assembly = selection_run_backend.make_assembly()
+        record = _make_record(selection_run_backend, assembly.id)
+
+        retrieved = selection_run_backend.repo.get_by_task_id(record.task_id)
+        assert retrieved is not None
+        assert retrieved.targets_used == []
+
+
 class TestGetByTaskId:
     def test_finds_by_task_id(self, selection_run_backend: ContractBackend):
         assembly = selection_run_backend.make_assembly()
