@@ -278,6 +278,23 @@
         pointer-events: none;
     }
 
+    /* Read-only state — non-interactive but full-opacity, for view-mode forms. */
+    .radio-container.radio-readonly {
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Read-only circle — grey ring on a subtle-grey centre so it doesn't read as clickable. */
+    .radio-container.radio-readonly .radio-circle {
+        border-color: var(--color-secondary-text);
+        background-color: var(--color-subtle-background-panels);
+    }
+
+    /* Read-only dot — match the ring colour so the selected state stays muted. */
+    .radio-container.radio-readonly .radio-dot {
+        background-color: var(--color-secondary-text);
+    }
+
     /* Hide native radio but keep interactable for Playwright/a11y */
     .radio-input {
         position: absolute;
