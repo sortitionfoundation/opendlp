@@ -470,30 +470,6 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
             can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
 
-        # Determine data source and whether tabs should be enabled
-        gsheet = None
-        try:
-            uow_gsheet = bootstrap.bootstrap()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception:  # noqa: S110
-            pass  # No gsheet config exists - this is expected for new assemblies
-
-        # Get CSV status
-        csv_status: CSVUploadStatus | None = None
-        try:
-            uow_csv = bootstrap.bootstrap()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception:  # noqa: S110
-            pass  # No CSV data - expected for new assemblies
-
-        # Determine data source
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-
-        # Tab enabled states
-        targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
-            data_source, gsheet, csv_status
-        )
-
         # Load the per-assembly field schema and pack it into display sections.
         # Empty groups are filtered out so the template renders only populated sections.
         uow_schema = bootstrap.bootstrap()
@@ -512,11 +488,6 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             "backoffice/assembly_view_respondent.html",
             assembly=assembly,
             respondent=respondent,
-            data_source=data_source,
-            gsheet=gsheet,
-            targets_enabled=targets_enabled,
-            respondents_enabled=respondents_enabled,
-            selection_enabled=selection_enabled,
             schema_sections=schema_sections,
             can_manage=can_manage,
             can_edit=can_edit,

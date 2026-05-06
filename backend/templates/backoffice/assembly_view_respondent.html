@@ -24,7 +24,6 @@ rendered as the default (blue) tag, so it's absent from this dict.
 {% set status_colour = selection_status_colours.get(status_key, "grey") %}
 {# Reserved field keys with boolean values — rendered via table_cell_yes_no. #}
 {% set boolean_fixed_keys = 'consent', 'stay_on_db', 'eligible', 'can_attend' %}
-
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
 {% block breadcrumb_section %}
     <div class="mb-6">
@@ -39,14 +38,6 @@ rendered as the default (blue) tag, so it's absent from this dict.
 {% set is_deleted = respondent.selection_status.value == "DELETED" %}
 {% set delete_comment = respondent.comments | selectattr("action.value", "equalto", "DELETE") | list | last if respondent.comments else none %}
 {% block page_content %}
-    {{ assembly_tabs(assembly=assembly,
-    active_tab="respondents",
-    data_source=data_source|default("") ,
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
     <div class="flex items-start justify-between gap-4 mb-2">
         <h1 class="text-display-lg" style="color: var(--color-headings);">{{ respondent_name }}</h1>
         {% if can_edit and not is_deleted %}
@@ -63,11 +54,11 @@ rendered as the default (blue) tag, so it's absent from this dict.
             {% set author = comment_authors.get(delete_comment.author_id) if comment_authors else none %}
             {% if author %}
                 {{ _("Deleted on %(date)s by %(who)s",
-                date=delete_comment.created_at|datetimeformat('long'),
+                date=delete_comment.created_at|datetimeformat('long') ,
                 who=author.email) }}
             {% else %}
                 {{ _("Deleted on %(date)s",
-                date=delete_comment.created_at|datetimeformat('long')) }}
+                date=delete_comment.created_at|datetimeformat('long') ) }}
             {% endif %}
         </div>
     {% endif %}
@@ -98,12 +89,12 @@ rendered as the default (blue) tag, so it's absent from this dict.
         {% if can_edit and not is_deleted and allowed_transitions %}
             <div class="flex flex-wrap gap-3" x-data="{ open_target: '' }">
                 {% for target in allowed_transitions %}
-                    {{ button(_("Change to %(status)s", status=target|title), variant="secondary", attrs='@click="open_target = \'' + target + '\'"') }}
+                    {{ button(_("Change to %(status)s", status=target|title) , variant="secondary", attrs='@click="open_target = \'' + target + '\'"') }}
                 {% endfor %}
                 {% for target in allowed_transitions %}
                     <div x-show="open_target === '{{ target }}'"
                          class="mt-4 p-4 border border-gray-300 rounded bg-white"
-                         style="max-width: 36rem;">
+                         style="max-width: 36rem">
                         <p class="text-body-md mb-3">
                             {{ _("This will mark the respondent as %(status)s. The change is logged with your comment.", status=target|title) }}
                         </p>
@@ -112,9 +103,7 @@ rendered as the default (blue) tag, so it's absent from this dict.
                               class="flex flex-col gap-3">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <input type="hidden" name="new_status" value="{{ target }}" />
-                            <label class="text-body-sm font-bold" for="transition-comment-{{ target }}">
-                                {{ _("Reason (required)") }}
-                            </label>
+                            <label class="text-body-sm font-bold" for="transition-comment-{{ target }}">{{ _("Reason (required)") }}</label>
                             <textarea id="transition-comment-{{ target }}"
                                       name="comment"
                                       rows="3"
@@ -122,8 +111,8 @@ rendered as the default (blue) tag, so it's absent from this dict.
                                       class="border border-gray-300 rounded p-2"
                                       placeholder="{{ _('e.g. confirmed on call with participant') }}"></textarea>
                             <div class="flex gap-3">
-                                {{ button(_("Confirm"), type="submit", variant="primary") }}
-                                {{ button(_("Cancel"), variant="outline", attrs='@click="open_target = \'\'"') }}
+                                {{ button(_("Confirm") , type="submit", variant="primary") }}
+                                {{ button(_("Cancel") , variant="outline", attrs='@click="open_target = \'\'"') }}
                             </div>
                         </form>
                     </div>
@@ -237,7 +226,7 @@ rendered as the default (blue) tag, so it's absent from this dict.
                     {% for comment in respondent.comments %}
                         {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
                         {% call table_row() %}
-                            {{ table_cell(comment.created_at|datetimeformat('long')) }}
+                            {{ table_cell(comment.created_at|datetimeformat('long') ) }}
                             {{ table_cell(author.email if author else comment.author_id|string) }}
                             {{ table_cell(comment.action.value|title if comment.action.value != "NONE" else "—") }}
                             {{ table_cell(comment.text) }}
