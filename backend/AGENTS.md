@@ -243,10 +243,21 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 **Permanent guidelines (always relevant):**
 
 - [Code Quality Rules](docs/agent/code_quality_rules.md) - Exception handling, complexity, and formatting rules
+- [Component Accessibility](docs/agent/component_accessibility.md) - WAI-ARIA, keyboard navigation, focus management
 - [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
+
+**IMPORTANT - Before creating or modifying UI components:**
+
+Read the [Component Accessibility Guide](docs/agent/component_accessibility.md). All components MUST comply with:
+- Semantic HTML structure
+- WAI-ARIA attributes (aria-label for icon buttons, aria-pressed for toggles, etc.)
+- Keyboard navigation (focusable, logical tab order, expected shortcuts)
+- Visible focus indicators (prefer browser defaults)
+
+Research complex patterns at https://www.w3.org/WAI/ARIA/apg/patterns/ before implementation.
 
 **IMPORTANT - Before implementing Alpine.js components:**
 

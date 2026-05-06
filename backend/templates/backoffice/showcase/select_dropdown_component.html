@@ -1,0 +1,239 @@
+{#
+ABOUTME: Showcase section for select dropdown component
+ABOUTME: Displays native select dropdown with consistent design system styling
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/select_dropdown.html" import select_dropdown %}
+
+{% macro select_dropdown_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Select Dropdown Component") }}
+        {{ showcase_description("Native HTML select dropdown with consistent styling. Uses built-in browser accessibility for keyboard navigation and screen reader support.") }}
+
+        {% call showcase_example('{% from "backoffice/components/select_dropdown.html" import select_dropdown %}
+
+{# Basic select dropdown #}
+            {{ select_dropdown(
+            name="data_source",
+            label="Data Source",
+            options=[
+            {"value": "gsheet", "label": "Google Spreadsheet"},
+            {"value": "csv", "label": "CSV file"}
+            ],
+            placeholder="Select Data Source"
+            ) }}
+
+{# With hint text #}
+            {{ select_dropdown(
+            name="team",
+            label="Team",
+            options=[
+            {"value": "uk", "label": "UK Team"},
+            {"value": "eu", "label": "EU Team"},
+            {"value": "aus", "label": "Australia Team"}
+            ],
+            hint="Select your team region"
+            ) }}
+
+{# Required with error #}
+            {{ select_dropdown(
+            name="required_field",
+            label="Required Selection",
+            options=[...],
+            required=true,
+            error="Please select an option"
+            ) }}') %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {# Basic select dropdown #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Basic Select</span>
+                    {{ select_dropdown(
+                    name="demo-basic",
+                    label="Data Source",
+                    options=[
+                    {"value": "gsheet", "label": "Google Spreadsheet"},
+                    {"value": "csv", "label": "CSV file"}
+                    ],
+                    placeholder="Select Data Source"
+                    ) }}
+                </div>
+
+                {# With hint text #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">With Hint</span>
+                    {{ select_dropdown(
+                    name="demo-hint",
+                    label="Team Region",
+                    options=[
+                    {"value": "uk", "label": "UK Team"},
+                    {"value": "eu", "label": "EU Team"},
+                    {"value": "aus", "label": "Australia Team"}
+                    ],
+                    placeholder="Select Team",
+                    hint="Choose your team's geographic region"
+                    ) }}
+                </div>
+
+                {# Required field #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Required Field</span>
+                    {{ select_dropdown(
+                    name="demo-required",
+                    label="Priority Level",
+                    options=[
+                    {"value": "high", "label": "High"},
+                    {"value": "medium", "label": "Medium"},
+                    {"value": "low", "label": "Low"}
+                    ],
+                    placeholder="Select Priority",
+                    required=true
+                    ) }}
+                </div>
+
+                {# Error state #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Error State</span>
+                    {{ select_dropdown(
+                    name="demo-error",
+                    label="Category",
+                    options=[
+                    {"value": "a", "label": "Category A"},
+                    {"value": "b", "label": "Category B"}
+                    ],
+                    placeholder="Select Category",
+                    error="Please select a category"
+                    ) }}
+                </div>
+
+                {# Disabled state #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Disabled State</span>
+                    {{ select_dropdown(
+                    name="demo-disabled",
+                    label="Locked Selection",
+                    options=[
+                    {"value": "locked", "label": "Locked Value"}
+                    ],
+                    value="locked",
+                    disabled=true,
+                    hint="This selection is locked"
+                    ) }}
+                </div>
+
+                {# Pre-selected value #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Pre-selected Value</span>
+                    {{ select_dropdown(
+                    name="demo-preselected",
+                    label="Default Option",
+                    options=[
+                    {"value": "opt1", "label": "Option 1"},
+                    {"value": "opt2", "label": "Option 2"},
+                    {"value": "opt3", "label": "Option 3"}
+                    ],
+                    value="opt2",
+                    hint="Option 2 is pre-selected"
+                    ) }}
+                </div>
+            </div>
+        {% endcall %}
+
+        {# Navigation Select with Alpine.js #}
+        {% call showcase_example('{# Navigation select with urlSelect Alpine component #}
+        <div x-data="urlSelect({ baseUrl: \'/page\', paramName: \'source\', initialValue: \'current\' })">
+            {{ select_dropdown(
+            name="nav_select",
+            label="Navigate on Change",
+            options=[...],
+            attrs=\'x-model="selected" @change="navigate($event)" data-focus-id="nav-select"\'
+            ) }}
+        </div>') %}
+        <div class="max-w-md">
+            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                Use with the <code>urlSelect</code> Alpine.js component for navigation dropdowns that redirect on change.
+                The <code>data-focus-id</code> attribute enables focus preservation after page reload.
+            </p>
+            <div x-data="{ selected: 'opt1' }">
+                {{ select_dropdown(
+                name="demo-navigation",
+                label="Navigation Example",
+                options=[
+                {"value": "opt1", "label": "Page Option 1"},
+                {"value": "opt2", "label": "Page Option 2"},
+                {"value": "opt3", "label": "Page Option 3"}
+                ],
+                value="opt1",
+                hint="In production, this would navigate to a new page",
+                attrs='x-model="selected" data-focus-id="demo-nav"'
+                ) }}
+            </div>
+        </div>
+    {% endcall %}
+
+        {# Accessibility Section #}
+    {% call showcase_example('{# Native select accessibility is built-in #}
+
+{# Keyboard navigation: #}
+{# - Arrow Up/Down: Navigate options #}
+{# - Enter/Space: Open dropdown and select #}
+{# - Escape: Close dropdown #}
+{# - Type letter: Jump to matching option #}
+
+{# Screen reader support: #}
+{# - Label association via for/id #}
+{# - aria-describedby for hints/errors #}
+{# - aria-required for required fields #}
+{# - aria-invalid for error state #}
+{# - aria-disabled for disabled state #}') %}
+    <div class="flex flex-col gap-6">
+        <div>
+            <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Built-in Accessibility</h4>
+            <ul class="text-body-sm list-disc pl-5 space-y-1" style="color: var(--color-body-text);">
+                <li><strong>Native element:</strong> Uses <code>&lt;select&gt;</code> with full browser accessibility support</li>
+                <li><strong>Label association:</strong> <code>for</code>/<code>id</code> linking for screen readers</li>
+                <li><strong>Descriptions:</strong> <code>aria-describedby</code> links hint and error text</li>
+                <li><strong>States:</strong> <code>aria-required</code>, <code>aria-invalid</code>, <code>aria-disabled</code></li>
+            </ul>
+        </div>
+        <div>
+            <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Keyboard Navigation</h4>
+            <ul class="text-body-sm list-disc pl-5 space-y-1" style="color: var(--color-body-text);">
+                <li><strong>Arrow Up/Down:</strong> Navigate between options</li>
+                <li><strong>Enter/Space:</strong> Open dropdown or select highlighted option</li>
+                <li><strong>Escape:</strong> Close dropdown without selecting</li>
+                <li><strong>Type letter:</strong> Jump to first option starting with that letter</li>
+                <li><strong>Home/End:</strong> Jump to first/last option</li>
+            </ul>
+        </div>
+        <div>
+            <span class="text-label-md" style="color: var(--color-secondary-text);">Try keyboard navigation</span>
+            {{ select_dropdown(
+            name="a11y-demo",
+            label="Accessible Select Demo",
+            options=[
+            {"value": "apple", "label": "Apple"},
+            {"value": "banana", "label": "Banana"},
+            {"value": "cherry", "label": "Cherry"},
+            {"value": "date", "label": "Date"},
+            {"value": "elderberry", "label": "Elderberry"}
+            ],
+            placeholder="Select a fruit",
+            hint="Use arrow keys to navigate, type a letter to jump to matching option"
+            ) }}
+        </div>
+    </div>
+{% endcall %}
+
+{{ showcase_tokens([
+"--color-page-background",
+"--color-borders-dividers",
+"--color-body-text",
+"--color-headings",
+"--color-secondary-text",
+"--color-primary-action",
+".text-label-lg",
+".text-body-md",
+".text-body-sm"
+]) }}
+{% endcall %}
+{% endmacro %}

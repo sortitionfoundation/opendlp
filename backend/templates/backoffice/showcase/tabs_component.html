@@ -8,70 +8,108 @@ ABOUTME: Displays horizontal tab navigation with usage examples
 {% macro tabs_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Tabs Component") }}
-        {{ showcase_description("Horizontal tab navigation for switching between page sections, based on OpenDLP Figma UI specification. Features bold text for selected state, hover background, and proper focus ring for keyboard navigation.") }}
+        {{ showcase_description("Accessible tabs component following WAI-ARIA Authoring Practices. Features keyboard navigation (Arrow keys, Home/End), proper ARIA attributes, and roving tabindex. Tabs control associated tab panels.") }}
 
         {% call showcase_example('{% from "backoffice/components/tabs.html" import tabs %}
 
             {{ tabs(
+            id="my-tabs",
             items=[
-            {"label": _("Details"), "href": url_for(\'...\'), "active": true},
-            {"label": _("Data"), "href": "#", "data-proto": "click:show:data-panel"},
-            {"label": _("Targets"), "href": "#", "disabled": true},
-            {"label": _("Selection"), "href": "#"},
-            {"label": _("Team Members"), "href": url_for(\'...\')}
+            {"key": "details", "label": _("Details"), "href": "?tab=details", "active": true},
+            {"key": "data", "label": _("Data"), "href": "?tab=data"},
+            {"key": "targets", "label": _("Targets"), "href": "?tab=targets", "disabled": true},
+            {"key": "selection", "label": _("Selection"), "href": "?tab=selection"}
             ],
             aria_label=_("Assembly sections")
             ) }}
 
-            {# Extra attributes like data-proto are passed through to the <a> element #}') %}
-            <div class="flex flex-col gap-6">
+{# Tab panel for the active tab #}
+            <div id="my-tabs-panel-details"
+                 role="tabpanel"
+                 aria-labelledby="my-tabs-tab-details"
+                 tabindex="0">
+                Panel content here
+            </div>') %}
+            <div class="flex flex-col gap-8">
+                {# Interactive example with panels #}
                 <div class="flex flex-col gap-2">
-                    <span class="text-label-md" style="color: var(--color-secondary-text);">Four tabs (first active)</span>
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Interactive tabs with panel</span>
                     {{ tabs(
+                    id="demo-tabs",
                     items=[
-                    {"label": "Details", "href": "#", "active": true},
-                    {"label": "Data", "href": "#"},
-                    {"label": "Selection", "href": "#"},
-                    {"label": "Team Members", "href": "#"}
+                    {"key": "first", "label": "First Tab", "href": "#", "active": true},
+                    {"key": "second", "label": "Second Tab", "href": "#"},
+                    {"key": "third", "label": "Third Tab", "href": "#"}
                     ],
-                    aria_label="Example tabs - four items"
+                    aria_label="Demo tabs",
+                    preserve_scroll=false
                     ) }}
+                    <div id="demo-tabs-panel-first"
+                         role="tabpanel"
+                         aria-labelledby="demo-tabs-tab-first"
+                         tabindex="0"
+                         class="p-4 rounded-lg"
+                         style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                        <p class="text-body-md" style="color: var(--color-body-text);">
+                            This is the content of the first tab panel. Use Arrow Left/Right keys to navigate between tabs.
+                        </p>
+                    </div>
                 </div>
 
+                {# With disabled tab #}
                 <div class="flex flex-col gap-2">
                     <span class="text-label-md" style="color: var(--color-secondary-text);">With disabled tab</span>
                     {{ tabs(
+                    id="disabled-demo",
                     items=[
-                    {"label": "Details", "href": "#", "active": true},
-                    {"label": "Data", "href": "#"},
-                    {"label": "Targets", "href": "#", "disabled": true},
-                    {"label": "Selection", "href": "#"}
+                    {"key": "details", "label": "Details", "href": "#", "active": true},
+                    {"key": "data", "label": "Data", "href": "#"},
+                    {"key": "targets", "label": "Targets", "href": "#", "disabled": true},
+                    {"key": "selection", "label": "Selection", "href": "#"}
                     ],
-                    aria_label="Example tabs - with disabled"
+                    aria_label="Example tabs - with disabled",
+                    preserve_scroll=false
                     ) }}
                 </div>
 
+                {# Middle tab selected #}
                 <div class="flex flex-col gap-2">
                     <span class="text-label-md" style="color: var(--color-secondary-text);">Middle tab selected</span>
                     {{ tabs(
+                    id="middle-demo",
                     items=[
-                    {"label": "Overview", "href": "#"},
-                    {"label": "Settings", "href": "#", "active": true},
-                    {"label": "History", "href": "#"}
+                    {"key": "overview", "label": "Overview", "href": "#"},
+                    {"key": "settings", "label": "Settings", "href": "#", "active": true},
+                    {"key": "history", "label": "History", "href": "#"}
                     ],
-                    aria_label="Example tabs - middle selected"
+                    aria_label="Example tabs - middle selected",
+                    preserve_scroll=false
                     ) }}
                 </div>
 
+                {# Two tabs #}
                 <div class="flex flex-col gap-2">
                     <span class="text-label-md" style="color: var(--color-secondary-text);">Two tabs</span>
                     {{ tabs(
+                    id="two-tabs-demo",
                     items=[
-                    {"label": "Overview", "href": "#", "active": true},
-                    {"label": "Settings", "href": "#"}
+                    {"key": "overview", "label": "Overview", "href": "#", "active": true},
+                    {"key": "settings", "label": "Settings", "href": "#"}
                     ],
-                    aria_label="Example tabs - two items"
+                    aria_label="Example tabs - two items",
+                    preserve_scroll=false
                     ) }}
+                </div>
+
+                {# Keyboard navigation info #}
+                <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                    <h4 class="text-label-md mb-2" style="color: var(--color-headings);">Keyboard Navigation</h4>
+                    <ul class="text-body-sm space-y-1" style="color: var(--color-body-text);">
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">←</kbd> / <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">→</kbd> Move to previous/next tab</li>
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">Home</kbd> Move to first tab</li>
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">End</kbd> Move to last tab</li>
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">Tab</kbd> Move focus out of the tablist</li>
+                    </ul>
                 </div>
             </div>
         {% endcall %}
@@ -80,7 +118,6 @@ ABOUTME: Displays horizontal tab navigation with usage examples
         "--color-borders-dividers",
         "--color-button-primary-bg",
         "--color-headings",
-        "--color-focus-ring",
         ".tab-bar",
         ".tab-item",
         ".tab-item-selected",

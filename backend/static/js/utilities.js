@@ -3,21 +3,25 @@
 
 // Handle select elements that navigate on change via data-navigate-base-url
 // Optionally preserves scroll position with data-navigate-preserve-scroll attribute
+// Note: Requires url-utils.js to be loaded before this file
 document.addEventListener("change", function (e) {
   var baseUrl = e.target.dataset.navigateBaseUrl;
   if (baseUrl) {
     var paramName = e.target.dataset.navigateParam || "value";
     var preserveScroll = e.target.hasAttribute("data-navigate-preserve-scroll");
     var url = baseUrl;
+
+    // Add parameter value using URL utilities (handles existing query params correctly)
     if (e.target.value) {
-      url += "?" + paramName + "=" + encodeURIComponent(e.target.value);
+      url = urlSetParam(url, paramName, e.target.value);
     }
+
     // Add scroll parameter if preservation is enabled
     if (preserveScroll) {
       var currentScroll = Math.round(window.scrollY);
-      var separator = url.includes("?") ? "&" : "?";
-      url += separator + "scroll=" + currentScroll;
+      url = urlSetParam(url, "scroll", currentScroll.toString());
     }
+
     window.location.href = url;
   }
 });
