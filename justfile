@@ -70,7 +70,7 @@ deploy-preview-gg:
   fi
   echo "*** Building docker image ***"
   git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
-  docker build -t opendlp:ggpreview backend/
+  docker build --platform linux/amd64 -t opendlp:ggpreview backend/
   # the double-s in pussh is NOT a typo
   echo "*** Pushing docker image to preview server ***"
   docker pussh opendlp:ggpreview opendlp-test
