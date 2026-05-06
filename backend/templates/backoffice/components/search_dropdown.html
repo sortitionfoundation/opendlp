@@ -1,11 +1,12 @@
 {#
 ABOUTME: Search dropdown component with autocomplete for backoffice design system
-ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying results
+ABOUTME: Uses Alpine.js autocomplete data component with WAI-ARIA combobox pattern
 #}
 
 {% macro search_dropdown(name, label="", fetch_url="", placeholder="", hint="", error="", required=false, id="", min_chars=2, debounce_ms=300, param_name="q") %}
     {#
     Search dropdown component with autocomplete functionality.
+    Follows WAI-ARIA Combobox pattern for accessibility.
 
     Uses the Alpine.js 'autocomplete' data component defined in alpine-components.js.
 
@@ -24,6 +25,13 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
 
     The fetch_url should return JSON array: [{ id, label, sublabel? }, ...]
 
+    Accessibility:
+        - role="combobox" on input with aria-expanded, aria-controls, aria-activedescendant
+        - role="listbox" on dropdown with unique ID
+        - role="option" on each result item with aria-selected
+        - Live region announces result count to screen readers
+        - Keyboard: Arrow Up/Down to navigate, Enter to select, Escape to close
+
     Usage:
         {{ search_dropdown(
             name="user_id",
@@ -35,9 +43,12 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
+    {% set listbox_id = input_id ~ '_listbox' %}
+    {% set hint_id = input_id ~ '_hint' if hint else '' %}
+    {% set error_id = input_id ~ '_error' if has_error else '' %}
 
     <div class="flex flex-col gap-1.5"
-         x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: {{ min_chars }}, debounceMs: {{ debounce_ms }}, paramName: '{{ param_name }}' })">
+         x-data="autocomplete({ fetchUrl: '{{ fetch_url }}', minChars: {{ min_chars }}, debounceMs: {{ debounce_ms }}, paramName: '{{ param_name }}', inputId: '{{ input_id }}' })">
 
         {# Label #}
         {% if label %}
@@ -49,26 +60,32 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
 
         {# Hint text #}
         {% if hint %}
-            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+            <p id="{{ hint_id }}" class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
         {% endif %}
 
         {# Search input with dropdown #}
         <div class="relative">
             <input type="text"
                    id="{{ input_id }}_search"
+                   role="combobox"
                    x-model="query"
                    @input="onInput()"
                    @keydown="onKeydown($event)"
                    @click.outside="close()"
                    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-                   {% if required %}required{% endif %}
+                   {% if required %}required aria-required="true"{% endif %}
                    autocomplete="off"
-                   class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                   aria-autocomplete="list"
+                   aria-haspopup="listbox"
+                   aria-controls="{{ listbox_id }}"
+                   x-bind:aria-expanded="isOpen"
+                   x-bind:aria-activedescendant="activeDescendantId"
+                   {% if hint_id or error_id %}aria-describedby="{{ hint_id }}{% if hint_id and error_id %} {% endif %}{{ error_id }}"{% endif %}
+                   class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150"
                    style="
                           background-color: var(--color-page-background);
                           border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
                           color: var(--color-body-text);
-                          --tw-ring-color: {% if has_error %}var(--color-primary-action){% else %}var(--color-focus-ring){% endif %};
                          ">
 
             {# Hidden input for form submission #}
@@ -87,17 +104,20 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
                  x-cloak
                  class="absolute z-20 w-full mt-1 rounded-lg shadow-lg overflow-hidden"
                  style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                <ul class="max-h-60 overflow-auto">
+                <ul id="{{ listbox_id }}"
+                    role="listbox"
+                    aria-label="{{ label if label else _('Search results') }}"
+                    class="max-h-60 overflow-auto">
                     <template x-for="(item, index) in results" x-bind:key="item.id">
-                        <li>
-                            <button type="button"
-                                    @click="selectItem(item)"
-                                    class="w-full px-4 py-3 text-left transition-colors"
-                                    x-bind:style="index === highlightedIndex ? 'background-color: var(--color-subtle-background-panels);' : ''"
-                                    @mouseenter="highlightedIndex = index">
-                                <span class="text-body-md block" style="color: var(--color-body-text);" x-text="item.label"></span>
-                                <span x-show="item.sublabel" class="text-body-sm block" style="color: var(--color-secondary-text);" x-text="item.sublabel"></span>
-                            </button>
+                        <li x-bind:id="'{{ input_id }}_option_' + index"
+                            role="option"
+                            x-bind:aria-selected="index === highlightedIndex"
+                            @click="selectItem(item)"
+                            @mouseenter="highlightedIndex = index"
+                            class="px-4 py-3 cursor-pointer transition-colors"
+                            x-bind:style="index === highlightedIndex ? 'background-color: var(--color-subtle-background-panels);' : ''">
+                            <span class="text-body-md block" style="color: var(--color-body-text);" x-text="item.label"></span>
+                            <span x-show="item.sublabel" class="text-body-sm block" style="color: var(--color-secondary-text);" x-text="item.sublabel"></span>
                         </li>
                     </template>
                 </ul>
@@ -113,7 +133,10 @@ ABOUTME: Uses Alpine.js autocomplete data component for fetching and displaying 
 
         {# Error message #}
         {% if has_error %}
-            <p class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+            <p id="{{ error_id }}" class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
         {% endif %}
+
+        {# Live region for screen reader announcements #}
+        <div aria-live="polite" aria-atomic="true" class="sr-only" x-text="statusMessage"></div>
     </div>
 {% endmacro %}

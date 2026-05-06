@@ -97,12 +97,12 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
 
 @when("the user clicks the Replacements button")
 def user_clicks_replacements(admin_logged_in_page: Page):
-    """Click the 'Go to Replacement Selection' link to open modal."""
+    """Click the 'Go to Replacement Selection' button to open modal."""
     page = admin_logged_in_page
-    # The button is actually a link styled as a button with text "Go to Replacement Selection"
-    link = page.get_by_role("link", name="Go to Replacement Selection")
-    expect(link).to_be_visible()
-    link.click()
+    # Button macro renders <a> with role="button" for accessibility
+    btn = page.get_by_role("button", name="Go to Replacement Selection")
+    expect(btn).to_be_visible()
+    btn.click()
     page.wait_for_load_state()
 
 
@@ -186,10 +186,11 @@ def user_opens_completed_task(admin_logged_in_page: Page, test_assembly, request
 
 @when("the user clicks Close")
 def user_clicks_close(admin_logged_in_page: Page):
-    """Click the Close button in the modal."""
+    """Click the Close button link in the modal (not the X icon button)."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    btn = modal.get_by_role("link", name="Close")
+    # Use locator for the link-styled close button (not the X icon which has aria-label="Close")
+    btn = modal.locator("a:has-text('Close')")
     expect(btn).to_be_visible()
     btn.click()
     page.wait_for_load_state()
@@ -314,10 +315,11 @@ def result_shows_success(admin_logged_in_page: Page):
 
 @then("the Close button is visible")
 def close_button_visible(admin_logged_in_page: Page):
-    """Verify Close button is visible in modal."""
+    """Verify Close button link is visible in modal (not the X icon button)."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    btn = modal.get_by_role("link", name="Close")
+    # Use locator for the link-styled close button (not the X icon which has aria-label="Close")
+    btn = modal.locator("a:has-text('Close')")
     expect(btn).to_be_visible()
 
 
@@ -348,12 +350,13 @@ def replacement_modal_not_visible(admin_logged_in_page: Page):
 
 @then("the Close button is not visible")
 def close_button_not_visible(admin_logged_in_page: Page):
-    """Verify Close button is not visible while task is running."""
+    """Verify Close button link is not visible while task is running."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    # Close link should not be visible during task execution
-    close_link = modal.get_by_role("link", name="Close")
-    expect(close_link).not_to_be_visible()
+    # Use locator for the link-styled close button (not the X icon which has aria-label="Close")
+    # Close button link should not be visible during task execution
+    close_btn = modal.locator("a:has-text('Close')")
+    expect(close_btn).not_to_be_visible()
 
 
 @then("the modal cannot be closed by clicking backdrop")
