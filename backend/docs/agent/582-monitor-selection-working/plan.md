@@ -974,7 +974,7 @@ Adds the new `check_monitor_selection`, the new
 `/health/monitor_selection` route, and the informational JSON fields
 on `/health`. All tested at the HTTP boundary in `tests/e2e/`.
 
-- [ ] 🔴 Create `tests/e2e/test_health_check_monitoring.py`. Use
+- [x] 🔴 Create `tests/e2e/test_health_check_monitoring.py`. Use
       `temp_env_vars` to configure `MONITOR_ASSEMBLY_ID`/
       `MONITOR_USER_ID`/`MONITOR_HEALTH_MAX_AGE_MINUTES` per scenario.
       Seed `SelectionRunRecord` rows directly via
@@ -997,25 +997,25 @@ on `/health`. All tested at the HTTP boundary in `tests/e2e/`.
       | URL field populated | any record | `monitor_selection_last_run_url` matches `…/assembly/<uuid>/selection/<run_uuid>` | same |
 
       Each row is one test method. Watch all fail.
-- [ ] 🟢 Add `check_monitor_selection() -> tuple[str, datetime | None,
+- [x] 🟢 Add `check_monitor_selection() -> tuple[str, datetime | None,
       str, str]` to `src/opendlp/entrypoints/blueprints/health.py`.
       It reads config, queries the latest SELECT_GSHEET and
       DELETE_OLD_TABS records via `get_latest_monitor_run`, and
       returns the status string per the spec.
-- [ ] 🟢 Wire `check_monitor_selection` into the existing
+- [x] 🟢 Wire `check_monitor_selection` into the existing
       `health_check` view: add the four new JSON fields
       (`monitor_selection_status`, `monitor_selection_last_run_at`,
       `monitor_selection_message`, `monitor_selection_last_run_url`)
       plus `monitor_cleanup_status`. Update the
       `is_healthy` calculation. Preserve current `fail_on_warning`
       semantics for everything pre-existing.
-- [ ] 🟢 Add a new route `@health_bp.route("/health/monitor_selection")`
+- [x] 🟢 Add a new route `@health_bp.route("/health/monitor_selection")`
       that returns the same JSON shape but with `NOT_CONFIGURED` mapped
       to HTTP 500.
-- [ ] 🟢 All scenarios pass.
-- [ ] 🟢 Run existing `tests/e2e/test_health_check.py` — no regression.
-- [ ] 🟢 `just test && just check` clean.
-- [ ] 📄 **Phase 3 commit/PR.**
+- [x] 🟢 All scenarios pass.
+- [x] 🟢 Run existing `tests/e2e/test_health_check.py` — no regression.
+- [x] 🟢 `just test && just check` clean.
+- [x] 📄 **Phase 3 commit/PR.**
 
 ---
 
