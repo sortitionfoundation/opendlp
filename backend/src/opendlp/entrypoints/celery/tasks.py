@@ -1033,3 +1033,41 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
     result = {"checked": checked, "marked_failed": marked_failed, "errors": errors}
     logging.info(f"Cleanup completed: {result}")
     return result
+
+
+@app.task
+def monitor_selection_periodic(session_factory: sessionmaker | None = None) -> dict[str, Any]:
+    """Hourly heartbeat — run one full monitor selection."""
+    from opendlp.service_layer.monitoring import run_monitoring_selection  # noqa: PLC0415
+
+    with bootstrap(session_factory=session_factory) as uow:
+        result = run_monitoring_selection(uow)
+
+    logging.info(
+        "monitor selection completed: success=%s, message=%s",
+        result.success,
+        result.message,
+    )
+    return {
+        "success": result.success,
+        "duration_seconds": result.duration_seconds,
+        "message": result.message,
+        "task_id": str(result.task_id) if result.task_id else None,
+    }
+
+
+@app.task
+def prune_monitor_run_records(
+    session_factory: sessionmaker | None = None,
+    keep: int = 100,
+) -> int:
+    """Prune monitor SelectionRunRecords beyond the most recent ``keep``."""
+    assembly_id = config.get_monitor_assembly_id()
+    if assembly_id is None:
+        return 0
+
+    with bootstrap(session_factory=session_factory) as uow:
+        deleted = uow.selection_run_records.delete_old_for_assembly(assembly_id, keep=keep)
+        uow.commit()
+    logging.info(f"prune_monitor_run_records: deleted {deleted} record(s)")
+    return deleted

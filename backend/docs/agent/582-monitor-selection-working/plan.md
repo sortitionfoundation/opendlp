@@ -1025,7 +1025,7 @@ Wires the service function up to the two ways it actually runs.
 
 #### CLI `monitor run-selection` (Step 10)
 
-- [ ] 🔴 Create `tests/integration/test_cli_monitor.py` using
+- [x] 🔴 Create `tests/integration/test_cli_monitor.py` using
       `cli_with_session_factory`. Patch `run_monitoring_selection`
       (module-level service function — patching is the right call
       here as flagged in the TDD preamble). Cases:
@@ -1037,15 +1037,15 @@ Wires the service function up to the two ways it actually runs.
   - Same failure with `--no-strict` → exit 0, "✗" still present.
   - `MonitorResult(success=False, not_configured=True)` → exit 0,
     "⚠" in output.
-- [ ] 🟢 Create `src/opendlp/entrypoints/cli/monitor.py` with the
+- [x] 🟢 Create `src/opendlp/entrypoints/cli/monitor.py` with the
       `monitor` subgroup and the `run-selection` command.
-- [ ] 🟢 Register the subgroup in
+- [x] 🟢 Register the subgroup in
       `src/opendlp/entrypoints/cli/__init__.py`.
-- [ ] 🟢 All four CLI tests pass.
+- [x] 🟢 All four CLI tests pass.
 
 #### Beat tasks (Step 11)
 
-- [ ] 🔴 In `tests/integration/test_celery_tasks.py` (extend) add:
+- [x] 🔴 In `tests/integration/test_celery_tasks.py` (extend) add:
   - `test_monitor_selection_periodic_invokes_service`: patch
     `run_monitoring_selection` to return a known `MonitorResult`;
     invoke `monitor_selection_periodic.run(session_factory=…)`
@@ -1059,14 +1059,14 @@ Wires the service function up to the two ways it actually runs.
   - `test_prune_monitor_run_records_no_op_when_unconfigured`:
     `clear_env_vars("MONITOR_ASSEMBLY_ID")`; call task; assert it
     returns 0 and didn't query the DB (or returned without error).
-- [ ] 🟢 Implement `monitor_selection_periodic` and
+- [x] 🟢 Implement `monitor_selection_periodic` and
       `prune_monitor_run_records` in
       `src/opendlp/entrypoints/celery/tasks.py`.
-- [ ] 🟢 Add the two new entries to `beat_schedule` in
+- [x] 🟢 Add the two new entries to `beat_schedule` in
       `src/opendlp/entrypoints/celery/app.py`.
-- [ ] 🟢 All three tests pass.
-- [ ] 🟢 `just test && just check` clean.
-- [ ] 📄 **Phase 4 commit/PR.**
+- [x] 🟢 All three tests pass.
+- [x] 🟢 `just test && just check` clean.
+- [x] 📄 **Phase 4 commit/PR.**
 
 ---
 
