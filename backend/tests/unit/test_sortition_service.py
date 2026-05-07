@@ -899,6 +899,85 @@ class TestCancelTask:
         assert record.is_cancelled is True
 
 
+class TestStartGsheetSelectTaskCeleryApplyKwargs:
+    """Test that start_gsheet_select_task forwards celery_apply_kwargs to apply_async."""
+
+    def _make_uow_with_select_setup(self) -> tuple[FakeUnitOfWork, User, Assembly]:
+        uow = FakeUnitOfWork()
+        admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=10)
+        uow.assemblies.add(assembly)
+
+        gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(gsheet)
+
+        sel_settings = SelectionSettings(
+            assembly_id=assembly.id,
+            check_same_address_cols=["address1", "postcode"],
+            columns_to_keep=["first_name", "last_name", "age"],
+        )
+        assembly.selection_settings = sel_settings
+        return uow, admin, assembly
+
+    def test_default_call_uses_apply_async_without_extra_kwargs(self):
+        uow, admin, assembly = self._make_uow_with_select_setup()
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_apply.return_value = mock_result
+
+            sortition.start_gsheet_select_task(uow, admin.id, assembly.id)
+
+        mock_apply.assert_called_once()
+        call_args = mock_apply.call_args
+        assert "kwargs" in call_args.kwargs
+        kwargs = call_args.kwargs["kwargs"]
+        assert set(kwargs.keys()) == {
+            "task_id",
+            "data_source",
+            "number_people_wanted",
+            "settings",
+            "test_selection",
+            "gen_rem_tab",
+        }
+        # No celery options should have been passed
+        extra = {k: v for k, v in call_args.kwargs.items() if k != "kwargs"}
+        assert extra == {}
+
+    def test_forwards_celery_apply_kwargs_to_apply_async(self):
+        uow, admin, assembly = self._make_uow_with_select_setup()
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_apply.return_value = mock_result
+
+            sortition.start_gsheet_select_task(
+                uow,
+                admin.id,
+                assembly.id,
+                celery_apply_kwargs={"time_limit": 5, "soft_time_limit": 4},
+            )
+
+        mock_apply.assert_called_once()
+        call_args = mock_apply.call_args
+        assert call_args.kwargs.get("time_limit") == 5
+        assert call_args.kwargs.get("soft_time_limit") == 4
+        assert "kwargs" in call_args.kwargs
+        kwargs = call_args.kwargs["kwargs"]
+        assert set(kwargs.keys()) == {
+            "task_id",
+            "data_source",
+            "number_people_wanted",
+            "settings",
+            "test_selection",
+            "gen_rem_tab",
+        }
+
+
 class TestSortitionErrorHandling:
     """Test that sortition-algorithms library errors are properly converted to service layer exceptions."""
 

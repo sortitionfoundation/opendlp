@@ -876,7 +876,7 @@ extension it needs. All tests live in `tests/unit/` against
 
 #### `apply_kwargs` plumbing in `start_gsheet_select_task` (Step 7 — done first because the service function depends on it)
 
-- [ ] 🔴 In `tests/unit/test_sortition_service.py`, add a test:
+- [x] 🔴 In `tests/unit/test_sortition_service.py`, add a test:
       patch `tasks.run_select.apply_async` (this is the documented
       "patch is fine here" exception); call
       `start_gsheet_select_task(uow, user_id, assembly_id,
@@ -884,33 +884,33 @@ extension it needs. All tests live in `tests/unit/` against
       assert `apply_async` was called once with
       `kwargs={...all six...}` and the `time_limit=5,
       soft_time_limit=4` extra kwargs.
-- [ ] 🔴 Add a second test asserting the **default** call (no
+- [x] 🔴 Add a second test asserting the **default** call (no
       `celery_apply_kwargs`) still works — patch `apply_async`,
       assert `kwargs={...}` only, no extra kwargs.
-- [ ] 🟢 Add `celery_apply_kwargs: dict[str, Any] | None = None` to
+- [x] 🟢 Add `celery_apply_kwargs: dict[str, Any] | None = None` to
       `start_gsheet_select_task`.
-- [ ] 🟢 Switch from `tasks.run_select.delay(...)` to
+- [x] 🟢 Switch from `tasks.run_select.delay(...)` to
       `tasks.run_select.apply_async(kwargs=..., **(celery_apply_kwargs or {}))`.
-- [ ] 🟢 New tests pass; **all existing sortition-service tests still
+- [x] 🟢 New tests pass; **all existing sortition-service tests still
       pass unchanged**.
-- [ ] 🟢 `just test && just check` clean.
+- [x] 🟢 `just test && just check` clean.
 
 #### `MonitorResult` + not-configured branch (Step 3)
 
-- [ ] 🔴 Create `tests/unit/test_monitoring_service.py`. First test:
+- [x] 🔴 Create `tests/unit/test_monitoring_service.py`. First test:
       use `clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")`;
       call `run_monitoring_selection(FakeUnitOfWork())`; assert the
       result has `success=False`, `not_configured=True`,
       `task_id is None`. Inject spy fakes for `start_select_fn` etc.
       and assert none were called.
-- [ ] 🟢 Create `src/opendlp/service_layer/monitoring.py` with the
+- [x] 🟢 Create `src/opendlp/service_layer/monitoring.py` with the
       `MonitorResult` dataclass and a stub `run_monitoring_selection`
       handling only the not-configured branch.
-- [ ] 🟢 Test passes.
+- [x] 🟢 Test passes.
 
 #### Happy path (Step 4)
 
-- [ ] 🔴 Add `TestHappyPath` test class. Use `temp_env_vars` to set
+- [x] 🔴 Add `TestHappyPath` test class. Use `temp_env_vars` to set
       fake UUIDs. Pre-populate `FakeUnitOfWork` with the monitor
       assembly + AssemblyGSheet + monitor user + role. Inject
       `start_select_fn` (a spy that records its call args, creates a
@@ -922,49 +922,49 @@ extension it needs. All tests live in `tests/unit/` against
       `MonitorResult.success` is True;
       `result.task_id` matches the seeded record;
       `start_cleanup_fn` called exactly once with `dry_run=False`.
-- [ ] 🟢 Implement steps 1-7 of the algorithm in
+- [x] 🟢 Implement steps 1-7 of the algorithm in
       `run_monitoring_selection` (env read, start, poll loop, cleanup
       dispatch). Implementation factors the polling into a small helper
       taking `now_fn`/`sleep_fn` so tests don't really sleep.
-- [ ] 🟢 Test passes.
+- [x] 🟢 Test passes.
 
 #### Wrapper timeout (Step 5)
 
-- [ ] 🔴 Add a test: inject `poll_status_fn` returning RUNNING forever,
+- [x] 🔴 Add a test: inject `poll_status_fn` returning RUNNING forever,
       a fake clock that jumps each `sleep_fn` call. Call with
       `wrapper_timeout_seconds=10` and a 2-second poll interval.
       Assert `success is False`, `"timeout" in message.lower()`,
       `health_check_fn` was called.
-- [ ] 🟢 Add the wall-clock guard and the half-budget
+- [x] 🟢 Add the wall-clock guard and the half-budget
       `health_check_fn` call.
-- [ ] 🟢 Test passes.
+- [x] 🟢 Test passes.
 
 #### Service-function exceptions (Step 6)
 
-- [ ] 🔴 Add a parameterised test
+- [x] 🔴 Add a parameterised test
       `test_typed_exceptions_become_failure_results` over
       `[AssemblyNotFoundError, GoogleSheetConfigNotFoundError,
       InvalidSelection, InsufficientPermissions]`. Inject a
       `start_select_fn` that raises the parameter; assert
       `success is False`, message names the underlying error class.
-- [ ] 🟢 Wrap the call in a `try/except` covering exactly those four
+- [x] 🟢 Wrap the call in a `try/except` covering exactly those four
       exception classes.
-- [ ] 🟢 Tests pass.
+- [x] 🟢 Tests pass.
 
 #### `get_latest_monitor_run` helper (Step 8)
 
-- [ ] 🔴 Add tests using `FakeUnitOfWork`:
+- [x] 🔴 Add tests using `FakeUnitOfWork`:
   - Monitor configured, zero records → `None`.
   - Single SELECT_GSHEET record → returns it.
   - SELECT_GSHEET + later DELETE_OLD_TABS — default call returns
     the SELECT_GSHEET; `task_type=DELETE_OLD_TABS` returns the
     cleanup.
   - `MONITOR_ASSEMBLY_ID` unset → `None` (and DB not queried).
-- [ ] 🟢 Implement `get_latest_monitor_run` as a thin wrapper around
+- [x] 🟢 Implement `get_latest_monitor_run` as a thin wrapper around
       `uow.selection_run_records.get_latest_for_assembly(monitor_assembly_id, task_type=…)`.
-- [ ] 🟢 Tests pass.
-- [ ] 🟢 `just test && just check` clean.
-- [ ] 📄 **Phase 2 commit/PR.**
+- [x] 🟢 Tests pass.
+- [x] 🟢 `just test && just check` clean.
+- [x] 📄 **Phase 2 commit/PR.**
 
 ---
 
