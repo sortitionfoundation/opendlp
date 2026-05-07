@@ -1,6 +1,7 @@
 """ABOUTME: Unit tests for OpenDLP configuration module
 ABOUTME: Tests environment variable loading and configuration class behavior"""
 
+import uuid
 from typing import ClassVar
 
 import pytest
@@ -11,6 +12,9 @@ from opendlp.config import (
     FlaskTestConfig,
     InvalidConfig,
     get_config,
+    get_monitor_assembly_id,
+    get_monitor_health_max_age_minutes,
+    get_monitor_user_id,
     get_task_timeout_hours,
     to_bool,
 )
@@ -209,3 +213,57 @@ class TestGetTaskTimeoutHours:
         """Test that function returns default for negative value."""
         temp_env_vars(TASK_TIMEOUT_HOURS="-5")
         assert get_task_timeout_hours() == 24
+
+
+class TestMonitorConfig:
+    """Test the monitoring-related configuration helpers."""
+
+    def test_assembly_id_returns_none_when_unset(self, clear_env_vars):
+        clear_env_vars("MONITOR_ASSEMBLY_ID")
+        assert get_monitor_assembly_id() is None
+
+    def test_assembly_id_returns_none_for_invalid_uuid(self, temp_env_vars, caplog):
+        temp_env_vars(MONITOR_ASSEMBLY_ID="not-a-uuid")
+        with caplog.at_level("WARNING"):
+            assert get_monitor_assembly_id() is None
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert len(warnings) == 1
+        assert "MONITOR_ASSEMBLY_ID" in warnings[0].message
+
+    def test_assembly_id_returns_uuid_for_valid_value(self, temp_env_vars):
+        valid = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(valid))
+        assert get_monitor_assembly_id() == valid
+
+    def test_user_id_returns_none_when_unset(self, clear_env_vars):
+        clear_env_vars("MONITOR_USER_ID")
+        assert get_monitor_user_id() is None
+
+    def test_user_id_returns_none_for_invalid_uuid(self, temp_env_vars, caplog):
+        temp_env_vars(MONITOR_USER_ID="not-a-uuid")
+        with caplog.at_level("WARNING"):
+            assert get_monitor_user_id() is None
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert len(warnings) == 1
+        assert "MONITOR_USER_ID" in warnings[0].message
+
+    def test_user_id_returns_uuid_for_valid_value(self, temp_env_vars):
+        valid = uuid.uuid4()
+        temp_env_vars(MONITOR_USER_ID=str(valid))
+        assert get_monitor_user_id() == valid
+
+    def test_max_age_returns_default_when_unset(self, clear_env_vars):
+        clear_env_vars("MONITOR_HEALTH_MAX_AGE_MINUTES")
+        assert get_monitor_health_max_age_minutes() == 120
+
+    def test_max_age_returns_default_for_non_integer(self, temp_env_vars, caplog):
+        temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="not-an-int")
+        with caplog.at_level("WARNING"):
+            assert get_monitor_health_max_age_minutes() == 120
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert len(warnings) == 1
+        assert "MONITOR_HEALTH_MAX_AGE_MINUTES" in warnings[0].message
+
+    def test_max_age_returns_value_when_valid(self, temp_env_vars):
+        temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="45")
+        assert get_monitor_health_max_age_minutes() == 45

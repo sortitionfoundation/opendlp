@@ -16,7 +16,7 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus, SelectionTaskType
 from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
@@ -326,13 +326,33 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         """Get all SelectionRunRecords for a specific assembly."""
         return [item for item in self._items if item.assembly_id == assembly_id]
 
-    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
-        """Get the most recent SelectionRunRecord for an assembly."""
+    def get_latest_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType | None = None,
+    ) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly, optionally filtered by task_type."""
         assembly_records = list(self.get_by_assembly_id(assembly_id))
+        if task_type is not None:
+            assembly_records = [r for r in assembly_records if r.task_type == task_type]
         if not assembly_records:
             return None
-        # Sort by created_at, return the most recent
         return max(assembly_records, key=lambda r: r.created_at or datetime.min)
+
+    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
+        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
+        if keep < 0:
+            keep = 0
+        assembly_records = sorted(
+            [r for r in self._items if r.assembly_id == assembly_id],
+            key=lambda r: r.created_at or datetime.min,
+            reverse=True,
+        )
+        to_delete = assembly_records[keep:]
+        delete_ids = {r.task_id for r in to_delete}
+        before = len(self._items)
+        self._items = [r for r in self._items if r.task_id not in delete_ids]
+        return before - len(self._items)
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""
