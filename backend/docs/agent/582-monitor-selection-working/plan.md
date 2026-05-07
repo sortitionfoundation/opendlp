@@ -1076,34 +1076,34 @@ No automated tests; the deliverable is the docs themselves. The
 "red" here is "doc currently doesn't exist or doesn't say X"; the
 "green" is "doc exists and says X".
 
-- [ ] 📄 Create `docs/monitoring.md` skeleton with sections per the
+- [x] 📄 Create `docs/monitoring.md` skeleton with sections per the
       Step 12 outline above. Mark concrete values as
       `**TODO (Doctor Chewie):**` so blanks are scannable.
-- [ ] 📄 Document the existing `/health` and `/health/bdd` endpoints
+- [x] 📄 Document the existing `/health` and `/health/bdd` endpoints
       in `docs/monitoring.md` (response shape, status-code rules,
       `fail_on_warning`). This is documentation of pre-existing
       behaviour and shouldn't change anything.
-- [ ] 📄 Document `/health/monitor_selection` (status enum, JSON
+- [x] 📄 Document `/health/monitor_selection` (status enum, JSON
       shape, `monitor_selection_last_run_url`, `monitor_cleanup_status`).
-- [ ] 📄 Document the monitor-selection feature: cadence, deploy-time
+- [x] 📄 Document the monitor-selection feature: cadence, deploy-time
       CLI, troubleshooting recipe based on the recent
       service-account-roles incident.
-- [ ] 📄 Create `docs/fixtures/monitoring/` directory with a README
+- [x] 📄 Create `docs/fixtures/monitoring/` directory with a README
       explaining the contents. (Actual CSVs added later by Doctor
       Chewie.)
-- [ ] 📄 Update `docs/configuration.md`: add a "Monitoring" subsection
+- [x] 📄 Update `docs/configuration.md`: add a "Monitoring" subsection
       under env vars covering the three new variables; cross-link to
       `docs/monitoring.md`.
-- [ ] 📄 Update `backend/env.example`: add the three new variables
+- [x] 📄 Update `backend/env.example`: add the three new variables
       with placeholder comments referencing `docs/monitoring.md`.
-- [ ] 📄 Update `docs/architecture.md`: in the `health` blueprint row,
+- [x] 📄 Update `docs/architecture.md`: in the `health` blueprint row,
       mention `/health/monitor_selection` alongside `/health` and
       `/health/bdd`.
-- [ ] 📄 Update `CLAUDE.md` "Further Documentation" list with a line
+- [x] 📄 Update `CLAUDE.md` "Further Documentation" list with a line
       for `docs/monitoring.md`.
-- [ ] 📄 Re-read all the new doc and fix anything that drifted from
+- [x] 📄 Re-read all the new doc and fix anything that drifted from
       the actual code (link rot, renamed env vars, etc.).
-- [ ] 📄 **Phase 5 commit/PR.**
+- [x] 📄 **Phase 5 commit/PR.**
 
 ---
 
