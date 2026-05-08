@@ -383,7 +383,9 @@ ABOUTME: Displays data source selection and data management for assemblies
                     <form method="post"
                           action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
                           enctype="multipart/form-data"
-                          class="flex flex-col gap-4">
+                          class="flex flex-col gap-4"
+                          x-data
+                          x-preserve-scroll-on-submit>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         {{ file_input(name="file",
                         label=_("CSV File") ,

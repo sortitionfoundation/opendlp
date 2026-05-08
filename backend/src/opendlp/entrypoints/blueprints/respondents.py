@@ -120,12 +120,16 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         if "file" not in request.files:
             flash(_("No file selected"), "error")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect_preserving_scroll(
+                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+            )
 
         file = request.files["file"]
         if file.filename == "":
             flash(_("No file selected"), "error")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect_preserving_scroll(
+                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+            )
 
         raw = file.read()
         max_bytes = get_max_csv_upload_bytes()
@@ -184,13 +188,17 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InvalidSelection as e:
         current_app.logger.warning(f"Invalid CSV format for respondents upload assembly {assembly_id}: {e}")
         flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
     except InsufficientPermissions as e:
         current_app.logger.warning(
             f"Insufficient permissions to upload respondents for assembly {assembly_id} user {current_user.id}: {e}"
         )
         flash(_("You don't have permission to upload respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for respondents upload: {e}")
         flash(_("Assembly not found"), "error")
@@ -199,7 +207,9 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Upload respondents error for assembly {assembly_id} user {current_user.id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while uploading respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["GET"])
