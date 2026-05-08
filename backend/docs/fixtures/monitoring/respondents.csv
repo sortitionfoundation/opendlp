@@ -1,0 +1,101 @@
+unique_id,first_name,last_name,age_bucket,economic_stability,gender,age,ethnicity,address_line_1,province,town,education,money_fairness,env_daily_life,belong_shared_space,education_next_gen
+1,Amina,Darane,Middle-aged,High,Female,45,Agrican,42 Oak Street,Verdelands,Harveston,3,2,2,1,4
+2,Li,Zemin,Youth,Middle,Non-binary,20,Maritan,"Flat 3, 15 Maple Avenue",Verdelands,Meadowdale,2,2,1,1,2
+3,Ahmed,Al-Mahdi,Middle-aged,Low,Male,40,Agrican,"The Cottage, Church Lane",Verdelands,Sunvale,1,1,4,2,1
+4,Sofia,Vellaro,Youth,High,Female,22,Artis,7 Elm Drive,Verdelands,Orchard,3,2,3,1,2
+5,Arjun,Devkumar,Middle-aged,Middle,Male,35,Maritan,"Unit B, Industrial Park",Verdelands,Harveston,3,4,2,2,2
+6,Maria,Costella,Elderly,High,Female,68,Agrican,19 High Street,Verdelands,Meadowdale,3,2,1,4,2
+7,Samuel,Dembayo,Youth,Low,Male,19,Techan,"Apartment 4, Riverside Court",Verdelands,Sunvale,1,1,2,2,1
+8,Fatima,Benyara,Elderly,Middle,Female,72,Maritan,56 Station Road,Verdelands,Orchard,2,2,3,1,2
+9,Pedro,Salgueiro,Youth,High,Male,23,Agrican,"The Old Bakery, Market Street",Verdelands,Harveston,3,2,2,4,2
+10,Mei,Hua-Lin,Middle-aged,High,Non-binary,42,Mixed Ethnic,11 Garden Terrace,Verdelands,Meadowdale,4,2,1,1,4
+11,Adama,Keïta,Youth,Low,Male,25,Agrican,"Flat 2A, 34 Princes Way",Verdelands,Sunvale,1,1,2,2,1
+12,Priya,Tharoor,Youth,Middle,Female,21,Artis,"The Mews, Back Lane",Verdelands,Orchard,2,4,3,1,2
+13,Xavier,Monteiro,Elderly,High,Male,65,Maritan,"Penthouse Suite, 200 Kings Road",Verdelands,Harveston,3,2,4,1,2
+14,Isabella,Fioretti,Youth,High,Female,24,Agrican,24 Birch Lane,Verdelands,Meadowdale,3,2,3,1,2
+15,Ayesha,Nasiri,Middle-aged,Middle,Female,38,Maritan,"The Manor House, Village Lane",Verdelands,Sunvale,2,2,3,2,2
+16,Mohamed,El-Fayad,Elderly,Low,Male,70,Agrican,6 Westfield Close,Harborview,Seabright,1,1,2,3,1
+17,Oumar,Ndiaye,Middle-aged,Low,Male,44,Techan,"Flat 7, 45 Park Avenue",Harborview,Tideport,1,1,1,3,1
+18,Ana,Bragança,Elderly,High,Female,69,Maritan,129 Queens Street,Harborview,Coastline,4,3,3,2,3
+19,Yuki,Nakamori,Youth,High,Non-binary,22,Artis,"The Farmhouse, Green Lane",Harborview,Mariner's Cove,4,4,4,4,3
+20,Amara,Tendai,Youth,Middle,Female,23,Agrican,3 Cedar Road,Harborview,Seabright,2,2,2,1,2
+21,Hiroshi,Kurosaka,Middle-aged,High,Male,41,Maritan,"Apartment 12, Victoria Heights",Harborview,Tideport,4,3,2,2,3
+22,Chipo,Mwandu,Youth,Low,Non-binary,25,Agrican,71 Chapel Street,Harborview,Coastline,1,1,4,2,1
+23,Elena,Savic,Middle-aged,High,Female,39,Mixed Ethnic,"The Mews, Back Lane",Harborview,Mariner's Cove,4,4,3,2,3
+24,Carlos,Navarro,Elderly,Middle,Male,67,Maritan,9 Ashworth Drive,Harborview,Seabright,2,2,1,1,2
+25,Jamilah,Omaran,Youth,Low,Female,18,Agrican,"Flat 1, 60 Bridge Road",Harborview,Tideport,1,1,2,2,1
+26,Luca,Ferraro,Middle-aged,High,Male,43,Maritan,102 Orchard Street,Harborview,Coastline,4,3,3,4,3
+27,Kwame,Mensah,Elderly,Low,Male,71,Techan,"The Old School House, School Road",Harborview,Mariner's Cove,1,1,3,2,1
+28,Maria,Iskandari,Middle-aged,High,Female,46,Agrican,17 Lime Street,Harborview,Seabright,4,3,2,2,3
+29,Sergei,Vetrov,Youth,Middle,Male,20,Maritan,"Suite 5, Commerce Centre",Harborview,Tideport,2,2,1,1,2
+30,Jada,Nkosi,Youth,High,Female,21,Artis,19 High Street,Harborview,Coastline,4,3,3,2,3
+31,Nia,Morani,Elderly,Low,Female,66,Artis,"Flat 8B, 38 River Street",Artesa,Clayford,3,2,2,1,3
+32,Zhi,Leung,Youth,High,Non-binary,24,Maritan,93 Mill Road,Artesa,Weaverton,3,3,4,2,4
+33,Tanya,Yurenko,Middle-aged,Middle,Female,37,Agrican,"The Clock Tower, Clock Lane",Artesa,Woodford,3,2,1,4,3
+34,Ibrahim,Darwish,Youth,Low,Male,25,Techan,22 Pear Street,Artesa,Smithton,1,1,3,3,1
+35,Leila,Kacem,Elderly,High,Female,65,Artis,"Apartment 6, Autumn Court",Artesa,Clayford,4,4,2,1,4
+36,Noura,Al-Harazi,Middle-aged,High,Female,42,Maritan,14 Station Lane,Artesa,Weaverton,4,3,1,3,4
+37,Ines,D'Almeida,Youth,High,Female,23,Agrican,"The Barn, Valley Road",Artesa,Woodford,4,3,4,2,4
+38,Malika,Chebbani,Middle-aged,Low,Female,40,Forian,81 Manor Drive,Artesa,Smithton,1,1,3,2,1
+39,Jun,Ma-Kwon,Youth,Middle,Male,22,Artis,"Flat 4, 27 Spring Street",Artesa,Clayford,2,2,2,1,2
+40,Hakeem,Al-Nuri,Elderly,Low,Male,68,Agrican,36 Walnuts Road,Artesa,Weaverton,1,1,2,3,1
+41,Rania,Kassim,Youth,High,Female,21,Maritan,"Townhouse, Crescent Square",Artesa,Woodford,4,3,1,3,4
+42,Elisa,Doménech,Middle-aged,High,Female,36,Mixed Ethnic,12 Forest Edge,Artesa,Smithton,4,4,2,4,4
+43,Dima,Kozlova,Youth,Low,Male,25,Agrican,"Flat 9, 52 Holly Avenue",Artesa,Clayford,1,1,1,2,1
+44,Soraya,Najdani,Elderly,High,Female,70,Maritan,75 Park Lane,Artesa,Weaverton,4,3,3,2,4
+45,Jack,Whitlow,Youth,Middle,Male,20,Artis,42 Oak Street,Artesa,Woodford,2,2,3,1,
+46,Ananya,Vishwanath,Youth,Middle,Female,24,Agrican,8 Acorn Street,Ironhold,Forgeham,2,2,3,1,2
+47,Tomas,Král,Middle-aged,High,Male,47,Maritan,"Apartment 3, Crystal Heights",Ironhold,Steelton,4,3,2,2,3
+48,Sarah,Haddad,Elderly,High,Female,67,Agrican,43 Summer Avenue,Ironhold,Ironvale,4,3,1,2,3
+49,Ravi,Mehra,Youth,Middle,Male,23,Techan,"The Old Post Office, Post Office Lane",Ironhold,Hammerford,2,2,2,1,2
+50,Eva,Janković,Middle-aged,High,Female,39,Maritan,28 Chestnut Walk,Ironhold,Gearford,4,3,2,3,3
+51,Mohammed,Zahiri,Youth,Low,Male,25,Agrican,"Flat 5C, 69 Central Street",Ironhold,Forgeham,1,1,1,3,1
+52,Oksana,Levchenko,Middle-aged,High,Female,44,Maritan,116 Ridge Road,Ironhold,Steelton,4,3,3,2,3
+53,Dayo,Adebajo,Elderly,Low,Male,73,Forian,"The Rectory, Church Road",Ironhold,Ironvale,1,4,1,2,1
+54,Lila,Qamar,Youth,High,Female,22,Agrican,13 Golden Grove,Ironhold,Hammerford,4,3,2,2,3
+55,Juan,Orellana,Middle-aged,High,Male,41,Maritan,"Suite 2, Business Park",Ironhold,Gearford,4,3,1,4,3
+56,Noura,Saidani,Youth,Low,Female,18,Agrican,39 Meadow Lane,Ironhold,Forgeham,1,1,3,2,1
+57,Ali,Sharafian,Elderly,High,Male,68,Maritan,"Flat 2, 41 Sunset Boulevard",Ironhold,Steelton,4,3,2,2,3
+58,Camila,Del Toro,Youth,Middle,Female,20,Artis,67 Willow Street,Ironhold,Ironvale,2,2,4,1,2
+59,Zayn,Marzouk,Middle-aged,High,Male,35,Agrican,"The Vicarage, Vicarage Lane",Ironhold,Hammerford,4,3,2,2,3
+60,Beatrice,Van der Meer,Elderly,High,Female,69,Maritan,2 Sycamore Drive,Ironhold,Gearford,2,3,1,2,3
+61,Emma,Renoux,Youth,High,Female,24,Agrican,"Apartment 7, Horizon Court",Ironhold,Forgeham,3,3,2,2,3
+62,Jacques,Martel,Middle-aged,High,Male,42,Maritan,48 Thames Street,Ironhold,Steelton,4,4,4,4,3
+63,Nabil,Rachid,Elderly,Low,Male,72,Techan,"The White House, White Lane",Ironhold,Ironvale,1,1,1,2,1
+64,Maria,Calderín,Youth,High,Female,23,Agrican,25 Poplar Close,Ironhold,Hammerford,4,3,2,3,3
+65,Tarek,Al-Rami,Middle-aged,High,Male,40,Maritan,"Flat 6, 73 Broadway",Ironhold,Gearford,4,3,2,3,3
+66,Zola,Mkhatshwa,Youth,Low,Female,25,Agrican,90 Summit Road,Ironhold,Forgeham,1,1,1,2,1
+67,Siti,Az-Zahra,Elderly,Middle,Female,66,Artis,"The Stone House, Stone Lane",Ironhold,Steelton,2,2,3,1,2
+68,Amira,Dabbagh,Youth,High,Female,21,Maritan,"The Pink House, Cottage Lane",Ironhold,Ironvale,4,3,1,2,3
+69,Raj,Iyer,Middle-aged,Low,Male,38,Agrican,"Flat 11, 55 Empire Street",Ironhold,Hammerford,1,1,2,3,1
+70,Malik,Idrissi,Elderly,Middle,Male,70,Mixed Ethnic,61 Oak Park,Ironhold,Gearford,2,2,2,1,2
+71,Samantha,Drewen,Youth,Middle,Female,20,Maritan,"The Pink House, Cottage Lane",Nexor,Innovara,2,2,3,3,3
+72,Violeta,Milenkova,Middle-aged,High,Female,45,Agrican,31 Winter Street,Nexor,Pioneerton,4,3,2,2,4
+73,Solomon,Tekle,Youth,Low,Male,24,Techan,"Apartment 9, Silver Springs",Nexor,Ventura,1,1,3,3,1
+74,Belen,Márquez,Elderly,High,Female,67,Maritan,18 Valley View,Nexor,Crestfield,4,3,2,3,4
+75,Ayo,Olanrewaju,Youth,High,Male,22,Agrican,"The Grange, Estate Lane",Nexor,Nexus,4,3,1,3,4
+76,Josie,Denholm,Middle-aged,High,Female,39,Maritan,26 Riverside Close,Nexor,Innovara,3,3,2,2,4
+77,Sabine,Krüger,Elderly,Low,Female,65,Artis,"Flat 3, 37 Westminster Road",Nexor,Pioneerton,1,1,2,3,1
+78,Leticia,Villaseñor,Youth,High,Female,21,Agrican,104 Marina Drive,Nexor,Ventura,4,3,1,3,4
+79,Bo,Zhangwen,Middle-aged,High,Non-binary,43,Maritan,"The Cottage Farm, Farm Lane",Nexor,Crestfield,4,3,3,2,4
+80,Tariq,Noorani,Youth,Low,Male,25,Forian,7 Beacon Hill,Nexor,Nexus,1,1,2,3,1
+81,Lina,Tarekian,Elderly,High,Female,71,Agrican,"Suite 4, Innovation Hub",Nexor,Innovara,4,3,2,2,4
+82,Dinesh,Bhattacharjee,Middle-aged,Low,Male,40,Techan,44 Cross Street,Nexor,Pioneerton,1,1,1,3,1
+83,Gabriel,Covas,Youth,High,Male,23,Maritan,"Flat 10, 64 Kensington Avenue",Nexor,Ventura,4,4,2,4,4
+84,Lara,Meireles,Middle-aged,High,Female,37,Agrican,78 Northfield Road,Nexor,Crestfield,4,3,3,2,4
+85,Ingrid,Stølen,Youth,High,Female,22,Maritan,"The Hollies, Holly Lane",Nexor,Nexus,4,3,3,2,4
+86,Esteban,Quiroga,Elderly,Low,Male,69,Agrican,20 Beacon Street,Nexor,Innovara,1,1,2,3,1
+87,Hina,Qureshi,Youth,Middle,Female,20,Artis,"Apartment 2, Sapphire Gardens",Nexor,Pioneerton,2,2,2,3,2
+88,Zoe,Lichtenberg,Elderly,High,Female,66,Maritan,35 Trinity Street,Nexor,Ventura,4,3,1,2,4
+89,Johan,Nyström,Youth,Low,Male,25,Agrican,"Flat 1B, 29 Strand Road",Nexor,Crestfield,1,4,3,3,1
+90,Chandra,Jeyasinghe,Middle-aged,High,Male,41,Maritan,57 Whitehall Street,Nexor,Nexus,4,3,2,2,4
+91,Yara,Abboud,Elderly,Low,Female,70,Agrican,"The Red Barn, Barn Lane",Nexor,Innovara,1,1,4,3,1
+92,Joaquim,Caldeira,Youth,High,Male,24,Maritan,4 Heather Way,Nexor,Pioneerton,4,3,3,4,4
+93,Karim,Haddouchi,Elderly,High,Male,73,Agrican,"Flat 12, 46 Constitution Road",Nexor,Ventura,4,3,2,2,4
+94,Isobel,Kinnersley,Youth,Low,Female,18,Techan,"Flat 3, 37 Westminster Road",Nexor,Crestfield,1,1,2,3,1
+95,Sasha,Morozov,Middle-aged,Low,Non-binary,36,Mixed Ethnic,"Flat 10, 64 Kensington Avenue",Nexor,Nexus,2,2,3,3,2
+96,Kofi,Agyeman,Elderly,Low,Male,67,Agrican,36 Walnuts Road,Nexor,Innovara,1,1,2,3,1
+97,Patrice,Malouda,Youth,High,Female,22,Maritan,5 Hawthorn Way,Nexor,Pioneerton,4,4,4,4,4
+98,Lucia,Fontanilla,Middle-aged,High,Female,46,Agrican,10 Rowan Avenue,Nexor,Ventura,4,3,1,2,4
+99,Tunde,Ajiboye,Youth,High,Male,21,Maritan,88 Grange Road,Nexor,Crestfield,3,3,2,2,4
+100,Joon,Baek-Hwan,Elderly,Low,Non-binary,68,Agrican,"The Lodge, Castle Road",Nexor,Nexus,1,1,3,3,1

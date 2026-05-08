@@ -49,9 +49,9 @@ Focused endpoint for the end-to-end monitor selection feature.
 
 Unlike `/health`, this endpoint treats `NOT_CONFIGURED` as **unhealthy
 (500)**, on the assumption that anything pointing a watcher at this
-URL has elected to monitor it. Returning 500 on a missing
-`MONITOR_ASSEMBLY_ID` correctly surfaces a forgotten env var on a
-redeployed environment.
+URL is expecting it to be configured and working. Returning 500 on
+a missing `MONITOR_ASSEMBLY_ID` correctly surfaces a forgotten env
+var on a redeployed environment.
 
 Status codes:
 
@@ -143,8 +143,8 @@ command exits 0 with a `⚠` warning.
 Each deployed environment (staging, prod) needs its own monitor
 assembly with its own copy of the source Google Sheet.
 
-**TODO (Doctor Chewie):** record the URLs of the staging and prod
-monitor sheets here, so reviewers don't have to dig through Slack.
+The URLs for the instance will be recorded in the infrastructure
+repo, that sets up the deployed instance.
 
 ### Source CSVs
 
@@ -154,53 +154,43 @@ The source-of-truth fixtures used to seed the monitor sheet live in
 - `respondents.csv` — people tab content
 - `categories.csv` — targets tab content
 
-**TODO (Doctor Chewie):** drop the operational CSV exports into that
-folder.
-
 ### Selection parameters
 
-- `number_to_select`: **TODO (Doctor Chewie)**
-- `id_column`: **TODO (Doctor Chewie)**
-- Any non-default `SelectionSettings` values: **TODO (Doctor
-  Chewie)**
+With the above CSV files, you should use:
+
+- `number_to_select`: 30
+- `id_column`: `unique_id`
+- Any non-default `SelectionSettings` values:
+  - set "Check Same Address" to False
 
 ### Bootstrap commands
 
 Run once per environment (via `flask shell` or a bootstrap script):
 
-1. Create a monitor user (a system account, not a real human):
-
-   ```python
-   from opendlp.bootstrap import bootstrap
-   from opendlp.service_layer.user_service import create_user
-   from opendlp.domain.value_objects import GlobalRole
-
-   with bootstrap() as uow:
-       user, _ = create_user(
-           uow=uow,
-           email="opendlp-monitor@example.org",
-           password="...",  # or set up via OAuth instead
-           first_name="OpenDLP",
-           last_name="Monitor",
-           global_role=GlobalRole.USER,
-           accept_data_agreement=True,
-       )
-       print("MONITOR_USER_ID =", user.id)
-   ```
+1. Create a monitor user (a system account, not a real human).
+   This might require a new email address, or email alias.
+   The user should be a normal user (not an admin).
+   Get their ID from looking at the user list in the Site Admin
+   section and going to the view page. The UUID is the last segment
+   of the URL - `/admin/user/<UUID>`
 
 2. Create the monitor assembly. **TODO (Doctor Chewie):** spell out
    the Assembly + AssemblyGSheet + SelectionSettings +
    UserAssemblyRole sequence with concrete tab names once we settle
    on them.
 
-3. Set the IDs in the environment's `.env`:
+3. Add the monitor user to the monitor assembly with the "Assembly Manager"
+   role.
+
+4. Set the IDs in the environment's `.env`:
 
    ```bash
    MONITOR_ASSEMBLY_ID=<assembly UUID>
+   # maybe record the user email in a comment, to help find them
    MONITOR_USER_ID=<user UUID>
    ```
 
-4. Restart the application + Celery worker + Celery beat so they
+5. Restart the application + Celery worker + Celery beat so they
    pick up the new env vars.
 
 ### Wiring into deploy scripts
@@ -236,14 +226,12 @@ error class fired (eg. `GoogleSheetConfigNotFoundError`,
   tabs, or found tabs it couldn't delete. Inspect the monitor sheet
   manually and reconcile.
 
-### `/health/monitor_selection` returns 200 with status `PENDING` for
-hours
+### `/health/monitor_selection` returns 200 with status `PENDING` for hours
 
 The hourly beat task didn't return — the worker is wedged. Check
 `opendlp celery list-tasks` and Celery worker logs.
 
-### `/health/monitor_selection` returns 500 with status
-`NOT_CONFIGURED`
+### `/health/monitor_selection` returns 500 with status `NOT_CONFIGURED`
 
 Set `MONITOR_ASSEMBLY_ID` and `MONITOR_USER_ID` in the environment
 (both are required) and restart.
