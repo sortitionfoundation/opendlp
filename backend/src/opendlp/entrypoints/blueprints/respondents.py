@@ -21,6 +21,7 @@ from opendlp.entrypoints.edit_respondent_form import (
     radio_or_none_to_bool,
     radio_to_bool,
 )
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
     delete_respondents_for_assembly,
@@ -295,14 +296,18 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Respondents deleted: %(count)d removed", count=count), "success")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
 
     except InsufficientPermissions as e:
         current_app.logger.warning(
             f"Insufficient permissions to delete respondents for assembly {assembly_id} user {current_user.id}: {e}"
         )
         flash(_("You don't have permission to delete respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for respondents deletion: {e}")
         flash(_("Assembly not found"), "error")
@@ -311,7 +316,9 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Delete respondents error for assembly {assembly_id} user {current_user.id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while deleting respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
