@@ -3,7 +3,7 @@ ABOUTME: Alert/flash message component macro for backoffice design system
 ABOUTME: Supports success, warning, error, info variants with semantic styling
 #}
 
-{% macro alert(message="", variant="info", dismissible=false, id="", use_caller=false) %}
+{% macro alert(message="", variant="info", dismissible=false, id="", use_caller=false, floating=false) %}
     {#
     Alert component for displaying messages/notifications.
 
@@ -13,6 +13,7 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
         dismissible: Boolean to show close button (requires Alpine.js)
         id: Optional id attribute
         use_caller: Boolean to use caller block for HTML content (default: false)
+        floating: Boolean to remove bottom margin (for floating alerts container)
 
     Usage:
         alert("Changes saved successfully", variant="success")
@@ -24,6 +25,9 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
         call alert(variant="warning", use_caller=true)
             Message with link
         endcall
+
+        For floating alerts (no bottom margin):
+        alert("Saved", variant="success", dismissible=true, floating=true)
     #}
     {% set variant_styles = {
     "success": {
@@ -56,7 +60,7 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
     <div
         {% if id %}id="{{ id }}"{% endif %}
         {% if dismissible %}x-data="{ show: true }" x-show="show" x-transition{% endif %}
-        class="mb-6 rounded-lg p-4 flex items-center gap-3"
+        class="{{ 'mb-6 ' if not floating else '' }}rounded-lg p-4 flex items-center gap-3"
         style="background-color: {{ styles.bg }}; border: 1px solid {{ styles.border }};"
         role="alert"
     >
