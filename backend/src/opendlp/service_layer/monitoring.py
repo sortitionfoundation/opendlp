@@ -79,7 +79,7 @@ class MonitorSelectionStatus:
 _FAILED_TERMINAL_STATUSES = (SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED)
 
 
-def _truncate(text: str, limit: int = 200) -> str:
+def truncate(text: str, limit: int = 200) -> str:
     if len(text) <= limit:
         return text
     return text[: limit - 1] + "…"
@@ -104,7 +104,7 @@ def _classify_select_record(
         return (
             "FAILED",
             last_run_at,
-            _truncate(record.error_message or f"latest selection {record.status.value}"),
+            truncate(record.error_message or f"latest selection {record.status.value}"),
         )
 
     if record.is_completed:
@@ -159,7 +159,7 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
         status = "FAILED"
         message = "tab cleanup failed after latest selection"
         if cleanup_record is not None and cleanup_record.error_message:
-            message = _truncate(cleanup_record.error_message)
+            message = truncate(cleanup_record.error_message)
 
     run_url = ""
     if select_record is not None:

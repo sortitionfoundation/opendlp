@@ -15,7 +15,7 @@ from opendlp.entrypoints.context_processors import (
     get_service_account_email,
     service_account_email_problem,
 )
-from opendlp.service_layer.monitoring import MonitorSelectionStatus, check_monitor_selection
+from opendlp.service_layer.monitoring import MonitorSelectionStatus, check_monitor_selection, truncate
 
 health_bp = Blueprint("health", __name__)
 
@@ -114,10 +114,10 @@ def _check_monitor_selection() -> MonitorSelectionStatus:
         uow = bootstrap.bootstrap()
         with uow:
             return check_monitor_selection(uow)
-    except Exception:
+    except Exception as error:
         return MonitorSelectionStatus(
             status="UNKNOWN",
-            message="could not query monitor selection records",
+            message=truncate(f"could not query monitor selection records: {error}"),
         )
 
 
