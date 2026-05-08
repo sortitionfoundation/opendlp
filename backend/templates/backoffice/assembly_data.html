@@ -410,13 +410,10 @@ ABOUTME: Displays data source selection and data management for assemblies
         {% set csv_readonly = csv_mode == "view" %}
         {% set csv_is_edit = csv_mode == "edit" %}
         <section class="mb-8">
-            <div class="flex items-center justify-between mb-4">
+            <div class="mb-4">
                 <h2 id="selection-settings"
                     class="text-heading-lg"
                     style="color: var(--color-headings)">{{ _("Selection Settings") }}</h2>
-                {% if csv_readonly %}
-                    {{ button(_("Edit Settings") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv&mode=edit", variant="outline") }}
-                {% endif %}
             </div>
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
                 {{ _("Configure how the selection algorithm runs for this assembly.") }}
@@ -426,7 +423,9 @@ ABOUTME: Displays data source selection and data management for assemblies
                         border: 1px solid var(--color-borders-dividers)">
                 <form method="post"
                       action="{{ url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) }}"
-                      class="flex flex-col gap-6">
+                      class="flex flex-col gap-6"
+                      x-data
+                      x-preserve-scroll-on-submit>
                     {% if not csv_readonly %}{{ csv_settings_form.hidden_tag() }}{% endif %}
                     {# Check Same Address Checkbox #}
                     {{ checkbox(name="check_same_address",
@@ -500,12 +499,21 @@ ABOUTME: Displays data source selection and data management for assemblies
                             </div>
                         {% endif %}
                     {% endif %}
-                    {# Form Actions - only show in edit mode #}
+                    {# Form Actions #}
                     {% if not csv_readonly %}
                         <div class="flex gap-4 pt-4"
                              style="border-top: 1px solid var(--color-borders-dividers)">
                             {{ button(_("Save Settings") , type="submit", variant="primary") }}
-                            {{ button(_("Cancel") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv", variant="outline") }}
+                            <span x-data x-scroll-preserve-links>
+                                {{ button(_("Cancel") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv", variant="outline") }}
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="flex justify-end pt-4"
+                             style="border-top: 1px solid var(--color-borders-dividers)">
+                            <span x-data x-scroll-preserve-links>
+                                {{ button(_("Edit Settings") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=csv&mode=edit", variant="outline") }}
+                            </span>
                         </div>
                     {% endif %}
                 </form>
