@@ -12,4 +12,8 @@ Google Sheet's people / targets tabs. See
 [`../../monitoring.md`](../../monitoring.md) for the full
 provisioning sequence.
 
-**TODO (Doctor Chewie):** drop in the operational CSVs.
+As for the assembly settings:
+
+- The number of people to select with these targets is: **30**.
+- The id column is **unique_id**.
+- Turn off "check same address"
