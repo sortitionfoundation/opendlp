@@ -2,23 +2,20 @@
 ABOUTME: Reports database, celery, and system configuration status as JSON"""
 
 import os
-import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
-from flask import Blueprint, current_app, jsonify, request, url_for
+from flask import Blueprint, current_app, jsonify, request
 from flask.typing import ResponseReturnValue
 
-from opendlp import bootstrap, config
+from opendlp import bootstrap
 from opendlp.config import to_bool
-from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.app import app as celery_app
 from opendlp.entrypoints.context_processors import (
     get_opendlp_version,
     get_service_account_email,
     service_account_email_problem,
 )
-from opendlp.service_layer.monitoring import get_latest_monitor_run
+from opendlp.service_layer.monitoring import MonitorSelectionStatus, check_monitor_selection
 
 health_bp = Blueprint("health", __name__)
 
@@ -108,127 +105,32 @@ def check_microsoft_oauth_expiry() -> tuple[int | None, str]:
         return None, "UNKNOWN"
 
 
-_FAILED_TERMINAL_STATUSES = (SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED)
+def _check_monitor_selection() -> MonitorSelectionStatus:
+    """Bootstrap a Unit of Work and call the service-layer check.
 
-
-def _truncate(text: str, limit: int = 200) -> str:
-    if len(text) <= limit:
-        return text
-    return text[: limit - 1] + "…"
-
-
-def _build_run_url(assembly_id: uuid.UUID, task_id: uuid.UUID) -> str:
-    try:
-        return url_for(
-            "gsheets.view_assembly_selection_with_run",
-            assembly_id=assembly_id,
-            run_id=task_id,
-            _external=True,
-        )
-    except Exception:
-        return ""
-
-
-def _classify_select_record(
-    record: SelectionRunRecord | None,
-    max_age: timedelta,
-    now: datetime,
-) -> tuple[str, datetime | None, str]:
-    """Classify the most recent SELECT_GSHEET record.
-
-    Returns (status, last_run_at, message).
+    Returns an UNKNOWN status if bootstrap itself fails (eg. DB unreachable).
     """
-    if record is None:
-        return "STALE", None, "no monitor selection runs recorded yet"
-
-    age = now - (record.created_at or now)
-    last_run_at = record.created_at
-
-    if record.status in _FAILED_TERMINAL_STATUSES:
-        return (
-            "FAILED",
-            last_run_at,
-            _truncate(record.error_message or f"latest selection {record.status.value}"),
-        )
-
-    if record.is_completed:
-        if age > max_age:
-            return "STALE", last_run_at, "latest successful selection is older than threshold"
-        return "OK", last_run_at, "latest selection completed successfully"
-
-    # PENDING or RUNNING
-    if age > max_age:
-        return "STALE", last_run_at, "selection has been pending/running longer than threshold"
-    return "PENDING", last_run_at, f"selection is currently {record.status.value}"
-
-
-def _classify_cleanup_record(record: SelectionRunRecord | None) -> str:
-    if record is None:
-        return "OK"
-    if record.status in _FAILED_TERMINAL_STATUSES:
-        return "FAILED"
-    return "OK"
-
-
-def check_monitor_selection() -> tuple[str, datetime | None, str, str, str]:
-    """Check the monitor assembly's most recent runs.
-
-    Returns (status, last_run_at, message, run_url, cleanup_status).
-
-    status:
-        "NOT_CONFIGURED" - MONITOR_ASSEMBLY_ID is not set
-        "OK"             - latest SELECT_GSHEET COMPLETED within max-age window
-        "STALE"          - latest SELECT_GSHEET stale, pending too long, or absent
-        "FAILED"         - latest SELECT_GSHEET in a terminal-failed state
-        "PENDING"        - latest SELECT_GSHEET in flight within window
-        "UNKNOWN"        - bootstrap or DB query failed
-
-    cleanup_status:
-        "OK" or "FAILED" — based on the latest DELETE_OLD_TABS record (if any).
-    """
-    assembly_id = config.get_monitor_assembly_id()
-    if assembly_id is None:
-        return "NOT_CONFIGURED", None, "MONITOR_ASSEMBLY_ID is not set", "", "OK"
-
     try:
         uow = bootstrap.bootstrap()
         with uow:
-            select_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.SELECT_GSHEET)
-            cleanup_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.DELETE_OLD_TABS)
+            return check_monitor_selection(uow)
     except Exception:
-        return "UNKNOWN", None, "could not query monitor selection records", "", "OK"
-
-    max_age = timedelta(minutes=config.get_monitor_health_max_age_minutes())
-    now = datetime.now(UTC)
-
-    status, last_run_at, message = _classify_select_record(select_record, max_age, now)
-    cleanup_status = _classify_cleanup_record(cleanup_record)
-
-    if cleanup_status == "FAILED" and status == "OK":
-        # Cleanup failure overrides the otherwise-clean SELECT result for the
-        # aggregate status, since the operator needs to see the failure.
-        status = "FAILED"
-        message = "tab cleanup failed after latest selection"
-        if cleanup_record is not None and cleanup_record.error_message:
-            message = _truncate(cleanup_record.error_message)
-
-    run_url = ""
-    if select_record is not None:
-        run_url = _build_run_url(select_record.assembly_id, select_record.task_id)
-
-    return status, last_run_at, message, run_url, cleanup_status
+        return MonitorSelectionStatus(
+            status="UNKNOWN",
+            message="could not query monitor selection records",
+        )
 
 
-def _build_monitor_payload() -> tuple[dict[str, object], str]:
-    status, last_run_at, message, run_url, cleanup_status = check_monitor_selection()
+def _build_monitor_payload() -> tuple[dict[str, object], MonitorSelectionStatus]:
+    monitor = _check_monitor_selection()
     payload: dict[str, object] = {
-        "monitor_selection_status": status,
-        "monitor_selection_last_run_at": last_run_at.isoformat() if last_run_at else None,
-        "monitor_selection_message": message,
-        "monitor_selection_last_run_url": run_url,
-        "monitor_cleanup_status": cleanup_status,
+        "monitor_selection_status": monitor.status,
+        "monitor_selection_last_run_at": monitor.last_run_at.isoformat() if monitor.last_run_at else None,
+        "monitor_selection_message": monitor.message,
+        "monitor_selection_last_run_url": monitor.run_url,
+        "monitor_cleanup_status": monitor.cleanup_status,
     }
-    return payload, status
+    return payload, monitor
 
 
 @health_bp.route("/health")
@@ -280,9 +182,9 @@ def health_check() -> ResponseReturnValue:
         if service_account == "UNKNOWN":
             service_account_ok = False
 
-    monitor_payload, monitor_status = _build_monitor_payload()
-    monitor_ok = monitor_status in ("OK", "PENDING", "NOT_CONFIGURED")
-    cleanup_ok = monitor_payload["monitor_cleanup_status"] != "FAILED"
+    monitor_payload, monitor = _build_monitor_payload()
+    monitor_ok = monitor.status in ("OK", "PENDING", "NOT_CONFIGURED")
+    cleanup_ok = monitor.cleanup_status != "FAILED"
 
     # Determine overall health status
     is_healthy = all((db_ok, celery_ok, service_account_ok, version_ok, ms_expiry_ok, monitor_ok, cleanup_ok))
@@ -321,9 +223,8 @@ def monitor_selection_health() -> ResponseReturnValue:
     HTTP status 200 when status is OK or PENDING; 500 otherwise (including
     NOT_CONFIGURED, STALE, FAILED, UNKNOWN).
     """
-    payload, status = _build_monitor_payload()
-    cleanup_failed = payload.get("monitor_cleanup_status") == "FAILED"
-    is_healthy = status in ("OK", "PENDING") and not cleanup_failed
+    payload, monitor = _build_monitor_payload()
+    is_healthy = monitor.status in ("OK", "PENDING") and monitor.cleanup_status != "FAILED"
     status_code = 200 if is_healthy else 500
     return jsonify(payload), status_code
 

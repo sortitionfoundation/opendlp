@@ -7,14 +7,14 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import structlog
 from flask import url_for
 
 from opendlp import config
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionTaskType
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -50,6 +50,128 @@ class MonitorResult:
     error: str = ""
     not_configured: bool = False
     run_url: str = ""
+
+
+@dataclass
+class MonitorSelectionStatus:
+    """Snapshot of the monitor assembly's current health.
+
+    status:
+        "NOT_CONFIGURED" - MONITOR_ASSEMBLY_ID is not set
+        "OK"             - latest SELECT_GSHEET COMPLETED within max-age window
+        "STALE"          - latest SELECT_GSHEET stale, pending too long, or absent
+        "FAILED"         - latest SELECT_GSHEET in a terminal-failed state, or
+                           latest DELETE_OLD_TABS failed
+        "PENDING"        - latest SELECT_GSHEET in flight within window
+        "UNKNOWN"        - DB query failed
+
+    cleanup_status:
+        "OK" or "FAILED" — based on the latest DELETE_OLD_TABS record (if any).
+    """
+
+    status: str
+    last_run_at: datetime | None = None
+    message: str = ""
+    run_url: str = ""
+    cleanup_status: str = "OK"
+
+
+_FAILED_TERMINAL_STATUSES = (SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED)
+
+
+def _truncate(text: str, limit: int = 200) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
+
+
+def _classify_select_record(
+    record: SelectionRunRecord | None,
+    max_age: timedelta,
+    now: datetime,
+) -> tuple[str, datetime | None, str]:
+    """Classify the most recent SELECT_GSHEET record.
+
+    Returns (status, last_run_at, message).
+    """
+    if record is None:
+        return "STALE", None, "no monitor selection runs recorded yet"
+
+    age = now - (record.created_at or now)
+    last_run_at = record.created_at
+
+    if record.status in _FAILED_TERMINAL_STATUSES:
+        return (
+            "FAILED",
+            last_run_at,
+            _truncate(record.error_message or f"latest selection {record.status.value}"),
+        )
+
+    if record.is_completed:
+        if age > max_age:
+            return "STALE", last_run_at, "latest successful selection is older than threshold"
+        return "OK", last_run_at, "latest selection completed successfully"
+
+    # PENDING or RUNNING
+    if age > max_age:
+        return "STALE", last_run_at, "selection has been pending/running longer than threshold"
+    return "PENDING", last_run_at, f"selection is currently {record.status.value}"
+
+
+def _classify_cleanup_record(record: SelectionRunRecord | None) -> str:
+    if record is None:
+        return "OK"
+    if record.status in _FAILED_TERMINAL_STATUSES:
+        return "FAILED"
+    return "OK"
+
+
+def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
+    """Check the monitor assembly's most recent selection and cleanup runs.
+
+    See ``MonitorSelectionStatus`` for the meaning of the returned values.
+    """
+    assembly_id = config.get_monitor_assembly_id()
+    if assembly_id is None:
+        return MonitorSelectionStatus(
+            status="NOT_CONFIGURED",
+            message="MONITOR_ASSEMBLY_ID is not set",
+        )
+
+    try:
+        select_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.SELECT_GSHEET)
+        cleanup_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.DELETE_OLD_TABS)
+    except Exception:
+        return MonitorSelectionStatus(
+            status="UNKNOWN",
+            message="could not query monitor selection records",
+        )
+
+    max_age = timedelta(minutes=config.get_monitor_health_max_age_minutes())
+    now = datetime.now(UTC)
+
+    status, last_run_at, message = _classify_select_record(select_record, max_age, now)
+    cleanup_status = _classify_cleanup_record(cleanup_record)
+
+    if cleanup_status == "FAILED" and status == "OK":
+        # Cleanup failure overrides the otherwise-clean SELECT result for the
+        # aggregate status, since the operator needs to see the failure.
+        status = "FAILED"
+        message = "tab cleanup failed after latest selection"
+        if cleanup_record is not None and cleanup_record.error_message:
+            message = _truncate(cleanup_record.error_message)
+
+    run_url = ""
+    if select_record is not None:
+        run_url = _safe_run_url(select_record.assembly_id, select_record.task_id)
+
+    return MonitorSelectionStatus(
+        status=status,
+        last_run_at=last_run_at,
+        message=message,
+        run_url=run_url,
+        cleanup_status=cleanup_status,
+    )
 
 
 def _safe_run_url(assembly_id: uuid.UUID, task_id: uuid.UUID) -> str:

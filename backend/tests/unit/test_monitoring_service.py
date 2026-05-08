@@ -19,6 +19,8 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.monitoring import (
     MonitorResult,
+    MonitorSelectionStatus,
+    check_monitor_selection,
     get_latest_monitor_run,
     run_monitoring_selection,
 )
@@ -212,6 +214,85 @@ class TestServiceFunctionExceptions:
 
         assert result.success is False
         assert exc_cls.__name__ in result.message
+
+
+class TestCheckMonitorSelection:
+    def test_not_configured_when_no_assembly_id(self, clear_env_vars):
+        clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")
+        result = check_monitor_selection(FakeUnitOfWork())
+        assert isinstance(result, MonitorSelectionStatus)
+        assert result.status == "NOT_CONFIGURED"
+        assert result.last_run_at is None
+        assert result.cleanup_status == "OK"
+
+    def test_stale_when_no_records(self, temp_env_vars):
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(uuid.uuid4()), MONITOR_USER_ID=str(uuid.uuid4()))
+        result = check_monitor_selection(FakeUnitOfWork())
+        assert result.status == "STALE"
+        assert "no monitor selection runs" in result.message
+
+    def test_ok_when_recent_completed(self, temp_env_vars):
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        record = SelectionRunRecord(
+            assembly_id=assembly_id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            created_at=datetime.now(UTC) - timedelta(minutes=30),
+        )
+        uow.selection_run_records.add(record)
+
+        result = check_monitor_selection(uow)
+        assert result.status == "OK"
+        assert result.cleanup_status == "OK"
+        assert result.last_run_at == record.created_at
+
+    def test_failed_select_record(self, temp_env_vars):
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                created_at=datetime.now(UTC) - timedelta(minutes=5),
+                error_message="permission denied",
+            )
+        )
+        result = check_monitor_selection(uow)
+        assert result.status == "FAILED"
+        assert "permission denied" in result.message
+
+    def test_cleanup_failure_overrides_ok(self, temp_env_vars):
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.COMPLETED,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                created_at=datetime.now(UTC) - timedelta(minutes=20),
+            )
+        )
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.DELETE_OLD_TABS,
+                created_at=datetime.now(UTC) - timedelta(minutes=15),
+                error_message="cleanup blew up",
+            )
+        )
+        result = check_monitor_selection(uow)
+        assert result.status == "FAILED"
+        assert result.cleanup_status == "FAILED"
 
 
 class TestGetLatestMonitorRun:
