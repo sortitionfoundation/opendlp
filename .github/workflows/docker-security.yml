@@ -56,7 +56,7 @@ jobs:
           severity-cutoff: high
 
       - name: Upload Grype scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
+        uses: github/codeql-action/upload-sarif@7434149006143a4d75b82a2f411ef15b03ccc2d7 # v4
         if: always()
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
