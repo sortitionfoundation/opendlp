@@ -114,7 +114,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                         ]) }}
                         {% call table_body() %}
                             {% for respondent in respondents %}
-                                {% call table_row() %}
+                                {% call table_row(row_url=url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id)) %}
                                     {{ table_cell_status(respondent.selection_status) }}
                                     {{ table_cell(respondent.display_name(assembly.name_fields)) }}
                                     {{ table_cell(respondent.external_id, bold=true) }}
