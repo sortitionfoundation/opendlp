@@ -220,6 +220,12 @@ def _poll_until_finished(
             except Exception as exc:
                 logger.warning("monitor mid-run health check failed", error=str(exc))
 
+        # Drop the session's identity-map cache so the next read picks up
+        # writes made by the Celery worker process. Without this, the
+        # SelectionRunRecord instance loaded on the first poll would keep
+        # its initial PENDING attributes forever (the session factory uses
+        # expire_on_commit=False).
+        uow.expire_all()
         poll_status_fn(uow, task_id)
         record = uow.selection_run_records.get_by_task_id(task_id)
         if record is not None and record.has_finished:

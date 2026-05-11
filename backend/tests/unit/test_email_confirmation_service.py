@@ -101,6 +101,9 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     def rollback(self):
         pass
 
+    def expire_all(self):
+        pass
+
 
 @pytest.fixture
 def uow():

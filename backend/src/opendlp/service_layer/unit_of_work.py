@@ -82,6 +82,16 @@ class AbstractUnitOfWork(abc.ABC):
         """Rollback the current transaction."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def expire_all(self) -> None:
+        """Drop cached attributes on all loaded objects.
+
+        The next attribute access on any previously-loaded instance will
+        re-fetch from the database. Use this when polling for changes made
+        by another process (e.g. a Celery worker updating a run record).
+        """
+        raise NotImplementedError
+
 
 DEFAULT_SESSION_FACTORY = create_session_factory()
 
@@ -145,6 +155,15 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         This allows new objects to get an ID that can be referenced by other objects.
         """
         self.session.flush()
+
+    def expire_all(self) -> None:
+        """Expire all instances in the session's identity map.
+
+        Required because the session factory uses ``expire_on_commit=False``,
+        so cached instances would otherwise hide writes made by other
+        processes (notably Celery workers updating SelectionRunRecord rows).
+        """
+        self.session.expire_all()
 
 
 class UnitOfWorkError(Exception):

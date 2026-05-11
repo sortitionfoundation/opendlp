@@ -669,6 +669,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
+        self.expire_all_calls = 0
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -696,6 +697,10 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_target_categories._items.clear()
         self.fake_respondents._items.clear()
         self.committed = False
+
+    def expire_all(self) -> None:
+        """No-op for in-memory repositories — record the call for assertions."""
+        self.expire_all_calls += 1
 
 
 class FakeTemplateRenderer:
