@@ -114,7 +114,6 @@ class RespondentStatus(Enum):
     SELECTED = "SELECTED"
     CONFIRMED = "CONFIRMED"
     WITHDRAWN = "WITHDRAWN"
-    PARTICIPATED = "PARTICIPATED"
     DELETED = "DELETED"
 
     @classmethod
@@ -136,7 +135,6 @@ ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentS
     RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
     RespondentStatus.WITHDRAWN: [],
-    RespondentStatus.PARTICIPATED: [],
     RespondentStatus.DELETED: [],
 }
 

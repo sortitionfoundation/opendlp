@@ -495,7 +495,6 @@ class TestApplyStatusTransition:
             RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
             RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
             RespondentStatus.WITHDRAWN: [],
-            RespondentStatus.PARTICIPATED: [],
             RespondentStatus.DELETED: [],
         }
         assert expected == ALLOWED_SELECTION_STATUS_TRANSITIONS
