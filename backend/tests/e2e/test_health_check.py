@@ -5,7 +5,21 @@ import os
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+import pytest
 from flask.testing import FlaskClient
+
+
+@pytest.fixture(autouse=True)
+def _isolate_monitor_env(clear_env_vars):
+    """Detach these health tests from a developer's live .env values.
+
+    When MONITOR_ASSEMBLY_ID/MONITOR_USER_ID are set, the health endpoint
+    queries the monitor assembly's selection records. The empty test DB has
+    none, so the monitor reports STALE and the endpoint returns 500. Clear
+    the vars so the monitor reports NOT_CONFIGURED, which is treated as
+    healthy.
+    """
+    clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")
 
 
 class TestHealthCheckEndpoint:

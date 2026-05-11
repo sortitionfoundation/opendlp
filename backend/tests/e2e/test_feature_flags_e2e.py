@@ -4,9 +4,22 @@ ABOUTME: Verifies feature flags work through the complete request/response cycle
 import os
 from unittest.mock import patch
 
+import pytest
 from flask.testing import FlaskClient
 
 from opendlp.feature_flags import reload_flags
+
+
+@pytest.fixture(autouse=True)
+def _isolate_monitor_env(clear_env_vars):
+    """Detach these tests from a developer's live .env monitor settings.
+
+    The health endpoint exercised below queries the monitor assembly when
+    MONITOR_ASSEMBLY_ID is set; with the empty test DB this returns STALE
+    and the endpoint flips to 500. Clear the vars so the monitor reports
+    NOT_CONFIGURED (treated as healthy).
+    """
+    clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")
 
 
 class TestFeatureFlagsE2E:
