@@ -633,6 +633,10 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             if fields_in_group:
                 ordered_sections.append({"label": GROUP_LABELS[group], "fields": fields_in_group})
 
+        allowed_transitions = [
+            s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
+        ]
+
         return render_template(
             "backoffice/assembly_edit_respondent.html",
             assembly=assembly,
@@ -640,6 +644,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             form=form,
             ordered_sections=ordered_sections,
             attr_prefix=ATTR_FIELD_PREFIX,
+            allowed_transitions=allowed_transitions,
         ), 200
     except RespondentNotFoundError:
         flash(_("Respondent not found"), "error")

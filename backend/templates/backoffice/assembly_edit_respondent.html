@@ -7,6 +7,8 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, textarea, select, radio_group, first_error %}
 {% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/respondent_status_form.html" import respondent_status_form %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
 {% block title %}{{ _("Edit respondent") }} - {{ respondent_name }}{% endblock %}
 {% block breadcrumb_section %}
@@ -23,6 +25,11 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Edit respondent") }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ respondent_name }}</p>
+
+    {# Selection status — its own form, visually separated from the attribute edit form below. #}
+    {% call section(classes="mb-8") %}
+        {{ respondent_status_form(assembly, respondent, allowed_transitions) }}
+    {% endcall %}
 
     {% if not ordered_sections %}
         {% call alert(variant="warning", use_caller=true) %}

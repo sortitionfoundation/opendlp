@@ -1019,6 +1019,9 @@ class TestEditRespondentPage:
         assert b"Edit respondent" in response.data
         assert b"Change note" in response.data
         assert b"first_name" in response.data or b"First name" in response.data
+        # Status transition form must also be rendered on the Edit page.
+        assert b"Selection status" in response.data
+        assert b"Change to" in response.data
 
     def test_get_with_uninitialised_schema_shows_init_prompt(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
