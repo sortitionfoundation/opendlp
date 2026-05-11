@@ -1018,6 +1018,30 @@ class TestEditRespondentPage:
         assert b"Change note" in response.data
         assert b"first_name" in response.data or b"First name" in response.data
 
+    def test_get_with_uninitialised_schema_shows_init_prompt(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """When no field schema has been initialised the form is replaced
+        with a prompt linking to the Fields tab."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-NOSCHEMA",
+                attributes={},
+            )
+            resp_id = respondent.id
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        assert b"This assembly has no respondent fields configured yet." in response.data
+        # Link points at the Fields tab.
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        # The form itself is not rendered.
+        assert b"Save changes" not in response.data
+        assert b"Change note" not in response.data
+
     def test_post_valid_updates_redirects_and_flashes(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
