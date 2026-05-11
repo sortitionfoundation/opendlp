@@ -1,6 +1,5 @@
 """Unit tests for email confirmation service layer."""
 
-import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
@@ -11,98 +10,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import email_confirmation_service
 from opendlp.service_layer.exceptions import InvalidConfirmationToken, RateLimitExceeded
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
-from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
-
-# ============================================================================
-# Test-specific Fake Repositories
-# ============================================================================
-# NOTE: These fakes are intentionally kept here rather than in tests/fakes.py
-# because they are simpler and more focused than the shared fakes. The shared
-# FakeUnitOfWork includes 9+ repositories with complex dependencies, which would
-# make these unit tests slower and harder to understand. These minimal fakes
-# only implement what's needed for testing the email confirmation service in
-# isolation, following the same pattern as test_password_reset_service.py.
-# ============================================================================
-
-
-class FakeEmailConfirmationTokenRepository:
-    """Fake repository for testing."""
-
-    def __init__(self):
-        self._tokens = {}
-
-    def add(self, token):
-        if token.id is None:
-            token.id = uuid.uuid4()
-        self._tokens[token.id] = token
-
-    def get(self, item_id):
-        return self._tokens.get(item_id)
-
-    def get_by_token(self, token_string):
-        for token in self._tokens.values():
-            if token.token == token_string:
-                return token
-        return None
-
-    def count_recent_requests(self, user_id, since):
-        count = 0
-        for token in self._tokens.values():
-            if token.user_id == user_id and token.created_at >= since:
-                count += 1
-        return count
-
-    def delete_old_tokens(self, before):
-        to_delete = [token_id for token_id, token in self._tokens.items() if token.created_at < before]
-        for token_id in to_delete:
-            del self._tokens[token_id]
-        return len(to_delete)
-
-    def invalidate_user_tokens(self, user_id):
-        count = 0
-        for token in self._tokens.values():
-            if token.user_id == user_id and token.is_valid():
-                token.use()
-                count += 1
-        return count
-
-
-class FakeUserRepository:
-    """Fake user repository for testing."""
-
-    def __init__(self):
-        self._users = {}
-
-    def add(self, user):
-        self._users[user.id] = user
-
-    def get(self, user_id):
-        return self._users.get(user_id)
-
-    def get_by_email(self, email):
-        for user in self._users.values():
-            if user.email == email:
-                return user
-        return None
-
-
-class FakeUnitOfWork(AbstractUnitOfWork):
-    """Fake Unit of Work for testing."""
-
-    def __init__(self):
-        self.users = FakeUserRepository()
-        self.email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
-        self.committed = False
-
-    def commit(self):
-        self.committed = True
-
-    def rollback(self):
-        pass
-
-    def expire_all(self):
-        pass
+from tests.fakes import FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
 
 
 @pytest.fixture
@@ -401,7 +309,7 @@ class TestResendConfirmationEmail:
             mock_send.assert_called_once()
 
         # Check token was created
-        tokens = list(uow.email_confirmation_tokens._tokens.values())
+        tokens = list(uow.email_confirmation_tokens.all())
         assert len(tokens) == 1
         assert tokens[0].user_id == unconfirmed_user.id
 
@@ -421,7 +329,7 @@ class TestResendConfirmationEmail:
         email_adapter.send_email.assert_not_called()
 
         # Check no token was created
-        tokens = list(uow.email_confirmation_tokens._tokens.values())
+        tokens = list(uow.email_confirmation_tokens.all())
         assert len(tokens) == 0
 
     def test_returns_true_for_confirmed_user(self, uow, confirmed_user):
@@ -440,7 +348,7 @@ class TestResendConfirmationEmail:
         email_adapter.send_email.assert_not_called()
 
         # Check no token was created
-        tokens = list(uow.email_confirmation_tokens._tokens.values())
+        tokens = list(uow.email_confirmation_tokens.all())
         assert len(tokens) == 0
 
     def test_returns_true_for_inactive_user(self, uow, inactive_user):
@@ -459,7 +367,7 @@ class TestResendConfirmationEmail:
         email_adapter.send_email.assert_not_called()
 
         # Check no token was created
-        tokens = list(uow.email_confirmation_tokens._tokens.values())
+        tokens = list(uow.email_confirmation_tokens.all())
         assert len(tokens) == 0
 
     def test_rate_limit_exceeded(self, uow, unconfirmed_user):
@@ -542,7 +450,7 @@ class TestCleanupExpiredTokens:
         count = email_confirmation_service.cleanup_expired_tokens(uow, days_old=30)
 
         assert count == 3
-        assert len(uow.email_confirmation_tokens._tokens) == 0
+        assert len(list(uow.email_confirmation_tokens.all())) == 0
 
     def test_keeps_recent_tokens(self, uow, unconfirmed_user):
         """Should keep recent tokens."""
@@ -560,4 +468,4 @@ class TestCleanupExpiredTokens:
         count = email_confirmation_service.cleanup_expired_tokens(uow, days_old=30)
 
         assert count == 0
-        assert len(uow.email_confirmation_tokens._tokens) == 3
+        assert len(list(uow.email_confirmation_tokens.all())) == 3

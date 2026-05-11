@@ -1,6 +1,5 @@
 """Unit tests for password reset service layer."""
 
-import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
@@ -11,87 +10,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.exceptions import InvalidResetToken, PasswordTooWeak, RateLimitExceeded
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
-
-
-class FakePasswordResetTokenRepository:
-    """Fake repository for testing."""
-
-    def __init__(self):
-        self._tokens = {}
-        self._next_id = 1
-
-    def add(self, token):
-        if token.id is None:
-            token.id = uuid.uuid4()
-        self._tokens[token.id] = token
-
-    def get(self, item_id):
-        return self._tokens.get(item_id)
-
-    def get_by_token(self, token_string):
-        for token in self._tokens.values():
-            if token.token == token_string:
-                return token
-        return None
-
-    def count_recent_requests(self, user_id, since):
-        count = 0
-        for token in self._tokens.values():
-            if token.user_id == user_id and token.created_at >= since:
-                count += 1
-        return count
-
-    def delete_old_tokens(self, before):
-        to_delete = [token_id for token_id, token in self._tokens.items() if token.created_at < before]
-        for token_id in to_delete:
-            del self._tokens[token_id]
-        return len(to_delete)
-
-    def invalidate_user_tokens(self, user_id):
-        count = 0
-        for token in self._tokens.values():
-            if token.user_id == user_id and token.is_valid():
-                token.use()
-                count += 1
-        return count
-
-
-class FakeUserRepository:
-    """Fake user repository for testing."""
-
-    def __init__(self):
-        self._users = {}
-
-    def add(self, user):
-        self._users[user.id] = user
-
-    def get(self, user_id):
-        return self._users.get(user_id)
-
-    def get_by_email(self, email):
-        for user in self._users.values():
-            if user.email == email:
-                return user
-        return None
-
-
-class FakeUnitOfWork(AbstractUnitOfWork):
-    """Fake Unit of Work for testing."""
-
-    def __init__(self):
-        self.users = FakeUserRepository()
-        self.password_reset_tokens = FakePasswordResetTokenRepository()
-        self.committed = False
-
-    def commit(self):
-        self.committed = True
-
-    def rollback(self):
-        pass
-
-    def expire_all(self):
-        pass
+from tests.fakes import FakeUnitOfWork
 
 
 @pytest.fixture
@@ -151,7 +70,7 @@ class TestRequestPasswordReset:
         assert uow.committed is True
 
         # Check token was created
-        tokens = list(uow.password_reset_tokens._tokens.values())
+        tokens = list(uow.password_reset_tokens.all())
         assert len(tokens) == 1
         assert tokens[0].user_id == active_user.id
 
@@ -162,7 +81,7 @@ class TestRequestPasswordReset:
         assert result is True
 
         # Check no token was created
-        tokens = list(uow.password_reset_tokens._tokens.values())
+        tokens = list(uow.password_reset_tokens.all())
         assert len(tokens) == 0
 
     def test_returns_true_for_oauth_user(self, uow, oauth_user):
@@ -172,7 +91,7 @@ class TestRequestPasswordReset:
         assert result is True
 
         # Check no token was created
-        tokens = list(uow.password_reset_tokens._tokens.values())
+        tokens = list(uow.password_reset_tokens.all())
         assert len(tokens) == 0
 
     def test_returns_true_for_inactive_user(self, uow, inactive_user):
@@ -182,7 +101,7 @@ class TestRequestPasswordReset:
         assert result is True
 
         # Check no token was created
-        tokens = list(uow.password_reset_tokens._tokens.values())
+        tokens = list(uow.password_reset_tokens.all())
         assert len(tokens) == 0
 
     def test_rate_limit_exceeded(self, uow, active_user):
@@ -201,7 +120,7 @@ class TestRequestPasswordReset:
         """Should use custom expiry hours."""
         password_reset_service.request_password_reset(uow, active_user.email, expires_in_hours=2)
 
-        tokens = list(uow.password_reset_tokens._tokens.values())
+        tokens = list(uow.password_reset_tokens.all())
         assert len(tokens) == 1
 
         # Check expiry is approximately 2 hours
