@@ -491,10 +491,26 @@ class TestApplyStatusTransition:
 
     def test_allowed_transitions_matches_agreed_matrix(self):
         expected = {
-            RespondentStatus.POOL: [RespondentStatus.SELECTED],
-            RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
-            RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
-            RespondentStatus.WITHDRAWN: [],
+            RespondentStatus.POOL: [
+                RespondentStatus.SELECTED,
+                RespondentStatus.CONFIRMED,
+                RespondentStatus.WITHDRAWN,
+            ],
+            RespondentStatus.SELECTED: [
+                RespondentStatus.POOL,
+                RespondentStatus.CONFIRMED,
+                RespondentStatus.WITHDRAWN,
+            ],
+            RespondentStatus.CONFIRMED: [
+                RespondentStatus.POOL,
+                RespondentStatus.SELECTED,
+                RespondentStatus.WITHDRAWN,
+            ],
+            RespondentStatus.WITHDRAWN: [
+                RespondentStatus.POOL,
+                RespondentStatus.SELECTED,
+                RespondentStatus.CONFIRMED,
+            ],
             RespondentStatus.DELETED: [],
         }
         assert expected == ALLOWED_SELECTION_STATUS_TRANSITIONS
@@ -531,20 +547,53 @@ class TestApplyStatusTransition:
         assert resp.selection_status == RespondentStatus.WITHDRAWN
         assert resp.selection_run_id == run_id
 
-    def test_pool_to_confirmed_refused(self):
-        resp = self._at(RespondentStatus.POOL)
+    def test_pool_to_confirmed_allowed_and_clears_run(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.POOL, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="manual confirm",
+        )
+        assert resp.selection_status == RespondentStatus.CONFIRMED
+        assert resp.selection_run_id is None
+
+    def test_withdrawn_back_to_pool_clears_run(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.WITHDRAWN, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.POOL,
+            author_id=uuid.uuid4(),
+            comment="returned to pool by mistake",
+        )
+        assert resp.selection_status == RespondentStatus.POOL
+        assert resp.selection_run_id is None
+
+    def test_withdrawn_to_confirmed_preserves_run_id(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.WITHDRAWN, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.CONFIRMED,
+            author_id=uuid.uuid4(),
+            comment="changed their mind",
+        )
+        assert resp.selection_status == RespondentStatus.CONFIRMED
+        assert resp.selection_run_id == run_id
+
+    def test_no_transitions_out_of_deleted(self):
+        resp = self._at(RespondentStatus.DELETED)
         with pytest.raises(ValueError, match="not allowed"):
             resp.apply_status_transition(
-                new_status=RespondentStatus.CONFIRMED,
+                new_status=RespondentStatus.POOL,
                 author_id=uuid.uuid4(),
                 comment="try",
             )
 
-    def test_no_transitions_out_of_withdrawn(self):
-        resp = self._at(RespondentStatus.WITHDRAWN)
+    def test_no_transitions_into_deleted(self):
+        resp = self._at(RespondentStatus.SELECTED)
         with pytest.raises(ValueError, match="not allowed"):
             resp.apply_status_transition(
-                new_status=RespondentStatus.CONFIRMED,
+                new_status=RespondentStatus.DELETED,
                 author_id=uuid.uuid4(),
                 comment="try",
             )

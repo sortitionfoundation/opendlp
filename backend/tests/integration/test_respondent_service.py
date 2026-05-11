@@ -499,15 +499,29 @@ class TestTransitionRespondentStatus:
                 comment="try override",
             )
 
+    def test_caller_cannot_move_back_into_pool(self, uow, admin_user, test_assembly):
+        caller_id = self._make_caller(uow, admin_user, test_assembly, "caller3@test.com")
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.CONFIRMED)
+
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.transition_respondent_status(
+                uow,
+                caller_id,
+                test_assembly.id,
+                resp.id,
+                new_status=RespondentStatus.POOL,
+                comment="try to undo",
+            )
+
     def test_illegal_transition_raises_value_error(self, uow, admin_user, test_assembly):
-        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.POOL)
+        resp = self._create(uow, admin_user, test_assembly, RespondentStatus.SELECTED)
         with pytest.raises(ValueError, match="not allowed"):
             respondent_service.transition_respondent_status(
                 uow,
                 admin_user.id,
                 test_assembly.id,
                 resp.id,
-                new_status=RespondentStatus.CONFIRMED,
+                new_status=RespondentStatus.DELETED,
                 comment="try",
             )
 

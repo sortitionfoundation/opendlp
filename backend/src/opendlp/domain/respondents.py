@@ -280,8 +280,9 @@ class Respondent:
             raise ValueError(f"Transition {self.selection_status.value} -> {new_status.value} is not allowed")
         old = self.selection_status
         self.selection_status = new_status
-        if old == RespondentStatus.POOL and new_status == RespondentStatus.SELECTED:
-            # Manual override — no algorithmic run is responsible.
+        if old == RespondentStatus.POOL or new_status == RespondentStatus.POOL:
+            # Manual override out of POOL has no algorithmic run behind it;
+            # moves back into POOL similarly belong to no run.
             self.selection_run_id = None
         self.updated_at = datetime.now(UTC)
         self.add_comment(

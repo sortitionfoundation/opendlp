@@ -128,13 +128,13 @@ class RespondentStatus(Enum):
 
 
 # Manual transitions allowed from the backoffice view-respondent page.
-# Moves to DELETED happen via the GDPR delete form only; returning the whole
-# pool to POOL happens via the batch reset action only.
+# Any move between the four active statuses is permitted; moves to or from
+# DELETED are excluded (DELETED is reached only via the GDPR delete form).
 ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
-    RespondentStatus.POOL: [RespondentStatus.SELECTED],
-    RespondentStatus.SELECTED: [RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
-    RespondentStatus.CONFIRMED: [RespondentStatus.WITHDRAWN],
-    RespondentStatus.WITHDRAWN: [],
+    RespondentStatus.POOL: [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.SELECTED: [RespondentStatus.POOL, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.CONFIRMED: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.WITHDRAWN: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.CONFIRMED],
     RespondentStatus.DELETED: [],
 }
 

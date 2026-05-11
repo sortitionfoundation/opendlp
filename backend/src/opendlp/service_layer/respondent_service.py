@@ -489,8 +489,14 @@ def get_respondent_with_comment_authors(
 
 
 def _required_permission_for_transition(old: RespondentStatus, new: RespondentStatus) -> Any:
-    """Map a (from, to) transition to the permission function that must authorise it."""
-    if old == RespondentStatus.POOL and new == RespondentStatus.SELECTED:
+    """Map a (from, to) transition to the permission function that must authorise it.
+
+    Any transition that touches POOL on either side is an organiser-level
+    operation (moving someone into or out of the unselected pool). Transitions
+    among SELECTED / CONFIRMED / WITHDRAWN remain available to confirmation
+    callers as part of their day-to-day work.
+    """
+    if old == RespondentStatus.POOL or new == RespondentStatus.POOL:
         return can_manage_assembly
     return can_call_confirmations
 

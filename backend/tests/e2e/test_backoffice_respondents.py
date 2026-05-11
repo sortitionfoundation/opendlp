@@ -877,7 +877,8 @@ class TestSelectionStatusTransition:
     def test_view_page_hides_buttons_on_terminal_status(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-
+        # DELETED is the only terminal status; all other statuses have manual
+        # transitions back into the active set.
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             resp = create_respondent(
                 uow,
@@ -885,7 +886,7 @@ class TestSelectionStatusTransition:
                 existing_assembly.id,
                 external_id="R-T2",
                 attributes={},
-                selection_status=RespondentStatus.WITHDRAWN,
+                selection_status=RespondentStatus.DELETED,
             )
         response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
         assert response.status_code == 200
@@ -951,7 +952,8 @@ class TestSelectionStatusTransition:
     def test_post_illegal_transition_rejected(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-
+        # Moves into DELETED are still forbidden via this form (GDPR delete
+        # has its own action), so use that as the illegal case.
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             resp = create_respondent(
                 uow,
@@ -959,13 +961,13 @@ class TestSelectionStatusTransition:
                 existing_assembly.id,
                 external_id="R-T5",
                 attributes={},
-                selection_status=RespondentStatus.POOL,
+                selection_status=RespondentStatus.SELECTED,
             )
 
         response = logged_in_admin.post(
             self._transition_url(existing_assembly.id, resp.id),
             data={
-                "new_status": RespondentStatus.CONFIRMED.value,
+                "new_status": RespondentStatus.DELETED.value,
                 "comment": "try",
                 "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
             },
@@ -974,7 +976,7 @@ class TestSelectionStatusTransition:
         assert response.status_code == 302
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             retrieved = uow.respondents.get(resp.id)
-            assert retrieved.selection_status == RespondentStatus.POOL
+            assert retrieved.selection_status == RespondentStatus.SELECTED
 
 
 class TestEditRespondentPage:
