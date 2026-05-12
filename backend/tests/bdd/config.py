@@ -24,7 +24,6 @@ class Urls:
     login = f"{base}/auth/login"
     register = f"{base}/auth/register"
     dashboard = f"{base}/dashboard"
-    user_data_agreement = f"{base}/auth/user-data-agreement"
     view_assembly_list = f"{base}/dashboard"
     create_assembly = f"{base}/assemblies/new"
     admin = f"{base}/admin/"

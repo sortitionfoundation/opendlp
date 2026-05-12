@@ -16,7 +16,7 @@ ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, an
         {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
         {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
         {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
-        {"label": _("Help"), "href": url_for('main.support')}
+        {"label": _("Help"), "href": help_site_home, "target": "_blank"}
         ],
         account_items=[
         {"label": _("My Account"), "href": url_for('profile.view')}

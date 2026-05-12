@@ -4,18 +4,15 @@ ABOUTME: Handles user authentication flow with invite-based registration"""
 import uuid
 from datetime import UTC, datetime, timedelta
 
-import markdown
 from django.utils.http import url_has_allowed_host_and_scheme
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
-from flask_babel import get_locale
 from flask_login import current_user, login_required, login_user, logout_user
 from markupsafe import Markup
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
-from opendlp.domain.user_data_agreement import get_user_data_agreement_content
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import (
     LoginForm,
@@ -443,24 +440,6 @@ def resend_confirmation() -> ResponseReturnValue:
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template("auth/resend_confirmation.html", form=form)
-
-
-@auth_bp.route("/user-data-agreement")
-def user_data_agreement() -> ResponseReturnValue:
-    """Display the user data agreement."""
-    # default to English
-    locale = get_locale()
-    language_code = locale.language if locale else "en"
-
-    try:
-        markdown_content = get_user_data_agreement_content(language_code)
-        html_content = markdown.markdown(markdown_content)
-    except KeyError:
-        # Fallback to English if language not available
-        markdown_content = get_user_data_agreement_content("en")
-        html_content = markdown.markdown(markdown_content)
-
-    return render_template("auth/user_data_agreement.html", agreement_content=html_content)
 
 
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])

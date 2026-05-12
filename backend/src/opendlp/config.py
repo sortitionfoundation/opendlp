@@ -230,6 +230,12 @@ class FlaskBaseConfig:
         # Support configuration
         self.SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
 
+        # External help site URLs
+        self.HELP_SITE_HOME: str = os.environ.get("HELP_SITE_HOME", "https://docs.sortitionlab.org/help/")
+        self.HELP_SITE_DATA_AGREEMENT: str = os.environ.get(
+            "HELP_SITE_DATA_AGREEMENT", "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
+        )
+
         # Login rate limiting
         self.LOGIN_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_EMAIL", "5"))
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))

@@ -11,8 +11,8 @@ from opendlp.entrypoints.context_processors import (
     _get_file_hash,
     get_opendlp_version,
     get_service_account_email,
+    inject_template_globals,
     static_hashes,
-    static_versioning_context_processor,
 )
 
 
@@ -109,12 +109,12 @@ class TestStaticHashes:
         assert hasattr(_get_file_hash, "cache_info")
 
 
-class TestStaticVersioningContextProcessor:
-    """Test the Flask context processor for static file versioning."""
+class TestInjectTemplateGlobals:
+    """Test the Flask context processor that injects site-wide template variables."""
 
     def test_context_processor_includes_static_hashes(self):
         """Test that the context processor includes static_hashes callable."""
-        context = static_versioning_context_processor()
+        context = inject_template_globals()
 
         assert isinstance(context, dict)
         assert "static_hashes" in context
@@ -122,12 +122,19 @@ class TestStaticVersioningContextProcessor:
 
     def test_context_processor_does_not_include_old_hash_keys(self):
         """Test that the old per-file hash keys have been removed."""
-        context = static_versioning_context_processor()
+        context = inject_template_globals()
 
         assert "css_hash" not in context
         assert "util_js_hash" not in context
         assert "alpine_js_hash" not in context
         assert "backoffice_alpine_js_hash" not in context
+
+    def test_context_processor_includes_help_site_urls(self):
+        """Test that the context processor exposes help site URLs to templates."""
+        context = inject_template_globals()
+
+        assert context["help_site_home"] == "https://docs.sortitionlab.org/help/"
+        assert context["help_site_data_agreement"] == "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
 
 
 class TestGetOpendlpVersion:

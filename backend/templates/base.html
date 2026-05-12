@@ -74,7 +74,9 @@
                                        target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('main.support') }}">{{ _("Help") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ help_site_home }}"
+                                       target="_blank">{{ _("Help") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link" href="{{ url_for('profile.view') }}">{{ _("My Account") }}</a>
@@ -111,7 +113,9 @@
                                        target="_blank">{{ _("Sortition Lab") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('main.support') }}">{{ _("Help") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ help_site_home }}"
+                                       target="_blank">{{ _("Help") }}</a>
                                 </li>
                             </ul>
                         </nav>
@@ -174,7 +178,8 @@
                             </li>
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
-                                   href="{{ url_for('auth.user_data_agreement') }}">{{ _("User Data Agreement") }}</a>
+                                   href="{{ help_site_data_agreement }}"
+                                   target="_blank">{{ _("User Data Agreement") }}</a>
                             </li>
                             <li class="govuk-footer__inline-list-item govuk-secondary-text-colour">
                                 {{ _("OpenDLP Version") }} {{ opendlp_version }}

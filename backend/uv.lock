@@ -729,15 +729,6 @@ wheels = [
 ]
 
 [[package]]
-name = "markdown"
-version = "3.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2b/f4/69fa6ed85ae003c2378ffa8f6d2e3234662abd02c10d216c0ba96081a238/markdown-3.10.2.tar.gz", hash = "sha256:994d51325d25ad8aa7ce4ebaec003febcce822c3f8c911e3b17c52f7f589f950", size = 368805, upload-time = "2026-02-09T14:57:26.942Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/de/1f/77fa3081e4f66ca3576c896ae5d31c3002ac6607f9747d2e3aa49227e464/markdown-3.10.2-py3-none-any.whl", hash = "sha256:e91464b71ae3ee7afd3017d9f358ef0baf158fd9a298db92f1d4761133824c36", size = 108180, upload-time = "2026-02-09T14:57:25.787Z" },
-]
-
-[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -878,7 +869,6 @@ dependencies = [
     { name = "flask-session" },
     { name = "flask-wtf" },
     { name = "gspread" },
-    { name = "markdown" },
     { name = "markupsafe" },
     { name = "pyotp" },
     { name = "python-dotenv" },
@@ -916,7 +906,6 @@ dev = [
     { name = "time-machine" },
     { name = "types-authlib" },
     { name = "types-gunicorn" },
-    { name = "types-markdown" },
     { name = "types-qrcode" },
     { name = "types-wtforms" },
 ]
@@ -937,7 +926,6 @@ requires-dist = [
     { name = "flask-wtf", specifier = ">=1.2.2" },
     { name = "gspread", specifier = ">=6.2.1" },
     { name = "gunicorn", marker = "extra == 'production'", specifier = ">=23.0.0" },
-    { name = "markdown", specifier = ">=3.8.2" },
     { name = "markupsafe", specifier = ">=3.0.2" },
     { name = "pyotp", specifier = ">=2.9.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
@@ -971,7 +959,6 @@ dev = [
     { name = "time-machine", specifier = ">=2.19.0" },
     { name = "types-authlib", specifier = ">=1.6.6.20251220" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
-    { name = "types-markdown", specifier = ">=3.8.0.20250809" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
     { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
 ]
@@ -1641,15 +1628,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/eb/94/1da5bcee084a5c33af582d46540ad3bb153852c138fc0c63832448fd6b10/types_gunicorn-25.3.0.20260408.tar.gz", hash = "sha256:51596970b1aff649530d74e50e7a055b09531954752a4498185f48bf37517b79", size = 34002, upload-time = "2026-04-08T04:37:25.323Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/75/e06c1c644c6af5ead6963470c637a043c4b1c0179858bf73a9e1b3056878/types_gunicorn-25.3.0.20260408-py3-none-any.whl", hash = "sha256:5bfd757504f932256c3303135e1cd2968859c8196c6c3ad8b0a66f67aea80b02", size = 52677, upload-time = "2026-04-08T04:37:24.082Z" },
-]
-
-[[package]]
-name = "types-markdown"
-version = "3.10.2.20260408"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dd/0e/a690840934c459aa50e0470e7550d7f151632eafa4a8e3c21d18009ad15c/types_markdown-3.10.2.20260408.tar.gz", hash = "sha256:d5cba15ed65a1420e80e31c17e3d4a2ad7208a3f3a4da97fd2c5f093caf523cd", size = 19784, upload-time = "2026-04-08T04:33:07.644Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/7e/265a8df257c8dced6ea89295f793a19f0a49ccbfeae1ed562368b2caf7a3/types_markdown-3.10.2.20260408-py3-none-any.whl", hash = "sha256:b0bbe8b7a8174db732067b86e391262898f5f536589ea81efec6d35ceb829331", size = 25857, upload-time = "2026-04-08T04:33:06.769Z" },
 ]
 
 [[package]]

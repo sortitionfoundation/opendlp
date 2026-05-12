@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import config
-from opendlp.entrypoints.context_processors import inject_feature_flags, static_versioning_context_processor
+from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
 
 
@@ -72,7 +72,7 @@ def create_app(config_name: str = "") -> Flask:
 
 def register_context_processors(app: Flask) -> None:
     """Register template context processors."""
-    app.context_processor(static_versioning_context_processor)
+    app.context_processor(inject_template_globals)
     app.context_processor(inject_feature_flags)
 
     @app.context_processor
