@@ -9,7 +9,7 @@ Feature: Respondent field schema
     When I open the first respondent for "Grouped Schema Demo"
     Then I should see the "Name and contact" collapsible block
     And I should see the "About you" collapsible block
-    And I should see the "Record metadata" collapsible block
+    And I should see the "Activity" collapsible block
 
   Scenario: Schema editor lists fields in their groups
     Given there is an assembly with respondents imported from CSV called "Schema Editor Demo"
