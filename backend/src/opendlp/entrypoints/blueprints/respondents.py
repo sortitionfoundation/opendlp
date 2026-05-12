@@ -82,6 +82,7 @@ def _run_csv_import(
             csv_content=csv_content,
             replace_existing=replace_existing,
             id_column=id_column,
+            filename=filename,
         )
 
     uow2 = bootstrap.bootstrap()

@@ -9,7 +9,12 @@ from typing import Any
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent, pop_normalised
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentAction,
+    RespondentSourceType,
+    RespondentStatus,
+)
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -63,6 +68,11 @@ def create_respondent(
             source_type=RespondentSourceType.MANUAL_ENTRY,
             **kwargs,
         )
+        respondent.add_comment(
+            text="Created via manual entry",
+            author_id=user_id,
+            action=RespondentAction.CREATE,
+        )
 
         uow.respondents.add(respondent)
         uow.commit()
@@ -76,12 +86,14 @@ def import_respondents_from_csv(  # noqa: C901
     csv_content: str,
     replace_existing: bool = False,
     id_column: str | None = None,
+    filename: str = "",
 ) -> tuple[list[Respondent], list[str], str]:
     """
     Import respondents from CSV.
 
     CSV format: id_column is required, all other columns become attributes.
     If id_column is not provided, the first column in the CSV is used.
+    The filename, if provided, is recorded in the CREATE comment each row gets.
     Returns: (list of created respondents, list of error messages, resolved id_column name)
     """
     with uow:
@@ -164,7 +176,12 @@ def import_respondents_from_csv(  # noqa: C901
                 can_attend=can_attend,
                 email=email,
                 source_type=RespondentSourceType.CSV_IMPORT,
-                source_reference=f"CSV import by user {user_id}",
+            )
+            create_text = f"Created via CSV import ({filename})" if filename else "Created via CSV import"
+            respondent.add_comment(
+                text=create_text,
+                author_id=user_id,
+                action=RespondentAction.CREATE,
             )
             respondents.append(respondent)
 

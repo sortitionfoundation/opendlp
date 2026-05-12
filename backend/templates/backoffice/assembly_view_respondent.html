@@ -6,7 +6,7 @@ ABOUTME: Renders a grouped detail page driven by RespondentFieldDefinition schem
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
 {% from "backoffice/components/input.html" import input, textarea, radio_group %}
 {% from "backoffice/components/respondent_status_form.html" import respondent_status_form %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
@@ -212,10 +212,27 @@ becomes a disabled input/textarea so the page reads as a read-only form.
     <summary class="text-display-sm mb-4 cursor-pointer"
              style="color: var(--color-headings);"
              @click="open = !open">
-        {{ _("Comments") }}
+        {{ _("Activity") }}
     </summary>
     <div x-show="open" x-cloak>
-        {% if respondent.comments %}
+        {# Reverse-chronological. A synthesised Created row is appended at the
+           end when the respondent has no CREATE comment (pre-existing data). #}
+        {% set has_create_comment = respondent.comments | selectattr("action.value", "equalto", "CREATE") | list | length > 0 %}
+        {% set action_labels = {
+        "NONE": "—",
+        "CREATE": _("Created"),
+        "EDIT": _("Edit"),
+        "STATUS_CHANGE": _("Status change"),
+        "SELECT": _("Selected"),
+        "DELETE": _("Deleted"),
+        } %}
+        {% set source_type_labels = {
+        "CSV_IMPORT": _("CSV import"),
+        "MANUAL_ENTRY": _("manual entry"),
+        "REGISTRATION_FORM": _("registration form"),
+        "NATIONBUILDER_SYNC": _("NationBuilder sync"),
+        } %}
+        {% if respondent.comments or not has_create_comment %}
             {% call table() %}
                 {{ table_head([
                 {"label": _("When") },
@@ -224,19 +241,36 @@ becomes a disabled input/textarea so the page reads as a read-only form.
                 {"label": _("Comment")}
                 ]) }}
                 {% call table_body() %}
-                    {% for comment in respondent.comments %}
+                    {% for comment in respondent.comments | reverse %}
                         {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
+                        {% set action_label = action_labels.get(comment.action.value, comment.action.value) %}
                         {% call table_row() %}
                             {{ table_cell(comment.created_at|datetimeformat('long') ) }}
                             {{ table_cell(author.email if author else comment.author_id|string) }}
-                            {{ table_cell(comment.action.value|title if comment.action.value != "NONE" else "—") }}
+                            {% if comment.action.value == "SELECT" and comment.selection_run_id %}
+                                {% set run_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
+                                {% call table_cell_custom() %}
+                                    <a href="{{ run_url }}" class="underline">{{ action_label }}</a>
+                                {% endcall %}
+                            {% else %}
+                                {{ table_cell(action_label) }}
+                            {% endif %}
                             {{ table_cell(comment.text) }}
                         {% endcall %}
                     {% endfor %}
+                    {% if not has_create_comment %}
+                        {% set src_label = source_type_labels.get(respondent.source_type.value, respondent.source_type.value) %}
+                        {% call table_row() %}
+                            {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "") }}
+                            {{ table_cell("—") }}
+                            {{ table_cell(_("Created")) }}
+                            {{ table_cell(_("Created via %(source)s", source=src_label)) }}
+                        {% endcall %}
+                    {% endif %}
                 {% endcall %}
             {% endcall %}
         {% else %}
-            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No comments recorded.") }}</p>
+            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No activity recorded.") }}</p>
         {% endif %}
     </div>
 </details>
@@ -268,20 +302,6 @@ becomes a disabled input/textarea so the page reads as a read-only form.
         </form>
     </section>
 {% endif %}
-    {# Audit block — provenance and timestamps, collapsed by default. #}
-<details class="mb-8" x-data="{ open: false }">
-    <summary class="text-display-sm mb-4 cursor-pointer"
-             style="color: var(--color-headings);"
-             @click="open = !open">
-        {{ _("Record metadata") }}
-    </summary>
-    <div x-show="open" x-cloak class="flex flex-col gap-4">
-        {{ input(name="source_type", label=_("Source type") , value=respondent.source_type.value|replace("_", " ") |title, disabled=true, dim=false) }}
-        {{ input(name="source_reference", label=_("Source reference") , value=respondent.source_reference or "", disabled=true, dim=false) }}
-        {{ input(name="created_at", label=_("Created") , value=respondent.created_at|datetimeformat('long') if respondent.created_at else "", disabled=true, dim=false) }}
-        {{ input(name="updated_at", label=_("Updated") , value=respondent.updated_at|datetimeformat('long') if respondent.updated_at else "", disabled=true, dim=false) }}
-    </div>
-</details>
 <section class="flex gap-4">
     {% if can_edit and not is_deleted %}
         {{ button(_("Edit") , href=url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id), variant="primary") }}

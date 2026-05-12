@@ -315,7 +315,6 @@ class TestRespondentDeletePersonalData:
             stay_on_db=True,
             eligible=True,
             can_attend=True,
-            source_reference="import 2026",
             selection_status=RespondentStatus.SELECTED,
             selection_run_id=uuid.uuid4(),
         )
@@ -325,11 +324,10 @@ class TestRespondentDeletePersonalData:
         resp.delete_personal_data(uuid.uuid4(), "gdpr request")
         assert resp.selection_status == RespondentStatus.DELETED
 
-    def test_blanks_email_and_source_reference(self):
+    def test_blanks_email(self):
         resp = self._live_respondent()
         resp.delete_personal_data(uuid.uuid4(), "gdpr request")
         assert resp.email == ""
-        assert resp.source_reference == ""
 
     def test_clears_booleans_to_none(self):
         resp = self._live_respondent()
@@ -616,7 +614,7 @@ class TestApplyStatusTransition:
         )
         assert len(resp.comments) == 1
         c = resp.comments[0]
-        assert c.action == RespondentAction.EDIT
+        assert c.action == RespondentAction.STATUS_CHANGE
         assert "SELECTED" in c.text and "CONFIRMED" in c.text
         assert "confirmed on the phone" in c.text
 

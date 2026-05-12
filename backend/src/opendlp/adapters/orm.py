@@ -489,7 +489,6 @@ respondents = Table(
     Column("can_attend", Boolean, nullable=True),
     Column("email", String(255), nullable=False, default="", index=True),
     Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
-    Column("source_reference", String(500), nullable=False, default=""),
     Column("attributes", JSON, nullable=False, default=dict),
     Column("comments", RespondentCommentListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

@@ -25,7 +25,13 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus, SelectionRunStatus
+from opendlp.domain.value_objects import (
+    AssemblyStatus,
+    GlobalRole,
+    RespondentAction,
+    RespondentStatus,
+    SelectionRunStatus,
+)
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
@@ -962,23 +968,29 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         assembly_id: uuid.UUID,
         external_ids: list[str],
         selection_run_id: uuid.UUID,
+        author_id: uuid.UUID,
     ) -> None:
         if not external_ids:
             return
-        self.session.execute(
-            update(orm.respondents)
-            .where(
+        rows = (
+            self.session
+            .query(Respondent)
+            .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.external_id.in_(external_ids),
                 )
             )
-            .values(
-                selection_status=RespondentStatus.SELECTED,
-                selection_run_id=selection_run_id,
-                updated_at=datetime.now(UTC),
-            )
+            .all()
         )
+        for respondent in rows:
+            respondent.mark_as_selected(selection_run_id)
+            respondent.add_comment(
+                text="Selected in run",
+                author_id=author_id,
+                action=RespondentAction.SELECT,
+                selection_run_id=selection_run_id,
+            )
 
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count: int = (

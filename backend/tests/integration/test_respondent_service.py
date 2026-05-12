@@ -552,8 +552,8 @@ class TestUpdateRespondent:
             retrieved = uow.respondents.get(resp.id)
             assert retrieved is not None
             assert retrieved.email == "new@b.com"
-            assert len(retrieved.comments) == 1
-            assert retrieved.comments[0].text == "fix email"
+            edit_comments = [c for c in retrieved.comments if c.text == "fix email"]
+            assert len(edit_comments) == 1
 
     def test_raises_for_mismatched_assembly(self, uow, admin_user, test_assembly):
         resp = self._create(uow, admin_user, test_assembly)

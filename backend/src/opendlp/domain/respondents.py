@@ -27,6 +27,10 @@ class RespondentComment:
     author_id: uuid.UUID
     created_at: datetime
     action: RespondentAction = RespondentAction.NONE
+    # Set on SELECT comments so the activity view can link back to the run
+    # that included this respondent, even after later status transitions
+    # clear `Respondent.selection_run_id`.
+    selection_run_id: uuid.UUID | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -34,15 +38,18 @@ class RespondentComment:
             "author_id": str(self.author_id),
             "created_at": self.created_at.isoformat(),
             "action": self.action.value,
+            "selection_run_id": str(self.selection_run_id) if self.selection_run_id else None,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RespondentComment":
+        run_id_raw = data.get("selection_run_id")
         return cls(
             text=data["text"],
             author_id=uuid.UUID(data["author_id"]),
             created_at=datetime.fromisoformat(data["created_at"]),
             action=RespondentAction(data.get("action", RespondentAction.NONE.value)),
+            selection_run_id=uuid.UUID(run_id_raw) if run_id_raw else None,
         )
 
 
@@ -83,7 +90,6 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "can_attend",
         "email",
         "source_type",
-        "source_reference",
         "created_at",
         "updated_at",
         "comments",
@@ -125,7 +131,6 @@ class Respondent:
         can_attend: bool | None = None,
         email: str = "",
         source_type: RespondentSourceType = RespondentSourceType.MANUAL_ENTRY,
-        source_reference: str = "",
         attributes: dict[str, Any] | None = None,
         respondent_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -146,7 +151,6 @@ class Respondent:
         self.can_attend = can_attend
         self.email = email.strip()
         self.source_type = source_type
-        self.source_reference = source_reference.strip()
         self.attributes = attributes or {}
         validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
@@ -178,6 +182,7 @@ class Respondent:
         text: str,
         author_id: uuid.UUID,
         action: RespondentAction = RespondentAction.NONE,
+        selection_run_id: uuid.UUID | None = None,
     ) -> None:
         """Append a comment authored by the given user."""
         text = text.strip()
@@ -188,6 +193,7 @@ class Respondent:
             author_id=author_id,
             created_at=datetime.now(UTC),
             action=action,
+            selection_run_id=selection_run_id,
         )
         # Reassign rather than mutate in place so SQLAlchemy's JSON column
         # change-detection sees the new value.
@@ -288,7 +294,7 @@ class Respondent:
         self.add_comment(
             f"Status: {old.value} → {new_status.value}. {comment}",
             author_id,
-            action=RespondentAction.EDIT,
+            action=RespondentAction.STATUS_CHANGE,
         )
 
     def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
@@ -299,7 +305,6 @@ class Respondent:
         self.selection_status = RespondentStatus.DELETED
         self.selection_run_id = None
         self.email = ""
-        self.source_reference = ""
         self.consent = None
         self.stay_on_db = None
         self.eligible = None
@@ -368,7 +373,6 @@ class Respondent:
             can_attend=self.can_attend,
             email=self.email,
             source_type=self.source_type,
-            source_reference=self.source_reference,
             attributes=self.attributes,
             respondent_id=self.id,
             created_at=self.created_at,

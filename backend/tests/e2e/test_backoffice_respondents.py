@@ -638,8 +638,8 @@ class TestBackofficeViewSingleRespondent:
         assert b"Female" in body
         assert b"SW1A 1AA" in body
         assert b"extra-info" in body
-        # Audit block sits in a collapsed details element.
-        assert b"Record metadata" in body
+        # Activity section replaces the old Record metadata block.
+        assert b"Activity" in body
         assert b"<details" in body
 
     def test_view_respondent_wrong_assembly(
@@ -758,8 +758,8 @@ class TestDeleteRespondentRoute:
             assert reloaded.selection_status.value == "DELETED"
             assert reloaded.email == ""
             assert reloaded.attributes == {"Gender": ""}
-            assert len(reloaded.comments) == 1
-            assert reloaded.comments[0].text == "gdpr request"
+            delete_comments = [c for c in reloaded.comments if c.text == "gdpr request"]
+            assert len(delete_comments) == 1
 
     def test_missing_comment_rejected(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -787,7 +787,8 @@ class TestDeleteRespondentRoute:
             assert reloaded is not None
             assert reloaded.selection_status.value == "POOL"
             assert reloaded.email == "keep@example.com"
-            assert len(reloaded.comments) == 0
+            # Only the CREATE comment from creation; no DELETE was applied.
+            assert all(c.action.value != "DELETE" for c in reloaded.comments)
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]

@@ -143,12 +143,18 @@ class RespondentAction(Enum):
     """Type of action a RespondentComment records.
 
     NONE is a plain comment with no system action attached.
-    EDIT records a change to the respondent's details.
+    CREATE records the initial creation of the respondent.
+    EDIT records a change to the respondent's attributes or eligibility flags.
+    STATUS_CHANGE records a manual selection-status transition.
+    SELECT records inclusion in a selection run.
     DELETE records a GDPR personal-data deletion.
     """
 
     NONE = "NONE"
+    CREATE = "CREATE"
     EDIT = "EDIT"
+    STATUS_CHANGE = "STATUS_CHANGE"
+    SELECT = "SELECT"
     DELETE = "DELETE"
 
 
