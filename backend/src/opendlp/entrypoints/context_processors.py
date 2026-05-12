@@ -128,6 +128,12 @@ def get_support_email() -> str:
     return flask_config.SUPPORT_EMAIL
 
 
+@cache
+def get_help_site_urls() -> tuple[str, str]:
+    flask_config = config.get_config()
+    return flask_config.HELP_SITE_HOME, flask_config.HELP_SITE_DATA_AGREEMENT
+
+
 def inject_feature_flags() -> dict[str, object]:
     """Inject feature flag checker into template context.
 
@@ -140,14 +146,14 @@ def static_hashes(relative_path: str) -> str:
     return _get_file_hash(config.get_static_path() / relative_path)
 
 
-def static_versioning_context_processor() -> dict[str, str | Callable]:
+def inject_template_globals() -> dict[str, str | Callable]:
     """
-    Flask context processor that adds static file version hashes to template context.
-
-    Returns:
-        Dictionary with css_hash and js_hash keys for use in templates
+    Flask context processor that injects site-wide variables into template context:
+    OpenDLP version, service account email, site banner, static-file hash helper,
+    support email, and external help-site URLs.
     """
     site_banner_text, site_banner_colour = get_site_banner_config()
+    help_site_home, help_site_data_agreement = get_help_site_urls()
     return {
         "opendlp_version": get_opendlp_version(),
         "google_service_account_email": get_service_account_email(),
@@ -155,4 +161,6 @@ def static_versioning_context_processor() -> dict[str, str | Callable]:
         "site_banner_colour": site_banner_colour,
         "static_hashes": static_hashes,
         "support_email_address": get_support_email(),
+        "help_site_home": help_site_home,
+        "help_site_data_agreement": help_site_data_agreement,
     }

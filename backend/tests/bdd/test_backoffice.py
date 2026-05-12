@@ -450,12 +450,12 @@ def footer_has_sortition_link(page: Page):
 
 @then("the footer should contain User Data Agreement link")
 def footer_has_user_data_agreement_link(page: Page):
-    """Verify the footer contains a User Data Agreement link."""
+    """Verify the footer contains a User Data Agreement link pointing at the external help site."""
     footer = page.locator("footer")
     uda_link = footer.locator("a", has_text="User Data Agreement")
     expect(uda_link).to_be_visible()
-    # The href should contain the user_data_agreement route
-    expect(uda_link).to_have_attribute("href", re.compile(r".*/auth/user-data-agreement"))
+    expect(uda_link).to_have_attribute("href", re.compile(r"^https?://.*data-agreement"))
+    expect(uda_link).to_have_attribute("target", "_blank")
 
 
 @then("the footer should display the version")
