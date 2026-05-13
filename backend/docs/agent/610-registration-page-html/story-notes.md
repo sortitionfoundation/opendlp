@@ -27,7 +27,7 @@ any?
 ## Consider - if not too expensive to do
 
 - produce complete unstyled form HTML below the text box that they could take and edit/style
-- encourage gov.uk design system
+- encourage gov.uk design system for the registration form
 - docs, examples ...
 - auto-checking that the form will be accepted
   - could be, check that all the required template bits are present
@@ -35,17 +35,17 @@ any?
 
 ## Out of scope
 
-- bot protection - see sc-614
+- bot protection
 - javascript support
 - rich text editor, splitting the edits into intro and form, ...
-- upload image to our server - see sc-672
-- auto-reply email template - see sc-615
-- auto publish/unpublish on dates - see sc-673
-- processing the form submission - see sc-613
+- upload image to our server
+- auto-reply email template
+- auto publish/unpublish on dates
+- processing the form submission
 - admin interface to see URL/short-URL for all assemblies
 - multiple registration forms for one assembly
 - registration form translations
-- list all open registration pages - see sc-674
+- list all open registration pages
 
 ## Notes
 
@@ -57,7 +57,7 @@ Note that "raw" does not mean "ugly". It means that the user is editing raw HTML
 
 ### Data notes
 
-Data model
+Data model ideas - initial sketch
 
 - RegistrationPage model
   - methods
