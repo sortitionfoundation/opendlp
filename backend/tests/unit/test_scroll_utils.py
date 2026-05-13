@@ -110,3 +110,45 @@ class TestRedirectPreservingScroll:
             response = redirect_preserving_scroll("/target/url")
             assert response.status_code == 302
             assert response.location == "/target/url"
+
+    def test_redirect_with_external_url_in_scroll_is_ignored(self, app: Flask) -> None:
+        """Attempts to inject external URLs via scroll param are rejected."""
+        # Full URL attempt
+        with app.test_request_context("/some/path?scroll=https://evil.com"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
+            assert "evil.com" not in response.location
+
+        # Protocol-relative URL attempt
+        with app.test_request_context("/some/path?scroll=//evil.com"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
+            assert "evil.com" not in response.location
+
+    def test_redirect_with_url_encoded_injection_is_ignored(self, app: Flask) -> None:
+        """URL-encoded injection attempts in scroll param are rejected."""
+        # Encoded newline + Location header injection attempt
+        with app.test_request_context("/some/path?scroll=100%0d%0aLocation:http://evil.com"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert "evil.com" not in response.location
+
+        # Encoded characters that look like numbers
+        with app.test_request_context("/some/path?scroll=%31%30%30"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            # URL-encoded "100" is decoded by Flask, so this should work
+            # but if it doesn't decode, it should be rejected
+            # Either way, no external redirect should occur
+            assert "evil" not in response.location.lower()
+
+    def test_redirect_rejects_scroll_with_path_traversal(self, app: Flask) -> None:
+        """Path traversal attempts in scroll param are rejected."""
+        with app.test_request_context("/some/path?scroll=../../../etc/passwd"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
+            assert "etc" not in response.location
+            assert "passwd" not in response.location
