@@ -399,3 +399,43 @@ class TestGetRespondentsForAssemblyPaginated:
         assert len(results) == 1
         assert total_count == 1
         assert results[0].selection_status == RespondentStatus.SELECTED
+
+
+class TestCreateRespondentEmitsCreateComment:
+    def test_manual_create_records_create_comment(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+
+        resp = respondent_service.create_respondent(
+            uow,
+            user.id,
+            assembly.id,
+            external_id="MANUAL-1",
+            attributes={"Gender": "Female"},
+        )
+
+        create_comments = [c for c in resp.comments if c.action is RespondentAction.CREATE]
+        assert len(create_comments) == 1
+        assert "manual entry" in create_comments[0].text
+        assert create_comments[0].author_id == user.id
+
+    def test_csv_import_records_create_comment_per_row_with_filename(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        csv_content = "external_id,Gender\nCSV-1,Female\nCSV-2,Male\n"
+
+        respondents, _errors, _id_col = respondent_service.import_respondents_from_csv(
+            uow,
+            user.id,
+            assembly.id,
+            csv_content,
+            filename="people.csv",
+        )
+
+        assert len(respondents) == 2
+        for r in respondents:
+            create_comments = [c for c in r.comments if c.action is RespondentAction.CREATE]
+            assert len(create_comments) == 1
+            assert "CSV import" in create_comments[0].text
+            assert "people.csv" in create_comments[0].text
+            assert create_comments[0].author_id == user.id

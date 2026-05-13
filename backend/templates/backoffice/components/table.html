@@ -98,19 +98,26 @@ Usage:
 {% endmacro %}
 
 {# Table row #}
-{% macro table_row(classes="") %}
+{% macro table_row(classes="", row_url="") %}
     {#
 Table row. Use within table_body().
 
 Args:
   classes: Additional CSS classes
+  row_url: Optional URL — when set, clicking anywhere on the row (outside
+           interactive elements like links or buttons) navigates to it.
 
 Usage:
   {% call table_row() %}
     {{ table_cell("Content") }}
   {% endcall %}
+
+  {% call table_row(row_url=url_for('...')) %}
+    {{ table_cell("Content") }}
+  {% endcall %}
     #}
-  <tr class="table-row-hover {{ classes }}"
+  <tr class="table-row-hover {{ 'cursor-pointer' if row_url else '' }} {{ classes }}"
+      {% if row_url %}data-row-url="{{ row_url }}"{% endif %}
       style="color: var(--color-body-text);">
     {{ caller() }}
   </tr>

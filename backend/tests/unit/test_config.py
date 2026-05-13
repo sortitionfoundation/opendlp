@@ -11,6 +11,8 @@ from opendlp.config import (
     FlaskTestConfig,
     InvalidConfig,
     get_config,
+    get_max_csv_upload_bytes,
+    get_max_csv_upload_mb,
     get_task_timeout_hours,
     to_bool,
 )
@@ -209,3 +211,35 @@ class TestGetTaskTimeoutHours:
         """Test that function returns default for negative value."""
         temp_env_vars(TASK_TIMEOUT_HOURS="-5")
         assert get_task_timeout_hours() == 24
+
+
+class TestGetMaxCsvUploadMb:
+    """Test the get_max_csv_upload_mb function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("MAX_CSV_UPLOAD_MB")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="100")
+        assert get_max_csv_upload_mb() == 100
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="not-a-number")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="0")
+        assert get_max_csv_upload_mb() == 1
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="9999")
+        assert get_max_csv_upload_mb() == 500
+
+    def test_bytes_helper_multiplies_by_1024_squared(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="3")
+        assert get_max_csv_upload_bytes() == 3 * 1024 * 1024

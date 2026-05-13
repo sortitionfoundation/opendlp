@@ -58,6 +58,19 @@ def can_view_assembly(user: User, assembly: Assembly) -> bool:
     return any(role.assembly_id == assembly.id for role in user.assembly_roles)
 
 
+def can_edit_respondent(user: User, assembly: Assembly) -> bool:
+    """Who can edit respondent attributes via the backoffice edit page."""
+    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+        return True
+    for role in user.assembly_roles:
+        if role.assembly_id == assembly.id and role.role in (
+            AssemblyRole.ASSEMBLY_MANAGER,
+            AssemblyRole.CONFIRMATION_CALLER,
+        ):
+            return True
+    return False
+
+
 def can_call_confirmations(user: User, assembly: Assembly) -> bool:
     """
     Check if user can call confirmations for an assembly.

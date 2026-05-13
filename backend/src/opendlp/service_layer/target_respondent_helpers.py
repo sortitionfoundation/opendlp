@@ -4,19 +4,22 @@ ABOUTME: Used by both backoffice targets and legacy targets blueprints."""
 import uuid
 
 from opendlp import bootstrap
+from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.respondent_service import (
     get_respondent_attribute_columns,
     get_respondent_attribute_value_counts,
     get_selected_respondent_attribute_value_counts,
 )
 
-# When looking at respondent data and choosing columns which are reasonable to use
-# as target categories, we want columns with not too many distinct values - as every distinct
-# value needs a category value with min and max values. This can be quite a few - sometimes
-# we have more than 10 regions. But it is rare for the number of values for a single target
-# category to be over 20, so we use this as a rule of thumb for which columns we suggest as
-# target categories.
-MAX_DISTINCT_VALUES_FOR_AUTO_ADD = 20
+__all__ = [
+    "MAX_DISTINCT_VALUES_FOR_AUTO_ADD",
+    "build_respondent_counts",
+    "build_selected_counts",
+    "get_assembly_respondent_attribute_columns",
+    "get_column_distinct_counts",
+    "get_respondent_counts_for_category",
+    "get_selected_counts_for_category",
+]
 
 
 def get_assembly_respondent_attribute_columns(assembly_id: uuid.UUID) -> list[str]:

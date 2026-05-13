@@ -878,6 +878,7 @@ class TestNonPoolRespondentWarning:
                 assembly_id=assembly_id,
                 external_ids=["R001"],
                 selection_run_id=run_id,
+                author_id=admin_user.id,
             )
             uow.commit()
 

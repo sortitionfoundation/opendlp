@@ -3,14 +3,13 @@ ABOUTME: Shared assembly navigation tabs macro
 ABOUTME: Ensures consistent tab display across all assembly pages
 #}
 {% from "backoffice/components/tabs.html" import tabs %}
-
 {% macro assembly_tabs(assembly, active_tab, data_source="", gsheet=none, targets_enabled=false, respondents_enabled=false, selection_enabled=false, preserve_scroll=true) %}
     {#
     Render consistent assembly navigation tabs across all assembly pages.
 
     Args:
         assembly: The assembly object
-        active_tab: Current active tab - one of: "details", "data", "targets", "respondents", "selection", "members"
+        active_tab: Current active tab - one of: "details", "data", "fields", "targets", "respondents", "selection", "members"
         data_source: Current data source ("gsheet", "csv", or "")
         gsheet: Google Sheet configuration object (if exists)
         targets_enabled: Whether the Targets tab should be clickable
@@ -24,13 +23,11 @@ ABOUTME: Ensures consistent tab display across all assembly pages
         assembly_tabs(assembly, "targets", data_source="gsheet", gsheet=gsheet, targets_enabled=true, selection_enabled=true)
     #}
     {% set source_param = "?source=" ~ data_source if data_source else "" %}
-
-    {{ tabs(
-    id="assembly-tabs",
+    {{ tabs(id="assembly-tabs",
     items=[
     {
     "key": "details",
-    "label": _("Details"),
+    "label": _("Details") ,
     "href": url_for('backoffice.view_assembly', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "details"
     },
@@ -39,6 +36,12 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "label": _("Data"),
     "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "data"
+    },
+    {
+    "key": "fields",
+    "label": _("Fields"),
+    "href": url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) ~ source_param,
+    "active": active_tab == "fields"
     },
     {
     "key": "targets",
