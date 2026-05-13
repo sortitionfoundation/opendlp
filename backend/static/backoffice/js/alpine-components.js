@@ -10,51 +10,21 @@
 
 /**
  * Set a query parameter on a URL, replacing any existing value.
+ * Uses the built-in URL and URLSearchParams APIs for reliable parsing.
  *
- * @param {string} url - The base URL
+ * @param {string} url - The base URL (can be relative or absolute)
  * @param {string} param - The parameter name
  * @param {string} value - The parameter value
  * @returns {string} URL with parameter set
  */
 function urlSetParam(url, param, value) {
-    // Split URL into base and hash parts
-    var hashIndex = url.indexOf("#");
-    var hash = "";
-    var baseUrl = url;
-    if (hashIndex !== -1) {
-        hash = url.substring(hashIndex);
-        baseUrl = url.substring(0, hashIndex);
+    var urlObj = new URL(url, window.location.origin);
+    urlObj.searchParams.set(param, value);
+    // Return relative URL for relative inputs, absolute for absolute inputs
+    if (url.match(/^(https?:)?\/\//)) {
+        return urlObj.href;
     }
-
-    // Parse existing query string
-    var queryIndex = baseUrl.indexOf("?");
-    var path = baseUrl;
-    var queryString = "";
-    if (queryIndex !== -1) {
-        path = baseUrl.substring(0, queryIndex);
-        queryString = baseUrl.substring(queryIndex + 1);
-    }
-
-    // Parse and update params
-    var params = [];
-    var replaced = false;
-    if (queryString) {
-        var pairs = queryString.split("&");
-        for (var i = 0; i < pairs.length; i++) {
-            var pair = pairs[i].split("=");
-            if (pair[0] === param) {
-                params.push(param + "=" + encodeURIComponent(value));
-                replaced = true;
-            } else {
-                params.push(pairs[i]);
-            }
-        }
-    }
-    if (!replaced) {
-        params.push(param + "=" + encodeURIComponent(value));
-    }
-
-    return path + "?" + params.join("&") + hash;
+    return urlObj.pathname + urlObj.search + urlObj.hash;
 }
 
 /* ========================================
