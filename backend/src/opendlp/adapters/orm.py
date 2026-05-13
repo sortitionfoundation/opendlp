@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
+from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType, RespondentFieldGroup
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
@@ -173,6 +174,27 @@ class RespondentCommentListJSON(TypeDecorator):
         if not value:
             return []
         return [RespondentComment.from_dict(item) if isinstance(item, dict) else item for item in value]
+
+
+class ChoiceOptionListJSON(TypeDecorator):
+    """Custom type for storing a list of ChoiceOption dataclasses as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [o.to_dict() if isinstance(o, ChoiceOption) else o for o in value]
+        return value
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> list[ChoiceOption] | None:
+        if value is None:
+            return None
+        if not value:
+            return None
+        return [ChoiceOption.from_dict(item) if isinstance(item, dict) else item for item in value]
 
 
 # Create a registry for imperative mapping
@@ -467,7 +489,6 @@ respondents = Table(
     Column("can_attend", Boolean, nullable=True),
     Column("email", String(255), nullable=False, default="", index=True),
     Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
-    Column("source_reference", String(500), nullable=False, default=""),
     Column("attributes", JSON, nullable=False, default=dict),
     Column("comments", RespondentCommentListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -476,4 +497,34 @@ respondents = Table(
     Index("ix_respondents_assembly_external", "assembly_id", "external_id", unique=True),
     # Composite index for selection queries
     Index("ix_respondents_selection", "assembly_id", "selection_status", "eligible", "can_attend"),
+)
+
+# Respondent field definitions table — per-assembly schema driving grouped display.
+respondent_field_definitions = Table(
+    "respondent_field_definitions",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("field_key", String(255), nullable=False),
+    Column("label", String(255), nullable=False),
+    Column("field_group", EnumAsString(RespondentFieldGroup, 50), nullable=False),
+    Column("sort_order", Integer, nullable=False, default=0),
+    Column("is_fixed", Boolean, nullable=False, default=False),
+    Column("is_derived", Boolean, nullable=False, default=False),
+    Column("derived_from", JSON, nullable=True),
+    Column("derivation_kind", String(100), nullable=False, default=""),
+    Column("field_type", EnumAsString(FieldType, 32), nullable=False, default=FieldType.TEXT),
+    Column("options", ChoiceOptionListJSON, nullable=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    # Unique field_key per assembly
+    Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
+    # Composite index for grouped display (ordered read path)
+    Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
 )

@@ -1,0 +1,109 @@
+{#
+ABOUTME: Confirmation page for a CSV upload that would change the respondent field schema
+ABOUTME: Lists added / absent columns and id-column changes; user confirms or cancels
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+
+{% block title %}{{ _("Confirm upload") }} - {{ assembly.title }}{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv')},
+        {"label": _("Confirm upload")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Confirm CSV upload") }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("This upload will change which fields exist in the respondent schema for") }}
+        <strong>{{ assembly.title }}</strong>.
+        {{ _("Review the changes below, then confirm or cancel.") }}
+    </p>
+
+    <p class="text-body-md mb-4">
+        {{ _("File:") }} <strong>{{ filename }}</strong>
+    </p>
+
+    {% if diff.id_column_changed %}
+        <section class="mb-6">
+            <strong class="govuk-tag govuk-tag--yellow">{{ _("ID column changed") }}</strong>
+            <p class="text-body-md mt-2">
+                {{ _("The ID column has changed from %(old)s to %(new)s.",
+                old="<code>" + diff.id_column_changed[0] + "</code>",
+                new="<code>" + diff.id_column_changed[1] + "</code>")|safe }}
+                {{ _("Existing respondents will be replaced — make sure this is intentional.") }}
+            </p>
+        </section>
+    {% endif %}
+
+    {% if new_keys_with_labels %}
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">
+                {{ _("New columns") }} ({{ new_keys_with_labels|length }})
+            </h2>
+            <p class="text-body-md mb-4">
+                {{ _("These columns are in the new CSV but not in the existing schema. They'll be added with the suggested groups; you can re-group them afterwards.") }}
+            </p>
+            <table class="w-full text-left">
+                <thead>
+                    <tr>
+                        <th class="text-body-md font-bold py-2">{{ _("Column") }}</th>
+                        <th class="text-body-md font-bold py-2">{{ _("Suggested group") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in new_keys_with_labels %}
+                        <tr>
+                            <td class="py-2"><code>{{ entry.key }}</code></td>
+                            <td class="py-2">{{ entry.group_label }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% endif %}
+
+    {% if diff.absent_keys %}
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">
+                {{ _("Columns no longer in CSV") }} ({{ diff.absent_keys|length }})
+            </h2>
+            <p class="text-body-md mb-4">
+                {{ _("These columns existed in the previous schema but are missing from the new CSV. The schema entries are kept (so the layout sticks if the column reappears) but no respondent will have data for them.") }}
+            </p>
+            <ul class="list-disc pl-6">
+                {% for key in diff.absent_keys %}
+                    <li><code>{{ key }}</code></li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if diff.unchanged %}
+        <section class="mb-8">
+            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                {{ _("Unchanged columns:") }} {{ diff.unchanged|length }}
+            </p>
+        </section>
+    {% endif %}
+
+    <section class="mb-8">
+        <strong class="govuk-tag govuk-tag--red">{{ _("Destructive action") }}</strong>
+        <p class="text-body-md mt-2">
+            {{ _("Confirming will replace all existing respondents for this assembly with the contents of the new CSV. This cannot be undone.") }}
+        </p>
+    </section>
+
+    <form method="post" action="{{ url_for('respondents.apply_upload_diff', assembly_id=assembly.id) }}" class="flex gap-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ button(_("Confirm and import"), type="submit", variant="primary", attrs='name="action" value="confirm"') }}
+        {{ button(_("Cancel"), type="submit", variant="secondary", attrs='name="action" value="cancel"') }}
+    </form>
+{% endblock %}

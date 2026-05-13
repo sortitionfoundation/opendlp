@@ -43,10 +43,32 @@ class TestRespondentComment:
             "author_id": str(author),
             "created_at": created.isoformat(),
             "action": "EDIT",
+            "selection_run_id": None,
         }
+
+    def test_to_dict_includes_selection_run_id(self):
+        author = uuid.uuid4()
+        run_id = uuid.uuid4()
+        created = datetime(2026, 4, 17, 12, 0, tzinfo=UTC)
+        comment = RespondentComment(
+            text="selected",
+            author_id=author,
+            created_at=created,
+            action=RespondentAction.SELECT,
+            selection_run_id=run_id,
+        )
+        assert comment.to_dict()["selection_run_id"] == str(run_id)
 
     def test_from_dict_round_trips(self):
         original = self._sample(action=RespondentAction.DELETE)
+        restored = RespondentComment.from_dict(original.to_dict())
+        assert restored == original
+
+    def test_from_dict_round_trips_with_selection_run_id(self):
+        original = self._sample(
+            action=RespondentAction.SELECT,
+            selection_run_id=uuid.uuid4(),
+        )
         restored = RespondentComment.from_dict(original.to_dict())
         assert restored == original
 
@@ -62,6 +84,7 @@ class TestRespondentComment:
         assert restored.text == "legacy row"
         assert restored.author_id == author
         assert restored.created_at == created
+        assert restored.selection_run_id is None
 
     def test_is_frozen(self):
         comment = self._sample()

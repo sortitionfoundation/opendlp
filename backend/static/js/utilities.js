@@ -26,6 +26,23 @@ document.addEventListener("change", function (e) {
   }
 });
 
+// Make table rows with data-row-url navigate when clicked.
+// Clicks on links, buttons, or other interactive elements are left alone, so
+// per-row links (e.g. View / Edit) keep working. A drag-selection is also
+// ignored so users can still highlight cell text without being navigated away.
+document.addEventListener("click", function (e) {
+  var row = e.target.closest("[data-row-url]");
+  if (!row) return;
+  if (e.target.closest("a, button, input, select, textarea, label")) return;
+  if (window.getSelection && window.getSelection().toString()) return;
+  var url = row.dataset.rowUrl;
+  if (e.metaKey || e.ctrlKey || e.shiftKey) {
+    window.open(url, "_blank");
+  } else {
+    window.location.href = url;
+  }
+});
+
 // Handle button clicks for confirmations and print
 document.addEventListener("click", function (e) {
   // Check for confirmation

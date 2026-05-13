@@ -157,6 +157,18 @@ MONITOR_USER_ID=
 See [docs/monitoring.md](monitoring.md) for the full feature
 description, provisioning steps, and operator runbook.
 
+### Help Site URLs
+
+External help site URLs linked from base templates (header "Help" link and footer "User Data Agreement" link):
+
+```bash
+# Help site landing page (replaces the in-app support page)
+HELP_SITE_HOME=https://docs.sortitionlab.org/help/
+
+# Data agreement page (replaces the in-app user data agreement page)
+HELP_SITE_DATA_AGREEMENT=https://docs.sortitionlab.org/data-and-legal/data-agreement/
+```
+
 ### Site Banner Configuration
 
 Display a banner at the top of all pages to distinguish demo/staging environments from production:

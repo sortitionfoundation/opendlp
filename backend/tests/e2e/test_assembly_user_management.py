@@ -66,6 +66,43 @@ def login_as_admin(client: FlaskClient, admin_user: User) -> None:
 class TestAddUserToAssembly:
     """Test adding users to assemblies."""
 
+    def test_role_picker_includes_read_only_option(
+        self,
+        client: FlaskClient,
+        admin_user: User,
+        existing_assembly: Assembly,
+    ):
+        login_as_admin(client, admin_user)
+        response = client.get(f"/assemblies/{existing_assembly.id}/members")
+        assert response.status_code == 200
+        assert b"Read Only" in response.data
+        assert AssemblyRole.READ_ONLY.name.encode() in response.data
+
+    def test_add_user_to_assembly_with_read_only_role(
+        self,
+        client: FlaskClient,
+        admin_user: User,
+        regular_user: User,
+        existing_assembly: Assembly,
+        postgres_session_factory,
+    ):
+        login_as_admin(client, admin_user)
+        response = client.post(
+            f"/assemblies/{existing_assembly.id}/members",
+            data={
+                "user_id": str(regular_user.id),
+                "role": AssemblyRole.READ_ONLY.name,
+                "csrf_token": get_csrf_token(client, f"/assemblies/{existing_assembly.id}/members"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            refreshed_user = uow.users.get(regular_user.id)
+            refreshed_assembly = uow.assemblies.get(existing_assembly.id)
+            assert can_view_assembly(refreshed_user, refreshed_assembly)
+            assert not can_manage_assembly(refreshed_user, refreshed_assembly)
+
     def test_add_user_to_assembly_success(
         self,
         client: FlaskClient,

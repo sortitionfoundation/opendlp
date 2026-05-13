@@ -178,7 +178,8 @@ class TestBulkMarkAsSelected:
         respondent_backend.persist(run_record)
         respondent_backend.commit()
 
-        respondent_backend.repo.bulk_mark_as_selected(assembly.id, ["R001", "R003"], run_record.task_id)
+        author_id = uuid.uuid4()
+        respondent_backend.repo.bulk_mark_as_selected(assembly.id, ["R001", "R003"], run_record.task_id, author_id)
         respondent_backend.commit()
 
         r1 = respondent_backend.repo.get_by_external_id(assembly.id, "R001")
@@ -187,6 +188,12 @@ class TestBulkMarkAsSelected:
         assert r1 is not None and r1.selection_status == RespondentStatus.SELECTED
         assert r2 is not None and r2.selection_status == RespondentStatus.POOL
         assert r3 is not None and r3.selection_status == RespondentStatus.SELECTED
+        # Each selected respondent gets a SELECT comment carrying the run id.
+        select_comments_r1 = [c for c in r1.comments if c.action.value == "SELECT"]
+        assert len(select_comments_r1) == 1
+        assert select_comments_r1[0].selection_run_id == run_record.task_id
+        assert select_comments_r1[0].author_id == author_id
+        assert not any(c.action.value == "SELECT" for c in r2.comments)
 
 
 class TestResetAllToPool:

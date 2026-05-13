@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import config
-from opendlp.entrypoints.context_processors import inject_feature_flags, static_versioning_context_processor
+from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
 
 
@@ -72,7 +72,7 @@ def create_app(config_name: str = "") -> Flask:
 
 def register_context_processors(app: Flask) -> None:
     """Register template context processors."""
-    app.context_processor(static_versioning_context_processor)
+    app.context_processor(inject_template_globals)
     app.context_processor(inject_feature_flags)
 
     @app.context_processor
@@ -93,6 +93,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
+    from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
     from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
     from .blueprints.targets import targets_bp  # noqa: PLC0415
@@ -115,6 +116,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(db_selection_backoffice_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_bp, url_prefix="/backoffice")
     app.register_blueprint(respondents_bp, url_prefix="/backoffice")
+    app.register_blueprint(respondent_field_schema_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_legacy_bp)
     app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)

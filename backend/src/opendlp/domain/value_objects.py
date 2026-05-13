@@ -37,12 +37,14 @@ def get_role_level(role: GlobalRole) -> int:
 class AssemblyRole(Enum):
     ASSEMBLY_MANAGER = "assembly-manager"
     CONFIRMATION_CALLER = "confirmation-caller"
+    READ_ONLY = "read-only"
 
 
 # for forms etc
 assembly_role_options = {
     AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager - Can manage the assembly and add other users"),
     AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller - Can call confirmations for selected participants"),
+    AssemblyRole.READ_ONLY.name: _l("Read Only - Can view the assembly but cannot make changes"),
 }
 
 
@@ -112,7 +114,6 @@ class RespondentStatus(Enum):
     SELECTED = "SELECTED"
     CONFIRMED = "CONFIRMED"
     WITHDRAWN = "WITHDRAWN"
-    PARTICIPATED = "PARTICIPATED"
     DELETED = "DELETED"
 
     @classmethod
@@ -126,16 +127,34 @@ class RespondentStatus(Enum):
             return None
 
 
+# Manual transitions allowed from the backoffice view-respondent page.
+# Any move between the four active statuses is permitted; moves to or from
+# DELETED are excluded (DELETED is reached only via the GDPR delete form).
+ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+    RespondentStatus.POOL: [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.SELECTED: [RespondentStatus.POOL, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.CONFIRMED: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.WITHDRAWN: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.CONFIRMED],
+    RespondentStatus.DELETED: [],
+}
+
+
 class RespondentAction(Enum):
     """Type of action a RespondentComment records.
 
     NONE is a plain comment with no system action attached.
-    EDIT records a change to the respondent's details.
+    CREATE records the initial creation of the respondent.
+    EDIT records a change to the respondent's attributes or eligibility flags.
+    STATUS_CHANGE records a manual selection-status transition.
+    SELECT records inclusion in a selection run.
     DELETE records a GDPR personal-data deletion.
     """
 
     NONE = "NONE"
+    CREATE = "CREATE"
     EDIT = "EDIT"
+    STATUS_CHANGE = "STATUS_CHANGE"
+    SELECT = "SELECT"
     DELETE = "DELETE"
 
 

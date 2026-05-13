@@ -12,6 +12,8 @@ from opendlp.config import (
     FlaskTestConfig,
     InvalidConfig,
     get_config,
+    get_max_csv_upload_bytes,
+    get_max_csv_upload_mb,
     get_monitor_assembly_id,
     get_monitor_health_max_age_minutes,
     get_monitor_user_id,
@@ -267,3 +269,35 @@ class TestMonitorConfig:
     def test_max_age_returns_value_when_valid(self, temp_env_vars):
         temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="45")
         assert get_monitor_health_max_age_minutes() == 45
+
+
+class TestGetMaxCsvUploadMb:
+    """Test the get_max_csv_upload_mb function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("MAX_CSV_UPLOAD_MB")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="100")
+        assert get_max_csv_upload_mb() == 100
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="not-a-number")
+        assert get_max_csv_upload_mb() == 50
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="0")
+        assert get_max_csv_upload_mb() == 1
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="9999")
+        assert get_max_csv_upload_mb() == 500
+
+    def test_bytes_helper_multiplies_by_1024_squared(self, temp_env_vars):
+        temp_env_vars(MAX_CSV_UPLOAD_MB="3")
+        assert get_max_csv_upload_bytes() == 3 * 1024 * 1024

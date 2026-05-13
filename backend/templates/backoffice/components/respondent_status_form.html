@@ -1,0 +1,94 @@
+{#
+ABOUTME: Selection-status block for a respondent — current status + transition controls
+ABOUTME: Shared between the view-respondent and edit-respondent pages
+#}
+{% from "backoffice/components/button.html" import button %}
+{# Selection status block: current value, optional run id, and per-target
+   collapsible transition forms.
+
+Args:
+  assembly: Assembly the respondent belongs to (used for url_for).
+  respondent: The respondent being displayed.
+  allowed_transitions: List of RespondentStatus enum *values* (strings) the
+                      current user may transition this respondent to. Pass
+                      an empty list to show only the read-only status block.
+#}
+{% macro respondent_status_form(assembly, respondent, allowed_transitions) %}
+    {% set selection_status_colours = {"POOL": "grey", "SELECTED": "blue", "CONFIRMED": "green", "WITHDRAWN": "yellow"} %}
+    {% set status_key = respondent.selection_status.value %}
+    {% set status_colour = selection_status_colours.get(status_key, "grey") %}
+    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Selection status") }}</h2>
+    <dl class="flex flex-col gap-2 mb-4">
+        <div class="flex items-baseline gap-3">
+            <dt class="text-body-md font-bold">{{ _("Current status:") }}</dt>
+            <dd>
+                <strong class="govuk-tag govuk-tag--{{ status_colour }}">{{ status_key|title }}</strong>
+            </dd>
+        </div>
+        {% if respondent.selection_run_id %}
+            <div class="flex items-baseline gap-3">
+                <dt class="text-body-md font-bold">{{ _("Selection run ID:") }}</dt>
+                <dd class="text-body-md">
+                    {{ respondent.selection_run_id }}
+                </dd>
+            </div>
+        {% endif %}
+    </dl>
+    {% if allowed_transitions %}
+        {#
+        Buttons and per-target panels live in one Alpine scope. Each target
+        renders twice — once secondary (shown when inactive) and once primary
+        (shown when active, with aria-pressed) — so the chosen target stays
+        visually highlighted while the reason panel is open. Clicking the
+        active (primary) button toggles the selection off again.
+
+        The reason panels are *siblings* of the button row, not flex children,
+        so the buttons keep their natural height even when a panel is open.
+        #}
+        <div x-data="{ open_target: '' }">
+            <div class="flex flex-wrap gap-3 items-start">
+                {% for target in allowed_transitions %}
+                    {{ button(
+                    _("Change to %(status)s", status=target|title),
+                    variant="secondary",
+                    aria_pressed="false",
+                    attrs='x-show="open_target !== \'' + target + '\'" @click="open_target = \'' + target + '\'"'
+                    ) }}
+                    {{ button(
+                    _("Change to %(status)s", status=target|title),
+                    variant="primary",
+                    aria_pressed="true",
+                    attrs='x-cloak x-show="open_target === \'' + target + '\'" @click="open_target = \'\'"'
+                    ) }}
+                {% endfor %}
+            </div>
+            {% for target in allowed_transitions %}
+                <div x-cloak
+                     x-show="open_target === '{{ target }}'"
+                     class="mt-4 p-4 border border-gray-300 rounded bg-white"
+                     style="max-width: 36rem">
+                    <p class="text-body-md mb-3">
+                        {{ _("This will mark the respondent as <strong>%(status)s</strong>. The change is logged with your comment.", status=target|title) }}
+                    </p>
+                    <form method="post"
+                          action="{{ url_for('respondents.transition_status', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                          class="flex flex-col gap-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="new_status" value="{{ target }}" />
+                        <label class="text-body-sm font-bold" for="transition-comment-{{ target }}">{{ _("Reason (required)") }}</label>
+                        <textarea id="transition-comment-{{ target }}"
+                                  name="comment"
+                                  rows="3"
+                                  required
+                                  class="border border-gray-300 rounded p-2"
+                                  placeholder="{{ _('e.g. confirmed on call with participant') }}"></textarea>
+                        <div class="flex gap-3">
+                            {{ button(_("Confirm") , type="submit", variant="primary") }}
+                            {{ button(_("Cancel") , variant="outline", attrs='@click="open_target = \'\'"') }}
+                        </div>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}

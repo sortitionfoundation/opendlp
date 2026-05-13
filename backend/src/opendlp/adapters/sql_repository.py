@@ -14,6 +14,10 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.respondent_field_schema import (
+    GROUP_DISPLAY_ORDER,
+    RespondentFieldDefinition,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
@@ -24,6 +28,7 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
     AssemblyStatus,
     GlobalRole,
+    RespondentAction,
     RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
@@ -33,6 +38,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -986,23 +992,29 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         assembly_id: uuid.UUID,
         external_ids: list[str],
         selection_run_id: uuid.UUID,
+        author_id: uuid.UUID,
     ) -> None:
         if not external_ids:
             return
-        self.session.execute(
-            update(orm.respondents)
-            .where(
+        rows = (
+            self.session
+            .query(Respondent)
+            .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.external_id.in_(external_ids),
                 )
             )
-            .values(
-                selection_status=RespondentStatus.SELECTED,
-                selection_run_id=selection_run_id,
-                updated_at=datetime.now(UTC),
-            )
+            .all()
         )
+        for respondent in rows:
+            respondent.mark_as_selected(selection_run_id)
+            respondent.add_comment(
+                text="Selected in run",
+                author_id=author_id,
+                action=RespondentAction.SELECT,
+                selection_run_id=selection_run_id,
+            )
 
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count: int = (
@@ -1095,3 +1107,72 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .group_by(val_col)
         ).all()
         return {row.val: row.cnt for row in rows if row.val is not None}
+
+
+class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, RespondentFieldDefinitionRepository):
+    """SQLAlchemy implementation of RespondentFieldDefinitionRepository."""
+
+    def add(self, item: RespondentFieldDefinition) -> None:
+        self.session.add(item)
+
+    def bulk_add(self, items: list[RespondentFieldDefinition]) -> None:
+        self.session.add_all(items)
+
+    def get(self, item_id: uuid.UUID) -> RespondentFieldDefinition | None:
+        return (
+            self.session
+            .query(RespondentFieldDefinition)
+            .filter(orm.respondent_field_definitions.c.id == item_id)
+            .first()
+        )
+
+    def all(self) -> Iterable[RespondentFieldDefinition]:
+        return self.session.query(RespondentFieldDefinition).all()
+
+    def get_by_assembly_and_key(self, assembly_id: uuid.UUID, field_key: str) -> RespondentFieldDefinition | None:
+        return (
+            self.session
+            .query(RespondentFieldDefinition)
+            .filter(
+                and_(
+                    orm.respondent_field_definitions.c.assembly_id == assembly_id,
+                    orm.respondent_field_definitions.c.field_key == field_key,
+                )
+            )
+            .first()
+        )
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
+        rows = (
+            self.session
+            .query(RespondentFieldDefinition)
+            .filter(orm.respondent_field_definitions.c.assembly_id == assembly_id)
+            .all()
+        )
+        # Order by GROUP_DISPLAY_ORDER in Python — the display order is a fixed
+        # Python list, so a CASE statement in SQL would be more work for the same result.
+        group_index = {group: i for i, group in enumerate(GROUP_DISPLAY_ORDER)}
+        return sorted(
+            rows,
+            key=lambda f: (group_index.get(f.group, len(GROUP_DISPLAY_ORDER)), f.sort_order, f.field_key),
+        )
+
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
+        return (
+            self.session
+            .query(RespondentFieldDefinition)
+            .filter(orm.respondent_field_definitions.c.assembly_id == assembly_id)
+            .count()
+        )
+
+    def delete(self, item: RespondentFieldDefinition) -> None:
+        self.session.delete(item)
+
+    def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
+        self.session.expire_all()
+        result = self.session.execute(
+            delete(orm.respondent_field_definitions).where(
+                orm.respondent_field_definitions.c.assembly_id == assembly_id
+            )
+        )
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
