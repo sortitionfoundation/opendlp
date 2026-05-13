@@ -23,7 +23,8 @@ def redirect_preserving_scroll(url: str) -> ResponseReturnValue:
         return redirect_preserving_scroll(url_for("my.route", id=item_id))
     """
     scroll = request.args.get("scroll")
-    if scroll:
+    # Validate scroll is a non-negative integer to prevent injection
+    if scroll and scroll.isdigit():
         # Handle hash fragments: query params must come before the hash
         hash_index = url.find("#")
         if hash_index != -1:

@@ -83,3 +83,30 @@ class TestRedirectPreservingScroll:
             response = redirect_preserving_scroll("/target/url?source=csv&mode=edit")
             assert response.status_code == 302
             assert response.location == "/target/url?source=csv&mode=edit&scroll=100"
+
+    def test_redirect_with_non_numeric_scroll_is_ignored(self, app: Flask) -> None:
+        """Non-numeric scroll values are ignored for security."""
+        with app.test_request_context("/some/path?scroll=abc"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
+
+    def test_redirect_with_negative_scroll_is_ignored(self, app: Flask) -> None:
+        """Negative scroll values are ignored (isdigit returns False for -)."""
+        with app.test_request_context("/some/path?scroll=-100"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
+
+    def test_redirect_with_injection_attempt_is_ignored(self, app: Flask) -> None:
+        """Potential injection attempts in scroll param are ignored."""
+        with app.test_request_context("/some/path?scroll=100&evil=true"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            # Only the numeric scroll value should be preserved
+            assert response.location == "/target/url?scroll=100"
+        # Try actual malicious value
+        with app.test_request_context("/some/path?scroll=<script>"):
+            response = redirect_preserving_scroll("/target/url")
+            assert response.status_code == 302
+            assert response.location == "/target/url"
