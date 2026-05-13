@@ -1,6 +1,8 @@
 """ABOUTME: Utility functions for scroll preservation across redirects
 ABOUTME: Provides redirect_preserving_scroll to maintain scroll position after form submissions"""
 
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 from flask import redirect, request
 from flask.typing import ResponseReturnValue
 
@@ -25,16 +27,9 @@ def redirect_preserving_scroll(url: str) -> ResponseReturnValue:
     scroll = request.args.get("scroll")
     # Validate scroll is a non-negative integer to prevent injection
     if scroll and scroll.isdigit():
-        # Handle hash fragments: query params must come before the hash
-        hash_index = url.find("#")
-        if hash_index != -1:
-            base_url = url[:hash_index]
-            hash_fragment = url[hash_index:]
-        else:
-            base_url = url
-            hash_fragment = ""
-
-        # Append scroll parameter to the base URL
-        separator = "&" if "?" in base_url else "?"
-        url = f"{base_url}{separator}scroll={scroll}{hash_fragment}"
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+        params["scroll"] = [scroll]
+        new_query = urlencode(params, doseq=True)
+        url = urlunparse(parsed._replace(query=new_query))
     return redirect(url)
