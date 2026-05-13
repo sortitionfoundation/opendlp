@@ -28,6 +28,16 @@ from opendlp.service_layer.respondent_service import (
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
+
+def _is_safe_redirect_url(url: str) -> bool:
+    """Check if a URL is safe for redirection (internal only).
+
+    Prevents open redirect attacks by only allowing relative URLs.
+    """
+    # Only allow relative URLs that start with / but not // (protocol-relative)
+    return url.startswith("/") and not url.startswith("//")
+
+
 dev_bp = Blueprint("dev", __name__)
 
 
@@ -436,5 +446,9 @@ def flash_test() -> ResponseReturnValue:
 
     flash(message, flash_type)
 
-    return_url = request.form.get("return_url", url_for("dev.patterns", tab="floating-alerts"))
+    default_url = url_for("dev.patterns", tab="floating-alerts")
+    return_url = request.form.get("return_url", default_url)
+    # Validate return_url to prevent open redirect attacks
+    if not _is_safe_redirect_url(return_url):
+        return_url = default_url
     return redirect(return_url)
