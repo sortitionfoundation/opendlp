@@ -375,6 +375,49 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
+@login_required
+def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Save registration form configuration (stub - service layer not yet implemented)."""
+    try:
+        # Verify user has permission to access this assembly (side effect: raises if unauthorized)
+        _nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            "",
+        )
+
+        # Extract form data (for future use when service layer is ready)
+        url_slug = request.form.get("url_slug", "").strip()
+        short_url_slug = request.form.get("short_url_slug", "").strip()
+
+        # TODO: Call service layer to save registration page when available
+        # save_registration_page(uow, assembly_id, url_slug, short_url_slug, ...)
+
+        # Stub: flash message indicating save is not yet implemented
+        current_app.logger.info(
+            f"Registration save stub called for assembly {assembly_id}: url_slug={url_slug}, short_url_slug={short_url_slug}"
+        )
+        flash(_("Registration settings saved (stub - persistence not yet implemented)"), "info")
+
+        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to modify this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(
+            f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("An error occurred while saving registration settings"), "error")
+        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
