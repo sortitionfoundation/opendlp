@@ -8,8 +8,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentAction,
+    RespondentSourceType,
+    RespondentStatus,
+)
 from opendlp.translations import gettext as _
+
+_UNSET: Any = object()
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,10 @@ class RespondentComment:
     author_id: uuid.UUID
     created_at: datetime
     action: RespondentAction = RespondentAction.NONE
+    # Set on SELECT comments so the activity view can link back to the run
+    # that included this respondent, even after later status transitions
+    # clear `Respondent.selection_run_id`.
+    selection_run_id: uuid.UUID | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -27,15 +38,18 @@ class RespondentComment:
             "author_id": str(self.author_id),
             "created_at": self.created_at.isoformat(),
             "action": self.action.value,
+            "selection_run_id": str(self.selection_run_id) if self.selection_run_id else None,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RespondentComment":
+        run_id_raw = data.get("selection_run_id")
         return cls(
             text=data["text"],
             author_id=uuid.UUID(data["author_id"]),
             created_at=datetime.fromisoformat(data["created_at"]),
             action=RespondentAction(data.get("action", RespondentAction.NONE.value)),
+            selection_run_id=uuid.UUID(run_id_raw) if run_id_raw else None,
         )
 
 
@@ -76,7 +90,6 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "can_attend",
         "email",
         "source_type",
-        "source_reference",
         "created_at",
         "updated_at",
         "comments",
@@ -118,7 +131,6 @@ class Respondent:
         can_attend: bool | None = None,
         email: str = "",
         source_type: RespondentSourceType = RespondentSourceType.MANUAL_ENTRY,
-        source_reference: str = "",
         attributes: dict[str, Any] | None = None,
         respondent_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -139,7 +151,6 @@ class Respondent:
         self.can_attend = can_attend
         self.email = email.strip()
         self.source_type = source_type
-        self.source_reference = source_reference.strip()
         self.attributes = attributes or {}
         validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
@@ -171,6 +182,7 @@ class Respondent:
         text: str,
         author_id: uuid.UUID,
         action: RespondentAction = RespondentAction.NONE,
+        selection_run_id: uuid.UUID | None = None,
     ) -> None:
         """Append a comment authored by the given user."""
         text = text.strip()
@@ -181,11 +193,109 @@ class Respondent:
             author_id=author_id,
             created_at=datetime.now(UTC),
             action=action,
+            selection_run_id=selection_run_id,
         )
         # Reassign rather than mutate in place so SQLAlchemy's JSON column
         # change-detection sees the new value.
         self.comments = [*self.comments, new_comment]
         self.updated_at = datetime.now(UTC)
+
+    def _apply_flag_edits(
+        self,
+        email: str | None,
+        eligible: bool | None,
+        can_attend: bool | None,
+        consent: bool | None,
+        stay_on_db: bool | None,
+    ) -> bool:
+        changed = False
+        if email is not _UNSET:
+            new_email = (email or "").strip()
+            if new_email != self.email:
+                self.email = new_email
+                changed = True
+        flag_updates = (
+            ("eligible", eligible),
+            ("can_attend", can_attend),
+            ("consent", consent),
+            ("stay_on_db", stay_on_db),
+        )
+        for attr_name, new_value in flag_updates:
+            if new_value is _UNSET:
+                continue
+            if getattr(self, attr_name) != new_value:
+                setattr(self, attr_name, new_value)
+                changed = True
+        return changed
+
+    def apply_edit(
+        self,
+        *,
+        author_id: uuid.UUID,
+        comment: str,
+        email: str | None = _UNSET,
+        eligible: bool | None = _UNSET,
+        can_attend: bool | None = _UNSET,
+        consent: bool | None = _UNSET,
+        stay_on_db: bool | None = _UNSET,
+        attributes: dict[str, Any] | None = None,
+    ) -> None:
+        """Apply an edit from the backoffice. `comment` is required.
+
+        Sentinels on email/eligible/can_attend/consent/stay_on_db let callers
+        distinguish "leave alone" from "set to None". Attributes, when passed,
+        are merged into the existing dict.
+        """
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required on edit")
+        if self.selection_status == RespondentStatus.DELETED:
+            raise ValueError("Cannot edit a DELETED respondent")
+
+        changed = self._apply_flag_edits(email, eligible, can_attend, consent, stay_on_db)
+        if attributes:
+            merged = {**self.attributes, **attributes}
+            validate_no_field_name_collisions(merged.keys())
+            if merged != self.attributes:
+                self.attributes = merged
+                changed = True
+
+        if not changed:
+            raise ValueError("No changes submitted")
+
+        self.updated_at = datetime.now(UTC)
+        self.add_comment(comment, author_id, action=RespondentAction.EDIT)
+
+    def apply_status_transition(
+        self,
+        *,
+        new_status: RespondentStatus,
+        author_id: uuid.UUID,
+        comment: str,
+    ) -> None:
+        """Transition selection_status via a backoffice action.
+
+        Only moves listed in ALLOWED_SELECTION_STATUS_TRANSITIONS succeed.
+        Records an EDIT comment prefixed with 'Status: OLD -> NEW. '.
+        """
+        comment = comment.strip()
+        if not comment:
+            raise ValueError("A comment is required when changing selection status")
+        allowed = ALLOWED_SELECTION_STATUS_TRANSITIONS.get(self.selection_status, [])
+        if new_status not in allowed:
+            raise ValueError(f"Transition {self.selection_status.value} -> {new_status.value} is not allowed")
+        old = self.selection_status
+        self.selection_status = new_status
+        if old == RespondentStatus.POOL or new_status == RespondentStatus.POOL:
+            # Manual override out of POOL has no algorithmic run behind it;
+            # moves back into POOL similarly belong to no run.
+            self.selection_run_id = None
+        self.updated_at = datetime.now(UTC)
+        self.add_comment(
+            f"Status: {old.value} → {new_status.value}. {comment}",
+            author_id,
+            action=RespondentAction.STATUS_CHANGE,
+        )
 
     def delete_personal_data(self, author_id: uuid.UUID, comment: str) -> None:
         """Blank PII, flip status to DELETED, append the deletion comment."""
@@ -195,7 +305,6 @@ class Respondent:
         self.selection_status = RespondentStatus.DELETED
         self.selection_run_id = None
         self.email = ""
-        self.source_reference = ""
         self.consent = None
         self.stay_on_db = None
         self.eligible = None
@@ -264,7 +373,6 @@ class Respondent:
             can_attend=self.can_attend,
             email=self.email,
             source_type=self.source_type,
-            source_reference=self.source_reference,
             attributes=self.attributes,
             respondent_id=self.id,
             created_at=self.created_at,

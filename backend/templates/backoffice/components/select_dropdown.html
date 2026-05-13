@@ -1,0 +1,109 @@
+{#
+ABOUTME: Select dropdown component for backoffice design system
+ABOUTME: Native HTML select with consistent styling matching search_dropdown
+#}
+
+{% macro select_dropdown(name, options, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, id="", attrs="") %}
+    {#
+    Select dropdown component with native HTML select element.
+    Styled to match search_dropdown component for visual consistency.
+
+    Uses the Alpine.js 'urlSelect' data component for navigation dropdowns.
+
+    Args:
+        name: Select input name (required)
+        options: List of option dicts with 'value' and 'label' keys, and optional 'selected' boolean
+        label: Label text displayed above the select
+        value: Currently selected value (alternative to 'selected' in options)
+        placeholder: Placeholder text for empty option (e.g., "Select an option")
+        hint: Help text displayed below the label
+        error: Error message (displays select in error state)
+        required: Boolean to mark field as required
+        disabled: Boolean to disable the select
+        id: Optional id attribute (defaults to name)
+        attrs: Additional attributes to add to the select element (e.g., 'x-model="selected"')
+
+    Accessibility:
+        - Native <select> element has built-in keyboard navigation and screen reader support
+        - Arrow Up/Down to navigate options, Enter/Space to select
+        - Label is properly associated via 'for' attribute
+        - aria-describedby links to hint and error messages
+        - aria-required for required fields
+        - aria-invalid for error state
+
+    Usage:
+        {{ select_dropdown(
+            name="data_source",
+            label="Data Source",
+            options=[
+                {"value": "", "label": "Select Data Source"},
+                {"value": "gsheet", "label": "Google Spreadsheet"},
+                {"value": "csv", "label": "CSV file"}
+            ],
+            value=current_source,
+            hint="Choose how you want to import data"
+        ) }}
+
+    With urlSelect for navigation:
+        <div x-data="urlSelect({ baseUrl: '/page', paramName: 'source', initialValue: '{{ value }}' })">
+            {{ select_dropdown(
+                name="source",
+                options=[...],
+                attrs='x-model="selected" @change="navigate($event)" data-focus-id="source-select"'
+            ) }}
+        </div>
+    #}
+    {% set input_id = id if id else name %}
+    {% set has_error = error | length > 0 %}
+    {% set hint_id = input_id ~ '_hint' if hint else '' %}
+    {% set error_id = input_id ~ '_error' if has_error else '' %}
+
+    <div class="flex flex-col gap-1.5">
+
+        {# Label #}
+        {% if label %}
+            <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+                {{ label }}
+                {% if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {# Hint text #}
+        {% if hint %}
+            <p id="{{ hint_id }}" class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+
+        {# Select element #}
+        <select name="{{ name }}"
+                id="{{ input_id }}"
+                {% if required %}required aria-required="true"{% endif %}
+                {% if disabled %}disabled aria-disabled="true"{% endif %}
+                {% if has_error %}aria-invalid="true"{% endif %}
+                {% if hint_id or error_id %}aria-describedby="{{ hint_id }}{% if hint_id and error_id %} {% endif %}{{ error_id }}"{% endif %}
+                {{ attrs | safe }}
+                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 cursor-pointer appearance-none bg-no-repeat {% if disabled %}cursor-not-allowed opacity-60{% endif %}"
+                style="background-color: var(--color-page-background);
+                       border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                       color: var(--color-body-text);
+                       background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22%3E%3C/polyline%3E%3C/svg%3E');
+                       background-position: right 0.75rem center;
+                       background-size: 1.25rem;
+                       padding-right: 2.5rem;">
+            {% if placeholder %}
+                <option value="">{{ placeholder }}</option>
+            {% endif %}
+            {% for option in options %}
+                <option value="{{ option.value }}"
+                        {% if option.selected or option.value == value %}selected{% endif %}
+                        {% if option.disabled %}disabled{% endif %}>
+                    {{ option.label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        {# Error message #}
+        {% if has_error %}
+            <p id="{{ error_id }}" class="text-body-sm" style="color: var(--color-primary-action);">{{ error }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}

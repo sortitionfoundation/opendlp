@@ -4,17 +4,37 @@
  */
 
 
+/* ========================================
+   FOCUS PRESERVATION SYSTEM
+   ========================================
+
+   Preserves keyboard focus across page reloads by encoding the focused element's
+   ID in the URL hash. This improves keyboard navigation UX when dropdowns or
+   other controls trigger page reloads.
+
+   Components:
+   1. DOMContentLoaded handler - restores focus on page load
+   2. $focusUrl magic - returns URL with focus hash appended
+   3. focusPreserve directive - auto-preserves focus on link clicks
+
+   Usage:
+     Option A: Magic helper (for custom navigation)
+       <select data-focus-id="my-select" @change="window.location.href = $focusUrl('/page?param=value')">
+
+     Option B: Directive (for simple links)
+       <a href="/page" data-focus-id="my-link" x-data x-focus-preserve>Link</a>
+
+     Option C: With urlSelect component (built-in support)
+       <div x-data="urlSelect({...})">
+         <select data-focus-id="my-select" x-model="selected" @change="navigate($event)">
+       </div>
+   ======================================== */
+
 /**
- * Focus restoration for keyboard navigation
+ * Focus restoration on page load
  *
- * When a component navigates to a new URL with keyboard focus, it can add
- * #focus=<focusId> to the URL. On page load, this handler finds the element
- * with data-focus-id="<focusId>" and restores focus to it.
- *
- * Usage:
- *   1. Add data-focus-id="myElement" to any focusable element
- *   2. When navigating, append #focus=myElement to the URL (if element had focus)
- *   3. On page load, focus is automatically restored
+ * Checks for #focus=<focusId> in the URL hash and restores focus to the
+ * element with matching data-focus-id attribute.
  */
 document.addEventListener("DOMContentLoaded", function () {
     var hash = window.location.hash;
@@ -23,11 +43,60 @@ document.addEventListener("DOMContentLoaded", function () {
         var el = document.querySelector('[data-focus-id="' + focusId + '"]');
         if (el) {
             el.focus();
+            // Clean up the URL hash after restoring focus
+            if (window.history.replaceState) {
+                var cleanUrl = window.location.href.split("#")[0];
+                window.history.replaceState(null, "", cleanUrl);
+            }
         }
     }
 });
 
 document.addEventListener("alpine:init", function () {
+    /**
+     * Focus URL magic helper
+     *
+     * Returns the given URL with #focus=<focusId> appended if the current
+     * element (or a specified element) has keyboard focus and a data-focus-id.
+     *
+     * Usage:
+     *   <button data-focus-id="my-btn" @click="window.location.href = $focusUrl('/page')">
+     *   <select data-focus-id="my-select" @change="window.location.href = $focusUrl('/page?q=' + selected)">
+     *
+     * @param {string} url - The base URL to navigate to
+     * @param {HTMLElement} [element] - Optional element to check for focus (defaults to $el)
+     * @returns {string} URL with focus hash appended if element has focus
+     */
+    Alpine.magic("focusUrl", function (el) {
+        return function (url, element) {
+            var targetEl = element || el;
+            var focusId = targetEl.dataset ? targetEl.dataset.focusId : null;
+            if (focusId && document.activeElement === targetEl) {
+                return url + "#focus=" + focusId;
+            }
+            return url;
+        };
+    });
+
+    /**
+     * Focus preserve directive
+     *
+     * Automatically appends focus hash to href when clicking a link,
+     * if the element has data-focus-id and keyboard focus.
+     *
+     * Usage:
+     *   <a href="/page" data-focus-id="my-link" x-data x-focus-preserve>Link</a>
+     */
+    Alpine.directive("focus-preserve", function (el) {
+        el.addEventListener("click", function (event) {
+            var focusId = el.dataset.focusId;
+            if (focusId && document.activeElement === el && el.href) {
+                event.preventDefault();
+                window.location.href = el.href + "#focus=" + focusId;
+            }
+        });
+    });
+
     /**
      * Confirmation magic helper for form submissions
      *
@@ -49,24 +118,36 @@ document.addEventListener("alpine:init", function () {
     });
 
     /**
-   * Autocomplete search component
+   * Autocomplete search component with WAI-ARIA combobox pattern
+   *
+   * Implements accessible combobox pattern with:
+   * - role="combobox" on input with aria-expanded, aria-controls, aria-activedescendant
+   * - role="listbox" on dropdown with role="option" on each item
+   * - Live region announces result count to screen readers
+   * - Keyboard navigation: Arrow Up/Down, Enter to select, Escape to close
    *
    * Usage:
    *   <div x-data="autocomplete({
    *     fetchUrl: '/api/search',
    *     minChars: 2,
    *     debounceMs: 300,
-   *     paramName: 'q'
+   *     paramName: 'q',
+   *     inputId: 'user_search'
    *   })">
-   *     <input type="text" x-model="query" @input="onInput()" @keydown="onKeydown($event)">
-   *     <div x-show="isOpen">
+   *     <input type="text" x-model="query" @input="onInput()" @keydown="onKeydown($event)"
+   *            role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+   *            :aria-expanded="isOpen" :aria-activedescendant="activeDescendantId">
+   *     <ul role="listbox" x-show="isOpen">
    *       <template x-for="(item, index) in results" :key="item.id">
-   *         <button @click="selectItem(item)" :class="{ 'highlighted': index === highlightedIndex }">
+   *         <li role="option" :id="'user_search_option_' + index"
+   *             :aria-selected="index === highlightedIndex"
+   *             @click="selectItem(item)">
    *           <span x-text="item.label"></span>
-   *         </button>
+   *         </li>
    *       </template>
-   *     </div>
+   *     </ul>
    *     <input type="hidden" :value="selectedId">
+   *     <div aria-live="polite" class="sr-only" x-text="statusMessage"></div>
    *   </div>
    *
    * Options:
@@ -74,6 +155,11 @@ document.addEventListener("alpine:init", function () {
    *   - minChars: Minimum characters before searching (default: 2)
    *   - debounceMs: Debounce delay in milliseconds (default: 300)
    *   - paramName: Query parameter name for search term (default: 'q')
+   *   - inputId: Unique ID prefix for generating option IDs (default: 'autocomplete')
+   *
+   * Reactive Properties:
+   *   - activeDescendantId: Computed ID of highlighted option for aria-activedescendant
+   *   - statusMessage: Status text for live region announcements
    *
    * The fetch URL should return JSON array: [{ id, label, sublabel? }, ...]
    */
@@ -82,6 +168,7 @@ document.addEventListener("alpine:init", function () {
         var minChars = options.minChars || 2;
         var debounceMs = options.debounceMs || 300;
         var paramName = options.paramName || "q";
+        var inputId = options.inputId || "autocomplete";
 
         return {
             query: "",
@@ -92,6 +179,15 @@ document.addEventListener("alpine:init", function () {
             selectedLabel: "",
             highlightedIndex: -1,
             debounceTimer: null,
+            statusMessage: "",
+
+            // Computed property for aria-activedescendant
+            get activeDescendantId() {
+                if (this.highlightedIndex >= 0 && this.highlightedIndex < this.results.length) {
+                    return inputId + "_option_" + this.highlightedIndex;
+                }
+                return "";
+            },
 
             onInput: function () {
                 var self = this;
@@ -140,6 +236,14 @@ document.addEventListener("alpine:init", function () {
                         self.isOpen = data.length > 0;
                         self.highlightedIndex = -1;
                         self.isLoading = false;
+                        // Announce results count to screen readers
+                        if (data.length === 0) {
+                            self.statusMessage = "No results found";
+                        } else if (data.length === 1) {
+                            self.statusMessage = "1 result available";
+                        } else {
+                            self.statusMessage = data.length + " results available";
+                        }
                     })
                     .catch(function (error) {
                         console.error("Autocomplete fetch error:", error);
@@ -306,6 +410,75 @@ document.addEventListener("alpine:init", function () {
 
             setCanClose: function (value) {
                 this.canClose = value;
+            },
+        };
+    });
+
+    /**
+     * Tabs keyboard navigation component
+     *
+     * Implements WAI-ARIA compliant keyboard navigation for tabs:
+     * - Arrow Left/Right: Move to previous/next tab
+     * - Home: Move to first tab
+     * - End: Move to last tab
+     *
+     * Uses automatic activation (focus moves and navigates simultaneously).
+     *
+     * Usage:
+     *   <ul role="tablist" x-data="tabsKeyboard()" @keydown="handleKeydown($event)">
+     *     <li role="presentation">
+     *       <a role="tab" href="?tab=one" tabindex="0">Tab 1</a>
+     *     </li>
+     *   </ul>
+     */
+    Alpine.data("tabsKeyboard", function () {
+        return {
+            handleKeydown: function (event) {
+                var key = event.key;
+
+                // Only handle arrow keys, Home, and End
+                if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(key) === -1) {
+                    return;
+                }
+
+                // Get all focusable tabs (exclude disabled)
+                // Use event.currentTarget (the element with @keydown) to find tabs
+                var tablist = event.currentTarget;
+                var tabs = Array.prototype.slice.call(
+                    tablist.querySelectorAll('[role="tab"]:not([aria-disabled="true"])')
+                );
+
+                if (tabs.length === 0) {
+                    return;
+                }
+
+                // Find current tab index
+                var currentIndex = tabs.indexOf(document.activeElement);
+                if (currentIndex === -1) {
+                    return;
+                }
+
+                var newIndex;
+
+                if (key === "ArrowLeft") {
+                    // Move to previous tab, wrap to end
+                    newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+                } else if (key === "ArrowRight") {
+                    // Move to next tab, wrap to start
+                    newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+                } else if (key === "Home") {
+                    newIndex = 0;
+                } else if (key === "End") {
+                    newIndex = tabs.length - 1;
+                }
+
+                if (newIndex !== undefined && newIndex !== currentIndex) {
+                    event.preventDefault();
+                    var targetTab = tabs[newIndex];
+                    targetTab.focus();
+                    // Automatic activation - navigate when focus moves
+                    targetTab.click();
+                }
             },
         };
     });

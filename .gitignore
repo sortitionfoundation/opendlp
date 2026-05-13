@@ -22,7 +22,10 @@ backend/credentials/*
 .venv
 
 # claude
-settings.local.json
+.claude/settings.local.json
+.claude/*.lock
+backend/.claude/settings.local.json
+backend/.claude/*.lock
 
 # Logs
 logs

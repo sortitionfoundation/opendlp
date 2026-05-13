@@ -6,14 +6,15 @@ This folder contains documentation specifically for AI agents (Claude Code, etc.
 
 ```
 docs/agent/
-├── ABOUT.md                 # This file
-├── [active-feature]/        # Active development specs (e.g., 547-component-redesign/)
-├── code_quality_rules.md    # Permanent: coding standards and rules
-├── frontend_design_system.md # Permanent: design system overview
-├── frontend_testing.md      # Permanent: testing guidelines
-├── govuk_components.md      # Permanent: GOV.UK component reference
-├── migration_notes.md       # Permanent: migration guidelines
-└── history/                 # Completed/merged feature specs
+├── ABOUT.md                    # This file
+├── [active-feature]/           # Active development specs (e.g., 547-component-redesign/)
+├── code_quality_rules.md       # Permanent: coding standards and rules
+├── component_accessibility.md  # Permanent: a11y requirements for UI components
+├── frontend_design_system.md   # Permanent: design system overview
+├── frontend_testing.md         # Permanent: testing guidelines
+├── govuk_components.md         # Permanent: GOV.UK component reference
+├── migration_notes.md          # Permanent: migration guidelines
+└── history/                    # Completed/merged feature specs
 ```
 
 ## What Goes Where

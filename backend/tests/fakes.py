@@ -20,7 +20,7 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentStatus
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentAction, RespondentStatus
 from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
@@ -586,10 +586,17 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         assembly_id: uuid.UUID,
         external_ids: list[str],
         selection_run_id: uuid.UUID,
+        author_id: uuid.UUID,
     ) -> None:
         for r in self._items:
             if r.assembly_id == assembly_id and r.external_id in external_ids:
                 r.mark_as_selected(selection_run_id)
+                r.add_comment(
+                    text="Selected in run",
+                    author_id=author_id,
+                    action=RespondentAction.SELECT,
+                    selection_run_id=selection_run_id,
+                )
 
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count = 0

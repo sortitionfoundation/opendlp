@@ -437,8 +437,9 @@ class RespondentRepository(AbstractRepository):
         assembly_id: uuid.UUID,
         external_ids: list[str],
         selection_run_id: uuid.UUID,
+        author_id: uuid.UUID,
     ) -> None:
-        """Mark multiple respondents as selected in a single query."""
+        """Mark multiple respondents as selected and append a SELECT comment to each."""
         raise NotImplementedError
 
     @abc.abstractmethod

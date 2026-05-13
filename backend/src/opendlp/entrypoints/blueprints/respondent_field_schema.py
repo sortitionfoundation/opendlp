@@ -10,8 +10,12 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.domain.respondent_field_schema import (
+    CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
+    ChoiceOption,
+    FieldType,
     RespondentFieldGroup,
 )
 from opendlp.service_layer.assembly_service import (
@@ -28,11 +32,15 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
+    add_choice_option,
     delete_field,
     get_schema,
     get_schema_grouped,
+    guess_field_types,
     initialise_empty_schema,
+    remove_choice_option,
     reorder_group,
+    update_choice_option,
     update_field,
 )
 from opendlp.translations import gettext as _
@@ -50,6 +58,16 @@ def _parse_group(raw: str | None) -> RespondentFieldGroup | None:
         return None
     try:
         return RespondentFieldGroup(raw)
+    except ValueError:
+        return None
+
+
+def _parse_field_type(raw: str | None) -> FieldType | None:
+    """Parse a submitted field_type value; returns None if empty or unrecognised."""
+    if not raw:
+        return None
+    try:
+        return FieldType(raw)
     except ValueError:
         return None
 
@@ -89,13 +107,29 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
         group_choices = [(group.value, GROUP_LABELS[group]) for group in GROUP_DISPLAY_ORDER]
+        field_type_choices = [(ft.value, FIELD_TYPE_LABELS[ft]) for ft in FieldType]
+        field_type_labels_by_value = {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType}
+        choice_type_values = {ft.value for ft in CHOICE_TYPES}
+
+        all_fields = [f for group_fields in grouped.values() for f in group_fields]
+        has_guessable_text_rows = any(
+            not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
+        )
+        uow_count = bootstrap.bootstrap()
+        with uow_count:
+            has_respondents = uow_count.respondents.count_by_assembly_id(assembly_id) > 0
+        show_guess_button = has_guessable_text_rows and has_respondents
 
         return render_template(
             "backoffice/respondent_field_schema/view.html",
             assembly=assembly,
             sections=sections,
             group_choices=group_choices,
+            field_type_choices=field_type_choices,
+            field_type_labels_by_value=field_type_labels_by_value,
+            choice_type_values=choice_type_values,
             schema_has_rows=schema_has_rows,
+            show_guess_button=show_guess_button,
             data_source=data_source,
             gsheet=gsheet,
             targets_enabled=targets_enabled,
@@ -137,20 +171,170 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
 )
 @login_required
 def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Update a field's display label and/or group."""
+    """Update a field's display label, group, or field_type."""
     label = request.form.get("label", "").strip() or None
     group = _parse_group(request.form.get("group"))
+    field_type = _parse_field_type(request.form.get("field_type"))
 
-    if label is None and group is None:
+    if label is None and group is None and field_type is None:
         flash(_("No changes submitted."), "info")
         return _schema_page_redirect(assembly_id)
 
+    # Seed a starter option when switching to a choice type so the domain's
+    # invariant ("choice fields need at least one option") holds on first save.
+    seed_options = None
+    if field_type in CHOICE_TYPES:
+        uow_peek = bootstrap.bootstrap()
+        with uow_peek:
+            existing = uow_peek.respondent_field_definitions.get(field_id)
+            if existing is not None and existing.field_type not in CHOICE_TYPES:
+                seed_options = [ChoiceOption(value="option_1")]
+
     try:
         uow = bootstrap.bootstrap()
-        update_field(uow, current_user.id, assembly_id, field_id, label=label, group=group)
+        if seed_options is not None:
+            update_field(
+                uow,
+                current_user.id,
+                assembly_id,
+                field_id,
+                label=label,
+                group=group,
+                field_type=field_type,
+                options=seed_options,
+            )
+        else:
+            update_field(
+                uow,
+                current_user.id,
+                assembly_id,
+                field_id,
+                label=label,
+                group=group,
+                field_type=field_type,
+            )
         flash(_("Field updated."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found."), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/guess-types",
+    methods=["POST"],
+)
+@login_required
+def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Overwrite TEXT-typed schema rows with guessed types based on respondent data."""
+    try:
+        uow = bootstrap.bootstrap()
+        changed = guess_field_types(uow, current_user.id, assembly_id)
+        if changed:
+            flash(_("Guessed types for %(count)d fields.", count=len(changed)), "success")
+        else:
+            flash(_("No fields were guessed — no untouched text rows to update."), "info")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/add",
+    methods=["POST"],
+)
+@login_required
+def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Append a ChoiceOption to a choice field."""
+    value = request.form.get("value", "").strip()
+    help_text = request.form.get("help_text", "")
+    if not value:
+        flash(_("Option value is required."), "error")
+        return _schema_page_redirect(assembly_id)
+    try:
+        uow = bootstrap.bootstrap()
+        add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
+        flash(_("Option added."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except FieldDefinitionNotFoundError:
+        flash(_("Field not found."), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/update",
+    methods=["POST"],
+)
+@login_required
+def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Update the value and/or help_text of an existing ChoiceOption."""
+    old_value = request.form.get("old_value", "").strip()
+    new_value = request.form.get("value", "").strip()
+    new_help_text = request.form.get("help_text", "")
+    if not old_value:
+        flash(_("Original option value is required."), "error")
+        return _schema_page_redirect(assembly_id)
+    if not new_value:
+        flash(_("Option value cannot be blank."), "error")
+        return _schema_page_redirect(assembly_id)
+    try:
+        uow = bootstrap.bootstrap()
+        update_choice_option(
+            uow,
+            current_user.id,
+            assembly_id,
+            field_id,
+            old_value=old_value,
+            new_value=new_value,
+            new_help_text=new_help_text,
+        )
+        flash(_("Option updated."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except FieldDefinitionNotFoundError:
+        flash(_("Option not found."), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/remove",
+    methods=["POST"],
+)
+@login_required
+def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Remove a ChoiceOption from a choice field."""
+    value = request.form.get("value", "").strip()
+    if not value:
+        flash(_("Option value is required."), "error")
+        return _schema_page_redirect(assembly_id)
+    try:
+        uow = bootstrap.bootstrap()
+        remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
+        flash(_("Option removed."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except FieldDefinitionNotFoundError:
+        flash(_("Option not found."), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:

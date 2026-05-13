@@ -450,12 +450,12 @@ def footer_has_sortition_link(page: Page):
 
 @then("the footer should contain User Data Agreement link")
 def footer_has_user_data_agreement_link(page: Page):
-    """Verify the footer contains a User Data Agreement link."""
+    """Verify the footer contains a User Data Agreement link pointing at the external help site."""
     footer = page.locator("footer")
     uda_link = footer.locator("a", has_text="User Data Agreement")
     expect(uda_link).to_be_visible()
-    # The href should contain the user_data_agreement route
-    expect(uda_link).to_have_attribute("href", re.compile(r".*/auth/user-data-agreement"))
+    expect(uda_link).to_have_attribute("href", re.compile(r"^https?://.*data-agreement"))
+    expect(uda_link).to_have_attribute("target", "_blank")
 
 
 @then("the footer should display the version")
@@ -1000,11 +1000,12 @@ def click_delete_and_confirm(page: Page):
 
 @when("I click the gsheet form cancel link")
 def click_gsheet_cancel_link(page: Page):
-    """Click the Cancel link in the gsheet form (more specific than generic button click)."""
-    # Look for the Cancel link within the form actions section
+    """Click the Cancel button in the gsheet form (more specific than generic button click)."""
+    # Look for the Cancel button within the form actions section
     # Use get_by_role with exact=True to avoid matching assembly name in breadcrumbs
-    cancel_link = page.get_by_role("link", name="Cancel", exact=True)
-    cancel_link.click()
+    # Note: Button macro renders <a> with role="button" for accessibility
+    cancel_button = page.get_by_role("button", name="Cancel", exact=True)
+    cancel_button.click()
     page.wait_for_load_state("networkidle")
 
 

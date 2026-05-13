@@ -12,7 +12,8 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
-from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery.tasks import (
     _internal_load_db,
     _internal_run_select,
@@ -86,12 +87,22 @@ def _make_run_record(assembly_id: uuid.UUID, postgres_session_factory) -> uuid.U
     """Create a SelectionRunRecord in the DB and return its task_id."""
     task_id = uuid.uuid4()
     with bootstrap(session_factory=postgres_session_factory) as uow:
+        user = User(
+            email=f"selection-runner-{uuid.uuid4().hex[:6]}@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(user)
+        uow.commit()
+        user_id = user.id
+    with bootstrap(session_factory=postgres_session_factory) as uow:
         record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=task_id,
             task_type=SelectionTaskType.SELECT_FROM_DB,
             status=SelectionRunStatus.PENDING,
             log_messages=["Task submitted for database selection"],
+            user_id=user_id,
         )
         uow.selection_run_records.add(record)
         uow.commit()

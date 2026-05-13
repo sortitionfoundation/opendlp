@@ -678,7 +678,10 @@ def _internal_write_db_results(
         remaining_count = len(remaining_ext_ids)
 
         with bootstrap(session_factory=session_factory) as uow:
-            uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id)
+            run_record = uow.selection_run_records.get_by_task_id(task_id)
+            if run_record is None or run_record.user_id is None:
+                raise SelectionRunRecordNotFoundError(f"Selection run {task_id} not found or has no user_id")
+            uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id, run_record.user_id)
             uow.commit()
 
         _update_selection_record(

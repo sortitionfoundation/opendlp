@@ -10,8 +10,9 @@ import pytest
 from opendlp import config as _config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.respondent_field_schema_service import get_schema
+from opendlp.service_layer.respondent_field_schema_service import get_schema, initialise_empty_schema
 from opendlp.service_layer.respondent_service import create_respondent, delete_respondent, import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -637,8 +638,8 @@ class TestBackofficeViewSingleRespondent:
         assert b"Female" in body
         assert b"SW1A 1AA" in body
         assert b"extra-info" in body
-        # Audit block sits in a collapsed details element.
-        assert b"Record metadata" in body
+        # Activity section replaces the old Record metadata block.
+        assert b"Activity" in body
         assert b"<details" in body
 
     def test_view_respondent_wrong_assembly(
@@ -757,8 +758,8 @@ class TestDeleteRespondentRoute:
             assert reloaded.selection_status.value == "DELETED"
             assert reloaded.email == ""
             assert reloaded.attributes == {"Gender": ""}
-            assert len(reloaded.comments) == 1
-            assert reloaded.comments[0].text == "gdpr request"
+            delete_comments = [c for c in reloaded.comments if c.text == "gdpr request"]
+            assert len(delete_comments) == 1
 
     def test_missing_comment_rejected(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -786,7 +787,8 @@ class TestDeleteRespondentRoute:
             assert reloaded is not None
             assert reloaded.selection_status.value == "POOL"
             assert reloaded.email == "keep@example.com"
-            assert len(reloaded.comments) == 0
+            # Only the CREATE comment from creation; no DELETE was applied.
+            assert all(c.action.value != "DELETE" for c in reloaded.comments)
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
@@ -844,3 +846,283 @@ class TestDeleteRespondentRoute:
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Respondent not found" in msg for msg in flash_messages)
+
+
+class TestSelectionStatusTransition:
+    """Transition buttons + POST /.../transition-status."""
+
+    def _transition_url(self, assembly_id, respondent_id):
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/transition-status"
+
+    def _view_url(self, assembly_id, respondent_id):
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def test_view_page_shows_buttons_for_each_allowed_transition(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T1",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        assert b"CONFIRMED" in response.data
+        assert b"WITHDRAWN" in response.data
+
+    def test_view_page_hides_buttons_on_terminal_status(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        # DELETED is the only terminal status; all other statuses have manual
+        # transitions back into the active set.
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T2",
+                attributes={},
+                selection_status=RespondentStatus.DELETED,
+            )
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        # No "Change to" buttons (no allowed transitions)
+        assert b"Change to" not in response.data
+
+    def test_post_valid_transition_updates_and_flashes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T3",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.CONFIRMED.value,
+                "comment": "confirmed on call",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.CONFIRMED
+
+    def test_post_blank_comment_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T4",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.CONFIRMED.value,
+                "comment": "",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.SELECTED
+
+    def test_post_illegal_transition_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        # Moves into DELETED are still forbidden via this form (GDPR delete
+        # has its own action), so use that as the illegal case.
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T5",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.DELETED.value,
+                "comment": "try",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.SELECTED
+
+
+class TestEditRespondentPage:
+    """GET /backoffice/assembly/<id>/respondents/<id>/edit and POST handling."""
+
+    def _edit_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/edit"
+
+    def _view_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def _make_respondent(self, uow, admin_user_id, assembly_id, **kwargs):
+        initialise_empty_schema(uow, admin_user_id, assembly_id)
+        return create_respondent(
+            uow,
+            admin_user_id,
+            assembly_id,
+            external_id=kwargs.pop("external_id", "R-EDIT"),
+            attributes=kwargs.pop("attributes", {"note": "original"}),
+            email=kwargs.pop("email", "r@example.com"),
+            **kwargs,
+        )
+
+    def test_get_renders_form_grouped_by_schema(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,first_name,note\nR1,Alice,orig\n",
+                replace_existing=True,
+            )
+            resp = next(iter(uow.respondents.get_by_assembly_id(existing_assembly.id)))
+            resp_id = resp.id
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        assert b"Edit respondent" in response.data
+        assert b"Change note" in response.data
+        assert b"first_name" in response.data or b"First name" in response.data
+        # Status transition form must also be rendered on the Edit page.
+        assert b"Selection status" in response.data
+        assert b"Change to" in response.data
+
+    def test_get_with_uninitialised_schema_shows_init_prompt(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """When no field schema has been initialised the form is replaced
+        with a prompt linking to the Fields tab."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-NOSCHEMA",
+                attributes={},
+            )
+            resp_id = respondent.id
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        assert b"This assembly has no respondent fields configured yet." in response.data
+        # Link points at the Fields tab.
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        # The form itself is not rendered.
+        assert b"Save changes" not in response.data
+        assert b"Change note" not in response.data
+
+    def test_post_valid_updates_redirects_and_flashes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = self._make_respondent(uow, admin_user.id, existing_assembly.id)
+            resp_id = respondent.id
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={
+                "email": "new@example.com",
+                "comment": "corrected email",
+                "csrf_token": get_csrf_token(logged_in_admin, self._edit_url(existing_assembly.id, resp_id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp_id)
+            assert retrieved is not None
+            assert retrieved.email == "new@example.com"
+            assert any(c.text == "corrected email" for c in retrieved.comments)
+
+    def test_post_blank_comment_rerenders_with_error(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = self._make_respondent(uow, admin_user.id, existing_assembly.id)
+            resp_id = respondent.id
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={
+                "email": "other@example.com",
+                "comment": "",
+                "csrf_token": get_csrf_token(logged_in_admin, self._edit_url(existing_assembly.id, resp_id)),
+            },
+            follow_redirects=False,
+        )
+        # Re-renders form (200), email unchanged.
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp_id)
+            assert retrieved is not None
+            assert retrieved.email == "r@example.com"
+
+    def test_refused_for_deleted_respondent(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = self._make_respondent(uow, admin_user.id, existing_assembly.id)
+            resp_id = respondent.id
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            delete_respondent(uow, admin_user.id, existing_assembly.id, resp_id, comment="gdpr")
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id), follow_redirects=False)
+        assert response.status_code == 302
+        assert self._view_url(existing_assembly.id, resp_id) in response.location
+
+    def test_view_page_shows_edit_button(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = self._make_respondent(uow, admin_user.id, existing_assembly.id)
+            resp_id = respondent.id
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        assert b"/edit" in response.data
+
+    def test_list_page_shows_edit_link_for_each_row(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            self._make_respondent(uow, admin_user.id, existing_assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        assert response.status_code == 200
+        assert b"Edit" in response.data
