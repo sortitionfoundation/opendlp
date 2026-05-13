@@ -1,0 +1,53 @@
+{#
+ABOUTME: Backoffice registration form configuration page
+ABOUTME: Allows assembly managers to configure RSVP/registration forms with custom HTML
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{% block title %}{{ assembly.title }} - Registration{% endblock %}
+
+{% block breadcrumb_section %}
+    <div class="mb-6">
+        {{ breadcrumbs([
+        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
+        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
+        {"label": _("Registration")}
+        ]) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {# Page Heading #}
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+        {{ _("Registration Form Configuration") }}
+    </p>
+
+    {{ assembly_tabs(
+    assembly=assembly,
+    active_tab="registration",
+    data_source=data_source|default(""),
+    gsheet=gsheet|default(none),
+    targets_enabled=targets_enabled|default(false),
+    respondents_enabled=respondents_enabled|default(false),
+    selection_enabled=selection_enabled|default(false)
+    ) }}
+
+    {# Placeholder content for Step 1 #}
+    <section class="mb-8">
+        <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Registration Form") }}</h2>
+            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                {{ _("Configure your registration form here. This feature is under development.") }}
+            </p>
+        </div>
+    </section>
+
+    {# Actions #}
+    <section class="flex gap-4">
+        {{ button(_("Back to Details"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
+    </section>
+{% endblock %}

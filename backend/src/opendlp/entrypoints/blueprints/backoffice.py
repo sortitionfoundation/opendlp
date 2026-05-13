@@ -334,6 +334,47 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/registration")
+@login_required
+def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice registration form configuration page."""
+    try:
+        nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            request.args.get("source", ""),
+        )
+
+        # TODO: Get registration page data from service layer when available
+        # registration_page = get_registration_page(uow, assembly_id)
+
+        return render_template(
+            "backoffice/assembly_registration.html",
+            assembly=nav.assembly,
+            data_source=nav.data_source,
+            gsheet=nav.gsheet,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
+            # registration_page=registration_page,
+        ), 200
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(
+            f"View assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
+        )
+        flash(_("An error occurred while loading registration settings"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
