@@ -8,6 +8,7 @@ ABOUTME: Renders a grouped detail page driven by RespondentFieldDefinition schem
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
 {% from "backoffice/components/input.html" import input, textarea, radio_group %}
+{% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/respondent_status_form.html" import respondent_status_form %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
@@ -112,7 +113,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
         </div>
     {% endif %}
     {# Identity block — kept simple, just the external ID. #}
-    <section class="mb-8">
+    {% call section(classes="mb-6") %}
         <dl class="flex flex-col gap-2">
             <div class="flex items-baseline gap-3">
                 <dt class="text-body-md font-bold">{{ _("External ID:") }}</dt>
@@ -121,31 +122,33 @@ becomes a disabled input/textarea so the page reads as a read-only form.
                 </dd>
             </div>
         </dl>
-    </section>
+    {% endcall %}
 
     {# Selection status — current value plus per-target transition controls. #}
-    <section class="mb-8">
+    {% call section(classes="mb-6") %}
         {{ respondent_status_form(
         assembly,
         respondent,
         allowed_transitions if (can_edit and not is_deleted) else []
         ) }}
-    </section>
+    {% endcall %}
     {# Schema-driven middle — one collapsible per populated group, rendered as a disabled form. #}
     {% if schema_sections %}
-        {% for section in schema_sections %}
-            <details class="mb-8" x-data="{ open: true }" open>
-                <summary class="text-display-sm mb-4 cursor-pointer"
-                         style="color: var(--color-headings);"
-                         @click="open = !open">
-                    {{ section.label }}
-                </summary>
-                <div x-show="open" x-cloak class="flex flex-col gap-4">
-                    {% for field in section.fields %}
-                        {{ render_view_field(field, respondent, "attr_") }}
-                    {% endfor %}
-                </div>
-            </details>
+        {% for schema_section in schema_sections %}
+            {% call section(classes="mb-6") %}
+                <details x-data="{ open: true }" open>
+                    <summary class="text-display-sm mb-4 cursor-pointer"
+                             style="color: var(--color-headings);"
+                             @click="open = !open">
+                        {{ schema_section.label }}
+                    </summary>
+                    <div x-show="open" x-cloak class="flex flex-col gap-4">
+                        {% for field in schema_section.fields %}
+                            {{ render_view_field(field, respondent, "attr_") }}
+                        {% endfor %}
+                    </div>
+                </details>
+            {% endcall %}
         {% endfor %}
     {% else %}
         {#
@@ -154,153 +157,161 @@ becomes a disabled input/textarea so the page reads as a read-only form.
         fields plus the raw attributes dict so nothing is hidden — the status
         and audit blocks already cover the remaining fixed fields.
         #}
-        <details class="mb-8" x-data="{ open: true }" open>
+        {% call section(classes="mb-6") %}
+            <details x-data="{ open: true }" open>
+                <summary class="text-display-sm mb-4 cursor-pointer"
+                         style="color: var(--color-headings);"
+                         @click="open = !open">
+                    {{ _("Contact and eligibility") }}
+                </summary>
+                <div x-show="open" x-cloak class="flex flex-col gap-4">
+                    {{ input(name="email", label=_("Email") , type="email", value=respondent.email or "", disabled=true, dim=false) }}
+                    {% set bool_options_3 = [
+                    {"value": "true", "label": _("Yes")},
+                    {"value": "false", "label": _("No")},
+                    {"value": "", "label": _("Not set")}
+                    ] %}
+                    {% for fixed_label, fixed_value in [
+                    (_("Eligible") , respondent.eligible),
+                    (_("Can attend") , respondent.can_attend),
+                    (_("Consent") , respondent.consent),
+                    (_("Stay on database") , respondent.stay_on_db)
+                    ] %}
+                    {% if fixed_value is none %}
+                        {% set value_str = "" %}
+                    {% elif fixed_value %}
+                        {% set value_str = "true" %}
+                    {% else %}
+                        {% set value_str = "false" %}
+                    {% endif %}
+                    {{ radio_group(
+                    name=loop.index|string,
+                    label=fixed_label,
+                    options=bool_options_3,
+                    value=value_str,
+                    inline=true,
+                    disabled=true, dim=false
+                    ) }}
+        {% endfor %}
+        </div>
+        </details>
+    {% endcall %}
+    {% call section(classes="mb-6") %}
+        <details x-data="{ open: true }" open>
             <summary class="text-display-sm mb-4 cursor-pointer"
                      style="color: var(--color-headings);"
                      @click="open = !open">
-                {{ _("Contact and eligibility") }}
+                {{ _("Attributes") }}
             </summary>
             <div x-show="open" x-cloak class="flex flex-col gap-4">
-                {{ input(name="email", label=_("Email") , type="email", value=respondent.email or "", disabled=true, dim=false) }}
-                {% set bool_options_3 = [
-                {"value": "true", "label": _("Yes")},
-                {"value": "false", "label": _("No")},
-                {"value": "", "label": _("Not set")}
-                ] %}
-                {% for fixed_label, fixed_value in [
-                (_("Eligible") , respondent.eligible),
-                (_("Can attend") , respondent.can_attend),
-                (_("Consent") , respondent.consent),
-                (_("Stay on database") , respondent.stay_on_db)
-                ] %}
-                {% if fixed_value is none %}
-                    {% set value_str = "" %}
-                {% elif fixed_value %}
-                    {% set value_str = "true" %}
+                {% if respondent.attributes %}
+                    {% for key, value in respondent.attributes.items() %}
+                        {{ input(name="attr_" ~ key, label=key, value=value or "", disabled=true, dim=false) }}
+                    {% endfor %}
                 {% else %}
-                    {% set value_str = "false" %}
+                    <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
                 {% endif %}
-                {{ radio_group(
-                name=loop.index|string,
-                label=fixed_label,
-                options=bool_options_3,
-                value=value_str,
-                inline=true,
-                disabled=true, dim=false
-                ) }}
-    {% endfor %}
-    </div>
-    </details>
-    <details class="mb-8" x-data="{ open: true }" open>
+            </div>
+        </details>
+    {% endcall %}
+{% endif %}
+{% call section(classes="mb-6") %}
+    <details x-data="{ open: true }" open>
         <summary class="text-display-sm mb-4 cursor-pointer"
                  style="color: var(--color-headings);"
                  @click="open = !open">
-            {{ _("Attributes") }}
+            {{ _("Activity") }}
         </summary>
-        <div x-show="open" x-cloak class="flex flex-col gap-4">
-            {% if respondent.attributes %}
-                {% for key, value in respondent.attributes.items() %}
-                    {{ input(name="attr_" ~ key, label=key, value=value or "", disabled=true, dim=false) }}
-                {% endfor %}
+        <div x-show="open" x-cloak>
+            {# Reverse-chronological. A synthesised Created row is appended at the
+               end when the respondent has no CREATE comment (pre-existing data). #}
+            {% set has_create_comment = respondent.comments | selectattr("action.value", "equalto", "CREATE") | list | length > 0 %}
+            {% set action_labels = {
+            "NONE": "—",
+            "CREATE": _("Created"),
+            "EDIT": _("Edit"),
+            "STATUS_CHANGE": _("Status change"),
+            "SELECT": _("Selected"),
+            "DELETE": _("Deleted"),
+            } %}
+            {% set source_type_labels = {
+            "CSV_IMPORT": _("CSV import"),
+            "MANUAL_ENTRY": _("manual entry"),
+            "REGISTRATION_FORM": _("registration form"),
+            "NATIONBUILDER_SYNC": _("NationBuilder sync"),
+            } %}
+            {% if respondent.comments or not has_create_comment %}
+                {% call table() %}
+                    {{ table_head([
+                    {"label": _("When") },
+                    {"label": _("Author")},
+                    {"label": _("Action")},
+                    {"label": _("Comment")}
+                    ]) }}
+                    {% call table_body() %}
+                        {% for comment in respondent.comments | reverse %}
+                            {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
+                            {% set action_label = action_labels.get(comment.action.value, comment.action.value) %}
+                            {% call table_row() %}
+                                {{ table_cell(comment.created_at|datetimeformat('long') ) }}
+                                {{ table_cell(author.email if author else comment.author_id|string) }}
+                                {% if comment.action.value == "SELECT" and comment.selection_run_id %}
+                                    {% set run_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
+                                    {% call table_cell_custom() %}
+                                        <a href="{{ run_url }}" class="underline">{{ action_label }}</a>
+                                    {% endcall %}
+                                {% else %}
+                                    {{ table_cell(action_label) }}
+                                {% endif %}
+                                {{ table_cell(comment.text) }}
+                            {% endcall %}
+                        {% endfor %}
+                        {% if not has_create_comment %}
+                            {% set src_label = source_type_labels.get(respondent.source_type.value, respondent.source_type.value) %}
+                            {% call table_row() %}
+                                {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "") }}
+                                {{ table_cell("—") }}
+                                {{ table_cell(_("Created")) }}
+                                {{ table_cell(_("Created via %(source)s", source=src_label)) }}
+                            {% endcall %}
+                        {% endif %}
+                    {% endcall %}
+                {% endcall %}
             {% else %}
-                <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No attributes recorded.") }}</p>
+                <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No activity recorded.") }}</p>
             {% endif %}
         </div>
     </details>
-{% endif %}
-<details class="mb-8" x-data="{ open: true }" open>
-    <summary class="text-display-sm mb-4 cursor-pointer"
-             style="color: var(--color-headings);"
-             @click="open = !open">
-        {{ _("Activity") }}
-    </summary>
-    <div x-show="open" x-cloak>
-        {# Reverse-chronological. A synthesised Created row is appended at the
-           end when the respondent has no CREATE comment (pre-existing data). #}
-        {% set has_create_comment = respondent.comments | selectattr("action.value", "equalto", "CREATE") | list | length > 0 %}
-        {% set action_labels = {
-        "NONE": "—",
-        "CREATE": _("Created"),
-        "EDIT": _("Edit"),
-        "STATUS_CHANGE": _("Status change"),
-        "SELECT": _("Selected"),
-        "DELETE": _("Deleted"),
-        } %}
-        {% set source_type_labels = {
-        "CSV_IMPORT": _("CSV import"),
-        "MANUAL_ENTRY": _("manual entry"),
-        "REGISTRATION_FORM": _("registration form"),
-        "NATIONBUILDER_SYNC": _("NationBuilder sync"),
-        } %}
-        {% if respondent.comments or not has_create_comment %}
-            {% call table() %}
-                {{ table_head([
-                {"label": _("When") },
-                {"label": _("Author")},
-                {"label": _("Action")},
-                {"label": _("Comment")}
-                ]) }}
-                {% call table_body() %}
-                    {% for comment in respondent.comments | reverse %}
-                        {% set author = comment_authors.get(comment.author_id) if comment_authors else none %}
-                        {% set action_label = action_labels.get(comment.action.value, comment.action.value) %}
-                        {% call table_row() %}
-                            {{ table_cell(comment.created_at|datetimeformat('long') ) }}
-                            {{ table_cell(author.email if author else comment.author_id|string) }}
-                            {% if comment.action.value == "SELECT" and comment.selection_run_id %}
-                                {% set run_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
-                                {% call table_cell_custom() %}
-                                    <a href="{{ run_url }}" class="underline">{{ action_label }}</a>
-                                {% endcall %}
-                            {% else %}
-                                {{ table_cell(action_label) }}
-                            {% endif %}
-                            {{ table_cell(comment.text) }}
-                        {% endcall %}
-                    {% endfor %}
-                    {% if not has_create_comment %}
-                        {% set src_label = source_type_labels.get(respondent.source_type.value, respondent.source_type.value) %}
-                        {% call table_row() %}
-                            {{ table_cell(respondent.created_at|datetimeformat('long') if respondent.created_at else "") }}
-                            {{ table_cell("—") }}
-                            {{ table_cell(_("Created")) }}
-                            {{ table_cell(_("Created via %(source)s", source=src_label)) }}
-                        {% endcall %}
-                    {% endif %}
-                {% endcall %}
-            {% endcall %}
-        {% else %}
-            <p class="text-body-md" style="color: var(--color-secondary-text);">{{ _("No activity recorded.") }}</p>
-        {% endif %}
-    </div>
-</details>
+{% endcall %}
 {% if can_manage and not is_deleted %}
-    <section class="mb-8" x-data="{ showing: false }">
-        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Delete personal data") }}</h2>
-        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-            {{ _("Under GDPR, a person may request that their personal data be deleted. This action blanks the respondent's contact details, attribute values, and eligibility flags, while preserving their external ID so any past selection can still reference them. This action is irreversible.") }}
-        </p>
-        <div x-show="!showing">
-            {{ button(_("Delete personal data") , variant="danger", attrs='@click="showing = true"') }}
-        </div>
-        <form x-show="showing"
-              method="post"
-              action="{{ url_for('respondents.delete_respondent_route', assembly_id=assembly.id, respondent_id=respondent.id) }}"
-              class="flex flex-col gap-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <label for="delete-comment" class="font-semibold">{{ _("Reason (required)") }}</label>
-            <textarea id="delete-comment"
-                      name="comment"
-                      rows="3"
-                      required
-                      class="border border-gray-300 rounded p-2"
-                      placeholder="{{ _('e.g. GDPR deletion request from the participant') }}"></textarea>
-            <div class="flex gap-4">
-                {{ button(_("Confirm delete") , type="submit", variant="danger") }}
-                {{ button(_("Cancel") , variant="outline", attrs='@click="showing = false"') }}
+    {% call section(classes="mb-6") %}
+        <div x-data="{ showing: false }">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Delete personal data") }}</h2>
+            <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                {{ _("Under GDPR, a person may request that their personal data be deleted. This action blanks the respondent's contact details, attribute values, and eligibility flags, while preserving their external ID so any past selection can still reference them. This action is irreversible.") }}
+            </p>
+            <div x-show="!showing">
+                {{ button(_("Delete personal data") , variant="danger", attrs='@click="showing = true"') }}
             </div>
-        </form>
-    </section>
+            <form x-show="showing"
+                  method="post"
+                  action="{{ url_for('respondents.delete_respondent_route', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                  class="flex flex-col gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <label for="delete-comment" class="font-semibold">{{ _("Reason (required)") }}</label>
+                <textarea id="delete-comment"
+                          name="comment"
+                          rows="3"
+                          required
+                          class="border border-gray-300 rounded p-2"
+                          placeholder="{{ _('e.g. GDPR deletion request from the participant') }}"></textarea>
+                <div class="flex gap-4">
+                    {{ button(_("Confirm delete") , type="submit", variant="danger") }}
+                    {{ button(_("Cancel") , variant="outline", attrs='@click="showing = false"') }}
+                </div>
+            </form>
+        </div>
+    {% endcall %}
 {% endif %}
 <section class="flex gap-4">
     {% if can_edit and not is_deleted %}

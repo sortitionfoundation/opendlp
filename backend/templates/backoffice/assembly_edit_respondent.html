@@ -44,11 +44,11 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
         <form method="post" class="flex flex-col gap-6">
             {{ form.hidden_tag() }}
 
-            {% for section in ordered_sections %}
-                <section class="mb-4">
-                    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
+            {% for schema_section in ordered_sections %}
+                {% call section(classes="mb-6") %}
+                    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ schema_section.label }}</h2>
                     <div class="flex flex-col gap-4">
-                        {% for field in section.fields %}
+                        {% for field in schema_section.fields %}
                             {% if field.is_fixed %}
                                 {% set form_field_name = field.field_key %}
                             {% else %}
@@ -123,16 +123,16 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                             {% endif %}
                         {% endfor %}
                     </div>
-                </section>
+                {% endcall %}
             {% endfor %}
 
-            <section class="mb-4">
+            {% call section(classes="mb-6") %}
                 <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Change note") }}</h2>
                 {{ textarea(name="comment", label=_("Why are you making this change?") , value=form.comment.data or "", required=true, rows=3) }}
                 {% if form.comment.errors %}
                     {{ first_error(form.comment.errors) }}
                 {% endif %}
-            </section>
+            {% endcall %}
 
             <section class="flex gap-4">
                 {{ button(_("Save changes"), type="submit", variant="primary") }}
