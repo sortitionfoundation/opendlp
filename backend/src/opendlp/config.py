@@ -219,6 +219,61 @@ def get_task_timeout_hours() -> int:
         return 24
 
 
+# Bounds for registration page HTML size limits. The minimum keeps a published
+# page from being trivially small; the ceiling guards against runaway storage.
+_REGISTRATION_HTML_MIN_BYTES = 1024
+_REGISTRATION_HTML_MAX_BYTES = 10 * 1024 * 1024
+
+
+def _registration_html_max_bytes(env_key: str, default: int) -> int:
+    """Read a registration page HTML byte limit from the environment.
+
+    Falls back to ``default`` on a missing or invalid value, and clamps to
+    [1 KB, 10 MB] with a logged warning so an operator sees the override.
+    """
+    raw = os.environ.get(env_key, "")
+    if not raw:
+        return default
+
+    try:
+        value = int(raw)
+    except ValueError:
+        logging.warning(f"Invalid {env_key} value '{raw}'. Using default {default} bytes.")
+        return default
+
+    if value < _REGISTRATION_HTML_MIN_BYTES:
+        logging.warning(
+            f"{env_key}={value} is below the minimum ({_REGISTRATION_HTML_MIN_BYTES}). "
+            f"Using {_REGISTRATION_HTML_MIN_BYTES} bytes."
+        )
+        return _REGISTRATION_HTML_MIN_BYTES
+    if value > _REGISTRATION_HTML_MAX_BYTES:
+        logging.warning(
+            f"{env_key}={value} is above the hard ceiling ({_REGISTRATION_HTML_MAX_BYTES}). "
+            f"Using {_REGISTRATION_HTML_MAX_BYTES} bytes."
+        )
+        return _REGISTRATION_HTML_MAX_BYTES
+    return value
+
+
+def get_registration_form_html_max_bytes() -> int:
+    """Maximum allowed size for a registration page's form HTML, in bytes.
+
+    Default 200 KB. Bounded to [1 KB, 10 MB]. Environment variable:
+    ``REGISTRATION_FORM_HTML_MAX_BYTES``.
+    """
+    return _registration_html_max_bytes("REGISTRATION_FORM_HTML_MAX_BYTES", 204800)
+
+
+def get_registration_thank_you_html_max_bytes() -> int:
+    """Maximum allowed size for a registration page's thank-you HTML, in bytes.
+
+    Default 50 KB. Bounded to [1 KB, 10 MB]. Environment variable:
+    ``REGISTRATION_THANK_YOU_HTML_MAX_BYTES``.
+    """
+    return _registration_html_max_bytes("REGISTRATION_THANK_YOU_HTML_MAX_BYTES", 51200)
+
+
 class FlaskBaseConfig:
     """Base configuration class that loads from environment variables."""
 
