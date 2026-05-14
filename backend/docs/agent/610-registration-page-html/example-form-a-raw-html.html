@@ -1,0 +1,124 @@
+<!--
+  EXAMPLE REGISTRATION FORM — VERSION A: raw HTML
+  Q15 Option A in plan-data-service.md
+
+  Authoring experience: the assembly manager edits this HTML directly. The
+  system generates it ONCE as a starter (from the assembly's respondent field
+  schema) and the manager then restyles / rewords / reorders it freely.
+
+  Templating engine: none. Flat string substitution.
+  Render-time tokens: just {{ csrf_form_element }} and {{ form_url }}.
+  This file, with those two tokens substituted, IS the raw HTML sent to the
+  browser. Versions B and C both render to this same output (modulo whitespace).
+
+  Built from assembly c8f833a8-a712-4457-b564-b1736cdf5222.
+  Labels are shown verbatim from the schema ("Primary zip", "Edu level", ...).
+  In Version A the manager would typically rewrite these to read nicely — that
+  freedom is the whole point of this option, but it's also why a later schema
+  change can't be re-generated over the top of their edits.
+
+  Trade-offs:
+   + No templating knowledge needed. Total control of every tag/attr/label/class.
+   + Trivial render path (substitute 2 tokens).
+   - Verbose: ~70 lines for 16 fields, all hand-maintained.
+   - Schema changes don't propagate — add a field to the assembly and the
+     manager must hand-edit this HTML (a publish-time check can warn, not fix).
+   - Easy to typo a name= attribute and silently break submission mapping.
+
+  Note: the surrounding <head> and page chrome are provided by the system;
+  this file is only the author-editable region.
+-->
+<form action="{{ form_url }}" method="post">
+  {{ csrf_form_element }}
+
+  <h1>Register your interest</h1>
+  <p>Fill in the form below to register for the citizens' assembly.</p>
+
+  <h2>Eligibility</h2>
+
+  <fieldset>
+    <legend>Eligible</legend>
+    <label><input type="radio" name="eligible" value="yes"> Yes</label>
+    <label><input type="radio" name="eligible" value="no"> No</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Can attend</legend>
+    <label><input type="radio" name="can_attend" value="yes"> Yes</label>
+    <label><input type="radio" name="can_attend" value="no"> No</label>
+  </fieldset>
+
+  <h2>Your name and contact details</h2>
+
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" required>
+
+  <label for="first_name">First name</label>
+  <input type="text" id="first_name" name="first_name">
+
+  <label for="last_name">Last name</label>
+  <input type="text" id="last_name" name="last_name">
+
+  <label for="mobile_number">Mobile number</label>
+  <input type="text" id="mobile_number" name="mobile_number">
+
+  <h2>Your address</h2>
+
+  <label for="primary_address1">Primary address1</label>
+  <input type="text" id="primary_address1" name="primary_address1">
+
+  <label for="primary_address2">Primary address2</label>
+  <input type="text" id="primary_address2" name="primary_address2">
+
+  <label for="primary_city">Primary city</label>
+  <input type="text" id="primary_city" name="primary_city">
+
+  <label for="primary_zip">Primary zip</label>
+  <input type="text" id="primary_zip" name="primary_zip">
+
+  <h2>About you</h2>
+
+  <fieldset>
+    <legend>Gender</legend>
+    <label><input type="radio" name="gender" value="Female"> Female</label>
+    <label><input type="radio" name="gender" value="Male"> Male</label>
+    <label><input type="radio" name="gender" value="Non-binary or other"> Non-binary or other</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Age bracket</legend>
+    <label><input type="radio" name="age_bracket" value="0-15"> 0-15</label>
+    <label><input type="radio" name="age_bracket" value="16-29"> 16-29</label>
+    <label><input type="radio" name="age_bracket" value="30-44"> 30-44</label>
+    <label><input type="radio" name="age_bracket" value="45-59"> 45-59</label>
+    <label><input type="radio" name="age_bracket" value="60+"> 60+</label>
+  </fieldset>
+
+  <label for="geo_bucket">Geo bucket</label>
+  <select id="geo_bucket" name="geo_bucket">
+    <option value="">— Please choose —</option>
+    <option value="Central Scotland">Central Scotland</option>
+    <option value="Glasgow">Glasgow</option>
+    <option value="Highlands and Islands">Highlands and Islands</option>
+    <option value="Lothian">Lothian</option>
+    <option value="Mid Scotland and Fife">Mid Scotland and Fife</option>
+    <option value="North East Scotland">North East Scotland</option>
+    <option value="South Scotland">South Scotland</option>
+    <option value="West Scotland">West Scotland</option>
+  </select>
+
+  <fieldset>
+    <legend>Edu level</legend>
+    <label><input type="radio" name="edu_level" value="Level 1"> Level 1</label>
+    <label><input type="radio" name="edu_level" value="Level 2 or 3"> Level 2 or 3</label>
+    <label><input type="radio" name="edu_level" value="Level 4 and above"> Level 4 and above</label>
+    <label><input type="radio" name="edu_level" value="No qualifications"> No qualifications</label>
+  </fieldset>
+
+  <h2>Consent</h2>
+
+  <label><input type="checkbox" name="consent" value="yes"> Consent</label>
+  <label><input type="checkbox" name="stay_on_db" value="yes"> Stay on database</label>
+
+  <button type="submit">Register</button>
+</form>

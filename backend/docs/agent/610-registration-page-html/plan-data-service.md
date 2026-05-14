@@ -674,4 +674,24 @@ The render context exposes per-field attribute strings and option iterables draw
 
 **Note:** picking A here implies the Q8(a) reading (author writes inputs, system validates); picking C implies Q8(b) (system substitutes attributes). So Q15 settles Q8.
 
+#### Worked examples for the team to compare
+
+Three concrete example forms have been written to this directory, all built from the
+real 16-field schema of assembly `c8f833a8-a712-4457-b564-b1736cdf5222` and all
+converging on the **same** rendered output:
+
+| File | Approach | Author writes |
+| --- | --- | --- |
+| `example-form-a-raw-html.html` | Option A — raw HTML | everything; only `{{ csrf_form_element }}` / `{{ form_url }}` are tokens |
+| `example-form-b-input-attrs.html` | Option C — attributes injected | all structural HTML + `{% for %}` loops; `{{ }}` for system-owned attrs/options |
+| `example-form-c-field-tags.html` | a third option (~what `plan-frontend.md` assumed) | page chrome only; one `{{ field('x') }}` per field |
+
+Key takeaway from the side-by-side: **Option C (`example-form-b`) is the only one
+where the per-option loop is visible and author-editable** — which is the looping
+requirement raised in discussion. `example-form-c` hides the loop entirely (less
+than half the lines, but near-zero control over per-field markup and labels);
+`example-form-a` has no loop because every option is hand-written (longest, total
+control, but schema changes never propagate). Each file's header comment carries
+its full pros/cons.
+
 **Answer:**
