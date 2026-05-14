@@ -223,7 +223,7 @@ tests/unit/test_validators.py -q` green; `just check` clean. Commit.
 
 ---
 
-## Phase 2 — Adapters layer
+## Phase 2 — Adapters layer ✅ COMPLETE
 
 ### 2.1 ORM tables — `src/opendlp/adapters/orm.py`
 
