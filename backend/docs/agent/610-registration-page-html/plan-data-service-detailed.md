@@ -325,7 +325,7 @@ tests/contract/test_registration_page_html_repo.py tests/integration/test_orm.py
 
 ---
 
-## Phase 3 — Config (size limits)
+## Phase 3 — Config (size limits) ✅ COMPLETE
 
 Done early — before the service layer — so the size checks in Phase 4 have a real config helper
 to call rather than a stub.
