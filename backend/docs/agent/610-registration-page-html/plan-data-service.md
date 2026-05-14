@@ -2,7 +2,7 @@
 
 **Branch:** `610-registration-page-html`
 **Date:** 2026-05-13
-**Status:** Updated after second round of answers (all questions resolved except Q15, which subsumes Q8 and is pending team discussion)
+**Status:** Updated after third round (URL structure aligned with `plan-frontend.md`: `/register/<url_slug>` + `/r/<short_url_slug>`, 302 redirect; Q3 redirect type clarified). All questions resolved except Q15, which subsumes Q8 and is pending team discussion. Remaining divergences between this plan and `plan-frontend.md` are tracked in `deltas-to-fix.md`.
 
 ## 1. Scope
 
@@ -14,7 +14,7 @@ This plan covers ONLY:
 
 This plan deliberately does NOT cover:
 
-- Blueprint routes (backoffice tab nor public `/r/<slug>` route)
+- Blueprint routes (backoffice tab nor the public `/register/<url_slug>` and `/r/<short_url_slug>` routes)
 - Templates / HTML / UI
 - WTForms classes
 - The form-submission endpoint or `Respondent` creation from a submission (next story)
@@ -55,7 +55,13 @@ The thank-you HTML stays on the main `RegistrationPage` row for now (one column,
 
 ### Public URL shape
 
-Confirmed in story notes: `/r/<slug>` for live, `/r/<slug>?preview=<preview_token>` for unpublished. Per Q3, both `url_slug` AND `short_url_slug` live under `/r/`. When `/r/<slug>` is hit, the lookup tries `url_slug` first, then `short_url_slug`; a short-slug hit returns a 301 redirect to the canonical `url_slug` URL (so QR-code lookups always land on the canonical address). The slug must be unique across all assemblies (no `/<assembly_id>/` prefix) AND a single string can't be both a short slug for one page and a long slug for another. See Q3.
+Aligned with `plan-frontend.md`: the long and short slugs live under **separate path prefixes**.
+
+- Canonical (long) form: `/register/<url_slug>`
+- Short form: `/r/<short_url_slug>` — issues a **302** (temporary) redirect to the canonical `/register/<url_slug>` URL (so QR-code scans always land on the canonical address). 302 not 301: short slugs may be cleared and reused later, and a cached permanent redirect would misroute. See Q3.
+- Preview of an unpublished page: `/register/<url_slug>?preview=<preview_token>`
+
+Because the two slug types live in different namespaces, a string can be a `url_slug` for one page and a `short_url_slug` for another without colliding as URLs. Each slug column therefore only needs to be unique **within its own column**, across all assemblies — no cross-column uniqueness check is required (this simplifies §4.1, §4.4, §5.1 versus the earlier "both under /r/" design). See Q3.
 
 ### Module system
 
@@ -183,9 +189,9 @@ class UrlSlugValidator:
     Rejects values in RESERVED_SLUGS."""
 ```
 
-`RESERVED_SLUGS = frozenset({"preview", "submit", "admin", "static", "assets"})` — same disallow list as before. Per Q3, both `url_slug` and `short_url_slug` are validated by this same validator (since both are mounted under `/r/` and could collide with reserved paths).
+`RESERVED_SLUGS = frozenset({"preview", "submit", "admin", "static", "assets"})` — disallow list applied to both `url_slug` and `short_url_slug` (same validator), guarding against collisions with reserved sub-paths we might mount under `/register/` or `/r/`.
 
-Additionally: within one page, `url_slug` and `short_url_slug` must differ. Across pages, neither slug type may equal any other slug of either type (the partial-unique index needs to span both columns — see §4.1).
+Uniqueness is per-column only: `url_slug` unique among `url_slug`s, `short_url_slug` unique among `short_url_slug`s (see §4.1). The two columns are independent namespaces, so no cross-column check is needed. Within one page, `url_slug` and `short_url_slug` may legitimately differ or even be unset independently.
 
 ### 3.6 No `RespondentSourceType` change needed
 
@@ -247,7 +253,7 @@ registration_page_html_sources = Table(
 
 Sizing: 100 chars for `url_slug`, 30 chars for `short_url_slug`. HTML stored as `Text`. Per Q4, size limits are enforced at the **service layer** (so we can give a friendly error) and are **configurable via env vars** — see §5.6.
 
-**Cross-column slug uniqueness:** the partial unique indexes above each cover one column. A value like `"berlin"` could theoretically end up as `url_slug` on one page and `short_url_slug` on another. To prevent this, the service layer also performs a cross-check on every slug write (see §5.1). A DB-level guarantee would require a check across two columns of two rows (an EXCLUDE constraint or a generated column), which is more machinery than the value justifies given assembly managers are trusted.
+**Slug uniqueness:** the two partial unique indexes above each cover one column. Because `/register/<url_slug>` and `/r/<short_url_slug>` are separate path namespaces (see §2), per-column uniqueness is sufficient — there is no cross-column constraint to enforce. The DB partial unique indexes are the real guard; the service layer adds a pre-flush check only to turn an `IntegrityError` into a friendly message.
 
 ### 4.2 Imperative mapping
 
@@ -282,11 +288,6 @@ class RegistrationPageRepository(AbstractRepository):
     def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None: ...
     @abc.abstractmethod
     def get_by_short_url_slug(self, short_url_slug: str) -> RegistrationPage | None: ...
-    @abc.abstractmethod
-    def slug_in_use(self, slug: str, exclude_page_id: uuid.UUID | None = None) -> bool:
-        """True if `slug` matches any registration page's url_slug OR short_url_slug,
-        ignoring the row identified by exclude_page_id. Used for the cross-column
-        uniqueness check from §4.1."""
     @abc.abstractmethod
     def delete(self, item: RegistrationPage) -> None: ...
 
@@ -350,9 +351,9 @@ def update_registration_page(
     thank_you_html: str | None = None,
 ) -> RegistrationPage:
     """Partial update to the aggregate root. Per Q6, raises ValueError if the
-    page is published and a slug change is attempted. Performs slug uniqueness
-    check (across BOTH columns, both directions) before flush so we raise a
-    clean ValueError instead of an IntegrityError."""
+    page is published and a slug change is attempted. Performs a per-column
+    slug uniqueness check before flush so we raise a clean ValueError instead
+    of an IntegrityError."""
 
 def update_registration_page_html(
     uow, user_id, assembly_id, form_html: str,
@@ -378,29 +379,31 @@ class RegistrationPageNotReady(Exception):
         super().__init__("; ".join(problems))
 ```
 
-**Slug uniqueness check pattern** (uses the cross-column `slug_in_use` repo method from §4.4):
+**Slug uniqueness check pattern** (per-column, using the existing `get_by_url_slug` / `get_by_short_url_slug` repo methods):
 
 ```python
 new = url_slug.strip()
-if new and uow.registration_pages.slug_in_use(new, exclude_page_id=page.id):
-    raise ValueError(f"The slug {new!r} is already in use by another registration page")
+if new:
+    clash = uow.registration_pages.get_by_url_slug(new)
+    if clash and clash.id != page.id:
+        raise ValueError(f"The slug {new!r} is already in use by another registration page")
 ```
 
-Same for `short_url_slug`. Also within one page: `url_slug != short_url_slug` (when both non-empty). The DB partial unique indexes are the real guard against same-column collisions; the cross-column case is enforced only at the service layer.
+Same shape for `short_url_slug` via `get_by_short_url_slug`. The DB partial unique indexes are the real guard; this check just produces a friendly error. No cross-column check — the two slug namespaces are independent (see §2, §4.1).
 
 ### 5.2 Public lookup functions
 
 These do **not** take a `user_id` and do **not** check Flask-Login — the public route is anonymous.
 
-```python
-@dataclass
-class SlugLookupResult:
-    page: RegistrationPage | None      # None if neither slug matched
-    matched_short_slug: bool            # True iff the slug was the short one — caller redirects
+The long and short slugs are served by different routes (`/register/<url_slug>` and `/r/<short_url_slug>` — see §2), so each route does an unambiguous single-column lookup. There is no "try one then the other" dispatch.
 
-def find_registration_page_by_slug(uow, slug: str) -> SlugLookupResult:
-    """Tries url_slug first, then short_url_slug. If only the short matched,
-    matched_short_slug=True so the route can issue a 301 to the canonical URL."""
+```python
+def find_registration_page_by_url_slug(uow, url_slug: str) -> RegistrationPage | None:
+    """For the canonical /register/<url_slug> route. None if not found."""
+
+def find_registration_page_by_short_url_slug(uow, short_url_slug: str) -> RegistrationPage | None:
+    """For the /r/<short_url_slug> route. The route 302-redirects to
+    /register/<page.url_slug> on a hit. None if not found."""
 
 @dataclass
 class RegistrationPageVisibility:
@@ -508,7 +511,7 @@ Suggested name: **`FF_REGISTRATION_PAGE`** (checked via `has_feature("registrati
 Gates:
 
 - The "Registration" tab in the backoffice (route layer).
-- The public `/r/<slug>` route (returns 404 if flag is off).
+- The public `/register/<url_slug>` and `/r/<short_url_slug>` routes (return 404 if flag is off).
 
 The service layer itself does NOT check the flag — it stays pure. The flag is a presentation-layer gate.
 
@@ -533,7 +536,7 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
   - `RegistrationPageHtml.render` substitution behaviour, `readiness_problems`.
   - `UrlSlugValidator` accept/reject cases including reserved values.
 - **Contract tests** for `RegistrationPageRepository` and `RegistrationPageHtmlRepository` against SqlAlchemy (plus an in-memory fake if we use the existing fake repo pattern).
-- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, slug cross-column uniqueness, slug change while published rejected, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, preview-token rotation, public lookup with short-slug redirect signal, render-context substitution, size-limit rejection (Q4), env-var override of size limits.
+- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, per-column slug uniqueness, slug change while published rejected, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, preview-token rotation, public lookup by url_slug and by short_url_slug, render-context substitution, size-limit rejection (Q4), env-var override of size limits.
 - **BDD** deferred to the route-level plan.
 
 ---
@@ -583,7 +586,11 @@ Empty string with partial unique index on `WHERE slug != ''`.
 
 ### Q3 — Reserved slug values? **RESOLVED**
 
-Confirmed list: `preview`, `submit`, `admin`, `static`, `assets`. Both `url_slug` and `short_url_slug` mount under `/r/` (no separate `/s/`). Implication: a route handler for `/r/<slug>` tries `url_slug` first then `short_url_slug`; a short-slug match returns a 301 to the canonical URL. The cross-column uniqueness check in §5.1 prevents the same value living as a short slug for one page and a long slug for another.
+Confirmed reserved list: `preview`, `submit`, `admin`, `static`, `assets`.
+
+URL structure aligned with `plan-frontend.md`: the canonical (long) form lives at `/register/<url_slug>` and the short form at `/r/<short_url_slug>`. They are **separate path namespaces**, so each route does a single-column lookup — no "try one then the other" dispatch, and no cross-column uniqueness needed.
+
+The `/r/<short_url_slug>` route redirects to the canonical `/register/<url_slug>` URL using a **302 (temporary) redirect**, not 301. A short slug may be cleared and reused by a different assembly later; a 301 would be cached by browsers and intermediaries and would keep pointing at the old target. Everywhere in this doc that describes the short-URL redirect uses 302.
 
 ### Q4 — HTML size cap? **RESOLVED**
 
@@ -652,9 +659,9 @@ The backoffice generates a complete, unstyled HTML form from the per-assembly re
 Author writes the form HTML using Jinja-style placeholders for per-field attributes and uses Jinja loops for option lists:
 
 ```html
-<input {{ form_attrs.first_name }} class="big-input">
+<input {{ form_attrs.first_name }} class="big-input" />
 {% for option in form_attrs.region.options %}
-  <label><input type="radio" {{ option.attrs }}> {{ option.label }}</label>
+<label><input type="radio" {{ option.attrs }} /> {{ option.label }}</label>
 {% endfor %}
 ```
 
