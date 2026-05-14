@@ -8,12 +8,26 @@ from enum import Enum
 from typing import Any
 
 from sortition_algorithms.utils import RunReport
-from sqlalchemy import TIMESTAMP, Boolean, Column, Date, ForeignKey, Index, Integer, String, Table, Text, TypeDecorator
+from sqlalchemy import (
+    TIMESTAMP,
+    Boolean,
+    Column,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+    Text,
+    TypeDecorator,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
+from opendlp.domain.registration_page import RegistrationPageSource
 from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType, RespondentFieldGroup
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
@@ -527,4 +541,56 @@ respondent_field_definitions = Table(
     Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
     # Composite index for grouped display (ordered read path)
     Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
+)
+
+# Registration pages table — one optional registration page per assembly.
+registration_pages = Table(
+    "registration_pages",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    ),
+    Column("url_slug", String(100), nullable=False, default=""),
+    Column("short_url_slug", String(30), nullable=False, default=""),
+    Column("is_published", Boolean, nullable=False, default=False, index=True),
+    Column("preview_token", String(64), nullable=False),
+    Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
+    Column("thank_you_html", Text, nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    # Partial unique indexes — only enforce uniqueness when the slug is set.
+    Index(
+        "ix_registration_pages_url_slug_unique",
+        "url_slug",
+        unique=True,
+        postgresql_where=text("url_slug != ''"),
+    ),
+    Index(
+        "ix_registration_pages_short_url_slug_unique",
+        "short_url_slug",
+        unique=True,
+        postgresql_where=text("short_url_slug != ''"),
+    ),
+)
+
+# Registration page HTML sources table — the form HTML for an HTML-source page.
+registration_page_html_sources = Table(
+    "registration_page_html_sources",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "registration_page_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("registration_pages.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    ),
+    Column("form_html", Text, nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

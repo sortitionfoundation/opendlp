@@ -14,6 +14,8 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationPageHtmlRepository,
+    SqlAlchemyRegistrationPageRepository,
     SqlAlchemyRespondentFieldDefinitionRepository,
     SqlAlchemyRespondentRepository,
     SqlAlchemySelectionRunRecordRepository,
@@ -30,6 +32,8 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RegistrationPageHtmlRepository,
+    RegistrationPageRepository,
     RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
@@ -60,6 +64,8 @@ class AbstractUnitOfWork(abc.ABC):
     target_categories: TargetCategoryRepository
     respondents: RespondentRepository
     respondent_field_definitions: RespondentFieldDefinitionRepository
+    registration_pages: RegistrationPageRepository
+    registration_page_html_sources: RegistrationPageHtmlRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -119,6 +125,8 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.target_categories = SqlAlchemyTargetCategoryRepository(self.session)
         self.respondents = SqlAlchemyRespondentRepository(self.session)
         self.respondent_field_definitions = SqlAlchemyRespondentFieldDefinitionRepository(self.session)
+        self.registration_pages = SqlAlchemyRegistrationPageRepository(self.session)
+        self.registration_page_html_sources = SqlAlchemyRegistrationPageHtmlRepository(self.session)
 
         return self
 

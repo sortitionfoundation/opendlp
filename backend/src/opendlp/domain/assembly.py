@@ -60,6 +60,10 @@ class Assembly:
         self.respondents = respondents or []
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
+        # An assembly may have a RegistrationPage (domain.registration_page).
+        # It is deliberately not wired here as an ORM relationship - it is
+        # loaded via RegistrationPageRepository.get_by_assembly_id. A
+        # relationship could be added later if direct access is wanted.
 
     def archive(self) -> None:
         """Archive this assembly."""

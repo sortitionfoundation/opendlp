@@ -9,6 +9,7 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
@@ -27,6 +28,8 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RegistrationPageHtmlRepository,
+    RegistrationPageRepository,
     RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
@@ -308,6 +311,56 @@ class FakeAssemblyGSheetRepository(FakeRepository, AssemblyGSheetRepository):
 
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeRegistrationPageRepository(FakeRepository, RegistrationPageRepository):
+    """Fake implementation of RegistrationPageRepository."""
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
+        """Get the registration page for an assembly, or None if it has none."""
+        for item in self._items:
+            if item.assembly_id == assembly_id:
+                return item
+        return None
+
+    def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its url_slug. Empty input returns None."""
+        if not url_slug:
+            return None
+        for item in self._items:
+            if item.url_slug == url_slug:
+                return item
+        return None
+
+    def get_by_short_url_slug(self, short_url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its short_url_slug. Empty input returns None."""
+        if not short_url_slug:
+            return None
+        for item in self._items:
+            if item.short_url_slug == short_url_slug:
+                return item
+        return None
+
+    def delete(self, item: RegistrationPage) -> None:
+        """Delete a RegistrationPage from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeRegistrationPageHtmlRepository(FakeRepository, RegistrationPageHtmlRepository):
+    """Fake implementation of RegistrationPageHtmlRepository."""
+
+    def get_by_page_id(self, registration_page_id: uuid.UUID) -> RegistrationPageHtml | None:
+        """Get the HTML source for a registration page, or None if it has none."""
+        for item in self._items:
+            if item.registration_page_id == registration_page_id:
+                return item
+        return None
+
+    def delete(self, item: RegistrationPageHtml) -> None:
+        """Delete a RegistrationPageHtml from the repository."""
         if item in self._items:
             self._items.remove(item)
 
@@ -693,6 +746,10 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.respondent_field_definitions = self.fake_respondent_field_definitions = (
             FakeRespondentFieldDefinitionRepository()
         )
+        self.registration_pages = self.fake_registration_pages = FakeRegistrationPageRepository()
+        self.registration_page_html_sources = self.fake_registration_page_html_sources = (
+            FakeRegistrationPageHtmlRepository()
+        )
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -723,6 +780,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_target_categories._items.clear()
         self.fake_respondents._items.clear()
         self.fake_respondent_field_definitions._items.clear()
+        self.fake_registration_pages._items.clear()
+        self.fake_registration_page_html_sources._items.clear()
         self.committed = False
 
 
