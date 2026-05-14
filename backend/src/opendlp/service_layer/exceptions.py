@@ -1,6 +1,8 @@
 """ABOUTME: Custom exceptions for service layer operations
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
+# Re-exported so service-layer callers import it from the usual exceptions module.
+from opendlp.domain.registration_page import RegistrationPageNotReady  # noqa: F401
 from opendlp.translations import gettext as _
 
 
@@ -144,6 +146,10 @@ class InviteNotFoundError(NotFoundError):
 
 class GoogleSheetConfigNotFoundError(NotFoundError):
     """A Google Sheets configuration could not be found in the database"""
+
+
+class RegistrationPageNotFoundError(NotFoundError):
+    """A registration page could not be found in the database"""
 
 
 class SelectionRunRecordNotFoundError(NotFoundError):
