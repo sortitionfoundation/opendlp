@@ -5,7 +5,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/input.html" import input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 
 {#
@@ -135,33 +135,323 @@ Args:
             </div>
         </section>
 
-        {# Form Actions #}
-        <section class="flex gap-4">
-            {{ button(_("Back to Details"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
-            {{ button(_("Save"), type="submit", variant="primary") }}
+        {# QR Code Section - only shown when short URL is configured #}
+        {% if qr_code_data_url %}
+            <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("QR Code") }}</h2>
+                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("Use this QR code on paper invitations") }}
+                </p>
+
+                <div class="flex items-start gap-6">
+                    {# QR Code Image #}
+                    <div class="flex-shrink-0 p-4 rounded-lg" style="background-color: white; border: 1px solid var(--color-borders-dividers);">
+                        <img src="{{ qr_code_data_url }}"
+                             alt="{{ _('QR code for registration page') }}"
+                             class="w-40 h-40" />
+                    </div>
+
+                    {# Download Button #}
+                    <div class="flex flex-col gap-2">
+                        <a href="{{ url_for('backoffice.download_registration_qr_code', assembly_id=assembly.id) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
+                           style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
+                           download>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            {{ _("Download QR Code") }}
+                        </a>
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("PNG format, 400x400 pixels") }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        {# Publication Status Section #}
+        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Publication Status") }}</h2>
+
+            <div class="space-y-6 max-w-2xl">
+                {# Published Toggle #}
+                {{ switch(
+                name="is_published",
+                label=_("Published"),
+                checked=is_published,
+                hint=_("When published, the registration form is publicly accessible")
+                ) }}
+
+                {# Preview Section - shown when not published #}
+                {% if not is_published %}
+                    <div class="p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                        <h3 class="text-heading-sm mb-3" style="color: var(--color-info-600);">{{ _("Preview Mode") }}</h3>
+                        <p class="text-body-sm mb-4" style="color: var(--color-body-text);">
+                            {{ _("While unpublished, use the preview URL below to test your form.") }}
+                        </p>
+
+                        {# Preview Token #}
+                        <div class="mb-4">
+                            <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Preview Token") }}</label>
+                            <div class="flex items-center gap-2">
+                                <code class="text-body-sm px-3 py-2 rounded-lg"
+                                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                    {{ preview_token }}
+                                </code>
+                            </div>
+                        </div>
+
+                        {# Preview URL #}
+                        <div>
+                            <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Preview URL") }}</label>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <a href="{{ preview_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-body-sm underline break-all"
+                                   style="color: var(--color-link-text);">
+                                    {{ preview_url }}
+                                </a>
+                                <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    ({{ _("opens in new tab") }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="p-4 rounded-lg" style="background-color: var(--color-success-100); border: 1px solid var(--color-success-400);">
+                        <p class="text-body-sm" style="color: var(--color-success-600);">
+                            {{ _("Your registration form is live and accessible to the public.") }}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
         </section>
-    </form>
 
-    <script nonce="{{ csp_nonce }}">
-        document.addEventListener('alpine:init', function() {
-            Alpine.data('prefixedUrlInput', function(prefix) {
-                return {
-                    prefix: prefix,
-                    copied: false,
+        {# Registration Form HTML Section #}
+        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
 
-                    copyUrl: function() {
-                        var self = this;
-                        var slug = this.$refs.slugInput.value;
-                        var fullUrl = this.prefix + slug;
-                        navigator.clipboard.writeText(fullUrl).then(function() {
-                            self.copied = true;
-                            setTimeout(function() {
-                                self.copied = false;
-                            }, 2000);
-                        });
-                    }
-                };
-            });
+            <div class="space-y-4">
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Paste your HTML form code below. Use template placeholders (shown at the bottom of this page) for form fields that will be resolved by the system.") }}
+                </p>
+
+                {# HTML Textarea with monospace font #}
+                {{ textarea(
+                name="html_content",
+                label="",
+                value=html_content,
+                placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label>First Name</label>\n    {{ first_name }}\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
+                rows=25,
+                attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
+                ) }}
+            </div>
+        </section>
+
+        {# Thank You Page HTML Section #}
+        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Thank You Page HTML") }}</h2>
+
+            <div class="space-y-4">
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("This page is shown after successful registration. You can use placeholders like {{ first_name }} and {{ assembly_title }}.") }}
+                </p>
+
+                {# Thank You HTML Textarea with monospace font #}
+                {{ textarea(
+                name="thank_you_html",
+                label="",
+                value=thank_you_html,
+                placeholder="<h1>Thank you, {{ first_name }}!</h1>\n<p>Your registration for {{ assembly_title }} has been received.</p>\n<p>We will contact you at {{ email }} with further details.</p>",
+                rows=12,
+                attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
+                ) }}
+            </div>
+        </section>
+
+        {# Available Placeholders Reference Section #}
+        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Available Placeholders") }}</h2>
+            <p class="text-body-sm mb-6" style="color: var(--color-secondary-text);">
+                {{ _("Copy and paste these placeholders into your HTML. They will be replaced with actual form elements or values.") }}
+            </p>
+
+            <div class="space-y-4">
+                {# Form Structure (Required) #}
+                <details class="group" open>
+                    <summary class="flex items-center gap-2 cursor-pointer text-heading-sm py-2" style="color: var(--color-headings);">
+                        <svg class="h-4 w-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                        {{ _("Form Structure (Required)") }}
+                    </summary>
+                    <div class="pl-6 pt-3 space-y-2">
+                        {% for placeholder in [
+                        ("{{ csrf_form_element }}", _("CSRF protection token (required in all forms)")),
+                        ("{{ form_action }}", _("Form submission URL"))
+                        ] %}
+                        <div class="flex items-center gap-3 py-1" x-data="placeholderCopy()">
+                            <code class="text-body-sm px-3 py-1.5 rounded font-mono"
+                                  style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"
+                                  x-ref="code">{{ placeholder[0] }}</code>
+                            <button type="button"
+                                    class="text-button-sm px-2 py-1 rounded transition-colors"
+                                    style="color: var(--color-link-text);"
+                                    @click="copyText()"
+                                    x-text="copied ? '{{ _('Copied!') }}' : '{{ _('Copy') }}'"
+                                    :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy placeholder to clipboard') }}'">
+                            </button>
+                            <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ placeholder[1] }}</span>
+                        </div>
+{% endfor %}
+</div>
+</details>
+
+                {# Personal Fields #}
+<details class="group">
+    <summary class="flex items-center gap-2 cursor-pointer text-heading-sm py-2" style="color: var(--color-headings);">
+        <svg class="h-4 w-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        {{ _("Personal Fields") }}
+    </summary>
+    <div class="pl-6 pt-3 space-y-2">
+        {% for placeholder in [
+        ("{{ first_name }}", _("First name input (required)")),
+        ("{{ last_name }}", _("Last name input (required)")),
+        ("{{ email }}", _("Email input (required)")),
+        ("{{ phone }}", _("Phone input")),
+        ("{{ address_line_1 }}", _("Address line 1")),
+        ("{{ address_line_2 }}", _("Address line 2")),
+        ("{{ city }}", _("City input")),
+        ("{{ postcode }}", _("Postcode input"))
+        ] %}
+        <div class="flex items-center gap-3 py-1" x-data="placeholderCopy()">
+            <code class="text-body-sm px-3 py-1.5 rounded font-mono"
+                  style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"
+                  x-ref="code">{{ placeholder[0] }}</code>
+            <button type="button"
+                    class="text-button-sm px-2 py-1 rounded transition-colors"
+                    style="color: var(--color-link-text);"
+                    @click="copyText()"
+                    x-text="copied ? '{{ _('Copied!') }}' : '{{ _('Copy') }}'"
+                    :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy placeholder to clipboard') }}'">
+            </button>
+            <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ placeholder[1] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</details>
+
+                {# Opt-in Fields #}
+<details class="group">
+    <summary class="flex items-center gap-2 cursor-pointer text-heading-sm py-2" style="color: var(--color-headings);">
+        <svg class="h-4 w-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        {{ _("Opt-in Fields") }}
+    </summary>
+    <div class="pl-6 pt-3 space-y-2">
+        {% for placeholder in [
+        ("{{ opt_in_email }}", _("Email opt-in checkbox")),
+        ("{{ opt_in_phone }}", _("Phone opt-in checkbox")),
+        ("{{ opt_in_post }}", _("Postal opt-in checkbox"))
+        ] %}
+        <div class="flex items-center gap-3 py-1" x-data="placeholderCopy()">
+            <code class="text-body-sm px-3 py-1.5 rounded font-mono"
+                  style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"
+                  x-ref="code">{{ placeholder[0] }}</code>
+            <button type="button"
+                    class="text-button-sm px-2 py-1 rounded transition-colors"
+                    style="color: var(--color-link-text);"
+                    @click="copyText()"
+                    x-text="copied ? '{{ _('Copied!') }}' : '{{ _('Copy') }}'"
+                    :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy placeholder to clipboard') }}'">
+            </button>
+            <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ placeholder[1] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</details>
+
+                {# Target Fields #}
+<details class="group">
+    <summary class="flex items-center gap-2 cursor-pointer text-heading-sm py-2" style="color: var(--color-headings);">
+        <svg class="h-4 w-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        {{ _("Target Fields (based on assembly configuration)") }}
+    </summary>
+    <div class="pl-6 pt-3">
+        <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">
+            {{ _("Target fields are generated based on your assembly's configured target categories. Use the pattern:") }}
+        </p>
+        <div class="flex items-center gap-3 py-1" x-data="placeholderCopy()">
+            <code class="text-body-sm px-3 py-1.5 rounded font-mono"
+                  style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"
+                  x-ref="code">{{ "{{ target_<field_name> }}" }}</code>
+            <button type="button"
+                    class="text-button-sm px-2 py-1 rounded transition-colors"
+                    style="color: var(--color-link-text);"
+                    @click="copyText()"
+                    x-text="copied ? '{{ _('Copied!') }}' : '{{ _('Copy') }}'"
+                    :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy placeholder to clipboard') }}'">
+            </button>
+        </div>
+        <p class="text-body-sm mt-3" style="color: var(--color-secondary-text);">
+            {{ _("Examples: {{ target_age_range }}, {{ target_gender }}, {{ target_location }}") }}
+        </p>
+    </div>
+</details>
+</div>
+</section>
+
+        {# Form Actions #}
+<section class="flex gap-4">
+    {{ button(_("Back to Details"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
+    {{ button(_("Save"), type="submit", variant="primary") }}
+</section>
+</form>
+
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('alpine:init', function() {
+        Alpine.data('prefixedUrlInput', function(prefix) {
+            return {
+                prefix: prefix,
+                copied: false,
+
+                copyUrl: function() {
+                    var self = this;
+                    var slug = this.$refs.slugInput.value;
+                    var fullUrl = this.prefix + slug;
+                    navigator.clipboard.writeText(fullUrl).then(function() {
+                        self.copied = true;
+                        setTimeout(function() {
+                            self.copied = false;
+                        }, 2000);
+                    });
+                }
+            };
         });
-    </script>
+
+        Alpine.data('placeholderCopy', function() {
+            return {
+                copied: false,
+
+                copyText: function() {
+                    var self = this;
+                    var text = this.$refs.code.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        self.copied = true;
+                        setTimeout(function() {
+                            self.copied = false;
+                        }, 2000);
+                    });
+                }
+            };
+        });
+    });
+</script>
 {% endblock %}
