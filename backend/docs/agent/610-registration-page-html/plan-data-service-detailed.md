@@ -344,7 +344,7 @@ clean. Commit (or fold into the Phase 4 commit).
 
 ---
 
-## Phase 4 — Service layer
+## Phase 4 — Service layer ✅ COMPLETE
 
 New file: `src/opendlp/service_layer/registration_page_service.py` (its own file — **not**
 appended to `assembly_service.py`, which is already flagged for splitting). New test file:
