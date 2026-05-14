@@ -348,12 +348,18 @@ def update_registration_page(
     *,
     url_slug: str | None = None,        # None = leave alone, "" = clear
     short_url_slug: str | None = None,
-    thank_you_html: str | None = None,
 ) -> RegistrationPage:
-    """Partial update to the aggregate root. Per Q6, raises ValueError if the
-    page is published and a slug change is attempted. Performs a per-column
-    slug uniqueness check before flush so we raise a clean ValueError instead
-    of an IntegrityError."""
+    """Partial update to the aggregate root's slugs. Per Q6, raises ValueError
+    if the page is published and a slug change is attempted. Performs a
+    per-column slug uniqueness check before flush so we raise a clean
+    ValueError instead of an IntegrityError."""
+
+def update_thank_you_html(
+    uow, user_id, assembly_id, thank_you_html: str,
+) -> RegistrationPage:
+    """Update the thank-you HTML on the aggregate root. Separate from
+    update_registration_page so the backoffice can save the thank-you content
+    independently of the slug fields. Enforces size limit (§5.6)."""
 
 def update_registration_page_html(
     uow, user_id, assembly_id, form_html: str,
@@ -486,7 +492,7 @@ Two env vars added to `opendlp.config`, with the defaults below if unset:
 | `REGISTRATION_FORM_HTML_MAX_BYTES`      | 204800 (200K) | `RegistrationPageHtml.form_html`  |
 | `REGISTRATION_THANK_YOU_HTML_MAX_BYTES` | 51200 (50K)   | `RegistrationPage.thank_you_html` |
 
-Enforced in `update_registration_page_html` and `update_registration_page` respectively, raising `ValueError` with a friendly message ("HTML must be ≤ N bytes; got M"). Document both in `env.example` and `docs/configuration.md`.
+Enforced in `update_registration_page_html` and `update_thank_you_html` respectively, raising `ValueError` with a friendly message ("HTML must be ≤ N bytes; got M"). Document both in `env.example` and `docs/configuration.md`.
 
 ### 5.7 Where the service file lives
 

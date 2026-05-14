@@ -30,20 +30,22 @@ This is the biggest gap. `plan-frontend.md` has effectively pre-decided the temp
 
 **To resolve:** decide Q15 first (Option A vs C), then `plan-frontend.md`'s "Template Placeholders Reference" card (Cards 4 & 5) is largely rewritten to match. The placeholder reference UI also has to become schema-driven (rendered from the assembly's `RespondentFieldDefinition` set) rather than a static table.
 
-### 2. Service-layer interface (was comparison item #5)
+### 2. Service-layer interface (was comparison item #5) — DECIDED
 
-`plan-frontend.md`'s "Expected service layer interface" diverges from `plan-data-service.md` §5.1 on every signature. The contract needs to be agreed before either side builds against it.
+`plan-frontend.md`'s "Expected service layer interface" diverged from `plan-data-service.md` §5.1 on every signature.
 
-| Concern | `plan-frontend.md` | `plan-data-service.md` §5.1 |
+**Decision:** go with the `plan-data-service.md` shape on every row — `user_id` + `assembly_id` keying, explicit `create_registration_page` per Q11, publish/unpublish split with `RegistrationPageNotReady` as a real error path, child-table HTML save — **with one change**: the thank-you HTML gets its **own** function, `update_thank_you_html(uow, user_id, assembly_id, thank_you_html)`, rather than being folded into `update_registration_page(..., thank_you_html=)`. `plan-data-service.md` §5.1 and §5.6 have been updated to match.
+
+| Concern | `plan-frontend.md` | Decided (`plan-data-service.md` §5.1) |
 |---|---|---|
-| Permission arg | no `user_id` on any function | `user_id` threaded through every management function (permission checks) |
-| Create | `create_or_update_registration_page(...)` | explicit `create_registration_page(...)` that raises if one already exists (Q11 resolved) |
-| Publish | `toggle_registration_publish(...) -> bool` | separate `publish_registration_page` / `unpublish_registration_page`; `publish` raises `RegistrationPageNotReady` with the list of problems |
+| Permission arg | no `user_id` on any function | `user_id` threaded through every management function |
+| Create | `create_or_update_registration_page(...)` | explicit `create_registration_page(...)` that raises if one already exists (Q11) |
+| Publish | `toggle_registration_publish(...) -> bool` | separate `publish_registration_page` / `unpublish_registration_page`; `publish` raises `RegistrationPageNotReady` with the problem list |
 | Keying | some functions keyed by `registration_page_id` | everything keyed by `assembly_id` (consistent with `assembly_service`) |
 | HTML save | `save_registration_html(uow, registration_page_id, html_content)` | `update_registration_page_html(uow, user_id, assembly_id, form_html)` — operates on the child `RegistrationPageHtml` |
-| Thank-you save | separate `save_thank_you_html(...)` | folded into `update_registration_page(..., thank_you_html=)` |
+| Thank-you save | separate `save_thank_you_html(...)` | separate `update_thank_you_html(uow, user_id, assembly_id, thank_you_html)` — **frontend's separate-method idea adopted, renamed for consistency** |
 
-**To resolve:** agree the signatures. `plan-data-service.md`'s shape is the more codebase-consistent one (`user_id` + `assembly_id` keying, explicit create per Q11, publish/unpublish split with a real error path). The friction point for the frontend is the **single combined Save button**: with an explicit `create` that raises if-exists, the route has to `get` first and branch create-vs-update; and with publish/unpublish split plus `RegistrationPageNotReady`, the toggle needs an error path. Both are doable in the route layer but the frontend plan should reflect them.
+**Frontend impact:** the **single combined Save button** still needs adjusting. With explicit `create` that raises if-exists, the route has to `get` first and branch create-vs-update; with publish/unpublish split plus `RegistrationPageNotReady`, the toggle needs an error path; and with slugs / thank-you / form-HTML now updated by three separate functions, the route fans one Save out to several service calls. All doable in the route layer — `plan-frontend.md` should reflect it.
 
 ---
 
