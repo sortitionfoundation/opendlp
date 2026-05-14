@@ -447,13 +447,15 @@ green; `just check` clean.
 
 ---
 
-## Phase 5 — Full verification
+## Phase 5 — Full verification ✅ COMPLETE
 
-1. `CI=true just test` — whole suite green, output pristine (CLAUDE.md: no stray errors/warnings).
-2. `just check` — mypy, deptry, ruff all clean.
+1. `CI=true uv run pytest --ignore=tests/bdd` — full non-BDD suite green (2732 passed). The BDD
+   browser suite could not be run in this environment: Playwright browsers are not installed
+   (`playwright install` needed) — a pre-existing environment limitation unrelated to this work.
+2. `just check` — prek, mypy, deptry all clean.
 3. `uv run alembic upgrade head` then `downgrade -1` then `upgrade head` on the local DB — the
-   migration is reversible.
-4. Sanity-grep that no `entrypoints/` file was touched.
+   migration applies and is reversible.
+4. Confirmed no `entrypoints/` or `templates/` file was touched by this work.
 
 ---
 
