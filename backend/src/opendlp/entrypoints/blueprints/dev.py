@@ -28,6 +28,16 @@ from opendlp.service_layer.respondent_service import (
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
+
+def _is_safe_redirect_url(url: str) -> bool:
+    """Check if a URL is safe for redirection (internal only).
+
+    Prevents open redirect attacks by only allowing relative URLs.
+    """
+    # Only allow relative URLs that start with / but not // (protocol-relative)
+    return url.startswith("/") and not url.startswith("//")
+
+
 dev_bp = Blueprint("dev", __name__)
 
 
@@ -399,7 +409,7 @@ def patterns() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'dropdown'
     active_tab = request.args.get("tab", "dropdown")
-    valid_tabs = ["dropdown", "form", "ajax", "file-upload", "progress", "pagination", "scroll"]
+    valid_tabs = ["dropdown", "form", "ajax", "file-upload", "progress", "pagination", "scroll", "floating-alerts"]
     if active_tab not in valid_tabs:
         active_tab = "dropdown"
 
@@ -408,3 +418,37 @@ def patterns() -> ResponseReturnValue:
     assemblies = get_user_assemblies(uow, current_user.id)
 
     return render_template("backoffice/patterns.html", assemblies=assemblies, active_tab=active_tab), 200
+
+
+@dev_bp.route("/dev/flash-test", methods=["POST"])
+@login_required
+def flash_test() -> ResponseReturnValue:
+    """Trigger flash messages for testing floating alerts.
+
+    Admin-only endpoint that creates flash messages of different types.
+    This blueprint is only registered in non-production environments.
+    """
+    if not has_global_admin(current_user):
+        flash(_("You don't have permission to access developer tools"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    flash_type = request.form.get("type", "info")
+    message = request.form.get("message", "")
+
+    if not message:
+        messages = {
+            "success": _("Success! Your changes have been saved."),
+            "warning": _("Warning: Please review the data before continuing."),
+            "error": _("Error: Something went wrong. Please try again."),
+            "info": _("Info: A new feature is available."),
+        }
+        message = messages.get(flash_type, messages["info"])
+
+    flash(message, flash_type)
+
+    default_url = url_for("dev.patterns", tab="floating-alerts")
+    return_url = request.form.get("return_url", default_url)
+    # Validate return_url to prevent open redirect attacks
+    if not _is_safe_redirect_url(return_url):
+        return_url = default_url
+    return redirect(return_url)

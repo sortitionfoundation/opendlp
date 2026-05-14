@@ -11,6 +11,7 @@ from opendlp import bootstrap
 from opendlp.bootstrap import get_url_generator
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
@@ -335,7 +336,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             for field_name, errors in form.errors.items():
                 for error in errors:
                     flash(f"{field_name}: {error}", "error")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect_preserving_scroll(
+                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+            )
 
         # Parse comma-separated columns
         check_same_address_cols = (
@@ -372,7 +375,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Selection settings saved successfully."), "success")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
 
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -384,7 +389,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Save DB settings error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while saving settings"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect_preserving_scroll(
+            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
+        )
 
 
 @db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/reset", methods=["POST"])

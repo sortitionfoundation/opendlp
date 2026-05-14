@@ -1,0 +1,40 @@
+{#
+ABOUTME: Floating alert component for flash messages at bottom-right of viewport
+ABOUTME: Provides accessible notifications that don't require scrolling to top
+#}
+{% from "backoffice/components/alert.html" import alert %}
+
+{% macro floating_alerts() %}
+    {#
+    Renders Flask flash messages in a fixed-position container at bottom-right.
+
+    Features:
+    - Fixed position at bottom-right of viewport
+    - z-30: Below modals (z-40/z-50) but above page content
+    - aria-live="polite": Screen readers announce new alerts
+    - All alerts are dismissible
+
+    Usage:
+        {{ floating_alerts() }}
+
+    Place this after </main> but inside the page container.
+    #}
+    {% set messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div id="floating-alerts"
+             class="fixed bottom-6 right-6 z-30 flex flex-col gap-3 max-w-md"
+             aria-live="polite">
+            {% for category, message in messages %}
+                {% if category == "success" %}
+                    {{ alert(message, variant="success", dismissible=true, floating=true) }}
+                {% elif category == "error" %}
+                    {{ alert(message, variant="error", dismissible=true, floating=true) }}
+                {% elif category == "warning" %}
+                    {{ alert(message, variant="warning", dismissible=true, floating=true) }}
+                {% else %}
+                    {{ alert(message, variant="info", dismissible=true, floating=true) }}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}

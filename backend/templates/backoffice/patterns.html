@@ -47,7 +47,8 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
         {"key": "progress", "label": _("Progress"), "href": url_for('dev.patterns', tab='progress'), "active": active_tab == 'progress'},
         {"key": "pagination", "label": _("Pagination"), "href": url_for('dev.patterns', tab='pagination'), "active": active_tab == 'pagination'},
         {"key": "scroll", "label": _("Scroll"), "href": url_for('dev.patterns', tab='scroll'), "active": active_tab == 'scroll'},
-        {"key": "focus", "label": _("Focus"), "href": url_for('dev.patterns', tab='focus'), "active": active_tab == 'focus'}
+        {"key": "focus", "label": _("Focus"), "href": url_for('dev.patterns', tab='focus'), "active": active_tab == 'focus'},
+        {"key": "floating-alerts", "label": _("Floating Alerts"), "href": url_for('dev.patterns', tab='floating-alerts'), "active": active_tab == 'floating-alerts'}
         ],
         aria_label=_("Pattern categories"),
         preserve_scroll=true
@@ -1022,8 +1023,16 @@ def list_items():
                                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Alpine directive for auto-applying to all links in a container") }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="px-3 py-2 font-mono"><code>data-navigate-preserve-scroll</code></td>
-                                            <td class="px-3 py-2">{{ _("Add to select elements with data-navigate-base-url") }}</td>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-navigate-preserve-scroll</code></td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Add to select elements with data-navigate-base-url") }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Form attribute for use with $confirm magic") }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono"><code>x-preserve-scroll-on-submit</code></td>
+                                            <td class="px-3 py-2">{{ _("Alpine directive for forms without confirmation") }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1036,6 +1045,7 @@ def list_items():
                             <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
                                 <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">static/js/alpine-scroll-manager.js</code> — {{ _("$preserveScroll magic and x-scroll-preserve-links directive") }}</li>
                                 <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">static/js/utilities.js</code> — {{ _("data-navigate-* handlers for select elements") }}</li>
+                                <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">static/backoffice/js/alpine-components.js</code> — {{ _("$confirm magic with data-preserve-scroll, x-preserve-scroll-on-submit directive") }}</li>
                             </ul>
                         </div>
                     {% endcall %}
@@ -1251,6 +1261,155 @@ def list_items():
                         </div>
                     {% endcall %}
                 {% endcall %}
+
+                {# Form Scroll Preservation Pattern #}
+                {% call card(title="Form Scroll Preservation", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("For forms that submit and reload the page, use these patterns to preserve scroll position. Useful for forms with confirmation dialogs or inline actions.") }}
+                        </p>
+
+                        {# When to Use #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("When to Use") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li>{{ _("Delete buttons with confirmation dialogs") }}</li>
+                                <li>{{ _("Inline action forms (approve, reject, toggle)") }}</li>
+                                <li>{{ _("Any form where the user should stay at their current position") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Available Tools #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧰</span>{{ _("Available Tools") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Tool") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Use Case") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
+                                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Form attribute for use with $confirm magic") }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono"><code>x-preserve-scroll-on-submit</code></td>
+                                            <td class="px-3 py-2">{{ _("Alpine directive for forms without confirmation") }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {# Code Example: With Confirmation #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("With Confirmation Dialog") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form with confirmation - uses data-preserve-scroll attribute #}
+&lt;form method="post"
+      action="{% raw %}{{ url_for('my.delete_item', id=item.id) }}{% endraw %}"
+      x-data
+      data-preserve-scroll
+      @submit.prevent="$confirm('Are you sure?', $el)"&gt;
+    &lt;input type="hidden" name="csrf_token" value="{% raw %}{{ csrf_token() }}{% endraw %}"&gt;
+    &lt;button type="submit"&gt;Delete&lt;/button&gt;
+&lt;/form&gt;
+
+{# The $confirm magic checks for data-preserve-scroll and adds scroll param #}</pre>
+                        </div>
+
+                        {# Code Example: Without Confirmation #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Without Confirmation Dialog") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form without confirmation - uses x-preserve-scroll-on-submit directive #}
+&lt;form method="post"
+      action="{% raw %}{{ url_for('my.toggle_item', id=item.id) }}{% endraw %}"
+      x-data
+      x-preserve-scroll-on-submit&gt;
+    &lt;input type="hidden" name="csrf_token" value="{% raw %}{{ csrf_token() }}{% endraw %}"&gt;
+    &lt;button type="submit"&gt;Toggle&lt;/button&gt;
+&lt;/form&gt;
+
+{# The directive adds scroll param on submit event #}</pre>
+                        </div>
+
+                        {# Live Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">🧪</span>{{ _("Live Example") }}
+                            </h4>
+                            <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                    {{ _("Scroll down, then submit one of these forms. Notice how scroll position is preserved.") }}
+                                </p>
+                                <div class="flex gap-4 flex-wrap">
+                                    <form action="{{ url_for('dev.flash_test') }}" method="post" x-data data-preserve-scroll
+                                          @submit.prevent="$confirm('Confirm with scroll preservation?', $el)">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="type" value="success">
+                                        <input type="hidden" name="message" value="Form submitted with scroll preserved!">
+                                        <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='scroll') }}">
+                                        <button type="submit"
+                                                class="px-4 py-2 rounded-lg text-button-md"
+                                                style="background-color: var(--color-primary-action); color: var(--color-button-primary-text);">
+                                            {{ _("With Confirmation") }}
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('dev.flash_test') }}" method="post" x-data x-preserve-scroll-on-submit>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="type" value="info">
+                                        <input type="hidden" name="message" value="Form submitted with scroll preserved (no confirmation)!">
+                                        <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='scroll') }}">
+                                        <button type="submit"
+                                                class="px-4 py-2 rounded-lg text-button-md"
+                                                style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);">
+                                            {{ _("Without Confirmation") }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Key Points #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>data-preserve-scroll</strong> — {{ _("Boolean attribute, works with $confirm magic") }}</li>
+                                <li><strong>x-preserve-scroll-on-submit</strong> — {{ _("Alpine directive, works on form submit event") }}</li>
+                                <li><strong>{{ _("URL cleanup") }}</strong> — {{ _("Scroll param is removed automatically after restoration") }}</li>
+                                <li><strong>{{ _("CSP-safe") }}</strong> — {{ _("No inline scripts required") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Implementation Index #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                <span class="mr-2">📍</span>{{ _("Source File") }}
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
+                                    <thead style="background-color: var(--color-subtle-background-panels);">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("File") }}</th>
+                                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Usage") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono">static/backoffice/js/alpine-components.js</td>
+                                            <td class="px-3 py-2">$confirm magic with data-preserve-scroll, x-preserve-scroll-on-submit directive</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
             </div>
         {% endif %}
 
@@ -1442,12 +1601,160 @@ def list_items():
             </div>
         {% endif %}
 
+        {# ===== FLOATING ALERTS PATTERN ===== #}
+        {% if active_tab == 'floating-alerts' %}
+            <div class="space-y-6">
+                {# Overview Card #}
+                {% call card(title="Floating Alerts Overview", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Flash messages in the backoffice appear as floating alerts at the bottom-right of the viewport. This ensures users see feedback without scrolling to the top of the page.") }}
+                        </p>
+
+                        {# Philosophy #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Design Philosophy") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>{{ _("Visible anywhere") }}:</strong> {{ _("Users don't need to scroll to see feedback messages") }}</li>
+                                <li><strong>{{ _("Non-blocking") }}:</strong> {{ _("Positioned at bottom-right to avoid covering content") }}</li>
+                                <li><strong>{{ _("Dismissible") }}:</strong> {{ _("All floating alerts can be closed by the user") }}</li>
+                                <li><strong>{{ _("Accessible") }}:</strong> {{ _("Uses aria-live='polite' for screen reader announcements") }}</li>
+                            </ul>
+                        </div>
+
+                        {# Where it's defined #}
+                        <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">📍 {{ _("Source Files") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">templates/backoffice/components/floating_alerts.html</code> — {{ _("Floating alerts macro") }}</li>
+                                <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">templates/backoffice/components/alert.html</code> — {{ _("Alert component with floating parameter") }}</li>
+                                <li><code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">templates/backoffice/base_page.html</code> — {{ _("Includes floating_alerts() after main content") }}</li>
+                            </ul>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Test Floating Alerts #}
+                {% call card(title="Test Floating Alerts", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Click the buttons below to trigger flash messages. The alerts will appear at the bottom-right of the viewport.") }}
+                        </p>
+
+                        {# Test Buttons #}
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="type" value="success">
+                                <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='floating-alerts') }}">
+                                <button type="submit"
+                                        class="px-4 py-2 rounded-lg text-button-md transition-colors"
+                                        style="background-color: var(--color-success-100); color: var(--color-success-600); border: 1px solid var(--color-success-400);">
+                                    ✓ {{ _("Success Alert") }}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="type" value="warning">
+                                <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='floating-alerts') }}">
+                                <button type="submit"
+                                        class="px-4 py-2 rounded-lg text-button-md transition-colors"
+                                        style="background-color: var(--color-warning-100); color: var(--color-warning-600); border: 1px solid var(--color-warning-400);">
+                                    ⚠ {{ _("Warning Alert") }}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="type" value="error">
+                                <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='floating-alerts') }}">
+                                <button type="submit"
+                                        class="px-4 py-2 rounded-lg text-button-md transition-colors"
+                                        style="background-color: var(--color-error-100); color: var(--color-error-600); border: 1px solid var(--color-error-400);">
+                                    ✕ {{ _("Error Alert") }}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="type" value="info">
+                                <input type="hidden" name="return_url" value="{{ url_for('dev.patterns', tab='floating-alerts') }}">
+                                <button type="submit"
+                                        class="px-4 py-2 rounded-lg text-button-md transition-colors"
+                                        style="background-color: var(--color-info-100); color: var(--color-info-600); border: 1px solid var(--color-info-400);">
+                                    ℹ {{ _("Info Alert") }}
+                                </button>
+                            </form>
+                        </div>
+
+                        {# Key Points #}
+                        <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
+                            <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
+                                <li><strong>z-30</strong> — {{ _("Below modals (z-40/z-50) but above page content") }}</li>
+                                <li><strong>aria-live=\"polite\"</strong> — {{ _("Screen readers announce new alerts without interrupting") }}</li>
+                                <li><strong>{{ _("Dismissible") }}</strong> — {{ _("All floating alerts have a close button") }}</li>
+                                <li><strong>{{ _("No bottom margin") }}</strong> — {{ _("Uses floating=true parameter; gap handled by container") }}</li>
+                            </ul>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+
+                {# Usage Code #}
+                {% call card(title="Usage", composed=true) %}
+                    {% call card_body() %}
+                        {# Description #}
+                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                            {{ _("Floating alerts are automatically included in <code>base_page.html</code>. Just use Flask's <code>flash()</code> function.") | safe }}
+                        </p>
+
+                        {# Code Example #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Python (Route Handler)") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">from flask import flash
+
+@bp.route("/save", methods=["POST"])
+def save_item():
+    # ... save logic ...
+    flash(_("Changes saved successfully!"), "success")
+    return redirect(url_for("my.route"))</pre>
+                        </div>
+
+                        {# Template Code #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Template (Automatic in base_page.html)") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# In base_page.html - already included #}
+{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
+
+<main>
+    {# Page content #}
+</main>
+
+{{ floating_alerts() }}  {# After </main> #}{% endraw %}</pre>
+                        </div>
+
+                        {# Alert Component Code #}
+                        <div class="mb-6">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Alert Component Options") }}</h4>
+                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{% from "backoffice/components/alert.html" import alert %}
+
+{# Standard alert (with bottom margin) #}
+{{ alert("Message", variant="success") }}
+
+{# Floating alert (no bottom margin, used in floating_alerts.html) #}
+{{ alert("Message", variant="success", dismissible=true, floating=true) }}{% endraw %}</pre>
+                        </div>
+                    {% endcall %}
+                {% endcall %}
+            </div>
+        {% endif %}
+
         {# Toast Notification #}
         <div x-cloak x-show="toast.show" x-transition
              class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
-             :style="toast.type === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);'">
-            <span x-text="toast.message"></span>
-        </div>
+             :style="toast.type === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);'"
+             <span x-text="toast.message"></span>
+    </div>
     </div>
 
     <script nonce="{{ csp_nonce }}">

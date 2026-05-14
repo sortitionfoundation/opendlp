@@ -5,6 +5,29 @@
 
 
 /* ========================================
+   URL PARAMETER HELPER
+   ======================================== */
+
+/**
+ * Set a query parameter on a URL, replacing any existing value.
+ * Uses the built-in URL and URLSearchParams APIs for reliable parsing.
+ *
+ * @param {string} url - The base URL (can be relative or absolute)
+ * @param {string} param - The parameter name
+ * @param {string} value - The parameter value
+ * @returns {string} URL with parameter set
+ */
+function urlSetParam(url, param, value) {
+    var urlObj = new URL(url, window.location.origin);
+    urlObj.searchParams.set(param, value);
+    // Return relative URL for relative inputs, absolute for absolute inputs
+    if (url.match(/^(https?:)?\/\//)) {
+        return urlObj.href;
+    }
+    return urlObj.pathname + urlObj.search + urlObj.hash;
+}
+
+/* ========================================
    FOCUS PRESERVATION SYSTEM
    ========================================
 
@@ -30,13 +53,38 @@
        </div>
    ======================================== */
 
+/* ========================================
+   SCROLL PRESERVATION SYSTEM
+   ========================================
+
+   Preserves scroll position across form submissions by encoding the scroll
+   position in a URL query parameter. This improves UX when forms reload
+   the page and the user needs to stay at the same scroll position.
+
+   Components:
+   1. DOMContentLoaded handler - restores scroll position on page load
+   2. data-preserve-scroll attribute - marks forms that should preserve scroll
+   3. x-preserve-scroll-on-submit directive - adds scroll param on submit
+
+   Usage:
+     Option A: With confirmation dialog ($confirm magic)
+       <form method="post" action="..." x-data data-preserve-scroll
+             @submit.prevent="$confirm('Are you sure?', $el)">
+
+     Option B: Without confirmation (directive)
+       <form method="post" action="..." x-data x-preserve-scroll-on-submit>
+   ======================================== */
+
 /**
- * Focus restoration on page load
+ * Focus and scroll restoration on page load
  *
  * Checks for #focus=<focusId> in the URL hash and restores focus to the
  * element with matching data-focus-id attribute.
+ *
+ * Also checks for ?scroll=<position> in query params and restores scroll position.
  */
 document.addEventListener("DOMContentLoaded", function () {
+    // Focus restoration
     var hash = window.location.hash;
     if (hash.startsWith("#focus=")) {
         var focusId = hash.substring(7);
@@ -46,6 +94,23 @@ document.addEventListener("DOMContentLoaded", function () {
             // Clean up the URL hash after restoring focus
             if (window.history.replaceState) {
                 var cleanUrl = window.location.href.split("#")[0];
+                window.history.replaceState(null, "", cleanUrl);
+            }
+        }
+    }
+
+    // Scroll restoration
+    var urlParams = new URLSearchParams(window.location.search);
+    var scrollPos = urlParams.get("scroll");
+    if (scrollPos !== null) {
+        var scrollY = parseInt(scrollPos, 10);
+        if (!isNaN(scrollY)) {
+            window.scrollTo(0, scrollY);
+            // Clean up the URL after restoring scroll
+            if (window.history.replaceState) {
+                urlParams.delete("scroll");
+                var newSearch = urlParams.toString();
+                var cleanUrl = window.location.pathname + (newSearch ? "?" + newSearch : "") + window.location.hash;
                 window.history.replaceState(null, "", cleanUrl);
             }
         }
@@ -101,10 +166,13 @@ document.addEventListener("alpine:init", function () {
      * Confirmation magic helper for form submissions
      *
      * Shows a confirmation dialog before submitting a form. Designed for CSP-safe
-     * Alpine.js usage.
+     * Alpine.js usage. Supports scroll preservation via data-preserve-scroll attribute.
      *
      * Usage:
      *   <form x-data @submit.prevent="$confirm('Are you sure?', $el)">
+     *
+     *   With scroll preservation:
+     *   <form x-data data-preserve-scroll @submit.prevent="$confirm('Are you sure?', $el)">
      *
      * @param {string} message - The confirmation message to display
      * @param {HTMLFormElement} formElement - The form element to submit if confirmed
@@ -112,9 +180,32 @@ document.addEventListener("alpine:init", function () {
     Alpine.magic("confirm", function () {
         return function (message, formElement) {
             if (confirm(message)) {
+                // Check if scroll preservation is requested
+                if (formElement.hasAttribute("data-preserve-scroll")) {
+                    var action = formElement.getAttribute("action") || window.location.href;
+                    var scrollPos = Math.round(window.scrollY);
+                    formElement.setAttribute("action", urlSetParam(action, "scroll", scrollPos.toString()));
+                }
                 formElement.submit();
             }
         };
+    });
+
+    /**
+     * Scroll preservation directive for form submissions
+     *
+     * Automatically adds scroll position to form action URL on submit.
+     * Use this for forms that don't use confirmation dialogs.
+     *
+     * Usage:
+     *   <form method="post" action="..." x-data x-preserve-scroll-on-submit>
+     */
+    Alpine.directive("preserve-scroll-on-submit", function (el) {
+        el.addEventListener("submit", function () {
+            var action = el.getAttribute("action") || window.location.href;
+            var scrollPos = Math.round(window.scrollY);
+            el.setAttribute("action", urlSetParam(action, "scroll", scrollPos.toString()));
+        });
     });
 
     /**

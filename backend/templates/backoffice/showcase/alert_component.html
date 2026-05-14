@@ -1,6 +1,6 @@
 {#
 ABOUTME: Showcase section for alert component
-ABOUTME: Displays alert variants and flash message helper
+ABOUTME: Displays alert variants and floating alerts documentation
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -8,26 +8,40 @@ ABOUTME: Displays alert variants and flash message helper
 {% macro alert_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Alert Component") }}
-        {{ showcase_description("Alerts for displaying feedback messages. Includes a flash_messages() helper for Flask flash messages.") }}
+        {{ showcase_description("Alerts for displaying feedback messages. Flash messages appear as floating alerts at the bottom-right of the viewport.") }}
 
-        {% call showcase_example('{% from "backoffice/components/alert.html" import alert, flash_messages %}
+        {# Floating Alerts Note #}
+        <div class="mb-8 p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">Floating Alerts</h4>
+            <p class="text-body-sm mb-2" style="color: var(--color-body-text);">
+                In the backoffice, flash messages now appear as <strong>floating alerts</strong> at the bottom-right of the viewport.
+                This ensures users see feedback without scrolling to the top of the page.
+            </p>
+            <p class="text-body-sm" style="color: var(--color-body-text);">
+                <strong>Test it:</strong> Visit
+                <a href="{{ url_for('dev.patterns', tab='floating-alerts') }}" class="underline" style="color: var(--color-link-text);">/backoffice/dev/patterns?tab=floating-alerts</a>
+                to trigger test alerts interactively.
+            </p>
+        </div>
 
-            {# Individual alerts #}
+        {% call showcase_example('{% from "backoffice/components/alert.html" import alert %}
+
+{# Individual alerts - variants #}
             {{ alert("Success message", variant="success") }}
             {{ alert("Warning message", variant="warning") }}
             {{ alert("Error message", variant="error") }}
             {{ alert("Info message", variant="info") }}
 
-            {# Dismissible alert (requires Alpine.js) #}
+{# Dismissible alert (requires Alpine.js) #}
             {{ alert("Can be closed", variant="info", dismissible=true) }}
 
-            {# Alert with HTML content (use caller block) #}
+{# Floating alert (no bottom margin, used in floating_alerts.html) #}
+            {{ alert("Floating alert", variant="success", dismissible=true, floating=true) }}
+
+{# Alert with HTML content (use caller block) #}
             {% call alert(variant="warning", use_caller=true) %}
                 Message with <a href="...">link</a>
-            {% endcall %}
-
-            {# Render all Flask flash messages automatically #}
-            {{ flash_messages() }}') %}
+            {% endcall %}') %}
             <div class="space-y-4">
                 <div>
                     <span class="text-caption mb-2 block" style="color: var(--color-secondary-text);">Success</span>
