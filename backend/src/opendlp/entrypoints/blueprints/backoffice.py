@@ -1,9 +1,12 @@
 """ABOUTME: Backoffice routes for admin UI using Pines UI + Tailwind CSS
 ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source, and team members"""
 
+import base64
+import io
 import uuid
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+import qrcode
+from flask import Blueprint, Response, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -42,6 +45,43 @@ from opendlp.service_layer.user_service import (
 from opendlp.translations import gettext as _
 
 backoffice_bp = Blueprint("backoffice", __name__)
+
+
+def generate_qr_code_base64(url: str) -> str:
+    """Generate a QR code for the given URL and return it as a base64-encoded PNG data URL."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = io.BytesIO()
+    img.save(buffer)  # qrcode images always save as PNG
+    buffer.seek(0)
+    img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{img_base64}"
+
+
+def generate_qr_code_png(url: str) -> bytes:
+    """Generate a QR code for the given URL and return it as PNG bytes."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = io.BytesIO()
+    img.save(buffer)  # qrcode images always save as PNG
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 @backoffice_bp.route("/showcase")
@@ -349,6 +389,21 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # TODO: Get registration page data from service layer when available
         # registration_page = get_registration_page(uow, assembly_id)
 
+        # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
+        # For now, use assembly ID as a placeholder slug
+        placeholder_slug = str(assembly_id)[:8]
+        placeholder_short_url = request.host_url + "r/" + placeholder_slug
+        qr_code_data_url = generate_qr_code_base64(placeholder_short_url)
+
+        # Publication status (placeholder values until service layer provides real data)
+        is_published = False  # Default to unpublished
+        preview_token = placeholder_slug + "preview"  # Placeholder preview token
+        preview_url = request.host_url + "register/" + placeholder_slug + "?token=" + preview_token
+
+        # HTML content (placeholder until service layer provides real data)
+        html_content = ""  # Will be populated from registration_page when available
+        thank_you_html = ""  # Will be populated from registration_page when available
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -357,6 +412,12 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            qr_code_data_url=qr_code_data_url,
+            is_published=is_published,
+            preview_token=preview_token,
+            preview_url=preview_url,
+            html_content=html_content,
+            thank_you_html=thank_you_html,
             # registration_page=registration_page,
         ), 200
     except InsufficientPermissions as e:
@@ -391,13 +452,18 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Extract form data (for future use when service layer is ready)
         url_slug = request.form.get("url_slug", "").strip()
         short_url_slug = request.form.get("short_url_slug", "").strip()
+        is_published = request.form.get("is_published") == "on"
+        html_content = request.form.get("html_content", "")
+        thank_you_html = request.form.get("thank_you_html", "")
 
         # TODO: Call service layer to save registration page when available
-        # save_registration_page(uow, assembly_id, url_slug, short_url_slug, ...)
+        # save_registration_page(uow, assembly_id, url_slug, short_url_slug, is_published, html_content, thank_you_html)
 
         # Stub: flash message indicating save is not yet implemented
         current_app.logger.info(
-            f"Registration save stub called for assembly {assembly_id}: url_slug={url_slug}, short_url_slug={short_url_slug}"
+            f"Registration save stub called for assembly {assembly_id}: "
+            f"url_slug={url_slug}, short_url_slug={short_url_slug}, is_published={is_published}, "
+            f"html_content_length={len(html_content)}, thank_you_html_length={len(thank_you_html)}"
         )
         flash(_("Registration settings saved (stub - persistence not yet implemented)"), "info")
 
@@ -415,6 +481,46 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
         )
         flash(_("An error occurred while saving registration settings"), "error")
+        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")
+@login_required
+def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Download registration QR code as PNG image."""
+    try:
+        # Verify user has permission to access this assembly
+        _nav = get_assembly_nav_context(
+            bootstrap.bootstrap,
+            current_user.id,
+            assembly_id,
+            "",
+        )
+
+        # TODO: Get real short URL from service layer when available
+        # For now, use assembly ID as a placeholder slug
+        placeholder_short_url = request.host_url + "r/" + str(assembly_id)[:8]
+        qr_png = generate_qr_code_png(placeholder_short_url)
+
+        return Response(
+            qr_png,
+            mimetype="image/png",
+            headers={
+                "Content-Disposition": f'attachment; filename="registration-qr-{str(assembly_id)[:8]}.png"',
+                "Cache-Control": "no-cache",
+            },
+        )
+    except InsufficientPermissions as e:
+        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("You don't have permission to access this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError as e:
+        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        current_app.logger.error(f"Download QR code error for assembly {assembly_id} user {current_user.id}: {e}")
+        flash(_("An error occurred while generating QR code"), "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
 
 
