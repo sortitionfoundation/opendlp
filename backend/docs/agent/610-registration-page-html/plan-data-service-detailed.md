@@ -82,7 +82,7 @@ commits, one per phase, each green + linted:
 
 ---
 
-## Phase 1 — Domain layer
+## Phase 1 — Domain layer ✅ COMPLETE
 
 New file: `src/opendlp/domain/registration_page.py` (with the 2-line `ABOUTME:` header).
 New test file: `tests/unit/domain/test_registration_page.py`.
