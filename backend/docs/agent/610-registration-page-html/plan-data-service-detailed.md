@@ -566,7 +566,7 @@ check` for the lint/type pass. Commit.
 **Suggested commit message:**
 `refactor(registration): rename render-time token form_url to form_action`
 
-### 6.2 Default thank-you HTML on create
+### 6.2 Default thank-you HTML on create ✅ COMPLETE
 
 **Scope.** New module-level constant + a one-line change in `create_registration_page`.
 
