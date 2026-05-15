@@ -2,7 +2,7 @@
 
 **Branch:** `610-registration-page-html`
 **Date:** 2026-05-13
-**Status:** Updated after third round (URL structure aligned with `plan-frontend.md`: `/register/<url_slug>` + `/r/<short_url_slug>`, 302 redirect; Q3 redirect type clarified). All questions resolved except Q15, which subsumes Q8 and is pending team discussion. Remaining divergences between this plan and `plan-frontend.md` are tracked in `deltas-to-fix.md`.
+**Status:** Updated 2026-05-15 — all open questions now resolved. Q15 settled on Option A (system-generated starter HTML, two render-time tokens only). Render-time tokens are `{{ csrf_form_element }}` and `{{ form_action }}` (renamed from `form_url` per `deltas-to-fix.md` §4). Preview query parameter is `?token=<preview_token>` (per `deltas-to-fix.md` §3). All cross-plan deltas are recorded in `deltas-to-fix.md`; `plan-frontend.md` still needs to absorb their implications.
 
 ## 1. Scope
 
@@ -59,7 +59,7 @@ Aligned with `plan-frontend.md`: the long and short slugs live under **separate 
 
 - Canonical (long) form: `/register/<url_slug>`
 - Short form: `/r/<short_url_slug>` — issues a **302** (temporary) redirect to the canonical `/register/<url_slug>` URL (so QR-code scans always land on the canonical address). 302 not 301: short slugs may be cleared and reused later, and a cached permanent redirect would misroute. See Q3.
-- Preview of an unpublished page: `/register/<url_slug>?preview=<preview_token>`
+- Preview of an unpublished page: `/register/<url_slug>?token=<preview_token>`
 
 Because the two slug types live in different namespaces, a string can be a `url_slug` for one page and a `short_url_slug` for another without colliding as URLs. Each slug column therefore only needs to be unique **within its own column**, across all assemblies — no cross-column uniqueness check is required (this simplifies §4.1, §4.4, §5.1 versus the earlier "both under /r/" design). See Q3.
 
@@ -135,7 +135,7 @@ A `(page, source)` combo is publishable iff:
 - `page.url_slug` is non-empty.
 - `source.readiness_problems()` returns an empty list. For `RegistrationPageHtml`, that means:
   - `form_html` non-empty (after strip)
-  - `form_html` contains both `{{ csrf_form_element }}` and `{{ form_url }}`
+  - `form_html` contains both `{{ csrf_form_element }}` and `{{ form_action }}`
 
 `thank_you_html` is NOT required to publish (Q5 confirmed). If empty at submit time, the form-submission route falls back to a Jinja template owned by the public blueprint.
 
@@ -332,7 +332,12 @@ def create_registration_page(
 ) -> RegistrationPage:
     """Explicit create (Q11). Raises if the assembly already has one.
     Creates the page row AND the matching source-type child row in the same
-    transaction. Initial source for v1: HTML only."""
+    transaction. Initial source for v1: HTML only.
+
+    Seeds `thank_you_html` with `DEFAULT_THANK_YOU_HTML` so the author has
+    something to edit (see §5.8). The form-HTML child row is created empty —
+    authors generate a starter via `generate_starter_form_html` (§5.9) and
+    paste the result in."""
 
 def get_registration_page(uow, user_id, assembly_id) -> RegistrationPage | None:
     """Returns None if the page hasn't been created yet (Q11)."""
@@ -397,6 +402,8 @@ if new:
 
 Same shape for `short_url_slug` via `get_by_short_url_slug`. The DB partial unique indexes are the real guard; this check just produces a friendly error. No cross-column check — the two slug namespaces are independent (see §2, §4.1).
 
+**Slug-error specificity** (per `deltas-to-fix.md` §12): exceptions raised for slug problems must carry enough information for the UI to attach the error to the correct field — i.e. the message / exception identifies *which* slug column is at fault (`url_slug` vs `short_url_slug`) and *what kind* of failure (taken / reserved / malformed). Implementation can use distinct exception subclasses or a structured attribute on the raised error; pick during implementation. The validator (`UrlSlugValidator`, §3.5) similarly raises with enough detail to distinguish reserved vs malformed.
+
 ### 5.2 Public lookup functions
 
 These do **not** take a `user_id` and do **not** check Flask-Login — the public route is anonymous.
@@ -440,18 +447,16 @@ def get_page_and_source_for_render(
 
 ### 5.3 Templating / rendering
 
-🔮 **Pending Q15** — the templating engine is now an open question, downstream of how authors compose forms (whether they write `<input>` themselves or use per-field placeholders). The two viable options on the table are flat string substitution and Jinja `SandboxedEnvironment`. The section below describes the **string-substitution path** as the placeholder; if Q15 lands on Jinja the substitution mechanics here are replaced wholesale but the rest of §5 (function shapes, RenderContext, render hooks) stays the same.
-
-The user's HTML is author-controlled but trusted (assembly managers are vetted). Rendering is currently planned as **flat string substitution** — not Jinja, not sandboxed Jinja.
+Q15 settled on **Option A** (system-generated starter HTML, minimal substitution at render time). The user's HTML is author-controlled but trusted (assembly managers are vetted). Rendering is **flat string substitution** — not Jinja, not sandboxed Jinja.
 
 ```python
-REQUIRED_TOKENS = ("csrf_form_element", "form_url")
+REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 OPTIONAL_TOKENS: tuple[str, ...] = ()  # extensible — see form-submission plan
 
 @dataclass(frozen=True)
 class RenderContext:
     csrf_form_element: str   # full `<input type="hidden" name="csrf_token" value="...">` HTML
-    form_url: str            # absolute or root-relative URL to POST to
+    form_action: str         # absolute or root-relative URL to POST to (lands in `action=`)
 ```
 
 `RegistrationPageHtml.render(ctx)` does the substitution. Tokens not in `REQUIRED_TOKENS|OPTIONAL_TOKENS` are left untouched (literal `{{ ... }}` in the user's prose stays as-is).
@@ -460,9 +465,10 @@ For the thank-you page:
 
 ```python
 def render_thank_you_html(page: RegistrationPage) -> str:
-    """Returns thank_you_html verbatim (no substitutable tokens in v1).
-    Exists so the route always goes through the service, leaving a hook
-    for {{ respondent_name }} etc. once the form-submission story lands."""
+    """Returns thank_you_html verbatim (no substitutable tokens in v1 — see
+    `deltas-to-fix.md` §7). Exists so the route always goes through the
+    service, leaving a hook for {{ respondent_name }} etc. once the
+    form-submission story lands."""
 ```
 
 Why string substitution rather than `jinja2.sandbox.SandboxedEnvironment`?
@@ -473,7 +479,7 @@ Why string substitution rather than `jinja2.sandbox.SandboxedEnvironment`?
 
 Brace-collision risk: literal `{{` in HTML body that isn't a recognised token won't be touched. CSS uses single braces, no collision.
 
-🔮 **Depends on form-submission story:** the canonical list of substitution tokens. See Q8.
+🔮 **Depends on form-submission story:** the canonical list of substitution tokens may grow (e.g. honeypot field name, version pin). New entries plug into `OPTIONAL_TOKENS` and `RenderContext` without changing the substitution mechanics.
 
 ### 5.4 The "registration closed" page
 
@@ -481,7 +487,7 @@ When an unpublished page is hit without a valid preview token, the route 302-red
 
 ### 5.5 CSRF and dependency injection
 
-The service layer must not import Flask. `csrf_form_element` and `form_url` in `RenderContext` are built by the blueprint (`flask_wtf.csrf.generate_csrf()` and `url_for(...)`) and passed in. Same pattern as `bootstrap.get_template_renderer` / `bootstrap.get_url_generator`.
+The service layer must not import Flask. `csrf_form_element` and `form_action` in `RenderContext` are built by the blueprint (`flask_wtf.csrf.generate_csrf()` and `url_for(...)`) and passed in. Same pattern as `bootstrap.get_template_renderer` / `bootstrap.get_url_generator`.
 
 ### 5.6 Size limits (Q4)
 
@@ -497,6 +503,61 @@ Enforced in `update_registration_page_html` and `update_thank_you_html` respecti
 ### 5.7 Where the service file lives
 
 New file `service_layer/registration_page_service.py`. Not added to `assembly_service.py` — that file is already flagged for splitting in `docs/architecture.md` (line 360).
+
+### 5.8 Default thank-you HTML
+
+Per `deltas-to-fix.md` §7, the thank-you HTML has no placeholders in this round, but `create_registration_page` seeds a starter so the author has something to edit (rather than a blank textarea).
+
+```python
+# In src/opendlp/domain/registration_page.py
+DEFAULT_THANK_YOU_HTML = (
+    "<h1>Thank you for registering</h1>\n"
+    "<p>Your registration has been received. We'll be in touch.</p>\n"
+)
+```
+
+Wrap the `<h1>` and `<p>` strings in `lazy_gettext` if/when this default is moved into a Jinja template owned by the public blueprint (the per-CLAUDE.md i18n rule). For the seeded value stored in the DB we keep plain text — once written, it's user-editable content, not a translation source.
+
+Lifecycle:
+
+- `create_registration_page` writes `DEFAULT_THANK_YOU_HTML` into the new `RegistrationPage.thank_you_html` field at create time.
+- `update_thank_you_html` may overwrite it freely (including with the empty string — see Q5: `thank_you_html` is not required to publish, and the public blueprint's fallback Jinja template covers the empty case at submission time).
+
+### 5.9 Generating a starter form HTML
+
+Per `deltas-to-fix.md` §1, authors get a system-generated starter from the assembly's `RespondentFieldDefinition` set. A new service function returns the HTML on demand (it is **not** auto-seeded into `form_html`):
+
+```python
+def generate_starter_form_html(uow, user_id, assembly_id) -> str:
+    """Generate a plain, unstyled HTML starter form from the assembly's
+    respondent field schema (`assembly.respondent_field_schema` — i.e. the
+    `RespondentFieldDefinition` set, including `ChoiceOption` lists for choice
+    fields). The result includes:
+
+    - A `<form action="{{ form_action }}" method="post">` wrapper.
+    - `{{ csrf_form_element }}` immediately inside the form.
+    - One labelled control per field, with the schema's `field_key` as the
+      `name=` attribute, and explicit per-option markup for choice fields
+      (radio / select option lists are written out — no loops, since this is
+      Option A).
+    - A submit button.
+
+    Required-field markers and input types follow `RespondentFieldDefinition`
+    (`is_required`, `effective_field_type`).
+
+    The intended workflow: author calls this, optionally pastes the result into
+    an LLM for styling, then pastes the styled HTML back into the textarea.
+    Nothing is auto-written to the database — the UI displays the result and
+    the author copies it.
+
+    Permission: `can_manage_assembly` (same as the rest of §5.1)."""
+```
+
+Where it lives: a pure helper in `domain/registration_page.py` (e.g. `generate_starter_form_html(schema: RespondentFieldSchema) -> str`) does the actual HTML construction; the service function above loads the assembly's schema and delegates. This keeps the HTML generator unit-testable without a database.
+
+The canonical reference for what the output looks like is `610-registration-page-html/example-form-a-raw-html.html` — the generator should produce HTML in the same shape (modulo whitespace / heading copy / section grouping, which are author concerns).
+
+🔮 **Depends on form-submission story:** the precise mapping between `RespondentFieldDefinition` and rendered widget (e.g. how textarea-vs-input is chosen for free-text fields, how multi-select choice fields render). Treat the v1 generator as a starter — authors can hand-edit the output before publishing.
 
 ---
 
@@ -527,11 +588,11 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
 
 1. The `Respondent` creation path. Already supported by `RespondentSourceType.REGISTRATION_FORM`.
 2. The `RespondentStatus.TEST_SUBMISSION` state from story-notes line 109 — adding the enum value, transitions, filters.
-3. Mapping form field names → respondent fields via `respondent_field_schema.py`.
+3. Mapping submitted form values → respondent fields. Q15 settles that the author writes `<input name="<field_key>">` themselves (Option A reading of Q8); the form-submission story owns turning a POST body into a `Respondent` via the assembly's `RespondentFieldDefinition` set.
 4. Rate-limiting / bot protection.
-5. Whether `{{ field_<name> }}` tokens auto-insert `<input>` HTML, or whether the user writes `<input>` and we just validate. (Q8 awaits an answer either way.)
-6. Thank-you page substitution context (e.g. `{{ respondent_name }}`).
-7. How to handle slug change after submissions have arrived via the old slug. (Mitigated by Q6: slug is frozen while published. Open: what happens on unpublish-edit-republish — are previously-submitted respondents still associated?)
+5. Thank-you page substitution context (e.g. `{{ respondent_name }}`) — see `deltas-to-fix.md` §7. v1 has no thank-you placeholders.
+6. How to handle slug change after submissions have arrived via the old slug. (Mitigated by Q6: slug is frozen while published. Open: what happens on unpublish-edit-republish — are previously-submitted respondents still associated?)
+7. Refinements to the starter HTML generator (§5.9): widget-type selection for ambiguous field types (free-text input vs textarea), multi-select choice rendering, ordering / grouping conventions. v1 ships a basic generator; the form-submission story drives any improvements.
 
 ---
 
@@ -539,10 +600,12 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
 
 - **Unit tests** for `domain/registration_page.py`:
   - `RegistrationPage.__init__` validation, `update_slugs` rejection when published, `publish`/`unpublish`, `is_visible_with`, `readiness_problems` returning a list of strings, `regenerate_preview_token`.
-  - `RegistrationPageHtml.render` substitution behaviour, `readiness_problems`.
-  - `UrlSlugValidator` accept/reject cases including reserved values.
+  - `RegistrationPageHtml.render` substitution behaviour (both `{{ csrf_form_element }}` and `{{ form_action }}`), `readiness_problems`.
+  - `UrlSlugValidator` accept/reject cases including reserved values, with errors that distinguish reserved vs malformed (per `deltas-to-fix.md` §12).
+  - `generate_starter_form_html` (pure helper): produces a `<form action="{{ form_action }}">` wrapper, includes `{{ csrf_form_element }}`, emits one labelled control per `RespondentFieldDefinition`, expands `ChoiceOption` lists into per-option HTML.
+  - `DEFAULT_THANK_YOU_HTML` constant non-empty and contains `<h1>` and `<p>`.
 - **Contract tests** for `RegistrationPageRepository` and `RegistrationPageHtmlRepository` against SqlAlchemy (plus an in-memory fake if we use the existing fake repo pattern).
-- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, per-column slug uniqueness, slug change while published rejected, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, preview-token rotation, public lookup by url_slug and by short_url_slug, render-context substitution, size-limit rejection (Q4), env-var override of size limits.
+- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, `create_registration_page` seeds `DEFAULT_THANK_YOU_HTML` and leaves `form_html` empty, per-column slug uniqueness, slug-error specificity (errors identify which slug column and which failure type — `deltas-to-fix.md` §12), slug change while published rejected, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, preview-token rotation, public lookup by url_slug and by short_url_slug, render-context substitution, size-limit rejection (Q4), env-var override of size limits, `generate_starter_form_html` wrapper loads the assembly's schema and delegates.
 - **BDD** deferred to the route-level plan.
 
 ---
@@ -551,14 +614,14 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
 
 ### New
 
-| Path                                                         | Why                                                                                                          |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `src/opendlp/domain/registration_page.py`                    | `RegistrationPage`, `RegistrationPageHtml`, `HtmlSource` protocol, `RenderContext`, `RegistrationPageSource` |
-| `src/opendlp/service_layer/registration_page_service.py`     | Service functions                                                                                            |
-| `migrations/versions/XXXX_add_registration_pages.py`         | Two tables + partial unique indexes                                                                          |
-| `tests/unit/domain/test_registration_page.py`                | Domain tests                                                                                                 |
-| `tests/unit/service_layer/test_registration_page_service.py` | Service tests                                                                                                |
-| `tests/contract/test_registration_page_repository.py`        | Repo contract tests (both repos)                                                                             |
+| Path                                                         | Why                                                                                                                                                              |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/opendlp/domain/registration_page.py`                    | `RegistrationPage`, `RegistrationPageHtml`, `HtmlSource` protocol, `RenderContext`, `RegistrationPageSource`, `DEFAULT_THANK_YOU_HTML`, `generate_starter_form_html` (pure helper, takes a schema) |
+| `src/opendlp/service_layer/registration_page_service.py`     | Service functions, including `generate_starter_form_html` wrapper that loads the assembly schema and delegates to the domain helper                              |
+| `migrations/versions/XXXX_add_registration_pages.py`         | Two tables + partial unique indexes                                                                                                                              |
+| `tests/unit/domain/test_registration_page.py`                | Domain tests, including `generate_starter_form_html` output shape against a known `RespondentFieldSchema`                                                        |
+| `tests/unit/service_layer/test_registration_page_service.py` | Service tests, including the starter-HTML generator wrapper and the `DEFAULT_THANK_YOU_HTML` seeding on create                                                   |
+| `tests/contract/test_registration_page_repository.py`        | Repo contract tests (both repos)                                                                                                                                 |
 
 ### Modified
 
@@ -614,16 +677,9 @@ No. Slug changes (both `url_slug` and `short_url_slug`) are forbidden while `is_
 
 302-redirect to a canonical `/registration-closed` URL.
 
-### Q8 — Required-input-fields templating
+### Q8 — Required-input-fields templating **RESOLVED (via Q15)**
 
-Story-notes line 18 says "required input fields listed as templates". Two readings:
-
-- (a) Users write `<input name="first_name">` themselves; system validates required input names are present in the HTML before publishing.
-- (b) Users include placeholders like `{{ field_first_name }}` and the system substitutes them with pre-styled `<input>` HTML.
-
-For the current plan I assumed neither — only `csrf_form_element` and `form_url` are required templates. The schema-field handling is firmly in form-submission story scope. Confirm?
-
-**Answer:**
+Settled by Q15 below: Q15 Option A implies the (a) reading — authors write `<input name="...">` themselves, with `name` matching the `RespondentFieldDefinition.field_key`. Render-time tokens are limited to `csrf_form_element` and `form_action`. Validation that the right input names are present is owned by the form-submission story (per §8), not by this plan.
 
 ### Q9 — Pre-empt or ignore the module system? **RESOLVED**
 
@@ -649,55 +705,28 @@ Option (a): keep `thank_you_html` on the main `RegistrationPage` row. Split out 
 
 Option (a): `typing.Protocol`, marked `@runtime_checkable`. Already consistent with §3.4. `RegistrationPageHtml` conforms structurally — no explicit subclassing required.
 
-### Q15 — Templating engine and form-authoring model **(supersedes Q8)**
+### Q15 — Templating engine and form-authoring model **RESOLVED**
 
-The render-time templating choice is tightly coupled to how authors compose the form. Two options for the team to discuss:
+**Decision:** Option A — system-generated starter form; minimal substitution at render time.
 
-**Option A — System-generated starter form; minimal substitution at render time**
+- The backoffice generates a complete, unstyled HTML form from the per-assembly respondent field schema (every field's `<input>`/`<select>`/`<label>`, including option lists for choice fields, with correct `name=` attributes — all hand-rendered, no loops, since this is Option A). The intended workflow is that the author pastes that into an LLM for styling and pastes the styled HTML back into the textarea.
+- At render time the **only** substitutions are `{{ csrf_form_element }}` and `{{ form_action }}`.
+- The starter is exposed via `generate_starter_form_html` (§5.9) — generated on demand, not auto-seeded into `form_html`. The author calls it explicitly (typically a "Generate starter HTML" button in the UI).
+- Canonical example: `610-registration-page-html/example-form-a-raw-html.html`.
+- Trade-off accepted: schema changes after authoring don't auto-propagate. If a `RespondentFieldDefinition` is added later, the author must hand-edit the HTML (or regenerate a starter and merge). Publish-readiness can warn about missing fields but cannot fix them.
 
-The backoffice generates a complete, unstyled HTML form from the per-assembly respondent field schema (every field's `<input>`/`<select>`/`<label>`, including option lists for choice fields, with correct `name=` attributes). The author pastes that into the textarea and edits it to taste — adds classes, copy, layout, ordering. At render time the **only** substitutions are `{{ csrf_form_element }}` and `{{ form_url }}`. Author writes radio/select option lists themselves because they're already in the generated starter.
+This decision settles Q8 — see Q8 above. Q15 is recorded here in detail; the day-to-day mechanics live in §5.3 (rendering) and §5.9 (starter generator).
 
-- **Pros:** dead-simple render path (`str.replace` on 2-3 tokens). Author has full control over the markup. No template syntax to learn or escape. Validation is "do the input `name=` attributes in this HTML cover all required schema fields?" — a single HTML parse on publish.
-- **Cons:** schema changes after authoring don't propagate. If a schema field is added, the author must manually edit their HTML to include it (publish-readiness will warn that the field is missing, but won't add it). Generating a sensible starter form is a small piece of work in its own right.
+#### Worked examples (kept for reference)
 
-**Option C — Jinja `SandboxedEnvironment`; author writes structure, system fills attributes and option lists**
-
-Author writes the form HTML using Jinja-style placeholders for per-field attributes and uses Jinja loops for option lists:
-
-```html
-<input {{ form_attrs.first_name }} class="big-input" />
-{% for option in form_attrs.region.options %}
-<label><input type="radio" {{ option.attrs }} /> {{ option.label }}</label>
-{% endfor %}
-```
-
-The render context exposes per-field attribute strings and option iterables drawn from the respondent schema. `SandboxedEnvironment` with no loader blocks `{% include %}`/`{% extends %}` and dangerous attribute access.
-
-- **Pros:** schema changes propagate automatically — add a field, no template edit needed. Loops handle choice-field option lists generated from the schema's `ChoiceOption` lists. Author can't accidentally use the wrong `name=` attribute (we control it). Less HTML to write per form.
-- **Cons:** author needs to know Jinja basics (`{{`/`{%` are special; escape literal `{{` with `{% raw %}`). Sandbox autoescape needs care: attribute injections must be wrapped in `Markup()` so they aren't HTML-escaped, while values like `form_url` should be escaped — mixed escape contexts are a known Jinja footgun. Publish-readiness needs to scan for leftover `{{ }}` AND `{% %}` after render.
-
-**Either way:** on publish, scan the post-render output for leftover template syntax and surface anything found as a readiness problem (catches author typos).
-
-**Note:** picking A here implies the Q8(a) reading (author writes inputs, system validates); picking C implies Q8(b) (system substitutes attributes). So Q15 settles Q8.
-
-#### Worked examples for the team to compare
-
-Three concrete example forms have been written to this directory, all built from the
-real 16-field schema of assembly `c8f833a8-a712-4457-b564-b1736cdf5222` and all
+Three concrete example forms remain in this directory, all built from the real
+16-field schema of assembly `c8f833a8-a712-4457-b564-b1736cdf5222` and all
 converging on the **same** rendered output:
 
 | File | Approach | Author writes |
 | --- | --- | --- |
-| `example-form-a-raw-html.html` | Option A — raw HTML | everything; only `{{ csrf_form_element }}` / `{{ form_url }}` are tokens |
-| `example-form-b-input-attrs.html` | Option C — attributes injected | all structural HTML + `{% for %}` loops; `{{ }}` for system-owned attrs/options |
-| `example-form-c-field-tags.html` | a third option (~what `plan-frontend.md` assumed) | page chrome only; one `{{ field('x') }}` per field |
+| `example-form-a-raw-html.html` | **Option A — chosen** — raw HTML | everything; only `{{ csrf_form_element }}` / `{{ form_action }}` are tokens |
+| `example-form-b-input-attrs.html` | Option C (rejected) — attributes injected | all structural HTML + `{% for %}` loops; `{{ }}` for system-owned attrs/options |
+| `example-form-c-field-tags.html` | another option (rejected) — what `plan-frontend.md` assumed | page chrome only; one `{{ field('x') }}` per field |
 
-Key takeaway from the side-by-side: **Option C (`example-form-b`) is the only one
-where the per-option loop is visible and author-editable** — which is the looping
-requirement raised in discussion. `example-form-c` hides the loop entirely (less
-than half the lines, but near-zero control over per-field markup and labels);
-`example-form-a` has no loop because every option is hand-written (longest, total
-control, but schema changes never propagate). Each file's header comment carries
-its full pros/cons.
-
-**Answer:**
+Examples B and C are kept as historical context for the decision; only A reflects the agreed direction.

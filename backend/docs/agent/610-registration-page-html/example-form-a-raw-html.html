@@ -7,7 +7,7 @@
   schema) and the manager then restyles / rewords / reorders it freely.
 
   Templating engine: none. Flat string substitution.
-  Render-time tokens: just {{ csrf_form_element }} and {{ form_url }}.
+  Render-time tokens: just {{ csrf_form_element }} and {{ form_action }}.
   This file, with those two tokens substituted, IS the raw HTML sent to the
   browser. Versions B and C both render to this same output (modulo whitespace).
 
@@ -28,7 +28,7 @@
   Note: the surrounding <head> and page chrome are provided by the system;
   this file is only the author-editable region.
 -->
-<form action="{{ form_url }}" method="post">
+<form action="{{ form_action }}" method="post">
   {{ csrf_form_element }}
 
   <h1>Register your interest</h1>
