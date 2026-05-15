@@ -708,7 +708,7 @@ Smallest delta, one place to change.
 
 **Suggested commit message:** `feat(registration): structured SlugError for UI field-specific errors`
 
-### 6.4 Starter HTML form generator (the meaty bit)
+### 6.4 Starter HTML form generator (the meaty bit) ✅ COMPLETE
 
 This is the largest piece of the alignment work. Two parts:
 
