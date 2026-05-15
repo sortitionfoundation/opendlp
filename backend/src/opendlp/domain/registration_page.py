@@ -37,9 +37,17 @@ class RenderContext:
 class HtmlSource(Protocol):
     """Common interface for the source types that supply a page's form HTML."""
 
-    def render(self, ctx: "RenderContext") -> str: ...
+    def render(self, ctx: RenderContext) -> str:
+        """Render the HTML from this Source, using the provided context"""
+        ...
 
-    def readiness_problems(self) -> list[str]: ...
+    def readiness_problems(self) -> list[str]:
+        """
+        Check if the source is ready to be used.
+        If yes, return empty list.
+        If not, return list of strings giving the problems that have to be resolved.
+        """
+        ...
 
 
 def _validated_slug(slug: str) -> str:
