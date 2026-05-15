@@ -6,7 +6,7 @@ import uuid
 import pytest
 
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.registration_page import RegistrationPage, RegistrationPageSource
+from opendlp.domain.registration_page import DEFAULT_THANK_YOU_HTML, RegistrationPage, RegistrationPageSource
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import registration_page_service as service
@@ -69,6 +69,17 @@ class TestCreateRegistrationPage:
         assert uow.registration_pages.get_by_assembly_id(assembly.id) is not None
         assert uow.registration_page_html_sources.get_by_page_id(page.id) is not None
         assert uow.committed
+
+    def test_create_seeds_default_thank_you_html(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        page = service.create_registration_page(uow, admin.id, assembly.id)
+
+        assert page.thank_you_html == DEFAULT_THANK_YOU_HTML
+        source = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert source is not None
+        assert source.form_html == ""
 
     def test_create_raises_if_already_exists(self):
         uow = FakeUnitOfWork()

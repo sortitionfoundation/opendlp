@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 import pytest
 
 from opendlp.domain.registration_page import (
+    DEFAULT_THANK_YOU_HTML,
     REQUIRED_TOKENS,
     HtmlSource,
     RegistrationPage,
@@ -33,6 +34,13 @@ class _StubSource:
 class TestRegistrationPageSource:
     def test_registration_page_source_has_html_member(self):
         assert RegistrationPageSource.HTML.value == "html"
+
+
+class TestDefaultThankYouHtml:
+    def test_default_thank_you_html_has_h1_and_p(self):
+        assert DEFAULT_THANK_YOU_HTML
+        assert "<h1>" in DEFAULT_THANK_YOU_HTML
+        assert "<p>" in DEFAULT_THANK_YOU_HTML
 
 
 class TestRenderContext:

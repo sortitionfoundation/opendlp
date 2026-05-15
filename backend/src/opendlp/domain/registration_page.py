@@ -12,6 +12,10 @@ from opendlp.domain.validators import UrlSlugValidator
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
+DEFAULT_THANK_YOU_HTML = (
+    "<h1>Thank you for registering</h1>\n<p>Your registration has been received. We'll be in touch.</p>\n"
+)
+
 
 class RegistrationPageSource(Enum):
     HTML = "html"

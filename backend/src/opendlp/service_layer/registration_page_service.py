@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from opendlp.config import get_registration_form_html_max_bytes, get_registration_thank_you_html_max_bytes
 from opendlp.domain.registration_page import (
+    DEFAULT_THANK_YOU_HTML,
     HtmlSource,
     RegistrationPage,
     RegistrationPageHtml,
@@ -66,7 +67,11 @@ def create_registration_page(
         if uow.registration_pages.get_by_assembly_id(assembly_id):
             raise ValueError(f"Assembly {assembly_id} already has a registration page")
 
-        page = RegistrationPage(assembly_id=assembly_id, source_type=source_type)
+        page = RegistrationPage(
+            assembly_id=assembly_id,
+            source_type=source_type,
+            thank_you_html=DEFAULT_THANK_YOU_HTML,
+        )
         uow.registration_pages.add(page)
         uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
         uow.commit()
