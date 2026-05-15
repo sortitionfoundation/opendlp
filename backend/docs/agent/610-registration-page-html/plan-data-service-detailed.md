@@ -936,7 +936,7 @@ test in §6.4.3 — add it, fix the helper, repeat.
 (One commit covering all of 6.4 is fine — the helper and wrapper land together, the tests are
 the "review surface".)
 
-### 6.5 Documentation sweep
+### 6.5 Documentation sweep ✅ COMPLETE
 
 After 6.1–6.4 are merged, do a final pass:
 
@@ -950,10 +950,12 @@ After 6.1–6.4 are merged, do a final pass:
   `REGISTRATION_FORM_HTML_MAX_BYTES` and `REGISTRATION_THANK_YOU_HTML_MAX_BYTES` (Phase 3
   added them); nothing in this phase changes those.
 
-### 6.6 Final verification
+### 6.6 Final verification ✅ COMPLETE
 
 `CI=true uv run pytest --ignore=tests/bdd -q` and `just check` clean before the final commit.
 The migration is unchanged in this phase, so no Alembic dance needed.
+
+Run on 2026-05-15: 2764 passed (full non-BDD suite), all of mypy, deptry, prek, and `uv lock --locked` clean.
 
 ---
 
@@ -965,8 +967,8 @@ The migration is unchanged in this phase, so no Alembic dance needed.
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | --------- |
 | `src/opendlp/domain/registration_page.py`                    | Token rename; `DEFAULT_THANK_YOU_HTML`; `generate_starter_form_html` helper                   | 6.1, 6.2.1, 6.4 |
 | `src/opendlp/service_layer/registration_page_service.py`     | Seed default thank-you HTML on create; `SlugError` raises; new `generate_starter_form_html` wrapper | 6.2.2, 6.3.2, 6.4 |
-| `src/opendlp/service_layer/exceptions.py`                    | New `SlugError` class                                                                         | 6.3       |
-| `src/opendlp/domain/validators.py`                           | New `InvalidSlug` exception, `UrlSlugValidator.validate` raises it                            | 6.3.1     |
+| `src/opendlp/service_layer/exceptions.py`                    | Re-export `SlugError` from the domain (lives in `domain/validators.py`)                       | 6.3       |
+| `src/opendlp/domain/validators.py`                           | New `InvalidSlug` and `SlugError` exceptions; `UrlSlugValidator.validate` raises `InvalidSlug` | 6.3.1     |
 | `tests/unit/domain/test_registration_page.py`                | Token rename in fixtures; `DEFAULT_THANK_YOU_HTML` test; `TestGenerateStarterFormHtml`        | 6.1, 6.2.1, 6.4.3 |
 | `tests/unit/test_registration_page_service.py`               | Token rename; default-thank-you-HTML test; `SlugError` tests; service wrapper tests           | 6.1, 6.2.2, 6.3.2, 6.4.4 |
 | `tests/unit/test_validators.py`                              | `InvalidSlug` reason-code tests                                                               | 6.3.1     |
