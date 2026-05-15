@@ -222,63 +222,67 @@ class RegistrationPageHtml:
         return hash(self.id)
 
 
-def _required_attr(field_key: str, required_field_keys: Iterable[str]) -> str:
-    return " required" if field_key in required_field_keys else ""
-
-
-def _render_input(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> str:
+def _render_input(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
-    return f'<label for="{key}">{label}</label>\n<input type="{input_type}" id="{key}" name="{key}"{required_attr}>'
+    return [
+        f'<label for="{key}">{label}</label>',
+        f'<input type="{input_type}" id="{key}" name="{key}"{required_attr}>',
+    ]
 
 
-def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> str:
+def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
-    return f'<label for="{key}">{label}</label>\n<textarea id="{key}" name="{key}"{required_attr}></textarea>'
+    return [
+        f'<label for="{key}">{label}</label>',
+        f'<textarea id="{key}" name="{key}"{required_attr}></textarea>',
+    ]
 
 
-def _render_yes_no_radios(field: RespondentFieldDefinition) -> str:
+def _render_yes_no_radios(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
-    return (
-        "<fieldset>\n"
-        f"<legend>{legend}</legend>\n"
-        f'<label><input type="radio" name="{key}" value="yes"> Yes</label>\n'
-        f'<label><input type="radio" name="{key}" value="no"> No</label>\n'
-        "</fieldset>"
-    )
+    return [
+        "<fieldset>",
+        f"<legend>{legend}</legend>",
+        f'<label><input type="radio" name="{key}" value="yes"> Yes</label>',
+        f'<label><input type="radio" name="{key}" value="no"> No</label>',
+        "</fieldset>",
+    ]
 
 
-def _render_choice_radios(field: RespondentFieldDefinition) -> str:
+def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
-    options_html = "\n".join(
-        f'<label><input type="radio" name="{key}" value="{html_lib.escape(opt.value, quote=True)}">'
-        f" {html_lib.escape(opt.value)}</label>"
-        for opt in (field.options or [])
-    )
-    return f"<fieldset>\n<legend>{legend}</legend>\n{options_html}\n</fieldset>"
+    parts = ["<fieldset>", f"<legend>{legend}</legend>"]
+    for opt in field.options or []:
+        value = html_lib.escape(opt.value, quote=True)
+        text = html_lib.escape(opt.value)
+        parts.append(f'<label><input type="radio" name="{key}" value="{value}"> {text}</label>')
+    parts.append("</fieldset>")
+    return parts
 
 
-def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool) -> str:
+def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     required_attr = " required" if is_required else ""
-    placeholder = "" if is_required else '<option value="">— Please choose —</option>\n'
-    options_html = "\n".join(
-        f'<option value="{html_lib.escape(opt.value, quote=True)}">{html_lib.escape(opt.value)}</option>'
-        for opt in (field.options or [])
-    )
-    return (
-        f'<label for="{key}">{label}</label>\n'
-        f'<select id="{key}" name="{key}"{required_attr}>\n'
-        f"{placeholder}{options_html}\n"
-        "</select>"
-    )
+    parts = [
+        f'<label for="{key}">{label}</label>',
+        f'<select id="{key}" name="{key}"{required_attr}>',
+    ]
+    if not is_required:
+        parts.append('<option value="">— Please choose —</option>')
+    for opt in field.options or []:
+        value = html_lib.escape(opt.value, quote=True)
+        text = html_lib.escape(opt.value)
+        parts.append(f'<option value="{value}">{text}</option>')
+    parts.append("</select>")
+    return parts
 
 
-def _render_field(field: RespondentFieldDefinition, required_field_keys: Iterable[str]) -> str:
+def _render_field(field: RespondentFieldDefinition, required_field_keys: Iterable[str]) -> list[str]:
     is_required = field.field_key in required_field_keys
     required_attr = " required" if is_required else ""
     field_type = field.effective_field_type
@@ -332,7 +336,7 @@ def generate_starter_form_html(
             continue
         parts.append(f"<h2>{html_lib.escape(str(GROUP_LABELS[group]))}</h2>")
         for field in bucket:
-            parts.append(_render_field(field, required_set))
+            parts.extend(_render_field(field, required_set))
     parts.append('<button type="submit">Register</button>')
     parts.append("</form>")
     return "\n".join(parts) + "\n"
