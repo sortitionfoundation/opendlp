@@ -247,6 +247,8 @@ extend-exclude = [
   # translation files contain multi-language strings that trigger false positives
   "*.po",
   "*.pot",
+  # There are some odd words in this sample data set
+  "backend/docs/fixtures/monitoring/"
 ]
 
 [tool.typos.default]

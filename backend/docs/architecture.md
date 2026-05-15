@@ -99,7 +99,7 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 | Blueprint                 | URL prefix                   | Purpose                                                                                        | Auth                 | Routes |
 | ------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | -------------------- | ------ |
 | `wellknown`               | —                            | robots.txt, security.txt, change-password redirect                                             | Public               | 3      |
-| `health`                  | —                            | JSON health check (`/health`, `/health/bdd`)                                                   | Public               | 2      |
+| `health`                  | —                            | JSON health check (`/health`, `/health/bdd`, `/health/monitor_selection`)                      | Public               | 3      |
 | `auth`                    | `/auth`                      | Login, register, password reset, email confirmation, Google/Microsoft OAuth, 2FA verify        | Mixed                | 18     |
 | `main`                    | —                            | Landing page, dashboard, assembly view, legacy member management                               | Mixed                | 11     |
 | `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
@@ -350,7 +350,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 | `targets_legacy`          | 11     | 2        | To be retired.                                                                          |
 | `respondents_legacy`      | 3      | 2        | To be retired.                                                                          |
 | `dev`                     | 4      | 3        | Non-production only; admin-guarded.                                                     |
-| `health`                  | 2      | —        | Public.                                                                                 |
+| `health`                  | 3      | —        | Public; includes `/health/monitor_selection` (focused, returns 500 on `NOT_CONFIGURED`).|
 | `wellknown`               | 3      | —        | Public.                                                                                 |
 
 ### Service observations

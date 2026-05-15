@@ -31,6 +31,7 @@ from opendlp.domain.value_objects import (
     RespondentAction,
     RespondentStatus,
     SelectionRunStatus,
+    SelectionTaskType,
 )
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
@@ -477,15 +478,38 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .all()
         )
 
-    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
-        """Get the most recent SelectionRunRecord for an assembly."""
-        return (
-            self.session
-            .query(SelectionRunRecord)
-            .filter_by(assembly_id=assembly_id)
+    def get_latest_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType | None = None,
+    ) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly, optionally filtered by task_type."""
+        query = self.session.query(SelectionRunRecord).filter(orm.selection_run_records.c.assembly_id == assembly_id)
+        if task_type is not None:
+            query = query.filter(orm.selection_run_records.c.task_type == task_type.value)
+        return query.order_by(orm.selection_run_records.c.created_at.desc()).first()
+
+    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
+        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
+        if keep < 0:
+            keep = 0
+        keep_ids_subq = (
+            select(orm.selection_run_records.c.task_id)
+            .where(orm.selection_run_records.c.assembly_id == assembly_id)
             .order_by(orm.selection_run_records.c.created_at.desc())
-            .first()
+            .limit(keep)
+            .subquery()
         )
+        stmt = delete(orm.selection_run_records).where(
+            and_(
+                orm.selection_run_records.c.assembly_id == assembly_id,
+                orm.selection_run_records.c.task_id.notin_(select(keep_ids_subq.c.task_id)),
+            )
+        )
+        result = self.session.execute(stmt)
+        self.session.flush()
+        rowcount = getattr(result, "rowcount", 0)
+        return int(rowcount) if rowcount else 0
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:
         """Get all currently running selection tasks."""

@@ -227,6 +227,7 @@ This requirement also means that we MUST NOT have copies of details in long term
 - [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes
 - [Command Line Interface](docs/cli.md) - System administration CLI commands
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
+- [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
 - [Translation Management](docs/translations.md) - i18n workflow for application strings
