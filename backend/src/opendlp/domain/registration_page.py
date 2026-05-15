@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
-from opendlp.domain.validators import UrlSlugValidator
+from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
@@ -54,9 +54,12 @@ class HtmlSource(Protocol):
         ...
 
 
-def _validated_slug(slug: str) -> str:
+def _validated_slug(slug: str, field: str) -> str:
     if slug:
-        UrlSlugValidator().validate(slug)
+        try:
+            UrlSlugValidator().validate(slug)
+        except InvalidSlug as e:
+            raise SlugError(field=field, reason=e.reason, message=str(e)) from e
     return slug
 
 
@@ -79,8 +82,8 @@ class RegistrationPage:
         now = datetime.now(UTC)
         self.id = registration_page_id or uuid.uuid4()
         self.assembly_id = assembly_id
-        self.url_slug = _validated_slug(url_slug)
-        self.short_url_slug = _validated_slug(short_url_slug)
+        self.url_slug = _validated_slug(url_slug, field="url_slug")
+        self.short_url_slug = _validated_slug(short_url_slug, field="short_url_slug")
         self.is_published = is_published
         self.preview_token = preview_token or secrets.token_urlsafe(32)
         self.source_type = source_type
@@ -93,9 +96,9 @@ class RegistrationPage:
         if self.is_published:
             raise ValueError("Cannot change slugs while the registration page is published")
         if url_slug is not None:
-            self.url_slug = _validated_slug(url_slug)
+            self.url_slug = _validated_slug(url_slug, field="url_slug")
         if short_url_slug is not None:
-            self.short_url_slug = _validated_slug(short_url_slug)
+            self.short_url_slug = _validated_slug(short_url_slug, field="short_url_slug")
         self.updated_at = datetime.now(UTC)
 
     def update_thank_you_html(self, thank_you_html: str) -> None:

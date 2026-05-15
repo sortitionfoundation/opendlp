@@ -16,6 +16,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageSource,
     RenderContext,
 )
+from opendlp.domain.validators import SlugError
 
 READY_HTML = "<form>{{ csrf_form_element }} posts to {{ form_action }}</form>"
 
@@ -159,12 +160,16 @@ class TestRegistrationPageInit:
         assert page.updated_at is not None
 
     def test_init_validates_url_slug(self):
-        with pytest.raises(ValueError):
-            RegistrationPage(assembly_id=uuid.uuid4(), url_slug="Bad Slug")
+        with pytest.raises(SlugError) as exc:
+            RegistrationPage(assembly_id=uuid.uuid4(), url_slug="admin")
+        assert exc.value.field == "url_slug"
+        assert exc.value.reason == "reserved"
 
     def test_init_validates_short_url_slug(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(SlugError) as exc:
             RegistrationPage(assembly_id=uuid.uuid4(), short_url_slug="Bad Slug")
+        assert exc.value.field == "short_url_slug"
+        assert exc.value.reason == "malformed"
 
     def test_init_allows_empty_slugs(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="", short_url_slug="")

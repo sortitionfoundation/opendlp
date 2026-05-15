@@ -15,6 +15,7 @@ from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     RegistrationPageNotFoundError,
     RegistrationPageNotReady,
+    SlugError,
     UserNotFoundError,
 )
 from tests.fakes import FakeUnitOfWork
@@ -185,8 +186,10 @@ class TestUpdateRegistrationPage:
         service.create_registration_page(uow, admin.id, assembly_b.id)
         service.update_registration_page(uow, admin.id, assembly_a.id, url_slug="taken")
 
-        with pytest.raises(ValueError, match="already in use"):
+        with pytest.raises(SlugError, match="already in use") as exc:
             service.update_registration_page(uow, admin.id, assembly_b.id, url_slug="taken")
+        assert exc.value.field == "url_slug"
+        assert exc.value.reason == "taken"
 
     def test_update_slug_rejects_duplicate_short_url_slug(self):
         uow = FakeUnitOfWork()
@@ -196,8 +199,30 @@ class TestUpdateRegistrationPage:
         service.create_registration_page(uow, admin.id, assembly_b.id)
         service.update_registration_page(uow, admin.id, assembly_a.id, short_url_slug="tk")
 
-        with pytest.raises(ValueError, match="already in use"):
+        with pytest.raises(SlugError, match="already in use") as exc:
             service.update_registration_page(uow, admin.id, assembly_b.id, short_url_slug="tk")
+        assert exc.value.field == "short_url_slug"
+        assert exc.value.reason == "taken"
+
+    def test_update_slug_raises_slug_error_on_reserved_value(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id)
+
+        with pytest.raises(SlugError) as exc:
+            service.update_registration_page(uow, admin.id, assembly.id, url_slug="admin")
+        assert exc.value.field == "url_slug"
+        assert exc.value.reason == "reserved"
+
+    def test_update_slug_raises_slug_error_on_malformed_value(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id)
+
+        with pytest.raises(SlugError) as exc:
+            service.update_registration_page(uow, admin.id, assembly.id, short_url_slug="Bad Slug")
+        assert exc.value.field == "short_url_slug"
+        assert exc.value.reason == "malformed"
 
     def test_update_slug_allows_same_page_keeping_its_own_slug(self):
         uow = FakeUnitOfWork()

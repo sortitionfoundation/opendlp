@@ -15,25 +15,48 @@ _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _SLUG_MAX_LENGTH = 100
 
 
+class InvalidSlug(ValueError):
+    """A URL slug failed validation. ``reason`` is one of empty/too_long/malformed/reserved."""
+
+    def __init__(self, reason: str, message: str) -> None:
+        self.reason = reason
+        super().__init__(message)
+
+
+class SlugError(ValueError):
+    """A registration-page slug failed validation or uniqueness.
+
+    ``field`` is one of ``"url_slug"`` or ``"short_url_slug"``.
+    ``reason`` is one of ``"taken"``, ``"reserved"``, ``"malformed"``, ``"too_long"``, ``"empty"``.
+    Subclasses ``ValueError`` so existing callers that catch ``ValueError`` continue to work.
+    """
+
+    def __init__(self, field: str, reason: str, message: str) -> None:
+        self.field = field
+        self.reason = reason
+        super().__init__(message)
+
+
 class UrlSlugValidator:
     """Validator for registration page URL slugs.
 
     Accepts lowercase ASCII alphanumerics and hyphens, 1-100 characters, with no
-    leading or trailing hyphen. Rejects reserved values. Raises ValueError on
+    leading or trailing hyphen. Rejects reserved values. Raises InvalidSlug on
     failure - this is a domain validator, not a WTForms one.
     """
 
     def validate(self, value: str) -> str:
         if not value:
-            raise ValueError("URL slug cannot be empty")
+            raise InvalidSlug("empty", "URL slug cannot be empty")
         if len(value) > _SLUG_MAX_LENGTH:
-            raise ValueError(f"URL slug cannot be longer than {_SLUG_MAX_LENGTH} characters")
+            raise InvalidSlug("too_long", f"URL slug cannot be longer than {_SLUG_MAX_LENGTH} characters")
         if not _SLUG_RE.match(value):
-            raise ValueError(
-                "URL slug must be lowercase letters, numbers and hyphens, with no leading or trailing hyphen"
+            raise InvalidSlug(
+                "malformed",
+                "URL slug must be lowercase letters, numbers and hyphens, with no leading or trailing hyphen",
             )
         if value in RESERVED_SLUGS:
-            raise ValueError(f"URL slug '{value}' is reserved and cannot be used")
+            raise InvalidSlug("reserved", f"URL slug '{value}' is reserved and cannot be used")
         return value
 
 

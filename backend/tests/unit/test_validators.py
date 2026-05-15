@@ -7,6 +7,7 @@ from wtforms import ValidationError
 from opendlp.domain.validators import (
     RESERVED_SLUGS,
     GoogleSpreadsheetURLValidator,
+    InvalidSlug,
     MockField,
     UrlSlugValidator,
 )
@@ -140,8 +141,9 @@ class TestUrlSlugValidator:
         assert UrlSlugValidator().validate(slug) == slug
 
     def test_rejects_empty_string(self):
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(InvalidSlug, match="cannot be empty") as exc:
             UrlSlugValidator().validate("")
+        assert exc.value.reason == "empty"
 
     @pytest.mark.parametrize(
         "slug",
@@ -158,14 +160,21 @@ class TestUrlSlugValidator:
         ],
     )
     def test_rejects_malformed_slugs(self, slug):
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidSlug) as exc:
             UrlSlugValidator().validate(slug)
+        assert exc.value.reason == "malformed"
 
     def test_rejects_too_long_slug(self):
-        with pytest.raises(ValueError, match="longer than"):
+        with pytest.raises(InvalidSlug, match="longer than") as exc:
             UrlSlugValidator().validate("a" * 101)
+        assert exc.value.reason == "too_long"
 
     @pytest.mark.parametrize("slug", sorted(RESERVED_SLUGS))
     def test_rejects_reserved_slugs(self, slug):
-        with pytest.raises(ValueError, match="reserved"):
+        with pytest.raises(InvalidSlug, match="reserved") as exc:
             UrlSlugValidator().validate(slug)
+        assert exc.value.reason == "reserved"
+
+    def test_invalid_slug_subclasses_value_error(self):
+        with pytest.raises(ValueError):
+            UrlSlugValidator().validate("BAD")

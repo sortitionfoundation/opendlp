@@ -3,6 +3,7 @@ ABOUTME: Defines business logic exceptions with proper error messages and codes"
 
 # Re-exported so service-layer callers import it from the usual exceptions module.
 from opendlp.domain.registration_page import RegistrationPageNotReady  # noqa: F401
+from opendlp.domain.validators import SlugError  # noqa: F401
 from opendlp.translations import gettext as _
 
 

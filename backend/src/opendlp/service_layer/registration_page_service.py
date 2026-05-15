@@ -17,6 +17,7 @@ from .exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
     RegistrationPageNotFoundError,
+    SlugError,
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
@@ -127,11 +128,19 @@ def update_registration_page(
         if url_slug:
             clash = uow.registration_pages.get_by_url_slug(url_slug)
             if clash and clash.id != page.id:
-                raise ValueError(f"The slug '{url_slug}' is already in use by another registration page")
+                raise SlugError(
+                    field="url_slug",
+                    reason="taken",
+                    message=f"The slug '{url_slug}' is already in use by another registration page",
+                )
         if short_url_slug:
             clash = uow.registration_pages.get_by_short_url_slug(short_url_slug)
             if clash and clash.id != page.id:
-                raise ValueError(f"The slug '{short_url_slug}' is already in use by another registration page")
+                raise SlugError(
+                    field="short_url_slug",
+                    reason="taken",
+                    message=f"The slug '{short_url_slug}' is already in use by another registration page",
+                )
 
         page.update_slugs(url_slug=url_slug, short_url_slug=short_url_slug)
         uow.commit()
