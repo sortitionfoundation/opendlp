@@ -619,7 +619,7 @@ explicitly via `update_thank_you_html`.
 
 **Suggested commit message:** `feat(registration): seed default thank-you HTML on create`
 
-### 6.3 Slug-error specificity
+### 6.3 Slug-error specificity ✅ COMPLETE
 
 **Scope.** Make slug failures distinguishable by (a) which slug column and (b) what kind of
 failure, so the UI can attach errors to the right field. Per `plan-data-service.md` §5.1, the
