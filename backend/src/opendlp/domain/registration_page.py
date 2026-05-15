@@ -1,13 +1,23 @@
 """ABOUTME: RegistrationPage domain model for assembly registration pages
 ABOUTME: Holds page config plus the HTML source that supplies the registration form"""
 
+import html as html_lib
 import secrets
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
+from opendlp.domain.respondent_field_schema import (
+    BOOL_TYPES,
+    GROUP_DISPLAY_ORDER,
+    GROUP_LABELS,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
@@ -210,3 +220,119 @@ class RegistrationPageHtml:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+def _required_attr(field_key: str, required_field_keys: Iterable[str]) -> str:
+    return " required" if field_key in required_field_keys else ""
+
+
+def _render_input(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> str:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    return f'<label for="{key}">{label}</label>\n<input type="{input_type}" id="{key}" name="{key}"{required_attr}>'
+
+
+def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> str:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    return f'<label for="{key}">{label}</label>\n<textarea id="{key}" name="{key}"{required_attr}></textarea>'
+
+
+def _render_yes_no_radios(field: RespondentFieldDefinition) -> str:
+    key = html_lib.escape(field.field_key, quote=True)
+    legend = html_lib.escape(field.label)
+    return (
+        "<fieldset>\n"
+        f"<legend>{legend}</legend>\n"
+        f'<label><input type="radio" name="{key}" value="yes"> Yes</label>\n'
+        f'<label><input type="radio" name="{key}" value="no"> No</label>\n'
+        "</fieldset>"
+    )
+
+
+def _render_choice_radios(field: RespondentFieldDefinition) -> str:
+    key = html_lib.escape(field.field_key, quote=True)
+    legend = html_lib.escape(field.label)
+    options_html = "\n".join(
+        f'<label><input type="radio" name="{key}" value="{html_lib.escape(opt.value, quote=True)}">'
+        f" {html_lib.escape(opt.value)}</label>"
+        for opt in (field.options or [])
+    )
+    return f"<fieldset>\n<legend>{legend}</legend>\n{options_html}\n</fieldset>"
+
+
+def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool) -> str:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    required_attr = " required" if is_required else ""
+    placeholder = "" if is_required else '<option value="">— Please choose —</option>\n'
+    options_html = "\n".join(
+        f'<option value="{html_lib.escape(opt.value, quote=True)}">{html_lib.escape(opt.value)}</option>'
+        for opt in (field.options or [])
+    )
+    return (
+        f'<label for="{key}">{label}</label>\n'
+        f'<select id="{key}" name="{key}"{required_attr}>\n'
+        f"{placeholder}{options_html}\n"
+        "</select>"
+    )
+
+
+def _render_field(field: RespondentFieldDefinition, required_field_keys: Iterable[str]) -> str:
+    is_required = field.field_key in required_field_keys
+    required_attr = " required" if is_required else ""
+    field_type = field.effective_field_type
+
+    if field_type == FieldType.TEXT:
+        return _render_input(field, "text", required_attr)
+    if field_type == FieldType.EMAIL:
+        return _render_input(field, "email", required_attr)
+    if field_type == FieldType.INTEGER:
+        return _render_input(field, "number", required_attr)
+    if field_type == FieldType.LONGTEXT:
+        return _render_textarea(field, required_attr)
+    if field_type in BOOL_TYPES:
+        return _render_yes_no_radios(field)
+    if field_type == FieldType.CHOICE_RADIO:
+        return _render_choice_radios(field)
+    if field_type == FieldType.CHOICE_DROPDOWN:
+        return _render_choice_dropdown(field, is_required)
+    return _render_input(field, "text", required_attr)
+
+
+def _group_fields(
+    fields: list[RespondentFieldDefinition],
+) -> dict[RespondentFieldGroup, list[RespondentFieldDefinition]]:
+    grouped: dict[RespondentFieldGroup, list[RespondentFieldDefinition]] = {g: [] for g in GROUP_DISPLAY_ORDER}
+    for f in fields:
+        grouped.setdefault(f.group, []).append(f)
+    for bucket in grouped.values():
+        bucket.sort(key=lambda f: f.sort_order)
+    return grouped
+
+
+def generate_starter_form_html(
+    fields: list[RespondentFieldDefinition],
+    required_field_keys: Iterable[str] = (),
+) -> str:
+    """Generate an unstyled starter HTML form from a respondent field schema.
+
+    Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
+    a valid input for ``RegistrationPageHtml.render``. Fields are grouped by
+    ``RespondentFieldGroup`` in ``GROUP_DISPLAY_ORDER`` and ordered by
+    ``sort_order`` within each group; empty groups are suppressed.
+    """
+    required_set = set(required_field_keys)
+    grouped = _group_fields(fields)
+
+    parts: list[str] = ['<form action="{{ form_action }}" method="post">', "{{ csrf_form_element }}"]
+    for group in GROUP_DISPLAY_ORDER:
+        bucket = grouped.get(group, [])
+        if not bucket:
+            continue
+        parts.append(f"<h2>{html_lib.escape(str(GROUP_LABELS[group]))}</h2>")
+        for field in bucket:
+            parts.append(_render_field(field, required_set))
+    parts.append('<button type="submit">Register</button>')
+    parts.append("</form>")
+    return "\n".join(parts) + "\n"

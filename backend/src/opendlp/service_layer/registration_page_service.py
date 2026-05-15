@@ -12,6 +12,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageHtml,
     RegistrationPageSource,
 )
+from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 
 from .exceptions import (
     AssemblyNotFoundError,
@@ -274,3 +275,13 @@ def get_page_and_source_for_render(uow: AbstractUnitOfWork, page: RegistrationPa
 def render_thank_you_html(page: RegistrationPage) -> str:
     """Return the thank-you HTML. Verbatim in v1 - a seam for later substitution."""
     return page.thank_you_html
+
+
+def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
+    """Generate an unstyled starter HTML form from the assembly's respondent field schema."""
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+        return _build_starter_html(list(fields))

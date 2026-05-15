@@ -7,6 +7,11 @@ import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_page import DEFAULT_THANK_YOU_HTML, RegistrationPage, RegistrationPageSource
+from opendlp.domain.respondent_field_schema import (
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import registration_page_service as service
@@ -495,3 +500,86 @@ class TestRenderThankYouHtml:
     def test_returns_thank_you_html_verbatim(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), thank_you_html="<p>thanks {{ name }}</p>")
         assert service.render_thank_you_html(page) == "<p>thanks {{ name }}</p>"
+
+
+def _add_field(uow: FakeUnitOfWork, assembly_id: uuid.UUID, field_key: str, sort_order: int = 0) -> None:
+    uow.respondent_field_definitions.add(
+        RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key=field_key,
+            label=field_key.replace("_", " ").title(),
+            group=RespondentFieldGroup.NAME_AND_CONTACT,
+            sort_order=sort_order,
+            field_type=FieldType.TEXT,
+        )
+    )
+
+
+class TestGenerateStarterFormHtml:
+    def test_happy_path_includes_field_names(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name", sort_order=0)
+        _add_field(uow, assembly.id, "last_name", sort_order=10)
+
+        html = service.generate_starter_form_html(uow, admin.id, assembly.id)
+
+        assert 'name="first_name"' in html
+        assert 'name="last_name"' in html
+        assert "{{ csrf_form_element }}" in html
+        assert "{{ form_action }}" in html
+
+    def test_requires_manage_permission(self):
+        uow = FakeUnitOfWork()
+        _admin(uow)
+        assembly = _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.generate_starter_form_html(uow, viewer.id, assembly.id)
+
+    def test_assembly_not_found(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            service.generate_starter_form_html(uow, admin.id, uuid.uuid4())
+
+    def test_user_not_found(self):
+        uow = FakeUnitOfWork()
+        assembly = _assembly(uow)
+
+        with pytest.raises(UserNotFoundError):
+            service.generate_starter_form_html(uow, uuid.uuid4(), assembly.id)
+
+    def test_empty_schema_returns_minimal_form(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        html = service.generate_starter_form_html(uow, admin.id, assembly.id)
+
+        assert "{{ csrf_form_element }}" in html
+        assert "{{ form_action }}" in html
+        assert '<button type="submit">Register</button>' in html
+
+    def test_only_returns_fields_for_target_assembly(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+        assembly_a, assembly_b = _assembly(uow), _assembly(uow)
+        _add_field(uow, assembly_a.id, "alpha")
+        _add_field(uow, assembly_b.id, "beta")
+
+        html = service.generate_starter_form_html(uow, admin.id, assembly_a.id)
+
+        assert 'name="alpha"' in html
+        assert 'name="beta"' not in html
+
+    def test_does_not_commit(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+
+        service.generate_starter_form_html(uow, admin.id, assembly.id)
+
+        assert uow.committed is False
