@@ -507,3 +507,471 @@ None block this build. For the record:
 - `plan-data-service.md` §8 items (`Respondent` creation, `TEST_SUBMISSION` status, field
   mapping, rate-limiting, thank-you substitution context, slug-change-after-submission) are all
   the form-submission story — untouched here.
+
+---
+
+## Phase 6 — Align with updated plan after the 2026-05-15 decisions — TODO
+
+**Why this phase exists.** Phases 1–5 above shipped the data + service layer per
+`plan-data-service.md` _as it stood on 2026-05-14_. Since then `plan-data-service.md` has been
+updated to record four decisions captured in `deltas-to-fix.md`:
+
+1. The render-time placeholder previously called `{{ form_url }}` is now `{{ form_action }}`
+   (deltas §4).
+2. `create_registration_page` should seed `RegistrationPage.thank_you_html` with a default
+   `<h1>` + `<p>` so the author has something to edit (deltas §7, plan §5.8).
+3. Slug-related exceptions must carry enough information for the UI to attribute the error to
+   the right field (deltas §12, plan §5.1 "Slug-error specificity").
+4. A new `generate_starter_form_html` function (pure helper in the domain layer + service
+   wrapper) generates an unstyled HTML form from the assembly's `RespondentFieldDefinition`
+   set. **Not** auto-seeded into `form_html`: the UI calls it explicitly and shows the result
+   for the author to copy / paste / hand off to an LLM and paste back (deltas §1, plan §5.9).
+
+The route layer is also adopting `?token=<preview_token>` instead of `?preview=<token>` for the
+preview URL (deltas §3, plan §2). That is a route-layer concern only — the service-layer
+function `resolve_visibility(page, preview_token=...)` already takes a token argument under that
+name, so no service- or domain-layer change is needed for it. Nothing to do in this phase for §3.
+
+Same TDD discipline as the rest of this plan (§0.3): red → green → refactor, scoped pytest as
+you go, `CI=true just test` and `just check` before each commit. **One commit per sub-phase**
+keeps the diffs reviewable; the four sub-phases below are independent and can land in any
+order, though 6.4 is the only meaty one.
+
+### 6.1 Rename render token `form_url` → `form_action`
+
+**Scope.** Pure rename across domain, tests, and existing fixture HTML. No behaviour change.
+
+**Affected files (search the working tree to confirm before editing — there may be more than
+the list below by the time this phase starts):**
+
+| File                                                         | What changes                                                                            |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `src/opendlp/domain/registration_page.py`                    | `REQUIRED_TOKENS` tuple, `RenderContext.form_url` → `form_action`, the `replace()` call |
+| `tests/unit/domain/test_registration_page.py`                | `READY_HTML` fixture, two test names (`*_form_url`), all `form_url=` kwargs and asserts |
+| `tests/unit/test_registration_page_service.py`               | `READY_HTML` fixture, any `form_url=` kwargs                                            |
+| `tests/integration/test_orm.py`                              | The two `form_html` fixture strings around line 1111/1133                               |
+
+**TDD shape.** Search-and-replace at this scale is one mechanical edit; a single failing test
+isn't useful here. Approach:
+
+1. **Rename in the production code** (`registration_page.py` only).
+2. Run `CI=true uv run pytest tests/unit/domain/test_registration_page.py
+   tests/unit/test_registration_page_service.py tests/integration/test_orm.py -q`. Watch the
+   `form_url` tests fail (expected — they reference the old token).
+3. **Rename in the tests / fixtures** to match.
+4. Re-run the same scoped pytest. Green.
+5. `CI=true just test` to confirm nothing else in the suite was relying on the old name; `just
+check` for the lint/type pass. Commit.
+
+**Suggested commit message:**
+`refactor(registration): rename render-time token form_url to form_action`
+
+### 6.2 Default thank-you HTML on create
+
+**Scope.** New module-level constant + a one-line change in `create_registration_page`.
+
+#### 6.2.1 `DEFAULT_THANK_YOU_HTML` constant
+
+`src/opendlp/domain/registration_page.py`:
+
+```python
+DEFAULT_THANK_YOU_HTML = (
+    "<h1>Thank you for registering</h1>\n"
+    "<p>Your registration has been received. We'll be in touch.</p>\n"
+)
+```
+
+- **Red:** `test_default_thank_you_html_has_h1_and_p` in
+  `tests/unit/domain/test_registration_page.py` — asserts the constant is non-empty, contains
+  `<h1>` and `<p>`. (Trivial, but it's the spec — if a future PR shrinks the default to a bare
+  string, the test surfaces it.)
+- **Green:** add the constant.
+
+#### 6.2.2 `create_registration_page` seeds it
+
+- **Red:** add `test_create_seeds_default_thank_you_html` to
+  `tests/unit/test_registration_page_service.py` — call `create_registration_page`, fetch the
+  returned page, assert `page.thank_you_html == DEFAULT_THANK_YOU_HTML`. Also assert
+  `RegistrationPageHtml.form_html == ""` (no auto-seeding of the form HTML — that contract
+  matters for 6.4).
+- **Green:** in `registration_page_service.create_registration_page`, change
+
+  ```python
+  page = RegistrationPage(assembly_id=assembly_id, source_type=source_type)
+  ```
+
+  to
+
+  ```python
+  page = RegistrationPage(
+      assembly_id=assembly_id,
+      source_type=source_type,
+      thank_you_html=DEFAULT_THANK_YOU_HTML,
+  )
+  ```
+
+  (import the constant from `opendlp.domain.registration_page`).
+
+**Existing tests to update.** Any service-layer test that asserts `thank_you_html == ""` after
+`create_registration_page` becomes wrong. Grep for `thank_you_html` in the test files and adjust
+the small number of spots — switch to `DEFAULT_THANK_YOU_HTML` or set thank-you HTML
+explicitly via `update_thank_you_html`.
+
+**Suggested commit message:** `feat(registration): seed default thank-you HTML on create`
+
+### 6.3 Slug-error specificity
+
+**Scope.** Make slug failures distinguishable by (a) which slug column and (b) what kind of
+failure, so the UI can attach errors to the right field. Per `plan-data-service.md` §5.1, the
+chosen mechanism (distinct exception subclasses vs. an attribute on the raised error) is left
+to the implementation.
+
+**Recommendation.** Use a single new exception class with structured attributes — fewer types
+to import and remember, and the route layer only needs `except SlugError: ...` once.
+
+```python
+# In src/opendlp/service_layer/exceptions.py (or domain/registration_page.py if we want to
+# keep slug rules in the domain — pick one place; service_layer/exceptions.py matches where
+# RegistrationPageNotReady is re-exported from today, so callers have a consistent import path)
+
+class SlugError(ValueError):
+    """A registration-page slug failed validation or uniqueness.
+
+    `field` is one of {"url_slug", "short_url_slug"}.
+    `reason` is one of {"taken", "reserved", "malformed", "too_long", "empty"}.
+    """
+    def __init__(self, field: str, reason: str, message: str) -> None:
+        self.field = field
+        self.reason = reason
+        super().__init__(message)
+```
+
+Subclassing `ValueError` keeps backwards compatibility with any existing `except ValueError:`
+clauses (there shouldn't be any — but it costs nothing).
+
+#### 6.3.1 Validator changes
+
+`src/opendlp/domain/validators.py` — `UrlSlugValidator.validate` currently raises bare
+`ValueError`s. The validator doesn't know which column the value is for, so it can't set
+`.field` itself; the caller has to. Two options:
+
+- **(a)** Validator raises a new `InvalidSlug(reason: str, message: str)` (no `field`); the
+  caller catches it and re-raises as `SlugError(field=..., reason=..., message=...)`.
+- **(b)** Validator stays as-is (bare `ValueError`); the caller maps to `SlugError`.
+
+Recommendation: **(a)**. It carries the kind-of-failure (reserved vs malformed vs too-long
+vs empty) up to the caller without reparsing the message string, and keeps the validator
+deterministic about its own classifications.
+
+- **Red:** add tests to `tests/unit/test_validators.py`: each rejection case (empty,
+  >100 chars, malformed, reserved) raises `InvalidSlug` with the expected `.reason` value.
+- **Green:** add `InvalidSlug` to `domain/validators.py` (or co-locate with `SlugError`), make
+  `UrlSlugValidator.validate` raise it.
+
+#### 6.3.2 Service changes
+
+`src/opendlp/service_layer/registration_page_service.py` — three call sites raise on slug
+problems today:
+
+- The `if clash` blocks for `url_slug` and `short_url_slug` in `update_registration_page`
+  (lines 122–129).
+- `RegistrationPage.__init__` / `update_slugs` propagate `ValueError` from the validator.
+
+Wrap these so the exception always carries `field` and `reason`:
+
+- The clash blocks raise `SlugError(field="url_slug", reason="taken", message=...)` /
+  `SlugError(field="short_url_slug", reason="taken", message=...)`.
+- The validator-call sites (in `_validated_slug` inside `domain/registration_page.py`, and any
+  service-level slug strip / validate paths) catch `InvalidSlug` and re-raise as
+  `SlugError(field=<which-column>, reason=e.reason, message=str(e))`. The domain helper
+  `_validated_slug` doesn't know the column name — push the wrapping up to
+  `RegistrationPage.__init__` / `update_slugs`, where the column _is_ known (one wrap per
+  column), or add a `field` parameter to `_validated_slug`.
+
+Recommendation: add a `field: str` parameter to `_validated_slug` and have it do the wrap.
+Smallest delta, one place to change.
+
+- **Red:** add tests to `tests/unit/test_registration_page_service.py`:
+  - `test_update_slug_raises_slug_error_on_clash_for_url_slug` — `.field == "url_slug"`,
+    `.reason == "taken"`.
+  - `test_update_slug_raises_slug_error_on_clash_for_short_url_slug` — `.field ==
+    "short_url_slug"`, `.reason == "taken"`.
+  - `test_update_slug_raises_slug_error_on_reserved_value` — `.field == "url_slug"`,
+    `.reason == "reserved"`.
+  - `test_update_slug_raises_slug_error_on_malformed_value` — `.field == "url_slug"`,
+    `.reason == "malformed"`.
+  - One mirror test for `RegistrationPage(..., url_slug="ADMIN")` (the constructor path).
+- **Green:** wire the wrap as described.
+
+**Note on `RegistrationPageNotReady`.** That exception (Phase 1.9 / §3.1) already carries a
+`.problems` list of human-readable strings. It is _not_ slug-specific and stays as-is.
+
+**Suggested commit message:** `feat(registration): structured SlugError for UI field-specific errors`
+
+### 6.4 Starter HTML form generator (the meaty bit)
+
+This is the largest piece of the alignment work. Two parts:
+
+- a **pure domain helper** that takes a list of `RespondentFieldDefinition` and returns HTML;
+- a **service wrapper** that loads the assembly's schema and delegates.
+
+The pure helper is the heart of it; the wrapper is six lines of permission + load + delegate.
+Tests live where the logic does — most of the test surface is on the pure helper.
+
+#### 6.4.1 Where the code lives
+
+- `src/opendlp/domain/registration_page.py` — `generate_starter_form_html(fields:
+list[RespondentFieldDefinition]) -> str`. Pure, no `uow`, no I/O. Importable from tests
+  without any DB or fake-repo machinery.
+- `src/opendlp/service_layer/registration_page_service.py` — `generate_starter_form_html(uow,
+user_id, assembly_id) -> str`. Permission check (`can_manage_assembly` per §6 of
+  `plan-data-service.md`), `uow.respondent_field_definitions.list_by_assembly(assembly_id)`,
+  delegate to the domain helper, return.
+
+Two functions with the same name in different modules — disambiguate by import alias if a test
+file ever needs both:
+
+```python
+from opendlp.domain.registration_page import generate_starter_form_html as build_starter_html
+from opendlp.service_layer.registration_page_service import generate_starter_form_html
+```
+
+#### 6.4.2 Output contract (what the helper must produce)
+
+The canonical reference is `docs/agent/610-registration-page-html/example-form-a-raw-html.html`
+(now using `{{ form_action }}` post-6.1). A starter for any 16-field schema should produce HTML
+in the same shape — not byte-identical to the example, but in the same _shape_:
+
+- A single `<form action="{{ form_action }}" method="post">` wrapper, closed at the end.
+- `{{ csrf_form_element }}` immediately inside the form (line 32 in the example).
+- Fields grouped under `<h2>{{ group label }}</h2>` headings, in `GROUP_DISPLAY_ORDER`. Skip
+  groups with no fields (no empty `<h2>` + nothing).
+- Within a group, fields ordered by `RespondentFieldDefinition.sort_order`.
+- A `<button type="submit">Register</button>` immediately before `</form>`.
+
+Per-field rendering, keyed off `RespondentFieldDefinition.effective_field_type`:
+
+| `effective_field_type` | Rendered as |
+| --- | --- |
+| `TEXT`     | `<label for="K">L</label>\n<input type="text" id="K" name="K">` |
+| `EMAIL`    | `<label for="K">L</label>\n<input type="email" id="K" name="K">` |
+| `LONGTEXT` | `<label for="K">L</label>\n<textarea id="K" name="K"></textarea>` |
+| `INTEGER`  | `<label for="K">L</label>\n<input type="number" id="K" name="K">` |
+| `BOOL`     | `<fieldset><legend>L</legend>\n<label><input type="radio" name="K" value="yes"> Yes</label>\n<label><input type="radio" name="K" value="no"> No</label>\n</fieldset>` |
+| `BOOL_OR_NONE` | same as `BOOL` (yes/no radios). The "not set" state is encoded by the absence of any selection in the submitted form — no third radio. _(Matches example-form-a, lines 41–48.)_ |
+| `CHOICE_RADIO` | `<fieldset><legend>L</legend>` + one `<label><input type="radio" name="K" value="V"> V</label>` per `ChoiceOption`, in declaration order, then `</fieldset>`. _(Example-form-a lines 81–86.)_ |
+| `CHOICE_DROPDOWN` | `<label for="K">L</label>\n<select id="K" name="K">` + `<option value="V">V</option>` per `ChoiceOption` + `</select>`. **Open question:** include the placeholder `<option value="">— Please choose —</option>` first as the example does (line 99)? Recommendation: **yes**, only when the field is not required, so author has a way to express "no answer" in a select widget. Otherwise required-attribute on the `<select>` covers it. |
+
+Where `K` = `field_key`, `L` = `label`, `V` = `ChoiceOption.value`. Required fields get a
+`required` attribute on the input/select (or on _all_ radios in the group? HTML5 says
+`required` on any radio in a group makes the group required, which is fine).
+
+**Helpers worth extracting** (private, in the same module): `_render_field`,
+`_render_choice_options`, `_render_group`. Keep them small and pass `RespondentFieldDefinition`
+in directly so they're easy to unit-test if it ever pays off. Don't over-abstract — these are
+internal.
+
+**Things deliberately out of scope** (for v1):
+
+- HTML-escaping of label/value text. `RespondentFieldDefinition.label` and `ChoiceOption.value`
+  are author-controlled strings entered via the schema editor — they're trusted. **However**
+  they may legitimately contain `<` / `>` / `&` (e.g. "AT&T"). Use `html.escape` on label and
+  value text on output. _(Cheap insurance — any author-supplied string lands in HTML; escape it.)_
+- `ChoiceOption.help_text` — not rendered. Authors can add it back when they style the form;
+  the starter stays minimal.
+- Accessibility extras (`aria-describedby`, `<fieldset>` for input groups beyond radio
+  choices, etc.) — author concern.
+- Any styling: no `class=`, no `<div>` wrappers, no inline styles. The starter is unstyled by
+  design (the LLM-styling step is what adds those).
+- Internationalisation: the literal strings (`"Yes"`, `"No"`, `"— Please choose —"`,
+  `"Register"`) are part of the generated _content_ that the author edits — they're not UI
+  chrome the system owns at runtime. Plain English in v1 (the constants are easily reachable
+  for a future i18n pass if needed).
+
+#### 6.4.3 TDD breakdown — domain helper
+
+New tests in `tests/unit/domain/test_registration_page.py`. They take a hand-rolled
+`list[RespondentFieldDefinition]` directly (no UoW, no fake repo, no DB) — fastest possible.
+Group them in a new `class TestGenerateStarterFormHtml:` block.
+
+A small fixture that mints a `RespondentFieldDefinition` with sensible defaults and overridable
+kwargs makes the tests readable:
+
+```python
+def _field(field_key, group, sort_order, *, label=None, field_type=FieldType.TEXT,
+           options=None, is_fixed=False) -> RespondentFieldDefinition:
+    return RespondentFieldDefinition(
+        assembly_id=ASSEMBLY_ID,
+        field_key=field_key,
+        label=label or humanise_field_key(field_key),
+        group=group,
+        sort_order=sort_order,
+        is_fixed=is_fixed,
+        field_type=field_type,
+        options=options,
+    )
+```
+
+Tests (one assertion per test where reasonable; a couple of "shape" tests near the end):
+
+1. **Wrapper structure.** Empty schema → output starts with `<form action="{{ form_action }}"
+method="post">`, contains `{{ csrf_form_element }}`, ends with `<button
+type="submit">Register</button>` followed by `</form>`. (`test_empty_schema_minimal_form`.)
+2. **TEXT field.** Single TEXT field → output contains `<label for="x">X</label>` and `<input
+type="text" id="x" name="x">`. (`test_text_field_renders_input`.)
+3. **EMAIL field.** As above with `type="email"`.
+4. **LONGTEXT field.** Renders `<textarea id="K" name="K"></textarea>`.
+5. **INTEGER field.** `type="number"`.
+6. **BOOL.** `<fieldset><legend>...` + two radios `yes` / `no` in that order; verify exact
+   text labels.
+7. **BOOL_OR_NONE.** Same shape as BOOL — _no_ third "Not set" radio (per the table above);
+   pin this so it doesn't drift.
+8. **CHOICE_RADIO with two options.** `<fieldset><legend>` + one radio per option, in
+   declaration order; values match `ChoiceOption.value` exactly.
+9. **CHOICE_DROPDOWN with two options, not required.** Includes the leading placeholder
+   `<option value="">…</option>`; one `<option value="V">V</option>` per option afterwards.
+10. **CHOICE_DROPDOWN required.** Placeholder `<option value="">…</option>` _omitted_;
+    `required` on the `<select>`.
+11. **`is_required`** on a TEXT field → `required` attribute on the `<input>`.
+12. **HTML escaping.** A field with `label="AT&T"` → output contains `AT&amp;T`; a
+    `ChoiceOption(value="<x>")` → output contains `&lt;x&gt;` in both `value=` and label
+    positions.
+13. **Group ordering.** Fields in `ABOUT_YOU` (sort_order 0) and `ELIGIBILITY` (sort_order 0)
+    → in the output, the `ELIGIBILITY` `<h2>` appears before the `ABOUT_YOU` `<h2>`
+    (`GROUP_DISPLAY_ORDER`).
+14. **Sort order within group.** Two fields in the same group with sort_order 20 then 10 →
+    sort_order 10's input appears first in the output.
+15. **Empty groups suppressed.** Single field in `OTHER` → `<h2>Eligibility</h2>` does **not**
+    appear in the output.
+16. **Group label.** A field in `NAME_AND_CONTACT` → the heading text matches
+    `GROUP_LABELS[NAME_AND_CONTACT]` (which is a `lazy_gettext` proxy — `str(label)` to compare).
+17. **`effective_field_type` honoured for fixed fields.** A field with
+    `field_key="eligible"`, `field_type=FieldType.TEXT`, `is_fixed=True` → still rendered as
+    BOOL_OR_NONE (radios), per `effective_field_type`. (Pin the override path so a future
+    refactor doesn't quietly bypass it.)
+18. **Token round-trip.** Render the generated HTML through
+    `RegistrationPageHtml(form_html=generated).render(RenderContext(csrf_form_element="C",
+form_action="A"))` → `C` and `A` end up in the right places (`<form action="A">` and where
+    `{{ csrf_form_element }}` was). One end-to-end smoke test that proves the generator's
+    output is valid input for the renderer — the contract that ties this story together.
+19. **Readiness round-trip.** The generated HTML satisfies
+    `RegistrationPageHtml(form_html=generated).readiness_problems() == []` (i.e. it includes
+    both required tokens and is non-empty). This is the test that catches a future regression
+    where someone changes `REQUIRED_TOKENS` but forgets the generator.
+20. **Realistic 16-field schema (shape test).** Build the same 16 fields as
+    `example-form-a-raw-html.html` (the assembly used to seed it) — assert: every `field_key`
+    appears as a `name=` somewhere; every `ChoiceOption.value` appears as a `value=`
+    somewhere; the order of `<h2>` headings matches the four groups in the example. Don't
+    byte-compare to the example file — author tweaks would diverge — but pin the structural
+    properties.
+
+#### 6.4.4 TDD breakdown — service wrapper
+
+New tests in `tests/unit/test_registration_page_service.py` using `FakeUnitOfWork`. Per the
+prompt: this is where the FakeRepository test-speed payoff lives — no DB session, no real
+SQLAlchemy, just `FakeRespondentFieldDefinitionRepository` populated via `add()`.
+
+A helper to add a fixture schema to the fake repo (similar to the `_add_*` helpers in the
+contract tests):
+
+```python
+def _populate_schema(uow: FakeUnitOfWork, assembly_id: uuid.UUID,
+                    fields: list[RespondentFieldDefinition]) -> None:
+    for f in fields:
+        uow.respondent_field_definitions.add(f)
+```
+
+Tests:
+
+1. **Happy path.** Populate the fake schema with two text fields for the assembly. Call
+   `generate_starter_form_html(uow, manager.id, assembly.id)` → returns a string that contains
+   both `name="<field_key>"` substrings. (Don't re-test the rendering details here — that's
+   §6.4.3's job; assert just enough to prove the wrapper called the helper with the right
+   schema.)
+2. **Permission failure.** A view-only user → `InsufficientPermissions` (matches every other
+   manage-only function in this service file).
+3. **Assembly not found.** Unknown `assembly_id` → `AssemblyNotFoundError`.
+4. **User not found.** Unknown `user_id` → `UserNotFoundError`.
+5. **Empty schema.** Assembly exists but has no fields registered → returns the minimal-form
+   string (still contains `{{ csrf_form_element }}` and `{{ form_action }}` and the submit
+   button). Pin this — the wrapper must not crash on an empty schema.
+6. **Schema for a different assembly is excluded.** Populate fields for `assembly_id_a` _and_
+   `assembly_id_b`; call for `assembly_id_a` → output contains only `assembly_a`'s field keys.
+   This pins the `list_by_assembly` filter on the wrapper side.
+7. **No commit.** This is a read-only operation — `uow.committed` should be `False` after the
+   call. (Mirrors the `get_registration_page` test, if there is one; otherwise skip.)
+
+#### 6.4.5 Wiring
+
+- `src/opendlp/service_layer/registration_page_service.py` — import the domain helper, add
+  the wrapper.
+- No new repository, no new fake — `FakeRespondentFieldDefinitionRepository` already lives on
+  `FakeUnitOfWork` (per `tests/fakes.py:746`).
+- `tests/unit/test_registration_page_service.py` — top of the file, import
+  `FakeUnitOfWork`, `RespondentFieldDefinition`, `RespondentFieldGroup`, `FieldType` (most
+  already imported by the existing tests).
+
+#### 6.4.6 Smoke test
+
+Once 6.4.1–6.4.5 are green, do an interactive sanity check via `flask shell`:
+
+```python
+from opendlp.bootstrap import bootstrap
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from opendlp.service_layer.registration_page_service import generate_starter_form_html
+
+bootstrap()
+uow = SqlAlchemyUnitOfWork()
+print(generate_starter_form_html(uow, my_user_id, "c8f833a8-...assembly id from example-form-a..."))
+```
+
+Diff visually against `example-form-a-raw-html.html`. They won't match exactly (the example has
+hand-edited copy and a placeholder option for the dropdown only when the field is not
+required), but the shape should match. Any structural surprise here points back at a missing
+test in §6.4.3 — add it, fix the helper, repeat.
+
+**Suggested commit message:**
+`feat(registration): generate starter HTML form from respondent field schema`
+
+(One commit covering all of 6.4 is fine — the helper and wrapper land together, the tests are
+the "review surface".)
+
+### 6.5 Documentation sweep
+
+After 6.1–6.4 are merged, do a final pass:
+
+- `docs/agent/610-registration-page-html/plan-data-service.md` — already aligned (see the
+  2026-05-15 status line). No change.
+- This file (`plan-data-service-detailed.md`) — mark the four sub-phases above as `✅ COMPLETE`
+  as they land, and update the file-by-file summary below.
+- `docs/agent/610-registration-page-html/example-form-a-raw-html.html` — already updated to
+  use `{{ form_action }}`. No further change.
+- Spot-check `docs/configuration.md` and `env.example` — they should still reference
+  `REGISTRATION_FORM_HTML_MAX_BYTES` and `REGISTRATION_THANK_YOU_HTML_MAX_BYTES` (Phase 3
+  added them); nothing in this phase changes those.
+
+### 6.6 Final verification
+
+`CI=true uv run pytest --ignore=tests/bdd -q` and `just check` clean before the final commit.
+The migration is unchanged in this phase, so no Alembic dance needed.
+
+---
+
+## Phase 6 file-by-file summary (additive)
+
+### Modified files
+
+| Path                                                         | Change                                                                                        | Sub-phase |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | --------- |
+| `src/opendlp/domain/registration_page.py`                    | Token rename; `DEFAULT_THANK_YOU_HTML`; `generate_starter_form_html` helper                   | 6.1, 6.2.1, 6.4 |
+| `src/opendlp/service_layer/registration_page_service.py`     | Seed default thank-you HTML on create; `SlugError` raises; new `generate_starter_form_html` wrapper | 6.2.2, 6.3.2, 6.4 |
+| `src/opendlp/service_layer/exceptions.py`                    | New `SlugError` class                                                                         | 6.3       |
+| `src/opendlp/domain/validators.py`                           | New `InvalidSlug` exception, `UrlSlugValidator.validate` raises it                            | 6.3.1     |
+| `tests/unit/domain/test_registration_page.py`                | Token rename in fixtures; `DEFAULT_THANK_YOU_HTML` test; `TestGenerateStarterFormHtml`        | 6.1, 6.2.1, 6.4.3 |
+| `tests/unit/test_registration_page_service.py`               | Token rename; default-thank-you-HTML test; `SlugError` tests; service wrapper tests           | 6.1, 6.2.2, 6.3.2, 6.4.4 |
+| `tests/unit/test_validators.py`                              | `InvalidSlug` reason-code tests                                                               | 6.3.1     |
+| `tests/integration/test_orm.py`                              | Token rename in fixture HTML strings                                                          | 6.1       |
+
+### No new files in Phase 6
+
+Everything in Phase 6 lands in files that already exist after Phases 1–5.
