@@ -4,7 +4,12 @@ ABOUTME: Tests URL validation and Google Spreadsheet URL validation"""
 import pytest
 from wtforms import ValidationError
 
-from opendlp.domain.validators import GoogleSpreadsheetURLValidator, MockField
+from opendlp.domain.validators import (
+    RESERVED_SLUGS,
+    GoogleSpreadsheetURLValidator,
+    MockField,
+    UrlSlugValidator,
+)
 
 
 class TestGoogleSpreadsheetURLValidator:
@@ -125,3 +130,42 @@ class TestGoogleSpreadsheetURLValidator:
 
         with pytest.raises(ValidationError, match="Invalid URL"):
             validator(None, field)
+
+
+class TestUrlSlugValidator:
+    """Test cases for the registration page URL slug validator."""
+
+    @pytest.mark.parametrize("slug", ["my-assembly", "abc", "a1-b2", "x", "a-b-c-d", "2024-citizens"])
+    def test_accepts_valid_slugs(self, slug):
+        assert UrlSlugValidator().validate(slug) == slug
+
+    def test_rejects_empty_string(self):
+        with pytest.raises(ValueError, match="cannot be empty"):
+            UrlSlugValidator().validate("")
+
+    @pytest.mark.parametrize(
+        "slug",
+        [
+            "MyAssembly",
+            "UPPER",
+            "-leading",
+            "trailing-",
+            "has space",
+            "under_score",
+            "café",
+            "double--hyphen",
+            "dot.dot",
+        ],
+    )
+    def test_rejects_malformed_slugs(self, slug):
+        with pytest.raises(ValueError):
+            UrlSlugValidator().validate(slug)
+
+    def test_rejects_too_long_slug(self):
+        with pytest.raises(ValueError, match="longer than"):
+            UrlSlugValidator().validate("a" * 101)
+
+    @pytest.mark.parametrize("slug", sorted(RESERVED_SLUGS))
+    def test_rejects_reserved_slugs(self, slug):
+        with pytest.raises(ValueError, match="reserved"):
+            UrlSlugValidator().validate(slug)

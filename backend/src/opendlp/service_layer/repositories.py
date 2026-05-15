@@ -12,6 +12,7 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -504,4 +505,42 @@ class RespondentFieldDefinitionRepository(AbstractRepository):
     @abc.abstractmethod
     def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
         """Delete all field definitions for an assembly. Returns count deleted."""
+        raise NotImplementedError
+
+
+class RegistrationPageRepository(AbstractRepository):
+    """Repository interface for RegistrationPage domain objects."""
+
+    @abc.abstractmethod
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
+        """Get the registration page for an assembly, or None if it has none."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its url_slug. Empty input returns None."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_short_url_slug(self, short_url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its short_url_slug. Empty input returns None."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RegistrationPage) -> None:
+        """Delete a registration page from the repository."""
+        raise NotImplementedError
+
+
+class RegistrationPageHtmlRepository(AbstractRepository):
+    """Repository interface for RegistrationPageHtml domain objects."""
+
+    @abc.abstractmethod
+    def get_by_page_id(self, registration_page_id: uuid.UUID) -> RegistrationPageHtml | None:
+        """Get the HTML source for a registration page, or None if it has none."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RegistrationPageHtml) -> None:
+        """Delete a registration page HTML source from the repository."""
         raise NotImplementedError

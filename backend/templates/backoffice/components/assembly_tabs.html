@@ -9,7 +9,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
 
     Args:
         assembly: The assembly object
-        active_tab: Current active tab - one of: "details", "data", "fields", "targets", "respondents", "selection", "members"
+        active_tab: Current active tab - one of: "details", "data", "fields", "targets", "registration", "respondents", "selection", "members"
         data_source: Current data source ("gsheet", "csv", or "")
         gsheet: Google Sheet configuration object (if exists)
         targets_enabled: Whether the Targets tab should be clickable
@@ -49,6 +49,12 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "href": url_for('targets.view_assembly_targets', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "targets",
     "disabled": not targets_enabled
+    },
+    {
+    "key": "registration",
+    "label": _("Registration"),
+    "href": url_for('backoffice.view_assembly_registration', assembly_id=assembly.id) ~ source_param,
+    "active": active_tab == "registration"
     },
     {
     "key": "respondents",

@@ -12,6 +12,7 @@ from opendlp.domain import (
     assembly_csv,
     email_confirmation,
     password_reset,
+    registration_page,
     respondent_field_schema,
     respondents,
     selection_settings,
@@ -202,6 +203,12 @@ def start_mappers() -> None:
                 "group": orm.respondent_field_definitions.c.field_group,
             },
         )
+
+        # Map RegistrationPage and RegistrationPageHtml domain objects. These are
+        # mapped independently - the service layer resolves page <-> source via
+        # source_type rather than an ORM relationship.
+        orm.mapper_registry.map_imperatively(registration_page.RegistrationPage, orm.registration_pages)
+        orm.mapper_registry.map_imperatively(registration_page.RegistrationPageHtml, orm.registration_page_html_sources)
 
         _mappers_started = True
 

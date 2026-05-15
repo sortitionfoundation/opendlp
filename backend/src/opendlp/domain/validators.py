@@ -1,12 +1,40 @@
 """ABOUTME: Domain validators for OpenDLP
 ABOUTME: Contains custom validators including Google Spreadsheet URL validation"""
 
+import re
 from typing import Any
 from urllib.parse import urlparse
 
 import gspread.utils
 from wtforms import ValidationError
 from wtforms.validators import URL
+
+RESERVED_SLUGS = frozenset({"preview", "submit", "admin", "static", "assets"})
+
+_SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+_SLUG_MAX_LENGTH = 100
+
+
+class UrlSlugValidator:
+    """Validator for registration page URL slugs.
+
+    Accepts lowercase ASCII alphanumerics and hyphens, 1-100 characters, with no
+    leading or trailing hyphen. Rejects reserved values. Raises ValueError on
+    failure - this is a domain validator, not a WTForms one.
+    """
+
+    def validate(self, value: str) -> str:
+        if not value:
+            raise ValueError("URL slug cannot be empty")
+        if len(value) > _SLUG_MAX_LENGTH:
+            raise ValueError(f"URL slug cannot be longer than {_SLUG_MAX_LENGTH} characters")
+        if not _SLUG_RE.match(value):
+            raise ValueError(
+                "URL slug must be lowercase letters, numbers and hyphens, with no leading or trailing hyphen"
+            )
+        if value in RESERVED_SLUGS:
+            raise ValueError(f"URL slug '{value}' is reserved and cannot be used")
+        return value
 
 
 class GoogleSpreadsheetURLValidator:

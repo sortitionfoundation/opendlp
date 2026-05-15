@@ -113,6 +113,8 @@ class TestSqlAlchemyUnitOfWork:
             assert uow.assemblies is not None
             assert uow.user_invites is not None
             assert uow.user_assembly_roles is not None
+            assert uow.registration_pages is not None
+            assert uow.registration_page_html_sources is not None
 
             # All repositories should use the same session
             assert uow.users.session is mock_session

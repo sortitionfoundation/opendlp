@@ -1,0 +1,80 @@
+<!--
+  EXAMPLE REGISTRATION FORM — VERSION C: whole-field tags
+  A third option, beyond plan-data-service.md's Q15 A/C — roughly what
+  plan-frontend.md assumed.
+
+  Authoring experience: the assembly manager writes only the page chrome
+  (headings, intro text, section grouping) and drops in a single tag per
+  field. Each {{ field(...) }} call expands to the COMPLETE field block —
+  label, input(s), fieldset, and for choice fields every option — generated
+  from the assembly's respondent field schema.
+
+  Templating engine: Jinja SandboxedEnvironment with a `field()` function
+  added to the context.
+  Render context:
+    field(key)  — callable. Returns the full HTML block for that field:
+                    text / email  -> <label> + <input>
+                    choice_radio  -> <fieldset><legend> + one <label><input> per option
+                    choice_dropdown -> <label> + <select> incl. "— Please choose —"
+                    bool flag     -> system decides: Yes/No <fieldset> OR a single
+                                     checkbox <label> (here: radios for eligible/
+                                     can_attend, checkbox for consent/stay_on_db)
+    {{ csrf_form_element }}, {{ form_url }} — as in Version A.
+
+  Possible extension (NOT shown): field(key, label='...') to override the
+  visible label, since otherwise the author is stuck with schema labels like
+  "Primary zip" and "Edu level". Every such override param re-introduces
+  complexity and nudges this option back towards Version B.
+
+  Renders to -> example-form-a-raw-html.html (modulo whitespace).
+
+  Trade-offs:
+   + Shortest by far — one line per field. Adding a field to the assembly
+     plus one {{ field('x') }} line is the entire edit.
+   + Impossible to get attributes or option lists wrong — the system
+     generates the whole block.
+   - The author has near-zero control over the markup INSIDE a field block:
+     the fieldset/label/wrapper structure, option ordering, the placeholder
+     option text, the Yes/No wording for bool fields are all system-fixed.
+   - Stuck with schema labels unless field() grows override params.
+   - The "system-generated block" markup becomes a hard contract — changing
+     it later changes every published form at once.
+   - Needs Jinja plus a documented field() API.
+
+  Note: the surrounding <head> and page chrome are provided by the system;
+  this file is only the author-editable region.
+-->
+<form action="{{ form_url }}" method="post">
+  {{ csrf_form_element }}
+
+  <h1>Register your interest</h1>
+  <p>Fill in the form below to register for the citizens' assembly.</p>
+
+  <h2>Eligibility</h2>
+  {{ field('eligible') }}
+  {{ field('can_attend') }}
+
+  <h2>Your name and contact details</h2>
+  {{ field('email') }}
+  {{ field('first_name') }}
+  {{ field('last_name') }}
+  {{ field('mobile_number') }}
+
+  <h2>Your address</h2>
+  {{ field('primary_address1') }}
+  {{ field('primary_address2') }}
+  {{ field('primary_city') }}
+  {{ field('primary_zip') }}
+
+  <h2>About you</h2>
+  {{ field('gender') }}
+  {{ field('age_bracket') }}
+  {{ field('geo_bucket') }}
+  {{ field('edu_level') }}
+
+  <h2>Consent</h2>
+  {{ field('consent') }}
+  {{ field('stay_on_db') }}
+
+  <button type="submit">Register</button>
+</form>

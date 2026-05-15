@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml, RegistrationPageSource
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
@@ -1090,3 +1091,64 @@ class TestSelectionRunRecordORM:
         assert retrieved_record.settings_used == {}
         assert isinstance(retrieved_record.log_messages, list)
         assert isinstance(retrieved_record.settings_used, dict)
+
+
+class TestRegistrationPageORM:
+    def test_registration_page_round_trips(self, postgres_session: Session):
+        """RegistrationPage and RegistrationPageHtml can be saved and retrieved."""
+        assembly = Assembly(title="Reg Page Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+
+        page = RegistrationPage(
+            assembly_id=assembly.id,
+            url_slug="reg-page-assembly",
+            short_url_slug="rpa",
+            thank_you_html="<p>thanks</p>",
+        )
+        html = RegistrationPageHtml(
+            registration_page_id=page.id,
+            form_html="<form>{{ csrf_form_element }} {{ form_url }}</form>",
+        )
+        postgres_session.add(page)
+        postgres_session.add(html)
+        postgres_session.commit()
+
+        postgres_session.expire_all()
+
+        retrieved_page = postgres_session.query(RegistrationPage).filter_by(id=page.id).first()
+        assert retrieved_page is not None
+        assert retrieved_page.assembly_id == assembly.id
+        assert retrieved_page.url_slug == "reg-page-assembly"
+        assert retrieved_page.short_url_slug == "rpa"
+        assert retrieved_page.is_published is False
+        assert retrieved_page.source_type is RegistrationPageSource.HTML
+        assert retrieved_page.thank_you_html == "<p>thanks</p>"
+        assert retrieved_page.preview_token == page.preview_token
+        assert retrieved_page.created_at.tzinfo is not None
+        assert retrieved_page.updated_at.tzinfo is not None
+
+        retrieved_html = postgres_session.query(RegistrationPageHtml).filter_by(registration_page_id=page.id).first()
+        assert retrieved_html is not None
+        assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_url }}</form>"
+
+    def test_registration_page_cascade_delete_with_assembly(self, postgres_session: Session):
+        """Deleting an assembly cascades to its registration page and HTML source."""
+        assembly = Assembly(title="Cascade Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+        assembly_id = assembly.id
+
+        page = RegistrationPage(assembly_id=assembly_id, url_slug="cascade-assembly")
+        html = RegistrationPageHtml(registration_page_id=page.id, form_html="<form></form>")
+        postgres_session.add(page)
+        postgres_session.add(html)
+        postgres_session.commit()
+        page_id = page.id
+        html_id = html.id
+
+        postgres_session.execute(orm.assemblies.delete().where(orm.assemblies.c.id == assembly_id))
+        postgres_session.commit()
+
+        assert postgres_session.query(RegistrationPage).filter_by(id=page_id).count() == 0
+        assert postgres_session.query(RegistrationPageHtml).filter_by(id=html_id).count() == 0

@@ -1,0 +1,134 @@
+<!--
+  EXAMPLE REGISTRATION FORM — VERSION B: attributes injected into elements
+  Q15 Option C in plan-data-service.md
+
+  Authoring experience: the assembly manager writes ALL the structural HTML —
+  every <input>, <select>, <fieldset>, <label>, and the {% for %} loops over
+  choice options — and uses {{ ... }} placeholders ONLY for the system-owned
+  attributes (id / name / type / value) and for option lists. The system fills
+  those in from the assembly's respondent field schema.
+
+  Templating engine: Jinja SandboxedEnvironment.
+  Render context:
+    fields           — dict keyed by field_key. Each entry has:
+                         .label    — display label (from schema)
+                         .id       — element id            (text / email / select)
+                         .attrs    — Markup of system-owned attributes:
+                                       text/email -> 'type id name [required]'
+                                       select     -> 'id name'
+                                       checkbox   -> 'type="checkbox" name value'
+                         .options  — list for choice fields AND bool fields
+                                     rendered as radios. Each option has
+                                     .label and .attrs
+                                       radio  -> 'type="radio" name value'
+                                       select -> 'value'
+    bool fields (eligible/can_attend/consent/stay_on_db) expose BOTH .attrs
+    (checkbox form) and .options (Yes/No radio form) — the author picks.
+    {{ csrf_form_element }}, {{ form_url }} — as in Version A.
+
+  Renders to -> example-form-a-raw-html.html (modulo whitespace).
+
+  Trade-offs:
+   + System owns the fragile bits (name / type / value / option lists) — the
+     author can't typo them and break submission mapping.
+   + Choice-option changes propagate automatically: add a region to the schema
+     and the {% for %} picks it up with no template edit.
+   + Author keeps full control of layout, classes, labels, ordering, and which
+     fields appear at all.
+   - Needs Jinja knowledge (loops, dotted access).
+   - Adding a whole new FIELD still needs a hand-edit — the loop is per-option,
+     not per-field.
+   - for="..."/id coupling: the author must reference fields.X.id; a mild wart.
+   - Still fairly verbose.
+
+  Note: the surrounding <head> and page chrome are provided by the system;
+  this file is only the author-editable region.
+-->
+<form action="{{ form_url }}" method="post">
+  {{ csrf_form_element }}
+
+  <h1>Register your interest</h1>
+  <p>Fill in the form below to register for the citizens' assembly.</p>
+
+  <h2>Eligibility</h2>
+
+  <fieldset>
+    <legend>{{ fields.eligible.label }}</legend>
+    {% for opt in fields.eligible.options %}
+      <label><input {{ opt.attrs }}> {{ opt.label }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ fields.can_attend.label }}</legend>
+    {% for opt in fields.can_attend.options %}
+      <label><input {{ opt.attrs }}> {{ opt.label }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <h2>Your name and contact details</h2>
+
+  <label for="{{ fields.email.id }}">{{ fields.email.label }}</label>
+  <input {{ fields.email.attrs }}>
+
+  <label for="{{ fields.first_name.id }}">{{ fields.first_name.label }}</label>
+  <input {{ fields.first_name.attrs }}>
+
+  <label for="{{ fields.last_name.id }}">{{ fields.last_name.label }}</label>
+  <input {{ fields.last_name.attrs }}>
+
+  <label for="{{ fields.mobile_number.id }}">{{ fields.mobile_number.label }}</label>
+  <input {{ fields.mobile_number.attrs }}>
+
+  <h2>Your address</h2>
+
+  <label for="{{ fields.primary_address1.id }}">{{ fields.primary_address1.label }}</label>
+  <input {{ fields.primary_address1.attrs }}>
+
+  <label for="{{ fields.primary_address2.id }}">{{ fields.primary_address2.label }}</label>
+  <input {{ fields.primary_address2.attrs }}>
+
+  <label for="{{ fields.primary_city.id }}">{{ fields.primary_city.label }}</label>
+  <input {{ fields.primary_city.attrs }}>
+
+  <label for="{{ fields.primary_zip.id }}">{{ fields.primary_zip.label }}</label>
+  <input {{ fields.primary_zip.attrs }}>
+
+  <h2>About you</h2>
+
+  <fieldset>
+    <legend>{{ fields.gender.label }}</legend>
+    {% for opt in fields.gender.options %}
+      <label><input {{ opt.attrs }}> {{ opt.label }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ fields.age_bracket.label }}</legend>
+    {% for opt in fields.age_bracket.options %}
+      <label><input {{ opt.attrs }}> {{ opt.label }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <label for="{{ fields.geo_bucket.id }}">{{ fields.geo_bucket.label }}</label>
+  <select {{ fields.geo_bucket.attrs }}>
+    <option value="">— Please choose —</option>
+    {% for opt in fields.geo_bucket.options %}
+      <option {{ opt.attrs }}>{{ opt.label }}</option>
+    {% endfor %}
+  </select>
+
+  <fieldset>
+    <legend>{{ fields.edu_level.label }}</legend>
+    {% for opt in fields.edu_level.options %}
+      <label><input {{ opt.attrs }}> {{ opt.label }}</label>
+    {% endfor %}
+  </fieldset>
+
+  <h2>Consent</h2>
+
+  <label><input {{ fields.consent.attrs }}> {{ fields.consent.label }}</label>
+  <label><input {{ fields.stay_on_db.attrs }}> {{ fields.stay_on_db.label }}</label>
+
+  <button type="submit">Register</button>
+</form>
