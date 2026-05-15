@@ -10,7 +10,7 @@ from typing import Protocol, runtime_checkable
 
 from opendlp.domain.validators import UrlSlugValidator
 
-REQUIRED_TOKENS = ("csrf_form_element", "form_url")
+REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
 
 class RegistrationPageSource(Enum):
@@ -30,7 +30,7 @@ class RenderContext:
     """Values substituted into the form HTML at render time."""
 
     csrf_form_element: str
-    form_url: str
+    form_action: str
 
 
 @runtime_checkable
@@ -175,7 +175,7 @@ class RegistrationPageHtml:
 
     def render(self, ctx: RenderContext) -> str:
         rendered = self.form_html.replace("{{ csrf_form_element }}", ctx.csrf_form_element)
-        return rendered.replace("{{ form_url }}", ctx.form_url)
+        return rendered.replace("{{ form_action }}", ctx.form_action)
 
     def readiness_problems(self) -> list[str]:
         if not self.form_html.strip():

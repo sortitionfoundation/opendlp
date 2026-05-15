@@ -19,7 +19,7 @@ from opendlp.service_layer.exceptions import (
 )
 from tests.fakes import FakeUnitOfWork
 
-READY_HTML = "<form>{{ csrf_form_element }} {{ form_url }}</form>"
+READY_HTML = "<form>{{ csrf_form_element }} {{ form_action }}</form>"
 
 
 def _admin(uow: FakeUnitOfWork) -> User:

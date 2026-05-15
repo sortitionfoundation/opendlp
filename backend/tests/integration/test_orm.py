@@ -1108,7 +1108,7 @@ class TestRegistrationPageORM:
         )
         html = RegistrationPageHtml(
             registration_page_id=page.id,
-            form_html="<form>{{ csrf_form_element }} {{ form_url }}</form>",
+            form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
         )
         postgres_session.add(page)
         postgres_session.add(html)
@@ -1130,7 +1130,7 @@ class TestRegistrationPageORM:
 
         retrieved_html = postgres_session.query(RegistrationPageHtml).filter_by(registration_page_id=page.id).first()
         assert retrieved_html is not None
-        assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_url }}</form>"
+        assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_action }}</form>"
 
     def test_registration_page_cascade_delete_with_assembly(self, postgres_session: Session):
         """Deleting an assembly cascades to its registration page and HTML source."""

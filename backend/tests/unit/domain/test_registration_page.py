@@ -16,7 +16,7 @@ from opendlp.domain.registration_page import (
     RenderContext,
 )
 
-READY_HTML = "<form>{{ csrf_form_element }} posts to {{ form_url }}</form>"
+READY_HTML = "<form>{{ csrf_form_element }} posts to {{ form_action }}</form>"
 
 
 class _StubSource:
@@ -36,13 +36,13 @@ class TestRegistrationPageSource:
 
 
 class TestRenderContext:
-    def test_render_context_holds_csrf_and_form_url(self):
-        ctx = RenderContext(csrf_form_element="<input>", form_url="/submit")
+    def test_render_context_holds_csrf_and_form_action(self):
+        ctx = RenderContext(csrf_form_element="<input>", form_action="/submit")
         assert ctx.csrf_form_element == "<input>"
-        assert ctx.form_url == "/submit"
+        assert ctx.form_action == "/submit"
 
-    def test_required_tokens_are_csrf_and_form_url(self):
-        assert REQUIRED_TOKENS == ("csrf_form_element", "form_url")
+    def test_required_tokens_are_csrf_and_form_action(self):
+        assert REQUIRED_TOKENS == ("csrf_form_element", "form_action")
 
 
 class TestRegistrationPageHtml:
@@ -69,20 +69,20 @@ class TestRegistrationPageHtml:
 
     def test_render_substitutes_both_tokens(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
-        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_url="/r/submit"))
+        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
         assert rendered == "<form><csrf> posts to /r/submit</form>"
 
     def test_render_leaves_unknown_braces_untouched(self):
         html = RegistrationPageHtml(
             registration_page_id=uuid.uuid4(),
-            form_html="{{ something_else }} {{ form_url }}",
+            form_html="{{ something_else }} {{ form_action }}",
         )
-        rendered = html.render(RenderContext(csrf_form_element="x", form_url="/u"))
+        rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))
         assert rendered == "{{ something_else }} /u"
 
     def test_render_with_no_tokens_returns_html_unchanged(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html="<p>hello</p>")
-        rendered = html.render(RenderContext(csrf_form_element="x", form_url="/u"))
+        rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))
         assert rendered == "<p>hello</p>"
 
     def test_readiness_problems_empty_when_html_ready(self):
@@ -100,7 +100,7 @@ class TestRegistrationPageHtml:
         )
         problems = html.readiness_problems()
         assert len(problems) == 1
-        assert "form_url" in problems[0]
+        assert "form_action" in problems[0]
 
     def test_html_create_detached_copy(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
