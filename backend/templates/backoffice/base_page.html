@@ -5,7 +5,7 @@ ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, an
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
-{% from "backoffice/components/alert.html" import flash_messages %}
+{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
 {% from "backoffice/components/footer.html" import footer with context %}
 
 {% block body %}
@@ -26,12 +26,12 @@ ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, an
         ) }}
 
         <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
-            {{ flash_messages() }}
-
             {% block breadcrumb_section %}{% endblock %}
 
             {% block page_content %}{% endblock %}
         </main>
+
+        {{ floating_alerts() }}
 
         {{ footer() }}
     </div>

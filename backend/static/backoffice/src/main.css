@@ -233,9 +233,9 @@
         border-color: var(--color-button-primary-bg-hover);
     }
 
-    /* Focus ring for keyboard navigation */
+    /* Focus ring for keyboard navigation - uses browser default for better contrast */
     .checkbox-input:focus-visible + .checkbox-box {
-        outline: 2px solid var(--color-focus-ring);
+        outline: 2px solid;
         outline-offset: 2px;
     }
 
@@ -332,9 +332,9 @@
         border-color: var(--color-button-primary-bg-hover);
     }
 
-    /* Focus ring for keyboard navigation */
+    /* Focus ring for keyboard navigation - uses browser default for better contrast */
     .radio-input:focus-visible + .radio-circle {
-        outline: 2px solid var(--color-focus-ring);
+        outline: 2px solid;
         outline-offset: 2px;
     }
 
@@ -422,9 +422,9 @@
         background-color: var(--color-button-primary-bg-hover);
     }
 
-    /* Focus ring for keyboard navigation */
+    /* Focus ring for keyboard navigation - uses browser default for better contrast */
     .switch-input:focus-visible + .switch-track {
-        outline: 2px solid var(--color-focus-ring);
+        outline: 2px solid;
         outline-offset: 2px;
     }
 

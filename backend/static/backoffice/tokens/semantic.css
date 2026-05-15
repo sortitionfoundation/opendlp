@@ -38,11 +38,17 @@
 
     /* ========================================
      FOCUS RING
+
+     Currently using browser default focus outline (black/white double
+     outline in Chrome) for better contrast against any background.
+
+     To enable custom focus color across all components, add
+     outline-color: var(--color-focus-ring) to focus styles.
      ======================================== */
 
     --color-focus-ring: var(--color-brand-400);
     --focus-ring-width: 2px;
-    --focus-ring-offset: 4px;
+    --focus-ring-offset: 2px;
 
     /* ========================================
      BUTTON SEMANTIC TOKENS

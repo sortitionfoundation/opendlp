@@ -14,6 +14,7 @@ from opendlp.entrypoints.forms import (
     CreateAssemblyGSheetForm,
     EditAssemblyGSheetForm,
 )
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
     get_assembly_gsheet,
@@ -984,12 +985,12 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
         current_app.logger.warning(f"Gsheet config not found for delete: {e}")
         flash(_("Google Spreadsheet configuration not found"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions to delete gsheet for assembly {assembly_id}: {e}")
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
@@ -998,4 +999,4 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.error(f"Gsheet delete error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
