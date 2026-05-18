@@ -23,7 +23,6 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.sortition import (
     check_and_update_task_health,
-    get_selection_run_status,
     start_gsheet_manage_tabs_task,
     start_gsheet_select_task,
 )
@@ -195,7 +194,6 @@ def _poll_until_finished(
     wrapper_timeout_seconds: int,
     poll_interval_seconds: float,
     health_check_fn: Callable[..., None],
-    poll_status_fn: Callable[..., object],
     now_fn: Callable[[], datetime],
     sleep_fn: Callable[[float], None],
 ) -> tuple[SelectionRunRecord | None, float, bool]:
@@ -226,7 +224,6 @@ def _poll_until_finished(
         # its initial PENDING attributes forever (the session factory uses
         # expire_on_commit=False).
         uow.expire_all()
-        poll_status_fn(uow, task_id)
         record = uow.selection_run_records.get_by_task_id(task_id)
         if record is not None and record.has_finished:
             return record, elapsed, False
@@ -270,7 +267,6 @@ def run_monitoring_selection(
     start_select_fn: Callable[..., uuid.UUID] = start_gsheet_select_task,
     start_cleanup_fn: Callable[..., uuid.UUID] = start_gsheet_manage_tabs_task,
     health_check_fn: Callable[..., None] = check_and_update_task_health,
-    poll_status_fn: Callable[..., object] = get_selection_run_status,
     now_fn: Callable[[], datetime] = _aware_utcnow,
     sleep_fn: Callable[[float], None] = time.sleep,
     wrapper_timeout_seconds: int = MONITOR_WRAPPER_TIMEOUT_SECONDS,
@@ -317,7 +313,6 @@ def run_monitoring_selection(
         wrapper_timeout_seconds=wrapper_timeout_seconds,
         poll_interval_seconds=poll_interval_seconds,
         health_check_fn=health_check_fn,
-        poll_status_fn=poll_status_fn,
         now_fn=now_fn,
         sleep_fn=sleep_fn,
     )

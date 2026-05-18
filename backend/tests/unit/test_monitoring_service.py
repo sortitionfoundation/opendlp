@@ -6,6 +6,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -98,7 +99,8 @@ class TestHappyPath:
 
         select_calls: list[dict[str, Any]] = []
         cleanup_calls: list[dict[str, Any]] = []
-        poll_calls: list[uuid.UUID] = []
+        task_id_holder: dict[str, uuid.UUID] = {}
+        tick_count = [0]
 
         def spy_select(uow_arg: Any, user_arg: uuid.UUID, assembly_arg: uuid.UUID, **kwargs: Any) -> uuid.UUID:
             assert assembly_arg == assembly_id
@@ -106,6 +108,7 @@ class TestHappyPath:
             select_calls.append(kwargs)
             record = _make_record(assembly_arg, SelectionRunStatus.PENDING)
             uow_arg.selection_run_records.add(record)
+            task_id_holder["task_id"] = record.task_id
             return record.task_id
 
         def spy_cleanup(uow_arg: Any, user_arg: uuid.UUID, assembly_arg: uuid.UUID, **kwargs: Any) -> uuid.UUID:
@@ -115,21 +118,23 @@ class TestHappyPath:
         def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
             return None
 
-        def spy_poll(uow_arg: Any, task_id: uuid.UUID) -> None:
-            poll_calls.append(task_id)
-            record = uow_arg.selection_run_records.get_by_task_id(task_id)
-            if record is not None and len(poll_calls) >= 2:
-                record.status = SelectionRunStatus.COMPLETED
-            return None
+        def spy_sleep(seconds: float) -> None:
+            # Stands in for the worker doing background progress between polls:
+            # the second tick flips the record to COMPLETED.
+            clock.sleep_fn(seconds)
+            tick_count[0] += 1
+            if tick_count[0] >= 2:
+                record = uow.selection_run_records.get_by_task_id(task_id_holder["task_id"])
+                if record is not None:
+                    record.status = SelectionRunStatus.COMPLETED
 
         result = run_monitoring_selection(
             uow,
             start_select_fn=spy_select,
             start_cleanup_fn=spy_cleanup,
             health_check_fn=spy_health,
-            poll_status_fn=spy_poll,
             now_fn=clock.now_fn,
-            sleep_fn=clock.sleep_fn,
+            sleep_fn=spy_sleep,
             poll_interval_seconds=2.0,
         )
 
@@ -168,16 +173,12 @@ class TestWrapperTimeout:
         def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
             health_calls.append(task_id)
 
-        def spy_poll(uow_arg: Any, task_id: uuid.UUID) -> None:
-            # record stays RUNNING forever
-            return None
-
+        # Record stays RUNNING forever — no sleep_fn hook needed to mutate state.
         result = run_monitoring_selection(
             uow,
             start_select_fn=spy_select,
             start_cleanup_fn=spy_cleanup,
             health_check_fn=spy_health,
-            poll_status_fn=spy_poll,
             now_fn=clock.now_fn,
             sleep_fn=clock.sleep_fn,
             wrapper_timeout_seconds=10,
@@ -214,6 +215,62 @@ class TestServiceFunctionExceptions:
 
         assert result.success is False
         assert exc_cls.__name__ in result.message
+
+
+class TestPollLoopAvoidsCeleryResultBackend:
+    """Regression guard for the Celery 'Never call result.get() within a task' bug.
+
+    The monitor's poll loop must read state from the DB only — it must not
+    reach into AsyncResult.get() or call get_selection_run_status (which
+    does so on the success path), because Celery raises RuntimeError when
+    a worker task does that.
+    """
+
+    def test_poll_loop_does_not_touch_celery_result_backend(self, temp_env_vars):
+        assembly_id = uuid.uuid4()
+        user_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
+
+        uow = FakeUnitOfWork()
+        clock = _FakeClock()
+
+        def spy_select(uow_arg: Any, user_arg: uuid.UUID, assembly_arg: uuid.UUID, **kwargs: Any) -> uuid.UUID:
+            # Land record as COMPLETED so the first poll exits the loop.
+            record = _make_record(assembly_arg, SelectionRunStatus.COMPLETED)
+            uow_arg.selection_run_records.add(record)
+            return record.task_id
+
+        def spy_cleanup(*args: Any, **kwargs: Any) -> uuid.UUID:
+            return uuid.uuid4()
+
+        def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
+            return None
+
+        # If the poll path ever reaches for the Celery result backend or
+        # get_selection_run_status, these patches fail the test instead of
+        # letting the regression slip through silently.
+        with (
+            patch(
+                "opendlp.service_layer.sortition.app.app.AsyncResult",
+                side_effect=AssertionError("monitor must not call AsyncResult"),
+            ),
+            patch(
+                "opendlp.service_layer.sortition.get_selection_run_status",
+                side_effect=AssertionError("monitor must not call get_selection_run_status"),
+            ),
+        ):
+            result = run_monitoring_selection(
+                uow,
+                start_select_fn=spy_select,
+                start_cleanup_fn=spy_cleanup,
+                health_check_fn=spy_health,
+                now_fn=clock.now_fn,
+                sleep_fn=clock.sleep_fn,
+                poll_interval_seconds=2.0,
+            )
+
+        assert result.success is True
+        assert result.task_id is not None
 
 
 class TestCheckMonitorSelection:
