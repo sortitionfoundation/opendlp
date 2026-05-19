@@ -544,19 +544,19 @@ order, though 6.4 is the only meaty one.
 **Affected files (search the working tree to confirm before editing — there may be more than
 the list below by the time this phase starts):**
 
-| File                                                         | What changes                                                                            |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `src/opendlp/domain/registration_page.py`                    | `REQUIRED_TOKENS` tuple, `RenderContext.form_url` → `form_action`, the `replace()` call |
-| `tests/unit/domain/test_registration_page.py`                | `READY_HTML` fixture, two test names (`*_form_url`), all `form_url=` kwargs and asserts |
-| `tests/unit/test_registration_page_service.py`               | `READY_HTML` fixture, any `form_url=` kwargs                                            |
-| `tests/integration/test_orm.py`                              | The two `form_html` fixture strings around line 1111/1133                               |
+| File                                           | What changes                                                                            |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `src/opendlp/domain/registration_page.py`      | `REQUIRED_TOKENS` tuple, `RenderContext.form_url` → `form_action`, the `replace()` call |
+| `tests/unit/domain/test_registration_page.py`  | `READY_HTML` fixture, two test names (`*_form_url`), all `form_url=` kwargs and asserts |
+| `tests/unit/test_registration_page_service.py` | `READY_HTML` fixture, any `form_url=` kwargs                                            |
+| `tests/integration/test_orm.py`                | The two `form_html` fixture strings around line 1111/1133                               |
 
 **TDD shape.** Search-and-replace at this scale is one mechanical edit; a single failing test
 isn't useful here. Approach:
 
 1. **Rename in the production code** (`registration_page.py` only).
 2. Run `CI=true uv run pytest tests/unit/domain/test_registration_page.py
-   tests/unit/test_registration_page_service.py tests/integration/test_orm.py -q`. Watch the
+tests/unit/test_registration_page_service.py tests/integration/test_orm.py -q`. Watch the
    `form_url` tests fail (expected — they reference the old token).
 3. **Rename in the tests / fixtures** to match.
 4. Re-run the same scoped pytest. Green.
@@ -664,7 +664,7 @@ vs empty) up to the caller without reparsing the message string, and keeps the v
 deterministic about its own classifications.
 
 - **Red:** add tests to `tests/unit/test_validators.py`: each rejection case (empty,
-  >100 chars, malformed, reserved) raises `InvalidSlug` with the expected `.reason` value.
+  > 100 chars, malformed, reserved) raises `InvalidSlug` with the expected `.reason` value.
 - **Green:** add `InvalidSlug` to `domain/validators.py` (or co-locate with `SlugError`), make
   `UrlSlugValidator.validate` raise it.
 
@@ -695,7 +695,7 @@ Smallest delta, one place to change.
   - `test_update_slug_raises_slug_error_on_clash_for_url_slug` — `.field == "url_slug"`,
     `.reason == "taken"`.
   - `test_update_slug_raises_slug_error_on_clash_for_short_url_slug` — `.field ==
-    "short_url_slug"`, `.reason == "taken"`.
+"short_url_slug"`, `.reason == "taken"`.
   - `test_update_slug_raises_slug_error_on_reserved_value` — `.field == "url_slug"`,
     `.reason == "reserved"`.
   - `test_update_slug_raises_slug_error_on_malformed_value` — `.field == "url_slug"`,
@@ -751,16 +751,16 @@ in the same shape — not byte-identical to the example, but in the same _shape_
 
 Per-field rendering, keyed off `RespondentFieldDefinition.effective_field_type`:
 
-| `effective_field_type` | Rendered as |
-| --- | --- |
-| `TEXT`     | `<label for="K">L</label>\n<input type="text" id="K" name="K">` |
-| `EMAIL`    | `<label for="K">L</label>\n<input type="email" id="K" name="K">` |
-| `LONGTEXT` | `<label for="K">L</label>\n<textarea id="K" name="K"></textarea>` |
-| `INTEGER`  | `<label for="K">L</label>\n<input type="number" id="K" name="K">` |
-| `BOOL`     | `<fieldset><legend>L</legend>\n<label><input type="radio" name="K" value="yes"> Yes</label>\n<label><input type="radio" name="K" value="no"> No</label>\n</fieldset>` |
-| `BOOL_OR_NONE` | same as `BOOL` (yes/no radios). The "not set" state is encoded by the absence of any selection in the submitted form — no third radio. _(Matches example-form-a, lines 41–48.)_ |
-| `CHOICE_RADIO` | `<fieldset><legend>L</legend>` + one `<label><input type="radio" name="K" value="V"> V</label>` per `ChoiceOption`, in declaration order, then `</fieldset>`. _(Example-form-a lines 81–86.)_ |
-| `CHOICE_DROPDOWN` | `<label for="K">L</label>\n<select id="K" name="K">` + `<option value="V">V</option>` per `ChoiceOption` + `</select>`. **Open question:** include the placeholder `<option value="">— Please choose —</option>` first as the example does (line 99)? Recommendation: **yes**, only when the field is not required, so author has a way to express "no answer" in a select widget. Otherwise required-attribute on the `<select>` covers it. |
+| `effective_field_type` | Rendered as                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TEXT`                 | `<label for="K">L</label>\n<input type="text" id="K" name="K">`                                                                                                                                                                                                                                                                                                                                                                              |
+| `EMAIL`                | `<label for="K">L</label>\n<input type="email" id="K" name="K">`                                                                                                                                                                                                                                                                                                                                                                             |
+| `LONGTEXT`             | `<label for="K">L</label>\n<textarea id="K" name="K"></textarea>`                                                                                                                                                                                                                                                                                                                                                                            |
+| `INTEGER`              | `<label for="K">L</label>\n<input type="number" id="K" name="K">`                                                                                                                                                                                                                                                                                                                                                                            |
+| `BOOL`                 | `<fieldset><legend>L</legend>\n<label><input type="radio" name="K" value="yes"> Yes</label>\n<label><input type="radio" name="K" value="no"> No</label>\n</fieldset>`                                                                                                                                                                                                                                                                        |
+| `BOOL_OR_NONE`         | same as `BOOL` (yes/no radios). The "not set" state is encoded by the absence of any selection in the submitted form — no third radio. _(Matches example-form-a, lines 41–48.)_                                                                                                                                                                                                                                                              |
+| `CHOICE_RADIO`         | `<fieldset><legend>L</legend>` + one `<label><input type="radio" name="K" value="V"> V</label>` per `ChoiceOption`, in declaration order, then `</fieldset>`. _(Example-form-a lines 81–86.)_                                                                                                                                                                                                                                                |
+| `CHOICE_DROPDOWN`      | `<label for="K">L</label>\n<select id="K" name="K">` + `<option value="V">V</option>` per `ChoiceOption` + `</select>`. **Open question:** include the placeholder `<option value="">— Please choose —</option>` first as the example does (line 99)? Recommendation: **yes**, only when the field is not required, so author has a way to express "no answer" in a select widget. Otherwise required-attribute on the `<select>` covers it. |
 
 Where `K` = `field_key`, `L` = `label`, `V` = `ChoiceOption.value`. Required fields get a
 `required` attribute on the input/select (or on _all_ radios in the group? HTML5 says
@@ -963,17 +963,648 @@ Run on 2026-05-15: 2764 passed (full non-BDD suite), all of mypy, deptry, prek, 
 
 ### Modified files
 
-| Path                                                         | Change                                                                                        | Sub-phase |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | --------- |
-| `src/opendlp/domain/registration_page.py`                    | Token rename; `DEFAULT_THANK_YOU_HTML`; `generate_starter_form_html` helper                   | 6.1, 6.2.1, 6.4 |
-| `src/opendlp/service_layer/registration_page_service.py`     | Seed default thank-you HTML on create; `SlugError` raises; new `generate_starter_form_html` wrapper | 6.2.2, 6.3.2, 6.4 |
-| `src/opendlp/service_layer/exceptions.py`                    | Re-export `SlugError` from the domain (lives in `domain/validators.py`)                       | 6.3       |
-| `src/opendlp/domain/validators.py`                           | New `InvalidSlug` and `SlugError` exceptions; `UrlSlugValidator.validate` raises `InvalidSlug` | 6.3.1     |
-| `tests/unit/domain/test_registration_page.py`                | Token rename in fixtures; `DEFAULT_THANK_YOU_HTML` test; `TestGenerateStarterFormHtml`        | 6.1, 6.2.1, 6.4.3 |
-| `tests/unit/test_registration_page_service.py`               | Token rename; default-thank-you-HTML test; `SlugError` tests; service wrapper tests           | 6.1, 6.2.2, 6.3.2, 6.4.4 |
-| `tests/unit/test_validators.py`                              | `InvalidSlug` reason-code tests                                                               | 6.3.1     |
-| `tests/integration/test_orm.py`                              | Token rename in fixture HTML strings                                                          | 6.1       |
+| Path                                                     | Change                                                                                              | Sub-phase                |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------ |
+| `src/opendlp/domain/registration_page.py`                | Token rename; `DEFAULT_THANK_YOU_HTML`; `generate_starter_form_html` helper                         | 6.1, 6.2.1, 6.4          |
+| `src/opendlp/service_layer/registration_page_service.py` | Seed default thank-you HTML on create; `SlugError` raises; new `generate_starter_form_html` wrapper | 6.2.2, 6.3.2, 6.4        |
+| `src/opendlp/service_layer/exceptions.py`                | Re-export `SlugError` from the domain (lives in `domain/validators.py`)                             | 6.3                      |
+| `src/opendlp/domain/validators.py`                       | New `InvalidSlug` and `SlugError` exceptions; `UrlSlugValidator.validate` raises `InvalidSlug`      | 6.3.1                    |
+| `tests/unit/domain/test_registration_page.py`            | Token rename in fixtures; `DEFAULT_THANK_YOU_HTML` test; `TestGenerateStarterFormHtml`              | 6.1, 6.2.1, 6.4.3        |
+| `tests/unit/test_registration_page_service.py`           | Token rename; default-thank-you-HTML test; `SlugError` tests; service wrapper tests                 | 6.1, 6.2.2, 6.3.2, 6.4.4 |
+| `tests/unit/test_validators.py`                          | `InvalidSlug` reason-code tests                                                                     | 6.3.1                    |
+| `tests/integration/test_orm.py`                          | Token rename in fixture HTML strings                                                                | 6.1                      |
 
 ### No new files in Phase 6
 
 Everything in Phase 6 lands in files that already exist after Phases 1–5.
+
+---
+
+## Phase 7 — Lifecycle status enum + activity audit log ✅ COMPLETE
+
+**Why this phase exists.** Phases 1–6 shipped a `RegistrationPage` with a single `is_published: bool`. Q16 in `plan-data-service.md` (resolved 2026-05-19) replaces that with a three-state `status` enum (`DRAFT / PUBLISHED / CLOSED`) and an append-only `activity: list[RegistrationPageActivity]` audit log. The driving requirement is that the public route should serve different responses for "never published" (404 — hide the page exists) vs "was published, now closed" (302 to `/registration-closed`). The audit log is a forced choice once we need "has ever been published?" to be queryable — modelling it as an activity log gives us the audit trail we want anyway, and avoids a parallel `has_been_published` bool that has to be kept in sync.
+
+The full design is recorded in `plan-data-service.md` §3.1, §3.6, §4.1, §5.1, §5.2, §5.4, Q6 (updated), Q16. This phase is the build order.
+
+### 7.0 Scope, decisions and judgement calls
+
+**In scope.**
+
+1. New domain types: `RegistrationPageStatus`, `RegistrationPageAction`, `RegistrationPageActivity`.
+2. `RegistrationPage`: drop `is_published`; gain `status`, `activity`; new transition methods (`publish`/`unpublish`/`close`/`reopen` all take `author_id`); add `record_edit`, `has_ever_been_published`, `slugs_frozen`. `regenerate_preview_token` takes `author_id`.
+3. New visibility state enum (`RegistrationPageVisibilityState`) and updated `RegistrationPageVisibility` dataclass; `resolve_visibility` returns a four-way state (`LIVE / PREVIEW / CLOSED / NOT_FOUND`) rather than two booleans.
+4. ORM: replace `is_published` column with `status` (`EnumAsString`, indexed) + new `activity` JSON column with a `RegistrationPageActivityListJSON` type decorator (mirror of `RespondentCommentListJSON`).
+5. Follow-on Alembic migration: add columns, backfill from `is_published`, drop the old column and its index.
+6. Service layer: every transition function passes `user_id` through as the activity's `author_id`; `create_registration_page` appends a `CREATE`; edit functions append `EDIT` only when content actually changed; new `close_registration_page` and `reopen_registration_page` service functions.
+7. Update / extend existing tests to match.
+
+**Out of scope (still).** Entrypoints / blueprints / templates / WTForms. The colleague's `entrypoints/blueprints/backoffice.py` has placeholder local variables called `is_published` in a stub form handler (lines 429, 446, 485, 490, 495) — these are mockups not bound to the service layer and the colleague will update them when they wire up the real backoffice tab.
+
+**Decisions baked in (challenge any on review).**
+
+1. **Clean break — no `is_published` shim.** No backwards-compat property like `@property def is_published(self): return self.status == PUBLISHED`. The branch is unreleased; one fewer thing to grep for and clean up later. _(Confirmed by Doctor Chewie in the design conversation.)_
+2. **Enums live in `domain/registration_page.py`** (matches `RegistrationPageSource` and `RegistrationPageNotReady`, not `value_objects.py`). Activity dataclass lives there too.
+3. **Visibility state enum lives in `service_layer/registration_page_service.py`** — visibility is a routing concern, not a domain invariant, and the existing `RegistrationPageVisibility` dataclass already lives in the service layer.
+4. **Activity logging discipline.** Status transitions and `regenerate_preview_token` are domain methods that auto-append their activity entry. Pure setters (`update_slugs`, `update_thank_you_html`, `RegistrationPageHtml.update_html`) stay pure — they don't log. The service layer follows each mutation with `record_edit(...)` and **only when content actually changed** (no log spam on no-op saves). Mirrors the Respondent pattern where `mark_as_selected` doesn't auto-add a comment.
+5. **Generic `EDIT` action in v1** with a descriptive `text` ("Updated form HTML", "Changed url_slug from 'old' to 'new'"). Splitting into `EDIT_SLUG` / `EDIT_HTML` etc. is deferred — easier to split later than to merge legacy rows.
+6. **Slug-freeze rule.** `slugs_frozen` is `has_ever_been_published()`. After the first publish, slugs are permanently fixed — through `unpublish`/`close`/`reopen` cycles — so live QR codes never break. No "discard history and restart" admin path.
+7. **Invalid status transitions raise `ValueError`.** E.g. `unpublish()` from `DRAFT`, `close()` from `CLOSED`. Matches the existing `mark_as_confirmed` / `mark_as_withdrawn` style on `Respondent`.
+8. **Activity JSON type.** Use the existing `JSON` (PostgreSQL) impl via a `TypeDecorator`, mirroring `RespondentCommentListJSON`. Not `JSONB` — the existing pattern is `JSON` and matching it is one less thing to reason about. Activity is small (~10s of entries per page max), so the JSONB indexing advantage is irrelevant here.
+9. **Migration is a follow-on revision**, not an amendment of `6c832644862b_add_registration_pages.py`. Local-dev databases may already have the old schema applied; a forward migration is safer than a destructive amend. Backfill: `status = 'PUBLISHED' WHERE is_published`, else `'DRAFT'`. The `activity` column ships with `default '[]'::json` — existing rows (if any) get an empty audit history (acceptable: this is unreleased work, and synthetic CREATE entries would be invented from thin air).
+10. **CREATE activity author is the `user_id` passed to `create_registration_page`.** No system-author sentinel.
+
+**Resolved judgement calls (confirmed by Doctor Chewie on review).**
+
+- **Q7.1 — Edit-text format.** When an `update_registration_page` call changes both slugs in one go, append **one combined `EDIT` entry** with all changes joined (e.g. `"Changed url_slug from 'a' to 'b'; changed short_url_slug from 'x' to 'y'"`).
+- **Q7.2 — Slug-clear log text.** When a slug is cleared (set to `""`), the EDIT text is `"Cleared url_slug (was 'old-value')"`. Pin in tests.
+- **Q7.3 — `is_visible_with` semantics.** Returns `True` for `PUBLISHED`, **and** for `DRAFT` or `CLOSED` with a non-empty matching preview token. `resolve_visibility` remains the more nuanced gate.
+
+### 7.1 New domain types — status, action, activity ✅ COMPLETE
+
+New code in `src/opendlp/domain/registration_page.py`, new tests in `tests/unit/domain/test_registration_page.py`.
+
+**Pure Python, no I/O, no DB.** TDD straightforward: one test class per new type, red → green per addition.
+
+#### 7.1.1 `RegistrationPageStatus` enum
+
+- **Red:** `TestRegistrationPageStatus` — `RegistrationPageStatus.DRAFT.value == "DRAFT"`, same for `PUBLISHED` and `CLOSED`. Listing all members gives exactly those three.
+- **Green:** add the enum at module level.
+
+#### 7.1.2 `RegistrationPageAction` enum
+
+- **Red:** `TestRegistrationPageAction` — pin each member's `.value`: `CREATE`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `CLOSE`, `REOPEN`, `REGENERATE_TOKEN`. List membership test.
+- **Green:** add the enum at module level.
+
+#### 7.1.3 `RegistrationPageActivity` dataclass
+
+Mirrors `RespondentComment` (`src/opendlp/domain/respondents.py:22`): frozen dataclass, immutable, `to_dict` / `from_dict` for JSON round-tripping.
+
+```python
+@dataclass(frozen=True)
+class RegistrationPageActivity:
+    """An entry in a RegistrationPage's audit log."""
+    text: str
+    author_id: uuid.UUID
+    created_at: datetime
+    action: RegistrationPageAction = RegistrationPageAction.EDIT
+
+    def to_dict(self) -> dict[str, Any]: ...
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RegistrationPageActivity": ...
+```
+
+- **Red:** `TestRegistrationPageActivity`:
+  - `test_init_with_explicit_fields` — fields set as given; `action` defaults to `EDIT`.
+  - `test_to_dict_round_trip` — `to_dict` → `from_dict` yields an equal object.
+  - `test_to_dict_stringifies_uuid_and_datetime` — `dict["author_id"]` is `str`, `dict["created_at"]` is ISO string, `dict["action"]` is the enum value string.
+  - `test_from_dict_with_unknown_action_falls_back_to_edit` — `data["action"] = "BANANA"` → entry has `action = EDIT` (graceful schema growth — same forward-compat as `RespondentComment.from_dict` uses).
+- **Green:** implement, copying the `RespondentComment.to_dict`/`from_dict` shape almost verbatim. Tolerate missing-key / unknown-enum gracefully — match the Respondent pattern.
+
+### 7.2 RegistrationPage state changes — fields, methods, derived predicates ✅ COMPLETE
+
+Same files (`src/opendlp/domain/registration_page.py`, `tests/unit/domain/test_registration_page.py`).
+
+#### 7.2.1 Constructor swap — `is_published` → `status` + `activity`
+
+This is the big break — touches every constructor call site in tests. Follow the same mechanical pattern as 6.1's rename.
+
+**Production change:**
+
+```python
+def __init__(
+    self,
+    assembly_id: uuid.UUID,
+    url_slug: str = "",
+    short_url_slug: str = "",
+    status: RegistrationPageStatus = RegistrationPageStatus.DRAFT,
+    preview_token: str = "",
+    source_type: RegistrationPageSource = RegistrationPageSource.HTML,
+    thank_you_html: str = "",
+    activity: list[RegistrationPageActivity] | None = None,
+    registration_page_id: uuid.UUID | None = None,
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+):
+    ...
+    self.status = status
+    self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
+    ...
+```
+
+The `list(activity)` copy + assigning to a fresh list mirrors how `Respondent.__init__` handles `comments` (`src/opendlp/domain/respondents.py:158`), which is necessary so SQLAlchemy's JSON change-detection sees a new list-object identity when the activity is later reassigned.
+
+`create_detached_copy` must carry both new fields:
+
+```python
+return RegistrationPage(
+    ...,
+    status=self.status,
+    activity=list(self.activity),     # shallow copy; entries are frozen dataclasses
+    ...
+)
+```
+
+**TDD shape — partial rename.** Like 6.1, this isn't a single-test-add: the entire test file currently constructs `is_published=True` everywhere. Approach:
+
+1. Update production code (constructor signature, `create_detached_copy`).
+2. Run `tests/unit/domain/test_registration_page.py` — watch existing tests fail with `TypeError: unexpected keyword 'is_published'`.
+3. Replace `is_published=True` with `status=RegistrationPageStatus.PUBLISHED` and `is_published=False` with `status=RegistrationPageStatus.DRAFT` in tests. **Keep** the `assert page.is_published is True` lines failing for now — they'll be fixed under 7.2.2.
+
+#### 7.2.2 Rename / replace `is_published` reads
+
+Every `page.is_published` read becomes either:
+
+- `page.status == RegistrationPageStatus.PUBLISHED` (most cases — direct semantic equivalent), or
+- `page.status` (richer comparisons in the visibility / route layer — addressed in 7.3).
+
+Test assertions: `assert page.is_published is True` → `assert page.status == RegistrationPageStatus.PUBLISHED`. Same for `False` → `DRAFT`.
+
+After this pass, no references to `is_published` exist on `RegistrationPage`. Confirm with `grep -rn "is_published" src/opendlp/domain/ tests/unit/domain/` showing only the entry in `backoffice.py` (out of scope per 7.0).
+
+#### 7.2.3 `has_ever_been_published()` and `slugs_frozen`
+
+- **Red:**
+  - `TestHasEverBeenPublished.test_false_when_no_activity` — fresh page → `False`.
+  - `..._false_with_only_edit_activity` — manually-seeded `activity=[Activity(action=EDIT, ...)]` → `False`.
+  - `..._true_after_publish_activity` — activity contains one `PUBLISH` entry → `True`.
+  - `..._true_after_publish_then_unpublish` — activity contains `PUBLISH` then `UNPUBLISH` → `True` (stays sticky).
+  - `TestSlugsFrozen.test_unfrozen_initially` — fresh page → `slugs_frozen is False`.
+  - `..._frozen_after_publish_activity` — activity contains one `PUBLISH` → `True`.
+- **Green:** implement `has_ever_been_published` as `any(a.action == PUBLISH for a in self.activity)`, and `slugs_frozen` as a `@property` returning that.
+
+#### 7.2.4 `update_slugs` — new freeze rule
+
+The existing implementation raises while `is_published`. Change it to raise while `slugs_frozen`.
+
+- **Red:** modify the existing `test_update_slugs_raises_when_published` to construct a page whose `activity` already contains a `PUBLISH` (i.e. `slugs_frozen=True`), then assert `update_slugs(...)` raises `ValueError`. Add a complementary `test_update_slugs_allowed_when_never_published_even_if_status_draft` for a page in `DRAFT` with empty activity.
+  - Also: `test_update_slugs_still_raises_in_closed_state` — page in `CLOSED` (so activity has `PUBLISH`+`CLOSE`) → still raises. Pins the "permanent freeze" rule.
+- **Green:** swap `if self.is_published` → `if self.slugs_frozen`. Update the error message to "Cannot change slugs once the registration page has been published".
+
+### 7.3 Status transition methods on `RegistrationPage` ✅ COMPLETE
+
+`publish` / `unpublish` / `close` / `reopen` / `regenerate_preview_token` all become activity-logging operations that take `author_id`. `record_edit` is a new helper for the service layer.
+
+Append discipline (matches `Respondent.add_comment` at `src/opendlp/domain/respondents.py:191`):
+
+```python
+self.activity = [*self.activity, new_entry]   # reassign, do NOT append in place
+```
+
+This is non-negotiable for SQLAlchemy's JSON change-detection. Pin in tests.
+
+#### 7.3.1 `record_edit(author_id, text)`
+
+- **Red:**
+  - `test_record_edit_appends_one_entry` — call with `text="foo"`; activity grows by one; entry has `action=EDIT`, `text="foo"`, given `author_id`, `created_at` close to `now`.
+  - `test_record_edit_uses_list_reassignment` — pre-store `old_activity = page.activity`; call `record_edit`; assert `page.activity is not old_activity` (new list-object identity). _(This pins the SQLAlchemy contract.)_
+  - `test_record_edit_bumps_updated_at`.
+- **Green:** implement.
+
+#### 7.3.2 `publish(source, author_id, text="")`
+
+- **Red:**
+  - `test_publish_sets_status_published` — replaces the existing `test_publish_sets_is_published`. Assert `page.status == PUBLISHED`, `updated_at` bumped.
+  - `test_publish_appends_publish_activity` — one new entry, `action=PUBLISH`, `author_id=author_id`, `text=text`. Bonus: `test_publish_text_default_is_empty_string`.
+  - `test_publish_raises_when_not_ready` — unchanged in spirit, just confirms exception is still `RegistrationPageNotReady` and **no activity is appended** on a failed publish (assert `len(page.activity) == 0` after the raise).
+  - `test_publish_from_draft_only` — calling `publish` on a page already in `PUBLISHED` raises `ValueError("Page is already published")`. Same when calling `publish` on `CLOSED` (use `reopen` instead).
+- **Green:** implement — validate transition source first, then run readiness, then mutate status + append activity. Single `datetime.now(UTC)` value used for both `updated_at` and the activity's `created_at` (so the audit row's timestamp matches the mutation timestamp).
+
+#### 7.3.3 `unpublish(author_id, text="")`
+
+Semantically: "I made a mistake, return to draft so I can edit and republish." Only valid from `PUBLISHED`.
+
+- **Red:**
+  - `test_unpublish_sets_status_draft` (replaces `test_unpublish_clears_is_published`).
+  - `test_unpublish_appends_unpublish_activity`.
+  - `test_unpublish_preview_token_unchanged` (Q12 still holds).
+  - `test_unpublish_raises_from_draft` — `ValueError`. Same from `CLOSED`.
+  - `test_unpublish_from_published_leaves_slugs_frozen` — call `unpublish`, then `update_slugs(...)`, assert still raises. _Pins the QR-stability rule._
+- **Green:** implement.
+
+#### 7.3.4 `close(author_id, text="")` and `reopen(source, author_id, text="")`
+
+Both are brand-new. `close` is `PUBLISHED → CLOSED`; `reopen` is `CLOSED → PUBLISHED` with the same readiness check as `publish`.
+
+- **Red — close:**
+  - `test_close_sets_status_closed` — from `PUBLISHED`.
+  - `test_close_appends_close_activity`.
+  - `test_close_raises_from_draft` and `_from_closed` — both `ValueError`.
+  - `test_close_preserves_slugs_frozen` — same pin as 7.3.3.
+- **Red — reopen:**
+  - `test_reopen_sets_status_published` — from `CLOSED` (build a page via `publish` then `close`).
+  - `test_reopen_appends_reopen_activity`.
+  - `test_reopen_raises_from_draft` and `_from_published` — both `ValueError`.
+  - `test_reopen_runs_readiness_check` — if the source has problems, raises `RegistrationPageNotReady`, no activity entry appended.
+- **Green:** implement both.
+
+#### 7.3.5 `regenerate_preview_token(author_id)` — now logs
+
+- **Red:**
+  - Update the existing `test_regenerate_preview_token_changes_token` — now takes an `author_id` parameter; token changes; `updated_at` bumped; **and** one new `REGENERATE_TOKEN` activity entry is appended.
+- **Green:** add the parameter, append the entry.
+
+#### 7.3.6 `is_visible_with` — three-state aware
+
+- **Red:**
+  - Update `test_is_visible_with_published_is_always_visible` (build with `status=PUBLISHED`).
+  - `test_is_visible_with_closed_requires_matching_token` — new test: page in `CLOSED`, with token `""` → False; with wrong token → False; with matching token → True.
+  - Keep `test_is_visible_with_unpublished_needs_matching_token` working for `DRAFT`.
+- **Green:** the function body becomes: `if status == PUBLISHED: return True; return bool(token) and token == self.preview_token`. Same shape as today, just checking status enum instead of bool.
+
+**End of 7.1–7.3:** `CI=true uv run pytest tests/unit/domain/test_registration_page.py -q` green; `just check` clean. Domain layer fully reflects the new model.
+
+**Suggested commit:** `feat(registration): lifecycle status enum and activity audit log`
+
+### 7.4 Visibility model — three-state outcome ✅ COMPLETE
+
+File: `src/opendlp/service_layer/registration_page_service.py`. Tests in `tests/unit/test_registration_page_service.py` (the `TestResolveVisibility` class).
+
+#### 7.4.1 `RegistrationPageVisibilityState` enum
+
+Add at module level, alongside the existing `RegistrationPageVisibility` dataclass:
+
+```python
+class RegistrationPageVisibilityState(Enum):
+    """Public-route response classification."""
+    LIVE = "LIVE"          # show the form
+    PREVIEW = "PREVIEW"    # show the form with a preview banner
+    CLOSED = "CLOSED"      # 302 to /registration-closed
+    NOT_FOUND = "NOT_FOUND"  # 404
+```
+
+#### 7.4.2 Update `RegistrationPageVisibility`
+
+Replace the existing two-bool dataclass with a state-bearing one, keeping `is_visible` / `is_preview` as derived properties for any caller that already uses them:
+
+```python
+@dataclass(frozen=True)
+class RegistrationPageVisibility:
+    page: RegistrationPage | None
+    state: RegistrationPageVisibilityState
+
+    @property
+    def is_visible(self) -> bool:
+        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.PREVIEW)
+
+    @property
+    def is_preview(self) -> bool:
+        return self.state == RegistrationPageVisibilityState.PREVIEW
+```
+
+The dataclass becomes `frozen=True` (it was previously unfrozen). Defensible — it's a pure result value. Heads-up if any test instantiates it directly and then mutates fields; none today, but worth a grep.
+
+#### 7.4.3 `resolve_visibility` — dispatch table
+
+The new dispatch:
+
+```python
+def resolve_visibility(page, preview_token=""):
+    if page is None:
+        return _v(None, NOT_FOUND)
+    if page.status == PUBLISHED:
+        return _v(page, LIVE)
+    if preview_token and preview_token == page.preview_token:
+        return _v(page, PREVIEW)
+    if page.status == CLOSED:
+        return _v(page, CLOSED)
+    return _v(page, NOT_FOUND)        # DRAFT, no valid preview token
+```
+
+Key behavioural changes vs today:
+
+- **DRAFT without token now yields `NOT_FOUND`**, not "not visible with `page` populated". The route returns 404. (Old behaviour 302'd to `/registration-closed`; conflated with closed.)
+- **CLOSED without token yields `CLOSED`**, not "not visible". The route 302s to `/registration-closed`.
+- **PUBLISHED + token still yields `LIVE`** (preview path doesn't downgrade visibility — the published case wins).
+
+#### 7.4.4 Test sweep
+
+Rewrite `TestResolveVisibility` to assert on `state` directly, with new cases for CLOSED. The full truth table (one test per row):
+
+| `page` | `status`    | token                   | expected state                             |
+| ------ | ----------- | ----------------------- | ------------------------------------------ |
+| `None` | —           | `""`                    | `NOT_FOUND`                                |
+| set    | `PUBLISHED` | `""`                    | `LIVE`                                     |
+| set    | `PUBLISHED` | matches `preview_token` | `LIVE` (still — preview doesn't downgrade) |
+| set    | `DRAFT`     | matches                 | `PREVIEW`                                  |
+| set    | `DRAFT`     | `""`                    | `NOT_FOUND`                                |
+| set    | `DRAFT`     | `"wrong"`               | `NOT_FOUND`                                |
+| set    | `CLOSED`    | matches                 | `PREVIEW`                                  |
+| set    | `CLOSED`    | `""`                    | `CLOSED`                                   |
+| set    | `CLOSED`    | `"wrong"`               | `CLOSED`                                   |
+
+Plus one assertion that `is_visible` / `is_preview` derived properties still behave (for any route code still reading them).
+
+**Suggested commit:** `feat(registration): three-state visibility distinguishes draft from closed`
+
+### 7.5 ORM and JSON serialisation ✅ COMPLETE
+
+Files: `src/opendlp/adapters/orm.py`, `src/opendlp/adapters/database.py`, `tests/integration/test_orm.py`.
+
+#### 7.5.1 `RegistrationPageActivityListJSON` type decorator
+
+Add a TypeDecorator next to `RespondentCommentListJSON` (line 174). Same shape:
+
+```python
+class RegistrationPageActivityListJSON(TypeDecorator):
+    """Custom type for storing a list of RegistrationPageActivity dataclasses as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [a.to_dict() if isinstance(a, RegistrationPageActivity) else a for a in value]
+        return value
+
+    def process_result_value(self, value, dialect):
+        if not value:
+            return []
+        return [RegistrationPageActivity.from_dict(item) if isinstance(item, dict) else item for item in value]
+```
+
+Import `RegistrationPageActivity` at the top of `orm.py` (alongside `RegistrationPageSource`).
+
+No standalone test — exercised by the round-trip test in 7.5.3.
+
+#### 7.5.2 Table column changes
+
+In `registration_pages` (line 547):
+
+- Replace `Column("is_published", Boolean, nullable=False, default=False, index=True)` with:
+
+  ```python
+  Column(
+      "status",
+      EnumAsString(RegistrationPageStatus, 32),
+      nullable=False,
+      default=RegistrationPageStatus.DRAFT,
+      index=True,
+  ),
+  ```
+
+- Add a new `activity` column near the end:
+
+  ```python
+  Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
+  ```
+
+Import `RegistrationPageStatus` at the top of `orm.py`.
+
+The imperative mapping in `database.py` (line 210–211) needs no change — it already does plain `map_imperatively` without `properties=`.
+
+#### 7.5.3 Round-trip test update
+
+In `tests/integration/test_orm.py` (the registration-page round-trip near line 1124 per the grep earlier):
+
+- Replace `assert retrieved_page.is_published is False` with `assert retrieved_page.status == RegistrationPageStatus.DRAFT`.
+- Add coverage for `activity` round-trip: construct a page with `activity=[Activity(action=PUBLISH, author_id=uuid.uuid4(), created_at=now, text="initial")]`, persist, reload, assert one entry with the same fields. Pin both `action` is the enum (not a string) after deserialisation, and `created_at` is tz-aware.
+
+### 7.6 Migration — follow-on alembic revision ✅ COMPLETE
+
+```bash
+uv run alembic revision --autogenerate -m "registration pages status enum and activity log"
+```
+
+Hand-edit the generated file. Autogenerate will (correctly) add the two new columns and drop the old one, but **does not produce a backfill**. Add it manually so the column drop doesn't lose information from any local dev DB that already has rows.
+
+**Hand-edited upgrade:**
+
+```python
+def upgrade() -> None:
+    # 1. Add new columns (nullable=True for status so we can backfill).
+    op.add_column(
+        "registration_pages",
+        sa.Column("status", sa.String(length=32), nullable=True),
+    )
+    op.add_column(
+        "registration_pages",
+        sa.Column("activity", sa.JSON(), nullable=False, server_default=sa.text("'[]'::json")),
+    )
+
+    # 2. Backfill status from is_published.
+    op.execute(
+        """
+        UPDATE registration_pages
+        SET status = CASE WHEN is_published THEN 'PUBLISHED' ELSE 'DRAFT' END
+        """
+    )
+
+    # 3. Enforce NOT NULL on status; add index.
+    op.alter_column("registration_pages", "status", nullable=False)
+    op.create_index(op.f("ix_registration_pages_status"), "registration_pages", ["status"], unique=False)
+
+    # 4. Drop the old is_published column and its index.
+    op.drop_index(op.f("ix_registration_pages_is_published"), table_name="registration_pages")
+    op.drop_column("registration_pages", "is_published")
+
+    # 5. Drop the activity server_default — defaults belong in the application, not the DB schema.
+    op.alter_column("registration_pages", "activity", server_default=None)
+```
+
+The trailing `alter_column` removes the server-side default so we don't drift from the existing pattern (no `server_default` on `is_published` historically — the Python-side default in the Table definition is the source of truth).
+
+**Downgrade — reverse the sequence:**
+
+```python
+def downgrade() -> None:
+    op.add_column(
+        "registration_pages",
+        sa.Column("is_published", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+    )
+    op.execute(
+        """
+        UPDATE registration_pages
+        SET is_published = (status = 'PUBLISHED')
+        """
+    )
+    op.alter_column("registration_pages", "is_published", server_default=None)
+    op.create_index(
+        op.f("ix_registration_pages_is_published"),
+        "registration_pages",
+        ["is_published"],
+        unique=False,
+    )
+    op.drop_index(op.f("ix_registration_pages_status"), table_name="registration_pages")
+    op.drop_column("registration_pages", "status")
+    op.drop_column("registration_pages", "activity")
+```
+
+Downgrade is lossy: `CLOSED` rows become `is_published=False` (indistinguishable from `DRAFT`), and the entire `activity` log is discarded. Document this in the migration's docstring — it's the price of going back.
+
+**Verification:**
+
+```bash
+uv run alembic upgrade head      # apply
+uv run alembic downgrade -1      # reverse
+uv run alembic upgrade head      # re-apply (idempotency)
+```
+
+Confirm the column / index changes via `\d registration_pages` in psql.
+
+**`tests/conftest.py` and `tests/bdd/conftest.py` need no change** — they already `DELETE FROM registration_pages` (no per-column dependency).
+
+### 7.7 Service layer — activity logging, transition wiring, new functions ✅ COMPLETE
+
+File: `src/opendlp/service_layer/registration_page_service.py`. Tests in `tests/unit/test_registration_page_service.py`.
+
+The service-layer pattern stays the same (`with uow: ... uow.commit(); return page.create_detached_copy()`). The deltas:
+
+1. Every transition function passes `user.id` (the authenticated user) through to the domain method as `author_id`.
+2. Edit functions compute `before` / `after` and call `page.record_edit(user.id, "...")` only when content changed.
+3. Two new functions: `close_registration_page`, `reopen_registration_page`.
+4. `regenerate_preview_token` passes `user.id`.
+
+#### 7.7.1 `create_registration_page` — append `CREATE` activity
+
+- **Red:** add `test_create_appends_create_activity` to `TestCreateRegistrationPage`:
+  - After `create`, fetch the stored page; `len(page.activity) == 1`; the entry has `action == CREATE`, `author_id == admin.id`, non-empty `text` (e.g. `"Registration page created"`), `created_at` close to `now`.
+- **Green:** in `create_registration_page` between the `RegistrationPage(...)` construction and the `uow.commit()`:
+  ```python
+  page.record_create(user.id)   # OR a direct page.activity = [...] append; see note
+  ```
+  **Decision:** add a dedicated `RegistrationPage.record_create(author_id)` domain method (mirror of `record_edit` but with `action=CREATE`). Keeps the service layer ignorant of activity-list internals. Single line: `self.activity = [*self.activity, Activity(action=CREATE, author_id=author_id, created_at=now, text="Registration page created")]`.
+
+#### 7.7.2 `update_registration_page` (slugs) — append EDIT only on actual change
+
+- **Red:** several new tests in `TestUpdateRegistrationPage`:
+  - `test_update_slugs_appends_edit_with_description` — change `url_slug` from `""` to `"foo"`: one EDIT entry, text mentions `url_slug` and `'foo'`.
+  - `test_update_slugs_no_op_no_activity` — call `update_registration_page(url_slug=None)` on a fresh page: zero EDIT entries (only the CREATE from 7.7.1).
+  - `test_update_slugs_both_changed_one_combined_entry` (per Q7.1) — change both slugs in one call: one EDIT entry, text mentions both.
+  - `test_update_slug_cleared_logs_old_value` (per Q7.2) — page has `url_slug="foo"`, call with `url_slug=""`: EDIT text `"Cleared url_slug (was 'foo')"`.
+- **Green:** compute the `before` values, run validation + clash checks, call `page.update_slugs(...)`, then if anything actually changed, compose the description and call `page.record_edit(user.id, description)`. Pattern:
+  ```python
+  before_url = page.url_slug
+  before_short = page.short_url_slug
+  # ... validation, clash check ...
+  page.update_slugs(url_slug=url_slug, short_url_slug=short_url_slug)
+  changes = []
+  if url_slug is not None and page.url_slug != before_url:
+      changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
+  if short_url_slug is not None and page.short_url_slug != before_short:
+      changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
+  if changes:
+      page.record_edit(user.id, "; ".join(changes))
+  ```
+  with a small `_describe_slug_change` helper for consistent text format.
+
+#### 7.7.3 `update_thank_you_html` and `update_registration_page_html` — log on actual change
+
+Same pattern: compare `before` / `after`, log if changed.
+
+- **Red:** for each function:
+  - `test_..._appends_edit_when_changed` — non-trivial change → one EDIT (`"Updated thank-you HTML"` or `"Updated form HTML"`).
+  - `test_..._no_op_no_activity` — same value resaved → no EDIT entry.
+- **Green:** straightforward.
+
+#### 7.7.4 `publish_registration_page` — pass `user.id`, optional `text`
+
+- **Red:** update `TestPublishAndUnpublish.test_publish_happy_path`:
+  - After publish, `page.status == PUBLISHED`, and the activity log contains a `PUBLISH` entry with `author_id == admin.id`.
+- Add: `test_publish_accepts_optional_text` — call with `text="reason"`, activity entry's `.text == "reason"`.
+- **Green:** the function gains a `text: str = ""` kwarg and calls `page.publish(source, author_id=user.id, text=text)`.
+
+#### 7.7.5 `unpublish_registration_page` — same shape
+
+Same pattern as 7.7.4. Update `test_unpublish_happy_path` and add the text-kwarg test.
+
+#### 7.7.6 `close_registration_page` — NEW
+
+- **Red:** new test class `TestCloseAndReopen` in `tests/unit/test_registration_page_service.py`:
+  - `test_close_happy_path` — publish a page, then close → `status == CLOSED`, CLOSE activity entry.
+  - `test_close_text_kwarg` — `text="sortition done"` → activity entry's `.text` matches.
+  - `test_close_raises_from_draft` and `_from_closed` — `ValueError` (domain layer raises; service propagates).
+  - `test_close_requires_manage_permission` — viewer → `InsufficientPermissions`.
+  - `test_close_raises_when_page_not_created` — `RegistrationPageNotFoundError`.
+- **Green:** implement, mirroring `unpublish_registration_page` but calling `page.close(...)`.
+
+#### 7.7.7 `reopen_registration_page` — NEW
+
+Same test class `TestCloseAndReopen`:
+
+- **Red:**
+  - `test_reopen_happy_path` — publish, close, then reopen → `status == PUBLISHED`, REOPEN activity entry.
+  - `test_reopen_runs_readiness` — close a page, mutate the HTML source to be unready (clear it), reopen → `RegistrationPageNotReady`.
+  - `test_reopen_raises_from_published` / `_from_draft` — `ValueError`.
+  - Permission and not-found cases.
+- **Green:** mirror `publish_registration_page` but call `page.reopen(source, ...)`.
+
+#### 7.7.8 `regenerate_preview_token` — pass `user.id`
+
+- **Red:** update `TestRegeneratePreviewToken.test_token_changes_and_is_persisted`:
+  - After call, activity contains a `REGENERATE_TOKEN` entry with `author_id == admin.id`.
+- **Green:** pass `user.id` to the domain method.
+
+#### 7.7.9 `_create_published_page` helper — refresh signature
+
+The `_create_published_page` helper at the top of `tests/unit/test_registration_page_service.py` (line 53) already works after 7.7.4 if `publish` takes the same `user_id` it always has. Confirm no signature drift; it's used by `TestPublishAndUnpublish`, `TestUpdateRegistrationPage` (slug-when-published tests), etc. The slug-when-published tests need updating: the page now stays slug-frozen after `unpublish_registration_page`, so any test that publishes-then-unpublishes-then-edits-slug becomes red. Update those assertions to expect the new behaviour (per the design — slugs frozen for life after first publish).
+
+**End of 7.7:** `CI=true uv run pytest tests/unit/test_registration_page_service.py -q` green.
+
+**Suggested commit:** `feat(registration): service-layer wiring for status transitions and activity logging`
+
+### 7.8 Contract-test update ✅ COMPLETE
+
+File: `tests/contract/test_registration_page_repo.py`.
+
+- The `_add_page` helper at line 13 takes `**kwargs`; existing callers pass `url_slug=...`. Tests that pass `is_published=True` (none today — confirmed by grep, but verify) would need updating. **Action: grep first; update if found.**
+- Add one new test in `TestAddAndGet`: `test_activity_round_trips_through_sql` — construct a page with one `Activity` entry, persist, reload, assert the entry deserialises with `action` as the enum (not `str`).
+
+### 7.9 Documentation and final verification ✅ COMPLETE
+
+**Verification run (2026-05-19):**
+
+- `CI=true uv run pytest --ignore=tests/bdd -q` → 2828 passed, 24 warnings, 2 subtests passed.
+- `uv tool run prek run --all-files` → all hooks pass (ruff check, ruff format, detect-secrets, DjHTML, DjCSS, DjJS, typos, etc.).
+- `uv run mypy` → 6 pre-existing errors in `src/opendlp/entrypoints/blueprints/dev.py` (colleague stub code from commit `266f934`, all outside this work's scope: `HtmlSource.html_content` references should be `.form_html`, `RegistrationPage.published_at` was never on the model). None introduced by Phase 7.
+- `uv run deptry src` → no dependency issues.
+- Alembic: `upgrade head` → `downgrade -1` → `upgrade head` all apply cleanly, migration is reversible.
+
+#### 7.9.1 Docs
+
+- This file (`plan-data-service-detailed.md`): mark sub-phases ✅ COMPLETE as they land.
+- `plan-data-service.md`: already aligned (the 2026-05-19 Q16 update). No change.
+- `docs/configuration.md` and `env.example`: no change — no new env vars in Phase 7.
+
+#### 7.9.2 Verification
+
+1. `CI=true uv run pytest --ignore=tests/bdd -q` — full non-BDD suite green.
+2. `just check` — prek, mypy, deptry clean.
+3. `uv run alembic upgrade head && uv run alembic downgrade -1 && uv run alembic upgrade head` — migration applies and is reversible against the local DB.
+4. Manual sanity check: `flask shell` → construct a page, publish it, close it, reopen it, regenerate the preview token; assert the activity log contains the five expected entries in order.
+
+---
+
+## Phase 7 file-by-file summary
+
+### Modified files
+
+| Path                                                     | Change                                                                                                                                                                                                                                                    | Sub-phase     |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `src/opendlp/domain/registration_page.py`                | New enums + activity dataclass; `status`/`activity` replace `is_published`; new `record_edit`, `record_create`, `close`, `reopen`, `has_ever_been_published`, `slugs_frozen`; `publish`/`unpublish`/`regenerate_preview_token` take `author_id`           | 7.1, 7.2, 7.3 |
+| `src/opendlp/service_layer/registration_page_service.py` | `resolve_visibility` returns state; new visibility-state enum; `create_registration_page` logs CREATE; edit functions log on change; new `close_registration_page` and `reopen_registration_page`; all transition functions pass `user.id` as `author_id` | 7.4, 7.7      |
+| `src/opendlp/adapters/orm.py`                            | New `RegistrationPageActivityListJSON` type decorator; `status` column replaces `is_published`; new `activity` column                                                                                                                                     | 7.5           |
+| `tests/unit/domain/test_registration_page.py`            | Tests for new enums + activity dataclass; rewritten `TestPublishAndReadiness` / `TestVisibilityAndPreviewToken`; new `TestCloseAndReopen`, `TestHasEverBeenPublished`, `TestSlugsFrozen`, `TestRecordEdit`                                                | 7.1, 7.2, 7.3 |
+| `tests/unit/test_registration_page_service.py`           | Rewritten `TestPublishAndUnpublish`, `TestResolveVisibility`, `TestRegeneratePreviewToken`; new `TestCloseAndReopen`; activity-logging assertions added throughout edit-test classes                                                                      | 7.4, 7.7      |
+| `tests/integration/test_orm.py`                          | Status assertion swap; activity round-trip test                                                                                                                                                                                                           | 7.5.3         |
+| `tests/contract/test_registration_page_repo.py`          | Activity round-trip test                                                                                                                                                                                                                                  | 7.8           |
+
+### New files
+
+| Path                                                                          | Why                                                                        | Sub-phase |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------- |
+| `migrations/versions/XXXX_registration_pages_status_enum_and_activity_log.py` | Schema migration: add `status` + `activity`, backfill, drop `is_published` | 7.6       |
+
+### No-change files
+
+- `tests/fakes.py` — no change needed; the fake repos store domain objects unchanged.
+- `src/opendlp/service_layer/exceptions.py` — no new exceptions (invalid transitions raise plain `ValueError` per decision 7.0(7)).
+- `src/opendlp/service_layer/unit_of_work.py` — no change.
+- `src/opendlp/service_layer/repositories.py` — no change.
+- `src/opendlp/adapters/sql_repository.py` — no change (no new query methods).
+- `tests/conftest.py` / `tests/bdd/conftest.py` — already delete from `registration_pages`, no per-column dependency.
+
+### Out-of-scope but worth flagging
+
+`src/opendlp/entrypoints/blueprints/backoffice.py` lines 429–495 reference `is_published` as local Python variables in a stub form handler — they don't bind to the service layer. The colleague owning entrypoints will update these when wiring the real backoffice tab (probably to a "Publish / Unpublish / Close" radio group). Not this phase.
