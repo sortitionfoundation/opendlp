@@ -14,6 +14,8 @@ from opendlp.adapters.url_generator import FlaskURLGenerator, URLGenerator
 from opendlp.config import SMTPEmailCfg, get_config, get_db_uri
 from opendlp.service_layer import unit_of_work
 
+_session_factory_cache: dict[str, sessionmaker] = {}
+
 
 def bootstrap_session_factory(
     start_orm: bool = True,
@@ -23,9 +25,28 @@ def bootstrap_session_factory(
         database.start_mappers()
 
     if session_factory is None:
-        session_factory = database.create_session_factory(get_db_uri())
+        db_uri = get_db_uri()
+        cached = _session_factory_cache.get(db_uri)
+        if cached is None:
+            cached = database.create_session_factory(db_uri)
+            _session_factory_cache[db_uri] = cached
+        session_factory = cached
 
     return session_factory
+
+
+def dispose_cached_engines() -> None:
+    """Dispose all engines cached by ``bootstrap_session_factory`` and clear the cache.
+
+    Call this from post-fork hooks (Celery ``worker_process_init``, gunicorn
+    ``post_fork``). SQLAlchemy connection pools must not be shared across a
+    fork: the child inherits the parent's open file descriptors, so parent
+    and children would race on the same TCP sockets. After disposal each
+    child rebuilds its own pool on first use.
+    """
+    for factory in _session_factory_cache.values():
+        factory.kw["bind"].dispose()
+    _session_factory_cache.clear()
 
 
 def bootstrap(
