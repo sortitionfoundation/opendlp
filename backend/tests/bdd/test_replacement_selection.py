@@ -1,6 +1,7 @@
 """ABOUTME: BDD tests for Replacement Selection Modal
 ABOUTME: Tests the replacement selection workflow from the selection page"""
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -196,14 +197,23 @@ def user_clicks_close(admin_logged_in_page: Page):
     page.wait_for_load_state()
 
 
-@when("the user clicks Re-check Spreadsheet")
-def user_clicks_recheck(admin_logged_in_page: Page):
-    """Click the Re-check Spreadsheet button in the modal."""
+@when("the user clicks Re-check Spreadsheet", target_fixture="previous_replacement_run_id")
+def user_clicks_recheck(admin_logged_in_page: Page) -> str:
+    """Click the Re-check Spreadsheet button in the modal.
+
+    Returns the ``current_replacement`` run_id from the URL before the click so
+    follow-up steps can confirm a new task was started.
+    """
     page = admin_logged_in_page
+    match = re.search(r"current_replacement=([0-9a-fA-F-]+)", page.url)
+    assert match is not None, f"expected current_replacement in URL, got {page.url}"
+    old_run_id = match.group(1)
+
     modal = page.locator("#replacement-modal")
     btn = modal.get_by_role("button", name="Re-check Spreadsheet")
     expect(btn).to_be_visible()
     btn.click()
+    return old_run_id
 
 
 # =============================================================================
@@ -370,21 +380,31 @@ def modal_cannot_close_via_backdrop(admin_logged_in_page: Page):
 
 
 @then("a new load task starts")
-def new_load_task_starts(admin_logged_in_page: Page):
-    """Verify a new load task has started."""
+def new_load_task_starts(admin_logged_in_page: Page, previous_replacement_run_id: str):
+    """Verify a new load task has started by waiting for the URL to point to a new run.
+
+    The task itself can complete in <50ms once SQLAlchemy engines are cached, so we
+    cannot rely on catching the spinner. Instead we verify the redirect chain has
+    landed on a different ``current_replacement`` than before the click.
+    """
     page = admin_logged_in_page
-    modal = page.locator("#replacement-modal")
-    # Should see the status change or spinner appear
-    spinner = modal.locator(".animate-spin")
-    expect(spinner.first).to_be_visible()
+    expect(page).not_to_have_url(re.compile(rf"current_replacement={previous_replacement_run_id}"))
+    expect(page).to_have_url(re.compile(r"current_replacement=[0-9a-fA-F-]+"))
 
 
-@then("the modal shows loading state")
-def modal_shows_loading(admin_logged_in_page: Page):
-    """Verify modal shows loading state."""
+@then("the modal shows the number to select")
+def modal_shows_number_to_select(admin_logged_in_page: Page):
+    """Verify the modal eventually settles on the loaded form for the new task.
+
+    The task can complete in ~25ms with warm engine caches, so the spinner may
+    never be visible. We instead wait for the eventual loaded state — the modal
+    keeps polling whenever features aren't yet in Celery's result backend, so
+    this reliably converges on the number input regardless of the task/render
+    race.
+    """
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    expect(modal.get_by_text("Processing...")).to_be_visible()
+    expect(modal.get_by_label("Number of people to select")).to_be_visible(timeout=30_000)
 
 
 @then("the selection history shows the replacement task")
