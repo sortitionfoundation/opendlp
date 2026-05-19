@@ -2,7 +2,7 @@
 ABOUTME: Tests that domain objects can be saved, retrieved, and relationships work correctly"""
 
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from requests.structures import CaseInsensitiveDict
@@ -14,7 +14,14 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml, RegistrationPageSource
+from opendlp.domain.registration_page import (
+    RegistrationPage,
+    RegistrationPageAction,
+    RegistrationPageActivity,
+    RegistrationPageHtml,
+    RegistrationPageSource,
+    RegistrationPageStatus,
+)
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
@@ -1121,7 +1128,8 @@ class TestRegistrationPageORM:
         assert retrieved_page.assembly_id == assembly.id
         assert retrieved_page.url_slug == "reg-page-assembly"
         assert retrieved_page.short_url_slug == "rpa"
-        assert retrieved_page.is_published is False
+        assert retrieved_page.status is RegistrationPageStatus.DRAFT
+        assert retrieved_page.activity == []
         assert retrieved_page.source_type is RegistrationPageSource.HTML
         assert retrieved_page.thank_you_html == "<p>thanks</p>"
         assert retrieved_page.preview_token == page.preview_token
@@ -1131,6 +1139,41 @@ class TestRegistrationPageORM:
         retrieved_html = postgres_session.query(RegistrationPageHtml).filter_by(registration_page_id=page.id).first()
         assert retrieved_html is not None
         assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_action }}</form>"
+
+    def test_registration_page_activity_round_trips(self, postgres_session: Session):
+        """The activity JSON column round-trips RegistrationPageActivity dataclasses."""
+        assembly = Assembly(title="Activity Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+
+        author_id = uuid.uuid4()
+        when = datetime.now(UTC)
+        page = RegistrationPage(
+            assembly_id=assembly.id,
+            url_slug="activity-assembly",
+            status=RegistrationPageStatus.PUBLISHED,
+            activity=[
+                RegistrationPageActivity(
+                    text="initial",
+                    author_id=author_id,
+                    created_at=when,
+                    action=RegistrationPageAction.PUBLISH,
+                ),
+            ],
+        )
+        postgres_session.add(page)
+        postgres_session.commit()
+        postgres_session.expire_all()
+
+        retrieved = postgres_session.query(RegistrationPage).filter_by(id=page.id).first()
+        assert retrieved is not None
+        assert retrieved.status is RegistrationPageStatus.PUBLISHED
+        assert len(retrieved.activity) == 1
+        entry = retrieved.activity[0]
+        assert entry.action is RegistrationPageAction.PUBLISH
+        assert entry.author_id == author_id
+        assert entry.text == "initial"
+        assert entry.created_at.tzinfo is not None
 
     def test_registration_page_cascade_delete_with_assembly(self, postgres_session: Session):
         """Deleting an assembly cascades to its registration page and HTML source."""

@@ -11,9 +11,12 @@ from opendlp.domain.registration_page import (
     REQUIRED_TOKENS,
     HtmlSource,
     RegistrationPage,
+    RegistrationPageAction,
+    RegistrationPageActivity,
     RegistrationPageHtml,
     RegistrationPageNotReady,
     RegistrationPageSource,
+    RegistrationPageStatus,
     RenderContext,
     generate_starter_form_html,
 )
@@ -66,9 +69,75 @@ class _StubSource:
         return list(self._problems)
 
 
+def _published_page(url_slug: str = "a-page") -> RegistrationPage:
+    page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug=url_slug)
+    page.publish(_StubSource(), author_id=uuid.uuid4())
+    return page
+
+
 class TestRegistrationPageSource:
     def test_registration_page_source_has_html_member(self):
         assert RegistrationPageSource.HTML.value == "html"
+
+
+class TestRegistrationPageStatus:
+    def test_members_are_draft_published_closed(self):
+        assert RegistrationPageStatus.DRAFT.value == "DRAFT"
+        assert RegistrationPageStatus.PUBLISHED.value == "PUBLISHED"
+        assert RegistrationPageStatus.CLOSED.value == "CLOSED"
+        assert set(RegistrationPageStatus) == {
+            RegistrationPageStatus.DRAFT,
+            RegistrationPageStatus.PUBLISHED,
+            RegistrationPageStatus.CLOSED,
+        }
+
+
+class TestRegistrationPageAction:
+    def test_members(self):
+        names = {a.value for a in RegistrationPageAction}
+        assert names == {"CREATE", "EDIT", "PUBLISH", "UNPUBLISH", "CLOSE", "REOPEN", "REGENERATE_TOKEN"}
+
+
+class TestRegistrationPageActivity:
+    def test_init_with_explicit_fields(self):
+        author_id = uuid.uuid4()
+        when = datetime.now(UTC)
+        entry = RegistrationPageActivity(
+            text="hello", author_id=author_id, created_at=when, action=RegistrationPageAction.PUBLISH
+        )
+        assert entry.text == "hello"
+        assert entry.author_id == author_id
+        assert entry.created_at == when
+        assert entry.action is RegistrationPageAction.PUBLISH
+
+    def test_action_defaults_to_edit(self):
+        entry = RegistrationPageActivity(text="x", author_id=uuid.uuid4(), created_at=datetime.now(UTC))
+        assert entry.action is RegistrationPageAction.EDIT
+
+    def test_to_dict_round_trip(self):
+        original = RegistrationPageActivity(
+            text="hi",
+            author_id=uuid.uuid4(),
+            created_at=datetime.now(UTC),
+            action=RegistrationPageAction.CLOSE,
+        )
+        data = original.to_dict()
+        assert isinstance(data["author_id"], str)
+        assert isinstance(data["created_at"], str)
+        assert data["action"] == "CLOSE"
+
+        restored = RegistrationPageActivity.from_dict(data)
+        assert restored == original
+
+    def test_from_dict_with_unknown_action_falls_back_to_edit(self):
+        data = {
+            "text": "x",
+            "author_id": str(uuid.uuid4()),
+            "created_at": datetime.now(UTC).isoformat(),
+            "action": "BANANA",
+        }
+        entry = RegistrationPageActivity.from_dict(data)
+        assert entry.action is RegistrationPageAction.EDIT
 
 
 class TestDefaultThankYouHtml:
@@ -172,7 +241,8 @@ class TestRegistrationPageInit:
 
     def test_init_defaults(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
-        assert page.is_published is False
+        assert page.status is RegistrationPageStatus.DRAFT
+        assert page.activity == []
         assert page.source_type is RegistrationPageSource.HTML
         assert page.url_slug == ""
         assert page.short_url_slug == ""
@@ -243,10 +313,29 @@ class TestUpdateSlugs:
         with pytest.raises(ValueError):
             page.update_slugs(url_slug="Bad Slug")
 
-    def test_update_slugs_raises_when_published(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page", is_published=True)
+    def test_update_slugs_raises_after_first_publish(self):
+        page = _published_page("a-page")
         with pytest.raises(ValueError, match="published"):
             page.update_slugs(url_slug="new-page")
+
+    def test_update_slugs_allowed_when_never_published_even_if_status_draft(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.update_slugs(url_slug="a-page")
+        assert page.url_slug == "a-page"
+
+    def test_update_slugs_still_raises_in_closed_state(self):
+        page = _published_page("a-page")
+        page.close(author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.CLOSED
+        with pytest.raises(ValueError, match="published"):
+            page.update_slugs(url_slug="changed")
+
+    def test_update_slugs_still_raises_after_unpublish(self):
+        page = _published_page("a-page")
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.DRAFT
+        with pytest.raises(ValueError, match="published"):
+            page.update_slugs(url_slug="changed")
 
     def test_update_slugs_bumps_updated_at(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
@@ -283,55 +372,243 @@ class TestPublishAndReadiness:
         problems = page.readiness_problems(_StubSource(["bad html"]))
         assert "bad html" in problems
 
-    def test_publish_sets_is_published(self):
+    def test_publish_sets_status_published(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
         page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
-        page.publish(_StubSource())
-        assert page.is_published is True
+        page.publish(_StubSource(), author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.PUBLISHED
         assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_publish_appends_publish_activity(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
+        author_id = uuid.uuid4()
+        page.publish(_StubSource(), author_id=author_id, text="going live")
+        assert len(page.activity) == 1
+        entry = page.activity[0]
+        assert entry.action is RegistrationPageAction.PUBLISH
+        assert entry.author_id == author_id
+        assert entry.text == "going live"
+
+    def test_publish_text_default_is_empty_string(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
+        page.publish(_StubSource(), author_id=uuid.uuid4())
+        assert page.activity[0].text == ""
 
     def test_publish_raises_when_not_ready(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
         with pytest.raises(RegistrationPageNotReady) as exc_info:
-            page.publish(_StubSource(["bad html"]))
+            page.publish(_StubSource(["bad html"]), author_id=uuid.uuid4())
         assert "bad html" in exc_info.value.problems
-        assert page.is_published is False
+        assert page.status is RegistrationPageStatus.DRAFT
+        assert page.activity == []
 
-    def test_unpublish_clears_is_published(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page", is_published=True)
+    def test_publish_from_published_raises(self):
+        page = _published_page()
+        with pytest.raises(ValueError, match="PUBLISHED"):
+            page.publish(_StubSource(), author_id=uuid.uuid4())
+
+    def test_publish_from_closed_raises(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        with pytest.raises(ValueError, match="CLOSED"):
+            page.publish(_StubSource(), author_id=uuid.uuid4())
+
+    def test_unpublish_sets_status_draft(self):
+        page = _published_page()
         token_before = page.preview_token
         page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
-        page.unpublish()
-        assert page.is_published is False
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.DRAFT
         assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
         assert page.preview_token == token_before
+
+    def test_unpublish_appends_unpublish_activity(self):
+        page = _published_page()
+        author_id = uuid.uuid4()
+        page.unpublish(author_id=author_id, text="typo")
+        last = page.activity[-1]
+        assert last.action is RegistrationPageAction.UNPUBLISH
+        assert last.author_id == author_id
+        assert last.text == "typo"
+
+    def test_unpublish_from_draft_raises(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        with pytest.raises(ValueError, match="DRAFT"):
+            page.unpublish(author_id=uuid.uuid4())
+
+    def test_unpublish_from_closed_raises(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        with pytest.raises(ValueError, match="CLOSED"):
+            page.unpublish(author_id=uuid.uuid4())
 
     def test_publish_with_real_html_source(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
         html = RegistrationPageHtml(registration_page_id=page.id, form_html=READY_HTML)
-        page.publish(html)
-        assert page.is_published is True
+        page.publish(html, author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.PUBLISHED
+
+
+class TestCloseAndReopen:
+    def test_close_from_published_sets_status_closed(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.CLOSED
+
+    def test_close_appends_close_activity(self):
+        page = _published_page()
+        author_id = uuid.uuid4()
+        page.close(author_id=author_id, text="sortition done")
+        last = page.activity[-1]
+        assert last.action is RegistrationPageAction.CLOSE
+        assert last.author_id == author_id
+        assert last.text == "sortition done"
+
+    def test_close_from_draft_raises(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        with pytest.raises(ValueError, match="DRAFT"):
+            page.close(author_id=uuid.uuid4())
+
+    def test_close_from_closed_raises(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        with pytest.raises(ValueError, match="CLOSED"):
+            page.close(author_id=uuid.uuid4())
+
+    def test_reopen_from_closed_sets_status_published(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        page.reopen(_StubSource(), author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.PUBLISHED
+
+    def test_reopen_appends_reopen_activity(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        author_id = uuid.uuid4()
+        page.reopen(_StubSource(), author_id=author_id, text="resuming")
+        last = page.activity[-1]
+        assert last.action is RegistrationPageAction.REOPEN
+        assert last.author_id == author_id
+        assert last.text == "resuming"
+
+    def test_reopen_runs_readiness_check(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        with pytest.raises(RegistrationPageNotReady):
+            page.reopen(_StubSource(["bad html"]), author_id=uuid.uuid4())
+        assert page.status is RegistrationPageStatus.CLOSED
+
+    def test_reopen_from_draft_raises(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
+        with pytest.raises(ValueError, match="DRAFT"):
+            page.reopen(_StubSource(), author_id=uuid.uuid4())
+
+    def test_reopen_from_published_raises(self):
+        page = _published_page()
+        with pytest.raises(ValueError, match="PUBLISHED"):
+            page.reopen(_StubSource(), author_id=uuid.uuid4())
+
+
+class TestHasEverBeenPublished:
+    def test_false_when_no_activity(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.has_ever_been_published() is False
+
+    def test_false_with_only_edit_activity(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.record_edit(uuid.uuid4(), "something")
+        assert page.has_ever_been_published() is False
+
+    def test_true_after_publish(self):
+        page = _published_page()
+        assert page.has_ever_been_published() is True
+
+    def test_true_after_publish_then_unpublish(self):
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.has_ever_been_published() is True
+
+    def test_true_after_publish_then_close(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        assert page.has_ever_been_published() is True
+
+
+class TestSlugsFrozen:
+    def test_unfrozen_initially(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.slugs_frozen is False
+
+    def test_frozen_after_publish(self):
+        page = _published_page()
+        assert page.slugs_frozen is True
+
+
+class TestRecordEdit:
+    def test_appends_one_entry(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        author_id = uuid.uuid4()
+        page.record_edit(author_id, "Updated form HTML")
+        assert len(page.activity) == 1
+        entry = page.activity[0]
+        assert entry.action is RegistrationPageAction.EDIT
+        assert entry.author_id == author_id
+        assert entry.text == "Updated form HTML"
+
+    def test_uses_list_reassignment(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        old = page.activity
+        page.record_edit(uuid.uuid4(), "foo")
+        assert page.activity is not old
+
+    def test_bumps_updated_at(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        page.record_edit(uuid.uuid4(), "foo")
+        assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+
+class TestRecordCreate:
+    def test_appends_create_entry(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        author_id = uuid.uuid4()
+        page.record_create(author_id)
+        entry = page.activity[0]
+        assert entry.action is RegistrationPageAction.CREATE
+        assert entry.author_id == author_id
+        assert entry.text
 
 
 class TestVisibilityAndPreviewToken:
     def test_is_visible_with_published_is_always_visible(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page", is_published=True)
+        page = _published_page()
         assert page.is_visible_with("") is True
         assert page.is_visible_with("anything") is True
 
-    def test_is_visible_with_unpublished_needs_matching_token(self):
+    def test_is_visible_with_draft_needs_matching_token(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), preview_token="secret")
         assert page.is_visible_with("secret") is True
         assert page.is_visible_with("wrong") is False
         assert page.is_visible_with("") is False
 
-    def test_regenerate_preview_token_changes_token(self):
+    def test_is_visible_with_closed_needs_matching_token(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        assert page.is_visible_with(page.preview_token) is True
+        assert page.is_visible_with("wrong") is False
+        assert page.is_visible_with("") is False
+
+    def test_regenerate_preview_token_changes_token_and_logs(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
         token_before = page.preview_token
         page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
-        page.regenerate_preview_token()
+        author_id = uuid.uuid4()
+        page.regenerate_preview_token(author_id=author_id)
         assert page.preview_token != token_before
         assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+        last = page.activity[-1]
+        assert last.action is RegistrationPageAction.REGENERATE_TOKEN
+        assert last.author_id == author_id
 
 
 class TestCreateDetachedCopyAndIdentity:
@@ -342,6 +619,7 @@ class TestCreateDetachedCopyAndIdentity:
             short_url_slug="ap",
             thank_you_html="<p>thanks</p>",
         )
+        page.record_create(uuid.uuid4())
         copy = page.create_detached_copy()
         assert copy is not page
         assert copy == page
@@ -351,6 +629,9 @@ class TestCreateDetachedCopyAndIdentity:
         assert copy.preview_token == page.preview_token
         assert copy.source_type == page.source_type
         assert copy.thank_you_html == page.thank_you_html
+        assert copy.status == page.status
+        assert copy.activity == page.activity
+        assert copy.activity is not page.activity
         assert copy.created_at == page.created_at
         assert copy.updated_at == page.updated_at
 

@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
@@ -31,12 +31,63 @@ class RegistrationPageSource(Enum):
     HTML = "html"
 
 
+class RegistrationPageStatus(Enum):
+    """Lifecycle state of a RegistrationPage."""
+
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
+    CLOSED = "CLOSED"
+
+
+class RegistrationPageAction(Enum):
+    """Type of action a RegistrationPageActivity records."""
+
+    CREATE = "CREATE"
+    EDIT = "EDIT"
+    PUBLISH = "PUBLISH"
+    UNPUBLISH = "UNPUBLISH"
+    CLOSE = "CLOSE"
+    REOPEN = "REOPEN"
+    REGENERATE_TOKEN = "REGENERATE_TOKEN"  # noqa: S105 — action name, not a credential
+
+
 class RegistrationPageNotReady(Exception):
     """Raised when a registration page is not ready to be published."""
 
     def __init__(self, problems: list[str]):
         self.problems = problems
         super().__init__("; ".join(problems))
+
+
+@dataclass(frozen=True)
+class RegistrationPageActivity:
+    """A timestamped entry in a RegistrationPage's audit log."""
+
+    text: str
+    author_id: uuid.UUID
+    created_at: datetime
+    action: RegistrationPageAction = RegistrationPageAction.EDIT
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "text": self.text,
+            "author_id": str(self.author_id),
+            "created_at": self.created_at.isoformat(),
+            "action": self.action.value,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RegistrationPageActivity":
+        try:
+            action = RegistrationPageAction(data.get("action", RegistrationPageAction.EDIT.value))
+        except ValueError:
+            action = RegistrationPageAction.EDIT
+        return cls(
+            text=data["text"],
+            author_id=uuid.UUID(data["author_id"]),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            action=action,
+        )
 
 
 @dataclass(frozen=True)
@@ -81,10 +132,11 @@ class RegistrationPage:
         assembly_id: uuid.UUID,
         url_slug: str = "",
         short_url_slug: str = "",
-        is_published: bool = False,
+        status: RegistrationPageStatus = RegistrationPageStatus.DRAFT,
         preview_token: str = "",
         source_type: RegistrationPageSource = RegistrationPageSource.HTML,
         thank_you_html: str = "",
+        activity: list[RegistrationPageActivity] | None = None,
         registration_page_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -94,17 +146,25 @@ class RegistrationPage:
         self.assembly_id = assembly_id
         self.url_slug = _validated_slug(url_slug, field="url_slug")
         self.short_url_slug = _validated_slug(short_url_slug, field="short_url_slug")
-        self.is_published = is_published
+        self.status = status
         self.preview_token = preview_token or secrets.token_urlsafe(32)
         self.source_type = source_type
         self.thank_you_html = thank_you_html
+        self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
         self.created_at = created_at or now
         self.updated_at = updated_at or now
 
+    def has_ever_been_published(self) -> bool:
+        return any(a.action == RegistrationPageAction.PUBLISH for a in self.activity)
+
+    @property
+    def slugs_frozen(self) -> bool:
+        return self.has_ever_been_published()
+
     def update_slugs(self, url_slug: str | None = None, short_url_slug: str | None = None) -> None:
-        """Update the URL slugs. Raises if the page is published (slugs are frozen)."""
-        if self.is_published:
-            raise ValueError("Cannot change slugs while the registration page is published")
+        """Update the URL slugs. Raises once the page has ever been published."""
+        if self.slugs_frozen:
+            raise ValueError("Cannot change slugs once the registration page has been published")
         if url_slug is not None:
             self.url_slug = _validated_slug(url_slug, field="url_slug")
         if short_url_slug is not None:
@@ -123,24 +183,54 @@ class RegistrationPage:
         problems.extend(source.readiness_problems())
         return problems
 
-    def publish(self, source: HtmlSource) -> None:
+    def _append_activity(self, action: RegistrationPageAction, author_id: uuid.UUID, text: str) -> None:
+        now = datetime.now(UTC)
+        entry = RegistrationPageActivity(text=text, author_id=author_id, created_at=now, action=action)
+        self.activity = [*self.activity, entry]
+        self.updated_at = now
+
+    def record_create(self, author_id: uuid.UUID) -> None:
+        self._append_activity(RegistrationPageAction.CREATE, author_id, "Registration page created")
+
+    def record_edit(self, author_id: uuid.UUID, text: str) -> None:
+        self._append_activity(RegistrationPageAction.EDIT, author_id, text)
+
+    def publish(self, source: HtmlSource, author_id: uuid.UUID, text: str = "") -> None:
+        if self.status != RegistrationPageStatus.DRAFT:
+            raise ValueError(f"Cannot publish a registration page in status {self.status.value}")
         problems = self.readiness_problems(source)
         if problems:
             raise RegistrationPageNotReady(problems)
-        self.is_published = True
-        self.updated_at = datetime.now(UTC)
+        self.status = RegistrationPageStatus.PUBLISHED
+        self._append_activity(RegistrationPageAction.PUBLISH, author_id, text)
 
-    def unpublish(self) -> None:
-        self.is_published = False
-        self.updated_at = datetime.now(UTC)
+    def unpublish(self, author_id: uuid.UUID, text: str = "") -> None:
+        if self.status != RegistrationPageStatus.PUBLISHED:
+            raise ValueError(f"Cannot unpublish a registration page in status {self.status.value}")
+        self.status = RegistrationPageStatus.DRAFT
+        self._append_activity(RegistrationPageAction.UNPUBLISH, author_id, text)
 
-    def regenerate_preview_token(self) -> None:
+    def close(self, author_id: uuid.UUID, text: str = "") -> None:
+        if self.status != RegistrationPageStatus.PUBLISHED:
+            raise ValueError(f"Cannot close a registration page in status {self.status.value}")
+        self.status = RegistrationPageStatus.CLOSED
+        self._append_activity(RegistrationPageAction.CLOSE, author_id, text)
+
+    def reopen(self, source: HtmlSource, author_id: uuid.UUID, text: str = "") -> None:
+        if self.status != RegistrationPageStatus.CLOSED:
+            raise ValueError(f"Cannot reopen a registration page in status {self.status.value}")
+        problems = self.readiness_problems(source)
+        if problems:
+            raise RegistrationPageNotReady(problems)
+        self.status = RegistrationPageStatus.PUBLISHED
+        self._append_activity(RegistrationPageAction.REOPEN, author_id, text)
+
+    def regenerate_preview_token(self, author_id: uuid.UUID) -> None:
         self.preview_token = secrets.token_urlsafe(32)
-        self.updated_at = datetime.now(UTC)
+        self._append_activity(RegistrationPageAction.REGENERATE_TOKEN, author_id, "")
 
     def is_visible_with(self, token: str = "") -> bool:
-        """True if the page is published, or the token matches the preview token."""
-        if self.is_published:
+        if self.status == RegistrationPageStatus.PUBLISHED:
             return True
         return bool(token) and token == self.preview_token
 
@@ -150,10 +240,11 @@ class RegistrationPage:
             assembly_id=self.assembly_id,
             url_slug=self.url_slug,
             short_url_slug=self.short_url_slug,
-            is_published=self.is_published,
+            status=self.status,
             preview_token=self.preview_token,
             source_type=self.source_type,
             thank_you_html=self.thank_you_html,
+            activity=list(self.activity),
             registration_page_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

@@ -3,6 +3,7 @@ ABOUTME: Create/edit/publish the page in the backoffice, and resolve it for the 
 
 import uuid
 from dataclasses import dataclass
+from enum import Enum
 
 from opendlp.config import get_registration_form_html_max_bytes, get_registration_thank_you_html_max_bytes
 from opendlp.domain.registration_page import (
@@ -11,6 +12,7 @@ from opendlp.domain.registration_page import (
     RegistrationPage,
     RegistrationPageHtml,
     RegistrationPageSource,
+    RegistrationPageStatus,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 
@@ -74,6 +76,7 @@ def create_registration_page(
             source_type=source_type,
             thank_you_html=DEFAULT_THANK_YOU_HTML,
         )
+        page.record_create(user.id)
         uow.registration_pages.add(page)
         uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
         uow.commit()
@@ -107,6 +110,14 @@ def get_registration_page_with_source(
         return page.create_detached_copy(), source.create_detached_copy()
 
 
+def _describe_slug_change(field: str, before: str, after: str) -> str:
+    if after == "":
+        return f"Cleared {field} (was '{before}')"
+    if before == "":
+        return f"Set {field} to '{after}'"
+    return f"Changed {field} from '{before}' to '{after}'"
+
+
 def update_registration_page(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -115,7 +126,7 @@ def update_registration_page(
     url_slug: str | None = None,
     short_url_slug: str | None = None,
 ) -> RegistrationPage:
-    """Update the page's URL slugs. Raises if a slug is taken or the page is published."""
+    """Update the page's URL slugs. Raises if a slug is taken or the page has been published."""
     url_slug = url_slug.strip() if url_slug is not None else None
     short_url_slug = short_url_slug.strip() if short_url_slug is not None else None
     with uow:
@@ -143,7 +154,18 @@ def update_registration_page(
                     message=f"The slug '{short_url_slug}' is already in use by another registration page",
                 )
 
+        before_url = page.url_slug
+        before_short = page.short_url_slug
         page.update_slugs(url_slug=url_slug, short_url_slug=short_url_slug)
+
+        changes: list[str] = []
+        if url_slug is not None and page.url_slug != before_url:
+            changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
+        if short_url_slug is not None and page.short_url_slug != before_short:
+            changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
+        if changes:
+            page.record_edit(user.id, "; ".join(changes))
+
         uow.commit()
         return page.create_detached_copy()
 
@@ -161,7 +183,9 @@ def update_thank_you_html(
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
         _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), "thank-you HTML")
-        page.update_thank_you_html(thank_you_html)
+        if page.thank_you_html != thank_you_html:
+            page.update_thank_you_html(thank_you_html)
+            page.record_edit(user.id, "Updated thank-you HTML")
         uow.commit()
         return page.create_detached_copy()
 
@@ -180,12 +204,16 @@ def update_registration_page_html(
 
         _check_size(form_html, get_registration_form_html_max_bytes(), "form HTML")
         source = _load_html_source(uow, page)
-        source.update_html(form_html)
+        if source.form_html != form_html:
+            source.update_html(form_html)
+            page.record_edit(user.id, "Updated form HTML")
         uow.commit()
         return source.create_detached_copy()
 
 
-def publish_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> RegistrationPage:
+def publish_registration_page(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, text: str = ""
+) -> RegistrationPage:
     """Publish the page. Raises RegistrationPageNotReady if it is not ready."""
     with uow:
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
@@ -195,15 +223,15 @@ def publish_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, assem
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
-        page.publish(_load_html_source(uow, page))
+        page.publish(_load_html_source(uow, page), author_id=user.id, text=text)
         uow.commit()
         return page.create_detached_copy()
 
 
 def unpublish_registration_page(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
-    """Unpublish the page."""
+    """Move the page back to draft. Used for 'I made a mistake, want to fix and republish'."""
     with uow:
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
@@ -212,7 +240,41 @@ def unpublish_registration_page(
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
-        page.unpublish()
+        page.unpublish(author_id=user.id, text=text)
+        uow.commit()
+        return page.create_detached_copy()
+
+
+def close_registration_page(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, text: str = ""
+) -> RegistrationPage:
+    """Close the page (registration period over)."""
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="close registration page", required_role=_MANAGE_ROLE)
+        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        if not page:
+            raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
+
+        page.close(author_id=user.id, text=text)
+        uow.commit()
+        return page.create_detached_copy()
+
+
+def reopen_registration_page(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, text: str = ""
+) -> RegistrationPage:
+    """Reopen a closed page. Runs the same readiness check as publish."""
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="reopen registration page", required_role=_MANAGE_ROLE)
+        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        if not page:
+            raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
+
+        page.reopen(_load_html_source(uow, page), author_id=user.id, text=text)
         uow.commit()
         return page.create_detached_copy()
 
@@ -227,7 +289,7 @@ def regenerate_preview_token(uow: AbstractUnitOfWork, user_id: uuid.UUID, assemb
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
-        page.regenerate_preview_token()
+        page.regenerate_preview_token(author_id=user.id)
         uow.commit()
         return page.create_detached_copy()
 
@@ -246,24 +308,48 @@ def find_registration_page_by_short_url_slug(uow: AbstractUnitOfWork, short_url_
         return page.create_detached_copy() if page else None
 
 
-@dataclass
+class RegistrationPageVisibilityState(Enum):
+    """Public-route response classification.
+
+    LIVE        — render the form (status PUBLISHED).
+    PREVIEW     — render the form with a preview banner (DRAFT or CLOSED + valid token).
+    CLOSED      — 302 to /registration-closed.
+    NOT_FOUND   — 404 (page absent, or DRAFT without a valid preview token).
+    """
+
+    LIVE = "LIVE"
+    PREVIEW = "PREVIEW"
+    CLOSED = "CLOSED"
+    NOT_FOUND = "NOT_FOUND"
+
+
+@dataclass(frozen=True)
 class RegistrationPageVisibility:
     """The outcome of resolving whether a page should be shown to a public visitor."""
 
     page: RegistrationPage | None
-    is_visible: bool
-    is_preview: bool
+    state: RegistrationPageVisibilityState
+
+    @property
+    def is_visible(self) -> bool:
+        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.PREVIEW)
+
+    @property
+    def is_preview(self) -> bool:
+        return self.state == RegistrationPageVisibilityState.PREVIEW
 
 
 def resolve_visibility(page: RegistrationPage | None, preview_token: str = "") -> RegistrationPageVisibility:
-    """Pure decision: is this page visible, and is it being shown only via a preview token?"""
+    """Pure decision: which public-route response does this page deserve?"""
     if page is None:
-        return RegistrationPageVisibility(page=None, is_visible=False, is_preview=False)
-    if page.is_published:
-        return RegistrationPageVisibility(page=page, is_visible=True, is_preview=False)
+        return RegistrationPageVisibility(page=None, state=RegistrationPageVisibilityState.NOT_FOUND)
+    if page.status == RegistrationPageStatus.PUBLISHED:
+        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.LIVE)
     if preview_token and preview_token == page.preview_token:
-        return RegistrationPageVisibility(page=page, is_visible=True, is_preview=True)
-    return RegistrationPageVisibility(page=page, is_visible=False, is_preview=False)
+        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.PREVIEW)
+    if page.status == RegistrationPageStatus.CLOSED:
+        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.CLOSED)
+    return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.NOT_FOUND)
 
 
 def get_page_and_source_for_render(uow: AbstractUnitOfWork, page: RegistrationPage) -> HtmlSource:

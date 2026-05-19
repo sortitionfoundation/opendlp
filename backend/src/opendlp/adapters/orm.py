@@ -27,7 +27,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
-from opendlp.domain.registration_page import RegistrationPageSource
+from opendlp.domain.registration_page import RegistrationPageActivity, RegistrationPageSource, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType, RespondentFieldGroup
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
@@ -188,6 +188,25 @@ class RespondentCommentListJSON(TypeDecorator):
         if not value:
             return []
         return [RespondentComment.from_dict(item) if isinstance(item, dict) else item for item in value]
+
+
+class RegistrationPageActivityListJSON(TypeDecorator):
+    """Custom type for storing a list of RegistrationPageActivity dataclasses as JSON."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [a.to_dict() if isinstance(a, RegistrationPageActivity) else a for a in value]
+        return value
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> list[RegistrationPageActivity]:
+        if not value:
+            return []
+        return [RegistrationPageActivity.from_dict(item) if isinstance(item, dict) else item for item in value]
 
 
 class ChoiceOptionListJSON(TypeDecorator):
@@ -557,10 +576,17 @@ registration_pages = Table(
     ),
     Column("url_slug", String(100), nullable=False, default=""),
     Column("short_url_slug", String(30), nullable=False, default=""),
-    Column("is_published", Boolean, nullable=False, default=False, index=True),
+    Column(
+        "status",
+        EnumAsString(RegistrationPageStatus, 32),
+        nullable=False,
+        default=RegistrationPageStatus.DRAFT,
+        index=True,
+    ),
     Column("preview_token", String(64), nullable=False),
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
+    Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Partial unique indexes — only enforce uniqueness when the slug is set.

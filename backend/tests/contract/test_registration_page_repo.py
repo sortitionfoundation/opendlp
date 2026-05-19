@@ -4,9 +4,15 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.registration_page import RegistrationPage
+from opendlp.domain.registration_page import (
+    RegistrationPage,
+    RegistrationPageAction,
+    RegistrationPageActivity,
+    RegistrationPageStatus,
+)
 from tests.contract.conftest import ContractBackend
 
 
@@ -38,6 +44,31 @@ class TestAddAndGet:
         ids = {p.id for p in registration_page_backend.repo.all()}
         assert p1.id in ids
         assert p2.id in ids
+
+    def test_status_and_activity_round_trip(self, registration_page_backend: ContractBackend):
+        author_id = uuid.uuid4()
+        page = _add_page(
+            registration_page_backend,
+            url_slug="round-trip",
+            status=RegistrationPageStatus.PUBLISHED,
+            activity=[
+                RegistrationPageActivity(
+                    text="initial publish",
+                    author_id=author_id,
+                    created_at=datetime.now(UTC),
+                    action=RegistrationPageAction.PUBLISH,
+                ),
+            ],
+        )
+
+        retrieved = registration_page_backend.repo.get(page.id)
+        assert retrieved is not None
+        assert retrieved.status is RegistrationPageStatus.PUBLISHED
+        assert len(retrieved.activity) == 1
+        entry = retrieved.activity[0]
+        assert entry.action is RegistrationPageAction.PUBLISH
+        assert entry.author_id == author_id
+        assert entry.text == "initial publish"
 
 
 class TestGetByAssemblyId:
