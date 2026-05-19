@@ -12,8 +12,9 @@ ABOUTME: Reusable form content for creating and editing assemblies
     - form: The WTForms form object (CreateAssemblyForm or EditAssemblyForm)
     - submit_label: Text for the submit button
     - cancel_url: URL for the cancel button
+    - extra_fields: Optional block for additional fields (use {% call %} to pass content)
 #}
-{% macro assembly_form(form, submit_label, cancel_url) %}
+{% macro assembly_form(form, submit_label, cancel_url, extra_fields=none) %}
     {# Error Summary #}
     {% if form.errors %}
         <div class="rounded-lg p-6 mb-8" style="background-color: var(--color-error-background, #fef2f2); border: 1px solid var(--color-primary-action);">
@@ -82,6 +83,11 @@ ABOUTME: Reusable form content for creating and editing assemblies
             classes="max-w-xs",
             attrs='min="0"'
             ) }}
+
+            {# Extra fields slot - allows caller to inject additional fields #}
+            {% if caller is defined %}
+                {{ caller() }}
+            {% endif %}
         </div>
 
         {# Form Actions #}

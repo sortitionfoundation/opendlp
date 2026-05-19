@@ -154,6 +154,16 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.args.get("source", ""),
         )
 
+        # TODO: Get registration page data from service layer when available
+        # registration_page = get_registration_page(uow, assembly_id)
+        registration_page = None  # Placeholder until service layer is ready
+
+        # Generate QR code for the short URL if registration page has a short slug
+        qr_code_data_url = None
+        if registration_page and registration_page.short_url_slug:
+            short_url = request.host_url + "r/" + registration_page.short_url_slug
+            qr_code_data_url = generate_qr_code_base64(short_url)
+
         return render_template(
             "backoffice/assembly_details.html",
             assembly=nav.assembly,
@@ -162,6 +172,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            registration_page=registration_page,
+            qr_code_data_url=qr_code_data_url,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -189,8 +201,16 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         form = EditAssemblyForm(obj=assembly)
 
+        # TODO: Get registration page data from service layer when available
+        # registration_page = get_registration_page(uow, assembly_id)
+        registration_page = None  # Placeholder until service layer is ready
+
         if form.validate_on_submit():
             try:
+                # Extract URL slug data from form (not part of WTForms, added as extra fields)
+                url_slug = request.form.get("url_slug", "").strip()
+                short_url_slug = request.form.get("short_url_slug", "").strip()
+
                 with uow:
                     updated_assembly = update_assembly(
                         uow=uow,
@@ -200,6 +220,15 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         question=form.question.data or "",
                         first_assembly_date=form.first_assembly_date.data,
                         number_to_select=form.number_to_select.data,
+                    )
+
+                # TODO: Save URL slugs via registration page service when available
+                # save_registration_page_urls(uow, assembly_id, url_slug, short_url_slug)
+                if url_slug or short_url_slug:
+                    current_app.logger.info(
+                        f"Registration URL slugs for assembly {assembly_id}: "
+                        f"url_slug={url_slug}, short_url_slug={short_url_slug} "
+                        "(not persisted - service layer not yet implemented)"
                     )
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
@@ -225,6 +254,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "backoffice/edit_assembly.html",
             form=form,
             assembly=assembly,
+            registration_page=registration_page,
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")

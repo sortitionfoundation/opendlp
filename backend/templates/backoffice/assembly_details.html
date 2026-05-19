@@ -5,7 +5,51 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{#
+Component: Read-only URL Display
+A read-only URL display with clickable link and copy button.
+
+Args:
+    label: Label text
+    hint: Help text below label
+    url: The full URL to display
+#}
+{% macro readonly_url_display(label, hint, url) %}
+    <div class="flex flex-col gap-1.5" x-data="{ copied: false }">
+        <span class="text-label-lg" style="color: var(--color-headings);">
+            {{ label }}
+        </span>
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+        <div class="flex items-center gap-3">
+            <a href="{{ url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="text-body-md underline break-all"
+               style="color: var(--color-link-text);">
+                {{ url }}
+            </a>
+            <button type="button"
+                    class="flex-shrink-0 p-2 rounded transition-colors duration-150 hover:opacity-70"
+                    style="color: var(--color-secondary-text);"
+                    @click="navigator.clipboard.writeText('{{ url }}').then(function() { copied = true; setTimeout(function() { copied = false; }, 2000); })"
+                    :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy URL to clipboard') }}'">
+                {# Copy icon (when not copied) #}
+                <svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                {# Checkmark icon (when copied) #}
+                <svg x-show="copied" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--color-success-text);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+{% endmacro %}
 
 {% block title %}{{ assembly.title }} - Assembly{% endblock %}
 
@@ -37,61 +81,136 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
     {# Assembly Question Section #}
     {% if assembly.question %}
-        <section class="mb-8">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assembly Question") }}</h2>
-            <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
-        </section>
+        <div class="mb-8">
+            {% call section() %}
+                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assembly Question") }}</h2>
+                <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
+            {% endcall %}
+        </div>
     {% endif %}
 
     {# Assembly Details Summary #}
-    <section class="mb-8">
-        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
-        <dl class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            {# Status #}
-            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                        {{ assembly.status.value }}
-                    </span>
-                </dd>
-            </div>
-
-            {# First Assembly Date #}
-            {% if assembly.first_assembly_date %}
+    <div class="mb-8">
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
+            <dl>
+                {# Status #}
                 <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
+                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.first_assembly_date|dateformat('long') }}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
+                            {{ assembly.status.value }}
+                        </span>
                     </dd>
                 </div>
+
+                {# First Assembly Date #}
+                {% if assembly.first_assembly_date %}
+                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                        <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
+                        <dd class="text-body-md" style="color: var(--color-body-text);">
+                            {{ assembly.first_assembly_date|dateformat('long') }}
+                        </dd>
+                    </div>
+                {% endif %}
+
+                {# Number to Select #}
+                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Number to Select") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        {{ assembly.number_to_select }}
+                    </dd>
+                </div>
+
+                {# Created #}
+                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        {{ assembly.created_at|dateformat('long') }}
+                    </dd>
+                </div>
+
+                {# Last Updated #}
+                <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
+                    <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        {{ assembly.updated_at|datetimeformat('long') }}
+                    </dd>
+                </div>
+            </dl>
+        {% endcall %}
+    </div>
+
+    {# Registration URLs Section #}
+    <div class="mb-8">
+        {% call section() %}
+            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration URLs") }}</h2>
+
+            {% if registration_page and registration_page.url_slug %}
+                <div class="space-y-6 max-w-2xl">
+                    {# Registration URL (read-only) #}
+                    {{ readonly_url_display(
+                    label=_("Registration URL"),
+                    hint=_("The URL for your registration form"),
+                    url=request.host_url ~ "register/" ~ registration_page.url_slug
+                    ) }}
+
+                    {# Short URL (read-only) - only shown if configured #}
+                    {% if registration_page.short_url_slug %}
+                        {{ readonly_url_display(
+                        label=_("Short URL"),
+                        hint=_("A shorter URL for QR codes and paper invitations"),
+                        url=request.host_url ~ "r/" ~ registration_page.short_url_slug
+                        ) }}
+                    {% endif %}
+
+                    {# QR Code - only shown when short URL is configured #}
+                    {% if qr_code_data_url %}
+                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                            <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("QR Code") }}</h3>
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("Use this QR code on paper invitations") }}
+                            </p>
+
+                            <div class="flex items-start gap-6">
+                                {# QR Code Image #}
+                                <div class="flex-shrink-0 p-4 rounded-lg" style="background-color: white; border: 1px solid var(--color-borders-dividers);">
+                                    <img src="{{ qr_code_data_url }}"
+                                         alt="{{ _('QR code for registration page') }}"
+                                         class="w-40 h-40" />
+                                </div>
+
+                                {# Download Button #}
+                                <div class="flex flex-col gap-2">
+                                    <a href="{{ url_for('backoffice.download_registration_qr_code', assembly_id=assembly.id) }}"
+                                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
+                                       style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
+                                       download>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        {{ _("Download QR Code") }}
+                                    </a>
+                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                        {{ _("PNG format, 400x400 pixels") }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">
+                    {{ _("No registration URLs configured yet.") }}
+                    <a href="{{ url_for('backoffice.edit_assembly', assembly_id=assembly.id) }}"
+                       class="underline"
+                       style="color: var(--color-link-text);">
+                        {{ _("Edit assembly to add URLs") }}
+                    </a>
+                </p>
             {% endif %}
-
-            {# Number to Select #}
-            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Number to Select") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">
-                    {{ assembly.number_to_select }}
-                </dd>
-            </div>
-
-            {# Created #}
-            <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">
-                    {{ assembly.created_at|dateformat('long') }}
-                </dd>
-            </div>
-
-            {# Last Updated #}
-            <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
-                <dt class="text-body-md font-medium sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
-                <dd class="text-body-md" style="color: var(--color-body-text);">
-                    {{ assembly.updated_at|datetimeformat('long') }}
-                </dd>
-            </div>
-        </dl>
-    </section>
+        {% endcall %}
+    </div>
 
     {# Actions #}
     <section class="flex gap-4">
