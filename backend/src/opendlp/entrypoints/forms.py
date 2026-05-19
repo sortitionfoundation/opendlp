@@ -19,12 +19,12 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
 
+from opendlp.bootstrap import bootstrap
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
 from opendlp.domain.value_objects import validate_email as domain_validate_email
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
@@ -69,7 +69,7 @@ class EmailDoesNotExistValidator:
         if not field.data:
             return
         try:
-            with SqlAlchemyUnitOfWork() as uow:
+            with bootstrap() as uow:
                 existing_user = uow.users.get_by_email(field.data)
         except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
@@ -154,7 +154,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         if not invite_code.data:
             return
         try:
-            with SqlAlchemyUnitOfWork() as uow:
+            with bootstrap() as uow:
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
                     raise ValidationError(_("Invalid or expired invite code."))
@@ -526,7 +526,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         if not invite_code.data:
             return
         try:
-            with SqlAlchemyUnitOfWork() as uow:
+            with bootstrap() as uow:
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
                     raise ValidationError(_("Invalid or expired invite code."))
