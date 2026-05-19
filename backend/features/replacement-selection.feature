@@ -107,7 +107,7 @@ Feature: Replacement Selection
     And the replacement load task has completed
     When the user clicks Re-check Spreadsheet
     Then a new load task starts
-    And the modal shows loading state
+    And the modal shows the number to select
 
   # =============================================================================
   # Selection History Integration

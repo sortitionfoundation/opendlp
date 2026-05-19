@@ -3,8 +3,12 @@
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
-{% set is_task_running = replacement_run_record and not replacement_run_record.has_finished %}
-{% set task_finished = replacement_run_record and replacement_run_record.has_finished %}
+{% set features_pending = replacement_features_pending|default(false) %}
+{# features_pending: postgres has the load task as COMPLETED but Celery's result
+   backend hasn't surfaced features yet, so min/max can't be computed. Treat as
+   still running so HTMX keeps polling; the next tick picks up the features. #}
+{% set is_task_running = replacement_run_record and (not replacement_run_record.has_finished or features_pending) %}
+{% set task_finished = replacement_run_record and replacement_run_record.has_finished and not features_pending %}
 {% set has_min_max = replacement_min_select and replacement_max_select %}
 {% set can_close = not is_task_running %}
 {% set htmx_poll_url = url_for('gsheets.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
