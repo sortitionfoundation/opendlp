@@ -36,11 +36,14 @@ def create_session_factory(database_url: str = "", echo: bool = False) -> sessio
     echo = bool_environ_get("DB_ECHO") or echo
     extra_args: dict[str, int | bool] = {}
     if database_url.startswith("postgresql://"):
+        # Sized for 8 connection-opening processes (5 celery workers + beat +
+        # 2 gunicorn workers) against postgres max_connections=100. Worst-case
+        # burst is 8 * (3 + 7) = 80, leaving headroom for psql/admin.
         extra_args = {
             "pool_pre_ping": True,  # Verify connections before use
             "pool_recycle": 3600,  # Recycle connections after 1 hour
-            "pool_size": 10,  # Connection pool size
-            "max_overflow": 20,  # Additional connections beyond pool_size
+            "pool_size": 3,
+            "max_overflow": 7,
         }
     engine = create_engine(database_url, echo=echo, **extra_args)
 
