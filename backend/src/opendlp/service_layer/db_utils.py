@@ -43,7 +43,7 @@ def drop_tables(engine: Engine) -> None:
 
 
 def seed_database(
-    session_factory: sessionmaker | None = None,
+    session_factory: sessionmaker,
 ) -> tuple[Iterable[tuple[User, str]], Iterable[UserInvite], Iterable[Assembly]]:
     """Seed the database with test data."""
     with SqlAlchemyUnitOfWork(session_factory) as uow:
