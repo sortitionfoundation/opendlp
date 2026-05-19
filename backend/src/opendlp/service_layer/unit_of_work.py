@@ -8,7 +8,6 @@ from types import TracebackType
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from opendlp.adapters.database import create_session_factory
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
@@ -91,15 +90,22 @@ class AbstractUnitOfWork(abc.ABC):
         """Rollback the current transaction."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def expire_all(self) -> None:
+        """Drop cached attributes on all loaded objects.
 
-DEFAULT_SESSION_FACTORY = create_session_factory()
+        The next attribute access on any previously-loaded instance will
+        re-fetch from the database. Use this when polling for changes made
+        by another process (e.g. a Celery worker updating a run record).
+        """
+        raise NotImplementedError
 
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     """SQLAlchemy implementation of Unit of Work pattern."""
 
-    def __init__(self, session_factory: sessionmaker | None = None) -> None:
-        self.session_factory = session_factory or DEFAULT_SESSION_FACTORY
+    def __init__(self, session_factory: sessionmaker) -> None:
+        self.session_factory = session_factory
         self._session: Session | None = None
 
     @property
@@ -157,6 +163,15 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         This allows new objects to get an ID that can be referenced by other objects.
         """
         self.session.flush()
+
+    def expire_all(self) -> None:
+        """Expire all instances in the session's identity map.
+
+        Required because the session factory uses ``expire_on_commit=False``,
+        so cached instances would otherwise hide writes made by other
+        processes (notably Celery workers updating SelectionRunRecord rows).
+        """
+        self.session.expire_all()
 
 
 class UnitOfWorkError(Exception):

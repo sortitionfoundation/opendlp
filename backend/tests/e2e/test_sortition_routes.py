@@ -161,7 +161,7 @@ class TestSortitionRoutes:
             assert records[0].task_type == SelectionTaskType.LOAD_GSHEET
             assert "Task submitted for Google Sheets loading" in records[0].log_messages
 
-    @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
+    @patch("opendlp.service_layer.sortition.tasks.run_select.apply_async")
     def test_gsheet_select_success(self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """Test POST request to start loading task succeeds."""
         assembly, _ = assembly_with_gsheet
@@ -183,7 +183,7 @@ class TestSortitionRoutes:
             assert records[0].task_type == SelectionTaskType.SELECT_GSHEET
             assert "Task submitted for Google Sheets selection" in records[0].log_messages
 
-    @patch("opendlp.service_layer.sortition.tasks.run_select.delay")
+    @patch("opendlp.service_layer.sortition.tasks.run_select.apply_async")
     def test_gsheet_test_select_success(
         self, mock_celery, logged_in_admin, assembly_with_gsheet, postgres_session_factory
     ):

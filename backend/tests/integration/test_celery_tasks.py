@@ -3,7 +3,7 @@ ABOUTME: Tests the public Celery task API with database integration"""
 
 import tempfile
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -24,9 +24,12 @@ from opendlp.entrypoints.celery.tasks import (
     cleanup_orphaned_tasks,
     load_gsheet,
     manage_old_tabs,
+    monitor_selection_periodic,
+    prune_monitor_run_records,
     run_select,
 )
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
+from opendlp.service_layer.monitoring import MonitorResult
 
 
 @pytest.fixture
@@ -969,3 +972,70 @@ class TestCleanupOrphanedTasks:
         assert result["checked"] == 0
         assert result["marked_failed"] == 0
         assert result["errors"] == 0
+
+
+class TestMonitorBeatTasks:
+    """Tests for the monitor_selection_periodic and prune_monitor_run_records tasks."""
+
+    def test_monitor_selection_periodic_invokes_service_and_returns_dict(self, postgres_session_factory, temp_env_vars):
+        temp_env_vars(
+            MONITOR_ASSEMBLY_ID=str(uuid.uuid4()),
+            MONITOR_USER_ID=str(uuid.uuid4()),
+        )
+
+        fake_task_id = uuid.uuid4()
+        with patch(
+            "opendlp.service_layer.monitoring.run_monitoring_selection",
+            return_value=MonitorResult(
+                success=True,
+                task_id=fake_task_id,
+                duration_seconds=4.5,
+                message="ok",
+            ),
+        ) as mock_service:
+            result = monitor_selection_periodic(session_factory=postgres_session_factory)
+
+        mock_service.assert_called_once()
+        assert result == {
+            "success": True,
+            "duration_seconds": 4.5,
+            "message": "ok",
+            "task_id": str(fake_task_id),
+        }
+
+    def test_prune_monitor_run_records_keeps_newest_only(self, postgres_session_factory, temp_env_vars):
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            assembly = Assembly(assembly_id=assembly_id, title="Monitor Assembly")
+            uow.assemblies.add(assembly)
+            uow.commit()
+
+        keep = 2
+        total = keep + 5
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            for i in range(total):
+                record = SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=uuid.uuid4(),
+                    status=SelectionRunStatus.COMPLETED,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                    created_at=datetime.now(UTC) - timedelta(minutes=10 * (total - i)),
+                )
+                uow.selection_run_records.add(record)
+            uow.commit()
+
+        deleted = prune_monitor_run_records(session_factory=postgres_session_factory, keep=keep)
+
+        assert deleted == total - keep
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            remaining = list(uow.selection_run_records.get_by_assembly_id(assembly_id))
+        assert len(remaining) == keep
+
+    def test_prune_monitor_run_records_no_op_when_unconfigured(self, postgres_session_factory, clear_env_vars):
+        clear_env_vars("MONITOR_ASSEMBLY_ID")
+
+        deleted = prune_monitor_run_records(session_factory=postgres_session_factory, keep=10)
+
+        assert deleted == 0

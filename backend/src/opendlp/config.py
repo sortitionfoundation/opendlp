@@ -6,6 +6,7 @@ import logging
 import logging.config
 import os
 import tempfile
+import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache
@@ -272,6 +273,60 @@ def get_registration_thank_you_html_max_bytes() -> int:
     ``REGISTRATION_THANK_YOU_HTML_MAX_BYTES``.
     """
     return _registration_html_max_bytes("REGISTRATION_THANK_YOU_HTML_MAX_BYTES", 51200)
+
+
+def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
+    value = os.environ.get(env_key, "").strip()
+    if not value:
+        return None
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        logging.warning(f"Invalid {env_key} value '{value}'. Monitoring will be disabled.")
+        return None
+
+
+def get_monitor_assembly_id() -> "uuid.UUID | None":
+    """
+    Get the UUID of the monitor assembly from the environment.
+    Returns None if unset or invalid (monitoring disabled).
+
+    Environment variable: MONITOR_ASSEMBLY_ID
+    """
+    return _get_monitor_uuid_env("MONITOR_ASSEMBLY_ID")
+
+
+def get_monitor_user_id() -> "uuid.UUID | None":
+    """
+    Get the UUID of the monitor user from the environment.
+    Returns None if unset or invalid (monitoring disabled).
+
+    Environment variable: MONITOR_USER_ID
+    """
+    return _get_monitor_uuid_env("MONITOR_USER_ID")
+
+
+def get_monitor_health_max_age_minutes() -> int:
+    """
+    Get the maximum age (in minutes) of a successful monitor run before it
+    is considered STALE. Returns 120 by default.
+
+    Environment variable: MONITOR_HEALTH_MAX_AGE_MINUTES
+    """
+    value = os.environ.get("MONITOR_HEALTH_MAX_AGE_MINUTES", "")
+    if not value:
+        return 120
+    try:
+        parsed = int(value)
+        if parsed <= 0:
+            logging.warning(
+                f"MONITOR_HEALTH_MAX_AGE_MINUTES must be positive, got '{value}'. Using default 120 minutes."
+            )
+            return 120
+        return parsed
+    except ValueError:
+        logging.warning(f"Invalid MONITOR_HEALTH_MAX_AGE_MINUTES value '{value}'. Using default 120 minutes.")
+        return 120
 
 
 class FlaskBaseConfig:

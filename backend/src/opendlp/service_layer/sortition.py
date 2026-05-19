@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import StringIO
+from typing import Any
 
 import structlog
 from celery.result import AsyncResult
@@ -132,7 +133,11 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
 
 @require_assembly_permission(can_manage_assembly)
 def start_gsheet_select_task(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, test_selection: bool = False
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    test_selection: bool = False,
+    celery_apply_kwargs: dict[str, Any] | None = None,
 ) -> uuid.UUID:
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
@@ -179,14 +184,16 @@ def start_gsheet_select_task(
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
-    result = tasks.run_select.delay(
-        task_id=task_id,
-        data_source=data_source,
-        number_people_wanted=assembly.number_to_select,
-        settings=settings_obj,
-        test_selection=test_selection,
-        gen_rem_tab=gsheet.generate_remaining_tab,
-    )
+    apply_kwargs = celery_apply_kwargs or {}
+    celery_kwargs = {
+        "task_id": task_id,
+        "data_source": data_source,
+        "number_people_wanted": assembly.number_to_select,
+        "settings": settings_obj,
+        "test_selection": test_selection,
+        "gen_rem_tab": gsheet.generate_remaining_tab,
+    }
+    result = tasks.run_select.apply_async(kwargs=celery_kwargs, **apply_kwargs)
     record.celery_task_id = str(result.id)
     uow.selection_run_records.add(record)
     uow.commit()
@@ -620,6 +627,10 @@ class TabManagementResult(RunResult):
 
 
 def _process_celery_final_result(celery_result: AsyncResult, run_record: SelectionRunRecord) -> RunResult:
+    # Calls AsyncResult.get(), which Celery forbids inside a worker task — it
+    # raises RuntimeError('Never call result.get() within a task!'). Callers
+    # invoked from a Celery worker must read state from SelectionRunRecord
+    # instead of going through get_selection_run_status.
     final_result = celery_result.get()
     assert final_result
     if run_record.task_type in (

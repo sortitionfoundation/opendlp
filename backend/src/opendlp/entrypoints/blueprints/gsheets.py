@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     CreateAssemblyGSheetForm,
@@ -99,19 +100,38 @@ def _get_selection_modal_context(
     return None, None, [], ""
 
 
+def _load_features_pending(run_record: object, result: object) -> bool:
+    """True when a load task is COMPLETED in postgres but Celery's result backend
+    hasn't surfaced the typed return value yet.
+
+    The load task commits ``status=COMPLETED`` to postgres before its return value
+    lands in the Celery result backend (Redis). A GET that arrives in that window
+    sees the run record as finished but ``get_selection_run_status`` cannot build
+    a ``LoadRunResult`` — so min/max can't be computed and the replacement modal
+    would render in the "result" state with no form and no polling. Detect that
+    state so the caller can keep the modal polling until the next tick.
+    """
+    if getattr(run_record, "task_type", None) != SelectionTaskType.LOAD_REPLACEMENT_GSHEET:
+        return False
+    if not getattr(run_record, "is_completed", False):
+        return False
+    return not (isinstance(result, LoadRunResult) and result.features is not None and result.success)
+
+
 def _get_replacement_modal_context(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     replacement_param: str | None,
     initial_min_select: int | None,
     initial_max_select: int | None,
-) -> tuple[uuid.UUID | None, object | None, list, str, int | None, int | None]:
+) -> tuple[uuid.UUID | None, object | None, list, str, int | None, int | None, bool]:
     """Get context for displaying the replacement selection modal.
 
-    Returns (current_replacement, run_record, log_messages, translated_report_html, min_select, max_select).
+    Returns (current_replacement, run_record, log_messages, translated_report_html,
+    min_select, max_select, features_pending).
     """
     if not replacement_param:
-        return None, None, [], "", initial_min_select, initial_max_select
+        return None, None, [], "", initial_min_select, initial_max_select, False
 
     try:
         current_replacement = uuid.UUID(replacement_param)
@@ -133,11 +153,12 @@ def _get_replacement_modal_context(
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
                 min_select,
                 max_select,
+                _load_features_pending(result.run_record, result),
             )
     except (ValueError, TypeError):
         current_app.logger.debug("Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param)
 
-    return None, None, [], "", initial_min_select, initial_max_select
+    return None, None, [], "", initial_min_select, initial_max_select, False
 
 
 # --- Selection views ---
@@ -176,6 +197,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 replacement_translated_report_html,
                 replacement_min_select,
                 replacement_max_select,
+                replacement_features_pending,
             ) = _get_replacement_modal_context(
                 uow,
                 assembly_id,
@@ -278,6 +300,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             replacement_translated_report_html=replacement_translated_report_html,
             replacement_min_select=replacement_min_select,
             replacement_max_select=replacement_max_select,
+            replacement_features_pending=replacement_features_pending,
             edit_number_modal_open=edit_number_modal_open,
             data_source=data_source,
             targets_enabled=targets_enabled,
@@ -398,6 +421,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             current_replacement=run_id,
             replacement_min_select=replacement_min_select,
             replacement_max_select=replacement_max_select,
+            replacement_features_pending=_load_features_pending(result.run_record, result),
         ), 200
     except NotFoundError:
         return "", 404

@@ -1,0 +1,19 @@
+category,name,suggest min,suggest max,Current #,min,max
+gender,Female,,,,14,16
+gender,Male,,,,12,14
+gender,Non-binary,,,,0,3
+ethnicity,Agrican,,,,9,12
+ethnicity,Maritan,,,,9,11
+ethnicity,Techan,,,,3,5
+ethnicity,Artis,,,,2,4
+ethnicity,Mixed Ethnic,,,,1,3
+ethnicity,Forian,,,,0,2
+province,Nexor,,,,9,11
+province,Ironhold,,,,7,9
+province,Verdelands,,,,4,6
+province,Harborview,,,,4,6
+province,Artesa,,,,4,6
+education,1,,,,7,10
+education,2,,,,5,7
+education,3,,,,3,5
+education,4,,,,12,15

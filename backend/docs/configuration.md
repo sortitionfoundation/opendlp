@@ -148,6 +148,27 @@ REGISTRATION_FORM_HTML_MAX_BYTES=204800
 REGISTRATION_THANK_YOU_HTML_MAX_BYTES=51200
 ```
 
+### Monitoring
+
+Enable end-to-end selection monitoring (issue #582) by pointing both
+of these at a dedicated monitor assembly + system user. Both IDs must
+be set together; leaving either unset disables monitoring entirely.
+
+```bash
+# UUID of the monitor assembly that receives a heartbeat selection
+MONITOR_ASSEMBLY_ID=
+
+# UUID of the system user that "runs" the monitor selection
+MONITOR_USER_ID=
+
+# Optional: how old (in minutes) the latest successful run can be before
+# /health and /health/monitor_selection report STALE. Default: 120
+# MONITOR_HEALTH_MAX_AGE_MINUTES=120
+```
+
+See [docs/monitoring.md](monitoring.md) for the full feature
+description, provisioning steps, and operator runbook.
+
 ### Help Site URLs
 
 External help site URLs linked from base templates (header "Help" link and footer "User Data Agreement" link):

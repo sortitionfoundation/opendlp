@@ -21,7 +21,7 @@ from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus
+from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus, SelectionTaskType
 
 
 class AbstractRepository(abc.ABC):
@@ -227,8 +227,17 @@ class SelectionRunRecordRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_latest_for_assembly(self, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
-        """Get the most recent SelectionRunRecord for an assembly."""
+    def get_latest_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType | None = None,
+    ) -> SelectionRunRecord | None:
+        """Get the most recent SelectionRunRecord for an assembly, optionally filtered by task_type."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
+        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
         raise NotImplementedError
 
     @abc.abstractmethod

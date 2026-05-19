@@ -21,7 +21,7 @@ deploy-opendlp-test:
     echo "claude code is not allowed to deploy"
     exit 1
   fi
-  ssh opendlp-test sudo -u opendlp just --justfile /var/lib/opendlp/justfile opendlp-update
+  ssh opendlp-test sudo -u opendlp just --justfile /var/lib/opendlp/justfile update
 
 # deploy the latest github docker image build to production
 deploy-opendlp-production:
@@ -31,7 +31,7 @@ deploy-opendlp-production:
     echo "claude code is not allowed to deploy"
     exit 1
   fi
-  ssh opendlp-prod sudo -u opendlp just --justfile /var/lib/opendlp/justfile opendlp-update
+  ssh opendlp-prod sudo -u opendlp just --justfile /var/lib/opendlp/justfile update
 
 # build docker with the current code, copy the image to the preview server and run on hd.preview
 deploy-preview-hd:

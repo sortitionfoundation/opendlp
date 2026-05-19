@@ -15,6 +15,7 @@ from opendlp.entrypoints.context_processors import (
     get_service_account_email,
     service_account_email_problem,
 )
+from opendlp.service_layer.monitoring import MonitorSelectionStatus, check_monitor_selection, truncate
 
 health_bp = Blueprint("health", __name__)
 
@@ -104,6 +105,34 @@ def check_microsoft_oauth_expiry() -> tuple[int | None, str]:
         return None, "UNKNOWN"
 
 
+def _check_monitor_selection() -> MonitorSelectionStatus:
+    """Bootstrap a Unit of Work and call the service-layer check.
+
+    Returns an UNKNOWN status if bootstrap itself fails (eg. DB unreachable).
+    """
+    try:
+        uow = bootstrap.bootstrap()
+        with uow:
+            return check_monitor_selection(uow)
+    except Exception as error:
+        return MonitorSelectionStatus(
+            status="UNKNOWN",
+            message=truncate(f"could not query monitor selection records: {error}"),
+        )
+
+
+def _build_monitor_payload() -> tuple[dict[str, object], MonitorSelectionStatus]:
+    monitor = _check_monitor_selection()
+    payload: dict[str, object] = {
+        "monitor_selection_status": monitor.status,
+        "monitor_selection_last_run_at": monitor.last_run_at.isoformat() if monitor.last_run_at else None,
+        "monitor_selection_message": monitor.message,
+        "monitor_selection_last_run_url": monitor.run_url,
+        "monitor_cleanup_status": monitor.cleanup_status,
+    }
+    return payload, monitor
+
+
 @health_bp.route("/health")
 def health_check() -> ResponseReturnValue:
     """
@@ -153,11 +182,15 @@ def health_check() -> ResponseReturnValue:
         if service_account == "UNKNOWN":
             service_account_ok = False
 
+    monitor_payload, monitor = _build_monitor_payload()
+    monitor_ok = monitor.status in ("OK", "PENDING", "NOT_CONFIGURED")
+    cleanup_ok = monitor.cleanup_status != "FAILED"
+
     # Determine overall health status
-    is_healthy = all((db_ok, celery_ok, service_account_ok, version_ok, ms_expiry_ok))
+    is_healthy = all((db_ok, celery_ok, service_account_ok, version_ok, ms_expiry_ok, monitor_ok, cleanup_ok))
 
     # Build response
-    response_data = {
+    response_data: dict[str, object] = {
         "database_ok": db_ok,
         "user_count": user_count,
         "celery_worker_running": celery_ok,
@@ -166,6 +199,7 @@ def health_check() -> ResponseReturnValue:
         "oauth_microsoft_days_to_expiry": ms_days_to_expiry,
         "oauth_microsoft_expiry_status": ms_expiry_status,
     }
+    response_data.update(monitor_payload)
 
     # do some debugging, but only if there is an issue
     if service_account == "UNKNOWN":
@@ -175,6 +209,24 @@ def health_check() -> ResponseReturnValue:
     status_code = 200 if is_healthy else 500
 
     return jsonify(response_data), status_code
+
+
+@health_bp.route("/health/monitor_selection")
+def monitor_selection_health() -> ResponseReturnValue:
+    """
+    Focused health endpoint for the end-to-end monitor selection feature.
+
+    Unlike /health, this endpoint treats NOT_CONFIGURED as unhealthy because
+    pointing a watcher at this URL is itself a declaration that monitoring
+    should be live.
+
+    HTTP status 200 when status is OK or PENDING; 500 otherwise (including
+    NOT_CONFIGURED, STALE, FAILED, UNKNOWN).
+    """
+    payload, monitor = _build_monitor_payload()
+    is_healthy = monitor.status in ("OK", "PENDING") and monitor.cleanup_status != "FAILED"
+    status_code = 200 if is_healthy else 500
+    return jsonify(payload), status_code
 
 
 @health_bp.route("/health/bdd")
