@@ -1,0 +1,337 @@
+<div>
+    <div class="space-y-6">
+                    {# get_or_create_csv_config #}
+        {% call card(title="get_or_create_csv_config()", composed=true) %}
+            {% call card_body() %}
+                            {# Code Reference #}
+                <div class="flex items-center justify-between mb-4">
+                    <code class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-subtle-background-panels);
+                                 color: var(--color-info-600)">
+                        assembly_service.py:613
+                    </code>
+                    <div class="flex gap-2">
+                        <span class="text-body-sm px-2 py-1 rounded"
+                              style="background-color: var(--color-success-100);
+                                     color: var(--color-success-600)">👁️ can_view_assembly()</span>
+                    </div>
+                </div>
+                            {# Description #}
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ _("Retrieves existing CSV config or creates a default one if none exists. Safe to call multiple times.") }}
+                </p>
+                            {# Parameters #}
+                <div class="mb-6">
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    UUID
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                            {# Returns #}
+                <div class="mb-6">
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm px-2 py-1 rounded block"
+                          style="background-color: var(--color-subtle-background-panels)">
+                        AssemblyCSV  →  Configuration object with all CSV settings
+                    </code>
+                </div>
+                            {# Try It Section #}
+                <div class="pt-4"
+                     style="border-top: 1px solid var(--color-borders-dividers)">
+                    <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                        <span class="mr-2">🧪</span>{{ _("Try It") }}
+                    </h4>
+                    <div class="mb-4">
+                        <label class="text-label-md block mb-1"
+                               style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                        <select x-model="getCsvConfigAssemblyId"
+                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-page-background);
+                                       border: 1px solid var(--color-borders-dividers);
+                                       color: var(--color-body-text)">
+                            <option value="">{{ _("Select an assembly...") }}</option>
+                            {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <button @click="executeGetCsvConfig()"
+                                :disabled="loading.get_csv_config"
+                                class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                style="background-color: var(--color-primary-action);
+                                       color: var(--color-page-background)">
+                            <span x-show="!loading.get_csv_config">▶️ {{ _("Execute") }}</span>
+                            <span x-cloak x-show="loading.get_csv_config">⏳ {{ _("Running...") }}</span>
+                        </button>
+                    </div>
+                    <template x-if="responses.get_csv_config">
+                        <div class="rounded-lg p-4"
+                             :style="responses.get_csv_config.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-heading-sm"
+                                      :style="responses.get_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                    <span x-text="responses.get_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                </span>
+                                <button @click="copyGetCsvConfigResponse()"
+                                        class="text-body-sm px-2 py-1 rounded"
+                                        style="background-color: var(--color-page-background)">
+                                    📋 {{ _("Copy JSON") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                                 style="color: var(--color-body-text)"
+                                 x-text="JSON.stringify(responses.get_csv_config, null, 2)"></pre>
+                        </div>
+                    </template>
+                </div>
+            {% endcall %}
+        {% endcall %}
+                    {# update_csv_config #}
+        {% call card(title="update_csv_config()", composed=true) %}
+            {% call card_body() %}
+                            {# Code Reference #}
+                <div class="flex items-center justify-between mb-4">
+                    <code class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-subtle-background-panels);
+                                 color: var(--color-info-600)">
+                        assembly_service.py:643
+                    </code>
+                    <div class="flex gap-2">
+                        <span class="text-body-sm px-2 py-1 rounded"
+                              style="background-color: var(--color-warning-100);
+                                     color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    </div>
+                </div>
+                            {# Description #}
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ _("Updates CSV configuration settings. Only provided fields are updated.") }}
+                </p>
+                            {# Parameters #}
+                <div class="mb-6">
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    UUID
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    id_column
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Column name for respondent ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    check_same_address
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    bool
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Enable address deduplication
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    check_same_address_cols
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    list[str]
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Address columns to check
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    columns_to_keep
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    list[str]
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Columns to preserve in output
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    selection_algorithm
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Algorithm: "maximin", "random", etc.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">settings_confirmed</td>
+                                <td class="px-3 py-2">bool</td>
+                                <td class="px-3 py-2">Mark settings as confirmed</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                            {# Try It Section #}
+                <div class="pt-4"
+                     style="border-top: 1px solid var(--color-borders-dividers)">
+                    <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                        <span class="mr-2">🧪</span>{{ _("Try It") }}
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-label-md block mb-1"
+                                   style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                            <select x-model="updateCsvConfigAssemblyId"
+                                    class="w-full px-3 py-2 rounded-lg text-body-md"
+                                    style="background-color: var(--color-page-background);
+                                           border: 1px solid var(--color-borders-dividers);
+                                           color: var(--color-body-text)">
+                                <option value="">{{ _("Select...") }}</option>
+                                {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-label-md block mb-1"
+                                   style="color: var(--color-headings)">{{ _("ID Column") }}</label>
+                            <input type="text"
+                                   x-model="updateCsvConfigIdColumn"
+                                   class="w-full px-3 py-2 rounded-lg text-body-md"
+                                   style="background-color: var(--color-page-background);
+                                          border: 1px solid var(--color-borders-dividers);
+                                          color: var(--color-body-text)"
+                                   placeholder="external_id">
+                        </div>
+                        <div>
+                            <label class="text-label-md block mb-1"
+                                   style="color: var(--color-headings)">
+                                {{ _("Selection Algorithm") }}
+                            </label>
+                            <select x-model="updateCsvConfigAlgorithm"
+                                    class="w-full px-3 py-2 rounded-lg text-body-md"
+                                    style="background-color: var(--color-page-background);
+                                           border: 1px solid var(--color-borders-dividers);
+                                           color: var(--color-body-text)">
+                                <option value="">{{ _("Select...") }}</option>
+                                <option value="maximin">maximin</option>
+                                <option value="random">random</option>
+                                <option value="legacy">legacy</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-4 pt-6">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox"
+                                       x-model="updateCsvConfigCheckSameAddress"
+                                       style="accent-color: var(--color-primary-action)">
+                                <span class="text-body-sm">{{ _("Check same address") }}</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox"
+                                       x-model="updateCsvConfigSettingsConfirmed"
+                                       style="accent-color: var(--color-primary-action)">
+                                <span class="text-body-sm">{{ _("Settings confirmed") }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <button @click="executeUpdateCsvConfig()"
+                                :disabled="loading.update_csv_config"
+                                class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                style="background-color: var(--color-primary-action);
+                                       color: var(--color-page-background)">
+                            <span x-show="!loading.update_csv_config">▶️ {{ _("Execute") }}</span>
+                            <span x-cloak x-show="loading.update_csv_config">⏳ {{ _("Running...") }}</span>
+                        </button>
+                        <button @click="resetUpdateCsvConfig()"
+                                class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                                style="background-color: transparent;
+                                       color: var(--color-headings);
+                                       border: 1px solid var(--color-borders-dividers)">
+                            🔄 {{ _("Reset") }}
+                        </button>
+                    </div>
+                    <template x-if="responses.update_csv_config">
+                        <div class="rounded-lg p-4"
+                             :style="responses.update_csv_config.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-heading-sm"
+                                      :style="responses.update_csv_config.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                    <span x-text="responses.update_csv_config.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                                </span>
+                                <button @click="copyUpdateCsvConfigResponse()"
+                                        class="text-body-sm px-2 py-1 rounded"
+                                        style="background-color: var(--color-page-background)">
+                                    📋 {{ _("Copy JSON") }}
+                                </button>
+                            </div>
+                            <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                                 style="color: var(--color-body-text)"
+                                 x-text="JSON.stringify(responses.update_csv_config, null, 2)"></pre>
+                        </div>
+                    </template>
+                </div>
+            {% endcall %}
+        {% endcall %}
+    </div>
+</div>

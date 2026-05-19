@@ -1,0 +1,392 @@
+<div class="space-y-6">
+    {# create_assembly #}
+    {% call card(title="create_assembly()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    assembly_service.py:46
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 global-organiser or admin</span>
+                    <button @click="copyAssemblyServiceRef()"
+                            class="text-body-sm px-2 py-1 rounded transition-colors"
+                            style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Create a new assembly with title, optional question, first assembly date, and number to select.") }}
+            </p>
+            {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Required
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    title
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    str
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Assembly title
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    question
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    str
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    The question being deliberated
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    first_assembly_date
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    date | None
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Date of first assembly meeting
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    number_to_select
+                                </td>
+                                <td class="px-3 py-2">
+                                    int
+                                </td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    Number of participants to select (default: 0)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    Assembly  →  The created assembly object
+                </code>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Title</label>
+                        <input type="text"
+                               x-model="createAssemblyTitle"
+                               placeholder="My Citizens' Assembly"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Question</label>
+                        <input type="text"
+                               x-model="createAssemblyQuestion"
+                               placeholder="How should we address climate change?"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Number to Select</label>
+                        <input type="number"
+                               x-model="createAssemblyNumberToSelect"
+                               placeholder="10"
+                               class="w-32 px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeCreateAssembly()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.create_assembly">
+                        <span x-show="!loading.create_assembly">Execute</span>
+                        <span x-show="loading.create_assembly">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.create_assembly" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                    <button @click="copyCreateAssemblyResponse()"
+                            class="text-body-sm px-2 py-1 rounded"
+                            style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.create_assembly, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# get_assembly_with_permissions #}
+    {% call card(title="get_assembly_with_permissions()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    assembly_service.py:142
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 assembly access required</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Retrieve an assembly if the user has permission to view it. Checks both global and assembly-specific roles.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    Assembly  →  The assembly object with all properties
+                </code>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="getAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeGetAssembly()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.get_assembly">
+                        <span x-show="!loading.get_assembly">Execute</span>
+                        <span x-show="loading.get_assembly">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.get_assembly" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                    <button @click="copyGetAssemblyResponse()"
+                            class="text-body-sm px-2 py-1 rounded"
+                            style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.get_assembly, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# update_assembly #}
+    {% call card(title="update_assembly()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    assembly_service.py:95
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update assembly fields with new values. Only provided fields are updated.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    **updates
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Any</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Fields to update: title, question, first_assembly_date, number_to_select
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    Assembly  →  The updated assembly object
+                </code>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="updateAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">New Title (optional)</label>
+                        <input type="text"
+                               x-model="updateAssemblyTitle"
+                               placeholder="Leave empty to keep current"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">New Question (optional)</label>
+                        <input type="text"
+                               x-model="updateAssemblyQuestion"
+                               placeholder="Leave empty to keep current"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeUpdateAssembly()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.update_assembly">
+                        <span x-show="!loading.update_assembly">Execute</span>
+                        <span x-show="loading.update_assembly">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.update_assembly" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.update_assembly, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>
