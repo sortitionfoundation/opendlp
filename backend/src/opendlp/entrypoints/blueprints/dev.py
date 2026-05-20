@@ -3,13 +3,14 @@ ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production e
 
 import uuid
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.registration_page import RegistrationPageHtml
 from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
@@ -392,7 +393,7 @@ def _handle_create_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
         try:
             assembly = create_assembly(
                 uow=uow,
-                user_id=current_user.id,
+                created_by_user_id=current_user.id,
                 title=title,
                 question=question,
                 number_to_select=int(number_to_select) if number_to_select else 0,
@@ -520,6 +521,8 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
                     "html_source": None,
                 }
             reg_page, html_source = result
+            # Cast to RegistrationPageHtml since HtmlSource protocol doesn't expose id/form_html
+            html = cast(RegistrationPageHtml, html_source)
             return {
                 "status": "success",
                 "registration_page": {
@@ -531,10 +534,8 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
                     "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
                 },
                 "html_source": {
-                    "id": str(html_source.id),
-                    "form_html_preview": html_source.form_html[:200] + "..."
-                    if len(html_source.form_html) > 200
-                    else html_source.form_html,
+                    "id": str(html.id),
+                    "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
                 },
             }
         except InsufficientPermissions as e:
