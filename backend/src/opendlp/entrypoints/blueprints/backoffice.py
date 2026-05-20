@@ -12,6 +12,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
@@ -34,6 +35,10 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.registration_page_service import (
+    get_registration_page_with_source,
+    update_registration_page,
+)
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.service_layer.user_service import (
     get_assembly_members,
@@ -154,9 +159,10 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.args.get("source", ""),
         )
 
-        # TODO: Get registration page data from service layer when available
-        # registration_page = get_registration_page(uow, assembly_id)
-        registration_page = None  # Placeholder until service layer is ready
+        # Get registration page data from service layer
+        uow = bootstrap.bootstrap()
+        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        registration_page = reg_result[0] if reg_result else None
 
         # Generate QR code for the short URL if registration page has a short slug
         qr_code_data_url = None
@@ -201,9 +207,9 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         form = EditAssemblyForm(obj=assembly)
 
-        # TODO: Get registration page data from service layer when available
-        # registration_page = get_registration_page(uow, assembly_id)
-        registration_page = None  # Placeholder until service layer is ready
+        # Get registration page data from service layer
+        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        registration_page = reg_result[0] if reg_result else None
 
         if form.validate_on_submit():
             try:
@@ -211,9 +217,10 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_slug = request.form.get("url_slug", "").strip()
                 short_url_slug = request.form.get("short_url_slug", "").strip()
 
-                with uow:
+                uow2 = bootstrap.bootstrap()
+                with uow2:
                     updated_assembly = update_assembly(
-                        uow=uow,
+                        uow=uow2,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
                         title=form.title.data,
@@ -222,17 +229,29 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
-                # TODO: Save URL slugs via registration page service when available
-                # save_registration_page_urls(uow, assembly_id, url_slug, short_url_slug)
-                if url_slug or short_url_slug:
-                    current_app.logger.info(
-                        f"Registration URL slugs for assembly {assembly_id}: "
-                        f"url_slug={url_slug}, short_url_slug={short_url_slug} "
-                        "(not persisted - service layer not yet implemented)"
+                # Save URL slugs via registration page service if registration page exists
+                if registration_page and (url_slug or short_url_slug):
+                    uow3 = bootstrap.bootstrap()
+                    update_registration_page(
+                        uow=uow3,
+                        user_id=current_user.id,
+                        assembly_id=assembly_id,
+                        url_slug=url_slug if url_slug else None,
+                        short_url_slug=short_url_slug if short_url_slug else None,
                     )
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+            except SlugError as e:
+                current_app.logger.warning(f"Slug error editing assembly {assembly_id}: {e}")
+                flash(_("The URL slug '%(slug)s' is already in use", slug=str(e)), "error")
+                # Re-render form with error
+                return render_template(
+                    "backoffice/edit_assembly.html",
+                    form=form,
+                    assembly=assembly,
+                    registration_page=registration_page,
+                ), 200
             except InsufficientPermissions as e:
                 current_app.logger.warning(
                     f"Insufficient permissions to edit assembly {assembly_id} for user {current_user.id}: {e}"

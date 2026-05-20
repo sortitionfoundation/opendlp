@@ -10,6 +10,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
     create_assembly,
@@ -563,6 +564,8 @@ def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
                     "updated_at": reg_page.updated_at.isoformat() if reg_page.updated_at else None,
                 },
             }
+        except SlugError as e:
+            return {"status": "error", "error": str(e), "error_type": "SlugError", "field": e.field}
         except InsufficientPermissions as e:
             return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
         except NotFoundError as e:
