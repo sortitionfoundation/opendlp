@@ -455,6 +455,18 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         else:
             html_content = ""
 
+        # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
+        # For now, use assembly ID as a placeholder slug
+        placeholder_slug = str(assembly_id)[:8]
+        placeholder_short_url = request.host_url + "r/" + placeholder_slug
+        qr_code_data_url = generate_qr_code_base64(placeholder_short_url)
+
+        # Publication status (placeholder values until service layer provides real data)
+        is_published = False  # Default to unpublished
+
+        # HTML content (placeholder until service layer provides real data)
+        # thank_you_html = ""  # Will be populated from registration_page when available
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -463,6 +475,8 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            qr_code_data_url=qr_code_data_url,
+            is_published=is_published,
             html_content=html_content,
         ), 200
     except InsufficientPermissions as e:

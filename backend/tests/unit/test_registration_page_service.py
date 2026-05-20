@@ -479,7 +479,7 @@ class TestPublishAndUnpublish:
         _create_published_page(uow, admin, assembly)
 
         page = service.unpublish_registration_page(uow, admin.id, assembly.id)
-        assert page.status is RegistrationPageStatus.DRAFT
+        assert page.status is RegistrationPageStatus.TEST
         assert page.activity[-1].action is RegistrationPageAction.UNPUBLISH
 
     def test_publish_requires_manage_permission(self):
@@ -519,12 +519,12 @@ class TestCloseAndReopen:
         assert last.text == "sortition done"
         assert last.author_id == admin.id
 
-    def test_close_raises_from_draft(self):
+    def test_close_raises_from_test(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id)
 
-        with pytest.raises(ValueError, match="DRAFT"):
+        with pytest.raises(ValueError, match="TEST"):
             service.close_registration_page(uow, admin.id, assembly.id)
 
     def test_close_requires_manage_permission(self):
@@ -591,37 +591,6 @@ class TestCloseAndReopen:
             service.reopen_registration_page(uow, admin.id, assembly.id)
 
 
-class TestRegeneratePreviewToken:
-    def test_token_changes_and_is_persisted(self):
-        uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
-        created = service.create_registration_page(uow, admin.id, assembly.id)
-
-        updated = service.regenerate_preview_token(uow, admin.id, assembly.id)
-        assert updated.preview_token != created.preview_token
-        stored = uow.registration_pages.get_by_assembly_id(assembly.id)
-        assert stored.preview_token == updated.preview_token
-        last = updated.activity[-1]
-        assert last.action is RegistrationPageAction.REGENERATE_TOKEN
-        assert last.author_id == admin.id
-
-    def test_requires_manage_permission(self):
-        uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        viewer = _viewer(uow, assembly)
-
-        with pytest.raises(InsufficientPermissions):
-            service.regenerate_preview_token(uow, viewer.id, assembly.id)
-
-    def test_raises_when_page_not_created(self):
-        uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
-
-        with pytest.raises(RegistrationPageNotFoundError):
-            service.regenerate_preview_token(uow, admin.id, assembly.id)
-
-
 class TestPublicLookup:
     def test_find_by_url_slug_hit(self):
         uow = FakeUnitOfWork()
@@ -671,7 +640,7 @@ class TestResolveVisibility:
         result = service.resolve_visibility(None)
         assert result.state is service.RegistrationPageVisibilityState.NOT_FOUND
         assert result.is_visible is False
-        assert result.is_preview is False
+        assert result.is_test is False
         assert result.page is None
 
     def test_published_is_live(self):
@@ -679,66 +648,38 @@ class TestResolveVisibility:
         result = service.resolve_visibility(page)
         assert result.state is service.RegistrationPageVisibilityState.LIVE
         assert result.is_visible is True
-        assert result.is_preview is False
+        assert result.is_test is False
 
-    def test_published_with_matching_token_still_live(self):
-        page = RegistrationPage(
-            assembly_id=uuid.uuid4(),
-            url_slug="a-page",
-            status=RegistrationPageStatus.PUBLISHED,
-            preview_token="secret",
-        )
-        result = service.resolve_visibility(page, preview_token="secret")
-        assert result.state is service.RegistrationPageVisibilityState.LIVE
-
-    def test_draft_with_matching_token_is_preview(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), preview_token="secret")
-        result = service.resolve_visibility(page, preview_token="secret")
-        assert result.state is service.RegistrationPageVisibilityState.PREVIEW
+    def test_test_status_is_test_state(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page", status=RegistrationPageStatus.TEST)
+        result = service.resolve_visibility(page)
+        assert result.state is service.RegistrationPageVisibilityState.TEST
         assert result.is_visible is True
-        assert result.is_preview is True
+        assert result.is_test is True
 
-    def test_draft_with_empty_token_is_not_found(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), preview_token="secret")
-        result = service.resolve_visibility(page, preview_token="")
+    def test_empty_url_slug_is_not_found(self):
+        # A freshly created page is TEST with no slug; it must not be visible.
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="", status=RegistrationPageStatus.TEST)
+        result = service.resolve_visibility(page)
         assert result.state is service.RegistrationPageVisibilityState.NOT_FOUND
         assert result.is_visible is False
 
-    def test_draft_with_wrong_token_is_not_found(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), preview_token="secret")
-        result = service.resolve_visibility(page, preview_token="wrong")
+    def test_empty_url_slug_is_not_found_even_when_published(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="", status=RegistrationPageStatus.PUBLISHED)
+        result = service.resolve_visibility(page)
         assert result.state is service.RegistrationPageVisibilityState.NOT_FOUND
-
-    def test_closed_with_matching_token_is_preview(self):
-        page = RegistrationPage(
-            assembly_id=uuid.uuid4(),
-            url_slug="a-page",
-            status=RegistrationPageStatus.CLOSED,
-            preview_token="secret",
-        )
-        result = service.resolve_visibility(page, preview_token="secret")
-        assert result.state is service.RegistrationPageVisibilityState.PREVIEW
-
-    def test_closed_with_empty_token_is_closed(self):
-        page = RegistrationPage(
-            assembly_id=uuid.uuid4(),
-            url_slug="a-page",
-            status=RegistrationPageStatus.CLOSED,
-            preview_token="secret",
-        )
-        result = service.resolve_visibility(page, preview_token="")
-        assert result.state is service.RegistrationPageVisibilityState.CLOSED
         assert result.is_visible is False
 
-    def test_closed_with_wrong_token_is_closed(self):
+    def test_closed_is_closed(self):
         page = RegistrationPage(
             assembly_id=uuid.uuid4(),
             url_slug="a-page",
             status=RegistrationPageStatus.CLOSED,
-            preview_token="secret",
         )
-        result = service.resolve_visibility(page, preview_token="nope")
+        result = service.resolve_visibility(page)
         assert result.state is service.RegistrationPageVisibilityState.CLOSED
+        assert result.is_visible is False
+        assert result.is_test is False
 
 
 class TestGetPageAndSourceForRender:

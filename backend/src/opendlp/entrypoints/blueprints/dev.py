@@ -491,7 +491,6 @@ def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
                     "assembly_id": str(reg_page.assembly_id),
                     "url_slug": reg_page.url_slug,
                     "short_url_slug": reg_page.short_url_slug,
-                    "preview_token": reg_page.preview_token,
                     "status": reg_page.status.value if reg_page.status else None,
                     "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
                 },

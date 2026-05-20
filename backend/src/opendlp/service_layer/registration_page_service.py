@@ -279,21 +279,6 @@ def reopen_registration_page(
         return page.create_detached_copy()
 
 
-def regenerate_preview_token(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> RegistrationPage:
-    """Rotate the page's preview token."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="regenerate preview token", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
-        if not page:
-            raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
-
-        page.regenerate_preview_token(author_id=user.id)
-        uow.commit()
-        return page.create_detached_copy()
-
-
 def find_registration_page_by_url_slug(uow: AbstractUnitOfWork, url_slug: str) -> RegistrationPage | None:
     """Public lookup for the canonical /register/<url_slug> route. No auth."""
     with uow:
@@ -311,14 +296,15 @@ def find_registration_page_by_short_url_slug(uow: AbstractUnitOfWork, short_url_
 class RegistrationPageVisibilityState(Enum):
     """Public-route response classification.
 
-    LIVE        — render the form (status PUBLISHED).
-    PREVIEW     — render the form with a preview banner (DRAFT or CLOSED + valid token).
+    LIVE        — render the form (status PUBLISHED); submissions go to the pool.
+    TEST        — render the form with a test-page banner (status TEST);
+                  submissions are recorded as test submissions.
     CLOSED      — 302 to /registration-closed.
-    NOT_FOUND   — 404 (page absent, or DRAFT without a valid preview token).
+    NOT_FOUND   — 404 (page absent).
     """
 
     LIVE = "LIVE"
-    PREVIEW = "PREVIEW"
+    TEST = "TEST"
     CLOSED = "CLOSED"
     NOT_FOUND = "NOT_FOUND"
 
@@ -332,24 +318,27 @@ class RegistrationPageVisibility:
 
     @property
     def is_visible(self) -> bool:
-        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.PREVIEW)
+        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.TEST)
 
     @property
-    def is_preview(self) -> bool:
-        return self.state == RegistrationPageVisibilityState.PREVIEW
+    def is_test(self) -> bool:
+        return self.state == RegistrationPageVisibilityState.TEST
 
 
-def resolve_visibility(page: RegistrationPage | None, preview_token: str = "") -> RegistrationPageVisibility:
+def resolve_visibility(page: RegistrationPage | None) -> RegistrationPageVisibility:
     """Pure decision: which public-route response does this page deserve?"""
     if page is None:
         return RegistrationPageVisibility(page=None, state=RegistrationPageVisibilityState.NOT_FOUND)
+    if not page.url_slug:
+        # A page with no canonical slug cannot be rendered at /register/<slug>;
+        # treat it as not found regardless of status (a freshly created page is
+        # TEST with an empty slug until a manager sets one).
+        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.NOT_FOUND)
     if page.status == RegistrationPageStatus.PUBLISHED:
         return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.LIVE)
-    if preview_token and preview_token == page.preview_token:
-        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.PREVIEW)
-    if page.status == RegistrationPageStatus.CLOSED:
-        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.CLOSED)
-    return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.NOT_FOUND)
+    if page.status == RegistrationPageStatus.TEST:
+        return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.TEST)
+    return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.CLOSED)
 
 
 def get_page_and_source_for_render(uow: AbstractUnitOfWork, page: RegistrationPage) -> HtmlSource:

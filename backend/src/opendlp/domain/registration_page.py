@@ -2,7 +2,6 @@
 ABOUTME: Holds page config plus the HTML source that supplies the registration form"""
 
 import html as html_lib
-import secrets
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -32,9 +31,14 @@ class RegistrationPageSource(Enum):
 
 
 class RegistrationPageStatus(Enum):
-    """Lifecycle state of a RegistrationPage."""
+    """Lifecycle state of a RegistrationPage.
 
-    DRAFT = "DRAFT"
+    TEST loads publicly at the page slug; submissions are recorded as test
+    submissions. PUBLISHED is live; submissions go into the selection pool.
+    CLOSED redirects visitors to the registration-closed page.
+    """
+
+    TEST = "TEST"
     PUBLISHED = "PUBLISHED"
     CLOSED = "CLOSED"
 
@@ -48,7 +52,6 @@ class RegistrationPageAction(Enum):
     UNPUBLISH = "UNPUBLISH"
     CLOSE = "CLOSE"
     REOPEN = "REOPEN"
-    REGENERATE_TOKEN = "REGENERATE_TOKEN"  # noqa: S105 — action name, not a credential
 
 
 class RegistrationPageNotReady(Exception):
@@ -132,8 +135,7 @@ class RegistrationPage:
         assembly_id: uuid.UUID,
         url_slug: str = "",
         short_url_slug: str = "",
-        status: RegistrationPageStatus = RegistrationPageStatus.DRAFT,
-        preview_token: str = "",
+        status: RegistrationPageStatus = RegistrationPageStatus.TEST,
         source_type: RegistrationPageSource = RegistrationPageSource.HTML,
         thank_you_html: str = "",
         activity: list[RegistrationPageActivity] | None = None,
@@ -147,7 +149,6 @@ class RegistrationPage:
         self.url_slug = _validated_slug(url_slug, field="url_slug")
         self.short_url_slug = _validated_slug(short_url_slug, field="short_url_slug")
         self.status = status
-        self.preview_token = preview_token or secrets.token_urlsafe(32)
         self.source_type = source_type
         self.thank_you_html = thank_you_html
         self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
@@ -196,7 +197,7 @@ class RegistrationPage:
         self._append_activity(RegistrationPageAction.EDIT, author_id, text)
 
     def publish(self, source: HtmlSource, author_id: uuid.UUID, text: str = "") -> None:
-        if self.status != RegistrationPageStatus.DRAFT:
+        if self.status != RegistrationPageStatus.TEST:
             raise ValueError(f"Cannot publish a registration page in status {self.status.value}")
         problems = self.readiness_problems(source)
         if problems:
@@ -207,7 +208,7 @@ class RegistrationPage:
     def unpublish(self, author_id: uuid.UUID, text: str = "") -> None:
         if self.status != RegistrationPageStatus.PUBLISHED:
             raise ValueError(f"Cannot unpublish a registration page in status {self.status.value}")
-        self.status = RegistrationPageStatus.DRAFT
+        self.status = RegistrationPageStatus.TEST
         self._append_activity(RegistrationPageAction.UNPUBLISH, author_id, text)
 
     def close(self, author_id: uuid.UUID, text: str = "") -> None:
@@ -225,14 +226,16 @@ class RegistrationPage:
         self.status = RegistrationPageStatus.PUBLISHED
         self._append_activity(RegistrationPageAction.REOPEN, author_id, text)
 
-    def regenerate_preview_token(self, author_id: uuid.UUID) -> None:
-        self.preview_token = secrets.token_urlsafe(32)
-        self._append_activity(RegistrationPageAction.REGENERATE_TOKEN, author_id, "")
+    def is_publicly_loadable(self) -> bool:
+        """True if the form should render at the public slug.
 
-    def is_visible_with(self, token: str = "") -> bool:
-        if self.status == RegistrationPageStatus.PUBLISHED:
-            return True
-        return bool(token) and token == self.preview_token
+        Requires a non-empty ``url_slug`` (a slugless page has no canonical URL
+        to render at) and a status of TEST or PUBLISHED. CLOSED redirects
+        visitors to the registration-closed page, so it never renders the form.
+        """
+        if not self.url_slug:
+            return False
+        return self.status in (RegistrationPageStatus.TEST, RegistrationPageStatus.PUBLISHED)
 
     def create_detached_copy(self) -> "RegistrationPage":
         """Create a detached copy for use outside SQLAlchemy sessions."""
@@ -241,7 +244,6 @@ class RegistrationPage:
             url_slug=self.url_slug,
             short_url_slug=self.short_url_slug,
             status=self.status,
-            preview_token=self.preview_token,
             source_type=self.source_type,
             thank_you_html=self.thank_you_html,
             activity=list(self.activity),

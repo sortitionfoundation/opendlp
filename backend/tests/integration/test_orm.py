@@ -1128,11 +1128,10 @@ class TestRegistrationPageORM:
         assert retrieved_page.assembly_id == assembly.id
         assert retrieved_page.url_slug == "reg-page-assembly"
         assert retrieved_page.short_url_slug == "rpa"
-        assert retrieved_page.status is RegistrationPageStatus.DRAFT
+        assert retrieved_page.status is RegistrationPageStatus.TEST
         assert retrieved_page.activity == []
         assert retrieved_page.source_type is RegistrationPageSource.HTML
         assert retrieved_page.thank_you_html == "<p>thanks</p>"
-        assert retrieved_page.preview_token == page.preview_token
         assert retrieved_page.created_at.tzinfo is not None
         assert retrieved_page.updated_at.tzinfo is not None
 
