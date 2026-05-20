@@ -2,7 +2,9 @@
 
 **Branch:** `610-registration-page-html`
 **Date:** 2026-05-13
-**Status:** Updated 2026-05-19 — Q16 added and resolved: the `is_published: bool` field becomes a three-state enum (`DRAFT / PUBLISHED / CLOSED`), and the page carries a `list[RegistrationPageActivity]` audit trail mirroring the `RespondentComment` pattern. The slug-freeze rule (Q6) tightens to "frozen after first publish", derived from the activity log. See §3.1, §3.6, §4.1, §11 Q6, §11 Q16.
+**Status:** Updated 2026-05-20 — Q17 added and resolved: the draft state becomes `TEST` (`TEST / PUBLISHED / CLOSED`). A `TEST` page loads publicly at its slug with no token; submissions to it create a `Respondent` with `RespondentStatus.TEST_SUBMISSION` (vs `RespondentStatus.POOL` for `PUBLISHED`). The `preview_token` attribute, the `?token=` preview link, the `PREVIEW` visibility state and the `REGENERATE_TOKEN` action are all retired. See §3.1, §5.2, §5.4, §11 Q17. Supersedes the `DRAFT`/preview wording in Q6, Q7, Q12 and Q16.
+
+Updated 2026-05-19 — Q16 added and resolved: the `is_published: bool` field becomes a three-state enum (`DRAFT / PUBLISHED / CLOSED`), and the page carries a `list[RegistrationPageActivity]` audit trail mirroring the `RespondentComment` pattern. The slug-freeze rule (Q6) tightens to "frozen after first publish", derived from the activity log. See §3.1, §3.6, §4.1, §11 Q6, §11 Q16. (The `DRAFT` state was renamed to `TEST` by Q17 — read this entry with that substitution.)
 
 Updated 2026-05-15 — Q1–Q15 all resolved. Q15 settled on Option A (system-generated starter HTML, two render-time tokens only). Render-time tokens are `{{ csrf_form_element }}` and `{{ form_action }}` (renamed from `form_url` per `deltas-to-fix.md` §4). Preview query parameter is `?token=<preview_token>` (per `deltas-to-fix.md` §3). All cross-plan deltas are recorded in `deltas-to-fix.md`; `plan-frontend.md` still needs to absorb their implications.
 
@@ -33,9 +35,8 @@ Where a question in the plan depends on the design of form submission (next stor
 Assembly (1) ──── (0..1) RegistrationPage
                               │   ├── url_slug          (unique under /register/)
                               │   ├── short_url_slug    (unique under /r/)
-                              │   ├── status            (enum: DRAFT / PUBLISHED / CLOSED)
+                              │   ├── status            (enum: TEST / PUBLISHED / CLOSED)
                               │   ├── activity          (list of RegistrationPageActivity)
-                              │   ├── preview_token
                               │   ├── source_type       (enum: HTML for now)
                               │   ├── thank_you_html
                               │   └── created_at / updated_at
@@ -62,7 +63,8 @@ Aligned with `plan-frontend.md`: the long and short slugs live under **separate 
 
 - Canonical (long) form: `/register/<url_slug>`
 - Short form: `/r/<short_url_slug>` — issues a **302** (temporary) redirect to the canonical `/register/<url_slug>` URL (so QR-code scans always land on the canonical address). 302 not 301: short slugs may be cleared and reused later, and a cached permanent redirect would misroute. See Q3.
-- Preview of an unpublished page: `/register/<url_slug>?token=<preview_token>`
+
+A `TEST` page loads publicly at `/register/<url_slug>` with no token — there is no separate preview URL (see Q17). Submissions to a `TEST` page are recorded as test submissions (see §5.4).
 
 Because the two slug types live in different namespaces, a string can be a `url_slug` for one page and a `short_url_slug` for another without colliding as URLs. Each slug column therefore only needs to be unique **within its own column**, across all assemblies — no cross-column uniqueness check is required (this simplifies §4.1, §4.4, §5.1 versus the earlier "both under /r/" design). See Q3.
 
@@ -85,9 +87,9 @@ class RegistrationPageSource(Enum):
 
 
 class RegistrationPageStatus(Enum):
-    """Lifecycle state of a RegistrationPage. See Q16."""
-    DRAFT = "DRAFT"          # never published, or unpublished back to draft
-    PUBLISHED = "PUBLISHED"  # currently live
+    """Lifecycle state of a RegistrationPage. See Q16, Q17."""
+    TEST = "TEST"            # loads publicly at its slug; submissions are test submissions
+    PUBLISHED = "PUBLISHED"  # currently live; submissions go into the pool
     CLOSED = "CLOSED"        # was published, now closed for registration
 
 
@@ -104,7 +106,6 @@ class RegistrationPageAction(Enum):
     UNPUBLISH = "UNPUBLISH"
     CLOSE = "CLOSE"
     REOPEN = "REOPEN"
-    REGENERATE_TOKEN = "REGENERATE_TOKEN"
 
 
 class RegistrationPage:
@@ -113,8 +114,7 @@ class RegistrationPage:
         assembly_id: uuid.UUID,
         url_slug: str = "",
         short_url_slug: str = "",
-        status: RegistrationPageStatus = RegistrationPageStatus.DRAFT,
-        preview_token: str = "",          # auto-generated if blank
+        status: RegistrationPageStatus = RegistrationPageStatus.TEST,
         source_type: RegistrationPageSource = RegistrationPageSource.HTML,
         thank_you_html: str = "",
         activity: list["RegistrationPageActivity"] | None = None,
@@ -123,7 +123,6 @@ class RegistrationPage:
         updated_at: datetime | None = None,
     ):
         # validate slugs (see UrlSlugValidator)
-        # auto-generate preview_token if empty
         # activity defaults to empty list — the service layer's
         # create_registration_page appends the initial CREATE entry.
         ...
@@ -135,11 +134,11 @@ class RegistrationPage:
 
     # ── status transitions (auto-append the matching activity entry):
     def publish(self, source: "HtmlSource", author_id: uuid.UUID, text: str = "") -> None:
-        """Move DRAFT → PUBLISHED (or raise on invalid transition). Raises
+        """Move TEST → PUBLISHED (or raise on invalid transition). Raises
         RegistrationPageNotReady if the (self, source) combination isn't
         publishable. Appends a PUBLISH activity entry."""
     def unpublish(self, author_id: uuid.UUID, text: str = "") -> None:
-        """Move PUBLISHED → DRAFT. Used for 'I made a mistake, want to fix and
+        """Move PUBLISHED → TEST. Used for 'I made a mistake, want to fix and
         republish'. Appends an UNPUBLISH activity entry."""
     def close(self, author_id: uuid.UUID, text: str = "") -> None:
         """Move PUBLISHED → CLOSED. Used for 'registration period is over'.
@@ -147,8 +146,6 @@ class RegistrationPage:
     def reopen(self, source: "HtmlSource", author_id: uuid.UUID, text: str = "") -> None:
         """Move CLOSED → PUBLISHED. Same readiness check as publish. Appends a
         REOPEN activity entry."""
-    def regenerate_preview_token(self, author_id: uuid.UUID) -> None:
-        """Rotate the preview token. Appends a REGENERATE_TOKEN activity entry."""
 
     # ── audit-log helper for generic edits:
     def record_edit(self, author_id: uuid.UUID, text: str) -> None:
@@ -161,11 +158,12 @@ class RegistrationPage:
     @property
     def slugs_frozen(self) -> bool:
         """Slugs are frozen once the page has ever been published — see Q6.
-        DRAFT-after-unpublish and CLOSED both remain frozen so live QR codes
+        TEST-after-unpublish and CLOSED both remain frozen so live QR codes
         still resolve."""
-    def is_visible_with(self, token: str = "") -> bool:
-        """True if status==PUBLISHED, or if `token` is non-empty and matches
-        preview_token (preview works for both DRAFT and CLOSED)."""
+    def is_publicly_loadable(self) -> bool:
+        """True if `url_slug` is non-empty AND status is TEST or PUBLISHED (both
+        render the form at the public slug). False for CLOSED, and for any page
+        without a canonical slug (e.g. a freshly created page) — see §5.4, Q17."""
     def readiness_problems(self, source: "HtmlSource") -> list[str]:
         """Human-readable reasons the (page, source) combo isn't publishable.
         Empty list = ready to publish."""
@@ -179,8 +177,8 @@ Notes:
 - `form_html` is NOT on this class. It's on `RegistrationPageHtml` (see §3.3). The aggregate root holds the cross-source metadata.
 - Status transitions take `author_id` (and an optional free-text `text`) because they append a structured activity entry as part of the transition. The `text` is for an operator-supplied reason (e.g. "closing early — sortition done"); empty is fine.
 - `publish()` / `reopen()` / `readiness_problems()` take the active `HtmlSource` as a parameter because publish-readiness depends on the source (e.g. the HTML source needs its required-template tokens present). Callers must load the source first; the service layer wraps this.
-- Invalid status transitions (e.g. `unpublish()` from DRAFT, `close()` from CLOSED) raise `ValueError`. The valid transitions are: DRAFT→PUBLISHED via `publish`; PUBLISHED→DRAFT via `unpublish`; PUBLISHED→CLOSED via `close`; CLOSED→PUBLISHED via `reopen`.
-- `preview_token` is generated with `secrets.token_urlsafe(32)` — same approach as `password_reset.py`. Stored plaintext (low-stakes: worst case is preview access to draft form HTML; no PII, no write).
+- Invalid status transitions (e.g. `unpublish()` from TEST, `close()` from CLOSED) raise `ValueError`. The valid transitions are: TEST→PUBLISHED via `publish`; PUBLISHED→TEST via `unpublish`; PUBLISHED→CLOSED via `close`; CLOSED→PUBLISHED via `reopen`.
+- There is no preview token. A `TEST` page is loadable by anyone with the slug — see Q17. The `preview_token` field, `regenerate_preview_token`, and the `REGENERATE_TOKEN` action have been retired.
 - Empty slug strings mean "not set yet". Uniqueness enforced at DB level via partial unique indexes on `WHERE slug != ''` (Q2 confirmed).
 - Per Q6, `update_slugs` raises while `slugs_frozen` is True. Slugs unfreeze only if the page has never been published — there is no admin "discard history and start over" path in this story.
 - Pure mutators (`update_slugs`, `update_thank_you_html`) and the `RegistrationPageHtml.update_html` method do NOT log activity themselves — the service layer follows each mutation with a `record_edit(...)` call with a descriptive text. This mirrors the Respondent pattern where status transitions auto-log (like `add_comment(action=CREATE)`) but field setters don't.
@@ -275,7 +273,7 @@ class RegistrationPageActivity:
 
 Append discipline:
 
-- Status transitions (`publish`/`unpublish`/`close`/`reopen`) and `regenerate_preview_token` are responsible for appending their own activity entry as part of the transition. The domain method is the single place to mutate state + log.
+- Status transitions (`publish`/`unpublish`/`close`/`reopen`) are responsible for appending their own activity entry as part of the transition. The domain method is the single place to mutate state + log.
 - Generic edits (slug changes, HTML changes, thank-you changes) use the explicit `record_edit(author_id, text)` helper. The service layer calls a pure setter then `record_edit` with a descriptive string. Pattern parity with Respondent: status changes log automatically; field edits log on the service layer's call. (See §3.1 for the reasoning and §5.1 for the per-function pattern.)
 - The append uses the **reassign-not-mutate** idiom from `Respondent.add_comment` (`self.activity = [*self.activity, new]`) so SQLAlchemy's JSON change-detection fires.
 
@@ -319,10 +317,9 @@ registration_pages = Table(
         "status",
         EnumAsString(RegistrationPageStatus, 32),
         nullable=False,
-        default=RegistrationPageStatus.DRAFT,
+        default=RegistrationPageStatus.TEST,
         index=True,
     ),
-    Column("preview_token", String(64), nullable=False),
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
     # JSON-serialised list of RegistrationPageActivity (see §3.6). Default to
@@ -374,7 +371,7 @@ In `src/opendlp/adapters/database.py`, alongside other `map_imperatively` calls:
 
 `migrations/versions/XXXX_add_registration_pages.py`:
 
-1. Create `registration_pages` table — including `status` (`EnumAsString`, indexed, default `DRAFT`) and `activity` (`JSONB`, default `'[]'`).
+1. Create `registration_pages` table — including `status` (`EnumAsString`, indexed, default `TEST`) and `activity` (`JSONB`, default `'[]'`). There is no `preview_token` column (retired by Q17). A later migration on the same branch (`6157c89afb01`, then a Q17 migration on top) drops `preview_token` and rewrites any `DRAFT` rows to `TEST` — these tables are unreleased, so the migrations stack rather than backfilling production data.
 2. Create the two partial unique indexes on `url_slug` and `short_url_slug`.
 3. Create `registration_page_html_sources` table.
 
@@ -496,7 +493,7 @@ def publish_registration_page(
 ) -> RegistrationPage:
     """Loads page + active source, calls `page.publish(source, author_id=user_id,
     text=text)`. Raises `RegistrationPageNotReady` with the list of problems if
-    not ready, or `ValueError` if the page is not in DRAFT (callers needing the
+    not ready, or `ValueError` if the page is not in TEST (callers needing the
     CLOSED→PUBLISHED transition use `reopen_registration_page` instead)."""
 
 def unpublish_registration_page(
@@ -518,10 +515,6 @@ def reopen_registration_page(
     """Loads page + active source, calls `page.reopen(source,
     author_id=user_id, text=text)`. Only valid from CLOSED — raises ValueError
     otherwise. Same readiness check as publish."""
-
-def regenerate_preview_token(uow, user_id, assembly_id) -> RegistrationPage:
-    """Calls `page.regenerate_preview_token(author_id=user_id)`, which rotates
-    the token and appends a REGENERATE_TOKEN activity entry."""
 ```
 
 `RegistrationPageNotReady` is a new exception in `service_layer/exceptions.py`. It carries the list of problem strings:
@@ -565,15 +558,13 @@ def find_registration_page_by_short_url_slug(uow, short_url_slug: str) -> Regist
 class RegistrationPageVisibilityState(Enum):
     """Outcome of resolving whether a public visitor can see the page.
 
-    LIVE        — render the form (status=PUBLISHED).
-    PREVIEW     — render the form with a preview banner (any status, valid token).
-    CLOSED      — redirect to /registration-closed (status=CLOSED, no preview).
-    NOT_FOUND   — 404. Either the page doesn't exist, or it's DRAFT-with-no-
-                  valid-token (which from the public's perspective is the same
-                  as not existing — we don't want random URL-guessers to learn
-                  that a draft exists at this slug)."""
+    LIVE        — render the form (status=PUBLISHED); submissions go to the pool.
+    TEST        — render the form with a 'test page' banner (status=TEST);
+                  submissions are recorded as test submissions (see §5.4).
+    CLOSED      — redirect to /registration-closed (status=CLOSED).
+    NOT_FOUND   — 404. The page doesn't exist."""
     LIVE = "LIVE"
-    PREVIEW = "PREVIEW"
+    TEST = "TEST"
     CLOSED = "CLOSED"
     NOT_FOUND = "NOT_FOUND"
 
@@ -587,32 +578,35 @@ class RegistrationPageVisibility:
     def is_visible(self) -> bool:
         return self.state in (
             RegistrationPageVisibilityState.LIVE,
-            RegistrationPageVisibilityState.PREVIEW,
+            RegistrationPageVisibilityState.TEST,
         )
 
     @property
-    def is_preview(self) -> bool:
-        return self.state == RegistrationPageVisibilityState.PREVIEW
+    def is_test(self) -> bool:
+        return self.state == RegistrationPageVisibilityState.TEST
 
 
 def resolve_visibility(
     page: RegistrationPage | None,
-    preview_token: str = "",
 ) -> RegistrationPageVisibility:
     """Pure function. The dispatch table:
 
-      page is None                                  → NOT_FOUND
-      status==PUBLISHED                             → LIVE
-      any status + non-empty token matching page    → PREVIEW
-      status==CLOSED, no valid preview              → CLOSED
-      status==DRAFT, no valid preview               → NOT_FOUND
+      page is None          → NOT_FOUND
+      page.url_slug == ""    → NOT_FOUND
+      status==PUBLISHED      → LIVE
+      status==TEST           → TEST
+      status==CLOSED         → CLOSED
 
-    The DRAFT→NOT_FOUND choice deliberately hides draft pages from non-managers
-    even though the underlying row exists. Only the `?token=...` preview link
-    reveals them."""
+    A TEST page is loadable by anyone with the slug (no token) — see Q17. The
+    empty-slug guard makes resolve_visibility self-contained: a page with no
+    canonical slug cannot be rendered at /register/<slug> regardless of status
+    (a freshly created page is TEST with an empty slug), so it is treated as not
+    found rather than relying on the repo lookup to never return it. The only
+    status that hides an otherwise-renderable page is CLOSED, which redirects to
+    the closed page."""
 ```
 
-`resolve_visibility` is pure (no uow) so it's trivially unit-testable and the blueprint stays thin. Route dispatch matches on `visibility.state`: `LIVE`/`PREVIEW` render the form (with a preview banner for `PREVIEW`); `CLOSED` 302s to `/registration-closed`; `NOT_FOUND` returns 404.
+`resolve_visibility` is pure (no uow) so it's trivially unit-testable and the blueprint stays thin. Route dispatch matches on `visibility.state`: `LIVE`/`TEST` render the form (with a test-page banner for `TEST`); `CLOSED` 302s to `/registration-closed`; `NOT_FOUND` returns 404.
 
 For rendering, the route also needs the active source:
 
@@ -662,13 +656,13 @@ Brace-collision risk: literal `{{` in HTML body that isn't a recognised token wo
 
 ### 5.4 The "registration closed" page
 
-The route's response now depends on the page's status (Q16):
+The route's response now depends on the page's status (Q16, Q17):
 
-- **`status==CLOSED`** without a valid preview token: 302-redirect (Q7) to a single canonical `/registration-closed` URL served by the public blueprint. The closed page is a regular Jinja template — **not** the user's HTML. No service-layer involvement.
-- **`status==DRAFT`** without a valid preview token: return 404. We deliberately do not reveal that a draft page exists at this slug to anyone without the preview token.
-- **Preview token valid**: render the form regardless of status (with a preview banner).
+- **`status==PUBLISHED`**: render the form (`LIVE`). A submission creates a `Respondent` with `RespondentStatus.POOL` (the submission path itself is owned by the form-submission story — see §8).
+- **`status==TEST`**: render the form (`TEST`) with a test-page banner. A submission creates a `Respondent` with `RespondentStatus.TEST_SUBMISSION` so test data is distinguishable from real registrations.
+- **`status==CLOSED`**: 302-redirect (Q7) to a single canonical `/registration-closed` URL served by the public blueprint. The closed page is a regular Jinja template — **not** the user's HTML. No service-layer involvement.
 
-This replaces the earlier "unpublished → always redirect to /registration-closed" rule. The new rule is the reason the original `is_published` bool wasn't enough — we needed to separate "never published" (404) from "was published, now closed" (redirect).
+This replaces the earlier "unpublished → always redirect to /registration-closed" / "draft → 404" rules. With `TEST` loading publicly, the distinction the route cares about is `TEST` vs `PUBLISHED` (which submission status to assign) and `CLOSED` (redirect). The `TEST→TEST_SUBMISSION` / `PUBLISHED→POOL` mapping is recorded here but implemented in the form-submission story (§8).
 
 ### 5.5 CSRF and dependency injection
 
@@ -772,7 +766,7 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
 ## 8. Things explicitly punted to the form-submission story
 
 1. The `Respondent` creation path. Already supported by `RespondentSourceType.REGISTRATION_FORM`.
-2. The `RespondentStatus.TEST_SUBMISSION` state from story-notes line 109 — adding the enum value, transitions, filters.
+2. The `RespondentStatus.TEST_SUBMISSION` state — adding the enum value, transitions, filters. **The status-to-submission mapping is now decided (Q17) and recorded in §5.4: a submission to a `TEST` page creates a `Respondent` with `RespondentStatus.TEST_SUBMISSION`; a submission to a `PUBLISHED` page creates one with `RespondentStatus.POOL`.** Only the implementation (the enum value and the create path that reads `page.status`) stays in this story.
 3. Mapping submitted form values → respondent fields. Q15 settles that the author writes `<input name="<field_key>">` themselves (Option A reading of Q8); the form-submission story owns turning a POST body into a `Respondent` via the assembly's `RespondentFieldDefinition` set.
 4. Rate-limiting / bot protection.
 5. Thank-you page substitution context (e.g. `{{ respondent_name }}`) — see `deltas-to-fix.md` §7. v1 has no thank-you placeholders.
@@ -784,19 +778,19 @@ The service layer itself does NOT check the flag — it stays pure. The flag is 
 ## 9. Testing outline
 
 - **Unit tests** for `domain/registration_page.py`:
-  - `RegistrationPage.__init__` validation, `update_slugs` rejection when `slugs_frozen` (per Q6 — i.e. once any PUBLISH activity has been recorded), `is_visible_with`, `readiness_problems` returning a list of strings.
-  - Status transitions: `publish` (DRAFT→PUBLISHED, appends PUBLISH activity), `unpublish` (PUBLISHED→DRAFT, appends UNPUBLISH), `close` (PUBLISHED→CLOSED, appends CLOSE), `reopen` (CLOSED→PUBLISHED, appends REOPEN, runs readiness check). Each rejects invalid source states with `ValueError`. `regenerate_preview_token` appends a REGENERATE_TOKEN entry.
+  - `RegistrationPage.__init__` validation, `update_slugs` rejection when `slugs_frozen` (per Q6 — i.e. once any PUBLISH activity has been recorded), `is_publicly_loadable` (True for TEST and PUBLISHED with a non-empty url_slug, False for CLOSED and for an empty url_slug), `readiness_problems` returning a list of strings.
+  - Status transitions: `publish` (TEST→PUBLISHED, appends PUBLISH activity), `unpublish` (PUBLISHED→TEST, appends UNPUBLISH), `close` (PUBLISHED→CLOSED, appends CLOSE), `reopen` (CLOSED→PUBLISHED, appends REOPEN, runs readiness check). Each rejects invalid source states with `ValueError`.
   - `record_edit` appends a single EDIT entry with the provided text.
-  - `has_ever_been_published()` / `slugs_frozen` derived from activity log: false initially, true after first PUBLISH, stays true through unpublish/close.
+  - `has_ever_been_published()` / `slugs_frozen` derived from activity log: false initially (and editable while in TEST), true after first PUBLISH, stays true through unpublish/close.
   - Activity append uses reassign-not-mutate (SQLAlchemy JSON change-detection contract).
   - `RegistrationPageActivity.to_dict` / `from_dict` round-trip including unknown action defaulting (graceful schema growth).
   - `RegistrationPageHtml.render` substitution behaviour (both `{{ csrf_form_element }}` and `{{ form_action }}`), `readiness_problems`.
   - `UrlSlugValidator` accept/reject cases including reserved values, with errors that distinguish reserved vs malformed (per `deltas-to-fix.md` §12).
   - `generate_starter_form_html` (pure helper): produces a `<form action="{{ form_action }}">` wrapper, includes `{{ csrf_form_element }}`, emits one labelled control per `RespondentFieldDefinition`, expands `ChoiceOption` lists into per-option HTML.
   - `DEFAULT_THANK_YOU_HTML` constant non-empty and contains `<h1>` and `<p>`.
-  - `resolve_visibility` dispatch table: None→NOT_FOUND, DRAFT→NOT_FOUND (no token), DRAFT→PREVIEW (valid token), PUBLISHED→LIVE, PUBLISHED+token→still LIVE (preview path doesn't downgrade), CLOSED→CLOSED (no token), CLOSED→PREVIEW (valid token), wrong-token→same as no-token.
+  - `resolve_visibility` dispatch table: None→NOT_FOUND, empty-url_slug→NOT_FOUND (even when TEST/PUBLISHED), TEST→TEST, PUBLISHED→LIVE, CLOSED→CLOSED. `is_visible` true for LIVE and TEST; `is_test` true only for TEST.
 - **Contract tests** for `RegistrationPageRepository` and `RegistrationPageHtmlRepository` against SqlAlchemy (plus an in-memory fake if we use the existing fake repo pattern). Cover round-tripping the `status` enum and the `activity` JSONB list including non-empty activity.
-- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, `create_registration_page` seeds `DEFAULT_THANK_YOU_HTML`, leaves `form_html` empty, and appends a CREATE activity entry with `author_id=user_id`, per-column slug uniqueness, slug-error specificity (errors identify which slug column and which failure type — `deltas-to-fix.md` §12), slug change after first publish rejected (incl. while CLOSED), publish/unpublish/close/reopen happy paths and invalid-state rejection, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, each transition writes the matching activity entry, edit functions write EDIT entries only on actual change (no log spam on no-op saves), preview-token rotation writes REGENERATE_TOKEN entry, public lookup by url_slug and by short_url_slug, render-context substitution, size-limit rejection (Q4), env-var override of size limits, `generate_starter_form_html` wrapper loads the assembly's schema and delegates.
+- **Service-level tests** for each `registration_page_service` function: permission failures, explicit create (Q11) including "already exists" rejection, `create_registration_page` seeds `DEFAULT_THANK_YOU_HTML`, leaves `form_html` empty, and appends a CREATE activity entry with `author_id=user_id`, per-column slug uniqueness, slug-error specificity (errors identify which slug column and which failure type — `deltas-to-fix.md` §12), slug change after first publish rejected (incl. while CLOSED), publish/unpublish/close/reopen happy paths and invalid-state rejection, publish-without-required-fields → `RegistrationPageNotReady` carrying problems, each transition writes the matching activity entry, edit functions write EDIT entries only on actual change (no log spam on no-op saves), public lookup by url_slug and by short_url_slug, render-context substitution, size-limit rejection (Q4), env-var override of size limits, `generate_starter_form_html` wrapper loads the assembly's schema and delegates.
 - **BDD** deferred to the route-level plan.
 
 ---
@@ -864,13 +858,13 @@ No. Publish without it; the form-submission route serves a generic fallback from
 
 No. Slug changes (both `url_slug` and `short_url_slug`) are forbidden once the page has ever been published — i.e. while `RegistrationPage.slugs_frozen` is True, which is `has_ever_been_published()` derived from the activity log (Q16). `update_registration_page` raises `ValueError`.
 
-Concretely: slugs unfreeze only if the page is still in DRAFT and has never had a PUBLISH activity entry. After publishing once, the slugs are permanently fixed for the lifetime of the page — they stay frozen through `unpublish`/`close`/`reopen` cycles so any QR codes or printed materials referring to the old slug continue to resolve. There is no admin "discard history and restart" path in this story.
+Concretely: slugs are editable only while the page is still in TEST and has never had a PUBLISH activity entry. After publishing once, the slugs are permanently fixed for the lifetime of the page — they stay frozen through `unpublish`/`close`/`reopen` cycles so any QR codes or printed materials referring to the old slug continue to resolve. There is no admin "discard history and restart" path in this story. (Q17 confirmed this rule survives the DRAFT→TEST rename: editable in TEST, frozen after first publish.)
 
 Earlier wording said "forbidden while `is_published=True`", which would have unfrozen the slug on every `unpublish`. That was too loose — the QR-code-stability story is the load-bearing constraint. Tightened to "after first publish" here, and that's the rule encoded in §3.1's `slugs_frozen` property.
 
-### Q7 — Unpublished page: redirect or render in place? **RESOLVED**
+### Q7 — Unpublished page: redirect or render in place? **RESOLVED (scope narrowed by Q17)**
 
-302-redirect to a canonical `/registration-closed` URL.
+302-redirect to a canonical `/registration-closed` URL. Per Q17 this now applies only to `CLOSED` pages — a `TEST` page renders the form in place (with a test banner) rather than redirecting, and there is no longer a `DRAFT` state to 404.
 
 ### Q8 — Required-input-fields templating **RESOLVED (via Q15)**
 
@@ -888,9 +882,9 @@ Read-only assembly members CAN see the registration tab; write controls hidden b
 
 Explicit create. `create_registration_page` is a named action; `get_registration_page` returns `None` if not yet created. Future "choice of HTML vs template" plugs into the `source_type` parameter on create.
 
-### Q12 — Preview-token rotation triggers **RESOLVED**
+### Q12 — Preview-token rotation triggers **OBSOLETE (superseded by Q17)**
 
-Option (b): token is generated when the page is first created and persists across publish/unpublish/close/reopen cycles. Only `regenerate_preview_token` rotates it. Already consistent with §3.1 and §5.1 — `unpublish()`, `close()` and `reopen()` do not touch the token. Per Q16, `regenerate_preview_token` appends a `REGENERATE_TOKEN` activity entry so the rotation is auditable.
+This question is moot: Q17 retired the preview token entirely. A `TEST` page is loadable by anyone with the slug, so there is no token to generate, persist or rotate, and no `REGENERATE_TOKEN` action. Kept here for history only.
 
 ### Q13 — Should `thank_you_html` ALSO be split into a child table for parity? **RESOLVED**
 
@@ -926,7 +920,9 @@ converging on the **same** rendered output:
 
 Examples B and C are kept as historical context for the decision; only A reflects the agreed direction.
 
-### Q16 — Lifecycle state representation: bool vs enum, and the audit trail **RESOLVED (2026-05-19)**
+### Q16 — Lifecycle state representation: bool vs enum, and the audit trail **RESOLVED (2026-05-19; DRAFT→TEST by Q17)**
+
+> **Superseded in part by Q17 (2026-05-20):** the `DRAFT` state was renamed `TEST`, the `REGENERATE_TOKEN` action and preview token were retired, and a `TEST` page now loads publicly (no 404-to-hide-existence). The enum/audit-log decision below stands; substitute `TEST` for `DRAFT` and ignore the `REGENERATE_TOKEN` mention when reading it.
 
 **Background.** The earlier plan had `is_published: bool`. The public-route dispatch in §5.4 conflated "never published" and "was published, now closed" — both 302'd to `/registration-closed`. We need to distinguish them: a draft shouldn't even reveal that an assembly exists at the slug (404), while a closed page should tell visitors registration is over.
 
@@ -950,3 +946,26 @@ Examples B and C are kept as historical context for the decision; only A reflect
 - Every domain method that mutates state takes `author_id`. Service-layer wiring is mechanical.
 - Discipline required: pure setters (`update_slugs`, `update_thank_you_html`, `RegistrationPageHtml.update_html`) don't log; the service layer calls `record_edit` after them. Mirrors how `Respondent` distinguishes status transitions (auto-comment on `add_comment`) from field setters.
 - Activity log text is English-only in v1. If/when translated, system-composed strings move to `lazy_gettext`; operator-supplied reasons stay verbatim.
+
+### Q17 — `DRAFT` → `TEST`, public test loading, and retiring the preview token **RESOLVED (2026-05-20)**
+
+**Background.** Q16 modelled the pre-publish state as `DRAFT`: hidden from the public (404), reachable only via a `?token=<preview_token>` preview link. In practice operators want to *test the real form at its real URL* before going live — fill it in, check it submits — without that test data polluting the selection pool, and without managing a secret preview link. The token machinery (the column, the `REGENERATE_TOKEN` action, the `PREVIEW` visibility state) existed only to gate a draft that no one could otherwise reach.
+
+**Decision.**
+
+1. Rename the pre-publish state `DRAFT` → `TEST`. The enum is now `TEST / PUBLISHED / CLOSED`.
+2. A `TEST` page **loads publicly at its slug with no token** — same render path as `PUBLISHED`, plus a "test page" banner (banner is the frontend's job; the service signals it via the `TEST` visibility state).
+3. Submissions are routed by status: a submission to a `TEST` page creates a `Respondent` with `RespondentStatus.TEST_SUBMISSION`; a submission to a `PUBLISHED` page creates one with `RespondentStatus.POOL`. This mapping is decided here (see §5.4) but **implemented in the form-submission story** (§8) — that story still owns adding the `TEST_SUBMISSION` enum value and the create path.
+4. Retire the preview token completely: drop the `preview_token` field/column, the `regenerate_preview_token` domain method and service function, the `REGENERATE_TOKEN` action, the `PREVIEW` visibility state, and the `?token=` URL. `resolve_visibility` no longer takes a token argument.
+5. `is_visible_with(token)` becomes `is_publicly_loadable()` — True for `TEST` and `PUBLISHED` with a non-empty `url_slug`, False for `CLOSED` and for any page without a canonical slug.
+6. Slug-freeze rule (Q6) is unchanged in spirit: slugs are editable while in `TEST` and freeze permanently after the first `PUBLISH`. QR-code stability still holds for published pages.
+
+**Why drop the preview token rather than keep it as an extra gate?** With `TEST` already public, the token guards nothing — there is no "hidden draft" to reveal. Keeping it would be dead state plus a migration liability. Removing it shrinks the domain surface (one fewer column, action, visibility state and URL form) and removes the question of when to rotate it.
+
+**Why route submission status off `page.status` rather than a separate flag?** The status already encodes exactly the distinction we need (is this live or a test?). A `TEST` page's whole purpose is producing test submissions, so reading status at submit time is the single source of truth — no risk of a flag drifting out of sync with the lifecycle state.
+
+**Migration impact.** These tables are unreleased (still on `610-registration-page-html`, not in `main`). A new migration stacks on top of the existing ones to rewrite any `DRAFT` rows to `TEST`, change the column default, and drop the `preview_token` column (per the chosen "new migration on top" approach). No production data exists.
+
+**Trade-offs accepted.**
+- Anyone who learns a `TEST` slug can submit test data. Acceptable: test submissions are quarantined as `TEST_SUBMISSION` and never enter the pool, and slugs are not enumerable secrets anyway.
+- Frontend work (banner, removing the preview-link UI) lands in `plan-frontend.md`; the data/service layer just exposes the `TEST` visibility state.
