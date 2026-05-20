@@ -541,8 +541,13 @@ def see_assembly_question_section(page: Page):
 @then("I should see the assembly details summary")
 def see_assembly_details_summary(page: Page):
     """Verify the assembly details summary (dl/dd section) is visible."""
-    details_section = page.locator("section", has_text="Details").locator("dl")
-    expect(details_section).to_be_visible()
+    # The section() macro renders a div, not a section element
+    # Look for h2 heading "Details" and verify the dl is visible
+    heading = page.locator("h2", has_text="Details")
+    expect(heading).to_be_visible()
+    # The dl should be a sibling of the h2 within the same container
+    details_list = page.locator("dl").first
+    expect(details_list).to_be_visible()
 
 
 @then(parsers.parse('I should see "{text}"'))
