@@ -4,6 +4,7 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import base64
 import io
 import uuid
+from typing import cast
 
 import qrcode
 from flask import Blueprint, Response, current_app, flash, jsonify, redirect, render_template, request, url_for
@@ -12,6 +13,11 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.registration_page import (
+    RegistrationPageHtml,
+    RegistrationPageNotReady,
+    RegistrationPageStatus,
+)
 from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.entrypoints.forms import (
@@ -36,8 +42,11 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_page_service import (
+    create_registration_page,
     get_registration_page_with_source,
+    publish_registration_page,
     update_registration_page,
+    update_registration_page_html,
 )
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.service_layer.user_service import (
@@ -435,23 +444,16 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.args.get("source", ""),
         )
 
-        # TODO: Get registration page data from service layer when available
-        # registration_page = get_registration_page(uow, assembly_id)
+        # Get registration page and HTML source from service layer
+        uow = bootstrap.bootstrap()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
 
-        # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
-        # For now, use assembly ID as a placeholder slug
-        placeholder_slug = str(assembly_id)[:8]
-        placeholder_short_url = request.host_url + "r/" + placeholder_slug
-        qr_code_data_url = generate_qr_code_base64(placeholder_short_url)
-
-        # Publication status (placeholder values until service layer provides real data)
-        is_published = False  # Default to unpublished
-        preview_token = placeholder_slug + "preview"  # Placeholder preview token
-        preview_url = request.host_url + "register/" + placeholder_slug + "?token=" + preview_token
-
-        # HTML content (placeholder until service layer provides real data)
-        html_content = ""  # Will be populated from registration_page when available
-        thank_you_html = ""  # Will be populated from registration_page when available
+        if result:
+            _registration_page, html_source = result
+            html = cast(RegistrationPageHtml, html_source)
+            html_content = html.form_html
+        else:
+            html_content = ""
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -461,13 +463,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
-            qr_code_data_url=qr_code_data_url,
-            is_published=is_published,
-            preview_token=preview_token,
-            preview_url=preview_url,
             html_content=html_content,
-            thank_you_html=thank_you_html,
-            # registration_page=registration_page,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -488,7 +484,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
 @login_required
 def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save registration form configuration (stub - service layer not yet implemented)."""
+    """Save and publish registration form HTML content."""
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         _nav = get_assembly_nav_context(
@@ -498,24 +494,44 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "",
         )
 
-        # Extract form data (for future use when service layer is ready)
-        url_slug = request.form.get("url_slug", "").strip()
-        short_url_slug = request.form.get("short_url_slug", "").strip()
-        is_published = request.form.get("is_published") == "on"
         html_content = request.form.get("html_content", "")
-        thank_you_html = request.form.get("thank_you_html", "")
+        action = request.form.get("action", "save")
 
-        # TODO: Call service layer to save registration page when available
-        # save_registration_page(uow, assembly_id, url_slug, short_url_slug, is_published, html_content, thank_you_html)
+        # Check if registration page exists, create if not
+        uow = bootstrap.bootstrap()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
 
-        # Stub: flash message indicating save is not yet implemented
-        current_app.logger.info(
-            f"Registration save stub called for assembly {assembly_id}: "
-            f"url_slug={url_slug}, short_url_slug={short_url_slug}, is_published={is_published}, "
-            f"html_content_length={len(html_content)}, thank_you_html_length={len(thank_you_html)}"
-        )
-        flash(_("Registration settings saved (stub - persistence not yet implemented)"), "info")
+        if not result:
+            # Create registration page first
+            uow = bootstrap.bootstrap()
+            create_registration_page(uow, current_user.id, assembly_id)
 
+        # Update HTML content
+        uow = bootstrap.bootstrap()
+        update_registration_page_html(uow, current_user.id, assembly_id, html_content)
+
+        if action == "publish":
+            # Publish the page (only if it's in DRAFT status)
+            uow = bootstrap.bootstrap()
+            result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+            if result:
+                registration_page, _html_source = result
+                if registration_page.status == RegistrationPageStatus.DRAFT:
+                    uow = bootstrap.bootstrap()
+                    publish_registration_page(uow, current_user.id, assembly_id)
+                    flash(_("Registration form published successfully"), "success")
+                else:
+                    # Already published, just saved the HTML
+                    flash(_("Registration form HTML updated successfully"), "success")
+        else:
+            # Just save, don't publish
+            flash(_("Registration form saved"), "success")
+        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+    except RegistrationPageNotReady as e:
+        # Show specific validation errors for publishing
+        error_message = "; ".join(e.problems)
+        current_app.logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
+        flash(error_message, "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -525,10 +541,15 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
+    except ValueError as e:
+        current_app.logger.warning(f"Validation error for assembly {assembly_id}: {e}")
+        flash(str(e), "error")
+        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(
             f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
         )
+        current_app.logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
 

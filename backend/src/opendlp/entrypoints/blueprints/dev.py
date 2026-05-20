@@ -34,6 +34,7 @@ from opendlp.service_layer.registration_page_service import (
     reopen_registration_page,
     unpublish_registration_page,
     update_registration_page,
+    update_registration_page_html,
 )
 from opendlp.service_layer.respondent_service import (
     get_respondents_for_assembly,
@@ -597,6 +598,36 @@ def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str,
             return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
+def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_registration_page_html service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    form_html = params.get("form_html", "")
+
+    with uow:
+        try:
+            html_source = update_registration_page_html(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                form_html=form_html,
+            )
+            return {
+                "status": "success",
+                "html_source": {
+                    "id": str(html_source.id),
+                    "form_html_preview": html_source.form_html[:200] + "..."
+                    if len(html_source.form_html) > 200
+                    else html_source.form_html,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except ValueError as e:
+            return {"status": "error", "error": str(e), "error_type": "ValueError"}
+
+
 def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle publish_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
@@ -716,6 +747,7 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "create_registration_page": _handle_create_registration_page,
     "get_registration_page_with_source": _handle_get_registration_page,
     "update_registration_page": _handle_update_registration_page,
+    "update_registration_page_html": _handle_update_registration_page_html,
     "generate_starter_form_html": _handle_generate_starter_html,
     "publish_registration_page": _handle_publish_registration_page,
     "unpublish_registration_page": _handle_unpublish_registration_page,

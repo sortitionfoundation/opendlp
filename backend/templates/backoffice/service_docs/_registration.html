@@ -349,6 +349,130 @@
         {% endcall %}
     {% endcall %}
 
+    {# update_registration_page_html #}
+    {% call card(title="update_registration_page_html()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_page_service.py:193
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update the registration page's form HTML content. Validates size limit and records an edit activity entry.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    form_html
+                                </td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">
+                                    HTML content for the registration form
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationPageHtml  →  The updated HTML source object
+                </code>
+            </div>
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ValueError</code> — HTML content exceeds size limit
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">RegistrationPageNotFoundError</code> — Assembly has no registration page
+                    </li>
+                </ul>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="updateHtmlAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Form HTML</label>
+                        <textarea x-model="updateHtmlContent"
+                                  rows="6"
+                                  placeholder='<form action="{{ form_action }}" method="POST">&#10;  {{ csrf_form_element }}&#10;  <input type="text" name="name" required />&#10;  <button type="submit">Register</button>&#10;</form>'
+                                  class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                                  style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);"></textarea>
+                    </div>
+                    <button @click="executeUpdateRegistrationHtml()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.update_registration_html">
+                        <span x-show="!loading.update_registration_html">Execute</span>
+                        <span x-show="loading.update_registration_html">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.update_registration_html" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('update_registration_html')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
     {# generate_starter_form_html #}
     {% call card(title="generate_starter_form_html()", composed=true) %}
         {% call card_body() %}

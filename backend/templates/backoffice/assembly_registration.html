@@ -62,9 +62,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
                 ) }}
 
-                {# Publish button #}
-                <div class="flex justify-end">
-                    {{ button(_("Publish"), type="submit", variant="primary") }}
+                {# Save and Publish buttons #}
+                <div class="flex justify-end gap-3">
+                    {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                    {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
                 </div>
             </div>
         </section>
