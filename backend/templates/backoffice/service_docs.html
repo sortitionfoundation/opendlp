@@ -130,6 +130,9 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                 updateHtmlAssemblyId: '',
                 updateHtmlContent: '',
                 publishAssemblyId: '',
+                unpublishAssemblyId: '',
+                closeAssemblyId: '',
+                reopenAssemblyId: '',
                 generateStarterAssemblyId: '',
 
                 // Loading state for each service
@@ -148,6 +151,9 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     update_registration_page: false,
                     update_registration_html: false,
                     publish_registration: false,
+                    unpublish_registration: false,
+                    close_registration: false,
+                    reopen_registration: false,
                     generate_starter_html: false
                 },
 
@@ -167,6 +173,9 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     update_registration_page: null,
                     update_registration_html: null,
                     publish_registration: null,
+                    unpublish_registration: null,
+                    close_registration: null,
+                    reopen_registration: null,
                     generate_starter_html: null
                 },
 
@@ -211,6 +220,9 @@ Age,51+,2,5,1,1`,
                         'update_registration_page': 'update_registration_page',
                         'update_registration_page_html': 'update_registration_html',
                         'publish_registration_page': 'publish_registration',
+                        'unpublish_registration_page': 'unpublish_registration',
+                        'close_registration_page': 'close_registration',
+                        'reopen_registration_page': 'reopen_registration',
                         'generate_starter_form_html': 'generate_starter_html'
                     };
                     const key = keyMap[serviceName];
@@ -354,6 +366,21 @@ Age,51+,2,5,1,1`,
                 executePublishRegistrationPage() {
                     this.executeService('publish_registration_page', {
                         assembly_id: this.publishAssemblyId
+                    });
+                },
+                executeUnpublishRegistrationPage() {
+                    this.executeService('unpublish_registration_page', {
+                        assembly_id: this.unpublishAssemblyId
+                    });
+                },
+                executeCloseRegistrationPage() {
+                    this.executeService('close_registration_page', {
+                        assembly_id: this.closeAssemblyId
+                    });
+                },
+                executeReopenRegistrationPage() {
+                    this.executeService('reopen_registration_page', {
+                        assembly_id: this.reopenAssemblyId
                     });
                 },
                 executeGenerateStarterHtml() {

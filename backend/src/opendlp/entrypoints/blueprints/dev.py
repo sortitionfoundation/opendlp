@@ -25,10 +25,13 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_page_service import (
+    close_registration_page,
     create_registration_page,
     generate_starter_form_html,
     get_registration_page_with_source,
     publish_registration_page,
+    reopen_registration_page,
+    unpublish_registration_page,
     update_registration_page,
 )
 from opendlp.service_layer.respondent_service import (
@@ -609,7 +612,6 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
                 "registration_page": {
                     "id": str(reg_page.id),
                     "status": reg_page.status.value if reg_page.status else None,
-                    "published_at": reg_page.published_at.isoformat() if reg_page.published_at else None,
                 },
             }
         except InsufficientPermissions as e:
@@ -618,6 +620,84 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
             return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
         except Exception as e:
             # Catch RegistrationPageNotReady or other validation errors
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle unpublish_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = unpublish_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle close_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = close_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle reopen_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = reopen_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
             return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
@@ -637,6 +717,9 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "update_registration_page": _handle_update_registration_page,
     "generate_starter_form_html": _handle_generate_starter_html,
     "publish_registration_page": _handle_publish_registration_page,
+    "unpublish_registration_page": _handle_unpublish_registration_page,
+    "close_registration_page": _handle_close_registration_page,
+    "reopen_registration_page": _handle_reopen_registration_page,
 }
 
 
