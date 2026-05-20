@@ -7,7 +7,7 @@
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    registration_page_service.py:54
+                    registration_page_service.py:56
                 </code>
                 <div class="flex gap-2">
                     <span class="text-body-sm px-2 py-1 rounded"
@@ -125,7 +125,7 @@
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    registration_page_service.py:95
+                    registration_page_service.py:98
                 </code>
                 <div class="flex gap-2">
                     <span class="text-body-sm px-2 py-1 rounded"
@@ -215,7 +215,7 @@
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    registration_page_service.py:110
+                    registration_page_service.py:121
                 </code>
                 <div class="flex gap-2">
                     <span class="text-body-sm px-2 py-1 rounded"
@@ -357,7 +357,7 @@
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    registration_page_service.py:280
+                    registration_page_service.py:366
                 </code>
                 <div class="flex gap-2">
                     <span class="text-body-sm px-2 py-1 rounded"
@@ -447,7 +447,7 @@
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    registration_page_service.py:188
+                    registration_page_service.py:214
                 </code>
                 <div class="flex gap-2">
                     <span class="text-body-sm px-2 py-1 rounded"
@@ -457,7 +457,7 @@
             </div>
             {# Description #}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Publish the registration page, making it visible to the public. Raises error if page is not ready for publishing.") }}
+                {{ _("Publish the registration page (DRAFT → PUBLISHED), making it visible to the public. Raises error if page is not ready for publishing. Logs a PUBLISH activity entry.") }}
             </p>
             {# Parameters #}
             <div class="mb-6">
@@ -467,13 +467,27 @@
                            style="border: 1px solid var(--color-borders-dividers)">
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono">
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
-                                <td class="px-3 py-2">UUID</td>
-                                <td class="px-3 py-2">✅</td>
-                                <td class="px-3 py-2">
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    text
+                                </td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    Optional reason/note for the activity log
                                 </td>
                             </tr>
                         </tbody>
@@ -485,7 +499,7 @@
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    RegistrationPage  →  The published registration page
+                    RegistrationPage  →  The published registration page (status=PUBLISHED)
                 </code>
             </div>
             {# Error Cases #}
@@ -496,6 +510,10 @@
                     <li>
                         <code class="px-1 rounded"
                               style="background-color: var(--color-error-100)">RegistrationPageNotReady</code> — Page is not in ready state
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in DRAFT state)
                     </li>
                 </ul>
             </div>
@@ -533,6 +551,346 @@
                 <pre class="p-3 rounded text-body-sm overflow-x-auto"
                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
                      x-text="JSON.stringify(responses.publish_registration, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# unpublish_registration_page #}
+    {% call card(title="unpublish_registration_page()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_page_service.py:231
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Move the page back to draft (PUBLISHED → DRAFT). Used for 'I made a mistake, want to fix and republish'. Note: slugs remain frozen after first publish. Logs an UNPUBLISH activity entry.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    text
+                                </td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    Optional reason/note for the activity log
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationPage  →  The unpublished registration page (status=DRAFT)
+                </code>
+            </div>
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in PUBLISHED state)
+                    </li>
+                </ul>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="unpublishAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeUnpublishRegistrationPage()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.unpublish_registration">
+                        <span x-show="!loading.unpublish_registration">Execute</span>
+                        <span x-show="loading.unpublish_registration">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.unpublish_registration" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.unpublish_registration, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# close_registration_page #}
+    {% call card(title="close_registration_page()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_page_service.py:248
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Close the registration page (PUBLISHED → CLOSED). Used when the registration period is over. Visitors see a 'registration closed' message. Logs a CLOSE activity entry.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    text
+                                </td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    Optional reason/note for the activity log (e.g. "Registration period ended")
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationPage  →  The closed registration page (status=CLOSED)
+                </code>
+            </div>
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in PUBLISHED state)
+                    </li>
+                </ul>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="closeAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeCloseRegistrationPage()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.close_registration">
+                        <span x-show="!loading.close_registration">Execute</span>
+                        <span x-show="loading.close_registration">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.close_registration" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.close_registration, null, 2)"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# reopen_registration_page #}
+    {% call card(title="reopen_registration_page()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_page_service.py:265
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Reopen a closed registration page (CLOSED → PUBLISHED). Runs the same readiness check as publish. Logs a REOPEN activity entry.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    text
+                                </td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    Optional reason/note for the activity log (e.g. "Extending registration deadline")
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationPage  →  The reopened registration page (status=PUBLISHED)
+                </code>
+            </div>
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">RegistrationPageNotReady</code> — Page is not in ready state
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in CLOSED state)
+                    </li>
+                </ul>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="reopenAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeReopenRegistrationPage()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.reopen_registration">
+                        <span x-show="!loading.reopen_registration">Execute</span>
+                        <span x-show="loading.reopen_registration">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.reopen_registration" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
+                     x-text="JSON.stringify(responses.reopen_registration, null, 2)"></pre>
             </div>
         {% endcall %}
     {% endcall %}
