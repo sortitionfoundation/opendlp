@@ -43,65 +43,6 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
           class="space-y-8">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        {# Publication Status Section #}
-        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Publication Status") }}</h2>
-
-            <div class="space-y-6 max-w-2xl">
-                {# Published Toggle #}
-                {{ switch(
-                name="is_published",
-                label=_("Published"),
-                checked=is_published,
-                hint=_("When published, the registration form is publicly accessible")
-                ) }}
-
-                {# Preview Section - shown when not published #}
-                {% if not is_published %}
-                    <div class="p-4 rounded-lg" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
-                        <h3 class="text-heading-sm mb-3" style="color: var(--color-info-600);">{{ _("Preview Mode") }}</h3>
-                        <p class="text-body-sm mb-4" style="color: var(--color-body-text);">
-                            {{ _("While unpublished, use the preview URL below to test your form.") }}
-                        </p>
-
-                        {# Preview Token #}
-                        <div class="mb-4">
-                            <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Preview Token") }}</label>
-                            <div class="flex items-center gap-2">
-                                <code class="text-body-sm px-3 py-2 rounded-lg"
-                                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
-                                    {{ preview_token }}
-                                </code>
-                            </div>
-                        </div>
-
-                        {# Preview URL #}
-                        <div>
-                            <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Preview URL") }}</label>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <a href="{{ preview_url }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="text-body-sm underline break-all"
-                                   style="color: var(--color-link-text);">
-                                    {{ preview_url }}
-                                </a>
-                                <span class="text-body-sm" style="color: var(--color-secondary-text);">
-                                    ({{ _("opens in new tab") }})
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="p-4 rounded-lg" style="background-color: var(--color-success-100); border: 1px solid var(--color-success-400);">
-                        <p class="text-body-sm" style="color: var(--color-success-600);">
-                            {{ _("Your registration form is live and accessible to the public.") }}
-                        </p>
-                    </div>
-                {% endif %}
-            </div>
-        </section>
-
         {# Registration Form HTML Section #}
         <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
             <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
@@ -120,84 +61,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 rows=25,
                 attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
                 ) }}
-            </div>
-        </section>
 
-        {# Thank You Page HTML Section #}
-        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Thank You Page HTML") }}</h2>
-
-            <div class="space-y-4">
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("This page is shown after successful registration.") }}
-                </p>
-
-                {# Thank You HTML Textarea with monospace font #}
-                {{ textarea(
-                name="thank_you_html",
-                label="",
-                value=thank_you_html,
-                placeholder="<h1>Thank you for registering!</h1>\n<p>Your registration has been received.</p>\n<p>We will contact you with further details.</p>",
-                rows=12,
-                attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
-                ) }}
-            </div>
-        </section>
-
-        {# Required Placeholders Reference Section #}
-        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Required Placeholders") }}</h2>
-            <p class="text-body-sm mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Your form HTML must include these two placeholders. All other form fields should be written as standard HTML.") }}
-            </p>
-
-            <div class="space-y-3">
-                {% for placeholder in [
-                ("{{ form_action }}", _("Form submission URL — use in the form's action attribute")),
-                ("{{ csrf_form_element }}", _("CSRF protection token — place inside the form element"))
-                ] %}
-                <div class="flex items-center gap-3 py-1" x-data="placeholderCopy()">
-                    <code class="text-body-sm px-3 py-1.5 rounded font-mono"
-                          style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"
-                          x-ref="code">{{ placeholder[0] }}</code>
-                    <button type="button"
-                            class="text-button-sm px-2 py-1 rounded transition-colors"
-                            style="color: var(--color-link-text);"
-                            @click="copyText()"
-                            x-text="copied ? '{{ _('Copied!') }}' : '{{ _('Copy') }}'"
-                            :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy placeholder to clipboard') }}'">
-                    </button>
-                    <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ placeholder[1] }}</span>
+                {# Publish button #}
+                <div class="flex justify-end">
+                    {{ button(_("Publish"), type="submit", variant="primary") }}
                 </div>
-{% endfor %}
-</div>
-</section>
-
-        {# Form Actions #}
-<section class="flex gap-4">
-    {{ button(_("Back to Details"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id), variant="outline") }}
-    {{ button(_("Save"), type="submit", variant="primary") }}
-</section>
-</form>
-
-<script nonce="{{ csp_nonce }}">
-    document.addEventListener('alpine:init', function() {
-        Alpine.data('placeholderCopy', function() {
-            return {
-                copied: false,
-
-                copyText: function() {
-                    var self = this;
-                    var text = this.$refs.code.textContent;
-                    navigator.clipboard.writeText(text).then(function() {
-                        self.copied = true;
-                        setTimeout(function() {
-                            self.copied = false;
-                        }, 2000);
-                    });
-                }
-            };
-        });
-    });
-</script>
+            </div>
+        </section>
+    </form>
 {% endblock %}
