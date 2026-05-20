@@ -170,7 +170,7 @@
                 </div>
                 <pre class="p-3 rounded text-body-sm overflow-x-auto"
                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
-                     x-text="JSON.stringify(responses.create_assembly, null, 2)"></pre>
+                     x-text="formatResponse('create_assembly')"></pre>
             </div>
         {% endcall %}
     {% endcall %}
@@ -264,7 +264,7 @@
                 </div>
                 <pre class="p-3 rounded text-body-sm overflow-x-auto"
                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
-                     x-text="JSON.stringify(responses.get_assembly, null, 2)"></pre>
+                     x-text="formatResponse('get_assembly')"></pre>
             </div>
         {% endcall %}
     {% endcall %}
@@ -385,7 +385,7 @@
                 </div>
                 <pre class="p-3 rounded text-body-sm overflow-x-auto"
                      style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);"
-                     x-text="JSON.stringify(responses.update_assembly, null, 2)"></pre>
+                     x-text="formatResponse('update_assembly')"></pre>
             </div>
         {% endcall %}
     {% endcall %}

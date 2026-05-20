@@ -458,6 +458,17 @@ Age,51+,2,5,1,1`,
                 },
                 copyRegistrationServiceRef() {
                     this.copyToClipboard('registration_page_service.py:54');
+                },
+
+                // Helper to stringify responses for x-text (CSP-safe)
+                formatResponse(key) {
+                    const data = this.responses[key];
+                    if (!data) return '';
+                    try {
+                        return JSON.stringify(data, null, 2);
+                    } catch (e) {
+                        return 'Error formatting: ' + e.message;
+                    }
                 }
             }));
         });

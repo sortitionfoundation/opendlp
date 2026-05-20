@@ -532,9 +532,9 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
                 },
                 "html_source": {
                     "id": str(html_source.id),
-                    "html_content_preview": html_source.html_content[:200] + "..."
-                    if len(html_source.html_content) > 200
-                    else html_source.html_content,
+                    "form_html_preview": html_source.form_html[:200] + "..."
+                    if len(html_source.form_html) > 200
+                    else html_source.form_html,
                 },
             }
         except InsufficientPermissions as e:
