@@ -448,24 +448,26 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         result = get_registration_page_with_source(uow, current_user.id, assembly_id)
 
+        # HTML content
         if result:
-            _registration_page, html_source = result
+            registration_page, html_source = result
             html = cast(RegistrationPageHtml, html_source)
+
             html_content = html.form_html
+            thank_you_html = registration_page.thank_you_html
+            is_published = registration_page.is_publicly_loadable()
+            url_slug = registration_page.url_slug
         else:
             html_content = ""
+            thank_you_html = ""
+            is_published = False  # Default to unpublished
+            url_slug = ""
 
         # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
         # For now, use assembly ID as a placeholder slug
-        placeholder_slug = str(assembly_id)[:8]
-        placeholder_short_url = request.host_url + "r/" + placeholder_slug
+        # placeholder_slug = str(assembly_id)[:8]
+        placeholder_short_url = request.host_url + "r/" + url_slug
         qr_code_data_url = generate_qr_code_base64(placeholder_short_url)
-
-        # Publication status (placeholder values until service layer provides real data)
-        is_published = False  # Default to unpublished
-
-        # HTML content (placeholder until service layer provides real data)
-        # thank_you_html = ""  # Will be populated from registration_page when available
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -478,6 +480,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             qr_code_data_url=qr_code_data_url,
             is_published=is_published,
             html_content=html_content,
+            thank_you_html=thank_you_html,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
