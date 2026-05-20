@@ -1,0 +1,221 @@
+<!--
+  EXAMPLE REGISTRATION FORM — OPTION C (validation-round-trip discussion):
+  Jinja sandbox with object-style access (idiomatic Jinja).
+
+  Context: after Q15 settled on Option A (two render-time tokens), we
+  realised that supporting server-side form-validation failure (re-show
+  the form with previous values + per-field error messages) requires a
+  richer template. This file shows the "full Jinja" flavour, in which
+  the render context is plain data (no helper callables) and the author
+  uses {% if %} / {% for %} / dotted attribute access directly.
+
+  Authoring experience: the system generates a starter form (one
+  <input>/<select>/<fieldset> per field) that already uses {% for %}
+  loops over choice options and {% if %} blocks for errors. The author
+  edits the HTML directly to restyle / rewrite.
+
+  Templating engine: jinja2.sandbox.SandboxedEnvironment.
+
+  Render context — globals only, no helper callables:
+    csrf_form_element                       — full hidden <input> for CSRF
+    form_action                             — URL the form POSTs to
+    values                                  — dict[field_key -> previously
+                                              submitted str]. Missing keys
+                                              render as "" via the renderer's
+                                              undefined handler.
+    errors                                  — dict[field_key -> list[str]].
+                                              Missing keys are empty lists,
+                                              so {% if errors.x %} is safe.
+    form_errors                             — list[str] of cross-field /
+                                              form-level errors.
+    fields                                  — dict[field_key -> FieldInfo],
+                                              where FieldInfo exposes:
+                                                .label   — display label
+                                                .key     — field_key
+                                                .choices — list of
+                                                  (value, label) tuples,
+                                                  for radio / select / multi.
+                                              The schema lives in the
+                                              render context so {% for %}
+                                              can iterate the same list the
+                                              system uses to validate.
+
+  Round-trip on POST that fails validation:
+    - text/email/number/textarea values re-populate via values.email
+    - radio/checkbox state preserved via
+        {% if values.eligible == 'yes' %}checked{% endif %}
+    - <option selected> preserved via
+        {% if values.geo_bucket == opt_value %}selected{% endif %}
+    - per-field errors render via {% if errors.email %} blocks
+    - cross-field errors render via {% for msg in form_errors %} block
+
+  Initial GET (no submission yet): values lookups return "", errors lists
+  are empty, the {% if %} guards stay false. Rendered output is visually
+  identical to example-form-a-raw-html.html.
+
+  Trade-offs:
+   + Most powerful. {% for %} over fields.X.choices means a schema change
+     to a choice field's options propagates without an HTML edit, provided
+     the author hasn't dismantled the loop.
+   + Idiomatic Jinja that any Flask/Django developer recognises on sight.
+     No "what does that helper do?" lookup.
+   + Author chooses error markup, layout, classes, and whether to show
+     all errors or just the first.
+   + Same Jinja sandbox dependency as Option B — no additional cost.
+   - Pushes Jinja literacy onto the author: dotted attribute access,
+     {% if %} / {% for %} / {% endif %} block syntax, and the
+     {{ }} (expression) vs {% %} (statement) distinction. Hostile to
+     non-programmer authors.
+   - The starter HTML is harder to LLM-style without breakage. An LLM
+     "tidying" the HTML may collapse {% for %}/{% endfor %} pairs or move
+     {% if %} blocks across opening/closing tags.
+   - Schema must be exposed in the render context (fields.X.choices). A
+     renamed field_key in the schema will silently break the template
+     (UndefinedError at render time inside the sandbox).
+   - Authors who include literal {{ ... }} in prose must wrap it in
+     {% raw %} / {% endraw %} to escape.
+
+  Note: the surrounding <head> and page chrome are provided by the system;
+  this file is only the author-editable region.
+-->
+<form action="{{ form_action }}" method="post">
+  {{ csrf_form_element }}
+
+  <h1>Register your interest</h1>
+  <p>Fill in the form below to register for the citizens' assembly.</p>
+  {% if form_errors %}
+    <ul class="form-errors">
+      {% for msg in form_errors %}<li>{{ msg }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <h2>Eligibility</h2>
+
+  <fieldset>
+    <legend>{{ fields.eligible.label }}</legend>
+    {% for opt_value, opt_label in fields.eligible.choices %}
+      <label>
+        <input type="radio" name="eligible" value="{{ opt_value }}"
+               {% if values.eligible == opt_value %}checked{% endif %}>
+        {{ opt_label }}
+      </label>
+    {% endfor %}
+    {% if errors.eligible %}<p class="error">{{ errors.eligible[0] }}</p>{% endif %}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ fields.can_attend.label }}</legend>
+    {% for opt_value, opt_label in fields.can_attend.choices %}
+      <label>
+        <input type="radio" name="can_attend" value="{{ opt_value }}"
+               {% if values.can_attend == opt_value %}checked{% endif %}>
+        {{ opt_label }}
+      </label>
+    {% endfor %}
+    {% if errors.can_attend %}<p class="error">{{ errors.can_attend[0] }}</p>{% endif %}
+  </fieldset>
+
+  <h2>Your name and contact details</h2>
+
+  <label for="email">{{ fields.email.label }}</label>
+  <input type="email" id="email" name="email" value="{{ values.email }}" required>
+  {% if errors.email %}<p class="error">{{ errors.email[0] }}</p>{% endif %}
+
+  <label for="first_name">{{ fields.first_name.label }}</label>
+  <input type="text" id="first_name" name="first_name" value="{{ values.first_name }}">
+  {% if errors.first_name %}<p class="error">{{ errors.first_name[0] }}</p>{% endif %}
+
+  <label for="last_name">{{ fields.last_name.label }}</label>
+  <input type="text" id="last_name" name="last_name" value="{{ values.last_name }}">
+  {% if errors.last_name %}<p class="error">{{ errors.last_name[0] }}</p>{% endif %}
+
+  <label for="mobile_number">{{ fields.mobile_number.label }}</label>
+  <input type="text" id="mobile_number" name="mobile_number" value="{{ values.mobile_number }}">
+  {% if errors.mobile_number %}<p class="error">{{ errors.mobile_number[0] }}</p>{% endif %}
+
+  <h2>Your address</h2>
+
+  <label for="primary_address1">{{ fields.primary_address1.label }}</label>
+  <input type="text" id="primary_address1" name="primary_address1" value="{{ values.primary_address1 }}">
+  {% if errors.primary_address1 %}<p class="error">{{ errors.primary_address1[0] }}</p>{% endif %}
+
+  <label for="primary_address2">{{ fields.primary_address2.label }}</label>
+  <input type="text" id="primary_address2" name="primary_address2" value="{{ values.primary_address2 }}">
+  {% if errors.primary_address2 %}<p class="error">{{ errors.primary_address2[0] }}</p>{% endif %}
+
+  <label for="primary_city">{{ fields.primary_city.label }}</label>
+  <input type="text" id="primary_city" name="primary_city" value="{{ values.primary_city }}">
+  {% if errors.primary_city %}<p class="error">{{ errors.primary_city[0] }}</p>{% endif %}
+
+  <label for="primary_zip">{{ fields.primary_zip.label }}</label>
+  <input type="text" id="primary_zip" name="primary_zip" value="{{ values.primary_zip }}">
+  {% if errors.primary_zip %}<p class="error">{{ errors.primary_zip[0] }}</p>{% endif %}
+
+  <h2>About you</h2>
+
+  <fieldset>
+    <legend>{{ fields.gender.label }}</legend>
+    {% for opt_value, opt_label in fields.gender.choices %}
+      <label>
+        <input type="radio" name="gender" value="{{ opt_value }}"
+               {% if values.gender == opt_value %}checked{% endif %}>
+        {{ opt_label }}
+      </label>
+    {% endfor %}
+    {% if errors.gender %}<p class="error">{{ errors.gender[0] }}</p>{% endif %}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ fields.age_bracket.label }}</legend>
+    {% for opt_value, opt_label in fields.age_bracket.choices %}
+      <label>
+        <input type="radio" name="age_bracket" value="{{ opt_value }}"
+               {% if values.age_bracket == opt_value %}checked{% endif %}>
+        {{ opt_label }}
+      </label>
+    {% endfor %}
+    {% if errors.age_bracket %}<p class="error">{{ errors.age_bracket[0] }}</p>{% endif %}
+  </fieldset>
+
+  <label for="geo_bucket">{{ fields.geo_bucket.label }}</label>
+  <select id="geo_bucket" name="geo_bucket">
+    <option value="">— Please choose —</option>
+    {% for opt_value, opt_label in fields.geo_bucket.choices %}
+      <option value="{{ opt_value }}"
+              {% if values.geo_bucket == opt_value %}selected{% endif %}>
+        {{ opt_label }}
+      </option>
+    {% endfor %}
+  </select>
+  {% if errors.geo_bucket %}<p class="error">{{ errors.geo_bucket[0] }}</p>{% endif %}
+
+  <fieldset>
+    <legend>{{ fields.edu_level.label }}</legend>
+    {% for opt_value, opt_label in fields.edu_level.choices %}
+      <label>
+        <input type="radio" name="edu_level" value="{{ opt_value }}"
+               {% if values.edu_level == opt_value %}checked{% endif %}>
+        {{ opt_label }}
+      </label>
+    {% endfor %}
+    {% if errors.edu_level %}<p class="error">{{ errors.edu_level[0] }}</p>{% endif %}
+  </fieldset>
+
+  <h2>Consent</h2>
+
+  <label>
+    <input type="checkbox" name="consent" value="yes"
+           {% if values.consent == 'yes' %}checked{% endif %}>
+    {{ fields.consent.label }}
+  </label>
+  {% if errors.consent %}<p class="error">{{ errors.consent[0] }}</p>{% endif %}
+
+  <label>
+    <input type="checkbox" name="stay_on_db" value="yes"
+           {% if values.stay_on_db == 'yes' %}checked{% endif %}>
+    {{ fields.stay_on_db.label }}
+  </label>
+  {% if errors.stay_on_db %}<p class="error">{{ errors.stay_on_db[0] }}</p>{% endif %}
+
+  <button type="submit">Register</button>
+</form>
