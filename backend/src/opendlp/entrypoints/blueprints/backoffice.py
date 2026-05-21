@@ -533,7 +533,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             result = get_registration_page_with_source(uow, current_user.id, assembly_id)
             if result:
                 registration_page, _html_source = result
-                if registration_page.status == RegistrationPageStatus.DRAFT:
+                if registration_page.status == RegistrationPageStatus.TEST:
                     uow = bootstrap.bootstrap()
                     publish_registration_page(uow, current_user.id, assembly_id)
                     flash(_("Registration form published successfully"), "success")
