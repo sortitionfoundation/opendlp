@@ -83,7 +83,36 @@ Large textarea for pasting HTML code with template placeholders.
 - Large textarea (20-30 rows minimum, resizable)
 - "Save" button
 - Template placeholders reference section below textarea
-- Optional: "Copy Starter Template" button to get basic form structure
+
+##### "Show Form Skeleton" Feature (Added 2026-05-22)
+
+A tertiary button at the top-right of the Registration Form HTML card that generates a starter HTML form based on the assembly's `RespondentFieldDefinition` schema.
+
+**Button:**
+- Position: Top-right corner of the card header, inline with the heading
+- Style: Tertiary button with code icon (`</>`)
+- Text: "Show Form Skeleton"
+
+**Behaviour:**
+1. User clicks "Show Form Skeleton" button
+2. AJAX request to `GET /backoffice/assembly/<id>/registration/skeleton`
+3. While loading: button shows spinner, is disabled
+4. On success: modal opens with the generated HTML
+5. On error: toast notification with error message
+
+**Modal:**
+- Title: "Form Skeleton"
+- Content: Read-only but selectable `<textarea>` with monospace font showing the generated HTML
+- Note text: "This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form."
+- Footer buttons:
+  - "Copy All" (secondary) — copies entire content to clipboard, shows toast confirmation
+  - "Close" (tertiary)
+
+**AJAX Endpoint:**
+- Route: `GET /backoffice/assembly/<assembly_id>/registration/skeleton`
+- Returns: JSON `{ "html": "<generated html>", "field_count": 5 }`
+- Calls: `generate_starter_form_html(uow, user_id, assembly_id)`
+- Permission: `can_manage_assembly()`
 
 #### Card 5: Template Placeholders Reference
 

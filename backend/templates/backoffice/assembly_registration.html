@@ -7,6 +7,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/modal.html" import modal %}
 
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 
@@ -21,53 +22,204 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% endblock %}
 
 {% block page_content %}
-    {# Page Heading #}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Registration Form Configuration") }}
-    </p>
+    <div x-data="registrationPageController()">
+        {# Page Heading #}
+        <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
+        <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
+            {{ _("Registration Form Configuration") }}
+        </p>
 
-    {{ assembly_tabs(
-    assembly=assembly,
-    active_tab="registration",
-    data_source=data_source|default(""),
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
+        {{ assembly_tabs(
+        assembly=assembly,
+        active_tab="registration",
+        data_source=data_source|default(""),
+        gsheet=gsheet|default(none),
+        targets_enabled=targets_enabled|default(false),
+        respondents_enabled=respondents_enabled|default(false),
+        selection_enabled=selection_enabled|default(false)
+        ) }}
 
-    {# Registration Configuration Form #}
-    <form method="post"
-          action="{{ url_for('backoffice.save_assembly_registration', assembly_id=assembly.id) }}"
-          class="space-y-8">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {# Registration Configuration Form #}
+        <form method="post"
+              action="{{ url_for('backoffice.save_assembly_registration', assembly_id=assembly.id) }}"
+              class="space-y-8">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        {# Registration Form HTML Section #}
-        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
+            {# Registration Form HTML Section #}
+            <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
+                    {# Show Form Skeleton button #}
+                    {% set code_icon %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                    {% endset %}
+                    {{ button(
+                    _("Show Form Skeleton"),
+                    variant="tertiary",
+                    leading_icon=code_icon,
+                    attrs='@click="fetchSkeleton()" :disabled="skeletonLoading"'
+                    ) }}
+                </div>
 
-            <div class="space-y-4">
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
-                </p>
+                <div class="space-y-4">
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
+                    </p>
 
-                {# HTML Textarea with monospace font #}
-                {{ textarea(
-                name="html_content",
-                label="",
-                value=html_content,
-                placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
-                rows=25,
-                attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
-                ) }}
+                    {# HTML Textarea with monospace font #}
+                    {{ textarea(
+                    name="html_content",
+                    label="",
+                    value=html_content,
+                    placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
+                    rows=25,
+                    attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
+                    ) }}
 
-                {# Save and Publish buttons #}
-                <div class="flex justify-end gap-3">
-                    {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                    {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
+                    {# Save and Publish buttons #}
+                    <div class="flex justify-end gap-3">
+                        {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                        {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
+                    </div>
+                </div>
+            </section>
+        </form>
+
+        {# Form Skeleton Modal #}
+        <template x-if="skeletonModalOpen">
+            <div x-cloak>
+                {# Backdrop overlay #}
+                <div class="fixed inset-0 z-40"
+                     style="background-color: rgba(0, 0, 0, 0.5)"
+                     @click="closeSkeletonModal()"
+                     @keydown.escape.window="closeSkeletonModal()"></div>
+                {# Modal panel #}
+                <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="skeleton-modal-title">
+                    <div class="pointer-events-auto w-full max-w-4xl mx-4 rounded-lg shadow-xl overflow-hidden"
+                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)"
+                         @click.stop>
+                        {# Header #}
+                        <div class="px-6 py-4 flex items-center justify-between"
+                             style="border-bottom: 1px solid var(--color-borders-dividers)">
+                            <h2 id="skeleton-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                                {{ _("Form Skeleton") }}
+                            </h2>
+                            <button type="button"
+                                    @click="closeSkeletonModal()"
+                                    class="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                                    style="color: var(--color-secondary-text);"
+                                    aria-label="{{ _('Close') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        {# Content #}
+                        <div class="px-6 py-4">
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form.") }}
+                            </p>
+                            <textarea readonly
+                                      x-ref="skeletonTextarea"
+                                      x-text="skeletonHtml"
+                                      class="w-full rounded-lg p-4"
+                                      rows="18"
+                                      style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+                                             font-size: 0.875rem;
+                                             line-height: 1.5;
+                                             background-color: var(--color-subtle-background-panels);
+                                             border: 1px solid var(--color-borders-dividers);
+                                             color: var(--color-body-text);
+                                             resize: none;"></textarea>
+                        </div>
+                        {# Footer #}
+                        <div class="px-6 py-3 flex gap-2 justify-end"
+                             style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
+                            {{ button(_("Copy All"), variant="secondary", attrs='@click="copySkeletonToClipboard()"') }}
+                            {{ button(_("Close"), variant="tertiary", attrs='@click="closeSkeletonModal()"') }}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
-    </form>
+        </template>
+
+        {# Toast notification #}
+        <div x-cloak
+             x-show="toastVisible"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-2"
+             class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
+             :style="toastType === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400); color: var(--color-error-600);'">
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce }}">
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('registrationPageController', () => ({
+                skeletonLoading: false,
+                skeletonModalOpen: false,
+                skeletonHtml: '',
+                toastVisible: false,
+                toastMessage: '',
+                toastType: 'success',
+
+                fetchSkeleton() {
+                    this.skeletonLoading = true;
+                    fetch('{{ url_for("backoffice.get_registration_skeleton", assembly_id=assembly.id) }}', {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token() }}'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            this.skeletonLoading = false;
+                            if (data.error) {
+                                this.showToast(data.error, 'error');
+                            } else {
+                                this.skeletonHtml = data.html;
+                                this.skeletonModalOpen = true;
+                            }
+                        })
+                        .catch(error => {
+                            this.skeletonLoading = false;
+                            this.showToast('{{ _("An error occurred while fetching the form skeleton") }}', 'error');
+                        });
+                },
+
+                closeSkeletonModal() {
+                    this.skeletonModalOpen = false;
+                },
+
+                copySkeletonToClipboard() {
+                    navigator.clipboard.writeText(this.skeletonHtml)
+                        .then(() => {
+                            this.showToast('{{ _("Copied to clipboard") }}', 'success');
+                        })
+                        .catch(() => {
+                            this.showToast('{{ _("Failed to copy to clipboard") }}', 'error');
+                        });
+                },
+
+                showToast(message, type) {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.toastVisible = true;
+                    setTimeout(() => {
+                        this.toastVisible = false;
+                    }, 3000);
+                }
+            }));
+        });
+    </script>
 {% endblock %}

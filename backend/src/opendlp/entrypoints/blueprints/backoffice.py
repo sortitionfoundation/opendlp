@@ -43,6 +43,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_page_service import (
     create_registration_page,
+    generate_starter_form_html,
     get_registration_page_with_source,
     publish_registration_page,
     update_registration_page,
@@ -569,6 +570,23 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
+@login_required
+def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Generate starter HTML form skeleton based on assembly's field definitions."""
+    try:
+        uow = bootstrap.bootstrap()
+        html = generate_starter_form_html(uow, current_user.id, assembly_id)
+        return jsonify({"html": html})
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to access this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        current_app.logger.error(f"Generate skeleton error for assembly {assembly_id}: {e}")
+        return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")
