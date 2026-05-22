@@ -3,11 +3,11 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-05-15T11:08:56.141382182Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sortition-algorithms = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "2026-05-22T11:08:56.141410966Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -891,6 +891,7 @@ dependencies = [
     { name = "flask-session" },
     { name = "flask-wtf" },
     { name = "gspread" },
+    { name = "jinja2" },
     { name = "markupsafe" },
     { name = "pyotp" },
     { name = "python-dotenv" },
@@ -948,6 +949,7 @@ requires-dist = [
     { name = "flask-wtf", specifier = ">=1.2.2" },
     { name = "gspread", specifier = ">=6.2.1" },
     { name = "gunicorn", marker = "extra == 'production'", specifier = ">=23.0.0" },
+    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "markupsafe", specifier = ">=3.0.2" },
     { name = "pyotp", specifier = ">=2.9.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },

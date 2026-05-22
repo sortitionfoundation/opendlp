@@ -5,6 +5,8 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from jinja2 import UndefinedError
+from jinja2.exceptions import SecurityError
 
 from opendlp.domain.registration_page import (
     DEFAULT_THANK_YOU_HTML,
@@ -153,6 +155,24 @@ class TestRenderContext:
         assert ctx.csrf_form_element == "<input>"
         assert ctx.form_action == "/submit"
 
+    def test_render_context_validation_fields_default_empty(self):
+        ctx = RenderContext(csrf_form_element="<input>", form_action="/submit")
+        assert ctx.values == {}
+        assert ctx.errors == {}
+        assert ctx.form_level_errors == []
+
+    def test_render_context_carries_validation_state(self):
+        ctx = RenderContext(
+            csrf_form_element="<input>",
+            form_action="/submit",
+            values={"email": "alice@example.com"},
+            errors={"email": ["bad address"]},
+            form_level_errors=["please fix the field above"],
+        )
+        assert ctx.values == {"email": "alice@example.com"}
+        assert ctx.errors == {"email": ["bad address"]}
+        assert ctx.form_level_errors == ["please fix the field above"]
+
     def test_required_tokens_are_csrf_and_form_action(self):
         assert REQUIRED_TOKENS == ("csrf_form_element", "form_action")
 
@@ -184,13 +204,15 @@ class TestRegistrationPageHtml:
         rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
         assert rendered == "<form><csrf> posts to /r/submit</form>"
 
-    def test_render_leaves_unknown_braces_untouched(self):
+    def test_render_raises_undefined_error_on_unknown_variable(self):
+        # Under StrictUndefined the renderer surfaces template typos as
+        # UndefinedError instead of silently rendering nothing.
         html = RegistrationPageHtml(
             registration_page_id=uuid.uuid4(),
             form_html="{{ something_else }} {{ form_action }}",
         )
-        rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))
-        assert rendered == "{{ something_else }} /u"
+        with pytest.raises(UndefinedError):
+            html.render(RenderContext(csrf_form_element="x", form_action="/u"))
 
     def test_render_with_no_tokens_returns_html_unchanged(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html="<p>hello</p>")
@@ -227,6 +249,216 @@ class TestHtmlSourceProtocol:
     def test_registration_page_html_is_an_html_source(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
         assert isinstance(html, HtmlSource)
+
+
+def _render(form_html: str, **ctx_kwargs) -> str:
+    """Render form_html with a RenderContext built from defaults + kwargs."""
+    base = {"csrf_form_element": "", "form_action": "/submit"}
+    base.update(ctx_kwargs)
+    html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=form_html)
+    return html.render(RenderContext(**base))
+
+
+class TestRenderHelpers:
+    # value() round-trips submitted text into input value attributes and
+    # textarea bodies, autoescaping HTML-special characters in the process.
+
+    def test_value_returns_submitted_value(self):
+        rendered = _render("{{ value('email') }}", values={"email": "alice@example.com"})
+        assert rendered == "alice@example.com"
+
+    def test_value_returns_empty_for_unknown_key(self):
+        rendered = _render("[{{ value('missing') }}]", values={"other": "v"})
+        assert rendered == "[]"
+
+    def test_value_autoescapes_html_special_chars(self):
+        rendered = _render("value=\"{{ value('name') }}\"", values={"name": "<script>"})
+        assert rendered == 'value="&lt;script&gt;"'
+
+    def test_value_autoescapes_double_quote_in_attribute(self):
+        rendered = _render("value=\"{{ value('name') }}\"", values={"name": 'O"Brien'})
+        assert "&#34;" in rendered or "&quot;" in rendered
+
+    def test_checked_returns_attribute_when_value_matches(self):
+        rendered = _render(
+            "<input value=\"yes\" {{ checked('eligible', 'yes') }}>",
+            values={"eligible": "yes"},
+        )
+        assert rendered == '<input value="yes" checked>'
+
+    def test_checked_returns_empty_when_value_differs(self):
+        rendered = _render(
+            "<input value=\"yes\" {{ checked('eligible', 'yes') }}>",
+            values={"eligible": "no"},
+        )
+        assert rendered == '<input value="yes" >'
+
+    def test_checked_returns_empty_when_field_absent(self):
+        rendered = _render(
+            "<input value=\"yes\" {{ checked('eligible', 'yes') }}>",
+            values={},
+        )
+        assert rendered == '<input value="yes" >'
+
+    def test_selected_returns_attribute_when_value_matches(self):
+        rendered = _render(
+            "<option value=\"N\" {{ selected('geo', 'N') }}>",
+            values={"geo": "N"},
+        )
+        assert rendered == '<option value="N" selected>'
+
+    def test_selected_returns_empty_when_value_differs(self):
+        rendered = _render(
+            "<option value=\"N\" {{ selected('geo', 'N') }}>",
+            values={"geo": "S"},
+        )
+        assert rendered == '<option value="N" >'
+
+    # field_errors() renders one <p class="error"> per error message; empty
+    # when no errors. Error text is HTML-escaped to defend against XSS.
+
+    def test_field_errors_renders_paragraph_per_message(self):
+        rendered = _render(
+            "{{ field_errors('email') }}",
+            errors={"email": ["bad address", "domain blocked"]},
+        )
+        assert '<p class="error">bad address</p>' in rendered
+        assert '<p class="error">domain blocked</p>' in rendered
+
+    def test_field_errors_empty_when_no_errors(self):
+        rendered = _render("[{{ field_errors('email') }}]", errors={})
+        assert rendered == "[]"
+
+    def test_field_errors_escapes_html_in_message(self):
+        rendered = _render(
+            "{{ field_errors('x') }}",
+            errors={"x": ["<script>alert(1)</script>"]},
+        )
+        assert "<script>" not in rendered
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in rendered
+
+    def test_has_error_true_when_errors_present(self):
+        rendered = _render("{{ has_error('email') }}", errors={"email": ["bad"]})
+        assert rendered == "True"
+
+    def test_has_error_false_when_field_absent(self):
+        rendered = _render("{{ has_error('email') }}", errors={})
+        assert rendered == "False"
+
+    def test_first_error_returns_first_message(self):
+        rendered = _render("{{ first_error('x') }}", errors={"x": ["one", "two"]})
+        assert rendered == "one"
+
+    def test_first_error_returns_empty_string_when_field_absent(self):
+        rendered = _render("[{{ first_error('x') }}]", errors={})
+        assert rendered == "[]"
+
+    def test_first_error_autoescapes_html(self):
+        rendered = _render("{{ first_error('x') }}", errors={"x": ["<b>oh</b>"]})
+        assert rendered == "&lt;b&gt;oh&lt;/b&gt;"
+
+    # form_errors() collects cross-field validation messages into an
+    # unordered list. Empty when there are no form-level errors.
+
+    def test_form_errors_renders_list_when_populated(self):
+        rendered = _render("{{ form_errors() }}", form_level_errors=["a", "b"])
+        assert '<ul class="form-errors">' in rendered
+        assert "<li>a</li>" in rendered
+        assert "<li>b</li>" in rendered
+
+    def test_form_errors_empty_when_no_messages(self):
+        rendered = _render("[{{ form_errors() }}]", form_level_errors=[])
+        assert rendered == "[]"
+
+    def test_form_errors_escapes_html_in_message(self):
+        rendered = _render("{{ form_errors() }}", form_level_errors=["<b>x</b>"])
+        assert "<b>x</b>" not in rendered
+        assert "&lt;b&gt;x&lt;/b&gt;" in rendered
+
+
+class TestRenderContextSubstitution:
+    # The original render-time tokens still work, but now via Jinja
+    # rather than flat str.replace. csrf_form_element must render as raw
+    # HTML (it carries the <input>); form_action is plain text.
+
+    def test_csrf_form_element_inserted_as_raw_html(self):
+        rendered = _render(
+            "{{ csrf_form_element }}",
+            csrf_form_element='<input name="csrf_token" value="abc">',
+        )
+        assert rendered == '<input name="csrf_token" value="abc">'
+
+    def test_form_action_substituted(self):
+        rendered = _render('<form action="{{ form_action }}">', form_action="/r/submit")
+        assert rendered == '<form action="/r/submit">'
+
+
+class TestRenderSandbox:
+    def test_dunder_attribute_access_blocked(self):
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html="{{ ''.__class__ }}",
+        )
+        with pytest.raises(SecurityError):
+            html.render(RenderContext(csrf_form_element="", form_action="/u"))
+
+
+class TestRenderGeneratedStarterEndToEnd:
+    # Exercise the helper API against a starter form built from a small
+    # realistic schema, with values and errors set.
+
+    def test_pre_filled_values_and_errors_round_trip(self):
+        fields = [
+            _field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL),
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+            ),
+            _field(
+                "geo",
+                RespondentFieldGroup.ADDRESS,
+                0,
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
+            ),
+        ]
+        starter = generate_starter_form_html(fields)
+        rendered = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html=starter,
+        ).render(
+            RenderContext(
+                csrf_form_element="<input name='csrf' value='tok'>",
+                form_action="/r/submit",
+                values={"email": "alice@example.com", "gender": "Female", "geo": "South"},
+                errors={"email": ["already registered"]},
+                form_level_errors=["please review the form"],
+            )
+        )
+
+        # CSRF + form action substituted, no Jinja markers leaking through.
+        assert "<input name='csrf' value='tok'>" in rendered
+        assert '<form action="/r/submit"' in rendered
+        assert "{{" not in rendered
+
+        # Pre-filled email value.
+        assert 'value="alice@example.com"' in rendered
+
+        # Pre-filled radio + dropdown selections; unmatched options stay empty.
+        assert 'value="Female" checked' in rendered
+        assert 'value="Male" checked' not in rendered
+        assert 'value="South" selected' in rendered
+        assert 'value="North" selected' not in rendered
+
+        # Field error rendered next to the email field.
+        assert '<p class="error">already registered</p>' in rendered
+
+        # Form-level error rendered near the top.
+        assert '<ul class="form-errors">' in rendered
+        assert "<li>please review the form</li>" in rendered
 
 
 class TestRegistrationPageInit:

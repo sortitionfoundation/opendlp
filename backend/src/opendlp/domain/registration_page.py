@@ -4,10 +4,14 @@ ABOUTME: Holds page config plus the HTML source that supplies the registration f
 import html as html_lib
 import uuid
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
+
+from jinja2 import StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
+from markupsafe import Markup
 
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
@@ -18,6 +22,8 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
+
+_SANDBOX_ENV = SandboxedEnvironment(autoescape=True, undefined=StrictUndefined)
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
@@ -95,10 +101,21 @@ class RegistrationPageActivity:
 
 @dataclass(frozen=True)
 class RenderContext:
-    """Values substituted into the form HTML at render time."""
+    """Values substituted into the form HTML at render time.
+
+    ``csrf_form_element`` and ``form_action`` are always populated. The
+    remaining fields carry validation state from a failed POST: ``values``
+    pre-fills field inputs, ``errors`` maps field keys to per-field error
+    messages, and ``form_level_errors`` holds cross-field messages shown
+    via the ``form_errors()`` helper. All three default to empty so a
+    fresh GET can omit them.
+    """
 
     csrf_form_element: str
     form_action: str
+    values: dict[str, str] = field(default_factory=dict)
+    errors: dict[str, list[str]] = field(default_factory=dict)
+    form_level_errors: list[str] = field(default_factory=list)
 
 
 @runtime_checkable
@@ -284,8 +301,21 @@ class RegistrationPageHtml:
         self.updated_at = datetime.now(UTC)
 
     def render(self, ctx: RenderContext) -> str:
-        rendered = self.form_html.replace("{{ csrf_form_element }}", ctx.csrf_form_element)
-        return rendered.replace("{{ form_action }}", ctx.form_action)
+        template = _SANDBOX_ENV.from_string(self.form_html)
+        # csrf_form_element is the hidden <input> built by Flask-WTF (or its
+        # CSRF middleware), never user-supplied; wrapping it in Markup so
+        # autoescape doesn't escape the angle brackets is safe.
+        return template.render(
+            csrf_form_element=Markup(ctx.csrf_form_element),  # noqa: S704
+            form_action=ctx.form_action,
+            value=lambda k: ctx.values.get(k, ""),
+            checked=lambda k, v: "checked" if ctx.values.get(k) == v else "",
+            selected=lambda k, v: "selected" if ctx.values.get(k) == v else "",
+            field_errors=lambda k: _field_errors_html(ctx.errors.get(k, [])),
+            has_error=lambda k: bool(ctx.errors.get(k)),
+            first_error=lambda k: (ctx.errors.get(k) or [""])[0],
+            form_errors=lambda: _form_errors_html(ctx.form_level_errors),
+        )
 
     def readiness_problems(self) -> list[str]:
         if not self.form_html.strip():
@@ -313,6 +343,20 @@ class RegistrationPageHtml:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+def _field_errors_html(errors: list[str]) -> Markup:
+    if not errors:
+        return Markup("")
+    parts = [Markup('<p class="error">{}</p>').format(msg) for msg in errors]
+    return Markup("\n").join(parts)
+
+
+def _form_errors_html(errors: list[str]) -> Markup:
+    if not errors:
+        return Markup("")
+    items = Markup("").join(Markup("<li>{}</li>").format(msg) for msg in errors)
+    return Markup('<ul class="form-errors">{}</ul>').format(items)
 
 
 def _jinja_str(value: str) -> str:
@@ -455,8 +499,8 @@ def generate_starter_form_html(
         if not bucket:
             continue
         parts.append(f"<h2>{html_lib.escape(str(GROUP_LABELS[group]))}</h2>")
-        for field in bucket:
-            parts.extend(_render_field(field, required_set))
+        for field_def in bucket:
+            parts.extend(_render_field(field_def, required_set))
     parts.append('<button type="submit">Register</button>')
     parts.append("</form>")
     return "\n".join(parts) + "\n"
