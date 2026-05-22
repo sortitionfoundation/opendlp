@@ -4,6 +4,17 @@
 **Date:** 2026-05-18
 **Status:** Research only — open for review before a detailed plan is written.
 
+**Updated 2026-05-22** — realigned against the now-evolved 610 work. Since this
+doc was first drafted, 610 (a) replaced `is_published`/`preview_token` with a
+`RegistrationPageStatus` enum (`TEST / PUBLISHED / CLOSED`) and retired the
+preview token completely (610 Q17), (b) moved form rendering to a **Jinja
+sandbox** with a helper API (`value` / `checked` / `selected` / `field_errors` /
+`form_errors`), and (c) **took over the public GET routes** (form render,
+short-URL redirect, `/registration-closed`). The Doctor Chewie review comments
+that drove this revision are folded in: Q3 and Q8 are now settled on the Jinja
+round-trip; Q9 leans strict (Option B); Q14 adds `is_required`; Q15 adds the
+`for_registration_page` bool; §6 Q16 (blueprint split) is out of scope.
+
 This document captures what's already in place from story 610, what story 613 actually
 adds, the main implementation options for each meaty decision, and the open technical
 questions that need answering before a detailed plan can be cut.
@@ -17,21 +28,47 @@ questions that need answering before a detailed plan can be cut.
 `src/opendlp/domain/registration_page.py`:
 
 - `RegistrationPage` aggregate per assembly with `url_slug`, `short_url_slug`,
-  `is_published`, `preview_token`, `source_type` (HTML only for now), `thank_you_html`.
-  Slugs are frozen while `is_published=True` (Q6 in plan-data-service.md).
-- `RegistrationPageHtml` child holding the author's HTML.
-  `render(RenderContext)` does **flat string substitution** of exactly two tokens —
-  `{{ csrf_form_element }}` and `{{ form_action }}`. `readiness_problems()` insists
-  on both being present.
-- `HtmlSource` protocol so future source types (template builder, A/B variants,
+  `status` (`RegistrationPageStatus`: `TEST` / `PUBLISHED` / `CLOSED`),
+  `source_type` (HTML only for now), `thank_you_html`, and an append-only
+  `activity` audit log (`list[RegistrationPageActivity]`). Slugs freeze once the
+  page has *ever* been published — `slugs_frozen` ← `has_ever_been_published()`,
+  derived from the activity log (610 Q6/Q16). Status transitions are `publish`
+  (TEST→PUBLISHED), `unpublish` (PUBLISHED→TEST), `close` (PUBLISHED→CLOSED) and
+  `reopen` (CLOSED→PUBLISHED); each appends a matching activity entry.
+- **No preview token.** A `TEST` page loads publicly at its slug with **no
+  token** — the `preview_token`, the `?token=` link, the `PREVIEW` visibility
+  state and the `REGENERATE_TOKEN` action were all retired (610 Q17).
+  `is_publicly_loadable()` is True for `TEST` and `PUBLISHED` with a non-empty
+  `url_slug`, False for `CLOSED` and slugless pages.
+- `RegistrationPageHtml` child holding the author's HTML. `render(RenderContext)`
+  runs the HTML through a **Jinja sandbox** (`SandboxedEnvironment`, `autoescape`,
+  `StrictUndefined`) exposing a small helper API (below). `readiness_problems()`
+  parses the template and insists both `{{ csrf_form_element }}` and
+  `{{ form_action }}` are referenced. (This replaced the original flat
+  two-token string substitution.)
+- `RenderContext` carries `csrf_form_element` and `form_action` plus the
+  **validation-round-trip state**: `values` (re-populate inputs), `errors`
+  (per-field messages keyed by `field_key`), and `form_level_errors`
+  (cross-field). All three default to empty, so a fresh GET renders the form
+  unchanged and a failed POST re-renders it with values + errors in place.
+- Render helpers exposed to author HTML (see `RegistrationPageHtml.render`):
+  `value(key)`, `checked(key, val)`, `selected(key, val)`, `field_errors(key)`,
+  `has_error(key)`, `first_error(key)`, `form_errors()`. **This helper API is the
+  seam story 613 feeds its validation results into** — the canonical shape is
+  `docs/agent/610-registration-page-html/example-form-d-jinja-helpers.html`. See
+  §4.7 and §5 — Q3.
+- `HtmlSource` protocol so future source types (form builder, A/B variants,
   translations) plug in without touching the page aggregate.
-- `is_visible_with(token)` — true if published, or if `token` matches the
-  page's `preview_token` and is non-empty.
-- `generate_starter_form_html(fields)` — pure helper that emits an unstyled HTML
-  form from the assembly's `RespondentFieldDefinition` set. `name=` attributes
-  match `field_key`; choice fields are emitted as radios/select; the four boolean
-  fixed fields (`eligible`, `can_attend`, `consent`, `stay_on_db`) become yes/no
-  radios via `effective_field_type` (always `BOOL_OR_NONE`).
+- `generate_starter_form_html(fields, required_field_keys=())` — pure helper that
+  emits an unstyled HTML form from the assembly's `RespondentFieldDefinition` set,
+  **with the Jinja helper calls already wired in** (`value(...)` on inputs,
+  `checked(...)`/`selected(...)` on options, `field_errors(...)` after each field,
+  `form_errors()` at the top). `name=` attributes match `field_key`; choice fields
+  are emitted as radios/select; the boolean fixed fields (`eligible`,
+  `can_attend`, `consent`, `stay_on_db`) become yes/no radios via
+  `effective_field_type`.
+- `RegistrationPageActivity` — frozen dataclass (`text`, `author_id`,
+  `created_at`, `action`) serialised as a JSON list on the page row.
 - `SlugError(field, reason, message)` carries structured info so a UI can attach
   the right error to the right slug input.
 - `RegistrationPageNotReady` carries a `.problems: list[str]`.
@@ -44,15 +81,19 @@ questions that need answering before a detailed plan can be cut.
   `get_registration_page`, `get_registration_page_with_source`,
   `update_registration_page` (slugs), `update_thank_you_html`,
   `update_registration_page_html`, `publish_registration_page`,
-  `unpublish_registration_page`, `regenerate_preview_token`,
-  `generate_starter_form_html`.
+  `unpublish_registration_page`, `close_registration_page`,
+  `reopen_registration_page`, `generate_starter_form_html`.
 - **Public, unauthenticated**: `find_registration_page_by_url_slug`,
-  `find_registration_page_by_short_url_slug`, `resolve_visibility(page, token)`
-  → `RegistrationPageVisibility(page, is_visible, is_preview)`,
-  `get_page_and_source_for_render(uow, page)`, `render_thank_you_html(page)`.
+  `find_registration_page_by_short_url_slug`, `resolve_visibility(page)`
+  → `RegistrationPageVisibility(page, state)` where `state` is a
+  `RegistrationPageVisibilityState` (`LIVE` / `TEST` / `CLOSED` / `NOT_FOUND`);
+  `.is_visible` is True for `LIVE` and `TEST`, `.is_test` True only for `TEST`.
+  Plus `get_page_and_source_for_render(uow, page)` and `render_thank_you_html(page)`.
 
 The public functions are intentionally read-only seams for the route layer to plug
-into. `resolve_visibility` is pure — no DB hit.
+into. `resolve_visibility` is pure — no token argument, no DB hit; it dispatches on
+`page.status`. **Story 613 reads `visibility.is_test` (equivalently `page.status`)
+to decide whether a submission becomes `TEST_SUBMISSION` or `POOL`.**
 
 ### 1.3 Adapters + tests
 
@@ -63,22 +104,36 @@ tests and unit tests are green (last verified 2026-05-15: 2764 passed).
 
 ### 1.4 What's NOT in place yet (the gap 613 sits in)
 
-- No public Flask blueprint for `/register/<url_slug>` or `/r/<short_url_slug>`.
-- No backoffice tab — `plan-frontend.md` is still unimplemented. (Story 613 only
-  needs the public side, but **the backoffice tab is part of story 610**, not 613. If we ship 613 without it, an author can only set up a page via the
-  Flask shell. See §6 — Q12.)
-- No "registration closed" page template.
-- `RespondentStatus.TEST_SUBMISSION` (or `.RegistrationTest`) doesn't exist yet.
-  Currently the enum has POOL / SELECTED / CONFIRMED / WITHDRAWN / DELETED.
+- The **public GET side is now 610's**, not 613's: the `GET /register/<url_slug>`
+  form-render route, the `GET /r/<short_url_slug>` redirect, visibility
+  resolution, and the canonical `/registration-closed` page are delivered by
+  610's frontend work (see COMMENT in §2). 613 no longer owns the read path.
+- No **POST** submission route, no submission service, no schema-driven validator
+  turning a POST body into a `Respondent`. **This is the bulk of 613.**
+- No "thank-you" page route rendering `page.thank_you_html` after a successful POST.
+- `RespondentStatus.TEST_SUBMISSION` doesn't exist yet. Currently the enum has
+  POOL / SELECTED / CONFIRMED / WITHDRAWN / DELETED.
 - `RespondentSourceType.REGISTRATION_FORM` **does** exist already.
-- `FF_REGISTRATION_PAGE` flag isn't checked anywhere yet (the service layer
-  intentionally doesn't gate; the route layer is meant to).
+- `FF_REGISTRATION_PAGE` is gated by 610's public routes; 613's new POST and
+  thank-you routes must gate the same way. The service layer intentionally
+  doesn't check the flag — it stays a route-layer concern.
+- No `is_required` or `for_registration_page` on `RespondentFieldDefinition` yet
+  (both proposed here — see §6 Q14, Q15).
 
-### 1.5 The bigger picture — raw HTML is just the first source type
+### 1.5 The bigger picture — the HTML source is just the first source type
 
-The raw-HTML authoring path that 610 ships is only the **first** way users will
-create registration forms. Two further paths are anticipated, and 613's
-submission handler is intended to support all of them:
+The HTML authoring path that 610 ships is only the **first** way users will
+create registration forms. Note that what 610 actually shipped is **not** raw,
+inert HTML: the author's HTML is run through a Jinja sandbox and the generated
+starter already wires in the helper API (`value`, `checked`, `selected`,
+`field_errors`, `form_errors`). So the "author-edits-Jinja-with-error-bits"
+path described in early drafts as a *future* option is, in effect, the **v1**
+path — a styling pass (by hand or via an LLM) round-trips because the
+"Jinja-ness" is confined to attribute values and one-liner helper calls, not
+block structure.
+
+One further path is still anticipated, and 613's submission handler is intended
+to support it too:
 
 - **A form builder** — expected to be the most common option. A library of
   components (text input, radio group, dropdown, consent checkbox, ...) keyed
@@ -87,47 +142,53 @@ submission handler is intended to support all of them:
   introduction. The system writes most of the HTML and provides default
   styling. Because the system owns the markup, the form builder can show
   errors **next to** the relevant inputs.
-- **A Jinja template the author can feed to their own LLM.** Same flexibility
-  as raw HTML, but with `{% for %}` loops and error-bit placeholders pre-wired
-  so the styled output still supports per-field error rendering.
 
 Implications for story 613:
 
 - The submission service **must return structured validation results** — a data
-  shape any presentation layer (raw-HTML summary, form-builder inline errors,
-  Jinja template with error bits) can consume. Don't pre-bake HTML inside the
-  service. See §4.7.
+  shape any presentation layer can consume (the v1 Jinja path renders them via
+  `field_errors(key)` / `form_errors()`; a future form builder attaches them to
+  its rendered widgets). Don't pre-bake HTML inside the service. See §4.7.
 - The respondent field schema may grow a `for_registration_page` flag (or an
   enum: `registration_page`, `derived_target`, `confirmation_call_only`, ...)
   so the validator and the form builder both know which fields belong on a
   registration form vs which are derived later or only collected during
-  confirmation calls. See §6 — Q15.
+  confirmation calls. See §6 — Q15 (**decided: add the bool now**).
 
 ---
 
 ## 2. What story 613 actually has to do
 
-Boiled down from `story-notes.md`:
+Boiled down from `story-notes.md`, and trimmed for the fact that **610 now owns
+the public GET routes** (the form render, the short-URL redirect, visibility
+resolution and `/registration-closed` — these were originally listed here but
+moved to 610; see the COMMENT below). What is left for 613:
 
-1. **GET** `/register/<url_slug>` — render the form HTML for the public.
-   - If the page exists and is published → render `RegistrationPageHtml.render(...)`
-     with a real CSRF input and real `form_action` URL.
-   - If the page exists, is unpublished, and the URL carries a valid
-     `?token=<preview_token>` → render as above, but the form submits as a
-     "test" (see step 3).
-   - Otherwise → **302 redirect** to a canonical "registration closed" page.
-2. **GET** `/r/<short_url_slug>` — 302 redirect to
-   `/register/<page.url_slug>` (not 301; the short slug may be cleared/reused).
-3. **POST** to the form action — validate the body against the assembly's
-   `RespondentFieldDefinition` set. On success:
+1. **POST** to the form action (`POST /register/<url_slug>/submit`) — validate
+   the body against the assembly's `RespondentFieldDefinition` set. On success:
    - Create a `Respondent` with `source_type=REGISTRATION_FORM`.
-   - Status is **POOL** in the normal case, or a new **TEST_SUBMISSION** value
-     when the preview-token path was used.
-   - **302 redirect** to a "thank you" page that renders
-     `page.thank_you_html` (or a Jinja fallback if it's blank).
-   - On failure → re-render the form with the field-level errors attached
-     somehow (the open question is how — see §5).
-4. **Feature flag** the whole thing behind `FF_REGISTRATION_PAGE`.
+   - Status is **POOL** when the page is `PUBLISHED`, or the new
+     **TEST_SUBMISSION** value when the page is in `TEST` status (read off
+     `page.status` / `visibility.is_test` — there is no preview token any more).
+   - **302 redirect** to a "thank you" page that renders `page.thank_you_html`
+     (or a Jinja fallback if it's blank).
+   - On failure → re-render the form through the **Jinja sandbox** with the
+     submitted values and per-field errors carried in `RenderContext` (settled
+     in §5 — Q3/Q8). No bespoke error-injection mechanism.
+2. **GET** `/register/<url_slug>/thank-you` — render `page.thank_you_html` in a
+   wrapper after a successful submission.
+3. **Feature flag** 613's new routes behind `FF_REGISTRATION_PAGE`, matching the
+   gate 610 already applies to the GET routes.
+
+> **COMMENT (resolved):** the GET routes — `GET /register/<url_slug>` and
+> `GET /r/<short_url_slug>`, together with visibility resolution and the
+> `/registration-closed` page — are now being done in the 610 story, so they are
+> no longer 613's responsibility. The original full-list version of this section
+> is preserved in git history. 613 picks up at the POST.
+
+The status-driven render itself (PUBLISHED → form, TEST → form + test banner,
+CLOSED → 302 to `/registration-closed`) is 610's `resolve_visibility` dispatch
+(plan-data-service §5.4). 613 only consumes the `is_test` outcome at submit time.
 
 Out of scope per the story notes:
 
@@ -140,24 +201,28 @@ Out of scope per `plan-data-service.md` §8 (still relevant):
 
 - Rate-limiting.
 - Thank-you page substitution (e.g. `{{ respondent_name }}`).
-- What happens to submissions when an unpublished page is republished after a
-  slug change (mitigated by the "slugs frozen while published" rule).
+- What happens to submissions when a page is unpublished and republished after a
+  slug change (mitigated by the "slugs frozen once ever published" rule).
 
 ---
 
 ## 3. Big-picture shape
 
 ```
+# delivered by 610:
 GET  /register/<url_slug>            → render form HTML (or 302 closed)
 GET  /r/<short_url_slug>             → 302 to /register/<url_slug>
+GET  /registration-closed            → static "closed" page
+
+# delivered by 613:
 POST /register/<url_slug>/submit     → create Respondent, 302 to thank-you
 GET  /register/<url_slug>/thank-you  → render thank_you_html
-GET  /registration-closed            → static "closed" page
 ```
 
-Open: does the POST live on the same URL as the GET (`/register/<url_slug>`,
-method-dispatched) or on a sibling `/submit`? Story-notes line 34 explicitly
-floats both options. See §5 — Q1.
+The POST lives on a **sibling `/submit`** URL, not method-dispatched on the GET
+(§5 — Q1 decided → Option A). `form_action` is therefore a function of the page,
+which keeps the door open for multiple GET URLs (translations, A/B variants)
+sharing one POST.
 
 The thank-you URL needs to be sticky enough that the redirect target works even
 after a slug change — see §6 — Q5.
@@ -172,9 +237,9 @@ after a slug change — see §6 — Q5.
   `ALLOWED_SELECTION_STATUS_TRANSITIONS`: no **inbound** transitions
   (TEST_SUBMISSION rows are only created from the form), but **outbound
   TEST_SUBMISSION → POOL is allowed** so an organiser can promote a real
-  person who happened to use the preview-token URL. The transition requires
-  a comment (the existing rule) so the activity history records who promoted
-  it and why. See §5 — Q10.
+  person who submitted while the page was in `TEST` status. The transition
+  requires a comment (the existing rule) so the activity history records who
+  promoted it and why. See §5 — Q10.
 - A small **value object** for the parsed-and-validated form payload — `dict[str, Any]`
   is workable, but a typed `RegistrationFormSubmission` (with `email`,
   `eligible`, `can_attend`, `consent`, `stay_on_db`, `attributes`,
@@ -193,15 +258,18 @@ def submit_registration(
     *,
     url_slug: str,
     form_data: Mapping[str, Any],
-    preview_token: str = "",
 ) -> RegistrationSubmissionResult:
     """Validate the submission against the assembly's field schema, create a
-    Respondent if valid, return either (Respondent, redirect_url) or an
-    errors structure for the route to re-render with."""
+    Respondent if valid (status from page.status — POOL when PUBLISHED,
+    TEST_SUBMISSION when TEST), and return a RegistrationSubmissionResult the
+    route can either redirect on (success) or re-render the form with (errors +
+    submitted values)."""
 ```
 
-The exact return shape is part of §5 — Q3. No `user_id` argument: the public
-route is anonymous.
+No `preview_token` argument — the token was retired (610 Q17); the service reads
+`page.status` to decide POOL vs TEST_SUBMISSION. No `user_id` argument: the public
+route is anonymous. The return shape is in §4.7; on failure the route feeds
+`result.values` + `result.errors` straight into a `RenderContext` (§5 — Q3).
 
 ### 4.3 Form-validation helper
 
@@ -226,34 +294,37 @@ deliberately re-implement is one of the main calls in §5 — Q2.
 
 ### 4.4 Public Flask blueprint
 
-A new `entrypoints/blueprints/registration_public.py` (or similar) hosting the
-four GET/POST routes above plus the closed page. No `@login_required`. CSRF is
-on by default (global `CSRFProtect`), so the form needs the real token from
-`flask_wtf.csrf.generate_csrf()` substituted in via `RenderContext.csrf_form_element`.
+610 already added the public blueprint hosting the GET routes
+(`/register/<url_slug>`, `/r/<short_url_slug>`, `/registration-closed`). 613
+adds the two new routes to the **same** blueprint: `POST
+/register/<url_slug>/submit` and `GET /register/<url_slug>/thank-you`. No
+`@login_required`. CSRF is on by default (global `CSRFProtect`), so the form
+needs the real token from `flask_wtf.csrf.generate_csrf()` substituted in via
+`RenderContext.csrf_form_element` (610 already does this for the GET render; the
+re-render after a failed POST does the same).
 
-Feature-flag gate at the top of every route: `if not has_feature("registration_page"):
-abort(404)`. Same pattern in the backoffice tab (when 610's frontend work
-lands).
+Feature-flag gate at the top of the new routes: `if not
+has_feature("registration_page"): abort(404)` — matching the gate 610 applies to
+its GET routes.
 
-**Open: split the short-URL redirect into its own blueprint?** A separate
-`blueprints/redirects.py` mounted at `/r/` (no prefix on the routes) keeps the
-registration blueprint focused on `/register/...`, and gives us a natural
-home for future short-link patterns (e.g. invite codes, share links). The
-trade-off is two blueprints to register instead of one. See §6 — Q16.
+(The earlier "split the short-URL redirect into its own blueprint?" question —
+§6 Q16 — is **out of scope**: see the COMMENT there.)
 
 ### 4.5 Templates
 
-- `templates/registration/closed.html` — a Jinja "registration is closed" page.
-  Story-notes line 110 implies a single canonical URL, not per-page.
-- `templates/registration/thank_you.html` — the **wrapper** template. The
-  author's `thank_you_html` is inserted as a body block via `|safe`. If the
-  author's HTML is empty, the wrapper falls back to a default thank-you message
-  (gettext'd).
-- `templates/registration/form_wrapper.html` — the wrapper around the author's
-  form HTML. The author's HTML is the body; surrounding page chrome (head,
-  doctype, header) belongs to the wrapper. This decouples site chrome from
-  what the author edits and is the only sensible way to keep e.g. the
-  `Content-Security-Policy` consistent. See §5 — Q4.
+610 owns the GET-side templates — the "registration is closed" page and the
+form wrapper (`<head>`, doctype, CSP nonce, locale, base CSS around the
+rendered author HTML). 613 **re-uses the form wrapper** for the failed-POST
+re-render (same template, now with `values`/`errors` populated in the
+`RenderContext`), and adds one new template:
+
+- `templates/registration/thank_you.html` — the **wrapper** for the thank-you
+  page. The author's `thank_you_html` is inserted as a body block via `|safe`.
+  If the author's HTML is empty, the wrapper falls back to a default thank-you
+  message (gettext'd). See §6 — Q4.
+
+(Q4 in §5 — "wrap the author's HTML vs render it as the whole page" — was decided
+Option A and is now realised by 610's form wrapper.)
 
 ### 4.6 Where the i18n boundary sits
 
@@ -263,25 +334,29 @@ page, and fallback thank-you message all are. Same rule as the rest of the codeb
 **Future-proofing note:** a later iteration will add the ability to have
 **multiple registration forms in different languages** per assembly, with
 workflows for adding the translations. That work isn't in 613, but the service
-layer should not assume one form per assembly. The render-time substitution
-mechanism, the submission handler, the error contract — all should be keyed
-off the `RegistrationPage` (or a future `RegistrationPageTranslation` row)
-that produced the form HTML, not off the assembly. The current public-lookup
-seams (`find_registration_page_by_url_slug`) already lean this way; the
-submission handler should follow the same pattern.
+layer should not assume one form per assembly. The Jinja render mechanism,
+the submission handler, the error contract — all should be keyed off the
+`RegistrationPage` (or a future `RegistrationPageTranslation` row) that produced
+the form HTML, not off the assembly. The current public-lookup seams
+(`find_registration_page_by_url_slug`) already lean this way; the submission
+handler should follow the same pattern.
 
 ### 4.7 Structured-error contract (for current and future form sources)
 
-Per §1.5, the validator's output has to be consumable by:
+The validator's output has to be consumable by:
 
-- The raw-HTML path (v1) — needs a flat list to render as a summary.
+- The v1 Jinja path — `RenderContext.errors` (per-field, keyed by `field_key`)
+  drives `field_errors(key)`; `RenderContext.form_level_errors` drives
+  `form_errors()`; `RenderContext.values` drives `value`/`checked`/`selected`.
+  **This already exists in 610's `RenderContext` and helper API** — the
+  submission service just has to populate it.
 - The future form-builder — needs per-field errors keyed by `field_key` so it
-  can attach them next to each rendered widget.
-- The future Jinja-template path — needs both: a summary block AND per-field
-  error data accessible by `{{ errors['first_name'] }}` style lookups.
+  can attach them next to each rendered widget. Same `field_key`-keyed shape.
 
 Suggested service-layer return shape (concrete enough to be useful, not so
-concrete that we commit to wire format):
+concrete that we commit to wire format) — note it carries the **submitted
+values** as well as errors, so the route can re-populate the form on failure
+(see §5 — Q8):
 
 ```python
 @dataclass
@@ -293,20 +368,30 @@ class FieldError:
 @dataclass
 class RegistrationSubmissionResult:
     respondent: Respondent | None   # set on success
-    errors: list[FieldError]        # empty on success
+    values: dict[str, str]          # submitted values, for re-population
+    errors: list[FieldError]        # empty on success; per-field
     form_errors: list[str]          # non-field-level (CSRF expiry, etc.)
-    is_test: bool                   # True iff preview-token path used
+    is_test: bool                   # True iff page.status == TEST
 ```
 
-The raw-HTML path turns `errors + form_errors` into a single `{{ form_errors_summary }}`
-block via a presentation helper. The form-builder will use `errors` directly
-to drive per-field annotation. The Jinja-template path will get both shapes
-exposed in the template context. **The service layer's job ends at populating
-`RegistrationSubmissionResult`.**
+On a failed POST the route maps `result.values` → `RenderContext.values`,
+groups `result.errors` by `field_key` → `RenderContext.errors`, and
+`result.form_errors` → `RenderContext.form_level_errors`, then re-renders the
+**same** form HTML through the Jinja sandbox. **The service layer's job ends at
+populating `RegistrationSubmissionResult`** — it never produces HTML.
 
 Putting `field_key` on `FieldError` (rather than a label or position) keeps the
-data source-agnostic — different rendering paths can re-resolve the key to
-whatever they need (label, slot index, builder component id).
+data source-agnostic — the Jinja helpers re-resolve the key, and a future form
+builder can resolve it to a slot index or component id.
+
+> **QUESTION (Doctor Chewie):** `RenderContext.errors` is typed
+> `dict[str, list[str]]` (a field can have several messages), whereas
+> `RegistrationSubmissionResult.errors` is a flat `list[FieldError]`. The route
+> bridges the two by grouping on `field_key`. Are you happy with that two-shape
+> split (flat list out of the service, grouped dict into the renderer), or would
+> you rather the service hand back the grouped `dict[str, list[str]]` directly so
+> the route is a pure pass-through? The flat list keeps `reason` codes around for
+> logging/i18n; the dict is less to translate at the boundary.
 
 ---
 
@@ -400,54 +485,41 @@ form builder and Jinja-template-with-error-bits paths will _also_ call the
 same validator helper. Forcing all three through a FlaskForm shaped around
 the raw-HTML case would be the wrong abstraction.
 
-### Q3 — How to surface validation failures (for the raw-HTML source)?
+### Q3 — How to surface validation failures? **DECIDED → standard POST re-render through the Jinja helpers**
 
-The structured-error contract is settled in §4.7 — `RegistrationSubmissionResult`
-always carries per-field errors. This question is narrower: how does the **raw
-HTML** path surface those errors to the user, given that the service has no
-ability to inject markup inside the author's HTML?
+This question — originally framed around a "raw HTML can't carry inline errors"
+constraint — is **settled by the Jinja-sandbox rendering 610 shipped**. The
+author's form HTML is a Jinja template, and the generated starter already wires
+in the per-field error and re-population helpers (see
+`docs/agent/610-registration-page-html/example-form-d-jinja-helpers.html` and
+`RegistrationPageHtml.render` in `domain/registration_page.py`):
 
-(The form-builder and Jinja-template paths get inline per-field errors for
-free — they own the markup.)
+- `field_errors(key)` renders a system-owned `<p class="error">…</p>` block per
+  message next to the field.
+- `form_errors()` renders cross-field / form-level errors (CSRF expiry, etc.).
+- `value(key)`, `checked(key, val)`, `selected(key, val)` re-populate inputs,
+  radios, checkboxes and `<select>`s.
 
-**Option A (recommended): a render-time summary block + an additive token.**
+**Approach (decided):** a plain server-side form round-trip — **no** redirect on
+failure, **no** summary-token scheme, **no** session stash. On a failed POST the
+handler builds a `RenderContext` from the submission result
+(`values` + `errors` + `form_level_errors`) and re-renders the *same* form HTML.
+On a fresh GET every helper returns `""` / no-op, so the page is visually
+identical to the unsubmitted form. This is the standard "redisplay with errors
+and the submitted values" pattern.
 
-The wrapper template renders the error summary as a `<div>` above the
-author's HTML by default. Authors who want to control placement can paste
-`{{ form_errors_summary }}` somewhere in their form HTML; the renderer
-substitutes it with the rendered summary (or empty string when there are no
-errors). Mirrors the GOV.UK error-summary pattern.
+This supersedes the earlier Option A/B/C analysis (render-time summary token /
+session redirect / token-per-value), all of which existed only to work around
+the assumption that the author's HTML was inert. It isn't — it's Jinja. The
+earlier options are preserved in git history.
 
-- Pros: the author's HTML stays untouched; placement is controllable but not
-  required; one new author-facing token to document.
-- Cons: less ergonomic than per-field errors — but those are intentionally
-  out of reach for the raw-HTML path. The user has to read the summary and
-  scroll up to find each field.
+A GOV.UK-style error summary at the top of the form is still possible and
+desirable (accessibility), but it's now just another helper/partial driven by
+the same `errors` data — not a separate mechanism. Whether the v1 starter emits
+a summary block is a frontend-polish call, not an architectural one.
 
-**Option B: redirect on failure with the errors in the session.**
-
-POST → 302 → GET → render with summary read from session.
-
-- Pros: classic post/redirect/get pattern; refresh-friendly.
-- Cons: more moving parts (session storage); errors can become stale; doesn't
-  preserve the user's typed values unless we also stash those (more session
-  bytes).
-
-**Option C: render the form directly from the POST handler (no redirect).**
-
-POST handler renders the same template the GET would, with errors in scope.
-Re-populating typed values would need yet more substitution tokens
-(`{{ value:first_name }}` and so on), which Q15 from 610 explicitly rejected.
-
-- Pros: typed values are easy to preserve since we're still in the request.
-- Cons: explodes the templating contract; against the spirit of Q15.
-
-Personal lean: **Option A** — small, additive, fits the existing design, and
-the structured-error contract from §4.7 means future form-builder /
-Jinja-template paths can do better-than-summary error rendering without
-disturbing the raw-HTML path.
-
-**Open: do we preserve typed values across a re-render?** §6 — Q8.
+Typed-value preservation is therefore **yes** in v1 — see §6 — Q8 (also settled
+via these helpers).
 
 ### Q4 — Form wrapper template, or render the author's HTML as the whole page? **DECIDED → Option A**
 
@@ -568,99 +640,73 @@ domain layer.
 - Pros: simpler validator.
 - Cons: breaks the eligibility/consent query patterns; doesn't match CSV.
 
-**Absent fixed fields are expected.** Not every form will collect every one
-of those five keys — a simple "register interest" form might omit `eligible`,
-`can_attend`, and `stay_on_db`, leaving only `email` and `consent`. The
-validator must therefore treat a _missing_ fixed field as "leave the
-`Respondent` column at its default (`None` for the booleans, `""` for email)"
-rather than rejecting the submission. This dovetails with the lenient
-validation stance in Q9, and connects to the proposed
-`for_registration_page` schema flag in §6 — Q15: that flag would let the
-validator know _which_ fields the schema author intended to collect on the
-form, without requiring an `is_required` migration.
+**A fixed field that the form doesn't collect is expected.** Not every form
+collects every one of those five keys — a simple "register interest" form might
+omit `eligible`, `can_attend`, and `stay_on_db`, leaving only `email` and
+`consent`. The validator uses `for_registration_page` (§6 — Q15) to know which
+fields the form is meant to collect: a fixed field **not** flagged for the
+registration page is simply not expected, and its `Respondent` column keeps its
+default (`None` for the booleans, `""` for email). This is distinct from the
+strict-required handling in Q9: required-ness (`is_required`, §6 — Q14) only
+bites on fields that *are* on the form. So "not on the form" → ignored; "on the
+form and required" → must be present/checked; "on the form and optional" (e.g.
+`stay_on_db`) → may be blank.
 
-### Q8 — Preserve typed values across a re-render after a validation failure?
+### Q8 — Preserve typed values across a re-render after a validation failure? **DECIDED → yes, via the Jinja helpers**
 
-The author's HTML emits e.g. `<input type="text" name="first_name">`. After a
-validation failure, do we want the user to see the value they typed
-re-populated?
+Yes — we re-populate. The premise of the original "Option A: no, not in v1"
+(that re-population would need a new `{{ value:foo }}` token scheme or
+after-the-fact HTML parsing) no longer holds: **610 ships exactly the helpers
+that make this free.** The generated starter already emits
+`value="{{ value('first_name') }}"`, `{{ checked('eligible', 'yes') }}`,
+`{{ selected('geo_bucket', 'Glasgow') }}` etc., and `RenderContext.values`
+carries the submitted values back into them on the re-render.
 
-**Option A (recommended): no, not in v1.**
+So the flow is the standard form round-trip from Q3: failed POST → re-render
+the same form HTML with `RenderContext.values` populated → text/email/number/
+textarea inputs show what the user typed, radios/checkboxes keep their
+selection, `<select>` keeps its option. No new tokens, no HTML post-processing.
 
-The first version surfaces an error summary (Q3) listing what went wrong; the
-user has to re-enter. Cost is paid by the user; benefit is **massive
-simplification** of the templating model — we don't have to introduce a
-`{{ value:foo }}` token for every field, or post-process the author's HTML to
-inject `value=` attributes.
+(This is what makes Q3 a plain redisplay rather than a post/redirect/get — the
+submitted values are still in scope on the failed POST.)
 
-- Pros: zero new substitution tokens; the author's HTML stays untouched; ships
-  in v1 timeframe.
-- Cons: poor UX for users with long forms.
+### Q9 — How strict is the validation? **DECIDED → Option B (strict), backed by `is_required`**
 
-**Option B: yes, re-populate.**
-
-Either by extending the substitution scheme (back to a Jinja-like model, which
-Q15 explicitly rejected) or by parsing the author's HTML after-the-fact and
-injecting `value=` attributes. Either is a substantial new piece of work.
-
-Personal lean: **Option A for v1, document the limitation, revisit later.**
-
-### Q9 — How strict is the validation? Does the submitted form have to match the schema exactly?
+Doctor Chewie's steer: **Option B — almost all fields are required.** The only
+standard exception is the "stay on database" checkbox. So the validator enforces
+required-ness server-side, sourced from the new `is_required` column added in
+§6 — Q14 (default `True`), plus the fixed-boolean rules captured there.
 
 The author writes the HTML, the schema is the source of truth, and the two can
-drift. Five sub-questions inside this one — they're tied together:
+drift. Five sub-questions, now answered:
 
-1. **Missing fields:** schema has `email` but the form omits it. Validator
-   behaviour?
-2. **Extra fields:** form posts `name="favourite_colour"` but the schema has
-   no such field. Drop, store, or reject?
-3. **Required-ness:** the schema doesn't currently mark fields as required
-   (the `_render_field` helper inspects a `required_field_keys` set passed by
-   the caller, but the persistent schema doesn't store that). Where do
-   per-field required flags come from?
+1. **Missing required field:** schema has `email` (or any `is_required` field)
+   but the form omitted/blanked it → **reject** with a per-field "this is
+   required" error. Missing *optional* field → stored as `None` / empty string.
+2. **Extra fields:** form posts `name="favourite_colour"` with no matching
+   schema field → **silently dropped** (not stored in `attributes`). The schema
+   is the source of truth for what to collect.
+3. **Required-ness:** comes from `RespondentFieldDefinition.is_required` (§6 —
+   Q14, default `True`). For the fixed booleans the rule is: when the form
+   collects them, `eligible` / `can_attend` / `consent` must be **checked**
+   (truthy), while `stay_on_db` is optional. See Q14 for the "is this fixed
+   boolean even in use?" mechanism.
 4. **Choice values:** form posts `gender=Martian` for a choice field whose
-   options are {Female, Male, Non-binary or other}. Reject or accept?
-5. **Type errors:** integer field gets `"abc"`. Reject definitely. But
-   user-visible message?
+   options are {Female, Male, Non-binary or other} → **rejected**.
+5. **Type errors:** integer field gets `"abc"` → **rejected**, with a
+   user-visible per-field message (rendered via `field_errors`).
 
-**Option A (recommended for v1): lenient — trust the schema for _what to
-collect_, ignore extras, treat all fields as optional, validate types and
-choice values strictly.**
+This depends on the §6 Q14 / Q15 schema additions (`is_required`,
+`for_registration_page`), which Doctor Chewie has approved adding in 613. The
+earlier "Option A lenient for v1, defer the migration" lean is therefore
+**dropped** — we are doing the migration in this story.
 
-- Missing fields: stored as `None` / empty string.
-- Extras: silently dropped (not stored in `attributes`).
-- Required-ness: not enforced server-side until we add a `is_required`
-  column to `RespondentFieldDefinition`.
-- Choice values: rejected.
-- Type errors: rejected.
-
-- Pros: ships now; doesn't depend on a schema migration; safer default
-  (we'd rather accept a partially-filled submission than lose it).
-- Cons: a half-filled submission gets stored as a half-filled `Respondent`;
-  the author has no server-side enforcement of their own form.
-
-**Option B: strict — the schema names exactly the fields the form must collect;
-required vs optional comes from a new `is_required` column.**
-
-- Pros: server-side enforcement; matches the user's mental model of "the
-  form said this is required so the server should agree".
-- Cons: requires a schema migration to add `is_required`; rejects perfectly
-  reasonable submissions that the author intended to make optional.
-
-**Option C: lenient where the form expressed nothing, strict where it did.**
-
-E.g. the form HTML has `required` attribute on `<input name="first_name"
-required>`. We _cannot_ read this from inside Python because we don't parse
-the HTML. So this needs a different mechanism — perhaps a new optional
-"required field keys" list on the `RegistrationPage` aggregate that the author
-configures alongside the HTML.
-
-- Pros: matches author intent.
-- Cons: more state to maintain; more places for divergence.
-
-Personal lean: **Option A for v1**, but call this out in the README so users
-understand what they're getting. Revisit when we add `is_required` (and the
-field-editing story owns that).
+> **QUESTION (Doctor Chewie):** for a required *choice* field that the visitor
+> simply leaves unselected (no radio chosen, `<select>` left on the "— Please
+> choose —" blank), I'll treat that the same as "missing required" → reject with
+> the field's required-error. Sound right? (It's the obvious reading of "almost
+> all fields required", just flagging because choice fields have a legitimate
+> empty state in the generated dropdown.)
 
 ### Q10 — Does the `TEST_SUBMISSION` status need transitions in or out? **DECIDED → Option B**
 
@@ -679,16 +725,17 @@ flips status to `DELETED`), but you can't promote it to POOL.
 
 **Option B (chosen): allow `TEST_SUBMISSION` → POOL.**
 
-Real people sometimes use the unpublished-with-token URL to register early,
-or an organiser realises a test submission was actually a valid registration.
+Real people sometimes register while the page is still in `TEST` status (it
+loads publicly at its real slug), or an organiser realises a test submission was
+actually a valid registration.
 The transition is one-way (no POOL → TEST*SUBMISSION) and goes through the
 existing `apply_status_transition` plumbing — which **requires a comment**
 that lands in the Respondent Activity history, recording \_who* promoted the
 submission and _why_. That audit trail removes the "is this real or staged"
 concern that Option A's cons listed.
 
-- Pros: handles the real-person-used-preview-link case without re-submission;
-  audit trail is comment-driven, not enforced-by-rule.
+- Pros: handles the real-person-registered-during-TEST case without
+  re-submission; audit trail is comment-driven, not enforced-by-rule.
 - Cons: very slight cognitive load — organisers need to know the promotion
   is possible.
 
@@ -697,12 +744,16 @@ concern that Option A's cons listed.
 ## 6. Open technical questions for the detailed plan
 
 Lower-level questions that don't change the high-level shape but need answers
-before code lands. Q1, Q2, Q4, Q5, Q6, Q7, Q11, Q12, Q13 are decided;
-Q8 and Q10 are agreed as written. **Still open** (Doctor Chewie is talking to
-the team about these): Q3 from §5 (raw-HTML error surface), Q8 from §5
-(preserve typed values), Q9 from §5 (validation strictness), §6 Q14
-(`is_required`), §6 Q15 (`for_registration_page` flag), §6 Q16 (blueprint
-split).
+before code lands. As of the 2026-05-22 revision, the §5 questions that were
+parked are now resolved: Q3 (errors surface via the Jinja helpers — standard
+redisplay), Q8 (typed values re-populated via the same helpers), and Q9
+(strict, Option B). In §6, Q1, Q2, Q4, Q5, Q6, Q7, Q11, Q12, Q13 are decided;
+Q8 and Q10 are agreed as written; Q14 (`is_required`) and Q15
+(`for_registration_page` flag) are decided by Doctor Chewie's comments
+(add both); Q16 (blueprint split) is **out of scope**. Nothing in §5/§6
+remains genuinely open except the two clarifying questions flagged inline (in
+§4.7 and §5 — Q9) and the dedicated **§9 — Questions for Doctor Chewie** at the
+end of this doc.
 
 ### Q1 — Naming of the new status **DECIDED → `TEST_SUBMISSION`**
 
@@ -744,9 +795,9 @@ story), we extend that function. No route-layer change needed at that point.
 
 YAGNI. Submission stays slug-based. If a user lands on
 `POST /register/old-slug/submit` after the slug has changed (only possible
-across an unpublish-edit-republish cycle — Q6 in 610 freezes slugs while
-published), they get a friendly "this form has moved" page. No hidden
-page-id field; no third render-time token.
+before the page has ever been published — Q6 in 610 freezes slugs permanently
+once any PUBLISH has happened), they get a friendly "this form has moved" page.
+No hidden page-id field; no extra render-time token.
 
 ### Q6 — Should TEST_SUBMISSION respondents show up in respondent lists? **DECIDED**
 
@@ -767,7 +818,7 @@ page-id field; no third render-time token.
 CSRF stays on for the submission route. The render-time `{{ csrf_form_element }}`
 token already substitutes in a real token; no `@csrf.exempt` decorator.
 
-This is a *public* form — anonymous user, no login — so Flask-WTF's CSRF
+This is a _public_ form — anonymous user, no login — so Flask-WTF's CSRF
 token rides the Flask session cookie. Detailed plan must verify and pin:
 
 - Anonymous requests get a session cookie that pins the CSRF token (the
@@ -823,149 +874,160 @@ otherwise identical to a real submission:
 
 - `email`/`eligible`/etc. landing logic still happens (top-level columns
   populated when the corresponding form field was submitted).
-- Auto-generated `CREATE` comment that explicitly says it was created via the
-  preview-token URL — e.g. "Created via test submission (preview token)".
-  Makes the test-ness unambiguous in the activity log, separately from the
-  status field.
+- Auto-generated `CREATE` comment that explicitly says it was submitted while
+  the page was in `TEST` status — e.g. "Created via test submission (page in
+  TEST status)". Makes the test-ness unambiguous in the activity log, separately
+  from the status field.
 - `RespondentSourceType.REGISTRATION_FORM` (no separate source type — the
   status carries the test-ness).
 
-### Q14 — Source of `RespondentFieldDefinition.is_required`
+### Q14 — Source of `RespondentFieldDefinition.is_required` **DECIDED → add `is_required`, default `True`**
 
-Currently, the schema has no `is_required` column. The `generate_starter_form_html`
-helper takes a `required_field_keys` parameter that defaults to empty — i.e.
-nothing is required in the starter today.
+Add `is_required: bool` to `RespondentFieldDefinition`, **defaulting to `True`**
+(matching Q9's "almost all fields are required"). This is a schema change, done
+in 613. `generate_starter_form_html` already takes a `required_field_keys`
+parameter; the field-editing UI / schema setup populates `is_required` and the
+starter generator derives `required_field_keys` from it.
 
-Options:
+**Fixed booleans need a separate "is this field even in use?" signal.** Not
+every form collects all of `eligible` / `can_attend` / `consent` / `stay_on_db`.
+The rule Doctor Chewie set:
 
-- Add `is_required: bool` to `RespondentFieldDefinition` (schema migration).
-- Treat the four core fixed booleans (`eligible`, `can_attend`, `consent`,
-  `stay_on_db`) as implicitly required and everything else as optional.
-- Leave required-ness to the author's HTML (`<input required>`) and not
-  enforce server-side.
+- We need a way to mark whether each fixed boolean is actually used on this
+  assembly's form (candidate mechanism: the `for_registration_page` flag from
+  Q15 — see the QUESTION below).
+- **When a fixed boolean is in use:** `eligible`, `can_attend` and `consent`
+  are required to be **checked** (i.e. a truthy "yes" — an unchecked/"no"
+  consent is a validation failure, not just a recorded `False`); `stay_on_db`
+  is **optional** (unchecked is a legitimate "no, don't keep me on the
+  database").
+- **When a fixed boolean is not in use:** it's absent from the form, the
+  validator doesn't expect it, and the `Respondent` column keeps its default.
 
-This intersects with Q9 (lenient vs strict) and Q15 (`for_registration_page`
-flag). Tied to the field-editing story (out of scope here). My lean: do
-**not** add `is_required` in 613; accept lenient validation; punt to a
-follow-up.
+This intersects with Q9 (strict validation) and Q15 (`for_registration_page`).
+Adding `is_required` here means the field-editing story no longer owns it; 613
+ships the column and the migration.
 
-### Q15 — Add a `for_registration_page` flag (or scope enum) to `RespondentFieldDefinition`?
+> **QUESTION (Doctor Chewie):** two ways to express "is this fixed boolean in
+> use", and I want your call before the detailed plan:
+> (a) **reuse `for_registration_page`** (Q15) — a fixed boolean is "in use" iff
+> it's flagged for the registration page. Simple, one flag does double duty.
+> (b) a **dedicated mechanism** (e.g. presence in the form HTML / a separate
+> per-field toggle). More explicit but more state.
+> My lean is (a) — `for_registration_page` already means "this field belongs on
+> the form", which is exactly "in use". Also: does the
+> "`consent`/`eligible`/`can_attend` must be checked when in use" rule belong in
+> the **validator** (reject on submit) or also surface as `required` in the
+> generated HTML? I'd do both — `required` attribute for the browser, validator
+> for the server — but flagging since "must be *checked*" is stronger than HTML
+> `required` gives for a single checkbox.
 
-Suggested in §1.5. Concrete options:
+### Q15 — Add a `for_registration_page` flag (or scope enum) to `RespondentFieldDefinition`? **DECIDED → add the bool now**
 
-- **A bool: `for_registration_page: bool`.** Simple; tells the validator
-  "these are the keys you should expect on a submission" and tells a future
-  form builder "these are the keys to offer as components". Anything not
-  flagged is implicitly derived/back-office-only.
-- **An enum: `field_scope: registration_page | derived_target |
-confirmation_call_only | back_office_only | ...`** Richer; lets us tag
-  e.g. confirmation-call fields so they don't pollute the registration form
-  builder's component list.
+Doctor Chewie's steer: **add the bool now; the enum can evolve later.**
 
-If we ship neither, the validator falls back to the lenient behaviour in Q9
-Option A (every schema field is collected if present in the form, otherwise
-left empty).
+Add `for_registration_page: bool` to `RespondentFieldDefinition` (schema change,
+done in 613). It tells the validator "these are the keys you should expect on a
+submission" and tells a future form builder "these are the keys to offer as
+components". Anything not flagged is implicitly derived / back-office-only and
+the validator neither expects nor stores it. (See the Q14 QUESTION for whether
+this same flag also answers "is this fixed boolean in use?".)
 
-Open: do we add this in 613 (it directly informs the validator), or punt to
-the form-builder story and let 613 stay lenient? My lean: **add the bool now**
-(cheap migration, immediately useful to the validator's error messages — we
-can say "field `x` is expected but not in the form" only for flagged fields),
-and let the enum evolve later. Tied to Q9 — if we want any kind of "your
-form is missing a required field" check, this flag is the cleanest place to
-hang it.
+The richer alternative — an enum `field_scope: registration_page |
+derived_target | confirmation_call_only | back_office_only | ...` — is **not**
+done now. The bool is forward-compatible: a later story can widen it to the
+enum without invalidating the "is it on the form?" question the validator asks.
 
-### Q16 — Separate blueprint for the `/r/` short-URL redirect?
+### Q16 — Separate blueprint for the `/r/` short-URL redirect? **OUT OF SCOPE**
 
-Per §4.4. Two cleanly-separated blueprints (`registration_public` at
-`/register/`, `redirects` at `/r/`) vs one combined blueprint.
-
-The combined option is simpler today; the split option earns its keep if we
-ever add more short-link patterns (invite codes already have short codes;
-share-this-page links might want them). My lean: **one combined blueprint
-for now**, split later if pressure builds. Document the URL prefix on the
-single blueprint comment so a future split is mechanical.
+> **COMMENT (Doctor Chewie):** this is now out of scope. 610 already owns the
+> public blueprint (including the `/r/` redirect), so there is no blueprint-split
+> decision left for 613 — its new routes (`/submit`, `/thank-you`) just join the
+> existing blueprint. The earlier "one combined vs two blueprints" analysis is
+> moot and kept only in git history.
 
 ---
 
 ## 7. Recommended overall shape (TL;DR)
 
-Pulled together from the §5 decisions (Q1, Q2, Q4, Q5, Q6, Q7, Q10), the
-§6 decisions (Q1, Q2, Q4, Q5, Q6, Q7, Q11, Q12, Q13), and the additional
-context in §1.5 / §4.7. Six questions remain genuinely open and parked for
-team discussion — see §6 intro.
+Pulled together from the §5 decisions and the §6 decisions, as revised
+2026-05-22 against the evolved 610 work. The previously-parked questions are now
+settled; only the two inline questions (§4.7, §5 Q9) and §9 remain for Doctor
+Chewie.
 
-- **New routes** on a single `registration_public_bp` blueprint (§6 Q16
-  unresolved — lean: combined):
-  - `GET /register/<url_slug>` — render form (or 302 to `/registration-closed`).
-  - `GET /r/<short_url_slug>` — 302 to canonical.
-  - `POST /register/<url_slug>/submit` — validate, create Respondent, 302 to thank-you.
-    Slug-mid-flight cliff: friendly "this form has moved" page if the slug
-    changed (no hidden page-id field — YAGNI).
-  - `GET /register/<url_slug>/thank-you` — render `thank_you_html` in a
-    wrapper. Renders even if the page has since been unpublished — the
-    submission is a fact.
-  - `GET /registration-closed` — static page.
-- **CSRF stays on** for the submission route — anonymous session cookie
-  carries the token. Detailed plan verifies anonymous-session token
-  lifecycle and adds a friendly "session timed out" path for expired tokens.
-- **New status** `RespondentStatus.TEST_SUBMISSION`. **No inbound
-  transitions; outbound TEST_SUBMISSION → POOL is allowed** (audit via the
-  required transition comment).
-- **TEST_SUBMISSION row shape:** same fields as a real submission
-  (top-level `email`/`eligible`/etc. land normally), `source_type =
-  REGISTRATION_FORM`, plus an auto-generated `CREATE` comment that says
-  "Created via test submission (preview token)" so the test-ness is visible
-  in the activity log.
-- **Respondent list behaviour:** TEST_SUBMISSION rows show in the default
-  list (alongside DELETED), counts exclude **both** DELETED and
-  TEST_SUBMISSION. Selection runs already exclude TEST_SUBMISSION by
-  construction — pin with a test.
-- **New service** `registration_submission_service.py` returning a
-  **structured `RegistrationSubmissionResult`** (per-field `FieldError` list +
-  form-level errors + `Respondent | None`). Presentation-agnostic — raw HTML
-  v1 turns it into a summary, future form-builder and Jinja-template paths
-  attach inline errors. See §4.7.
-- **Schema-driven validator** as a pure helper (no Flask, no WTForms),
-  called by the service. Strictness model is **§5 Q9 still open**; the
-  current lean is lenient (missing fields → empty values; extras →
-  dropped; type / choice violations → rejected). Fixed-field keys land on
-  `Respondent` top-level; rest in `attributes`. **Missing fixed fields are
-  accepted** — not every form will collect every fixed key.
-- **`external_id`** = freshly-generated UUID per submission. **No email
-  dedup** — shared-email submissions are explicit valid usage.
-- **Errors** surface for the raw-HTML path is **§5 Q3 still open** —
-  current lean is a server-rendered summary block injectable via an
-  additive render-time token (`{{ form_errors_summary }}`).
-- **Typed values across re-render** is **§5 Q8 still open** — current
-  lean is "not preserved in v1".
-- **Thank-you HTML rendering:** via Jinja `{{ thank_you_html | safe }}` for
-  now (no substitution tokens in v1; the existing `render_thank_you_html`
-  seam stays).
-- **Feature-flag gate** (`FF_REGISTRATION_PAGE`) at the top of every route.
-- **Wrapper templates** for form page, thank-you page, closed page —
-  consistent `<head>`, CSP nonce, locale, base CSS.
-- **Rate-limiting:** out of scope for 613, but the detailed plan reserves
-  the seam (decorator on the POST route) so the follow-up doesn't have to
-  retrofit.
-- **Sequencing:** developed in parallel with 610's `plan-frontend.md`
-  backoffice tab; integrated end-to-end once both are green.
-- **Future-proofing:** validator + structured errors are designed for two
-  more form sources (form builder, Jinja-template-for-LLM) that will land
-  after 613. Multi-language registration forms will reuse the same service
-  and validator, keyed off `RegistrationPage` rather than assembly.
+- **610 owns the public GET side** — `GET /register/<url_slug>` (form render),
+  `GET /r/<short_url_slug>` (302 to canonical), visibility resolution, and
+  `GET /registration-closed`. 613 adds **two routes to the same blueprint**:
+  - `POST /register/<url_slug>/submit` — validate, create Respondent, 302 to
+    thank-you. On failure, re-render the same form HTML through the Jinja
+    sandbox with submitted values + per-field errors. Slug-mid-flight cliff:
+    friendly "this form has moved" page if the slug changed (only possible
+    pre-first-publish; no hidden page-id field — YAGNI).
+  - `GET /register/<url_slug>/thank-you` — render `thank_you_html` in a wrapper.
+    Renders even if the page has since been unpublished/closed — the submission
+    is a fact (Q11).
+- **Submission status from `page.status`** — `PUBLISHED` → `POOL`, `TEST` →
+  `TEST_SUBMISSION`. No preview token (retired by 610 Q17); 613 reads
+  `visibility.is_test`.
+- **CSRF stays on** for the submission route — anonymous session cookie carries
+  the token. Detailed plan verifies anonymous-session token lifecycle and adds
+  a friendly "session timed out" path for expired tokens.
+- **New status** `RespondentStatus.TEST_SUBMISSION`. **No inbound transitions;
+  outbound TEST_SUBMISSION → POOL is allowed** (audit via the required
+  transition comment).
+- **TEST_SUBMISSION row shape:** same fields as a real submission (top-level
+  `email`/`eligible`/etc. land normally), `source_type = REGISTRATION_FORM`,
+  plus an auto-generated `CREATE` comment saying it was submitted while the page
+  was in `TEST` status, so the test-ness is visible in the activity log.
+- **Respondent list behaviour:** TEST_SUBMISSION rows show in the default list
+  (alongside DELETED), counts exclude **both** DELETED and TEST_SUBMISSION.
+  Selection runs already exclude TEST_SUBMISSION by construction — pin with a
+  test.
+- **New service** `registration_submission_service.py` returning a **structured
+  `RegistrationSubmissionResult`** (`Respondent | None` + submitted `values` +
+  per-field `FieldError` list + form-level errors + `is_test`). Presentation-
+  agnostic — the v1 Jinja path renders it via `field_errors()`/`form_errors()`/
+  `value()`; a future form builder attaches errors to its widgets. See §4.7.
+- **Schema-driven validator** as a pure helper (no Flask, no WTForms), called by
+  the service. Strictness is **strict (§5 Q9, Option B)**: required-ness from
+  the new `is_required` column (default `True`); missing required → reject;
+  extras → dropped; type / choice violations → rejected. Fixed-field keys land
+  on `Respondent` top-level; rest in `attributes`. Fixed booleans only expected
+  when in use; when in use `eligible`/`can_attend`/`consent` must be checked,
+  `stay_on_db` optional (§6 Q14).
+- **`external_id`** = freshly-generated UUID per submission. **No email dedup** —
+  shared-email submissions are explicit valid usage.
+- **Errors + typed-value round-trip** (§5 Q3, Q8) — standard server re-render
+  through the Jinja sandbox: failed POST → `RenderContext` carries `values`,
+  `errors`, `form_level_errors` → helpers re-populate inputs and render
+  per-field/form errors. No summary token, no session stash, no PRG.
+- **Thank-you HTML rendering:** via Jinja `{{ thank_you_html | safe }}` for now
+  (no substitution tokens in v1; the existing `render_thank_you_html` seam
+  stays).
+- **Feature-flag gate** (`FF_REGISTRATION_PAGE`) on 613's new routes, matching
+  610's gate on the GET routes.
+- **Templates:** 610 owns the form wrapper and closed page (re-used by 613 for
+  the failed-POST re-render); 613 adds the thank-you wrapper.
+- **Schema additions in 613:** `RespondentFieldDefinition.is_required`
+  (default `True`, §6 Q14) and `for_registration_page: bool` (§6 Q15). One
+  schema migration covers both.
+- **Rate-limiting:** out of scope for 613, but the detailed plan reserves the
+  seam (decorator on the POST route) so the follow-up doesn't have to retrofit.
+- **Sequencing:** developed in parallel with 610's `plan-frontend.md` backoffice
+  tab; integrated end-to-end once both are green.
+- **Future-proofing:** validator + structured errors are designed for the
+  future form-builder source too. Multi-language registration forms will reuse
+  the same service and validator, keyed off `RegistrationPage` rather than
+  assembly.
 
-Schema-side **still open** (§6 Q14, Q15): whether to add an `is_required`
-column and/or a `for_registration_page` flag to `RespondentFieldDefinition`.
-Decisions here change the validator's strictness story (§5 Q9).
-
-Estimated rough size: ~400 LOC of new src code (route + service + validator
-+ structured-error value object + status enum + possibly the schema flag),
-~700 LOC of tests, three new templates, one domain enum addition, possibly
-one schema migration. Note: `RespondentStatus` is stored via `EnumAsString`
-(confirmed in `domain/value_objects.py` + ORM code), so **adding the new
-status value does NOT need a column-type migration** — it's just a code
-change. Any schema-flag migration (§6 Q15) would be the only DB change in
-play.
+Estimated rough size: ~400 LOC of new src code (route + service + validator +
+structured-error value object + status enum + the two schema fields), ~700 LOC
+of tests, one new template (thank-you wrapper), one domain enum addition, one
+schema migration (`is_required` + `for_registration_page`). Note:
+`RespondentStatus` is stored via `EnumAsString` (confirmed in
+`domain/value_objects.py` + ORM code), so **adding the new status value does NOT
+need a column-type migration** — it's just a code change. The
+`RespondentFieldDefinition` schema migration (Q14/Q15) is the DB change in play.
 
 ---
 
@@ -977,6 +1039,8 @@ play.
 - `docs/agent/610-registration-page-html/plan-frontend.md`
 - `docs/agent/610-registration-page-html/deltas-to-fix.md`
 - `docs/agent/610-registration-page-html/example-form-a-raw-html.html`
+- `docs/agent/610-registration-page-html/example-form-d-jinja-helpers.html`
+  (the shape 613's error/value round-trip renders through — see §5 Q3/Q8)
 - `docs/architecture.md`
 - `src/opendlp/domain/registration_page.py`
 - `src/opendlp/domain/respondents.py`
@@ -992,3 +1056,42 @@ play.
   a public, anonymous blueprint)
 - `src/opendlp/feature_flags.py`
 - `src/opendlp/entrypoints/extensions.py` (CSRF setup)
+
+---
+
+## 9. Questions for Doctor Chewie
+
+Captured here (rather than asked in chat) per your request. Each is also flagged
+inline at the relevant section.
+
+1. **Error shape at the service/route boundary (§4.7).**
+   `RegistrationSubmissionResult.errors` is a flat `list[FieldError]` (keeps
+   `reason` codes for logging/i18n); `RenderContext.errors` is a grouped
+   `dict[str, list[str]]`. The route bridges them by grouping on `field_key`.
+   Happy with that split, or should the service hand back the grouped dict so
+   the route is a pure pass-through?
+
+2. **"Fixed boolean in use" mechanism (§6 Q14).** You said the fixed booleans
+   need "some way to select whether they are actually used". My lean is to
+   **reuse the new `for_registration_page` flag** (Q15) — a fixed boolean is
+   "in use" iff it's flagged for the registration page — rather than add a
+   separate per-field toggle. Agree, or do you want a dedicated mechanism?
+
+3. **"Must be checked" enforcement (§6 Q14).** For `eligible`/`can_attend`/
+   `consent` when in use, "must be checked" is stronger than an HTML `required`
+   attribute gives for a single checkbox. I plan to enforce it in the
+   **validator** (server-side reject) *and* mark `required` in the generated
+   HTML (browser hint). Sound right?
+
+4. **Unselected required choice fields (§5 Q9).** A required radio with nothing
+   chosen, or a `<select>` left on the blank "— Please choose —" option → I'll
+   treat as "missing required" and reject. Confirm that's the intended reading
+   of "almost all fields required".
+
+5. **Scope sanity-check (§2, §4.4).** I've taken your "the GETs are now in 610"
+   comment to mean 610 owns the form-render route, the `/r/` redirect, visibility
+   resolution **and** the `/registration-closed` page — leaving 613 with the
+   `POST /submit` and `GET /thank-you` routes plus the submission service /
+   validator / `TEST_SUBMISSION` status / schema additions. If the thank-you
+   route or the closed page actually landed in 610 too, say so and I'll move
+   them out of 613's scope.
