@@ -631,42 +631,56 @@ class TestGenerateStarterFormHtml:
 
         assert '<form action="{{ form_action }}" method="post">' in html
         assert "{{ csrf_form_element }}" in html
+        assert "{{ form_errors() }}" in html
         assert '<button type="submit">Register</button>' in html
         assert html.rstrip().endswith("</form>")
 
-    def test_text_field_renders_input(self):
+    def test_form_errors_appears_between_csrf_and_button(self):
+        html = generate_starter_form_html([])
+
+        csrf_pos = html.find("{{ csrf_form_element }}")
+        form_errors_pos = html.find("{{ form_errors() }}")
+        button_pos = html.find('<button type="submit">')
+        assert -1 < csrf_pos < form_errors_pos < button_pos
+
+    def test_text_field_renders_input_with_value_helper(self):
         fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
         html = generate_starter_form_html(fields)
 
         assert '<label for="first_name">First name</label>' in html
-        assert '<input type="text" id="first_name" name="first_name">' in html
+        assert ('<input type="text" id="first_name" name="first_name" value="{{ value(\'first_name\') }}">') in html
+        assert "{{ field_errors('first_name') }}" in html
 
-    def test_email_field_renders_email_input(self):
+    def test_email_field_renders_email_input_with_value_helper(self):
         fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
         html = generate_starter_form_html(fields)
 
-        assert '<input type="email" id="email" name="email">' in html
+        assert ('<input type="email" id="email" name="email" value="{{ value(\'email\') }}">') in html
+        assert "{{ field_errors('email') }}" in html
 
-    def test_longtext_field_renders_textarea(self):
+    def test_longtext_field_renders_textarea_with_value_helper(self):
         fields = [_field("about", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.LONGTEXT)]
         html = generate_starter_form_html(fields)
 
-        assert '<textarea id="about" name="about"></textarea>' in html
+        assert ('<textarea id="about" name="about">{{ value(\'about\') }}</textarea>') in html
+        assert "{{ field_errors('about') }}" in html
 
-    def test_integer_field_renders_number_input(self):
+    def test_integer_field_renders_number_input_with_value_helper(self):
         fields = [_field("age", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.INTEGER)]
         html = generate_starter_form_html(fields)
 
-        assert '<input type="number" id="age" name="age">' in html
+        assert ('<input type="number" id="age" name="age" value="{{ value(\'age\') }}">') in html
+        assert "{{ field_errors('age') }}" in html
 
-    def test_bool_field_renders_two_radios(self):
+    def test_bool_field_renders_two_radios_with_checked_helpers(self):
         fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL)]
         html = generate_starter_form_html(fields)
 
         assert "<fieldset>" in html
         assert "<legend>Eligible</legend>" in html
-        assert '<input type="radio" name="eligible" value="yes">' in html
-        assert '<input type="radio" name="eligible" value="no">' in html
+        assert ('<input type="radio" name="eligible" value="yes" {{ checked(\'eligible\', \'yes\') }}>') in html
+        assert ('<input type="radio" name="eligible" value="no" {{ checked(\'eligible\', \'no\') }}>') in html
+        assert "{{ field_errors('eligible') }}" in html
 
     def test_bool_or_none_field_renders_two_radios_no_third_option(self):
         fields = [_field("can_attend", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
@@ -674,11 +688,11 @@ class TestGenerateStarterFormHtml:
 
         radio_count = html.count('type="radio" name="can_attend"')
         assert radio_count == 2
-        assert '<input type="radio" name="can_attend" value="yes">' in html
-        assert '<input type="radio" name="can_attend" value="no">' in html
+        assert ('<input type="radio" name="can_attend" value="yes" {{ checked(\'can_attend\', \'yes\') }}>') in html
+        assert ('<input type="radio" name="can_attend" value="no" {{ checked(\'can_attend\', \'no\') }}>') in html
         assert "Not set" not in html
 
-    def test_choice_radio_renders_per_option_radios(self):
+    def test_choice_radio_renders_per_option_radios_with_checked_helpers(self):
         fields = [
             _field(
                 "gender",
@@ -691,13 +705,14 @@ class TestGenerateStarterFormHtml:
         html = generate_starter_form_html(fields)
 
         assert "<legend>Gender</legend>" in html
-        assert '<input type="radio" name="gender" value="Female">' in html
+        assert ('<input type="radio" name="gender" value="Female" {{ checked(\'gender\', \'Female\') }}>') in html
         assert "Female</label>" in html
-        assert '<input type="radio" name="gender" value="Male">' in html
+        assert ('<input type="radio" name="gender" value="Male" {{ checked(\'gender\', \'Male\') }}>') in html
         assert "Male</label>" in html
         assert html.find('value="Female"') < html.find('value="Male"')
+        assert "{{ field_errors('gender') }}" in html
 
-    def test_choice_dropdown_not_required_includes_placeholder_option(self):
+    def test_choice_dropdown_not_required_includes_placeholder_and_selected_helpers(self):
         fields = [
             _field(
                 "geo",
@@ -711,10 +726,15 @@ class TestGenerateStarterFormHtml:
 
         assert '<select id="geo" name="geo">' in html
         assert '<option value="">' in html
-        assert '<option value="North">North</option>' in html
-        assert '<option value="South">South</option>' in html
+        assert ("<option value=\"North\" {{ selected('geo', 'North') }}>North</option>") in html
+        assert ("<option value=\"South\" {{ selected('geo', 'South') }}>South</option>") in html
+        assert "{{ field_errors('geo') }}" in html
 
     def test_html_escapes_label_and_option_value(self):
+        # Labels are HTML-escaped in <legend>, option values are HTML-escaped in
+        # value="..." attributes. Inside Jinja string literals the raw value is
+        # used (Jinja literals do not interpret HTML entities) so the helper can
+        # compare against the literal value the browser submits.
         fields = [
             _field(
                 "company",
@@ -730,6 +750,24 @@ class TestGenerateStarterFormHtml:
         assert "AT&amp;T" in html
         assert "AT&T<" not in html
         assert "&lt;Yes&gt;" in html
+        assert " {{ checked('company', '<Yes>') }}" in html
+
+    def test_single_quote_in_option_value_is_escaped_in_jinja_literal(self):
+        # An apostrophe inside the Jinja string literal must be escaped so the
+        # template still parses; the raw character stays inside the HTML
+        # attribute (where html.escape keeps it as the &#x27; entity).
+        fields = [
+            _field(
+                "name_prefix",
+                RespondentFieldGroup.NAME_AND_CONTACT,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="O'Brien")],
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert "checked('name_prefix', 'O\\'Brien')" in html
 
     def test_groups_emitted_in_display_order(self):
         fields = [
@@ -768,14 +806,14 @@ class TestGenerateStarterFormHtml:
         fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
         html = generate_starter_form_html(fields)
 
-        assert '<input type="radio" name="eligible" value="yes">' in html
+        assert ('<input type="radio" name="eligible" value="yes" {{ checked(\'eligible\', \'yes\') }}>') in html
         assert "<legend>Eligible</legend>" in html
 
     def test_required_attribute_on_required_text_field(self):
         fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
         html = generate_starter_form_html(fields, required_field_keys={"email"})
 
-        assert '<input type="email" id="email" name="email" required>' in html
+        assert ('<input type="email" id="email" name="email" value="{{ value(\'email\') }}" required>') in html
 
     def test_required_dropdown_omits_placeholder_and_marks_required(self):
         fields = [
@@ -838,6 +876,7 @@ class TestGenerateStarterFormHtml:
 
         for key in ("eligible", "can_attend", "email", "first_name", "last_name", "gender", "geo_bucket"):
             assert f'name="{key}"' in html
+            assert f"{{{{ field_errors('{key}') }}}}" in html
         for value in ("Female", "Male", "North", "South"):
             assert f'value="{value}"' in html
         eligibility_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY]))

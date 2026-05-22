@@ -315,32 +315,51 @@ class RegistrationPageHtml:
         return hash(self.id)
 
 
+def _jinja_str(value: str) -> str:
+    # Escape a Python string for embedding inside a single-quoted Jinja string
+    # literal. The pair backslash-then-quote in the rendered template lets the
+    # Jinja parser see a single literal quote inside the string.
+    return value.replace("\\", r"\\").replace("'", r"\'")
+
+
+def _jinja_call(fn: str, *args: str) -> str:
+    quoted = ", ".join(f"'{_jinja_str(a)}'" for a in args)
+    return f"{{{{ {fn}({quoted}) }}}}"
+
+
 def _render_input(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
+    value_expr = _jinja_call("value", field.field_key)
     return [
         f'<label for="{key}">{label}</label>',
-        f'<input type="{input_type}" id="{key}" name="{key}"{required_attr}>',
+        f'<input type="{input_type}" id="{key}" name="{key}" value="{value_expr}"{required_attr}>',
+        _jinja_call("field_errors", field.field_key),
     ]
 
 
 def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
+    value_expr = _jinja_call("value", field.field_key)
     return [
         f'<label for="{key}">{label}</label>',
-        f'<textarea id="{key}" name="{key}"{required_attr}></textarea>',
+        f'<textarea id="{key}" name="{key}"{required_attr}>{value_expr}</textarea>',
+        _jinja_call("field_errors", field.field_key),
     ]
 
 
 def _render_yes_no_radios(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
+    yes_checked = _jinja_call("checked", field.field_key, "yes")
+    no_checked = _jinja_call("checked", field.field_key, "no")
     return [
         "<fieldset>",
         f"<legend>{legend}</legend>",
-        f'<label><input type="radio" name="{key}" value="yes"> Yes</label>',
-        f'<label><input type="radio" name="{key}" value="no"> No</label>',
+        f'<label><input type="radio" name="{key}" value="yes" {yes_checked}> Yes</label>',
+        f'<label><input type="radio" name="{key}" value="no" {no_checked}> No</label>',
+        _jinja_call("field_errors", field.field_key),
         "</fieldset>",
     ]
 
@@ -350,9 +369,11 @@ def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     legend = html_lib.escape(field.label)
     parts = ["<fieldset>", f"<legend>{legend}</legend>"]
     for opt in field.options or []:
-        value = html_lib.escape(opt.value, quote=True)
+        value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
-        parts.append(f'<label><input type="radio" name="{key}" value="{value}"> {text}</label>')
+        checked_expr = _jinja_call("checked", field.field_key, opt.value)
+        parts.append(f'<label><input type="radio" name="{key}" value="{value_attr}" {checked_expr}> {text}</label>')
+    parts.append(_jinja_call("field_errors", field.field_key))
     parts.append("</fieldset>")
     return parts
 
@@ -368,10 +389,12 @@ def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool)
     if not is_required:
         parts.append('<option value="">— Please choose —</option>')
     for opt in field.options or []:
-        value = html_lib.escape(opt.value, quote=True)
+        value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
-        parts.append(f'<option value="{value}">{text}</option>')
+        selected_expr = _jinja_call("selected", field.field_key, opt.value)
+        parts.append(f'<option value="{value_attr}" {selected_expr}>{text}</option>')
     parts.append("</select>")
+    parts.append(_jinja_call("field_errors", field.field_key))
     return parts
 
 
@@ -422,7 +445,11 @@ def generate_starter_form_html(
     required_set = set(required_field_keys)
     grouped = _group_fields(fields)
 
-    parts: list[str] = ['<form action="{{ form_action }}" method="post">', "{{ csrf_form_element }}"]
+    parts: list[str] = [
+        '<form action="{{ form_action }}" method="post">',
+        "{{ csrf_form_element }}",
+        "{{ form_errors() }}",
+    ]
     for group in GROUP_DISPLAY_ORDER:
         bucket = grouped.get(group, [])
         if not bucket:

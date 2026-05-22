@@ -83,15 +83,15 @@
 
   <fieldset>
     <legend>Eligible</legend>
-    <label><input type="radio" name="eligible" value="yes"{{ checked('eligible', 'yes') }}> Yes</label>
-    <label><input type="radio" name="eligible" value="no"{{ checked('eligible', 'no') }}> No</label>
+    <label><input type="radio" name="eligible" value="yes" {{ checked('eligible', 'yes') }}> Yes</label>
+    <label><input type="radio" name="eligible" value="no" {{ checked('eligible', 'no') }}> No</label>
     {{ field_errors('eligible') }}
   </fieldset>
 
   <fieldset>
     <legend>Can attend</legend>
-    <label><input type="radio" name="can_attend" value="yes"{{ checked('can_attend', 'yes') }}> Yes</label>
-    <label><input type="radio" name="can_attend" value="no"{{ checked('can_attend', 'no') }}> No</label>
+    <label><input type="radio" name="can_attend" value="yes" {{ checked('can_attend', 'yes') }}> Yes</label>
+    <label><input type="radio" name="can_attend" value="no" {{ checked('can_attend', 'no') }}> No</label>
     {{ field_errors('can_attend') }}
   </fieldset>
 
@@ -135,50 +135,50 @@
 
   <fieldset>
     <legend>Gender</legend>
-    <label><input type="radio" name="gender" value="Female"{{ checked('gender', 'Female') }}> Female</label>
-    <label><input type="radio" name="gender" value="Male"{{ checked('gender', 'Male') }}> Male</label>
-    <label><input type="radio" name="gender" value="Non-binary or other"{{ checked('gender', 'Non-binary or other') }}> Non-binary or other</label>
+    <label><input type="radio" name="gender" value="Female" {{ checked('gender', 'Female') }}> Female</label>
+    <label><input type="radio" name="gender" value="Male" {{ checked('gender', 'Male') }}> Male</label>
+    <label><input type="radio" name="gender" value="Non-binary or other" {{ checked('gender', 'Non-binary or other') }}> Non-binary or other</label>
     {{ field_errors('gender') }}
   </fieldset>
 
   <fieldset>
     <legend>Age bracket</legend>
-    <label><input type="radio" name="age_bracket" value="0-15"{{ checked('age_bracket', '0-15') }}> 0-15</label>
-    <label><input type="radio" name="age_bracket" value="16-29"{{ checked('age_bracket', '16-29') }}> 16-29</label>
-    <label><input type="radio" name="age_bracket" value="30-44"{{ checked('age_bracket', '30-44') }}> 30-44</label>
-    <label><input type="radio" name="age_bracket" value="45-59"{{ checked('age_bracket', '45-59') }}> 45-59</label>
-    <label><input type="radio" name="age_bracket" value="60+"{{ checked('age_bracket', '60+') }}> 60+</label>
+    <label><input type="radio" name="age_bracket" value="0-15" {{ checked('age_bracket', '0-15') }}> 0-15</label>
+    <label><input type="radio" name="age_bracket" value="16-29" {{ checked('age_bracket', '16-29') }}> 16-29</label>
+    <label><input type="radio" name="age_bracket" value="30-44" {{ checked('age_bracket', '30-44') }}> 30-44</label>
+    <label><input type="radio" name="age_bracket" value="45-59" {{ checked('age_bracket', '45-59') }}> 45-59</label>
+    <label><input type="radio" name="age_bracket" value="60+" {{ checked('age_bracket', '60+') }}> 60+</label>
     {{ field_errors('age_bracket') }}
   </fieldset>
 
   <label for="geo_bucket">Geo bucket</label>
   <select id="geo_bucket" name="geo_bucket">
     <option value="">— Please choose —</option>
-    <option value="Central Scotland"{{ selected('geo_bucket', 'Central Scotland') }}>Central Scotland</option>
-    <option value="Glasgow"{{ selected('geo_bucket', 'Glasgow') }}>Glasgow</option>
-    <option value="Highlands and Islands"{{ selected('geo_bucket', 'Highlands and Islands') }}>Highlands and Islands</option>
-    <option value="Lothian"{{ selected('geo_bucket', 'Lothian') }}>Lothian</option>
-    <option value="Mid Scotland and Fife"{{ selected('geo_bucket', 'Mid Scotland and Fife') }}>Mid Scotland and Fife</option>
-    <option value="North East Scotland"{{ selected('geo_bucket', 'North East Scotland') }}>North East Scotland</option>
-    <option value="South Scotland"{{ selected('geo_bucket', 'South Scotland') }}>South Scotland</option>
-    <option value="West Scotland"{{ selected('geo_bucket', 'West Scotland') }}>West Scotland</option>
+    <option value="Central Scotland" {{ selected('geo_bucket', 'Central Scotland') }}>Central Scotland</option>
+    <option value="Glasgow" {{ selected('geo_bucket', 'Glasgow') }}>Glasgow</option>
+    <option value="Highlands and Islands" {{ selected('geo_bucket', 'Highlands and Islands') }}>Highlands and Islands</option>
+    <option value="Lothian" {{ selected('geo_bucket', 'Lothian') }}>Lothian</option>
+    <option value="Mid Scotland and Fife" {{ selected('geo_bucket', 'Mid Scotland and Fife') }}>Mid Scotland and Fife</option>
+    <option value="North East Scotland" {{ selected('geo_bucket', 'North East Scotland') }}>North East Scotland</option>
+    <option value="South Scotland" {{ selected('geo_bucket', 'South Scotland') }}>South Scotland</option>
+    <option value="West Scotland" {{ selected('geo_bucket', 'West Scotland') }}>West Scotland</option>
   </select>
   {{ field_errors('geo_bucket') }}
 
   <fieldset>
     <legend>Edu level</legend>
-    <label><input type="radio" name="edu_level" value="Level 1"{{ checked('edu_level', 'Level 1') }}> Level 1</label>
-    <label><input type="radio" name="edu_level" value="Level 2 or 3"{{ checked('edu_level', 'Level 2 or 3') }}> Level 2 or 3</label>
-    <label><input type="radio" name="edu_level" value="Level 4 and above"{{ checked('edu_level', 'Level 4 and above') }}> Level 4 and above</label>
-    <label><input type="radio" name="edu_level" value="No qualifications"{{ checked('edu_level', 'No qualifications') }}> No qualifications</label>
+    <label><input type="radio" name="edu_level" value="Level 1" {{ checked('edu_level', 'Level 1') }}> Level 1</label>
+    <label><input type="radio" name="edu_level" value="Level 2 or 3" {{ checked('edu_level', 'Level 2 or 3') }}> Level 2 or 3</label>
+    <label><input type="radio" name="edu_level" value="Level 4 and above" {{ checked('edu_level', 'Level 4 and above') }}> Level 4 and above</label>
+    <label><input type="radio" name="edu_level" value="No qualifications" {{ checked('edu_level', 'No qualifications') }}> No qualifications</label>
     {{ field_errors('edu_level') }}
   </fieldset>
 
   <h2>Consent</h2>
 
-  <label><input type="checkbox" name="consent" value="yes"{{ checked('consent', 'yes') }}> Consent</label>
+  <label><input type="checkbox" name="consent" value="yes" {{ checked('consent', 'yes') }}> Consent</label>
   {{ field_errors('consent') }}
-  <label><input type="checkbox" name="stay_on_db" value="yes"{{ checked('stay_on_db', 'yes') }}> Stay on database</label>
+  <label><input type="checkbox" name="stay_on_db" value="yes" {{ checked('stay_on_db', 'yes') }}> Stay on database</label>
   {{ field_errors('stay_on_db') }}
 
   <button type="submit">Register</button>
