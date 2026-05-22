@@ -236,6 +236,38 @@ class TestRegistrationPageHtml:
         assert len(problems) == 1
         assert "form_action" in problems[0]
 
+    def test_readiness_problems_accepts_token_without_surrounding_whitespace(self):
+        # Parser-based check tolerates whitespace variants that the old
+        # substring check rejected.
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html="<form action='{{form_action}}'>{{  csrf_form_element  }}</form>",
+        )
+        assert html.readiness_problems() == []
+
+    def test_readiness_problems_reports_template_syntax_error(self):
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html="<form>{% if errors.email</form>",
+        )
+        problems = html.readiness_problems()
+        assert len(problems) == 1
+        assert "template syntax error" in problems[0]
+        assert "line" in problems[0]
+
+    def test_readiness_problems_syntax_error_short_circuits_token_check(self):
+        # A template that won't parse can't usefully be inspected for token
+        # presence; report only the parse problem so the author sees one
+        # actionable message at a time.
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html="<form>{% if errors.email</form>",
+        )
+        problems = html.readiness_problems()
+        assert len(problems) == 1
+        assert "csrf_form_element" not in problems[0]
+        assert "form_action" not in problems[0]
+
     def test_html_create_detached_copy(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
         copy = html.create_detached_copy()

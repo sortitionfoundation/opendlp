@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
-from jinja2 import StrictUndefined
+from jinja2 import StrictUndefined, TemplateSyntaxError, meta
 from jinja2.sandbox import SandboxedEnvironment
 from markupsafe import Markup
 
@@ -320,9 +320,14 @@ class RegistrationPageHtml:
     def readiness_problems(self) -> list[str]:
         if not self.form_html.strip():
             return ["The form HTML is empty"]
+        try:
+            parsed = _SANDBOX_ENV.parse(self.form_html)
+        except TemplateSyntaxError as e:
+            return [f"The form HTML has a template syntax error on line {e.lineno}: {e.message}"]
+        referenced = meta.find_undeclared_variables(parsed)
         problems: list[str] = []
         for token in REQUIRED_TOKENS:
-            if f"{{{{ {token} }}}}" not in self.form_html:
+            if token not in referenced:
                 problems.append(f"The form HTML is missing the {{{{ {token} }}}} placeholder")
         return problems
 
