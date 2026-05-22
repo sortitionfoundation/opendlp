@@ -152,6 +152,192 @@
         {% endcall %}
     {% endcall %}
 
+    {# Jinja Template Helpers #}
+    {% call card(title="Jinja Template Helpers", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("These helper functions are available within your form HTML template. They enable dynamic form behaviour like showing validation errors and repopulating fields after failed submission.") }}
+            </p>
+
+            {# Required Placeholders #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Required Placeholders") }}</h4>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th class="px-3 py-2 text-left font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">Placeholder</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code style="background-color: var(--color-info-100); color: var(--color-info-700); padding: 2px 6px; border-radius: 4px;">&#123;&#123; csrf_form_element &#125;&#125;</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                Hidden input for CSRF protection. <strong>Required</strong> inside your &lt;form&gt; tag.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono">
+                                <code style="background-color: var(--color-info-100); color: var(--color-info-700); padding: 2px 6px; border-radius: 4px;">&#123;&#123; form_action &#125;&#125;</code>
+                            </td>
+                            <td class="px-3 py-2">
+                                Form submission URL. Use in <code>action="&#123;&#123; form_action &#125;&#125;"</code>. <strong>Required</strong>.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Value Helpers #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Value Helpers") }}</h4>
+            <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">
+                {{ _("These helpers repopulate form fields with submitted values when validation fails.") }}
+            </p>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th class="px-3 py-2 text-left font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">Helper</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Returns</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>value(field_key)</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                Submitted value or empty string
+                            </td>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>value="&#123;&#123; value('email') &#125;&#125;"</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>checked(field_key, option)</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                "checked" if value matches, else ""
+                            </td>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>&#123;&#123; checked('gender', 'female') &#125;&#125;</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono">
+                                <code>selected(field_key, option)</code>
+                            </td>
+                            <td class="px-3 py-2">
+                                "selected" if value matches, else ""
+                            </td>
+                            <td class="px-3 py-2 font-mono">
+                                <code>&#123;&#123; selected('age_range', '25-34') &#125;&#125;</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Error Helpers #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Error Helpers") }}</h4>
+            <p class="text-body-sm mb-3" style="color: var(--color-secondary-text);">
+                {{ _("These helpers display validation errors after failed submission.") }}
+            </p>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th class="px-3 py-2 text-left font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">Helper</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Returns</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>has_error(field_key)</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                Boolean — True if field has errors
+                            </td>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>&#123;% if has_error('email') %&#125;...&#123;% endif %&#125;</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>first_error(field_key)</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                First error message or empty string
+                            </td>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>&#123;&#123; first_error('email') &#125;&#125;</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>field_errors(field_key)</code>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                HTML &lt;ul&gt; list of all field errors
+                            </td>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <code>&#123;&#123; field_errors('email') &#125;&#125;</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono">
+                                <code>form_errors()</code>
+                            </td>
+                            <td class="px-3 py-2">
+                                HTML &lt;ul&gt; list of form-level errors
+                            </td>
+                            <td class="px-3 py-2 font-mono">
+                                <code>&#123;&#123; form_errors() &#125;&#125;</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Example Usage #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Example Usage") }}</h4>
+            <pre class="p-4 rounded text-body-sm overflow-x-auto mb-4"
+                 style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); font-family: ui-monospace, monospace;">&lt;form action="&#123;&#123; form_action &#125;&#125;" method="POST"&gt;
+                &#123;&#123; csrf_form_element &#125;&#125;
+
+                &#123;&#123; form_errors() &#125;&#125;
+
+                &lt;div class="form-group"&gt;
+                &lt;label for="email"&gt;Email&lt;/label&gt;
+                &lt;input type="email" name="email" id="email"
+                value="&#123;&#123; value('email') &#125;&#125;"
+                class="&#123;% if has_error('email') %&#125;error&#123;% endif %&#125;"&gt;
+                &#123;&#123; field_errors('email') &#125;&#125;
+                &lt;/div&gt;
+
+                &lt;div class="form-group"&gt;
+                &lt;label&gt;Gender&lt;/label&gt;
+                &lt;input type="radio" name="gender" value="female" &#123;&#123; checked('gender', 'female') &#125;&#125;&gt; Female
+                &lt;input type="radio" name="gender" value="male" &#123;&#123; checked('gender', 'male') &#125;&#125;&gt; Male
+                &lt;/div&gt;
+
+                &lt;button type="submit"&gt;Register&lt;/button&gt;
+                &lt;/form&gt;</pre>
+
+            <div class="p-3 rounded" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                <p class="text-body-sm" style="color: var(--color-info-700);">
+                    <strong>Note:</strong> On initial page load (GET request), all helpers return empty values. They are populated with submitted data only after a POST with validation errors.
+                </p>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
     {# create_registration_page #}
     {% call card(title="create_registration_page()", composed=true) %}
         {% call card_body() %}
