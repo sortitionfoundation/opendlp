@@ -3,7 +3,7 @@
 **Branch:** `610-registration-page-html`
 **Date:** 2026-05-14
 **Companion to:** `plan-data-service.md` (the design) — this doc is the _build order_.
-**Status:** For review before implementation starts.
+**Status:** Updated 2026-05-22 for Q17 (DRAFT→TEST, preview token retired). See inline Q17 notes throughout.
 
 ---
 
@@ -114,16 +114,15 @@ Tests in `tests/unit/test_validators.py` (new `TestUrlSlugValidator` class).
 
 - **Red:**
   - `test_init_sets_id_when_not_given` / `test_init_keeps_given_id`
-  - `test_init_defaults` — `is_published is False`, `source_type is HTML`,
+  - `test_init_defaults` — `status is TEST`, `source_type is HTML`,
     `url_slug == ""`, `short_url_slug == ""`, `thank_you_html == ""`
-  - `test_init_autogenerates_preview_token` — non-empty, and two instances differ
-  - `test_init_keeps_given_preview_token`
   - `test_init_sets_created_and_updated_at`
   - `test_init_validates_url_slug` / `test_init_validates_short_url_slug` — a bad slug raises
     `ValueError`; an empty slug does **not** (empty = unset)
-- **Green:** constructor per `plan-data-service.md` §3.1. `preview_token` via
-  `secrets.token_urlsafe(32)` when blank. Validate each slug only if non-empty. Use
+- **Green:** constructor per `plan-data-service.md` §3.1. Validate each slug only if non-empty. Use
   `datetime.now(UTC)` for timestamp defaults (matches `assembly.py` / `password_reset.py`).
+
+> **Note (Q17):** There is no `preview_token`. A TEST page loads publicly at its slug.
 
 ### 1.4 `update_slugs`
 
@@ -132,9 +131,9 @@ Tests in `tests/unit/test_validators.py` (new `TestUrlSlugValidator` class).
   - `test_update_slugs_none_leaves_value_alone` (passing `None` is a no-op for that arg)
   - `test_update_slugs_empty_string_clears` (passing `""` clears — distinct from `None`)
   - `test_update_slugs_validates` — bad slug raises `ValueError`
-  - `test_update_slugs_raises_when_published` — `is_published=True` → `ValueError` (Q6)
+  - `test_update_slugs_raises_when_frozen` — `slugs_frozen=True` (after first PUBLISH) → `ValueError` (Q6, Q17)
   - `test_update_slugs_bumps_updated_at`
-- **Green:** implement per §3.1. Guard `is_published` first, then validate, then assign, then
+- **Green:** implement per §3.1. Guard `slugs_frozen` first, then validate, then assign, then
   bump `updated_at`.
 
 ### 1.5 `update_thank_you_html`
@@ -180,11 +179,13 @@ Both live in `domain/registration_page.py` (per `plan-data-service.md` §10).
 - **Green:** `@runtime_checkable class HtmlSource(Protocol)` with `render(self, ctx:
 RenderContext) -> str` and `readiness_problems(self) -> list[str]`.
 
-### 1.9 `publish` / `unpublish` / `readiness_problems`
+### 1.9 `publish` / `unpublish` / `close` / `reopen` / `readiness_problems`
 
-`publish` and `readiness_problems` take the active `HtmlSource` as a parameter (§3.1). The
+`publish`, `reopen` and `readiness_problems` take the active `HtmlSource` as a parameter (§3.1). The
 concrete `RegistrationPageHtml` is already built (1.7), so use a real one in these tests — or a
 tiny `_StubSource` with a `readiness_problems()` method if you want to isolate the page logic.
+
+All status transitions take `author_id` and append an activity entry. See §3.1, §3.6 in `plan-data-service.md`.
 
 - **Red:**
   - `test_readiness_problems_empty_when_ready` — non-empty `url_slug` + source with no problems
@@ -193,24 +194,28 @@ tiny `_StubSource` with a `readiness_problems()` method if you want to isolate t
     human-readable string about the URL slug
   - `test_readiness_problems_includes_source_problems` — source returns `["..."]` → those
     strings appear in the result
-  - `test_publish_sets_is_published` — ready combo → `is_published is True`, `updated_at` bumped
+  - `test_publish_sets_status_published` — ready combo → `status == PUBLISHED`, `updated_at` bumped, PUBLISH activity appended
   - `test_publish_raises_when_not_ready` — raises `RegistrationPageNotReady` (the **domain**
     exception — see note)
-  - `test_unpublish_clears_is_published` — `updated_at` bumped; `preview_token` untouched (Q12)
+  - `test_unpublish_sets_status_test` — `updated_at` bumped, UNPUBLISH activity appended
+  - `test_close_sets_status_closed` — `updated_at` bumped, CLOSE activity appended
+  - `test_reopen_sets_status_published` — same readiness check as publish, REOPEN activity appended
 - **Note on the exception (decided):** `RegistrationPageNotReady` is a **domain** exception
   defined in `domain/registration_page.py`, carrying `.problems: list[str]`, and **re-exported**
   from `service_layer/exceptions.py` for service-layer callers. This keeps the domain layer from
   importing the service layer.
-- **Green:** implement `readiness_problems(source)`, `publish(source)`, `unpublish()`.
+- **Green:** implement `readiness_problems(source)`, `publish(source, author_id)`, `unpublish(author_id)`, `close(author_id)`, `reopen(source, author_id)`.
 
-### 1.10 `is_visible_with` and `regenerate_preview_token`
+### 1.10 `is_publicly_loadable` ✅ COMPLETE (UPDATED by Q17)
+
+> **Q17 superseded this section.** The preview token has been retired. `is_visible_with(token)` became `is_publicly_loadable()` — no token argument. A TEST page loads publicly at its slug.
 
 - **Red:**
-  - `test_is_visible_with_published_is_always_visible` — published → `True` for any token incl. `""`
-  - `test_is_visible_with_unpublished_needs_matching_token` — unpublished + matching non-empty
-    token → `True`; wrong token → `False`; empty token → `False`
-  - `test_regenerate_preview_token_changes_token` — token differs, `updated_at` bumped
-- **Green:** implement both.
+  - `test_is_publicly_loadable_true_when_published_with_slug` — status=PUBLISHED + non-empty url_slug → `True`
+  - `test_is_publicly_loadable_true_when_test_with_slug` — status=TEST + non-empty url_slug → `True`
+  - `test_is_publicly_loadable_false_when_closed` — status=CLOSED → `False`
+  - `test_is_publicly_loadable_false_when_empty_slug` — any status + empty url_slug → `False`
+- **Green:** implement `is_publicly_loadable()` returning `True` iff `url_slug` is non-empty AND status is TEST or PUBLISHED.
 
 ### 1.11 `create_detached_copy`, `__eq__`, `__hash__`
 
@@ -417,23 +422,24 @@ list.
 - **Green:** load page + source via `get_registration_page_with_source`, delegate to the domain
   `publish(source)` / `unpublish()`.
 
-### 4.8 `regenerate_preview_token`
+### 4.8 ~~`regenerate_preview_token`~~ — RETIRED by Q17
 
-- **Red:** token changes and is persisted; permission + not-found cases.
-- **Green:** implement.
+> **Q17 retired the preview token.** This phase is obsolete. There is no token to regenerate.
 
-### 4.9 Public lookup + visibility (no `user_id`, no auth — §5.2)
+### 4.9 Public lookup + visibility (no `user_id`, no auth — §5.2) ✅ COMPLETE (UPDATED by Q17)
+
+> **Q17 updated this section.** The visibility dispatch no longer takes a token argument. States are now `LIVE` / `TEST` / `CLOSED` / `NOT_FOUND` — no `PREVIEW` state.
 
 - **Red:**
   - `test_find_by_url_slug` hit / miss / empty input → `None`
   - `test_find_by_short_url_slug` hit / miss / empty input → `None`
-  - `resolve_visibility` (pure function) truth table: not found → not visible; published →
-    visible, `is_preview False`; unpublished + matching token → visible, `is_preview True`;
-    unpublished + wrong/empty token → not visible
+  - `resolve_visibility` (pure function) truth table: page=None → NOT_FOUND; empty url_slug → NOT_FOUND; status=PUBLISHED → LIVE; status=TEST → TEST; status=CLOSED → CLOSED
+  - `is_visible` property: True for LIVE and TEST
+  - `is_test` property: True only for TEST
   - `get_page_and_source_for_render` returns the source matching `source_type`
 - **Green:** implement `find_registration_page_by_url_slug`,
-  `find_registration_page_by_short_url_slug`, `RegistrationPageVisibility` dataclass,
-  `resolve_visibility`, `get_page_and_source_for_render`.
+  `find_registration_page_by_short_url_slug`, `RegistrationPageVisibilityState` enum,
+  `RegistrationPageVisibility` dataclass, `resolve_visibility`, `get_page_and_source_for_render`.
 
 ### 4.10 `render_thank_you_html`
 
@@ -527,10 +533,9 @@ updated to record four decisions captured in `deltas-to-fix.md`:
    set. **Not** auto-seeded into `form_html`: the UI calls it explicitly and shows the result
    for the author to copy / paste / hand off to an LLM and paste back (deltas §1, plan §5.9).
 
-The route layer is also adopting `?token=<preview_token>` instead of `?preview=<token>` for the
-preview URL (deltas §3, plan §2). That is a route-layer concern only — the service-layer
-function `resolve_visibility(page, preview_token=...)` already takes a token argument under that
-name, so no service- or domain-layer change is needed for it. Nothing to do in this phase for §3.
+> **Q17 retired the preview token.** The `?token=` preview URL no longer applies. A TEST page
+> is publicly loadable at its slug with no token. `resolve_visibility` no longer takes a token
+> argument.
 
 Same TDD discipline as the rest of this plan (§0.3): red → green → refactor, scoped pytest as
 you go, `CI=true just test` and `just check` before each commit. **One commit per sub-phase**
@@ -982,7 +987,9 @@ Everything in Phase 6 lands in files that already exist after Phases 1–5.
 
 ## Phase 7 — Lifecycle status enum + activity audit log ✅ COMPLETE
 
-**Why this phase exists.** Phases 1–6 shipped a `RegistrationPage` with a single `is_published: bool`. Q16 in `plan-data-service.md` (resolved 2026-05-19) replaces that with a three-state `status` enum (`DRAFT / PUBLISHED / CLOSED`) and an append-only `activity: list[RegistrationPageActivity]` audit log. The driving requirement is that the public route should serve different responses for "never published" (404 — hide the page exists) vs "was published, now closed" (302 to `/registration-closed`). The audit log is a forced choice once we need "has ever been published?" to be queryable — modelling it as an activity log gives us the audit trail we want anyway, and avoids a parallel `has_been_published` bool that has to be kept in sync.
+> **Q17 update (2026-05-20):** Q17 superseded parts of Q16. The pre-publish state was renamed from `DRAFT` to `TEST`. The preview token was retired entirely (`preview_token` field, `regenerate_preview_token` method, `REGENERATE_TOKEN` action, `PREVIEW` visibility state — all removed). A `TEST` page now loads publicly at its slug with no token. See `plan-data-service.md` Q17 for full details. **When reading this phase, substitute `TEST` for `DRAFT` and ignore any `preview_token`/`REGENERATE_TOKEN` references.**
+
+**Why this phase exists.** Phases 1–6 shipped a `RegistrationPage` with a single `is_published: bool`. Q16 in `plan-data-service.md` (resolved 2026-05-19) replaces that with a three-state `status` enum (`TEST / PUBLISHED / CLOSED` — note: Q17 renamed DRAFT→TEST) and an append-only `activity: list[RegistrationPageActivity]` audit log. The driving requirement is that the public route should serve different responses for "test page" (render with test banner) vs "was published, now closed" (302 to `/registration-closed`). The audit log is a forced choice once we need "has ever been published?" to be queryable — modelling it as an activity log gives us the audit trail we want anyway, and avoids a parallel `has_been_published` bool that has to be kept in sync.
 
 The full design is recorded in `plan-data-service.md` §3.1, §3.6, §4.1, §5.1, §5.2, §5.4, Q6 (updated), Q16. This phase is the build order.
 
@@ -991,11 +998,11 @@ The full design is recorded in `plan-data-service.md` §3.1, §3.6, §4.1, §5.1
 **In scope.**
 
 1. New domain types: `RegistrationPageStatus`, `RegistrationPageAction`, `RegistrationPageActivity`.
-2. `RegistrationPage`: drop `is_published`; gain `status`, `activity`; new transition methods (`publish`/`unpublish`/`close`/`reopen` all take `author_id`); add `record_edit`, `has_ever_been_published`, `slugs_frozen`. `regenerate_preview_token` takes `author_id`.
-3. New visibility state enum (`RegistrationPageVisibilityState`) and updated `RegistrationPageVisibility` dataclass; `resolve_visibility` returns a four-way state (`LIVE / PREVIEW / CLOSED / NOT_FOUND`) rather than two booleans.
-4. ORM: replace `is_published` column with `status` (`EnumAsString`, indexed) + new `activity` JSON column with a `RegistrationPageActivityListJSON` type decorator (mirror of `RespondentCommentListJSON`).
-5. Follow-on Alembic migration: add columns, backfill from `is_published`, drop the old column and its index.
-6. Service layer: every transition function passes `user_id` through as the activity's `author_id`; `create_registration_page` appends a `CREATE`; edit functions append `EDIT` only when content actually changed; new `close_registration_page` and `reopen_registration_page` service functions.
+2. `RegistrationPage`: drop `is_published`; gain `status`, `activity`; new transition methods (`publish`/`unpublish`/`close`/`reopen` all take `author_id`); add `record_edit`, `has_ever_been_published`, `slugs_frozen`, `is_publicly_loadable`. ~~`regenerate_preview_token` takes `author_id`~~ (**Q17: preview token retired**).
+3. New visibility state enum (`RegistrationPageVisibilityState`) and updated `RegistrationPageVisibility` dataclass; `resolve_visibility` returns a four-way state (`LIVE / TEST / CLOSED / NOT_FOUND` — **Q17: no PREVIEW state**) rather than two booleans.
+4. ORM: replace `is_published` column with `status` (`EnumAsString`, indexed) + new `activity` JSON column with a `RegistrationPageActivityListJSON` type decorator (mirror of `RespondentCommentListJSON`). (**Q17: also drop `preview_token` column**).
+5. Follow-on Alembic migration: add columns, backfill from `is_published`, drop the old column and its index. (**Q17: migration also rewrites DRAFT→TEST and drops preview_token**).
+6. Service layer: every transition function passes `user_id` through as the activity's `author_id`; `create_registration_page` appends a `CREATE`; edit functions append `EDIT` only when content actually changed; new `close_registration_page` and `reopen_registration_page` service functions. (**Q17: no `regenerate_preview_token` service function**).
 7. Update / extend existing tests to match.
 
 **Out of scope (still).** Entrypoints / blueprints / templates / WTForms. The colleague's `entrypoints/blueprints/backoffice.py` has placeholder local variables called `is_published` in a stub form handler (lines 429, 446, 485, 490, 495) — these are mockups not bound to the service layer and the colleague will update them when they wire up the real backoffice tab.
@@ -1027,12 +1034,12 @@ New code in `src/opendlp/domain/registration_page.py`, new tests in `tests/unit/
 
 #### 7.1.1 `RegistrationPageStatus` enum
 
-- **Red:** `TestRegistrationPageStatus` — `RegistrationPageStatus.DRAFT.value == "DRAFT"`, same for `PUBLISHED` and `CLOSED`. Listing all members gives exactly those three.
+- **Red:** `TestRegistrationPageStatus` — `RegistrationPageStatus.TEST.value == "TEST"` (**Q17: renamed from DRAFT**), same for `PUBLISHED` and `CLOSED`. Listing all members gives exactly those three.
 - **Green:** add the enum at module level.
 
 #### 7.1.2 `RegistrationPageAction` enum
 
-- **Red:** `TestRegistrationPageAction` — pin each member's `.value`: `CREATE`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `CLOSE`, `REOPEN`, `REGENERATE_TOKEN`. List membership test.
+- **Red:** `TestRegistrationPageAction` — pin each member's `.value`: `CREATE`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `CLOSE`, `REOPEN`. List membership test. (**Q17: `REGENERATE_TOKEN` retired.**)
 - **Green:** add the enum at module level.
 
 #### 7.1.3 `RegistrationPageActivity` dataclass
@@ -1197,25 +1204,28 @@ Both are brand-new. `close` is `PUBLISHED → CLOSED`; `reopen` is `CLOSED → P
   - `test_reopen_runs_readiness_check` — if the source has problems, raises `RegistrationPageNotReady`, no activity entry appended.
 - **Green:** implement both.
 
-#### 7.3.5 `regenerate_preview_token(author_id)` — now logs
+#### 7.3.5 ~~`regenerate_preview_token(author_id)` — now logs~~ — RETIRED by Q17
+
+> **Q17 retired the preview token.** This section is obsolete. There is no token to regenerate and no `REGENERATE_TOKEN` action.
+
+#### 7.3.6 `is_publicly_loadable` — TEST and PUBLISHED are loadable (**Q17 replaced `is_visible_with`**)
+
+> **Q17 replaced `is_visible_with(token)` with `is_publicly_loadable()`.** No token argument. A TEST page is publicly loadable.
 
 - **Red:**
-  - Update the existing `test_regenerate_preview_token_changes_token` — now takes an `author_id` parameter; token changes; `updated_at` bumped; **and** one new `REGENERATE_TOKEN` activity entry is appended.
-- **Green:** add the parameter, append the entry.
-
-#### 7.3.6 `is_visible_with` — three-state aware
-
-- **Red:**
-  - Update `test_is_visible_with_published_is_always_visible` (build with `status=PUBLISHED`).
-  - `test_is_visible_with_closed_requires_matching_token` — new test: page in `CLOSED`, with token `""` → False; with wrong token → False; with matching token → True.
-  - Keep `test_is_visible_with_unpublished_needs_matching_token` working for `DRAFT`.
-- **Green:** the function body becomes: `if status == PUBLISHED: return True; return bool(token) and token == self.preview_token`. Same shape as today, just checking status enum instead of bool.
+  - `test_is_publicly_loadable_true_when_published_with_slug` — status=PUBLISHED + non-empty url_slug → True.
+  - `test_is_publicly_loadable_true_when_test_with_slug` — status=TEST + non-empty url_slug → True.
+  - `test_is_publicly_loadable_false_when_closed` — status=CLOSED → False.
+  - `test_is_publicly_loadable_false_when_empty_slug` — any status + empty url_slug → False.
+- **Green:** the function body: `return bool(self.url_slug) and self.status in (TEST, PUBLISHED)`.
 
 **End of 7.1–7.3:** `CI=true uv run pytest tests/unit/domain/test_registration_page.py -q` green; `just check` clean. Domain layer fully reflects the new model.
 
 **Suggested commit:** `feat(registration): lifecycle status enum and activity audit log`
 
-### 7.4 Visibility model — three-state outcome ✅ COMPLETE
+### 7.4 Visibility model — four-state outcome ✅ COMPLETE (UPDATED by Q17)
+
+> **Q17 update:** The `PREVIEW` state was retired. The four states are now `LIVE / TEST / CLOSED / NOT_FOUND`. A TEST page renders publicly (with a test banner) — no token required.
 
 File: `src/opendlp/service_layer/registration_page_service.py`. Tests in `tests/unit/test_registration_page_service.py` (the `TestResolveVisibility` class).
 
@@ -1226,15 +1236,15 @@ Add at module level, alongside the existing `RegistrationPageVisibility` datacla
 ```python
 class RegistrationPageVisibilityState(Enum):
     """Public-route response classification."""
-    LIVE = "LIVE"          # show the form
-    PREVIEW = "PREVIEW"    # show the form with a preview banner
+    LIVE = "LIVE"          # show the form (status=PUBLISHED)
+    TEST = "TEST"          # show the form with a test banner (status=TEST)
     CLOSED = "CLOSED"      # 302 to /registration-closed
     NOT_FOUND = "NOT_FOUND"  # 404
 ```
 
 #### 7.4.2 Update `RegistrationPageVisibility`
 
-Replace the existing two-bool dataclass with a state-bearing one, keeping `is_visible` / `is_preview` as derived properties for any caller that already uses them:
+Replace the existing two-bool dataclass with a state-bearing one, keeping `is_visible` / `is_test` as derived properties for any caller that already uses them:
 
 ```python
 @dataclass(frozen=True)
@@ -1244,57 +1254,61 @@ class RegistrationPageVisibility:
 
     @property
     def is_visible(self) -> bool:
-        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.PREVIEW)
+        return self.state in (RegistrationPageVisibilityState.LIVE, RegistrationPageVisibilityState.TEST)
 
     @property
-    def is_preview(self) -> bool:
-        return self.state == RegistrationPageVisibilityState.PREVIEW
+    def is_test(self) -> bool:
+        return self.state == RegistrationPageVisibilityState.TEST
 ```
+
+> **Q17 update:** `is_preview` renamed to `is_test`. The `PREVIEW` state was retired — replaced by `TEST`.
 
 The dataclass becomes `frozen=True` (it was previously unfrozen). Defensible — it's a pure result value. Heads-up if any test instantiates it directly and then mutates fields; none today, but worth a grep.
 
-#### 7.4.3 `resolve_visibility` — dispatch table
+#### 7.4.3 `resolve_visibility` — dispatch table (**Q17: no token argument**)
+
+> **Q17 update:** `resolve_visibility` no longer takes a `preview_token` argument. A TEST page is publicly loadable.
 
 The new dispatch:
 
 ```python
-def resolve_visibility(page, preview_token=""):
+def resolve_visibility(page):
     if page is None:
         return _v(None, NOT_FOUND)
+    if not page.url_slug:
+        return _v(None, NOT_FOUND)    # no slug = not publicly loadable
     if page.status == PUBLISHED:
         return _v(page, LIVE)
-    if preview_token and preview_token == page.preview_token:
-        return _v(page, PREVIEW)
+    if page.status == TEST:
+        return _v(page, TEST)
     if page.status == CLOSED:
         return _v(page, CLOSED)
-    return _v(page, NOT_FOUND)        # DRAFT, no valid preview token
+    return _v(page, NOT_FOUND)        # fallback (should not reach)
 ```
 
-Key behavioural changes vs today:
+Key behavioural changes vs the pre-Q16 model:
 
-- **DRAFT without token now yields `NOT_FOUND`**, not "not visible with `page` populated". The route returns 404. (Old behaviour 302'd to `/registration-closed`; conflated with closed.)
-- **CLOSED without token yields `CLOSED`**, not "not visible". The route 302s to `/registration-closed`.
-- **PUBLISHED + token still yields `LIVE`** (preview path doesn't downgrade visibility — the published case wins).
+- **TEST now yields `TEST`** — renders the form with a test banner. Submissions are recorded as test submissions (see form-submission story).
+- **CLOSED yields `CLOSED`** — 302 to `/registration-closed`.
+- **Empty url_slug yields `NOT_FOUND`** — a page without a slug cannot be publicly loaded.
 
 #### 7.4.4 Test sweep
 
-Rewrite `TestResolveVisibility` to assert on `state` directly, with new cases for CLOSED. The full truth table (one test per row):
+> **Q17 update:** The truth table is simplified — no token column. The states are `LIVE / TEST / CLOSED / NOT_FOUND`.
 
-| `page` | `status`    | token                   | expected state                             |
-| ------ | ----------- | ----------------------- | ------------------------------------------ |
-| `None` | —           | `""`                    | `NOT_FOUND`                                |
-| set    | `PUBLISHED` | `""`                    | `LIVE`                                     |
-| set    | `PUBLISHED` | matches `preview_token` | `LIVE` (still — preview doesn't downgrade) |
-| set    | `DRAFT`     | matches                 | `PREVIEW`                                  |
-| set    | `DRAFT`     | `""`                    | `NOT_FOUND`                                |
-| set    | `DRAFT`     | `"wrong"`               | `NOT_FOUND`                                |
-| set    | `CLOSED`    | matches                 | `PREVIEW`                                  |
-| set    | `CLOSED`    | `""`                    | `CLOSED`                                   |
-| set    | `CLOSED`    | `"wrong"`               | `CLOSED`                                   |
+Rewrite `TestResolveVisibility` to assert on `state` directly. The full truth table (one test per row):
 
-Plus one assertion that `is_visible` / `is_preview` derived properties still behave (for any route code still reading them).
+| `page` | `url_slug` | `status`    | expected state |
+| ------ | ---------- | ----------- | -------------- |
+| `None` | —          | —           | `NOT_FOUND`    |
+| set    | `""`       | any         | `NOT_FOUND`    |
+| set    | non-empty  | `PUBLISHED` | `LIVE`         |
+| set    | non-empty  | `TEST`      | `TEST`         |
+| set    | non-empty  | `CLOSED`    | `CLOSED`       |
 
-**Suggested commit:** `feat(registration): three-state visibility distinguishes draft from closed`
+Plus one assertion that `is_visible` / `is_test` derived properties still behave (for any route code still reading them).
+
+**Suggested commit:** `feat(registration): four-state visibility (LIVE/TEST/CLOSED/NOT_FOUND)`
 
 ### 7.5 ORM and JSON serialisation ✅ COMPLETE
 
@@ -1530,11 +1544,9 @@ Same test class `TestCloseAndReopen`:
   - Permission and not-found cases.
 - **Green:** mirror `publish_registration_page` but call `page.reopen(source, ...)`.
 
-#### 7.7.8 `regenerate_preview_token` — pass `user.id`
+#### 7.7.8 ~~`regenerate_preview_token` — pass `user.id`~~ — RETIRED by Q17
 
-- **Red:** update `TestRegeneratePreviewToken.test_token_changes_and_is_persisted`:
-  - After call, activity contains a `REGENERATE_TOKEN` entry with `author_id == admin.id`.
-- **Green:** pass `user.id` to the domain method.
+> **Q17 retired the preview token.** This section is obsolete. There is no `regenerate_preview_token` service function.
 
 #### 7.7.9 `_create_published_page` helper — refresh signature
 
@@ -1582,11 +1594,11 @@ File: `tests/contract/test_registration_page_repo.py`.
 
 | Path                                                     | Change                                                                                                                                                                                                                                                    | Sub-phase     |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `src/opendlp/domain/registration_page.py`                | New enums + activity dataclass; `status`/`activity` replace `is_published`; new `record_edit`, `record_create`, `close`, `reopen`, `has_ever_been_published`, `slugs_frozen`; `publish`/`unpublish`/`regenerate_preview_token` take `author_id`           | 7.1, 7.2, 7.3 |
+| `src/opendlp/domain/registration_page.py`                | New enums + activity dataclass; `status`/`activity` replace `is_published`; new `record_edit`, `record_create`, `close`, `reopen`, `has_ever_been_published`, `slugs_frozen`, `is_publicly_loadable`; `publish`/`unpublish` take `author_id` (**Q17: preview token retired**) | 7.1, 7.2, 7.3 |
 | `src/opendlp/service_layer/registration_page_service.py` | `resolve_visibility` returns state; new visibility-state enum; `create_registration_page` logs CREATE; edit functions log on change; new `close_registration_page` and `reopen_registration_page`; all transition functions pass `user.id` as `author_id` | 7.4, 7.7      |
 | `src/opendlp/adapters/orm.py`                            | New `RegistrationPageActivityListJSON` type decorator; `status` column replaces `is_published`; new `activity` column                                                                                                                                     | 7.5           |
-| `tests/unit/domain/test_registration_page.py`            | Tests for new enums + activity dataclass; rewritten `TestPublishAndReadiness` / `TestVisibilityAndPreviewToken`; new `TestCloseAndReopen`, `TestHasEverBeenPublished`, `TestSlugsFrozen`, `TestRecordEdit`                                                | 7.1, 7.2, 7.3 |
-| `tests/unit/test_registration_page_service.py`           | Rewritten `TestPublishAndUnpublish`, `TestResolveVisibility`, `TestRegeneratePreviewToken`; new `TestCloseAndReopen`; activity-logging assertions added throughout edit-test classes                                                                      | 7.4, 7.7      |
+| `tests/unit/domain/test_registration_page.py`            | Tests for new enums + activity dataclass; rewritten `TestPublishAndReadiness` / `TestIsPubliclyLoadable`; new `TestCloseAndReopen`, `TestHasEverBeenPublished`, `TestSlugsFrozen`, `TestRecordEdit` (**Q17: no preview token tests**)                     | 7.1, 7.2, 7.3 |
+| `tests/unit/test_registration_page_service.py`           | Rewritten `TestPublishAndUnpublish`, `TestResolveVisibility`; new `TestCloseAndReopen`; activity-logging assertions added throughout edit-test classes (**Q17: no `TestRegeneratePreviewToken`**)                                                         | 7.4, 7.7      |
 | `tests/integration/test_orm.py`                          | Status assertion swap; activity round-trip test                                                                                                                                                                                                           | 7.5.3         |
 | `tests/contract/test_registration_page_repo.py`          | Activity round-trip test                                                                                                                                                                                                                                  | 7.8           |
 

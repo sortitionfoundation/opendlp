@@ -10,10 +10,11 @@ Assembly manager can paste in HTML, it will be served at a URL the user chooses.
 - put HTML in a text box and save it
 - inline CSS and `<style>` tags allowed
 - publish/unpublish
-  - when published, it is live
-  - when not published
-    - default is redirect to generic "Registration is Closed" page
-    - the page is only visible with token
+  - when published, it is live (status=PUBLISHED → LIVE visibility)
+  - when in test mode (status=TEST), the form renders publicly with a test banner — submissions are recorded as test submissions
+  - when closed (status=CLOSED), redirects to "Registration is Closed" page
+
+> **Q17 (2026-05-20):** The preview token was retired. A TEST page is publicly loadable at its slug with no token. The three status states are TEST / PUBLISHED / CLOSED.
 - basic templating for CSRF token, form action
   - `{{ csrf_form_element }}` and `<form action="{{ form_url }}" ...>` and the like
   - required input fields listed as templates
@@ -59,6 +60,8 @@ Note that "raw" does not mean "ugly". It means that the user is editing raw HTML
 
 Data model ideas - initial sketch
 
+> **Note:** This is the original sketch. See `plan-data-service.md` for the final design including Q16 (status enum + activity log) and Q17 (DRAFT→TEST, preview token retired).
+
 - RegistrationPage model
   - methods
     - `get_html()` to fetch HTML
@@ -69,8 +72,8 @@ Data model ideas - initial sketch
     - type - plainHtml, template, ...
     - url_slug
     - short_url_slug
-    - is_published
-    - token - auto-generated - used to view the page when not published
+    - status (TEST / PUBLISHED / CLOSED) — **Q17: `is_published` bool replaced by status enum**
+    - ~~token - auto-generated - used to view the page when not published~~ — **Q17: preview token retired**
 - RegistrationHTML model
   - fields
     - link to RegistrationPage
@@ -102,10 +105,10 @@ Data model ideas - initial sketch
     - go to Registration tab and you can set the URL and some other bits without creating the page itself.
     - have the URL on an earlier page of "assembly settings"
     - or both - but stored in the same place in the database
-- preview questions
+- preview questions (**Q17 update: preview token retired — TEST pages load publicly**)
   - is preview just looking at it? or can you submit the form and see the results in the Respondents tab?
     - you can submit the form
     - flag respondents who were entered when the form was not properly published. New selection-state of "test-submission"
   - how to get to preview page, when not published - i.e. how to avoid going to the "Registration Closed" page?
-    - the preview URL will be `/r/url-slug?preview=<token>`
+    - ~~the preview URL will be `/r/url-slug?preview=<token>`~~ — **Q17: retired. A TEST page loads at `/register/<url_slug>` with no token, with a test banner. Submissions are recorded as test submissions.**
 - can you edit while the page is published? For MVP, just have a warning. That allows fixing typos, broken links etc.

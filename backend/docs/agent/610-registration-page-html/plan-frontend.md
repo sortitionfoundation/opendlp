@@ -1,12 +1,14 @@
-# RSVP Page Backoffice - Presentation Layer Specification
+# Registration Page Backoffice - Presentation Layer Specification
 
-**Branch:** `610-rsvp-page-backoffice`
-**Status:** Ready for implementation
-**Last Updated:** 2026-05-13
+**Branch:** `610-registration-page-html`
+**Status:** Updated 2026-05-22 for Q17 (DRAFT→TEST, preview token retired)
+**Last Updated:** 2026-05-22
+
+> **Q17 (2026-05-20):** The preview token was retired. A TEST page is publicly loadable at its slug with no token (see "Publication Status" section below). The three status states are TEST / PUBLISHED / CLOSED.
 
 ## Overview
 
-This specification covers the **presentation/representation layer** for the RSVP (Registration) page backoffice feature. The feature allows assembly managers to create custom HTML registration forms that respondents can use to subscribe to an assembly.
+This specification covers the **presentation/representation layer** for the Registration page backoffice feature. The feature allows assembly managers to create custom HTML registration forms that respondents can use to subscribe to an assembly.
 
 **Key Concept:** Instead of a complex form builder, we provide a raw HTML approach where technologically skilled users paste HTML code with template placeholders (wildcards) that the backend resolves to actual form elements.
 
@@ -59,17 +61,19 @@ The registration tab is a **single cohesive form** with one "Save" button at the
 - "Download QR Code" button (downloads PNG image)
 - Hint text: "Use this QR code on paper invitations"
 
-#### Card 3: Publication Status
+#### Card 3: Publication Status (**Q17 updated**)
+
+> **Q17 (2026-05-20):** The preview token was retired. The three status states are now TEST / PUBLISHED / CLOSED. A TEST page is publicly loadable at its slug with no token — submissions are recorded as test submissions.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| Published | Switch/Toggle | When ON, form is publicly accessible |
-| Preview Token | Read-only text | Auto-generated token for previewing unpublished forms |
-| Preview URL | Read-only link | URL with token for testing: `/register/slug?token=abc123` |
+| Status | Radio/Select | Three states: TEST (test mode), PUBLISHED (live), CLOSED (registration closed) |
+| Test URL | Read-only link (shown when TEST) | The public URL — in test mode, submissions are recorded as test submissions |
 
-**Behaviour when unpublished:**
-- Public URL redirects to generic "Registration is Closed" page
-- Form is only visible with valid preview token
+**Behaviour by status:**
+- **TEST:** Form renders publicly at its URL with a "test page" banner. Submissions create respondents with `TEST_SUBMISSION` status.
+- **PUBLISHED:** Form is live. Submissions create respondents with `POOL` status.
+- **CLOSED:** Public URL redirects to "Registration is Closed" page.
 
 #### Card 4: Registration Form HTML
 
@@ -174,12 +178,12 @@ Single cohesive form with one Save button. Tab positioned before "Respondents".
 │  │ ▓▓▓▓▓▓ │  [Download QR Code]                                             │
 │  └────────┘                                                                  │
 │                                                                              │
-│  ── Publication Status ─────────────────────────────────────────────────────│
+│  ── Publication Status (Q17: preview token retired) ───────────────────────│
 │                                                                              │
-│  Published   [○━━━] Off                                                      │
+│  Status:   ( ) Test mode   (●) Published   ( ) Closed                        │
 │                                                                              │
-│  Preview Token:  abc123xyz                                                   │
-│  Preview URL:    https://example.com/register/my-assembly-2026?token=abc123 │
+│  Form URL: https://example.com/register/my-assembly-2026                     │
+│  (In test mode, submissions are recorded as test submissions)               │
 │                                                                              │
 │  ── Registration Form HTML ─────────────────────────────────────────────────│
 │                                                                              │
@@ -343,27 +347,29 @@ def generate_qr_code_base64(url: str) -> str:
 
 ---
 
-### Step 4: Publication Status Toggle
+### Step 4: Publication Status (**Q17 updated**)
 
-**Goal:** Publish toggle displays current state; toggling shows feedback.
+**Goal:** Status selector displays current state; changing status shows feedback.
+
+> **Q17 (2026-05-20):** The preview token was retired. Status is now a three-state selector: TEST / PUBLISHED / CLOSED.
 
 **Files to modify:**
-- `templates/backoffice/assembly_registration.html` - Add publish toggle section
-- `src/opendlp/entrypoints/blueprints/backoffice.py` - Update to handle publish toggle
+- `templates/backoffice/assembly_registration.html` - Add status selector section
+- `src/opendlp/entrypoints/blueprints/backoffice.py` - Update to handle status changes
 
 **Implementation:**
 
-1. Add switch component for published state
-2. Add preview token display (read-only, shown when unpublished)
-3. Add preview URL display with clickable link
-4. Toggle submits form and flashes status change message
+1. Add radio group or select for status (TEST / PUBLISHED / CLOSED)
+2. Add form URL display (shown always — in TEST mode, submissions are test submissions)
+3. Status change submits form and flashes status change message
+4. Show "test submissions" note when in TEST mode
 
 **Manual Test:**
 - Navigate to Registration tab
-- See publish toggle (default: unpublished)
-- Toggle to "Published" → Flash "Form published" (stubbed)
-- When unpublished, preview token and preview URL display
-- Click preview URL → Opens in new tab (will 404 until public routes exist)
+- See status selector (default: TEST)
+- Change to "Published" → Flash "Form published" (stubbed)
+- Change to "Closed" → Flash "Registration closed" (stubbed)
+- Form URL is always visible; clicking it opens the public page
 
 ---
 
@@ -564,7 +570,7 @@ All user-facing strings must be wrapped in gettext:
    - No server-side sanitization of user HTML (intentional - allows custom styling)
    - Scripts are **not** executed (inline JS disabled, external JS not loaded)
 
-3. **Preview Token:** Auto-generated secure token for unpublished form preview
+3. ~~**Preview Token:** Auto-generated secure token for unpublished form preview~~ — **Q17: retired. TEST pages are publicly loadable at their slug.**
 
 4. **Permission Check:** All routes use `@require_assembly_management` decorator
 
@@ -588,11 +594,10 @@ All user-facing strings must be wrapped in gettext:
    - Download button downloads PNG file
    - Scanning QR leads to correct URL
 
-4. **Publication Toggle:**
-   - Toggle published OFF → Preview token appears
-   - Preview URL works with token
-   - Public URL redirects to "closed" page
-   - Toggle published ON → Public URL works
+4. **Publication Status (Q17 updated):**
+   - Set status to TEST → Form loads publicly with test banner; submissions are test submissions
+   - Set status to PUBLISHED → Form is live; submissions go to pool
+   - Set status to CLOSED → Public URL redirects to "closed" page
 
 5. **HTML Editor:**
    - Paste HTML → Saves correctly
@@ -608,8 +613,8 @@ def test_view_assembly_registration_route():
 def test_save_registration_urls():
     """URL slugs save correctly."""
 
-def test_toggle_registration_publish():
-    """Publication toggle works."""
+def test_change_registration_status():
+    """Status change (TEST/PUBLISHED/CLOSED) works."""
 ```
 
 ### BDD Tests (Future)
@@ -638,18 +643,22 @@ Check if already in `pyproject.toml`:
 grep -i qrcode pyproject.toml
 ```
 
-### Service Layer (Not Yet Implemented)
+### Service Layer (Implemented — see `plan-data-service.md`)
 
-The presentation layer will call these service functions (to be implemented by colleague):
+> **Note:** See `plan-data-service.md` §5.1 for the actual service layer interface. The interface below was the original sketch and is now outdated. Key changes per Q17: preview token retired, status is three-state (TEST/PUBLISHED/CLOSED), explicit `create_registration_page` + `update_*` split.
 
 ```python
-# Expected service layer interface
-def get_registration_page(uow, assembly_id) -> RegistrationPage | None
-def create_or_update_registration_page(uow, assembly_id, url_slug, short_url_slug) -> RegistrationPage
-def save_registration_html(uow, registration_page_id, html_content) -> None
-def save_thank_you_html(uow, registration_page_id, html_content) -> None
-def toggle_registration_publish(uow, registration_page_id) -> bool
-def regenerate_preview_token(uow, registration_page_id) -> str
+# Actual service layer interface (see plan-data-service.md §5.1)
+def get_registration_page(uow, user_id, assembly_id) -> RegistrationPage | None
+def create_registration_page(uow, user_id, assembly_id, source_type=HTML) -> RegistrationPage
+def update_registration_page(uow, user_id, assembly_id, url_slug=None, short_url_slug=None) -> RegistrationPage
+def update_registration_page_html(uow, user_id, assembly_id, form_html) -> RegistrationPageHtml
+def update_thank_you_html(uow, user_id, assembly_id, thank_you_html) -> RegistrationPage
+def publish_registration_page(uow, user_id, assembly_id, text="") -> RegistrationPage
+def unpublish_registration_page(uow, user_id, assembly_id, text="") -> RegistrationPage
+def close_registration_page(uow, user_id, assembly_id, text="") -> RegistrationPage
+def reopen_registration_page(uow, user_id, assembly_id, text="") -> RegistrationPage
+# Q17: regenerate_preview_token is RETIRED — no preview token
 ```
 
 ---

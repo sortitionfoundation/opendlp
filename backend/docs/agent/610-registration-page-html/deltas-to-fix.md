@@ -1,9 +1,12 @@
 # Registration Page — Deltas to Reconcile Between the Two Plans
 
 **Date:** 2026-05-14 (decisions recorded 2026-05-15)
+**Updated:** 2026-05-22 for Q17 (DRAFT→TEST, preview token retired)
 **Plans compared:** `plan-data-service.md` (domain/adapters/service layer) and `plan-frontend.md` (backoffice presentation layer)
 
 This note lists the divergences between the two plans. Most exist because `plan-frontend.md` was written without sight of the resolved Q&A in `plan-data-service.md`. As of 2026-05-15 every delta below has a decision recorded — `plan-data-service.md` has been updated to match, and `plan-frontend.md` still needs to absorb the implications listed under each section.
+
+> **Q17 (2026-05-20):** The preview token was retired. Section §3 below is now obsolete. A TEST page is publicly loadable at its slug with no token.
 
 ## Already resolved
 
@@ -59,11 +62,13 @@ This was the biggest gap. `plan-frontend.md` had effectively pre-decided the tem
 
 ## Other divergences — frontend plan to update
 
-### 3. Preview query parameter name — DECIDED
+### 3. ~~Preview query parameter name~~ — OBSOLETE (Q17)
 
-`plan-frontend.md`: `/register/slug?token=abc123`. `plan-data-service.md` + story-notes line 110: `?preview=<token>`.
+> **Q17 (2026-05-20):** The preview token was retired. This section is obsolete. A TEST page is publicly loadable at its slug with no token. There is no `?token=` or `?preview=` URL form.
 
-**Decision:** use `?token=<preview_token>`. `plan-data-service.md` updated to match.
+~~`plan-frontend.md`: `/register/slug?token=abc123`. `plan-data-service.md` + story-notes line 110: `?preview=<token>`.~~
+
+~~**Decision:** use `?token=<preview_token>`. `plan-data-service.md` updated to match.~~
 
 ### 4. Form-action placeholder name — DECIDED
 
@@ -82,6 +87,8 @@ Story-notes line 52: "an early version behind a feature flag." `plan-data-servic
 `plan-frontend.md`: all routes behind `@require_assembly_management`. `plan-data-service.md` §6 / Q10: read-only assembly members should **see** the registration tab (read-only), only management can write. A blanket management gate excludes read-only members.
 
 **Decision:** keep this question open and revisit as we learn from what we build. `plan-data-service.md` §6 / Q10 stays as written (read-only members can view); the frontend can choose to gate more tightly initially and we relax once we have a clearer picture.
+
+> **Note (Q17):** With preview tokens retired, read-only view is simpler — no sensitive token to hide. The form URL is always visible (TEST pages load publicly).
 
 ### 7. Thank-you page placeholders — DECIDED
 
