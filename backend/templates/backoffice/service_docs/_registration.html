@@ -62,7 +62,7 @@
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    RegistrationPage  →  The created registration page with generated URL slugs and preview token
+                    RegistrationPage  →  The created registration page (status=TEST)
                 </code>
             </div>
             {# Error Cases #}
@@ -581,7 +581,7 @@
             </div>
             {# Description #}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Publish the registration page (DRAFT → PUBLISHED), making it visible to the public. Raises error if page is not ready for publishing. Logs a PUBLISH activity entry.") }}
+                {{ _("Publish the registration page (TEST → PUBLISHED), making it visible to the public. Raises error if page is not ready for publishing. Logs a PUBLISH activity entry.") }}
             </p>
             {# Parameters #}
             <div class="mb-6">
@@ -637,7 +637,7 @@
                     </li>
                     <li>
                         <code class="px-1 rounded"
-                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in DRAFT state)
+                              style="background-color: var(--color-error-100)">ValueError</code> — Invalid status transition (not in TEST state)
                     </li>
                 </ul>
             </div>
@@ -697,7 +697,7 @@
             </div>
             {# Description #}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Move the page back to draft (PUBLISHED → DRAFT). Used for 'I made a mistake, want to fix and republish'. Note: slugs remain frozen after first publish. Logs an UNPUBLISH activity entry.") }}
+                {{ _("Move the page back to test mode (PUBLISHED → TEST). Used for 'I made a mistake, want to fix and republish'. Note: slugs remain frozen after first publish. Logs an UNPUBLISH activity entry.") }}
             </p>
             {# Parameters #}
             <div class="mb-6">
@@ -739,7 +739,7 @@
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    RegistrationPage  →  The unpublished registration page (status=DRAFT)
+                    RegistrationPage  →  The unpublished registration page (status=TEST)
                 </code>
             </div>
             {# Error Cases #}
