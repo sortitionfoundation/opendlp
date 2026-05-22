@@ -31,7 +31,7 @@ questions that need answering before a detailed plan can be cut.
   `status` (`RegistrationPageStatus`: `TEST` / `PUBLISHED` / `CLOSED`),
   `source_type` (HTML only for now), `thank_you_html`, and an append-only
   `activity` audit log (`list[RegistrationPageActivity]`). Slugs freeze once the
-  page has *ever* been published — `slugs_frozen` ← `has_ever_been_published()`,
+  page has _ever_ been published — `slugs_frozen` ← `has_ever_been_published()`,
   derived from the activity log (610 Q6/Q16). Status transitions are `publish`
   (TEST→PUBLISHED), `unpublish` (PUBLISHED→TEST), `close` (PUBLISHED→CLOSED) and
   `reopen` (CLOSED→PUBLISHED); each appends a matching activity entry.
@@ -127,7 +127,7 @@ create registration forms. Note that what 610 actually shipped is **not** raw,
 inert HTML: the author's HTML is run through a Jinja sandbox and the generated
 starter already wires in the helper API (`value`, `checked`, `selected`,
 `field_errors`, `form_errors`). So the "author-edits-Jinja-with-error-bits"
-path described in early drafts as a *future* option is, in effect, the **v1**
+path described in early drafts as a _future_ option is, in effect, the **v1**
 path — a styling pass (by hand or via an LLM) round-trips because the
 "Jinja-ness" is confined to attribute values and one-liner helper calls, not
 block structure.
@@ -409,7 +409,7 @@ this page" URL; the POST URL is its own thing.
 
 - Pros: trivial route dispatch; bookmarks/back-button behaviour on the GET is
   cleaner; `form_action` is explicit so we can change it later without breaking
-  HTML the author hand-edited (e.g. moving to `/register/<slug>/submissions`);
+  HTML the author hand-edited (e.g. moving to `/register/<slug>/submissions` );
   matches the example in `plan-data-service.md` §5.3.
 - Cons: two URLs to keep track of; on validation failure the redirect-then-
   re-render dance is slightly awkward (or we render the form HTML directly in
@@ -503,7 +503,7 @@ in the per-field error and re-population helpers (see
 **Approach (decided):** a plain server-side form round-trip — **no** redirect on
 failure, **no** summary-token scheme, **no** session stash. On a failed POST the
 handler builds a `RenderContext` from the submission result
-(`values` + `errors` + `form_level_errors`) and re-renders the *same* form HTML.
+(`values` + `errors` + `form_level_errors`) and re-renders the _same_ form HTML.
 On a fresh GET every helper returns `""` / no-op, so the page is visually
 identical to the unsubmitted form. This is the standard "redisplay with errors
 and the submitted values" pattern.
@@ -648,7 +648,7 @@ fields the form is meant to collect: a fixed field **not** flagged for the
 registration page is simply not expected, and its `Respondent` column keeps its
 default (`None` for the booleans, `""` for email). This is distinct from the
 strict-required handling in Q9: required-ness (`is_required`, §6 — Q14) only
-bites on fields that *are* on the form. So "not on the form" → ignored; "on the
+bites on fields that _are_ on the form. So "not on the form" → ignored; "on the
 form and required" → must be present/checked; "on the form and optional" (e.g.
 `stay_on_db`) → may be blank.
 
@@ -682,7 +682,7 @@ drift. Five sub-questions, now answered:
 
 1. **Missing required field:** schema has `email` (or any `is_required` field)
    but the form omitted/blanked it → **reject** with a per-field "this is
-   required" error. Missing *optional* field → stored as `None` / empty string.
+   required" error. Missing _optional_ field → stored as `None` / empty string.
 2. **Extra fields:** form posts `name="favourite_colour"` with no matching
    schema field → **silently dropped** (not stored in `attributes`). The schema
    is the source of truth for what to collect.
@@ -701,7 +701,7 @@ This depends on the §6 Q14 / Q15 schema additions (`is_required`,
 earlier "Option A lenient for v1, defer the migration" lean is therefore
 **dropped** — we are doing the migration in this story.
 
-> **QUESTION (Doctor Chewie):** for a required *choice* field that the visitor
+> **QUESTION (Doctor Chewie):** for a required _choice_ field that the visitor
 > simply leaves unselected (no radio chosen, `<select>` left on the "— Please
 > choose —" blank), I'll treat that the same as "missing required" → reject with
 > the field's required-error. Sound right? (It's the obvious reading of "almost
@@ -919,7 +919,7 @@ ships the column and the migration.
 > "`consent`/`eligible`/`can_attend` must be checked when in use" rule belong in
 > the **validator** (reject on submit) or also surface as `required` in the
 > generated HTML? I'd do both — `required` attribute for the browser, validator
-> for the server — but flagging since "must be *checked*" is stronger than HTML
+> for the server — but flagging since "must be _checked_" is stronger than HTML
 > `required` gives for a single checkbox.
 
 ### Q15 — Add a `for_registration_page` flag (or scope enum) to `RespondentFieldDefinition`? **DECIDED → add the bool now**
@@ -1080,7 +1080,7 @@ inline at the relevant section.
 3. **"Must be checked" enforcement (§6 Q14).** For `eligible`/`can_attend`/
    `consent` when in use, "must be checked" is stronger than an HTML `required`
    attribute gives for a single checkbox. I plan to enforce it in the
-   **validator** (server-side reject) *and* mark `required` in the generated
+   **validator** (server-side reject) _and_ mark `required` in the generated
    HTML (browser hint). Sound right?
 
 4. **Unselected required choice fields (§5 Q9).** A required radio with nothing
