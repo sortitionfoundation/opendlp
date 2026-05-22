@@ -46,6 +46,8 @@ from opendlp.service_layer.registration_page_service import (
     generate_starter_form_html,
     get_registration_page_with_source,
     publish_registration_page,
+    reopen_registration_page,
+    unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
 )
@@ -456,12 +458,12 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
             html_content = html.form_html
             thank_you_html = registration_page.thank_you_html
-            is_published = registration_page.is_publicly_loadable()
+            registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
             url_slug = registration_page.url_slug
         else:
             html_content = ""
             thank_you_html = ""
-            is_published = False  # Default to unpublished
+            registration_status = "TEST"  # Default for new pages
             url_slug = ""
 
         # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
@@ -479,7 +481,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             qr_code_data_url=qr_code_data_url,
-            is_published=is_published,
+            registration_status=registration_status,
             html_content=html_content,
             thank_you_html=thank_you_html,
         ), 200
@@ -497,6 +499,27 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while loading registration settings"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
+    """Handle publish/unpublish/reopen/save action for registration page. Returns flash message."""
+    if action == "publish":
+        uow = bootstrap.bootstrap()
+        result = get_registration_page_with_source(uow, user_id, assembly_id)
+        if result and result[0].status == RegistrationPageStatus.TEST:
+            uow = bootstrap.bootstrap()
+            publish_registration_page(uow, user_id, assembly_id)
+            return _("Registration form published successfully")
+        return _("Registration form HTML updated successfully")
+    if action == "unpublish":
+        uow = bootstrap.bootstrap()
+        unpublish_registration_page(uow, user_id, assembly_id)
+        return _("Registration form unpublished")
+    if action == "reopen":
+        uow = bootstrap.bootstrap()
+        reopen_registration_page(uow, user_id, assembly_id)
+        return _("Registration form reopened")
+    return _("Registration form saved")
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
@@ -528,22 +551,8 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.bootstrap()
         update_registration_page_html(uow, current_user.id, assembly_id, html_content)
 
-        if action == "publish":
-            # Publish the page (only if it's in DRAFT status)
-            uow = bootstrap.bootstrap()
-            result = get_registration_page_with_source(uow, current_user.id, assembly_id)
-            if result:
-                registration_page, _html_source = result
-                if registration_page.status == RegistrationPageStatus.TEST:
-                    uow = bootstrap.bootstrap()
-                    publish_registration_page(uow, current_user.id, assembly_id)
-                    flash(_("Registration form published successfully"), "success")
-                else:
-                    # Already published, just saved the HTML
-                    flash(_("Registration form HTML updated successfully"), "success")
-        else:
-            # Just save, don't publish
-            flash(_("Registration form saved"), "success")
+        flash_message = _handle_registration_action(action, current_user.id, assembly_id)
+        flash(flash_message, "success")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing

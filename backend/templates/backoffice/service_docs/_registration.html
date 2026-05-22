@@ -1,4 +1,156 @@
 <div class="space-y-6">
+    {# Status Lifecycle Diagram #}
+    {% call card(title="Registration Page Status Lifecycle", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("A registration page has three statuses. New pages start in TEST mode. The diagram below shows valid transitions.") }}
+            </p>
+
+            {# Visual State Diagram #}
+            <div class="p-6 rounded-lg mb-6" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                <div class="flex items-center justify-center gap-4 flex-wrap">
+                    {# TEST State #}
+                    <div class="text-center">
+                        <div class="px-6 py-3 rounded-lg font-semibold"
+                             style="background-color: var(--color-warning-100); border: 2px solid var(--color-warning-500); color: var(--color-warning-700);">
+                            TEST
+                        </div>
+                        <p class="text-body-sm mt-2" style="color: var(--color-secondary-text); max-width: 120px;">
+                            Form visible with test banner
+                        </p>
+                    </div>
+
+                    {# Arrow TEST → PUBLISHED #}
+                    <div class="flex flex-col items-center">
+                        <span class="text-body-sm mb-1" style="color: var(--color-success-600);">publish()</span>
+                        <svg class="w-12 h-6" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 12h40M40 12l-8-6M40 12l-8 6" stroke="var(--color-success-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="text-body-sm mt-1" style="color: var(--color-info-600);">← unpublish()</span>
+                    </div>
+
+                    {# PUBLISHED State #}
+                    <div class="text-center">
+                        <div class="px-6 py-3 rounded-lg font-semibold"
+                             style="background-color: var(--color-success-100); border: 2px solid var(--color-success-500); color: var(--color-success-700);">
+                            PUBLISHED
+                        </div>
+                        <p class="text-body-sm mt-2" style="color: var(--color-secondary-text); max-width: 120px;">
+                            Form is live, submissions go to pool
+                        </p>
+                    </div>
+
+                    {# Arrow PUBLISHED → CLOSED #}
+                    <div class="flex flex-col items-center">
+                        <span class="text-body-sm mb-1" style="color: var(--color-error-600);">close()</span>
+                        <svg class="w-12 h-6" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 12h40M40 12l-8-6M40 12l-8 6" stroke="var(--color-error-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="text-body-sm mt-1" style="color: var(--color-info-600);">← reopen()</span>
+                    </div>
+
+                    {# CLOSED State #}
+                    <div class="text-center">
+                        <div class="px-6 py-3 rounded-lg font-semibold"
+                             style="background-color: var(--color-error-100); border: 2px solid var(--color-error-500); color: var(--color-error-700);">
+                            CLOSED
+                        </div>
+                        <p class="text-body-sm mt-2" style="color: var(--color-secondary-text); max-width: 120px;">
+                            Redirects to "registration closed" page
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {# Status Details Table #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Status Details") }}</h4>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Status</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">is_publicly_loadable()</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Public Behaviour</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Submission Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-700);">TEST</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅ True</td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Form renders with test banner</td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">TEST_SUBMISSION</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-700);">PUBLISHED</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅ True</td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Form renders normally (live)</td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">POOL</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-error-100); color: var(--color-error-700);">CLOSED</span>
+                            </td>
+                            <td class="px-3 py-2">❌ False</td>
+                            <td class="px-3 py-2">302 redirect to /registration-closed</td>
+                            <td class="px-3 py-2">N/A (no submissions)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Backoffice Button Behaviour #}
+            <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Backoffice Button Behaviour") }}</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Current Status</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Available Buttons</th>
+                            <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers);">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-700);">TEST</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-1 rounded mr-1" style="background-color: var(--color-button-secondary-bg); border: 1px solid var(--color-borders-dividers);">Save</span>
+                                <span class="px-2 py-1 rounded" style="background-color: var(--color-primary-action); color: white;">Publish</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Publish button is primary (encouraged action)</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-700);">PUBLISHED</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                <span class="px-2 py-1 rounded mr-1" style="background-color: var(--color-button-secondary-bg); border: 1px solid var(--color-borders-dividers);">Unpublish</span>
+                                <span class="px-2 py-1 rounded" style="background-color: var(--color-primary-action); color: white;">Save and Publish</span>
+                            </td>
+                            <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Save and Publish is primary; saves go live immediately</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-mono">
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-error-100); color: var(--color-error-700);">CLOSED</span>
+                            </td>
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-1 rounded mr-1" style="background-color: var(--color-button-secondary-bg); border: 1px solid var(--color-borders-dividers);">Save</span>
+                                <span class="px-2 py-1 rounded" style="background-color: var(--color-primary-action); color: white;">Reopen</span>
+                            </td>
+                            <td class="px-3 py-2">Reopen button is primary; reopens to PUBLISHED</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
     {# create_registration_page #}
     {% call card(title="create_registration_page()", composed=true) %}
         {% call card_body() %}

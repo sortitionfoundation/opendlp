@@ -48,7 +48,30 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
             {# Registration Form HTML Section #}
             <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
+                        {# Publication status indicator (tri-state) #}
+                        {% if registration_status == "PUBLISHED" %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                  style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
+                                {{ _("Published") }}
+                            </span>
+                        {% elif registration_status == "CLOSED" %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                  style="background-color: var(--color-error-100); color: var(--color-error-600);">
+                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
+                                {{ _("Closed") }}
+                            </span>
+                        {% else %}
+                            {# TEST status (default) #}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                  style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
+                                {{ _("Test") }}
+                            </span>
+                        {% endif %}
+                    </div>
                     {# Show Form Skeleton button #}
                     {% set code_icon %}
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -78,10 +101,21 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
                     ) }}
 
-                    {# Save and Publish buttons #}
+                    {# Save and status transition buttons #}
                     <div class="flex justify-end gap-3">
-                        {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                        {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
+                        {% if registration_status == "PUBLISHED" %}
+                            {# When published: Unpublish + Save and Publish (primary, on right) #}
+                            {{ button(_("Unpublish"), type="submit", variant="secondary", attrs='name="action" value="unpublish"') }}
+                            {{ button(_("Save and Publish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                        {% elif registration_status == "CLOSED" %}
+                            {# When closed: Save + Reopen #}
+                            {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                            {{ button(_("Reopen"), type="submit", variant="primary", attrs='name="action" value="reopen"') }}
+                        {% else %}
+                            {# When in TEST: Save + Publish #}
+                            {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                            {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
+                        {% endif %}
                     </div>
                 </div>
             </section>
