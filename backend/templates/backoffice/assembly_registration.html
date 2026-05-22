@@ -104,9 +104,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     {# Save and status transition buttons #}
                     <div class="flex justify-end gap-3">
                         {% if registration_status == "PUBLISHED" %}
-                            {# When published: Unpublish + Save and Publish (primary, on right) #}
+                            {# When published: Unpublish + Close + Save and Republish (primary, on right) #}
                             {{ button(_("Unpublish"), type="submit", variant="secondary", attrs='name="action" value="unpublish"') }}
-                            {{ button(_("Save and Publish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                            {{ button(_("Close"), type="submit", variant="secondary", attrs='name="action" value="close"') }}
+                            {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
                         {% elif registration_status == "CLOSED" %}
                             {# When closed: Save + Reopen #}
                             {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}

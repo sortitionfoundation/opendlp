@@ -42,6 +42,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_page_service import (
+    close_registration_page,
     create_registration_page,
     generate_starter_form_html,
     get_registration_page_with_source,
@@ -502,7 +503,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
-    """Handle publish/unpublish/reopen/save action for registration page. Returns flash message."""
+    """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message."""
     if action == "publish":
         uow = bootstrap.bootstrap()
         result = get_registration_page_with_source(uow, user_id, assembly_id)
@@ -515,6 +516,10 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
         uow = bootstrap.bootstrap()
         unpublish_registration_page(uow, user_id, assembly_id)
         return _("Registration form unpublished")
+    if action == "close":
+        uow = bootstrap.bootstrap()
+        close_registration_page(uow, user_id, assembly_id)
+        return _("Registration form closed")
     if action == "reopen":
         uow = bootstrap.bootstrap()
         reopen_registration_page(uow, user_id, assembly_id)
