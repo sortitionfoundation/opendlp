@@ -1,0 +1,238 @@
+<div>
+    {# add_field #}
+    {% call card(title="add_field()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    respondent_field_schema_service.py:204
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-warning-100);
+                             color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Add a single field to an assembly's respondent schema. This is the granular building block for field creation — use it to manually create fields that will appear in the starter form HTML.") }}
+            </p>
+            {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Name</th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Type</th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Required</th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">field_key</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Unique key (e.g., "age_range", "gender")</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">label</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str | None</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Human-readable label; defaults to humanised field_key</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">group</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">eligibility, name_and_contact, address, about_you, consent, other</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">field_type</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">text, email, integer, bool, bool_or_none, choice_radio, choice_dropdown, longtext</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">options</td>
+                                <td class="px-3 py-2">list[str] | None</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">For choice fields: list of option values</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RespondentFieldDefinition  →  The newly created field definition
+                </code>
+            </div>
+            {# Usage Note #}
+            <div class="mb-6 p-3 rounded-lg"
+                 style="background-color: var(--color-info-100);
+                        border: 1px solid var(--color-info-400)">
+                <p class="text-body-sm" style="color: var(--color-info-600);">
+                    💡 {{ _("Use this to add fields matching your target categories. After adding fields, use 'generate_starter_form_html' on the Registration tab to generate form HTML that includes them.") }}
+                </p>
+            </div>
+            {# Try It Section #}
+            <div class="pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                {# Assembly Select #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="addFieldAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                {# Field Key #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Field Key") }}</label>
+                    <input type="text"
+                           x-model="addFieldKey"
+                           placeholder="e.g., age_range, gender, district"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background);
+                                  border: 1px solid var(--color-borders-dividers);
+                                  color: var(--color-body-text)">
+                </div>
+                {# Label #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Label (optional)") }}</label>
+                    <input type="text"
+                           x-model="addFieldLabel"
+                           placeholder="Human-readable label (defaults to humanised key)"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background);
+                                  border: 1px solid var(--color-borders-dividers);
+                                  color: var(--color-body-text)">
+                </div>
+                {# Group #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Group") }}</label>
+                    <select x-model="addFieldGroup"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="eligibility">Eligibility</option>
+                        <option value="name_and_contact">Name and Contact</option>
+                        <option value="address">Address</option>
+                        <option value="about_you">About You</option>
+                        <option value="consent">Consent</option>
+                        <option value="other" selected>Other</option>
+                    </select>
+                </div>
+                {# Field Type #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Field Type") }}</label>
+                    <select x-model="addFieldType"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="text" selected>Text</option>
+                        <option value="email">Email</option>
+                        <option value="integer">Integer</option>
+                        <option value="bool">Boolean (Yes/No)</option>
+                        <option value="bool_or_none">Boolean (Yes/No/Unknown)</option>
+                        <option value="choice_radio">Choice (Radio Buttons)</option>
+                        <option value="choice_dropdown">Choice (Dropdown)</option>
+                        <option value="longtext">Long Text</option>
+                    </select>
+                </div>
+                {# Options (for choice fields) #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Options (for choice fields, comma-separated)") }}</label>
+                    <input type="text"
+                           x-model="addFieldOptions"
+                           placeholder="e.g., 18-30, 31-50, 51-65, 65+"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background);
+                                  border: 1px solid var(--color-borders-dividers);
+                                  color: var(--color-body-text)">
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                        {{ _("Required for CHOICE_RADIO and CHOICE_DROPDOWN field types") }}
+                    </p>
+                </div>
+                {# Action Buttons #}
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeAddField()"
+                            :disabled="loading.add_field"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action);
+                                   color: var(--color-page-background)">
+                        <span x-show="!loading.add_field">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.add_field">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                {# Response Display #}
+                <template x-if="responses.add_field">
+                    <div class="rounded-lg p-4"
+                         :style="responses.add_field.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.add_field.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.add_field.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('add_field')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>

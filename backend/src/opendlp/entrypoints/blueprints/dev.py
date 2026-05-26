@@ -11,6 +11,11 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.domain.registration_page import RegistrationPageHtml
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldGroup,
+)
 from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
@@ -38,6 +43,10 @@ from opendlp.service_layer.registration_page_service import (
 )
 from opendlp.service_layer.registration_submission_service import (
     submit_registration_by_assembly_id,
+)
+from opendlp.service_layer.respondent_field_schema_service import (
+    FieldDefinitionConflictError,
+    add_field,
 )
 from opendlp.service_layer.respondent_service import (
     get_respondents_for_assembly,
@@ -99,7 +108,7 @@ def service_docs() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'respondents'
     active_tab = request.args.get("tab", "respondents")
-    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration"]
+    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration", "fields"]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
 
@@ -767,6 +776,79 @@ def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, A
             return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
+def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle add_field service call for creating a new field definition."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    field_key = params.get("field_key", "")
+    label = params.get("label") or None
+    group_str = params.get("group", "GENERAL")
+    field_type_str = params.get("field_type", "TEXT")
+    options_raw = params.get("options")  # List of option values (strings) or None
+
+    # Parse group enum
+    try:
+        group = RespondentFieldGroup(group_str)
+    except ValueError:
+        return {
+            "status": "error",
+            "error": f"Invalid group: {group_str}. Valid values: {[g.value for g in RespondentFieldGroup]}",
+            "error_type": "ValidationError",
+        }
+
+    # Parse field_type enum
+    try:
+        field_type = FieldType(field_type_str)
+    except ValueError:
+        return {
+            "status": "error",
+            "error": f"Invalid field_type: {field_type_str}. Valid values: {[ft.value for ft in FieldType]}",
+            "error_type": "ValidationError",
+        }
+
+    # Parse options if provided (for choice fields)
+    options = None
+    if options_raw:
+        if isinstance(options_raw, list):
+            options = [ChoiceOption(value=str(v)) for v in options_raw]
+        else:
+            return {
+                "status": "error",
+                "error": "options must be a list of strings",
+                "error_type": "ValidationError",
+            }
+
+    with uow:
+        try:
+            field = add_field(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                field_key=field_key,
+                label=label,
+                group=group,
+                field_type=field_type,
+                options=options,
+            )
+            return {
+                "status": "success",
+                "field": {
+                    "id": str(field.id),
+                    "field_key": field.field_key,
+                    "label": field.label,
+                    "group": field.group.value,
+                    "field_type": field.field_type.value,
+                    "sort_order": field.sort_order,
+                    "options": [{"value": o.value, "help_text": o.help_text} for o in (field.options or [])],
+                },
+            }
+        except FieldDefinitionConflictError as e:
+            return {"status": "error", "error": str(e), "error_type": "FieldDefinitionConflictError"}
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -788,6 +870,7 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "close_registration_page": _handle_close_registration_page,
     "reopen_registration_page": _handle_reopen_registration_page,
     "submit_registration": _handle_submit_registration,
+    "add_field": _handle_add_field,
 }
 
 

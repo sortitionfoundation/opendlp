@@ -40,6 +40,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         items=[
         {"key": "assembly", "label": _("Assembly"), "href": url_for('dev.service_docs', tab='assembly'), "active": active_tab == 'assembly'},
         {"key": "registration", "label": _("Registration"), "href": url_for('dev.service_docs', tab='registration'), "active": active_tab == 'registration'},
+        {"key": "fields", "label": _("Fields"), "href": url_for('dev.service_docs', tab='fields'), "active": active_tab == 'fields'},
         {"key": "respondents", "label": _("Respondents"), "href": url_for('dev.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
         {"key": "targets", "label": _("Targets"), "href": url_for('dev.service_docs', tab='targets'), "active": active_tab == 'targets'},
         {"key": "config", "label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
@@ -56,6 +57,10 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {% if active_tab == 'registration' %}
             {% include "backoffice/service_docs/_registration.html" %}
+        {% endif %}
+
+        {% if active_tab == 'fields' %}
+            {% include "backoffice/service_docs/_fields.html" %}
         {% endif %}
 
         {% if active_tab == 'respondents' %}
@@ -121,6 +126,14 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                 updateAssemblyTitle: '',
                 updateAssemblyQuestion: '',
 
+                // Fields form properties
+                addFieldAssemblyId: '',
+                addFieldKey: '',
+                addFieldLabel: '',
+                addFieldGroup: 'other',
+                addFieldType: 'text',
+                addFieldOptions: '',
+
                 // Registration form properties
                 createRegistrationAssemblyId: '',
                 getRegistrationAssemblyId: '',
@@ -158,7 +171,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     close_registration: false,
                     reopen_registration: false,
                     generate_starter_html: false,
-                    submit_registration: false
+                    submit_registration: false,
+                    add_field: false
                 },
 
                 // Response data for each service
@@ -181,7 +195,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     close_registration: null,
                     reopen_registration: null,
                     generate_starter_html: null,
-                    submit_registration: null
+                    submit_registration: null,
+                    add_field: null
                 },
 
                 // Sample data for each service
@@ -229,7 +244,8 @@ Age,51+,2,5,1,1`,
                         'close_registration_page': 'close_registration',
                         'reopen_registration_page': 'reopen_registration',
                         'generate_starter_form_html': 'generate_starter_html',
-                        'submit_registration': 'submit_registration'
+                        'submit_registration': 'submit_registration',
+                        'add_field': 'add_field'
                     };
                     const key = keyMap[serviceName];
 
@@ -406,6 +422,23 @@ Age,51+,2,5,1,1`,
                         assembly_id: this.submitRegistrationAssemblyId,
                         form_data: formData,
                         is_test: this.submitRegistrationIsTest
+                    });
+                },
+
+                // ===== Field schema service execute methods =====
+                executeAddField() {
+                    // Parse options from comma-separated string to array
+                    let options = null;
+                    if (this.addFieldOptions && this.addFieldOptions.trim()) {
+                        options = this.addFieldOptions.split(',').map(s => s.trim()).filter(s => s);
+                    }
+                    this.executeService('add_field', {
+                        assembly_id: this.addFieldAssemblyId,
+                        field_key: this.addFieldKey,
+                        label: this.addFieldLabel || null,
+                        group: this.addFieldGroup,
+                        field_type: this.addFieldType,
+                        options: options
                     });
                 },
 
