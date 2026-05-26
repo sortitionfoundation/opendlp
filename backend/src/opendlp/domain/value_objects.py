@@ -108,8 +108,13 @@ class SelectionTaskType(Enum):
 
 
 class RespondentStatus(Enum):
-    """Status of a respondent in the selection process"""
+    """Status of a respondent in the selection process.
 
+    TEST_SUBMISSION is for respondents created via a TEST registration page.
+    They are quarantined from the selection pool but can be promoted to POOL.
+    """
+
+    TEST_SUBMISSION = "TEST_SUBMISSION"
     POOL = "POOL"
     SELECTED = "SELECTED"
     CONFIRMED = "CONFIRMED"
@@ -130,7 +135,9 @@ class RespondentStatus(Enum):
 # Manual transitions allowed from the backoffice view-respondent page.
 # Any move between the four active statuses is permitted; moves to or from
 # DELETED are excluded (DELETED is reached only via the GDPR delete form).
+# TEST_SUBMISSION can only be promoted to POOL (one-way).
 ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+    RespondentStatus.TEST_SUBMISSION: [RespondentStatus.POOL],
     RespondentStatus.POOL: [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.SELECTED: [RespondentStatus.POOL, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.CONFIRMED: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN],

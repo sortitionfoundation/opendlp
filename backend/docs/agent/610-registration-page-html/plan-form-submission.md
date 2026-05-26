@@ -518,3 +518,24 @@ Should `/register/` be indexed by search engines?
 | XSS in form HTML | Jinja sandbox with autoescape; author-supplied HTML is trusted |
 | Spam submissions | Out of scope (bot protection in future story) |
 | Field schema mismatch | Validate against assembly's `RespondentFieldDefinition` at submit time |
+
+---
+
+## 10. Implementation Progress
+
+### Completed (2026-05-22)
+
+- [x] Added `TEST_SUBMISSION` to `RespondentStatus` enum
+- [x] Created `registration_submission_service.py` with:
+  - `submit_registration()` for URL-based submissions
+  - `submit_registration_by_assembly_id()` for testing
+  - Field validation against assembly schema
+- [x] Added service-docs Try It form for `submit_registration`
+- [x] Wired up dev.py handler
+
+### Pending
+
+- [ ] Public routes (`/register/<url_slug>` GET/POST)
+- [ ] Thank-you page template
+- [ ] Test-mode banner
+- [ ] BDD tests

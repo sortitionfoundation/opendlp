@@ -36,6 +36,9 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page,
     update_registration_page_html,
 )
+from opendlp.service_layer.registration_submission_service import (
+    submit_registration_by_assembly_id,
+)
 from opendlp.service_layer.respondent_service import (
     get_respondents_for_assembly,
     import_respondents_from_csv,
@@ -732,6 +735,38 @@ def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
             return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
+def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle submit_registration_by_assembly_id service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    form_data = params.get("form_data", {})
+    is_test = params.get("is_test", False)
+
+    with uow:
+        try:
+            result = submit_registration_by_assembly_id(
+                uow=uow,
+                assembly_id=assembly_id,
+                form_data=form_data,
+                is_test=is_test,
+            )
+            return {
+                "status": "success" if result.is_valid else "validation_error",
+                "respondent": {
+                    "id": str(result.respondent.id),
+                    "external_id": result.respondent.external_id,
+                    "selection_status": result.respondent.selection_status.value,
+                    "attributes": result.respondent.attributes,
+                }
+                if result.respondent
+                else None,
+                "is_test": result.is_test,
+                "field_errors": result.field_errors,
+                "form_errors": result.form_errors,
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -752,6 +787,7 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "unpublish_registration_page": _handle_unpublish_registration_page,
     "close_registration_page": _handle_close_registration_page,
     "reopen_registration_page": _handle_reopen_registration_page,
+    "submit_registration": _handle_submit_registration,
 }
 
 

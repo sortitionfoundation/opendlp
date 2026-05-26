@@ -1357,4 +1357,145 @@
             </div>
         {% endcall %}
     {% endcall %}
+
+    {# submit_registration #}
+    {% call card(title="submit_registration()", composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_submission_service.py:117
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100);
+                                 color: var(--color-success-600)">🌐 Public</span>
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Submit a registration form and create a respondent. This is a public-facing function that validates form data against the assembly's field schema and creates a Respondent with the appropriate status (POOL or TEST_SUBMISSION).") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    form_data
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">dict</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Form data as JSON (field_key → value)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">
+                                    is_test
+                                </td>
+                                <td class="px-3 py-2">bool</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">
+                                    If true, creates TEST_SUBMISSION; otherwise POOL (default: false)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationSubmissionResult  →  Contains respondent (or None), field_errors, form_errors, is_test
+                </code>
+            </div>
+            {# Status Logic #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Status Logic") }}</h4>
+                <div class="p-3 rounded" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                    <ul class="list-disc list-inside text-body-sm" style="color: var(--color-info-700);">
+                        <li><strong>is_test=false</strong> → Creates respondent with <code>POOL</code> status (real submission)</li>
+                        <li><strong>is_test=true</strong> → Creates respondent with <code>TEST_SUBMISSION</code> status (quarantined from selection)</li>
+                    </ul>
+                </div>
+            </div>
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="submitRegistrationAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Form Data (JSON)</label>
+                        <textarea x-model="submitRegistrationFormData"
+                                  class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                                  style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);"
+                                  rows="6"
+                                  placeholder='{"email": "test@example.com", "first_name": "John", "last_name": "Doe"}'></textarea>
+                        <p class="text-body-xs mt-1" style="color: var(--color-secondary-text);">
+                            Enter field_key → value pairs matching the assembly's field definitions
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="submitRegistrationIsTest" x-model="submitRegistrationIsTest"
+                               class="rounded" style="border: 1px solid var(--color-borders-dividers);">
+                        <label for="submitRegistrationIsTest" class="text-body-sm">Test submission (creates TEST_SUBMISSION status)</label>
+                    </div>
+                    <button @click="executeSubmitRegistration()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.submit_registration">
+                        <span x-show="!loading.submit_registration">Execute</span>
+                        <span x-show="loading.submit_registration">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            {# Response #}
+            <div x-show="responses.submit_registration" x-cloak>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                </div>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('submit_registration')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
 </div>

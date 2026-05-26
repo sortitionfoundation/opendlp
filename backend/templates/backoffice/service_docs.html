@@ -134,6 +134,9 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                 closeAssemblyId: '',
                 reopenAssemblyId: '',
                 generateStarterAssemblyId: '',
+                submitRegistrationAssemblyId: '',
+                submitRegistrationFormData: '{}',
+                submitRegistrationIsTest: false,
 
                 // Loading state for each service
                 loading: {
@@ -154,7 +157,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     unpublish_registration: false,
                     close_registration: false,
                     reopen_registration: false,
-                    generate_starter_html: false
+                    generate_starter_html: false,
+                    submit_registration: false
                 },
 
                 // Response data for each service
@@ -176,7 +180,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     unpublish_registration: null,
                     close_registration: null,
                     reopen_registration: null,
-                    generate_starter_html: null
+                    generate_starter_html: null,
+                    submit_registration: null
                 },
 
                 // Sample data for each service
@@ -223,7 +228,8 @@ Age,51+,2,5,1,1`,
                         'unpublish_registration_page': 'unpublish_registration',
                         'close_registration_page': 'close_registration',
                         'reopen_registration_page': 'reopen_registration',
-                        'generate_starter_form_html': 'generate_starter_html'
+                        'generate_starter_form_html': 'generate_starter_html',
+                        'submit_registration': 'submit_registration'
                     };
                     const key = keyMap[serviceName];
 
@@ -386,6 +392,20 @@ Age,51+,2,5,1,1`,
                 executeGenerateStarterHtml() {
                     this.executeService('generate_starter_form_html', {
                         assembly_id: this.generateStarterAssemblyId
+                    });
+                },
+                executeSubmitRegistration() {
+                    let formData = {};
+                    try {
+                        formData = JSON.parse(this.submitRegistrationFormData);
+                    } catch (e) {
+                        this.responses.submit_registration = { status: 'error', error: 'Invalid JSON in form data' };
+                        return;
+                    }
+                    this.executeService('submit_registration', {
+                        assembly_id: this.submitRegistrationAssemblyId,
+                        form_data: formData,
+                        is_test: this.submitRegistrationIsTest
                     });
                 },
 
