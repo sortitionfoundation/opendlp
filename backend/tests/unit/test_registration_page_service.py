@@ -781,3 +781,178 @@ class TestGenerateStarterFormHtml:
         service.generate_starter_form_html(uow, admin.id, assembly.id)
 
         assert uow.committed is False
+
+
+class TestSlugify:
+    def test_simple_text(self):
+        assert service._slugify("Hello World") == "hello-world"
+
+    def test_removes_apostrophes(self):
+        assert service._slugify("Citizens' Assembly") == "citizens-assembly"
+
+    def test_removes_special_chars(self):
+        assert service._slugify("Dublin 2026!") == "dublin-2026"
+
+    def test_collapses_multiple_hyphens(self):
+        assert service._slugify("One -- Two --- Three") == "one-two-three"
+
+    def test_strips_leading_trailing_hyphens(self):
+        assert service._slugify("---leading-trailing---") == "leading-trailing"
+
+    def test_handles_underscores(self):
+        assert service._slugify("with_underscores") == "with-underscores"
+
+    def test_empty_string(self):
+        assert service._slugify("") == ""
+
+    def test_only_special_chars(self):
+        assert service._slugify("!@#$%") == ""
+
+
+class TestGenerateUrlSlugFromName:
+    def test_simple_name(self):
+        assert service.generate_url_slug_from_name("Test Assembly") == "test-assembly"
+
+    def test_truncates_to_max_length(self):
+        slug = service.generate_url_slug_from_name("Dublin Citizens Assembly on Housing 2026", max_length=25)
+        assert len(slug) <= 25
+        assert slug == "dublin-citizens-assembly"
+
+    def test_truncates_long_first_word(self):
+        slug = service.generate_url_slug_from_name("supercalifragilisticexpialidocious", max_length=25)
+        assert len(slug) == 25
+        assert slug == "supercalifragilisticexpial"[:25]
+
+    def test_empty_name(self):
+        assert service.generate_url_slug_from_name("") == ""
+
+    def test_special_chars_only_returns_empty(self):
+        assert service.generate_url_slug_from_name("!@#$%") == ""
+
+    def test_keeps_full_words_within_limit(self):
+        # "dublin-citizens" = 15 chars, adding "-assembly" = 24 chars (OK)
+        slug = service.generate_url_slug_from_name("Dublin Citizens Assembly on Housing", max_length=25)
+        assert slug == "dublin-citizens-assembly"
+
+
+class TestGenerateShortUrlSlug:
+    def test_returns_6_digit_string(self):
+        slug = service.generate_short_url_slug()
+        assert len(slug) == 6
+        assert slug.isdigit()
+
+    def test_returns_different_values(self):
+        slugs = {service.generate_short_url_slug() for _ in range(10)}
+        assert len(slugs) > 1  # Very unlikely to get all the same
+
+
+class TestGenerateUniqueUrlSlug:
+    def test_returns_base_slug_when_available(self):
+        uow = FakeUnitOfWork()
+        slug = service.generate_unique_url_slug(uow, "my-assembly")
+        assert slug == "my-assembly"
+
+    def test_appends_suffix_on_collision(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id)
+        service.update_registration_page(uow, admin.id, assembly.id, url_slug="taken-slug")
+
+        slug = service.generate_unique_url_slug(uow, "taken-slug")
+        assert slug == "taken-slug-2"
+
+    def test_increments_suffix_on_multiple_collisions(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+        # Create multiple assemblies with sequential slugs
+        for i in range(1, 4):
+            assembly = _assembly(uow)
+            service.create_registration_page(uow, admin.id, assembly.id)
+            slug = "popular-name" if i == 1 else f"popular-name-{i}"
+            service.update_registration_page(uow, admin.id, assembly.id, url_slug=slug)
+
+        slug = service.generate_unique_url_slug(uow, "popular-name")
+        assert slug == "popular-name-4"
+
+    def test_generates_random_fallback_when_empty(self):
+        uow = FakeUnitOfWork()
+        slug = service.generate_unique_url_slug(uow, "")
+        assert slug.startswith("assembly-")
+        assert len(slug) > 10  # assembly- + 6 digits
+
+
+class TestGenerateUniqueShortUrlSlug:
+    def test_returns_unique_6_digit_slug(self):
+        uow = FakeUnitOfWork()
+        slug = service.generate_unique_short_url_slug(uow)
+        assert len(slug) == 6
+        assert slug.isdigit()
+
+    def test_retries_on_collision(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id)
+        service.update_registration_page(uow, admin.id, assembly.id, short_url_slug="123456")
+
+        # Should still be able to generate a unique one
+        slug = service.generate_unique_short_url_slug(uow)
+        assert slug != "123456"
+        assert len(slug) == 6
+
+
+class TestCreateRegistrationPageWithSlugs:
+    def test_creates_page_with_auto_generated_slugs(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+        assembly = Assembly(title="Dublin Citizens Assembly", question="?", status=AssemblyStatus.ACTIVE)
+        uow.assemblies.add(assembly)
+
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+
+        assert page.url_slug != ""
+        assert page.short_url_slug != ""
+        assert len(page.short_url_slug) == 6
+        assert page.url_slug == "dublin-citizens-assembly"
+        assert uow.committed
+
+    def test_generates_unique_slug_on_collision(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+
+        # Create first assembly with same-ish name
+        assembly1 = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
+        uow.assemblies.add(assembly1)
+        page1 = service.create_registration_page_with_slugs(uow, admin.id, assembly1.id)
+
+        # Create second assembly with same name
+        assembly2 = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
+        uow.assemblies.add(assembly2)
+        page2 = service.create_registration_page_with_slugs(uow, admin.id, assembly2.id)
+
+        assert page1.url_slug == "test-assembly"
+        assert page2.url_slug == "test-assembly-2"
+
+    def test_raises_if_page_already_exists(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+
+        with pytest.raises(ValueError, match="already has a registration page"):
+            service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+
+    def test_requires_manage_permission(self):
+        uow = FakeUnitOfWork()
+        assembly = _assembly(uow)
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.create_registration_page_with_slugs(uow, viewer.id, assembly.id)
+
+    def test_appends_create_activity(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+
+        assert len(page.activity) == 1
+        assert page.activity[0].action is RegistrationPageAction.CREATE

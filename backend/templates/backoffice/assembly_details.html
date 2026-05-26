@@ -141,12 +141,13 @@ Args:
         {% endcall %}
     </div>
 
-    {# Registration URLs Section #}
+    {# Registration Page Details Section #}
     <div class="mb-8">
         {% call section() %}
-            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration URLs") }}</h2>
+            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration Page Details") }}</h2>
 
-            {% if registration_page and registration_page.url_slug %}
+            {% if registration_page %}
+                {# Registration page exists - show URLs #}
                 <div class="space-y-6 max-w-2xl">
                     {# Registration URL (read-only) #}
                     {{ readonly_url_display(
@@ -200,14 +201,15 @@ Args:
                     {% endif %}
                 </div>
             {% else %}
-                <p class="text-body-md" style="color: var(--color-secondary-text);">
-                    {{ _("No registration URLs configured yet.") }}
-                    <a href="{{ url_for('backoffice.edit_assembly', assembly_id=assembly.id) }}"
-                       class="underline"
-                       style="color: var(--color-link-text);">
-                        {{ _("Edit assembly to add URLs") }}
-                    </a>
+                {# No registration page - show CTA to create one #}
+                <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("No registration page has been created for this assembly.") }}
                 </p>
+                <form method="POST"
+                      action="{{ url_for('backoffice.create_assembly_registration_page', assembly_id=assembly.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    {{ button(_("Create Registration Page"), type="submit", variant="primary") }}
+                </form>
             {% endif %}
         {% endcall %}
     </div>

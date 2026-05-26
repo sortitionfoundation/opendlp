@@ -1,6 +1,8 @@
 """ABOUTME: Service layer for registration page management and public lookup
 ABOUTME: Create/edit/publish the page in the backoffice, and resolve it for the public route"""
 
+import random
+import re
 import uuid
 from dataclasses import dataclass
 from enum import Enum
@@ -53,6 +55,95 @@ def _check_size(html: str, max_bytes: int, label: str) -> None:
         raise ValueError(f"The {label} must be at most {max_bytes} bytes; got {size}")
 
 
+# --- Slug generation utilities ---
+
+
+def _slugify(text: str) -> str:
+    """Convert text to a URL-safe slug: lowercase, hyphens, no special chars."""
+    # Lowercase and replace spaces/underscores with hyphens
+    text = text.lower().strip()
+    text = re.sub(r"[\s_]+", "-", text)
+    # Remove apostrophes and similar characters completely
+    text = re.sub(r"[''`]", "", text)
+    # Remove any character that isn't alphanumeric or hyphen
+    text = re.sub(r"[^a-z0-9-]", "", text)
+    # Collapse multiple hyphens
+    text = re.sub(r"-+", "-", text)
+    # Strip leading/trailing hyphens
+    text = text.strip("-")
+    return text
+
+
+def generate_url_slug_from_name(name: str, max_length: int = 25) -> str:
+    """Generate a URL slug from assembly name.
+
+    Takes first N words that fit within max_length characters.
+    Returns empty string if name produces no valid slug chars.
+    """
+    slug = _slugify(name)
+    if not slug:
+        return ""
+
+    # Split into words by hyphen
+    words = slug.split("-")
+    result_words: list[str] = []
+    current_length = 0
+
+    for word in words:
+        # Account for hyphen separator (except first word)
+        separator_len = 1 if result_words else 0
+        new_length = current_length + separator_len + len(word)
+
+        if new_length > max_length:
+            # If we have no words yet and first word is too long, truncate it
+            if not result_words:
+                result_words.append(word[:max_length])
+            break
+
+        result_words.append(word)
+        current_length = new_length
+
+    return "-".join(result_words)
+
+
+def generate_unique_url_slug(uow: AbstractUnitOfWork, base_slug: str) -> str:
+    """Ensure slug is unique, appending -2, -3, etc. if needed.
+
+    If base_slug is empty, generates a random fallback slug.
+    """
+    if not base_slug:
+        base_slug = f"assembly-{random.randint(100000, 999999)}"  # noqa: S311
+
+    # Check if base slug is available
+    if uow.registration_pages.get_by_url_slug(base_slug) is None:
+        return base_slug
+
+    # Try with numeric suffix
+    for i in range(2, 100):
+        candidate = f"{base_slug}-{i}"
+        if uow.registration_pages.get_by_url_slug(candidate) is None:
+            return candidate
+
+    # Fallback: append random suffix
+    return f"{base_slug}-{random.randint(1000, 9999)}"  # noqa: S311
+
+
+def generate_short_url_slug() -> str:
+    """Generate a random 6-digit numeric string."""
+    return str(random.randint(100000, 999999))  # noqa: S311
+
+
+def generate_unique_short_url_slug(uow: AbstractUnitOfWork, max_attempts: int = 10) -> str:
+    """Generate unique 6-digit short slug, retrying on collision."""
+    for _ in range(max_attempts):
+        candidate = generate_short_url_slug()
+        if uow.registration_pages.get_by_short_url_slug(candidate) is None:
+            return candidate
+
+    # Very unlikely to reach here, but handle it
+    raise ValueError("Failed to generate unique short URL slug after multiple attempts")
+
+
 def create_registration_page(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -75,6 +166,45 @@ def create_registration_page(
             assembly_id=assembly_id,
             source_type=source_type,
             thank_you_html=DEFAULT_THANK_YOU_HTML,
+        )
+        page.record_create(user.id)
+        uow.registration_pages.add(page)
+        uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+        uow.commit()
+        return page.create_detached_copy()
+
+
+def create_registration_page_with_slugs(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> RegistrationPage:
+    """Create a registration page with auto-generated slugs from the assembly name.
+
+    The url_slug is generated from the assembly title (first N words, max 25 chars).
+    The short_url_slug is a random 6-digit number.
+    Both are ensured to be unique.
+
+    Raises ValueError if the assembly already has a registration page.
+    """
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
+        if uow.registration_pages.get_by_assembly_id(assembly_id):
+            raise ValueError(f"Assembly {assembly_id} already has a registration page")
+
+        # Generate unique slugs
+        base_slug = generate_url_slug_from_name(assembly.title)
+        url_slug = generate_unique_url_slug(uow, base_slug)
+        short_url_slug = generate_unique_short_url_slug(uow)
+
+        page = RegistrationPage(
+            assembly_id=assembly_id,
+            source_type=RegistrationPageSource.HTML,
+            thank_you_html=DEFAULT_THANK_YOU_HTML,
+            url_slug=url_slug,
+            short_url_slug=short_url_slug,
         )
         page.record_create(user.id)
         uow.registration_pages.add(page)

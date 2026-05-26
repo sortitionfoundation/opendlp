@@ -489,6 +489,9 @@ class TestApplyStatusTransition:
 
     def test_allowed_transitions_matches_agreed_matrix(self):
         expected = {
+            RespondentStatus.TEST_SUBMISSION: [
+                RespondentStatus.POOL,
+            ],
             RespondentStatus.POOL: [
                 RespondentStatus.SELECTED,
                 RespondentStatus.CONFIRMED,

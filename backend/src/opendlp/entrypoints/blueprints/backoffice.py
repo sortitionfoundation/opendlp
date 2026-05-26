@@ -39,11 +39,12 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
+    RegistrationPageNotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
-    create_registration_page,
+    create_registration_page_with_slugs,
     generate_starter_form_html,
     get_registration_page_with_source,
     publish_registration_page,
@@ -453,6 +454,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         result = get_registration_page_with_source(uow, current_user.id, assembly_id)
 
         # HTML content
+        has_registration_page = result is not None
         if result:
             registration_page, html_source = result
             html = cast(RegistrationPageHtml, html_source)
@@ -485,6 +487,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             registration_status=registration_status,
             html_content=html_content,
             thank_you_html=thank_you_html,
+            has_registration_page=has_registration_page,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -543,16 +546,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         html_content = request.form.get("html_content", "")
         action = request.form.get("action", "save")
 
-        # Check if registration page exists, create if not
-        uow = bootstrap.bootstrap()
-        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
-
-        if not result:
-            # Create registration page first
-            uow = bootstrap.bootstrap()
-            create_registration_page(uow, current_user.id, assembly_id)
-
-        # Update HTML content
+        # Update HTML content (will raise RegistrationPageNotFoundError if page doesn't exist)
         uow = bootstrap.bootstrap()
         update_registration_page_html(uow, current_user.id, assembly_id, html_content)
 
@@ -565,6 +559,10 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
         flash(error_message, "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+    except RegistrationPageNotFoundError:
+        # Registration page doesn't exist yet - redirect to Details tab to create it
+        flash(_("Please create a registration page first from the Details tab."), "warning")
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("You don't have permission to modify this assembly"), "error")
@@ -584,6 +582,36 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         current_app.logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
         return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
+@login_required
+def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Create a registration page with auto-generated slugs from the assembly name."""
+    try:
+        uow = bootstrap.bootstrap()
+        create_registration_page_with_slugs(uow, current_user.id, assembly_id)
+        flash(
+            _("Registration page created. URLs have been generated automatically and can be edited below."),
+            "success",
+        )
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to modify this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except ValueError as e:
+        # Already has a registration page
+        current_app.logger.warning(f"Cannot create registration page for assembly {assembly_id}: {e}")
+        flash(_("This assembly already has a registration page."), "warning")
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+    except Exception as e:
+        current_app.logger.error(f"Error creating registration page for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full traceback:")
+        flash(_("An error occurred while creating the registration page"), "error")
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
