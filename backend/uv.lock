@@ -980,7 +980,7 @@ dev = [
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "time-machine", specifier = ">=2.19.0" },
     { name = "types-authlib", specifier = ">=1.6.6.20251220" },
-    { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
+    { name = "types-gunicorn", specifier = ">=26.0.0.20260518" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
     { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
 ]
@@ -1642,14 +1642,14 @@ wheels = [
 
 [[package]]
 name = "types-gunicorn"
-version = "26.0.0.20260510"
+version = "26.0.0.20260518"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "types-gevent" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d7/73/39acb46b2872c35c0ace3b0c618e9845eb0fc6a9b3fb17413a2ee642bdbf/types_gunicorn-26.0.0.20260510.tar.gz", hash = "sha256:4d7102936da6643cd9512583d9f7e0282acea1d24fcebf122df6e3b83eecd4fa", size = 34112, upload-time = "2026-05-10T05:26:43.599Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/1c/a01ec531454c9b1904ac5164bc6fd1c5dfebe97b7976c8cb2135b90625ec/types_gunicorn-26.0.0.20260518.tar.gz", hash = "sha256:40d40019cd1798924f19c62b5fe96bc5a63a2051278706d788c39805fabdb306", size = 34157, upload-time = "2026-05-18T06:07:57.858Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/f9/8fa0bca29caa849e7d87dd80806edee020842fdbcd0291492a4adadfbe78/types_gunicorn-26.0.0.20260510-py3-none-any.whl", hash = "sha256:e53c07c11996047ac8bd69cb17178141c6fd560bbbb0c5a995033792bd7cee12", size = 52170, upload-time = "2026-05-10T05:26:42.342Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/1a/07fa198168b4023286692d3df4db3232eb94c6815b516e5c5488abd15f71/types_gunicorn-26.0.0.20260518-py3-none-any.whl", hash = "sha256:5b5e1d9d43a1c56e90a380694106a9eba295d4d99e64abbdcbedee44c2c6dc50", size = 52182, upload-time = "2026-05-18T06:07:57.022Z" },
 ]
 
 [[package]]
