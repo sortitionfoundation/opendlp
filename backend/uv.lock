@@ -981,7 +981,7 @@ dev = [
     { name = "time-machine", specifier = ">=2.19.0" },
     { name = "types-authlib", specifier = ">=1.6.6.20251220" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
-    { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
+    { name = "types-qrcode", specifier = ">=8.2.0.20260518" },
     { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
 ]
 
@@ -1663,14 +1663,14 @@ wheels = [
 
 [[package]]
 name = "types-qrcode"
-version = "8.2.0.20260508"
+version = "8.2.0.20260518"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pillow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/f1/1363a9c951dbe141968e20b3e662c40506629e5f4de0dec7f9f602dfac12/types_qrcode-8.2.0.20260508.tar.gz", hash = "sha256:8d610ee09910653047fb680045797bdf6210f95927aae2f2dba074c7118fa9db", size = 15248, upload-time = "2026-05-08T04:51:55.188Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/08/6f4cbdbdc1238e07ea0ad42ad45a6ea89fef6d5606782b0398bdf5a63f5f/types_qrcode-8.2.0.20260518.tar.gz", hash = "sha256:5079a2bf5fe57c8c44ae16867c5b41520522b58d21bb07e886770b7413160b04", size = 15280, upload-time = "2026-05-18T06:07:13.084Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/99/57d891724cea5e020a25b5b7790b6d39da75a66910fc1004bb8a701ef202/types_qrcode-8.2.0.20260508-py3-none-any.whl", hash = "sha256:153fe7786d7ada13bb88c3c7ae535cca722569300cbf594b5d517898ab3ab014", size = 19813, upload-time = "2026-05-08T04:51:54.284Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/6f/48acc11e4b5cf84ab8a04d065691b3d6d16a535821ba5ad2efcc3548f227/types_qrcode-8.2.0.20260518-py3-none-any.whl", hash = "sha256:7dc344a5877a92c03e2ceeda33bc91af1e09cc8b574b87729c4b66ccb46b0f55", size = 19823, upload-time = "2026-05-18T06:07:12.257Z" },
 ]
 
 [[package]]
