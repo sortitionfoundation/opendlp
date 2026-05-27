@@ -982,7 +982,7 @@ dev = [
     { name = "types-authlib", specifier = ">=1.6.6.20251220" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
-    { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
+    { name = "types-wtforms", specifier = ">=3.2.1.20260518" },
 ]
 
 [[package]]
@@ -1675,14 +1675,14 @@ wheels = [
 
 [[package]]
 name = "types-wtforms"
-version = "3.2.1.20260508"
+version = "3.2.1.20260518"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/71/6947f5a26edcb369a1f0a239b3ce09273cda80ebb3687c209e4ea33d1939/types_wtforms-3.2.1.20260508.tar.gz", hash = "sha256:94fdc3ed4816915b16e8e0c36eca4996a93a9f11b9416c7b1acd29d4960d7e4c", size = 17482, upload-time = "2026-05-08T04:50:17.173Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/f0/0c84f7175c56089ba0c000d1eb4f20b144721b7446b90280625f3c8ce23b/types_wtforms-3.2.1.20260518.tar.gz", hash = "sha256:05fb7adfc8cdd72c7b597e20b74f6270511ca492a80953805f25ee7d1cfd1282", size = 17505, upload-time = "2026-05-18T06:07:30.769Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/1f/50967065b9514ab3ed965f08c93da91ad3164698e396117613cf6bb167f8/types_wtforms-3.2.1.20260508-py3-none-any.whl", hash = "sha256:98b53466311c185dd75e46400ecef603cd536f78680d256318af88f359c98c1d", size = 24290, upload-time = "2026-05-08T04:50:16.312Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/94/0da3294e8c4fd4b64e96d57f7a768fb57e3b2d77ac0aed142c25fe1f28d5/types_wtforms-3.2.1.20260518-py3-none-any.whl", hash = "sha256:193377e60e715920b47481fbc62a7f3796045d0492e02a46319c5064eee81e23", size = 24303, upload-time = "2026-05-18T06:07:29.866Z" },
 ]
 
 [[package]]
