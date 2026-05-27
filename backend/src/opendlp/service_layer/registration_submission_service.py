@@ -54,54 +54,72 @@ def _generate_external_id() -> str:
     return f"reg-{uuid.uuid4().hex[:12]}"
 
 
-def _parse_bool_value(str_value: str, allow_none: bool) -> tuple[bool | None, str | None]:
-    """Parse a boolean value from form radio button submission.
-
-    Returns (parsed_value, error_message or None).
-    Registration form emits "yes"/"no", but we also accept "true"/"false"/"1"/"0".
-    """
+def _validate_bool(str_value: str, allow_none: bool) -> tuple[bool | None, str | None]:
+    """Validate boolean from radio button. Accepts "yes"/"no"/"true"/"false"/"1"/"0"."""
     lower = str_value.lower()
     if lower in ("yes", "true", "1"):
         return True, None
     if lower in ("no", "false", "0"):
         return False, None
-    # Empty or unrecognized value
     if allow_none:
         return None, None
     return None, "Please select Yes or No"
+
+
+def _validate_email(str_value: str) -> tuple[str | None, str | None]:
+    """Validate email field - required and must contain @."""
+    if not str_value:
+        return None, "This field is required"
+    if "@" not in str_value:
+        return None, "Please enter a valid email address"
+    return str_value, None
+
+
+def _validate_choice(str_value: str, valid_values: set[str] | None) -> tuple[str | None, str | None]:
+    """Validate choice field - required and must be a valid option."""
+    if not str_value:
+        return None, "Please select an option"
+    if valid_values and str_value not in valid_values:
+        return None, "Please select a valid option"
+    return str_value, None
+
+
+def _validate_integer(str_value: str) -> tuple[int | None, str | None]:
+    """Validate integer field - required and must be a valid number."""
+    if not str_value:
+        return None, "This field is required"
+    try:
+        return int(str_value), None
+    except ValueError:
+        return None, "Please enter a valid number"
 
 
 def _validate_field_value(
     fd: RespondentFieldDefinition,
     value: Any,
 ) -> tuple[Any, str | None]:
-    """Validate a single field value. Returns (cleaned_value, error_message or None)."""
+    """Validate a single field value. Returns (cleaned_value, error_message or None).
+
+    All fields are required except BOOL_OR_NONE (which explicitly allows None).
+    """
     str_value = str(value).strip() if value is not None else ""
 
     if fd.effective_field_type == FieldType.EMAIL:
-        if str_value and "@" not in str_value:
-            return None, "Please enter a valid email address"
-        return str_value, None
+        return _validate_email(str_value)
 
     if fd.effective_field_type in (FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN):
-        if fd.options:
-            valid_values = {opt.value for opt in fd.options}
-            if str_value and str_value not in valid_values:
-                return None, "Please select a valid option"
-        return str_value, None
+        valid_values = {opt.value for opt in fd.options} if fd.options else None
+        return _validate_choice(str_value, valid_values)
 
     if fd.effective_field_type in (FieldType.BOOL, FieldType.BOOL_OR_NONE):
-        return _parse_bool_value(str_value, allow_none=fd.effective_field_type == FieldType.BOOL_OR_NONE)
+        return _validate_bool(str_value, allow_none=fd.effective_field_type == FieldType.BOOL_OR_NONE)
 
     if fd.effective_field_type == FieldType.INTEGER:
-        if str_value:
-            try:
-                return int(str_value), None
-            except ValueError:
-                return None, "Please enter a valid number"
-        return None, None
+        return _validate_integer(str_value)
 
-    # TEXT, LONGTEXT, PHONE, DATE, etc. - accept as-is
+    # TEXT, LONGTEXT, PHONE, DATE, etc. - require non-empty
+    if not str_value:
+        return None, "This field is required"
     return str_value, None
 
 
