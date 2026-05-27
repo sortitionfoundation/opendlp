@@ -11,6 +11,7 @@ services:
       - DB_PASSWORD=abc123
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
+      - FF_REGISTRATION_PAGE=true
     ports:
       - "5005:5005"
     entrypoint:
@@ -42,6 +43,7 @@ services:
     environment:
       - DB_HOST=postgres
       - PYTHONUNBUFFERED=1
+      - FF_REGISTRATION_PAGE=true
     # define DB_PASSWORD in the .env file
     env_file: .env
     entrypoint: /app/bin/celery
@@ -62,6 +64,7 @@ services:
     environment:
       - DB_HOST=postgres
       - PYTHONUNBUFFERED=1
+      - FF_REGISTRATION_PAGE=true
     # define DB_PASSWORD in the .env file
     env_file: .env
     entrypoint: /app/bin/celery
