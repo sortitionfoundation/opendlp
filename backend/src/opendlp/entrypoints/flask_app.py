@@ -93,6 +93,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
+    from .blueprints.registration import registration_bp  # noqa: PLC0415
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
     from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
@@ -120,6 +121,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(targets_legacy_bp)
     app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)
+    app.register_blueprint(registration_bp)  # No url_prefix - routes define full paths
 
 
 def register_error_handlers(app: Flask) -> None:
