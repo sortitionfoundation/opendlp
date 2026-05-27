@@ -175,11 +175,24 @@ def submit_registration(
         # Determine respondent status based on page status
         respondent_status = RespondentStatus.TEST_SUBMISSION if is_test else RespondentStatus.POOL
 
+        # Extract top-level Respondent fields from cleaned_data
+        # These are reserved field names that go to Respondent constructor, not attributes
+        email = str(cleaned_data.pop("email", ""))
+        consent = cleaned_data.pop("consent", None)
+        eligible = cleaned_data.pop("eligible", None)
+        can_attend = cleaned_data.pop("can_attend", None)
+        stay_on_db = cleaned_data.pop("stay_on_db", None)
+
         # Create the respondent
         external_id = _generate_external_id()
         respondent = Respondent(
             assembly_id=page.assembly_id,
             external_id=external_id,
+            email=email,
+            consent=consent,
+            eligible=eligible,
+            can_attend=can_attend,
+            stay_on_db=stay_on_db,
             attributes=cleaned_data,
             source_type=RespondentSourceType.REGISTRATION_FORM,
             selection_status=respondent_status,
@@ -263,11 +276,24 @@ def submit_registration_by_assembly_id(
         # Determine respondent status
         respondent_status = RespondentStatus.TEST_SUBMISSION if is_test else RespondentStatus.POOL
 
+        # Extract top-level Respondent fields from cleaned_data
+        # These are reserved field names that go to Respondent constructor, not attributes
+        email = str(cleaned_data.pop("email", ""))
+        consent = cleaned_data.pop("consent", None)
+        eligible = cleaned_data.pop("eligible", None)
+        can_attend = cleaned_data.pop("can_attend", None)
+        stay_on_db = cleaned_data.pop("stay_on_db", None)
+
         # Create the respondent
         external_id = _generate_external_id()
         respondent = Respondent(
             assembly_id=assembly_id,
             external_id=external_id,
+            email=email,
+            consent=consent,
+            eligible=eligible,
+            can_attend=can_attend,
+            stay_on_db=stay_on_db,
             attributes=cleaned_data,
             source_type=RespondentSourceType.REGISTRATION_FORM,
             selection_status=respondent_status,
