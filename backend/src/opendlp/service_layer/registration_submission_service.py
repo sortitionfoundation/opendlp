@@ -54,6 +54,23 @@ def _generate_external_id() -> str:
     return f"reg-{uuid.uuid4().hex[:12]}"
 
 
+def _parse_bool_value(str_value: str, allow_none: bool) -> tuple[bool | None, str | None]:
+    """Parse a boolean value from form radio button submission.
+
+    Returns (parsed_value, error_message or None).
+    Registration form emits "yes"/"no", but we also accept "true"/"false"/"1"/"0".
+    """
+    lower = str_value.lower()
+    if lower in ("yes", "true", "1"):
+        return True, None
+    if lower in ("no", "false", "0"):
+        return False, None
+    # Empty or unrecognized value
+    if allow_none:
+        return None, None
+    return None, "Please select Yes or No"
+
+
 def _validate_field_value(
     fd: RespondentFieldDefinition,
     value: Any,
@@ -74,7 +91,7 @@ def _validate_field_value(
         return str_value, None
 
     if fd.effective_field_type in (FieldType.BOOL, FieldType.BOOL_OR_NONE):
-        return bool(value), None
+        return _parse_bool_value(str_value, allow_none=fd.effective_field_type == FieldType.BOOL_OR_NONE)
 
     if fd.effective_field_type == FieldType.INTEGER:
         if str_value:
@@ -95,19 +112,17 @@ def _validate_form_data(
     """Validate form data against field definitions.
 
     Returns (cleaned_data, field_errors).
-    For now, does basic validation - full schema validation can be expanded later.
+    Iterates over all field definitions to handle missing fields (e.g. unselected
+    radio buttons which don't appear in form_data at all).
     """
     cleaned: dict[str, Any] = {}
     errors: dict[str, list[str]] = {}
-    field_by_key = {fd.field_key: fd for fd in field_definitions}
 
-    for key, value in form_data.items():
-        if key.startswith("csrf") or key.startswith("_"):
-            continue
-
-        fd = field_by_key.get(key)
-        if fd is None:
-            continue  # Extra field not in schema - silently drop per 613 research
+    for fd in field_definitions:
+        key = fd.field_key
+        # Get value from form_data, defaulting to empty string if missing
+        # (unselected radio buttons won't be in form_data)
+        value = form_data.get(key, "")
 
         cleaned_value, error = _validate_field_value(fd, value)
         if error:
