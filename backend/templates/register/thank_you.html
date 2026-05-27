@@ -1,9 +1,5 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% block title %}{{ _("Thank You") }} - OpenDLP{% endblock %}
 {% block content %}
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-            {{ custom_html | safe }}
-        </div>
-    </div>
+    {{ custom_html | safe }}
 {% endblock %}

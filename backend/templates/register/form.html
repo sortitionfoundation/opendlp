@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% block title %}{{ _("Register") }} - OpenDLP{% endblock %}
 {% block content %}
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-            {% if is_test %}
+    {% if is_test %}
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-two-thirds">
                 <div class="govuk-notification-banner govuk-notification-banner--warning"
                      role="region"
                      aria-labelledby="govuk-notification-banner-title">
@@ -14,8 +14,8 @@
                         <p class="govuk-body">{{ _("This is a test registration page. Submissions will not be entered into the selection pool.") }}</p>
                     </div>
                 </div>
-            {% endif %}
-            {{ rendered_form | safe }}
+            </div>
         </div>
-    </div>
+    {% endif %}
+    {{ rendered_form | safe }}
 {% endblock %}
