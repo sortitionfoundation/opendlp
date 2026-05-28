@@ -38,40 +38,41 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def client() -> FlaskClient:
+    """Client with feature enabled (default behavior)."""
     app = create_app("testing")
     return app.test_client()
 
 
 @pytest.fixture
-def client_with_feature(monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
-    """Create a client with the registration_page feature flag enabled."""
-    monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
+def client_with_feature_disabled(monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
+    """Create a client with the registration page feature disabled."""
+    monkeypatch.setenv("FF_DISABLE_REGISTRATION_PAGE", "true")
     reload_flags()
     app = create_app("testing")
     return app.test_client()
 
 
 class TestFeatureFlagBehavior:
-    """Test feature flag returns 404 when disabled."""
+    """Test FF_DISABLE_REGISTRATION_PAGE flag returns 404 when set."""
 
-    def test_show_form_returns_404_when_feature_disabled(self, client: FlaskClient) -> None:
-        response = client.get("/register/test-slug")
+    def test_show_form_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
+        response = client_with_feature_disabled.get("/register/test-slug")
         assert response.status_code == 404
 
-    def test_submit_form_returns_404_when_feature_disabled(self, client: FlaskClient) -> None:
-        response = client.post("/register/test-slug", data={})
+    def test_submit_form_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
+        response = client_with_feature_disabled.post("/register/test-slug", data={})
         assert response.status_code == 404
 
-    def test_thank_you_returns_404_when_feature_disabled(self, client: FlaskClient) -> None:
-        response = client.get("/register/test-slug/thank-you")
+    def test_thank_you_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
+        response = client_with_feature_disabled.get("/register/test-slug/thank-you")
         assert response.status_code == 404
 
-    def test_short_url_returns_404_when_feature_disabled(self, client: FlaskClient) -> None:
-        response = client.get("/r/abc123")
+    def test_short_url_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
+        response = client_with_feature_disabled.get("/r/abc123")
         assert response.status_code == 404
 
-    def test_closed_page_returns_404_when_feature_disabled(self, client: FlaskClient) -> None:
-        response = client.get("/registration-closed")
+    def test_closed_page_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
+        response = client_with_feature_disabled.get("/registration-closed")
         assert response.status_code == 404
 
 
@@ -87,13 +88,13 @@ class TestBlueprintRegistration:
 class TestShowRegistrationForm:
     """Test GET /register/<url_slug> route."""
 
-    def test_returns_404_when_page_not_found(self, client_with_feature: FlaskClient) -> None:
+    def test_returns_404_when_page_not_found(self, client: FlaskClient) -> None:
         with patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find:
             mock_find.return_value = None
-            response = client_with_feature.get("/register/nonexistent")
+            response = client.get("/register/nonexistent")
             assert response.status_code == 404
 
-    def test_redirects_to_closed_page_when_closed(self, client_with_feature: FlaskClient) -> None:
+    def test_redirects_to_closed_page_when_closed(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.CLOSED
@@ -107,11 +108,11 @@ class TestShowRegistrationForm:
                 page=page, state=RegistrationPageVisibilityState.CLOSED
             )
 
-            response = client_with_feature.get("/register/test-slug")
+            response = client.get("/register/test-slug")
             assert response.status_code == 302
             assert "/registration-closed" in response.location
 
-    def test_renders_form_when_live(self, client_with_feature: FlaskClient) -> None:
+    def test_renders_form_when_live(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.PUBLISHED
@@ -131,11 +132,11 @@ class TestShowRegistrationForm:
             )
             mock_source.return_value = html_source
 
-            response = client_with_feature.get("/register/test-slug")
+            response = client.get("/register/test-slug")
             assert response.status_code == 200
             assert b"Test Form" in response.data
 
-    def test_renders_test_banner_when_test_mode(self, client_with_feature: FlaskClient) -> None:
+    def test_renders_test_banner_when_test_mode(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.TEST
@@ -155,7 +156,7 @@ class TestShowRegistrationForm:
             )
             mock_source.return_value = html_source
 
-            response = client_with_feature.get("/register/test-slug")
+            response = client.get("/register/test-slug")
             assert response.status_code == 200
             assert b"Test Mode" in response.data
 
@@ -163,20 +164,20 @@ class TestShowRegistrationForm:
 class TestSubmitRegistrationForm:
     """Test POST /register/<url_slug> route."""
 
-    def test_returns_404_when_page_not_found(self, client_with_feature: FlaskClient) -> None:
+    def test_returns_404_when_page_not_found(self, client: FlaskClient) -> None:
         with patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit:
             mock_submit.side_effect = RegistrationNotFoundError("Not found")
-            response = client_with_feature.post("/register/nonexistent", data={})
+            response = client.post("/register/nonexistent", data={})
             assert response.status_code == 404
 
-    def test_redirects_to_closed_when_closed(self, client_with_feature: FlaskClient) -> None:
+    def test_redirects_to_closed_when_closed(self, client: FlaskClient) -> None:
         with patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit:
             mock_submit.side_effect = RegistrationClosedError("Closed")
-            response = client_with_feature.post("/register/closed-slug", data={})
+            response = client.post("/register/closed-slug", data={})
             assert response.status_code == 302
             assert "/registration-closed" in response.location
 
-    def test_redirects_to_thank_you_on_valid_submission(self, client_with_feature: FlaskClient) -> None:
+    def test_redirects_to_thank_you_on_valid_submission(self, client: FlaskClient) -> None:
         result = RegistrationSubmissionResult(
             respondent=MagicMock(),
             values={},
@@ -187,11 +188,11 @@ class TestSubmitRegistrationForm:
 
         with patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit:
             mock_submit.return_value = result
-            response = client_with_feature.post("/register/valid-slug", data={"name": "Test"})
+            response = client.post("/register/valid-slug", data={"name": "Test"})
             assert response.status_code == 302
             assert "/register/valid-slug/thank-you" in response.location
 
-    def test_re_renders_form_with_errors_on_invalid_submission(self, client_with_feature: FlaskClient) -> None:
+    def test_re_renders_form_with_errors_on_invalid_submission(self, client: FlaskClient) -> None:
         result = RegistrationSubmissionResult(
             respondent=None,
             values={"name": "Test"},
@@ -221,7 +222,7 @@ class TestSubmitRegistrationForm:
             )
             mock_source.return_value = html_source
 
-            response = client_with_feature.post("/register/test-slug", data={"name": "Test"})
+            response = client.post("/register/test-slug", data={"name": "Test"})
             assert response.status_code == 200
             # Verify render was called with error context
             render_call = html_source.render.call_args
@@ -233,13 +234,13 @@ class TestSubmitRegistrationForm:
 class TestThankYouPage:
     """Test GET /register/<url_slug>/thank-you route."""
 
-    def test_returns_404_when_page_not_found(self, client_with_feature: FlaskClient) -> None:
+    def test_returns_404_when_page_not_found(self, client: FlaskClient) -> None:
         with patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find:
             mock_find.return_value = None
-            response = client_with_feature.get("/register/nonexistent/thank-you")
+            response = client.get("/register/nonexistent/thank-you")
             assert response.status_code == 404
 
-    def test_renders_default_thank_you_when_no_custom_html(self, client_with_feature: FlaskClient) -> None:
+    def test_renders_default_thank_you_when_no_custom_html(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "test-slug"
 
@@ -251,11 +252,11 @@ class TestThankYouPage:
             mock_find.return_value = page
             mock_render.return_value = ""  # No custom HTML
 
-            response = client_with_feature.get("/register/test-slug/thank-you")
+            response = client.get("/register/test-slug/thank-you")
             assert response.status_code == 200
             assert b"Registration complete" in response.data
 
-    def test_renders_custom_thank_you_when_provided(self, client_with_feature: FlaskClient) -> None:
+    def test_renders_custom_thank_you_when_provided(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "test-slug"
 
@@ -267,7 +268,7 @@ class TestThankYouPage:
             mock_find.return_value = page
             mock_render.return_value = "<h1>Custom Thank You</h1>"
 
-            response = client_with_feature.get("/register/test-slug/thank-you")
+            response = client.get("/register/test-slug/thank-you")
             assert response.status_code == 200
             assert b"Custom Thank You" in response.data
 
@@ -275,28 +276,28 @@ class TestThankYouPage:
 class TestShortUrlRedirect:
     """Test GET /r/<short_url_slug> route."""
 
-    def test_returns_404_when_page_not_found(self, client_with_feature: FlaskClient) -> None:
+    def test_returns_404_when_page_not_found(self, client: FlaskClient) -> None:
         with patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_short_url_slug") as mock_find:
             mock_find.return_value = None
-            response = client_with_feature.get("/r/nonexistent")
+            response = client.get("/r/nonexistent")
             assert response.status_code == 404
 
-    def test_returns_404_when_page_has_no_url_slug(self, client_with_feature: FlaskClient) -> None:
+    def test_returns_404_when_page_has_no_url_slug(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = ""  # No URL slug set
 
         with patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_short_url_slug") as mock_find:
             mock_find.return_value = page
-            response = client_with_feature.get("/r/abc123")
+            response = client.get("/r/abc123")
             assert response.status_code == 404
 
-    def test_redirects_to_canonical_url_with_302(self, client_with_feature: FlaskClient) -> None:
+    def test_redirects_to_canonical_url_with_302(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)
         page.url_slug = "full-slug"
 
         with patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_short_url_slug") as mock_find:
             mock_find.return_value = page
-            response = client_with_feature.get("/r/abc")
+            response = client.get("/r/abc")
             assert response.status_code == 302
             assert "/register/full-slug" in response.location
 
@@ -304,7 +305,7 @@ class TestShortUrlRedirect:
 class TestRegistrationClosed:
     """Test GET /registration-closed route."""
 
-    def test_renders_closed_page(self, client_with_feature: FlaskClient) -> None:
-        response = client_with_feature.get("/registration-closed")
+    def test_renders_closed_page(self, client: FlaskClient) -> None:
+        response = client.get("/registration-closed")
         assert response.status_code == 200
         assert b"Registration Closed" in response.data
