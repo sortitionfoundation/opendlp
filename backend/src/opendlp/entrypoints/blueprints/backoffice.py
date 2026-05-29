@@ -527,6 +527,10 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
         uow = bootstrap.bootstrap()
         reopen_registration_page(uow, user_id, assembly_id)
         return _("Registration form reopened")
+    uow = bootstrap.bootstrap()
+    result = get_registration_page_with_source(uow, user_id, assembly_id)
+    if result and result[0].status == RegistrationPageStatus.PUBLISHED:
+        return _("Registration form saved and republished")
     return _("Registration form saved")
 
 
