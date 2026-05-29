@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-29 15:40+0200\n"
+"POT-Creation-Date: 2026-05-29 16:54+0200\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -4487,16 +4487,8 @@ msgid "Unpublish"
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:132
-#: templates/backoffice/assembly_registration.html:176
-#: templates/backoffice/components/db_selection_progress_modal.html:117
-#: templates/backoffice/components/manage_tabs_progress_modal.html:111
-#: templates/backoffice/components/modal.html:54
-#: templates/backoffice/components/modal.html:133
-#: templates/backoffice/components/replacement_modal.html:170
-#: templates/backoffice/components/selection_progress_modal.html:89
-#, fuzzy
-msgid "Close"
-msgstr "Menü bezárása"
+msgid "Stop Accepting Submissions"
+msgstr ""
 
 #: templates/backoffice/assembly_registration.html:133
 #, fuzzy
@@ -4530,6 +4522,17 @@ msgstr ""
 #, fuzzy
 msgid "Form Skeleton"
 msgstr "Rétegzett kiválasztás"
+
+#: templates/backoffice/assembly_registration.html:176
+#: templates/backoffice/components/db_selection_progress_modal.html:117
+#: templates/backoffice/components/manage_tabs_progress_modal.html:111
+#: templates/backoffice/components/modal.html:54
+#: templates/backoffice/components/modal.html:133
+#: templates/backoffice/components/replacement_modal.html:170
+#: templates/backoffice/components/selection_progress_modal.html:89
+#, fuzzy
+msgid "Close"
+msgstr "Menü bezárása"
 
 #: templates/backoffice/assembly_registration.html:185
 msgid ""
@@ -5712,6 +5715,11 @@ msgstr "Táblázat lapfülei"
 #, fuzzy
 msgid "No results found"
 msgstr "Az oldal nem elérhető"
+
+#: templates/backoffice/components/split_button.html:98
+#, fuzzy
+msgid "More actions"
+msgstr "Kiválasztás"
 
 #: templates/backoffice/patterns/_ajax.html:9
 msgid "Documentation for AJAX patterns coming soon..."
