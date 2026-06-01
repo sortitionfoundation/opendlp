@@ -14,6 +14,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
 from tests.e2e.helpers import get_csrf_token
@@ -53,6 +54,23 @@ class TestBackofficeAssemblyDetails:
         response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}")
         # Regular users without assembly roles should get permission error
         assert response.status_code in [302, 403, 500]
+
+    def test_registration_url_copy_widget_uses_csp_safe_alpine_component(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The copy-URL button must use the urlCopy Alpine.data component, not an
+        inline navigator.clipboard expression — the latter fails silently under the
+        CSP-safe Alpine build (`@alpinejs/csp`)."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert b"Registration Page Details" in response.data
+        assert b'x-data="urlCopy(' in response.data
+        assert b'@click="copy()"' in response.data
+        # The old inline expression is incompatible with the CSP-safe build.
+        assert b"navigator.clipboard.writeText(" not in response.data
 
 
 class TestBackofficeAssemblyCreate:

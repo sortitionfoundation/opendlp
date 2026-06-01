@@ -18,7 +18,7 @@ Args:
     url: The full URL to display
 #}
 {% macro readonly_url_display(label, hint, url) %}
-    <div class="flex flex-col gap-1.5" x-data="{ copied: false }">
+    <div class="flex flex-col gap-1.5" x-data="urlCopy({ url: '{{ url }}' })">
         <span class="text-label-lg" style="color: var(--color-headings);">
             {{ label }}
         </span>
@@ -36,7 +36,7 @@ Args:
             <button type="button"
                     class="flex-shrink-0 p-2 rounded transition-colors duration-150 hover:opacity-70"
                     style="color: var(--color-secondary-text);"
-                    @click="navigator.clipboard.writeText('{{ url }}').then(function() { copied = true; setTimeout(function() { copied = false; }, 2000); })"
+                    @click="copy()"
                     :aria-label="copied ? '{{ _('Copied to clipboard') }}' : '{{ _('Copy URL to clipboard') }}'">
                 {# Copy icon (when not copied) #}
                 <svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
