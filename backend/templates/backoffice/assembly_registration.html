@@ -67,7 +67,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
         {# Registration Configuration Form #}
             <form method="post"
                   action="{{ url_for('backoffice.save_assembly_registration', assembly_id=assembly.id) }}"
-                  class="space-y-8">
+                  class="space-y-8"
+                  x-data
+                  x-preserve-scroll-on-submit>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
             {# Registration Form HTML Section #}
@@ -182,9 +184,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 ) }}
                                 {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
                             {% elif registration_status == "CLOSED" %}
-                            {# CLOSED only transitions forward to PUBLISHED via reopen — no rewind to TEST #}
-                                {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                                {{ button(_("Accept Submissions Again"), type="submit", variant="primary", attrs='name="action" value="reopen"') }}
+                            {# CLOSED is terminal — only the rewind to PUBLISHED is available; no Save (form is redirecting, edits have no public effect) #}
+                                {{ button(_("Accept Submissions Again"), type="submit", variant="secondary", attrs='name="action" value="reopen"') }}
                             {% else %}
                             {# When in TEST: Save + Publish (no rewind step available) #}
                                 {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}

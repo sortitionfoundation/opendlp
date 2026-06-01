@@ -28,6 +28,7 @@ from opendlp.entrypoints.forms import (
     EditAssemblyForm,
     EditAssemblyGSheetForm,
 )
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_nav_context,
@@ -554,13 +555,13 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
-        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing
         error_message = "; ".join(e.problems)
         current_app.logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
         flash(error_message, "error")
-        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except RegistrationPageNotFoundError:
         # Registration page doesn't exist yet - redirect to Details tab to create it
         flash(_("Please create a registration page first from the Details tab."), "warning")
@@ -576,14 +577,14 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except ValueError as e:
         current_app.logger.warning(f"Validation error for assembly {assembly_id}: {e}")
         flash(str(e), "error")
-        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
     except Exception as e:
         current_app.logger.error(
             f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
         )
         current_app.logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
-        return redirect(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
+        return redirect_preserving_scroll(url_for("backoffice.view_assembly_registration", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
