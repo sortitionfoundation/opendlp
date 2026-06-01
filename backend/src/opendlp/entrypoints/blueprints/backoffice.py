@@ -455,25 +455,22 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # HTML content
         has_registration_page = result is not None
+        registration_page = result[0] if result else None
         if result:
-            registration_page, html_source = result
-            html = cast(RegistrationPageHtml, html_source)
-
+            html = cast(RegistrationPageHtml, result[1])
             html_content = html.form_html
-            thank_you_html = registration_page.thank_you_html
-            registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
-            url_slug = registration_page.url_slug
+            thank_you_html = result[0].thank_you_html
+            registration_status = result[0].status.value  # "TEST", "PUBLISHED", or "CLOSED"
         else:
             html_content = ""
             thank_you_html = ""
             registration_status = "TEST"  # Default for new pages
-            url_slug = ""
 
-        # Generate QR code for the short URL (placeholder URL until service layer provides real slug)
-        # For now, use assembly ID as a placeholder slug
-        # placeholder_slug = str(assembly_id)[:8]
-        placeholder_short_url = request.host_url + "r/" + url_slug
-        qr_code_data_url = generate_qr_code_base64(placeholder_short_url)
+        # Generate QR code from the short URL (only when a short slug is configured)
+        qr_code_data_url = None
+        if registration_page and registration_page.short_url_slug:
+            short_url = request.host_url + "r/" + registration_page.short_url_slug
+            qr_code_data_url = generate_qr_code_base64(short_url)
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -483,6 +480,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            registration_page=registration_page,
             qr_code_data_url=qr_code_data_url,
             registration_status=registration_status,
             html_content=html_content,
