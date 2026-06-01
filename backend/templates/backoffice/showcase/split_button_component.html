@@ -41,16 +41,16 @@ ABOUTME: Demonstrates primary action + dropdown menu for grouped secondary actio
                 </div>
 
                 <div>
-                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Closed state — primary = resume, dropdown = further rewind</p>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Primary variant — one prominent action with a less-common alternative</p>
                     <form @submit.prevent class="inline-block">
                         {{ split_button(
-                        primary_text="Resume Accepting Submissions",
+                        primary_text="Accept Submissions Again",
                         primary_attrs='name="action" value="reopen"',
                         items=[
                         { "text": "Back to Test", "attrs": 'name="action" value="unpublish"' },
                         ],
                         variant="primary",
-                        id="demo-closed",
+                        id="demo-primary",
                         ) }}
                     </form>
                 </div>

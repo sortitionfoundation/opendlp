@@ -5,6 +5,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/split_button.html" import split_button %}
 {% from "backoffice/components/input.html" import input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/modal.html" import modal %}
@@ -127,16 +128,23 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     {# Save and status transition buttons #}
                         <div class="flex justify-end gap-3">
                             {% if registration_status == "PUBLISHED" %}
-                            {# When published: Unpublish + Stop Accepting Submissions + Save and Republish (primary, on right) #}
-                                {{ button(_("Unpublish"), type="submit", variant="secondary", attrs='name="action" value="unpublish"') }}
-                                {{ button(_("Stop Accepting Submissions"), type="submit", variant="secondary", attrs='name="action" value="close"') }}
+                            {# Split button collapses status transitions: forward = Stop Accepting, rewind = Back to Test #}
+                                {{ split_button(
+                                primary_text=_("Stop Accepting Submissions"),
+                                primary_attrs='name="action" value="close"',
+                                items=[
+                                { "text": _("Back to Test"), "attrs": 'name="action" value="unpublish"' },
+                                ],
+                                variant="secondary",
+                                id="status-toggle",
+                                ) }}
                                 {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
                             {% elif registration_status == "CLOSED" %}
-                            {# When closed: Save + Reopen #}
+                            {# CLOSED only transitions forward to PUBLISHED via reopen — no rewind to TEST #}
                                 {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                                {{ button(_("Reopen"), type="submit", variant="primary", attrs='name="action" value="reopen"') }}
+                                {{ button(_("Accept Submissions Again"), type="submit", variant="primary", attrs='name="action" value="reopen"') }}
                             {% else %}
-                            {# When in TEST: Save + Publish #}
+                            {# When in TEST: Save + Publish (no rewind step available) #}
                                 {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
                                 {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
                             {% endif %}
