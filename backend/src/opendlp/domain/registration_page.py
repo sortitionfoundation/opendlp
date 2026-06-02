@@ -27,9 +27,17 @@ _SANDBOX_ENV = SandboxedEnvironment(autoescape=True, undefined=StrictUndefined)
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
-DEFAULT_THANK_YOU_HTML = (
-    "<h1>Thank you for registering</h1>\n<p>Your registration has been received. We'll be in touch.</p>\n"
-)
+DEFAULT_THANK_YOU_HTML = """\
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">
+        <div class="govuk-panel govuk-panel--confirmation">
+            <h1 class="govuk-panel__title">Thank you for registering</h1>
+            <div class="govuk-panel__body">Your registration has been received</div>
+        </div>
+        <p class="govuk-body">We'll be in touch.</p>
+    </div>
+</div>
+"""
 
 
 class RegistrationPageSource(Enum):
