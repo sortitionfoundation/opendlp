@@ -103,16 +103,21 @@ class RegistrationPageActivity:
 class RenderContext:
     """Values substituted into the form HTML at render time.
 
-    ``csrf_form_element`` and ``form_action`` are always populated. The
-    remaining fields carry validation state from a failed POST: ``values``
-    pre-fills field inputs, ``errors`` maps field keys to per-field error
-    messages, and ``form_level_errors`` holds cross-field messages shown
-    via the ``form_errors()`` helper. All three default to empty so a
-    fresh GET can omit them.
+    ``csrf_form_element`` and ``form_action`` are always populated.
+    ``assembly_title`` and ``assembly_question`` are optional copy that
+    authors can drop into their HTML via ``{{ assembly_title }}`` and
+    ``{{ assembly_question }}``; they default to empty so callers that
+    don't have an Assembly handy can omit them. The remaining fields
+    carry validation state from a failed POST: ``values`` pre-fills
+    field inputs, ``errors`` maps field keys to per-field error
+    messages, and ``form_level_errors`` holds cross-field messages
+    shown via the ``form_errors()`` helper.
     """
 
     csrf_form_element: str
     form_action: str
+    assembly_title: str = ""
+    assembly_question: str = ""
     values: dict[str, str] = field(default_factory=dict)
     errors: dict[str, list[str]] = field(default_factory=dict)
     form_level_errors: list[str] = field(default_factory=list)
@@ -308,6 +313,8 @@ class RegistrationPageHtml:
         return template.render(
             csrf_form_element=Markup(ctx.csrf_form_element),  # noqa: S704
             form_action=ctx.form_action,
+            assembly_title=ctx.assembly_title,
+            assembly_question=ctx.assembly_question,
             value=lambda k: ctx.values.get(k, ""),
             checked=lambda k, v: "checked" if ctx.values.get(k) == v else "",
             selected=lambda k, v: "selected" if ctx.values.get(k) == v else "",
@@ -487,14 +494,20 @@ def generate_starter_form_html(
     """Generate an unstyled starter HTML form from a respondent field schema.
 
     Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
-    a valid input for ``RegistrationPageHtml.render``. Fields are grouped by
-    ``RespondentFieldGroup`` in ``GROUP_DISPLAY_ORDER`` and ordered by
-    ``sort_order`` within each group; empty groups are suppressed.
+    a valid input for ``RegistrationPageHtml.render``. The skeleton also
+    includes optional ``{{ assembly_title }}`` and ``{{ assembly_question }}``
+    placeholders above the form so authors get a sensible heading and
+    intro paragraph by default; both substitute to the empty string when
+    not supplied. Fields are grouped by ``RespondentFieldGroup`` in
+    ``GROUP_DISPLAY_ORDER`` and ordered by ``sort_order`` within each
+    group; empty groups are suppressed.
     """
     required_set = set(required_field_keys)
     grouped = _group_fields(fields)
 
     parts: list[str] = [
+        "<h1>{{ assembly_title }}</h1>",
+        "<p>{{ assembly_question }}</p>",
         '<form action="{{ form_action }}" method="post">',
         "{{ csrf_form_element }}",
         "{{ form_errors() }}",

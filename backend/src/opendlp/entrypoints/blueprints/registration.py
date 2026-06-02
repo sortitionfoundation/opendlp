@@ -62,10 +62,13 @@ def show_registration_form(url_slug: str) -> ResponseReturnValue:
     # LIVE or TEST - render the form
     assert page is not None  # Guaranteed by visibility state
     source = get_page_and_source_for_render(uow, page)
+    assembly = uow.assemblies.get(page.assembly_id)
 
     ctx = RenderContext(
         csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
+        assembly_title=assembly.title if assembly else "",
+        assembly_question=assembly.question if assembly else "",
     )
 
     rendered_form = source.render(ctx)
@@ -100,10 +103,13 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
 
     source = get_page_and_source_for_render(uow, page)
     visibility = resolve_visibility(page)
+    assembly = uow.assemblies.get(page.assembly_id)
 
     ctx = RenderContext(
         csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
+        assembly_title=assembly.title if assembly else "",
+        assembly_question=assembly.question if assembly else "",
         values=result.values,
         errors=result.field_errors,
         form_level_errors=result.form_errors,
