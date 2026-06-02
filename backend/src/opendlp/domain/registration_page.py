@@ -182,12 +182,16 @@ class RegistrationPage:
 
     @property
     def slugs_frozen(self) -> bool:
-        return self.has_ever_been_published()
+        """Slugs are editable only while in TEST. PUBLISHED locks live URLs;
+        CLOSED stays locked because invites and QR codes from the published
+        period are still in the world and the closed-page redirect needs
+        the original slug to keep working."""
+        return self.status != RegistrationPageStatus.TEST
 
     def update_slugs(self, url_slug: str | None = None, short_url_slug: str | None = None) -> None:
-        """Update the URL slugs. Raises once the page has ever been published."""
+        """Update the URL slugs. Raises while the page is published or closed."""
         if self.slugs_frozen:
-            raise ValueError("Cannot change slugs once the registration page has been published")
+            raise ValueError("Cannot change slugs while the registration page is published or closed")
         if url_slug is not None:
             self.url_slug = _validated_slug(url_slug, field="url_slug")
         if short_url_slug is not None:

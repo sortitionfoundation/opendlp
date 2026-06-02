@@ -248,6 +248,31 @@ def _describe_slug_change(field: str, before: str, after: str) -> str:
     return f"Changed {field} from '{before}' to '{after}'"
 
 
+def _raise_if_slug_taken(
+    uow: AbstractUnitOfWork,
+    page_id: uuid.UUID,
+    *,
+    url_slug: str | None,
+    short_url_slug: str | None,
+) -> None:
+    if url_slug:
+        clash = uow.registration_pages.get_by_url_slug(url_slug)
+        if clash and clash.id != page_id:
+            raise SlugError(
+                field="url_slug",
+                reason="taken",
+                message=f"The slug '{url_slug}' is already in use by another registration page",
+            )
+    if short_url_slug:
+        clash = uow.registration_pages.get_by_short_url_slug(short_url_slug)
+        if clash and clash.id != page_id:
+            raise SlugError(
+                field="short_url_slug",
+                reason="taken",
+                message=f"The slug '{short_url_slug}' is already in use by another registration page",
+            )
+
+
 def update_registration_page(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -267,34 +292,28 @@ def update_registration_page(
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
-        if url_slug:
-            clash = uow.registration_pages.get_by_url_slug(url_slug)
-            if clash and clash.id != page.id:
-                raise SlugError(
-                    field="url_slug",
-                    reason="taken",
-                    message=f"The slug '{url_slug}' is already in use by another registration page",
-                )
-        if short_url_slug:
-            clash = uow.registration_pages.get_by_short_url_slug(short_url_slug)
-            if clash and clash.id != page.id:
-                raise SlugError(
-                    field="short_url_slug",
-                    reason="taken",
-                    message=f"The slug '{short_url_slug}' is already in use by another registration page",
-                )
+        _raise_if_slug_taken(uow, page.id, url_slug=url_slug, short_url_slug=short_url_slug)
 
-        before_url = page.url_slug
-        before_short = page.short_url_slug
-        page.update_slugs(url_slug=url_slug, short_url_slug=short_url_slug)
+        # Treat "value matches what's already stored" as a no-op so that callers
+        # who resubmit the current slugs alongside other edits don't get an error
+        # when slugs are frozen.
+        url_slug_changed = url_slug is not None and url_slug != page.url_slug
+        short_changed = short_url_slug is not None and short_url_slug != page.short_url_slug
+        if url_slug_changed or short_changed:
+            before_url = page.url_slug
+            before_short = page.short_url_slug
+            page.update_slugs(
+                url_slug=url_slug if url_slug_changed else None,
+                short_url_slug=short_url_slug if short_changed else None,
+            )
 
-        changes: list[str] = []
-        if url_slug is not None and page.url_slug != before_url:
-            changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
-        if short_url_slug is not None and page.short_url_slug != before_short:
-            changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
-        if changes:
-            page.record_edit(user.id, "; ".join(changes))
+            changes: list[str] = []
+            if url_slug_changed:
+                changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
+            if short_changed:
+                changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
+            if changes:
+                page.record_edit(user.id, "; ".join(changes))
 
         uow.commit()
         return page.create_detached_copy()

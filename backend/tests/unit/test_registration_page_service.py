@@ -256,22 +256,22 @@ class TestUpdateRegistrationPage:
         page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="keep-me")
         assert page.url_slug == "keep-me"
 
-    def test_update_slug_rejected_after_publish(self):
+    def test_update_slug_rejected_while_published(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
 
-        with pytest.raises(ValueError, match="published"):
+        with pytest.raises(ValueError, match="published or closed"):
             service.update_registration_page(uow, admin.id, assembly.id, url_slug="new-slug")
 
-    def test_update_slug_still_rejected_after_unpublish(self):
+    def test_update_slug_allowed_after_unpublish_back_to_test(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
         service.unpublish_registration_page(uow, admin.id, assembly.id)
 
-        with pytest.raises(ValueError, match="published"):
-            service.update_registration_page(uow, admin.id, assembly.id, url_slug="new-slug")
+        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="new-slug")
+        assert page.url_slug == "new-slug"
 
     def test_update_slug_appends_edit_with_description(self):
         uow = FakeUnitOfWork()

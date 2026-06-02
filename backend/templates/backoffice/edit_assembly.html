@@ -4,6 +4,7 @@ ABOUTME: Uses assembly_form macro for editing assembly details
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/assembly_form.html" import assembly_form %}
 
 {#
@@ -20,7 +21,7 @@ Args:
     value: Current value of the input
     id: Optional id (defaults to name)
 #}
-{% macro prefixed_url_input(name, label, hint, prefix, placeholder="", value="", id="") %}
+{% macro prefixed_url_input(name, label, hint, prefix, placeholder="", value="", id="", disabled=false) %}
     {% set input_id = id if id else name %}
     <div class="flex flex-col gap-1.5">
         <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
@@ -30,7 +31,9 @@ Args:
             <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
         {% endif %}
         <div class="flex items-center rounded-lg overflow-hidden transition-all duration-150"
-             style="border: 1px solid var(--color-borders-dividers); background-color: var(--color-page-background);">
+             style="border: 1px solid var(--color-borders-dividers);
+                    background-color: {{ 'var(--color-subtle-background-panels)' if disabled else 'var(--color-page-background)' }};
+                    {% if disabled %}opacity: 0.7;{% endif %}">
             {# Non-editable prefix #}
             <span class="text-body-md px-4 py-2.5 whitespace-nowrap select-none flex-shrink-0"
                   style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border-right: 1px solid var(--color-borders-dividers);">
@@ -42,8 +45,9 @@ Args:
                    id="{{ input_id }}"
                    value="{{ value }}"
                    placeholder="{{ placeholder }}"
+                   {% if disabled %}disabled aria-disabled="true"{% endif %}
                    class="text-body-md px-3 py-2.5 flex-grow min-w-0 outline-none"
-                   style="border: none; background: transparent; color: var(--color-body-text);" />
+                   style="border: none; background: transparent; color: var(--color-body-text); {% if disabled %}cursor: not-allowed;{% endif %}" />
         </div>
     </div>
 {% endmacro %}
@@ -73,11 +77,21 @@ Args:
     cancel_url=url_for('backoffice.view_assembly', assembly_id=assembly.id)
     ) %}
         {# Registration URLs Section #}
+    {% set slugs_locked = registration_page and registration_page.slugs_frozen %}
     <div class="pt-6 mt-6" style="border-top: 1px solid var(--color-borders-dividers);">
         <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ _("Registration URLs") }}</h3>
         <p class="text-body-sm mb-6" style="color: var(--color-secondary-text);">
             {{ _("Configure the URLs for your public registration form.") }}
         </p>
+
+        {% if slugs_locked %}
+            <div class="mb-6">
+                {{ alert(
+                message=_("These URLs are locked while the registration page is published or closed, so links shared in invites, QR codes, and elsewhere keep working. Switch the form back to test mode from the Registration tab to edit them."),
+                variant="info"
+                ) }}
+            </div>
+        {% endif %}
 
         <div class="space-y-6">
                 {# Registration URL with prefix #}
@@ -87,7 +101,8 @@ Args:
             hint=_("The URL path for your registration form"),
             prefix=request.host_url ~ "register/",
             placeholder="my-assembly-2026",
-            value=registration_page.url_slug if registration_page else ""
+            value=registration_page.url_slug if registration_page else "",
+            disabled=slugs_locked
             ) }}
 
                 {# Short URL with prefix #}
@@ -97,7 +112,8 @@ Args:
             hint=_("A shorter URL for QR codes and paper invitations"),
             prefix=request.host_url ~ "r/",
             placeholder="ma26",
-            value=registration_page.short_url_slug if registration_page else ""
+            value=registration_page.short_url_slug if registration_page else "",
+            disabled=slugs_locked
             ) }}
         </div>
     </div>

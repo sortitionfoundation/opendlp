@@ -567,9 +567,9 @@ class TestUpdateSlugs:
         with pytest.raises(ValueError):
             page.update_slugs(url_slug="Bad Slug")
 
-    def test_update_slugs_raises_after_first_publish(self):
+    def test_update_slugs_raises_while_published(self):
         page = _published_page("a-page")
-        with pytest.raises(ValueError, match="published"):
+        with pytest.raises(ValueError, match="published or closed"):
             page.update_slugs(url_slug="new-page")
 
     def test_update_slugs_allowed_when_never_published_even_if_status_draft(self):
@@ -577,19 +577,19 @@ class TestUpdateSlugs:
         page.update_slugs(url_slug="a-page")
         assert page.url_slug == "a-page"
 
-    def test_update_slugs_still_raises_in_closed_state(self):
+    def test_update_slugs_raises_in_closed_state(self):
         page = _published_page("a-page")
         page.close(author_id=uuid.uuid4())
         assert page.status is RegistrationPageStatus.CLOSED
-        with pytest.raises(ValueError, match="published"):
+        with pytest.raises(ValueError, match="published or closed"):
             page.update_slugs(url_slug="changed")
 
-    def test_update_slugs_still_raises_after_unpublish(self):
+    def test_update_slugs_allowed_after_unpublish_back_to_test(self):
         page = _published_page("a-page")
         page.unpublish(author_id=uuid.uuid4())
         assert page.status is RegistrationPageStatus.TEST
-        with pytest.raises(ValueError, match="published"):
-            page.update_slugs(url_slug="changed")
+        page.update_slugs(url_slug="changed")
+        assert page.url_slug == "changed"
 
     def test_update_slugs_bumps_updated_at(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
@@ -793,6 +793,16 @@ class TestSlugsFrozen:
 
     def test_frozen_after_publish(self):
         page = _published_page()
+        assert page.slugs_frozen is True
+
+    def test_unfrozen_after_publish_then_unpublish(self):
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.slugs_frozen is False
+
+    def test_frozen_after_publish_then_close(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
         assert page.slugs_frozen is True
 
 

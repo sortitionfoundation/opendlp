@@ -244,8 +244,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
-                # Save URL slugs via registration page service if registration page exists
-                if registration_page and (url_slug or short_url_slug):
+                # Save URL slugs via registration page service if registration page exists.
+                # Skip entirely once slugs are frozen — disabled inputs in the template send
+                # nothing, and the service layer would no-op anyway, but this avoids the
+                # round-trip and any audit noise.
+                if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
                     uow3 = bootstrap.bootstrap()
                     update_registration_page(
                         uow=uow3,
