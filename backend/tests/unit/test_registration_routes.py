@@ -37,23 +37,23 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def client() -> FlaskClient:
-    """Client with feature enabled (default behavior)."""
-    app = create_app("testing")
-    return app.test_client()
-
-
-@pytest.fixture
-def client_with_feature_disabled(monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
-    """Create a client with the registration page feature disabled."""
-    monkeypatch.setenv("FF_DISABLE_REGISTRATION_PAGE", "true")
+def client(monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
+    """Client with FF_REGISTRATION_PAGE enabled."""
+    monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
     reload_flags()
     app = create_app("testing")
     return app.test_client()
 
 
+@pytest.fixture
+def client_with_feature_disabled() -> FlaskClient:
+    """Client with FF_REGISTRATION_PAGE unset — feature is off by default."""
+    app = create_app("testing")
+    return app.test_client()
+
+
 class TestFeatureFlagBehavior:
-    """Test FF_DISABLE_REGISTRATION_PAGE flag returns 404 when set."""
+    """Routes return 404 unless FF_REGISTRATION_PAGE is enabled."""
 
     def test_show_form_returns_404_when_feature_disabled(self, client_with_feature_disabled: FlaskClient) -> None:
         response = client_with_feature_disabled.get("/register/test-slug")

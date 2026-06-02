@@ -281,6 +281,12 @@ if has_feature("my_feature"):
 {% endif %}
 ```
 
+**Known flags:**
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `FF_REGISTRATION_PAGE` | `false` | Enables the public registration page routes (`/register/<slug>`, `/register/<slug>/thank-you`, `/r/<short_slug>`, `/registration-closed`). When unset or `false`, those routes return 404. |
+
 ## Environment Files
 
 ### Development: `.env`

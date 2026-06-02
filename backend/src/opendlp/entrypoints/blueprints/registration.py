@@ -30,14 +30,11 @@ registration_bp = Blueprint("registration", __name__)
 
 
 def require_registration_feature(f: Callable[..., ResponseReturnValue]) -> Callable[..., ResponseReturnValue]:
-    """Return 404 if FF_DISABLE_REGISTRATION_PAGE is set to true.
-
-    Uses inverted logic: feature is ON by default, flag disables it.
-    """
+    """Return 404 unless FF_REGISTRATION_PAGE is enabled."""
 
     @wraps(f)
     def decorated(*args: Any, **kwargs: Any) -> ResponseReturnValue:
-        if has_feature("disable_registration_page"):
+        if not has_feature("registration_page"):
             abort(404)
         return f(*args, **kwargs)
 
