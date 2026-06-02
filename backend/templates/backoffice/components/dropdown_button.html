@@ -1,0 +1,135 @@
+{#
+ABOUTME: Dropdown button component - single trigger that opens a menu of actions
+ABOUTME: Sibling of split_button; use when no primary action should be elevated outside the menu
+#}
+
+{% macro dropdown_button(label="", items=None, variant="secondary", id="", aria_label="") %}
+    {#
+    Dropdown button: a single button that opens a menu of related actions. Unlike
+    split_button, no action is elevated outside the menu — every option lives in
+    the dropdown. Use for state pickers, "More actions" menus, and "Change status"
+    style controls where the choice itself is the action.
+
+    Args:
+        label: Trigger label (e.g. "Change status").
+        items: List of dicts describing menu items. Each item:
+            { "text": str, "description": str (optional, secondary caption rendered below the title), "attrs": str (optional, raw HTML attrs e.g. 'name="action" value="publish"'), "type": str (optional, default "submit") }
+        variant: Style variant: "primary" | "secondary" | "danger" (default: "secondary").
+        id: Optional id prefix used for the toggle and menu (defaults to "dropdown-btn").
+        aria_label: aria-label for the trigger (defaults to the label).
+
+    Accessibility:
+        - Trigger uses aria-haspopup="menu" and aria-expanded bound to open state.
+        - Dropdown uses role="menu" with role="menuitem" entries.
+        - Keyboard: Escape closes the menu; click outside closes it.
+
+    Usage:
+        {{ dropdown_button(
+            label=_("Change status"),
+            items=[
+                { "text": _("Publish"), "attrs": 'name="action" value="publish"' },
+            ],
+            variant="secondary",
+            id="status-control",
+        ) }}
+    #}
+    {% set items = items or [] %}
+    {% set prefix = id if id else "dropdown-btn" %}
+    {% set menu_id = prefix ~ "-menu" %}
+    {% set toggle_id = prefix ~ "-toggle" %}
+
+    {# Variant styling - mirrors split_button so visually they look identical #}
+    {% if variant == "primary" %}
+        {% set var_bg = "var(--color-button-primary-bg)" %}
+        {% set var_fg = "var(--color-button-primary-text)" %}
+        {% set var_border = "transparent" %}
+        {% set hover_class = "btn-primary-hover" %}
+    {% elif variant == "danger" %}
+        {% set var_bg = "var(--color-button-danger-bg)" %}
+        {% set var_fg = "var(--color-button-danger-text)" %}
+        {% set var_border = "transparent" %}
+        {% set hover_class = "btn-danger-hover" %}
+    {% else %}
+        {% set var_bg = "var(--color-button-secondary-bg)" %}
+        {% set var_fg = "var(--color-button-secondary-text)" %}
+        {% set var_border = "var(--color-button-secondary-border)" %}
+        {% set hover_class = "btn-secondary-hover" %}
+    {% endif %}
+
+    {% set base_styles %}
+        font-family: var(--font-button);
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 16px;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background-color 150ms ease, border-color 150ms ease;
+        text-decoration: none;
+        box-sizing: border-box;
+        background-color: {{ var_bg }};
+        color: {{ var_fg }};
+        border: 1px solid {{ var_border }};
+        padding: 8px 12px;
+        border-radius: 4px;
+    {% endset %}
+
+    <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
+        {# Trigger #}
+        <button
+            type="button"
+            id="{{ toggle_id }}"
+            @click="open = !open"
+            @click.outside="open = false"
+            aria-haspopup="menu"
+            x-bind:aria-expanded="open ? 'true' : 'false'"
+            aria-controls="{{ menu_id }}"
+            aria-label="{{ aria_label if aria_label else label }}"
+            style="{{ base_styles }}"
+            class="{{ hover_class }} btn-focus"
+        >
+            <span>{{ label }}</span>
+            <span class="btn-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </span>
+        </button>
+
+        {# Dropdown menu #}
+        <div
+            x-show="open"
+            x-cloak
+            id="{{ menu_id }}"
+            role="menu"
+            aria-labelledby="{{ toggle_id }}"
+            class="absolute z-30 mt-1 rounded-lg shadow-lg overflow-hidden"
+            style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); top: 100%; left: 0; min-width: max(100%, 20rem); max-width: 26rem;"
+        >
+            {% for item in items %}
+                <button
+                    type="{{ item.type if item.type else 'submit' }}"
+                    role="menuitem"
+                    {% if item.attrs %}{{ item.attrs | safe }}{% endif %}
+                    @click="open = false"
+                    @mouseenter="$el.style.backgroundColor='var(--color-button-tertiary-bg-hover)'"
+                    @mouseleave="$el.style.backgroundColor='transparent'"
+                    @focus="$el.style.backgroundColor='var(--color-button-tertiary-bg-hover)'"
+                    @blur="$el.style.backgroundColor='transparent'"
+                    class="w-full text-left px-4 py-3 transition-colors btn-focus"
+                    style="background-color: transparent; border: none; cursor: pointer;"
+                >
+                    {% if item.description %}
+                        <span class="block text-body-md font-medium" style="color: var(--color-body-text);">{{ item.text }}</span>
+                        <span class="block text-body-sm mt-0.5" style="color: var(--color-secondary-text);">{{ item.description }}</span>
+                    {% else %}
+                        <span class="block text-body-md" style="color: var(--color-body-text); white-space: nowrap;">{{ item.text }}</span>
+                    {% endif %}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}

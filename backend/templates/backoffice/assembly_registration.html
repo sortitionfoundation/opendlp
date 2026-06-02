@@ -5,7 +5,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/split_button.html" import split_button %}
+{% from "backoffice/components/dropdown_button.html" import dropdown_button %}
 {% from "backoffice/components/input.html" import input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/modal.html" import modal %}
@@ -77,69 +77,75 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
-                        {# Publication status indicator (tri-state) #}
-                            {% if registration_status == "PUBLISHED" %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                      style="background-color: var(--color-success-100); color: var(--color-success-600);">
-                                    <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
-                                    {{ _("Published") }}
-                                </span>
-                            {% elif registration_status == "CLOSED" %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                      style="background-color: var(--color-error-100); color: var(--color-error-600);">
-                                    <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
-                                    {{ _("Closed") }}
-                                </span>
-                            {% else %}
-                            {# TEST status (default) #}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                      style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
-                                    <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
-                                    {{ _("Test") }}
-                                </span>
-                            {% endif %}
-                        </div>
-                    {# Header action buttons #}
-                        <div class="flex items-center gap-2">
-                        {# Preview / Share button — varies by status #}
-                            {% if registration_status == "TEST" %}
-                                {% set eye_icon %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                {% endset %}
-                                {{ button(
-                                _("Preview and Test Responses"),
-                                variant="tertiary",
-                                leading_icon=eye_icon,
-                                attrs='@click="openPreviewModal()"'
-                                ) }}
-                            {% elif registration_status in ("PUBLISHED", "CLOSED") %}
-                                {% set link_icon %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                    </svg>
-                                {% endset %}
+
+                        {# Publication status indicator (tri-state). Wrapped in a fixed-min-width slot so the
+                           variable badge width ("Test" / "Published" / "Closed") doesn't shift everything to
+                           its right as the status changes. #}
+                            <div class="inline-flex items-center" style="min-width: 7rem;">
                                 {% if registration_status == "PUBLISHED" %}
-                                    {{ button(
-                                    _("Share Form"),
-                                    variant="tertiary",
-                                    leading_icon=link_icon,
-                                    attrs='@click="openPreviewModal()"'
-                                    ) }}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                          style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
+                                        {{ _("Published") }}
+                                    </span>
+                                {% elif registration_status == "CLOSED" %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                          style="background-color: var(--color-error-100); color: var(--color-error-600);">
+                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
+                                        {{ _("Closed") }}
+                                    </span>
                                 {% else %}
-                                    {{ button(
-                                    _("Share Form"),
-                                    variant="tertiary",
-                                    leading_icon=link_icon,
-                                    disabled=true,
-                                    aria_label=_("Registration is closed — the form URL redirects to the closed page"),
-                                    attrs='title="' ~ _("Registration is closed — the form URL redirects to the closed page") ~ '"'
-                                    ) }}
+                                {# TEST status (default) #}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                          style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
+                                        {{ _("Test") }}
+                                    </span>
                                 {% endif %}
+                            </div>
+
+                        {# Change status dropdown — items are named after the TARGET state, with a one-line
+                           explanation of what visitors will see. Forbidden jumps (TEST↔CLOSED) are simply
+                           absent from the menu. #}
+                            {% if registration_status == "TEST" %}
+                                {% set status_items = [
+                                {
+                                "text": _("Published"),
+                                "description": _("Form goes live; submissions enter the selection pool."),
+                                "attrs": 'name="action" value="publish"'
+                                },
+                                ] %}
+                            {% elif registration_status == "PUBLISHED" %}
+                                {% set status_items = [
+                                {
+                                "text": _("Closed for Submissions"),
+                                "description": _("Visitors are redirected to a registration-closed page; no new submissions are accepted."),
+                                "attrs": 'name="action" value="close"'
+                                },
+                                {
+                                "text": _("Test"),
+                                "description": _("Form stays public, but new submissions are flagged as test entries and skipped from the pool."),
+                                "attrs": 'name="action" value="unpublish"'
+                                },
+                                ] %}
+                            {% else %}
+                                {% set status_items = [
+                                {
+                                "text": _("Published"),
+                                "description": _("Form goes live again; new submissions enter the selection pool."),
+                                "attrs": 'name="action" value="reopen"'
+                                },
+                                ] %}
                             {% endif %}
-                        {# Show Form Skeleton button #}
+                            {{ dropdown_button(
+                            label=_("Change status"),
+                            items=status_items,
+                            variant="secondary",
+                            id="status-control",
+                            ) }}
+                        </div>
+                     {# Header right: editorial helper only (status controls live on the left next to the badge) #}
+                        <div class="flex items-center gap-2">
                             {% set code_icon %}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -169,27 +175,48 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
                         ) }}
 
-                    {# Save and status transition buttons #}
+                    {# Footer: review the form + save edits. Status transitions live in the header dropdown. #}
                         <div class="flex justify-end gap-3">
-                            {% if registration_status == "PUBLISHED" %}
-                            {# Split button collapses status transitions: forward = Stop Accepting, rewind = Back to Test #}
-                                {{ split_button(
-                                primary_text=_("Stop Accepting Submissions"),
-                                primary_attrs='name="action" value="close"',
-                                items=[
-                                { "text": _("Back to Test"), "attrs": 'name="action" value="unpublish"' },
-                                ],
-                                variant="secondary",
-                                id="status-toggle",
+                        {# Preview / Share lives next to Save — "view what you just edited" pairs with "save it" #}
+                            {% if registration_status == "TEST" %}
+                                {% set eye_icon %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                {% endset %}
+                                {{ button(
+                                _("Preview and Test Responses"),
+                                variant="tertiary",
+                                leading_icon=eye_icon,
+                                attrs='@click="openPreviewModal()"'
                                 ) }}
-                                {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
-                            {% elif registration_status == "CLOSED" %}
-                            {# CLOSED is terminal — only the rewind to PUBLISHED is available; no Save (form is redirecting, edits have no public effect) #}
-                                {{ button(_("Accept Submissions Again"), type="submit", variant="secondary", attrs='name="action" value="reopen"') }}
+                                {{ button(_("Save"), type="submit", variant="primary", attrs='name="action" value="save"') }}
                             {% else %}
-                            {# When in TEST: Save + Publish (no rewind step available) #}
-                                {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                                {{ button(_("Publish"), type="submit", variant="primary", attrs='name="action" value="publish"') }}
+                                {% set link_icon %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                    </svg>
+                                {% endset %}
+                                {% if registration_status == "PUBLISHED" %}
+                                    {{ button(
+                                    _("Share Form"),
+                                    variant="tertiary",
+                                    leading_icon=link_icon,
+                                    attrs='@click="openPreviewModal()"'
+                                    ) }}
+                                    {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                {% else %}
+                                {# CLOSED: no save (form is redirecting), but keep Share Form visible-but-disabled so the user can see why #}
+                                    {{ button(
+                                    _("Share Form"),
+                                    variant="tertiary",
+                                    leading_icon=link_icon,
+                                    disabled=true,
+                                    aria_label=_("Registration is closed — the form URL redirects to the closed page"),
+                                    attrs='title="' ~ _("Registration is closed — the form URL redirects to the closed page") ~ '"'
+                                    ) }}
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
