@@ -15,6 +15,13 @@ that drove this revision are folded in: Q3 and Q8 are now settled on the Jinja
 round-trip; Q9 leans strict (Option B); Q14 adds `is_required`; Q15 adds the
 `for_registration_page` bool; §6 Q16 (blueprint split) is out of scope.
 
+**Updated 2026-06-02** — §5 Q1 (POST URL shape) flipped from Option A
+(`/register/<slug>/submit`) to **Option B** (method-dispatched on
+`/register/<slug>`) to match what landed during implementation. See Q1 for the
+rationale; `form_action` is still an explicit substitution so a future story
+can re-introduce a separate submit URL if multi-language / A/B variants need
+it.
+
 This document captures what's already in place from story 610, what story 613 actually
 adds, the main implementation options for each meaty decision, and the open technical
 questions that need answering before a detailed plan can be cut.
@@ -164,7 +171,8 @@ the public GET routes** (the form render, the short-URL redirect, visibility
 resolution and `/registration-closed` — these were originally listed here but
 moved to 610; see the COMMENT below). What is left for 613:
 
-1. **POST** to the form action (`POST /register/<url_slug>/submit`) — validate
+1. **POST** to the form action (`POST /register/<url_slug>` — same URL as the
+   GET, dispatched by method) — validate
    the body against the assembly's `RespondentFieldDefinition` set. On success:
    - Create a `Respondent` with `source_type=REGISTRATION_FORM`.
    - Status is **POOL** when the page is `PUBLISHED`, or the new
@@ -215,14 +223,15 @@ GET  /r/<short_url_slug>             → 302 to /register/<url_slug>
 GET  /registration-closed            → static "closed" page
 
 # delivered by 613:
-POST /register/<url_slug>/submit     → create Respondent, 302 to thank-you
+POST /register/<url_slug>            → create Respondent, 302 to thank-you
 GET  /register/<url_slug>/thank-you  → render thank_you_html
 ```
 
-The POST lives on a **sibling `/submit`** URL, not method-dispatched on the GET
-(§5 — Q1 decided → Option A). `form_action` is therefore a function of the page,
-which keeps the door open for multiple GET URLs (translations, A/B variants)
-sharing one POST.
+The POST shares the GET URL and is dispatched by method (§5 — Q1, Option B). The
+author's HTML still emits `<form action="{{ form_action }}" method="post">` so
+`form_action` stays an explicit substitution — if a future translation/A/B
+variant story needs multiple GET URLs sharing one POST, the seam is preserved
+and we can re-point `form_action` without disturbing author HTML.
 
 The thank-you URL needs to be sticky enough that the redirect target works even
 after a slug change — see §6 — Q5.
@@ -297,7 +306,8 @@ deliberately re-implement is one of the main calls in §5 — Q2.
 610 already added the public blueprint hosting the GET routes
 (`/register/<url_slug>`, `/r/<short_url_slug>`, `/registration-closed`). 613
 adds the two new routes to the **same** blueprint: `POST
-/register/<url_slug>/submit` and `GET /register/<url_slug>/thank-you`. No
+/register/<url_slug>` (method-dispatched on the GET URL) and
+`GET /register/<url_slug>/thank-you`. No
 `@login_required`. CSRF is on by default (global `CSRFProtect`), so the form
 needs the real token from `flask_wtf.csrf.generate_csrf()` substituted in via
 `RenderContext.csrf_form_element` (610 already does this for the GET render; the
@@ -399,37 +409,39 @@ builder can resolve it to a slot index or component id.
 
 Each subsection is a real fork in the road. The recommended option is listed first.
 
-### Q1 — Where does the POST live? **DECIDED → Option A**
+### Q1 — Where does the POST live? **DECIDED → Option B** (as implemented)
 
-**Option A (chosen): separate URL — `POST /register/<url_slug>/submit`.**
-
-The author's HTML emits `<form action="{{ form_action }}" method="post">` and
-`form_action` is filled in with the submit URL. The GET URL stays a "view
-this page" URL; the POST URL is its own thing.
-
-- Pros: trivial route dispatch; bookmarks/back-button behaviour on the GET is
-  cleaner; `form_action` is explicit so we can change it later without breaking
-  HTML the author hand-edited (e.g. moving to `/register/<slug>/submissions` );
-  matches the example in `plan-data-service.md` §5.3.
-- Cons: two URLs to keep track of; on validation failure the redirect-then-
-  re-render dance is slightly awkward (or we render the form HTML directly in
-  the POST handler — see Q3).
-
-**Option B: same URL, dispatch by method.**
+**Option B (chosen): same URL, dispatch by method.**
 
 `POST /register/<url_slug>` does the submission; GET still renders the form.
+The author's HTML emits `<form action="{{ form_action }}" method="post">` and
+`form_action` is filled in with the same `/register/<url_slug>` URL.
 
-- Pros: one URL to think about; very common Flask pattern (cf. auth's
-  `register` / `login`).
-- Cons: `form_action` is the same as the page URL, which is fine in practice
-  but ties the two concepts together; the POST handler also has to redirect on
-  failure to itself (the GET) with the form re-rendered, which is one extra hop.
+- Pros: one URL to think about; standard Flask pattern (cf. auth's `register` /
+  `login`); failed-POST re-render happens in the POST handler itself with no
+  redirect needed (matches the round-trip in §5 — Q3 / Q8).
+- Cons: `form_action` is the same as the page URL, so a future
+  multi-GET / shared-POST design (translations, A/B variants — §4.6) would
+  need to either re-point `form_action` or introduce a separate submit URL at
+  that point. The substitution seam is still there, so it's a one-edit change
+  if/when that story lands.
 
-**Story-notes line 34 calls this out as a deliberate question.** The story
-also wonders if multiple GET URLs could share a single POST (translated forms,
-A/B variants). That argues for Option A — `form_action` becomes a function
-of the page, not a function of how the form arrived. This also lines up with
-the future-multi-language work flagged in §4.6.
+**Option A: separate URL — `POST /register/<url_slug>/submit`.**
+
+The GET URL stays a "view this page" URL; the POST URL is its own thing.
+
+- Pros: `form_action` independent of the page URL up-front; multiple GET URLs
+  sharing one POST works without re-pointing anything later; matches the
+  original example in `plan-data-service.md` §5.3.
+- Cons: two URLs to keep track of; nothing in v1 actually needs the
+  decoupling, so YAGNI bites.
+
+**Note:** earlier drafts of this research recommended Option A on
+future-proofing grounds, and the colleague implementing 613 went with Option B
+(simpler, no extra URL). After review (2026-06-02), we accepted the
+implementation: the `form_action` substitution preserves enough of the seam
+that the multi-language / A/B story can re-introduce a separate submit URL if
+it actually needs one.
 
 ### Q2 — How much to share with `edit_respondent_form.py`? **DECIDED → Option A**
 
@@ -794,10 +806,10 @@ story), we extend that function. No route-layer change needed at that point.
 ### Q5 — What if the slug changed between form load and submission? **DECIDED → keep it simple**
 
 YAGNI. Submission stays slug-based. If a user lands on
-`POST /register/old-slug/submit` after the slug has changed (only possible
-before the page has ever been published — Q6 in 610 freezes slugs permanently
-once any PUBLISH has happened), they get a friendly "this form has moved" page.
-No hidden page-id field; no extra render-time token.
+`POST /register/old-slug` after the slug has changed (only possible before the
+page has ever been published — Q6 in 610 freezes slugs permanently once any
+PUBLISH has happened), they get a friendly "this form has moved" page. No
+hidden page-id field; no extra render-time token.
 
 ### Q6 — Should TEST_SUBMISSION respondents show up in respondent lists? **DECIDED**
 
@@ -942,9 +954,9 @@ enum without invalidating the "is it on the form?" question the validator asks.
 
 > **COMMENT (Doctor Chewie):** this is now out of scope. 610 already owns the
 > public blueprint (including the `/r/` redirect), so there is no blueprint-split
-> decision left for 613 — its new routes (`/submit`, `/thank-you`) just join the
-> existing blueprint. The earlier "one combined vs two blueprints" analysis is
-> moot and kept only in git history.
+> decision left for 613 — its new routes (the POST on `/register/<slug>` and the
+> `/thank-you` GET) just join the existing blueprint. The earlier "one combined
+> vs two blueprints" analysis is moot and kept only in git history.
 
 ---
 
@@ -958,11 +970,12 @@ Chewie.
 - **610 owns the public GET side** — `GET /register/<url_slug>` (form render),
   `GET /r/<short_url_slug>` (302 to canonical), visibility resolution, and
   `GET /registration-closed`. 613 adds **two routes to the same blueprint**:
-  - `POST /register/<url_slug>/submit` — validate, create Respondent, 302 to
-    thank-you. On failure, re-render the same form HTML through the Jinja
-    sandbox with submitted values + per-field errors. Slug-mid-flight cliff:
-    friendly "this form has moved" page if the slug changed (only possible
-    pre-first-publish; no hidden page-id field — YAGNI).
+  - `POST /register/<url_slug>` (method-dispatched on the GET URL, §5 Q1
+    Option B) — validate, create Respondent, 302 to thank-you. On failure,
+    re-render the same form HTML through the Jinja sandbox with submitted
+    values + per-field errors. Slug-mid-flight cliff: friendly "this form
+    has moved" page if the slug changed (only possible pre-first-publish;
+    no hidden page-id field — YAGNI).
   - `GET /register/<url_slug>/thank-you` — render `thank_you_html` in a wrapper.
     Renders even if the page has since been unpublished/closed — the submission
     is a fact (Q11).
@@ -1091,7 +1104,7 @@ inline at the relevant section.
 5. **Scope sanity-check (§2, §4.4).** I've taken your "the GETs are now in 610"
    comment to mean 610 owns the form-render route, the `/r/` redirect, visibility
    resolution **and** the `/registration-closed` page — leaving 613 with the
-   `POST /submit` and `GET /thank-you` routes plus the submission service /
-   validator / `TEST_SUBMISSION` status / schema additions. If the thank-you
-   route or the closed page actually landed in 610 too, say so and I'll move
-   them out of 613's scope.
+   POST on `/register/<slug>` and `GET /register/<slug>/thank-you` plus the
+   submission service / validator / `TEST_SUBMISSION` status / schema
+   additions. If the thank-you route or the closed page actually landed in 610
+   too, say so and I'll move them out of 613's scope.
