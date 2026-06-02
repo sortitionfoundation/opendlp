@@ -13,7 +13,7 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
     Args:
         label: Trigger label (e.g. "Change status").
         items: List of dicts describing menu items. Each item:
-            { "text": str, "description": str (optional, secondary caption rendered below the title), "attrs": str (optional, raw HTML attrs e.g. 'name="action" value="publish"'), "type": str (optional, default "submit") }
+            { "text": str, "description": str (optional, secondary caption rendered below the title), "dot_color": str (optional, CSS color or var() — renders a small coloured dot before the title, useful for status indicators), "attrs": str (optional, raw HTML attrs e.g. 'name="action" value="publish"'), "type": str (optional, default "submit") }
         variant: Style variant: "primary" | "secondary" | "danger" (default: "secondary").
         id: Optional id prefix used for the toggle and menu (defaults to "dropdown-btn").
         aria_label: aria-label for the trigger (defaults to the label).
@@ -123,10 +123,20 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
                     style="background-color: transparent; border: none; cursor: pointer;"
                 >
                     {% if item.description %}
-                        <span class="block text-body-md font-medium" style="color: var(--color-body-text);">{{ item.text }}</span>
+                        <span class="flex items-center gap-2">
+                            {% if item.dot_color %}
+                                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ item.dot_color }};"></span>
+                            {% endif %}
+                            <span class="text-body-md font-medium" style="color: var(--color-body-text);">{{ item.text }}</span>
+                        </span>
                         <span class="block text-body-sm mt-0.5" style="color: var(--color-secondary-text);">{{ item.description }}</span>
                     {% else %}
-                        <span class="block text-body-md" style="color: var(--color-body-text); white-space: nowrap;">{{ item.text }}</span>
+                        <span class="flex items-center gap-2">
+                            {% if item.dot_color %}
+                                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ item.dot_color }};"></span>
+                            {% endif %}
+                            <span class="text-body-md" style="color: var(--color-body-text); white-space: nowrap;">{{ item.text }}</span>
+                        </span>
                     {% endif %}
                 </button>
             {% endfor %}

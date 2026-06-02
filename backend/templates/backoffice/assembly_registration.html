@@ -112,6 +112,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 {
                                 "text": _("Published"),
                                 "description": _("Form goes live; submissions enter the selection pool."),
+                                "dot_color": "var(--color-success-400)",
                                 "attrs": 'name="action" value="publish"'
                                 },
                                 ] %}
@@ -120,11 +121,13 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 {
                                 "text": _("Closed for Submissions"),
                                 "description": _("Visitors are redirected to a registration-closed page; no new submissions are accepted."),
+                                "dot_color": "var(--color-error-400)",
                                 "attrs": 'name="action" value="close"'
                                 },
                                 {
                                 "text": _("Test"),
                                 "description": _("Form stays public, but new submissions are flagged as test entries and skipped from the pool."),
+                                "dot_color": "var(--color-warning-400)",
                                 "attrs": 'name="action" value="unpublish"'
                                 },
                                 ] %}
@@ -133,6 +136,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 {
                                 "text": _("Published"),
                                 "description": _("Form goes live again; new submissions enter the selection pool."),
+                                "dot_color": "var(--color-success-400)",
                                 "attrs": 'name="action" value="reopen"'
                                 },
                                 ] %}
