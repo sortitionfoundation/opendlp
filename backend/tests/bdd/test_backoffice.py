@@ -541,9 +541,10 @@ def see_assembly_question_section(page: Page):
 @then("I should see the assembly details summary")
 def see_assembly_details_summary(page: Page):
     """Verify the assembly details summary (dl/dd section) is visible."""
-    # The section() macro renders a div, not a section element
-    # Look for h2 heading "Details" and verify the dl is visible
-    heading = page.locator("h2", has_text="Details")
+    # The section() macro renders a div, not a section element.
+    # Use exact-match role lookup so we don't collide with the "Registration
+    # Page Details" h2 added when the registration page section landed.
+    heading = page.get_by_role("heading", name="Details", exact=True)
     expect(heading).to_be_visible()
     # The dl should be a sibling of the h2 within the same container
     details_list = page.locator("dl").first
