@@ -203,10 +203,6 @@ Run `just translate-regen` after adding translatable strings.
 
 The plan above landed largely as written. The list below records changes layered on top during user testing and review, both on the public-route side directly and on the adjacent backoffice editor that drives these routes.
 
-### Feature flag: inversion to "disable"
-
-`require_registration_feature` now reads `has_feature("disable_registration_page")` (inverted logic) so the feature is ON by default. The flag is `FF_DISABLE_REGISTRATION_PAGE`, not `FF_REGISTRATION_PAGE` as the plan originally stated. Routes still 404 when the flag is true.
-
 ### `RenderContext` carries assembly title and question
 
 `RenderContext` picked up two optional fields, both defaulting to empty:
