@@ -196,3 +196,103 @@ Run `just translate-regen` after adding translatable strings.
 2. **CSRF:** Standard Flask-WTF protection via `generate_csrf()`
 3. **No auth required:** Public routes intentionally skip `@login_required`
 4. **Feature flag:** Routes return 404 when flag disabled
+
+---
+
+## Implementation deltas (2026-06-02)
+
+The plan above landed largely as written. The list below records changes layered on top during user testing and review, both on the public-route side directly and on the adjacent backoffice editor that drives these routes.
+
+### Feature flag: inversion to "disable"
+
+`require_registration_feature` now reads `has_feature("disable_registration_page")` (inverted logic) so the feature is ON by default. The flag is `FF_DISABLE_REGISTRATION_PAGE`, not `FF_REGISTRATION_PAGE` as the plan originally stated. Routes still 404 when the flag is true.
+
+### `RenderContext` carries assembly title and question
+
+`RenderContext` picked up two optional fields, both defaulting to empty:
+
+- `assembly_title: str` → substitutes `{{ assembly_title }}`
+- `assembly_question: str` → substitutes `{{ assembly_question }}`
+
+Both the initial GET and the post-validation re-render in `registration.py` now call `uow.assemblies.get(page.assembly_id)` and populate the context. The starter form skeleton (`generate_starter_form_html`) emits `<h1>{{ assembly_title }}</h1>` and `<p>{{ assembly_question }}</p>` above the `<form>` tag by default. Neither token is in `REQUIRED_TOKENS`, so authors are free to remove them.
+
+### CSP: Google Fonts whitelisted
+
+Authors paste arbitrary HTML/CSS and the first thing a real form used was Google Fonts. `get_secure_headers()` in `flask_app.py` was widened:
+
+- `style_src` += `https://fonts.googleapis.com`
+- `font_src` += `https://fonts.gstatic.com`
+
+Backoffice and login pages don't load Google Fonts, so the practical surface didn't grow outside the new behavior.
+
+### Backoffice editor UX (drives the public routes)
+
+The `/backoffice/assembly/<id>/registration` editor changed significantly during testing. Documented here because the public routes serve what the editor produces — every visitor-facing artifact (URL, banner, redirect) is configured from this page.
+
+#### Status badge + header dropdown replace bottom-row transition buttons
+
+The original layout placed `Save` and `Publish` (or `Save and Republish` and `Stop Accepting Submissions`) next to each other at the bottom of the form. Real testing surfaced a near-miss "I almost clicked Publish when I meant Save." The new layout:
+
+- **Header left** — fixed-width slot holding the status badge (`Test` / `Published` / `Closed`), followed by a `Change status ▾` dropdown. The badge slot has `min-width: 7rem` so the variable badge text doesn't shift the dropdown trigger as status changes.
+- **Header right** — `Show Form Skeleton` only (it's an authoring helper, not a state change).
+- **Footer** — pairs `Preview and Test Responses` / `Share Form` with `Save` / `Save and Republish`. The "view what you just edited" action sits next to "save it."
+
+The dropdown items are named after the target STATE (nouns), with a one-line description of what visitors will experience:
+
+- From `TEST`:
+  - **Published** — *Form goes live; submissions enter the selection pool.*
+- From `PUBLISHED`:
+  - **Closed for Submissions** — *Visitors are redirected to a registration-closed page; no new submissions are accepted.*
+  - **Test** — *Form stays public, but new submissions are flagged as test entries and skipped from the pool.*
+- From `CLOSED`:
+  - **Published** — *Form goes live again; new submissions enter the selection pool.*
+
+Forbidden TEST↔CLOSED jumps are simply absent from the menus, enforcing the lifecycle at the UI layer (the service layer rejects them too).
+
+Action values posted to `save_assembly_registration` (`publish`, `unpublish`, `close`, `reopen`, `save`) are unchanged.
+
+#### CLOSED state is read-only
+
+In `CLOSED`, there is no `Save` button (form is redirecting, edits have no public effect). `Share Form` stays visible-but-disabled with a `title` tooltip explaining that the URL redirects to the closed page.
+
+#### `dropdown_button` component
+
+A new `components/dropdown_button.html` macro powers the status control. Sibling of `split_button` but with no primary action elevated outside the menu — every option lives in the dropdown. Items support an optional `description` field for two-line entries. Menu width is `min(100%, 20rem) – 26rem`. Hover/focus use `--color-button-tertiary-bg-hover` so the affordance matches the rest of the design system.
+
+#### Preview / Share modal mirrors the Details tab
+
+Triggered from the footer-row button:
+
+- **TEST** → labeled `Preview and Test Responses`. Modal shows an amber TEST notice, the long URL, the short URL (if set), and the QR code (if a short slug exists, mirrors the Details tab).
+- **PUBLISHED** → labeled `Share Form`. Same modal contents, no TEST notice.
+- **CLOSED** → button disabled.
+
+The QR is now sourced from `registration_page.short_url_slug` (matching the Details tab) instead of a placeholder built from `url_slug`. `readonly_url_display` was extracted into `components/url_display.html` so the Details tab and this modal share one implementation.
+
+#### `/edit` page locks slugs while published or closed
+
+`RegistrationPage.slugs_frozen` now mirrors current status (`status != TEST`) rather than `has_ever_been_published()`. Editing the assembly title while the page is in TEST no longer fails with a slug-update error, even if the page was published at some point in the past. The `/edit` page:
+
+- Renders the URL inputs disabled (`prefixed_url_input` picked up a `disabled` arg)
+- Shows an info alert above them when frozen
+- Short-circuits the `update_registration_page` call entirely when `registration_page.slugs_frozen` is true
+
+Defense in depth: `update_registration_page` also no-ops when submitted slugs match the current values, so a future caller forgetting both the UI lock and the route gate still won't spuriously error.
+
+### Scroll preservation
+
+Every status-action and Save submission on the registration form preserves scroll across the POST→redirect→GET cycle:
+
+- The form carries `x-preserve-scroll-on-submit`.
+- All four `view_assembly_registration` redirect paths in the save handler use `redirect_preserving_scroll(...)` instead of plain `redirect(...)`.
+
+### Translation strings added
+
+The following English strings need Hungarian translations on the next `just translate-regen` cycle:
+
+- `Preview and Test Responses`, `Share Form`
+- `Change status`, `Published`, `Closed for Submissions`, `Test` (the **target-state** nouns — separate keys from the badge text even though spelling matches)
+- The three status-description sentences in the dropdown
+- `Registration is closed — the form URL redirects to the closed page`
+- `These URLs are locked while the registration page is published or closed, so links shared in invites, QR codes, and elsewhere keep working. Switch the form back to test mode from the Registration tab to edit them.`
+- `Cannot change slugs while the registration page is published or closed` (domain-side error message)
