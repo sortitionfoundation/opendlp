@@ -188,8 +188,8 @@ def get_secure_headers(config: Config) -> Secure:
             "'strict-dynamic'",
             "https://cdn.jsdelivr.net",
         )
-        .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
-        .font_src("'self'", "https://cdn.jsdelivr.net")
+        .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
+        .font_src("'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com")
         .img_src("'self'", "data:")
         .frame_ancestors("'none'")
         .form_action("'self'", "https://accounts.google.com", "https://login.microsoftonline.com")
