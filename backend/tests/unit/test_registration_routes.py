@@ -254,7 +254,7 @@ class TestThankYouPage:
 
             response = client.get("/register/test-slug/thank-you")
             assert response.status_code == 200
-            assert b"Registration complete" in response.data
+            assert b"Thank you for registering" in response.data
 
     def test_renders_custom_thank_you_when_provided(self, client: FlaskClient) -> None:
         page = MagicMock(spec=RegistrationPage)

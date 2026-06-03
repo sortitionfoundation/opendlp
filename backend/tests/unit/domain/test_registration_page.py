@@ -145,8 +145,10 @@ class TestRegistrationPageActivity:
 class TestDefaultThankYouHtml:
     def test_default_thank_you_html_has_h1_and_p(self):
         assert DEFAULT_THANK_YOU_HTML
-        assert "<h1>" in DEFAULT_THANK_YOU_HTML
-        assert "<p>" in DEFAULT_THANK_YOU_HTML
+        # Element start tags only — they may carry GOV.UK class attributes.
+        assert "<h1" in DEFAULT_THANK_YOU_HTML
+        assert "<p" in DEFAULT_THANK_YOU_HTML
+        assert "Thank you for registering" in DEFAULT_THANK_YOU_HTML
 
 
 class TestRenderContext:
