@@ -86,6 +86,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.admin import admin_bp  # noqa: PLC0415
     from .blueprints.auth import auth_bp  # noqa: PLC0415
     from .blueprints.backoffice import backoffice_bp  # noqa: PLC0415
+    from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
     from .blueprints.db_selection_legacy import db_selection_legacy_bp  # noqa: PLC0415
     from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
@@ -109,6 +110,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
+    app.register_blueprint(backoffice_registration_bp, url_prefix="/backoffice")
     if not config.is_production():
         from .blueprints.dev import dev_bp  # noqa: PLC0415
 

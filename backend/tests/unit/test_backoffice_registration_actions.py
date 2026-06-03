@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from opendlp.domain.registration_page import RegistrationPageStatus
-from opendlp.entrypoints.blueprints.backoffice import _handle_registration_action
+from opendlp.entrypoints.blueprints.backoffice_registration import _handle_registration_action
 from opendlp.entrypoints.flask_app import create_app
 
 
@@ -40,9 +40,11 @@ class TestHandleRegistrationAction:
 
     def test_publish_action_calls_publish_when_page_is_test(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.get_registration_page_with_source") as get_page,
-            patch("opendlp.entrypoints.blueprints.backoffice.publish_registration_page") as publish,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
+            ) as get_page,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.publish_registration_page") as publish,
         ):
             get_page.return_value = (_page_with_status(RegistrationPageStatus.TEST), MagicMock())
 
@@ -53,9 +55,11 @@ class TestHandleRegistrationAction:
 
     def test_publish_action_on_already_published_page_does_not_republish(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.get_registration_page_with_source") as get_page,
-            patch("opendlp.entrypoints.blueprints.backoffice.publish_registration_page") as publish,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
+            ) as get_page,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.publish_registration_page") as publish,
         ):
             get_page.return_value = (_page_with_status(RegistrationPageStatus.PUBLISHED), MagicMock())
 
@@ -66,8 +70,8 @@ class TestHandleRegistrationAction:
 
     def test_unpublish_action_calls_unpublish(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.unpublish_registration_page") as unpublish,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.unpublish_registration_page") as unpublish,
         ):
             message = _handle_registration_action("unpublish", user_id, assembly_id)
 
@@ -76,8 +80,8 @@ class TestHandleRegistrationAction:
 
     def test_close_action_calls_close(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.close_registration_page") as close,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.close_registration_page") as close,
         ):
             message = _handle_registration_action("close", user_id, assembly_id)
 
@@ -86,8 +90,8 @@ class TestHandleRegistrationAction:
 
     def test_reopen_action_calls_reopen(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.reopen_registration_page") as reopen,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.reopen_registration_page") as reopen,
         ):
             message = _handle_registration_action("reopen", user_id, assembly_id)
 
@@ -96,8 +100,10 @@ class TestHandleRegistrationAction:
 
     def test_save_action_uses_saved_message_for_test_pages(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.get_registration_page_with_source") as get_page,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
+            ) as get_page,
         ):
             get_page.return_value = (_page_with_status(RegistrationPageStatus.TEST), MagicMock())
 
@@ -108,8 +114,10 @@ class TestHandleRegistrationAction:
 
     def test_save_action_uses_republished_message_when_page_published(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice.bootstrap.bootstrap"),
-            patch("opendlp.entrypoints.blueprints.backoffice.get_registration_page_with_source") as get_page,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch(
+                "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
+            ) as get_page,
         ):
             get_page.return_value = (_page_with_status(RegistrationPageStatus.PUBLISHED), MagicMock())
 

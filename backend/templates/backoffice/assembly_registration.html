@@ -66,7 +66,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
         {% else %}
         {# Registration Configuration Form #}
             <form method="post"
-                  action="{{ url_for('backoffice.save_assembly_registration', assembly_id=assembly.id) }}"
+                  action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
                   class="space-y-8"
                   x-data
                   x-preserve-scroll-on-submit>
@@ -368,7 +368,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                                     </div>
 
                                                     <div class="flex flex-col gap-2">
-                                                        <a href="{{ url_for('backoffice.download_registration_qr_code', assembly_id=assembly.id) }}"
+                                                        <a href="{{ url_for('backoffice_registration.download_registration_qr_code', assembly_id=assembly.id) }}"
                                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
                                                            style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
                                                            download>
@@ -427,7 +427,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                     fetchSkeleton() {
                         this.skeletonLoading = true;
-                        fetch('{{ url_for("backoffice.get_registration_skeleton", assembly_id=assembly.id) }}', {
+                        fetch('{{ url_for("backoffice_registration.get_registration_skeleton", assembly_id=assembly.id) }}', {
                             method: 'GET',
                             headers: {
                                 'X-CSRFToken': '{{ csrf_token() }}'

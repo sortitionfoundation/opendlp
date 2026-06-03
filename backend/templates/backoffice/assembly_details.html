@@ -141,7 +141,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
                                 {# Download Button #}
                                 <div class="flex flex-col gap-2">
-                                    <a href="{{ url_for('backoffice.download_registration_qr_code', assembly_id=assembly.id) }}"
+                                    <a href="{{ url_for('backoffice_registration.download_registration_qr_code', assembly_id=assembly.id) }}"
                                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
                                        style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
                                        download>
@@ -164,7 +164,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     {{ _("No registration page has been created for this assembly.") }}
                 </p>
                 <form method="POST"
-                      action="{{ url_for('backoffice.create_assembly_registration_page', assembly_id=assembly.id) }}">
+                      action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     {{ button(_("Create Registration Page"), type="submit", variant="primary") }}
                 </form>

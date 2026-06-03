@@ -53,7 +53,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     {
     "key": "registration",
     "label": _("Registration"),
-    "href": url_for('backoffice.view_assembly_registration', assembly_id=assembly.id) ~ source_param,
+    "href": url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "registration"
     },
     {
