@@ -72,6 +72,15 @@ class TestBackofficeAssemblyDetails:
         # The old inline expression is incompatible with the CSP-safe build.
         assert b"navigator.clipboard.writeText(" not in response.data
 
+    def test_registration_qr_code_endpoint_returns_png(self, logged_in_admin, existing_assembly):
+        """GET .../registration/qr-code.png returns a PNG attachment for the assembly."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
+        assert response.status_code == 200
+        assert response.mimetype == "image/png"
+        # PNG signature: 89 50 4E 47 0D 0A 1A 0A
+        assert response.data.startswith(b"\x89PNG\r\n\x1a\n")
+        assert "attachment" in response.headers.get("Content-Disposition", "")
+
 
 class TestBackofficeAssemblyCreate:
     """Test backoffice assembly creation functionality."""

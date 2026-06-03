@@ -572,6 +572,58 @@ class TestDeleteField:
             respondent_field_schema_service.delete_field(uow, admin_user.id, test_assembly.id, fixed_field.id)
 
 
+class TestAddField:
+    def test_adds_field_with_defaults(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_key="favourite_colour",
+        )
+
+        assert field.field_key == "favourite_colour"
+        # Label is humanised from the key when not supplied (sentence-case)
+        assert field.label == "Favourite colour"
+        assert field.field_type is FieldType.TEXT
+        assert field.group is RespondentFieldGroup.OTHER
+
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        assert any(f.field_key == "favourite_colour" for f in schema)
+
+    def test_adds_choice_field_with_custom_label_and_options(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_key="age_band",
+            label="Age band",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="18_29"), ChoiceOption(value="30_44")],
+        )
+
+        assert field.label == "Age band"
+        assert field.group is RespondentFieldGroup.ABOUT_YOU
+        assert field.field_type is FieldType.CHOICE_DROPDOWN
+        assert [opt.value for opt in field.options] == ["18_29", "30_44"]
+
+    def test_sort_order_continues_within_group(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        first = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="one", group=RespondentFieldGroup.ABOUT_YOU
+        )
+        second = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="two", group=RespondentFieldGroup.ABOUT_YOU
+        )
+
+        assert second.sort_order > first.sort_order
+
+
 class TestPermissions:
     def test_regular_user_cannot_edit(self, uow, admin_user, regular_user, test_assembly):
         respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
