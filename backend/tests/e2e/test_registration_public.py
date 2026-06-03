@@ -62,7 +62,7 @@ def published_registration_page(postgres_session_factory, admin_user) -> Registr
 
     # Create a registration page with auto-generated slugs
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
 
     # Update the form HTML with a valid form
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

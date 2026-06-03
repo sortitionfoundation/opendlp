@@ -64,7 +64,7 @@ def _slugify(text: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"[\s_]+", "-", text)
     # Remove apostrophes and similar characters completely
-    text = re.sub(r"[''`]", "", text)
+    text = re.sub(r"['`]", "", text)
     # Remove any character that isn't alphanumeric or hyphen
     text = re.sub(r"[^a-z0-9-]", "", text)
     # Collapse multiple hyphens

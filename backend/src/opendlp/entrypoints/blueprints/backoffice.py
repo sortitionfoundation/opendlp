@@ -542,7 +542,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save and publish registration form HTML content."""
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
-        _nav = get_assembly_nav_context(
+        get_assembly_nav_context(
             bootstrap.bootstrap,
             current_user.id,
             assembly_id,
@@ -643,7 +643,7 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
     """Download registration QR code as PNG image."""
     try:
         # Verify user has permission to access this assembly
-        _nav = get_assembly_nav_context(
+        get_assembly_nav_context(
             bootstrap.bootstrap,
             current_user.id,
             assembly_id,
