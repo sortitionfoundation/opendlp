@@ -2,9 +2,37 @@
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
 # Re-exported so service-layer callers import it from the usual exceptions module.
-from opendlp.domain.registration_page import RegistrationPageNotReady  # noqa: F401
-from opendlp.domain.validators import SlugError  # noqa: F401
+from opendlp.domain.registration_page import RegistrationPageNotReady
+from opendlp.domain.validators import SlugError
 from opendlp.translations import gettext as _
+
+__all__ = [
+    "AssemblyNotFoundError",
+    "CannotRemoveLastAuthMethod",
+    "EmailNotConfirmed",
+    "GoogleSheetConfigNotFoundError",
+    "InsufficientPermissions",
+    "InvalidConfirmationToken",
+    "InvalidCredentials",
+    "InvalidInvite",
+    "InvalidResetToken",
+    "InvalidSelection",
+    "InviteNotFoundError",
+    "NotFoundError",
+    "OAuthError",
+    "OAuthStateError",
+    "OpenDLPError",
+    "PasswordTooWeak",
+    "RateLimitExceeded",
+    "RegistrationPageNotFoundError",
+    "RegistrationPageNotReady",
+    "RespondentNotFoundError",
+    "SelectionRunRecordNotFoundError",
+    "ServiceLayerError",
+    "SlugError",
+    "UserAlreadyExists",
+    "UserNotFoundError",
+]
 
 
 class OpenDLPError(Exception):
