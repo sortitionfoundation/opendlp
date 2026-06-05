@@ -19,6 +19,7 @@ from werkzeug.security import generate_password_hash
 
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
+from opendlp.feature_flags import reload_flags
 from opendlp.service_layer import security, totp_service
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
@@ -53,11 +54,28 @@ def set_test_env():
     """Automatically set test environment for all tests."""
     original_env = os.environ.get("FLASK_ENV")
     os.environ["FLASK_ENV"] = "testing"
+    # Keep the legacy /dashboard available for tests that still target it.
+    # Individual tests that exercise the new default can override these via
+    # monkeypatch and reload_flags().
+    ff_defaults = {
+        "FF_OLD_DEFAULT_DASHBOARD": "true",
+        "FF_LINK_TO_OLD_DASHBOARD": "true",
+    }
+    original_ffs = {key: os.environ.get(key) for key in ff_defaults}
+    for key, value in ff_defaults.items():
+        os.environ.setdefault(key, value)
+    reload_flags()
     yield
     if original_env is not None:  # pragma: no cover
         os.environ["FLASK_ENV"] = original_env
     else:
         os.environ.pop("FLASK_ENV", None)
+    for key, original_value in original_ffs.items():
+        if original_value is None:
+            os.environ.pop(key, None)
+        else:  # pragma: no cover
+            os.environ[key] = original_value
+    reload_flags()
 
 
 @pytest.fixture

@@ -3,13 +3,14 @@ ABOUTME: Handles home page, dashboard, and assembly views with login requirement
 
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.feature_flags import default_dashboard_endpoint, old_dashboard_route_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_gsheet,
@@ -36,7 +37,7 @@ main_bp = Blueprint("main", __name__)
 def index() -> ResponseReturnValue:
     """Home page - redirects to dashboard if logged in, otherwise shows landing page."""
     if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for(default_dashboard_endpoint()))
     return render_template("main/index.html"), 200
 
 
@@ -44,6 +45,8 @@ def index() -> ResponseReturnValue:
 @login_required
 def dashboard() -> ResponseReturnValue:
     """User dashboard showing accessible assemblies."""
+    if not old_dashboard_route_enabled():
+        abort(404)
     try:
         uow = bootstrap.bootstrap()
         with uow:
