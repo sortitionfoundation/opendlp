@@ -1,11 +1,13 @@
 """ABOUTME: Domain validators for OpenDLP
-ABOUTME: Contains custom validators including Google Spreadsheet URL validation"""
+ABOUTME: Contains field validators, URL validators, and email validation"""
 
 import re
 from typing import Any
 from urllib.parse import urlparse
 
 import gspread.utils
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import EmailValidator
 from wtforms import ValidationError
 from wtforms.validators import URL
 
@@ -138,3 +140,65 @@ class MockField:
     def gettext(self, message: str) -> str:
         """Mock gettext method for WTForms compatibility."""
         return message
+
+
+def validate_email(email: str) -> None:
+    """Validate an email address using Django's EmailValidator. Raises ValueError on failure."""
+    # we use the well-tested and maintained Django EmailValidator
+    # Note that passing in the message is important - if we don't do that then
+    # the validator will try to use the default message, which will trigger the
+    # auto localisation of the string which then blows up.
+    validator = EmailValidator(message="Invalid email address")
+    try:
+        validator(email)
+    except DjangoValidationError as error:
+        raise ValueError("Invalid email address") from error
+
+
+def validate_bool(str_value: str, allow_none: bool) -> tuple[bool | None, str | None]:
+    """Validate boolean from a radio button. Accepts yes/no/true/false/1/0 (case-insensitive).
+
+    Returns (value, error). When allow_none is True a blank value returns (None, None)
+    instead of an error.
+    """
+    lower = str_value.lower()
+    if lower in ("yes", "true", "1"):
+        return True, None
+    if lower in ("no", "false", "0"):
+        return False, None
+    if allow_none:
+        return None, None
+    return None, "Please select Yes or No"
+
+
+def validate_choice(str_value: str, valid_values: set[str] | None) -> tuple[str | None, str | None]:
+    """Validate a choice field. Returns (value, error)."""
+    if not str_value:
+        return None, "Please select an option"
+    if valid_values and str_value not in valid_values:
+        return None, "Please select a valid option"
+    return str_value, None
+
+
+def validate_integer(str_value: str) -> tuple[int | None, str | None]:
+    """Validate an integer field. Returns (value, error)."""
+    if not str_value:
+        return None, "This field is required"
+    try:
+        return int(str_value), None
+    except ValueError:
+        return None, "Please enter a valid number"
+
+
+def validate_email_field(str_value: str) -> tuple[str | None, str | None]:
+    """Validate an email form field. Returns (value, error).
+
+    Wraps validate_email in the (value, error) tuple pattern used by form field validators.
+    """
+    if not str_value:
+        return None, "This field is required"
+    try:
+        validate_email(str_value)
+        return str_value, None
+    except ValueError:
+        return None, "Please enter a valid email address"
