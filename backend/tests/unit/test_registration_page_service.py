@@ -4,6 +4,7 @@ ABOUTME: Covers management functions, public lookup and visibility resolution"""
 import uuid
 
 import pytest
+from jinja2 import UndefinedError
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_page import (
@@ -682,16 +683,51 @@ class TestResolveVisibility:
         assert result.is_test is False
 
 
-class TestGetPageAndSourceForRender:
-    def test_returns_source_for_page(self):
+class TestRenderRegistrationForm:
+    def test_renders_with_assembly_and_form_context(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
+        service.update_registration_page_html(
+            uow,
+            admin.id,
+            assembly.id,
+            '<form action="{{ form_action }}">{{ csrf_form_element }}'
+            "<h1>{{ assembly_title }}</h1>"
+            '<input name="name" value="{{ value(\'name\') }}"></form>',
+        )
         page = uow.registration_pages.get_by_assembly_id(assembly.id)
 
-        source = service.get_page_and_source_for_render(uow, page)
-        assert source.readiness_problems() == []
+        rendered = service.render_registration_form(
+            uow,
+            page,
+            csrf_form_element="<csrf>",
+            form_action="/r/submit",
+            values={"name": "Ada"},
+        )
+
+        assert "<csrf>" in rendered
+        assert 'action="/r/submit"' in rendered
+        assert "Test Assembly" in rendered  # assembly_title from the loaded assembly
+        assert 'value="Ada"' in rendered  # submitted values passed through
+
+    def test_does_not_expose_csp_nonce(self):
+        # The render context omits csp_nonce, so author HTML referencing it
+        # raises (StrictUndefined) rather than receiving the request nonce -
+        # the security boundary that stops author HTML whitelisting inline JS.
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id)
+        service.update_registration_page_html(
+            uow,
+            admin.id,
+            assembly.id,
+            '<form action="{{ form_action }}">{{ csrf_form_element }}<script nonce="{{ csp_nonce }}">x</script></form>',
+        )
+        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+
+        with pytest.raises(UndefinedError):
+            service.render_registration_form(uow, page, csrf_form_element="<csrf>", form_action="/r/submit")
 
 
 class TestRenderThankYouHtml:

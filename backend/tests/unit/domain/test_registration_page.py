@@ -216,6 +216,20 @@ class TestRegistrationPageHtml:
         with pytest.raises(UndefinedError):
             html.render(RenderContext(csrf_form_element="x", form_action="/u"))
 
+    def test_render_does_not_expose_csp_nonce(self):
+        # Security guard: author HTML is rendered in a sandbox that is NOT given
+        # the request CSP nonce. If it were, an assembly manager could write
+        # <script nonce="{{ csp_nonce }}">...</script> and bypass the CSP that
+        # otherwise blocks their inline JavaScript. Under StrictUndefined a
+        # reference to the absent nonce raises rather than rendering empty, so
+        # the nonce can never reach the output.
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html='<script nonce="{{ csp_nonce }}">alert(1)</script> {{ form_action }}',
+        )
+        with pytest.raises(UndefinedError):
+            html.render(RenderContext(csrf_form_element="x", form_action="/u"))
+
     def test_render_with_no_tokens_returns_html_unchanged(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html="<p>hello</p>")
         rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))

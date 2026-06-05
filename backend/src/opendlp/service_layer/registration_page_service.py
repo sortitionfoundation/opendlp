@@ -15,6 +15,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageHtml,
     RegistrationPageSource,
     RegistrationPageStatus,
+    RenderContext,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 
@@ -490,10 +491,40 @@ def resolve_visibility(page: RegistrationPage | None) -> RegistrationPageVisibil
     return RegistrationPageVisibility(page=page, state=RegistrationPageVisibilityState.CLOSED)
 
 
-def get_page_and_source_for_render(uow: AbstractUnitOfWork, page: RegistrationPage) -> HtmlSource:
-    """Load the active HTML source for a page that has already been resolved as visible."""
+def render_registration_form(
+    uow: AbstractUnitOfWork,
+    page: RegistrationPage,
+    csrf_form_element: str,
+    form_action: str,
+    values: dict[str, str] | None = None,
+    errors: dict[str, list[str]] | None = None,
+    form_level_errors: list[str] | None = None,
+) -> str:
+    """Render the public form HTML for a page already resolved as visible.
+
+    Loads the active HTML source and the assembly in a single transaction and
+    renders the author HTML against a RenderContext. Keeping the render inside
+    the ``with uow:`` block means a failed render (the sandbox raises on bad
+    author HTML) still rolls back and closes the session rather than leaking an
+    open transaction.
+
+    The request CSP nonce is deliberately absent from the RenderContext: author
+    HTML must not be able to reference ``{{ csp_nonce }}`` to whitelist its own
+    inline JavaScript past the Content-Security-Policy.
+    """
     with uow:
-        return _load_html_source(uow, page).create_detached_copy()
+        source = _load_html_source(uow, page)
+        assembly = uow.assemblies.get(page.assembly_id)
+        ctx = RenderContext(
+            csrf_form_element=csrf_form_element,
+            form_action=form_action,
+            assembly_title=assembly.title if assembly else "",
+            assembly_question=assembly.question if assembly else "",
+            values=values or {},
+            errors=errors or {},
+            form_level_errors=form_level_errors or [],
+        )
+        return source.render(ctx)
 
 
 def render_thank_you_html(page: RegistrationPage) -> str:

@@ -9,7 +9,6 @@ from flask.testing import FlaskClient
 
 from opendlp.domain.registration_page import (
     RegistrationPage,
-    RegistrationPageHtml,
     RegistrationPageStatus,
 )
 from opendlp.entrypoints.flask_app import create_app
@@ -117,20 +116,17 @@ class TestShowRegistrationForm:
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.PUBLISHED
 
-        html_source = MagicMock(spec=RegistrationPageHtml)
-        html_source.render.return_value = "<form>Test Form</form>"
-
         with (
             patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find,
             patch("opendlp.entrypoints.blueprints.registration.resolve_visibility") as mock_resolve,
-            patch("opendlp.entrypoints.blueprints.registration.get_page_and_source_for_render") as mock_source,
+            patch("opendlp.entrypoints.blueprints.registration.render_registration_form") as mock_render,
             patch("opendlp.entrypoints.blueprints.registration.bootstrap"),
         ):
             mock_find.return_value = page
             mock_resolve.return_value = RegistrationPageVisibility(
                 page=page, state=RegistrationPageVisibilityState.LIVE
             )
-            mock_source.return_value = html_source
+            mock_render.return_value = "<form>Test Form</form>"
 
             response = client.get("/register/test-slug")
             assert response.status_code == 200
@@ -141,20 +137,17 @@ class TestShowRegistrationForm:
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.TEST
 
-        html_source = MagicMock(spec=RegistrationPageHtml)
-        html_source.render.return_value = "<form>Test Form</form>"
-
         with (
             patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find,
             patch("opendlp.entrypoints.blueprints.registration.resolve_visibility") as mock_resolve,
-            patch("opendlp.entrypoints.blueprints.registration.get_page_and_source_for_render") as mock_source,
+            patch("opendlp.entrypoints.blueprints.registration.render_registration_form") as mock_render,
             patch("opendlp.entrypoints.blueprints.registration.bootstrap"),
         ):
             mock_find.return_value = page
             mock_resolve.return_value = RegistrationPageVisibility(
                 page=page, state=RegistrationPageVisibilityState.TEST
             )
-            mock_source.return_value = html_source
+            mock_render.return_value = "<form>Test Form</form>"
 
             response = client.get("/register/test-slug")
             assert response.status_code == 200
@@ -205,14 +198,11 @@ class TestSubmitRegistrationForm:
         page.url_slug = "test-slug"
         page.status = RegistrationPageStatus.PUBLISHED
 
-        html_source = MagicMock(spec=RegistrationPageHtml)
-        html_source.render.return_value = "<form>Form with errors</form>"
-
         with (
             patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit,
             patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find,
             patch("opendlp.entrypoints.blueprints.registration.resolve_visibility") as mock_resolve,
-            patch("opendlp.entrypoints.blueprints.registration.get_page_and_source_for_render") as mock_source,
+            patch("opendlp.entrypoints.blueprints.registration.render_registration_form") as mock_render,
             patch("opendlp.entrypoints.blueprints.registration.bootstrap"),
         ):
             mock_submit.return_value = result
@@ -220,15 +210,14 @@ class TestSubmitRegistrationForm:
             mock_resolve.return_value = RegistrationPageVisibility(
                 page=page, state=RegistrationPageVisibilityState.LIVE
             )
-            mock_source.return_value = html_source
+            mock_render.return_value = "<form>Form with errors</form>"
 
             response = client.post("/register/test-slug", data={"name": "Test"})
             assert response.status_code == 200
-            # Verify render was called with error context
-            render_call = html_source.render.call_args
-            ctx = render_call[0][0]
-            assert ctx.errors == {"email": ["Invalid email"]}
-            assert ctx.values == {"name": "Test"}
+            # Verify the form was re-rendered with the failed submission's state
+            render_kwargs = mock_render.call_args.kwargs
+            assert render_kwargs["errors"] == {"email": ["Invalid email"]}
+            assert render_kwargs["values"] == {"name": "Test"}
 
 
 class TestThankYouPage:

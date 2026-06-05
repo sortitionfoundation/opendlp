@@ -10,13 +10,12 @@ from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf
 
 from opendlp import bootstrap
-from opendlp.domain.registration_page import RenderContext
 from opendlp.feature_flags import has_feature
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
     find_registration_page_by_short_url_slug,
     find_registration_page_by_url_slug,
-    get_page_and_source_for_render,
+    render_registration_form,
     render_thank_you_html,
     resolve_visibility,
 )
@@ -58,17 +57,12 @@ def show_registration_form(url_slug: str) -> ResponseReturnValue:
 
     # LIVE or TEST - render the form
     assert page is not None  # Guaranteed by visibility state
-    source = get_page_and_source_for_render(uow, page)
-    assembly = uow.assemblies.get(page.assembly_id)
-
-    ctx = RenderContext(
+    rendered_form = render_registration_form(
+        uow,
+        page,
         csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
-        assembly_title=assembly.title if assembly else "",
-        assembly_question=assembly.question if assembly else "",
     )
-
-    rendered_form = source.render(ctx)
 
     return render_template(
         "register/form.html",
@@ -98,21 +92,17 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     if page is None:
         abort(404)
 
-    source = get_page_and_source_for_render(uow, page)
     visibility = resolve_visibility(page)
-    assembly = uow.assemblies.get(page.assembly_id)
 
-    ctx = RenderContext(
+    rendered_form = render_registration_form(
+        uow,
+        page,
         csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
-        assembly_title=assembly.title if assembly else "",
-        assembly_question=assembly.question if assembly else "",
         values=result.values,
         errors=result.field_errors,
         form_level_errors=result.form_errors,
     )
-
-    rendered_form = source.render(ctx)
 
     return render_template(
         "register/form.html",

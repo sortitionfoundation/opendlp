@@ -1,6 +1,7 @@
 """ABOUTME: E2E tests for public registration page routes
 ABOUTME: Tests the full submission flow from rendering form to creating respondent"""
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -99,6 +100,92 @@ def test_mode_registration_page(postgres_session_factory, admin_user) -> Registr
     # Page is in TEST status by default, just return it
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         return uow.registration_pages.get(page.id).create_detached_copy()
+
+
+# Sentinel emitted when csp_nonce is absent from the render context. It proves
+# the probe location actually rendered (rather than the assertion passing because
+# the page errored or the markup moved).
+NONCE_ABSENT_SENTINEL = "csp-nonce-was-absent"
+
+# Form HTML that tries to smuggle the request CSP nonce into author-controlled
+# output. It is valid for publishing (carries both required placeholders) but a
+# malicious author has added a <script> whose nonce attribute references
+# csp_nonce - if that nonce were available to the sandbox the inline JS would
+# satisfy the CSP and execute. The `default` filter keeps the page rendering
+# (the sandbox uses StrictUndefined, so a bare {{ csp_nonce }} would raise): it
+# yields the sentinel today and the real nonce only if a regression adds
+# csp_nonce to the render context.
+NONCE_PROBE_FORM_HTML = """
+<form method="post" action="{{ form_action }}">
+    {{ csrf_form_element }}
+    <script nonce="{{ csp_nonce | default('__SENTINEL__') }}">window.__pwned = true;</script>
+    <button type="submit" class="govuk-button">Submit</button>
+</form>
+""".replace("__SENTINEL__", NONCE_ABSENT_SENTINEL)
+
+
+def _csp_nonce_from_response(response) -> str:
+    """Extract the per-request CSP nonce from the response's CSP header."""
+    csp = response.headers.get("Content-Security-Policy", "")
+    match = re.search(r"'nonce-([^']+)'", csp)
+    assert match, f"No CSP nonce found in header: {csp!r}"
+    return match.group(1)
+
+
+@pytest.fixture
+def nonce_probe_registration_page(postgres_session_factory, admin_user) -> RegistrationPage:
+    """A published page whose form HTML references csp_nonce."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title="Nonce Probe Assembly",
+            created_by_user_id=admin_user.id,
+            question="Test question?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+        )
+        assembly_id = assembly.id
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_registration_page_html(uow, admin_user.id, assembly_id, NONCE_PROBE_FORM_HTML)
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        return publish_registration_page(uow, admin_user.id, assembly_id)
+
+
+class TestCspNonceNotLeakedToAuthorHtml:
+    """Author HTML must never receive the request CSP nonce.
+
+    Assembly managers can author form HTML containing Jinja, which we render in
+    a sandbox. Our CSP forbids inline JavaScript unless it carries the
+    per-request nonce. If author HTML could read that nonce (via
+    ``{{ csp_nonce }}``), a malicious manager could whitelist their own inline
+    script and defeat the CSP. The page's own framework scripts legitimately
+    carry the nonce; this locks in that author-controlled markup never does,
+    guarding against a future change that adds ``csp_nonce`` to the render
+    context.
+    """
+
+    def test_author_script_does_not_receive_request_nonce(
+        self, client: FlaskClient, nonce_probe_registration_page: RegistrationPage
+    ) -> None:
+        response = client.get(f"/register/{nonce_probe_registration_page.url_slug}")
+        assert response.status_code == 200
+
+        # The real nonce is in the CSP header. It legitimately appears in the
+        # page's own framework <script> tags (the outer template gets the nonce),
+        # so we check the *author-controlled* script specifically: it must not
+        # have been handed the live nonce, or its inline JS would satisfy the CSP.
+        nonce = _csp_nonce_from_response(response)
+        assert f'nonce="{nonce}">window.__pwned'.encode() not in response.data
+
+        # And it did render - with the empty-context sentinel rather than a
+        # nonce - so the assertion above is not vacuously true. A regression that
+        # added csp_nonce to the render context would swap the sentinel for the
+        # live nonce and fail the check above.
+        assert f'nonce="{NONCE_ABSENT_SENTINEL}">window.__pwned'.encode() in response.data
 
 
 class TestRegistrationFormRendering:
