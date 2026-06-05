@@ -1,16 +1,12 @@
 """ABOUTME: Public registration page routes for assembly registration forms
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
-from collections.abc import Callable
-from functools import wraps
-from typing import Any
-
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf
 
 from opendlp import bootstrap
-from opendlp.feature_flags import has_feature
+from opendlp.entrypoints.decorators import require_feature
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
     find_registration_page_by_short_url_slug,
@@ -28,20 +24,8 @@ from opendlp.service_layer.registration_submission_service import (
 registration_bp = Blueprint("registration", __name__)
 
 
-def require_registration_feature(f: Callable[..., ResponseReturnValue]) -> Callable[..., ResponseReturnValue]:
-    """Return 404 unless FF_REGISTRATION_PAGE is enabled."""
-
-    @wraps(f)
-    def decorated(*args: Any, **kwargs: Any) -> ResponseReturnValue:
-        if not has_feature("registration_page"):
-            abort(404)
-        return f(*args, **kwargs)
-
-    return decorated
-
-
 @registration_bp.route("/register/<url_slug>", methods=["GET"])
-@require_registration_feature
+@require_feature("registration_page")
 def show_registration_form(url_slug: str) -> ResponseReturnValue:
     """Render the public registration form for the given URL slug."""
     uow = bootstrap.bootstrap()
@@ -72,7 +56,7 @@ def show_registration_form(url_slug: str) -> ResponseReturnValue:
 
 
 @registration_bp.route("/register/<url_slug>", methods=["POST"])
-@require_registration_feature
+@require_feature("registration_page")
 def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     """Handle form submission for the registration page."""
     uow = bootstrap.bootstrap()
@@ -112,7 +96,7 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
 
 
 @registration_bp.route("/register/<url_slug>/thank-you", methods=["GET"])
-@require_registration_feature
+@require_feature("registration_page")
 def thank_you(url_slug: str) -> ResponseReturnValue:
     """Display the thank-you page after successful registration submission."""
     uow = bootstrap.bootstrap()
@@ -133,7 +117,7 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
 
 
 @registration_bp.route("/r/<short_url_slug>", methods=["GET"])
-@require_registration_feature
+@require_feature("registration_page")
 def short_url_redirect(short_url_slug: str) -> ResponseReturnValue:
     """Redirect from short URL to canonical registration URL.
 
@@ -149,7 +133,7 @@ def short_url_redirect(short_url_slug: str) -> ResponseReturnValue:
 
 
 @registration_bp.route("/registration-closed", methods=["GET"])
-@require_registration_feature
+@require_feature("registration_page")
 def registration_closed() -> ResponseReturnValue:
     """Display the static registration closed page."""
     return render_template("register/closed.html")
