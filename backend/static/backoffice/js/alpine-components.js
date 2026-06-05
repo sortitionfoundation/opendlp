@@ -452,44 +452,6 @@ document.addEventListener("alpine:init", function () {
     });
 
     /**
-     * URL copy-to-clipboard component
-     *
-     * Stores a URL in component state and exposes a copy() method that writes
-     * it to the clipboard, flipping a `copied` flag for 2s to drive UI feedback
-     * (e.g. icon swap). Required because the CSP-safe Alpine build cannot evaluate
-     * `navigator.clipboard.writeText(...)` in inline @click expressions.
-     *
-     * Usage:
-     *   <div x-data="urlCopy({ url: '{{ url }}' })">
-     *     <button type="button" @click="copy()" :aria-label="copied ? 'Copied' : 'Copy URL'">
-     *       <svg x-show="!copied" ...>copy icon</svg>
-     *       <svg x-show="copied" x-cloak ...>checkmark</svg>
-     *     </button>
-     *   </div>
-     *
-     * Options:
-     *   - url: The URL (or any string) to copy when copy() is invoked
-     */
-    Alpine.data("urlCopy", function (options) {
-        var url = options.url || "";
-
-        return {
-            copied: false,
-
-            copy: function () {
-                var self = this;
-                if (!navigator.clipboard) return;
-                navigator.clipboard.writeText(url).then(function () {
-                    self.copied = true;
-                    setTimeout(function () {
-                        self.copied = false;
-                    }, 2000);
-                });
-            },
-        };
-    });
-
-    /**
      * Modal component for dialogs and overlays
      *
      * Usage:

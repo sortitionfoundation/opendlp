@@ -55,21 +55,21 @@ class TestBackofficeAssemblyDetails:
         # Regular users without assembly roles should get permission error
         assert response.status_code in [302, 403, 500]
 
-    def test_registration_url_copy_widget_uses_csp_safe_alpine_component(
+    def test_registration_url_copy_widget_uses_csp_safe_data_attributes(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-        """The copy-URL button must use the urlCopy Alpine.data component, not an
-        inline navigator.clipboard expression — the latter fails silently under the
-        CSP-safe Alpine build (`@alpinejs/csp`)."""
+        """The copy-URL button must drive the clipboard through utilities.js
+        data attributes, not an inline navigator.clipboard expression — the
+        latter fails silently under the CSP-safe Alpine build (`@alpinejs/csp`)."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
         assert response.status_code == 200
         assert b"Registration Page Details" in response.data
-        assert b'x-data="urlCopy(' in response.data
-        assert b'@click="copy()"' in response.data
-        # The old inline expression is incompatible with the CSP-safe build.
+        assert b"data-copy-text=" in response.data
+        assert b'data-copy-feedback="inline"' in response.data
+        # No inline JS expression — incompatible with the CSP-safe build.
         assert b"navigator.clipboard.writeText(" not in response.data
 
     def test_registration_qr_code_endpoint_returns_png(self, logged_in_admin, existing_assembly):
