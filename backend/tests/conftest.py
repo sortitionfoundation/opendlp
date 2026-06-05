@@ -59,7 +59,7 @@ def set_test_env():
     # monkeypatch and reload_flags().
     ff_defaults = {
         "FF_OLD_DEFAULT_DASHBOARD": "true",
-        "FF_LINK_TO_OLD_DASHBOARD": "true",
+        "FF_DASHBOARD_SWITCH_LINKS": "true",
     }
     original_ffs = {key: os.environ.get(key) for key in ff_defaults}
     for key, value in ff_defaults.items():

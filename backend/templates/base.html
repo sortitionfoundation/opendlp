@@ -57,12 +57,6 @@
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
                                 </li>
-                                {% if feature('backoffice_link') %}
-                                    <li class="govuk-header__navigation-item">
-                                        <a class="govuk-header__link"
-                                           href="{{ url_for('backoffice.dashboard') }}">{{ _("Back Office Dashboard (preview)") }}</a>
-                                    </li>
-                                {% endif %}
                                 {% if current_user.global_role.value == 'admin' or current_user.global_role.value == 'global-organiser' %}
                                     <li class="govuk-header__navigation-item">
                                         <a class="govuk-header__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
@@ -181,6 +175,12 @@
                                    href="{{ help_site_data_agreement }}"
                                    target="_blank">{{ _("User Data Agreement") }}</a>
                             </li>
+                            {% if feature('dashboard_switch_links') %}
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                       href="{{ url_for('backoffice.dashboard') }}">{{ _("New Dashboard") }}</a>
+                                </li>
+                            {% endif %}
                             <li class="govuk-footer__inline-list-item govuk-secondary-text-colour">
                                 {{ _("OpenDLP Version") }} {{ opendlp_version }}
                             </li>

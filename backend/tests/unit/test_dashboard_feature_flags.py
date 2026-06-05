@@ -19,7 +19,7 @@ from opendlp.feature_flags import (
 @pytest.fixture(autouse=True)
 def _clean_dashboard_flags(monkeypatch):
     """Strip the FF_*DASHBOARD vars set by the global conftest so each test starts clean."""
-    for key in ("FF_OLD_DEFAULT_DASHBOARD", "FF_LINK_TO_OLD_DASHBOARD"):
+    for key in ("FF_OLD_DEFAULT_DASHBOARD", "FF_DASHBOARD_SWITCH_LINKS"):
         monkeypatch.delenv(key, raising=False)
     reload_flags()
     yield
@@ -51,19 +51,19 @@ class TestOldDashboardRouteEnabled:
         assert old_dashboard_route_enabled() is True
 
     def test_enabled_when_link_flag_on(self, monkeypatch):
-        monkeypatch.setenv("FF_LINK_TO_OLD_DASHBOARD", "true")
+        monkeypatch.setenv("FF_DASHBOARD_SWITCH_LINKS", "true")
         reload_flags()
         assert old_dashboard_route_enabled() is True
 
     def test_enabled_when_both_flags_on(self, monkeypatch):
         monkeypatch.setenv("FF_OLD_DEFAULT_DASHBOARD", "true")
-        monkeypatch.setenv("FF_LINK_TO_OLD_DASHBOARD", "true")
+        monkeypatch.setenv("FF_DASHBOARD_SWITCH_LINKS", "true")
         reload_flags()
         assert old_dashboard_route_enabled() is True
 
 
 class TestFooterOldDashboardLink:
-    """Verify the footer renders the link only when FF_LINK_TO_OLD_DASHBOARD is on."""
+    """Verify the backoffice footer renders the old-dashboard link only when FF_DASHBOARD_SWITCH_LINKS is on."""
 
     def _render_footer(self) -> str:
         reload_flags()
@@ -96,12 +96,12 @@ class TestFooterOldDashboardLink:
             return response.data.decode("utf-8")
 
     def test_link_absent_when_flag_off(self, monkeypatch):
-        monkeypatch.delenv("FF_LINK_TO_OLD_DASHBOARD", raising=False)
+        monkeypatch.delenv("FF_DASHBOARD_SWITCH_LINKS", raising=False)
         html = self._render_footer()
         assert "Old Dashboard" not in html
 
     def test_link_present_when_flag_on(self, monkeypatch):
-        monkeypatch.setenv("FF_LINK_TO_OLD_DASHBOARD", "true")
+        monkeypatch.setenv("FF_DASHBOARD_SWITCH_LINKS", "true")
         html = self._render_footer()
         assert "Old Dashboard" in html
         assert "/dashboard" in html

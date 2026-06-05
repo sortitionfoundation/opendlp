@@ -50,7 +50,8 @@ def old_dashboard_route_enabled() -> bool:
     """Whether the legacy /dashboard route should be reachable at all.
 
     The route stays on while either flag is set: FF_OLD_DEFAULT_DASHBOARD (the
-    user lands there after login) or FF_LINK_TO_OLD_DASHBOARD (the footer link
-    needs a working target). When both are off, the route is fully disabled.
+    user lands there after login) or FF_DASHBOARD_SWITCH_LINKS (the
+    cross-dashboard switch links need a working target). When both are off,
+    the route is fully disabled.
     """
-    return has_feature("old_default_dashboard") or has_feature("link_to_old_dashboard")
+    return has_feature("old_default_dashboard") or has_feature("dashboard_switch_links")
