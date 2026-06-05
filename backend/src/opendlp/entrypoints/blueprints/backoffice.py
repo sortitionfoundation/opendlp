@@ -19,7 +19,6 @@ from opendlp.entrypoints.forms import (
     EditAssemblyForm,
     EditAssemblyGSheetForm,
 )
-from opendlp.entrypoints.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_nav_context,
@@ -33,6 +32,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.registration_page_service import (
     get_registration_page_with_source,
     update_registration_page,

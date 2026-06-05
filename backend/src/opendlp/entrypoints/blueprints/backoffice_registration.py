@@ -14,7 +14,6 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
-from opendlp.entrypoints.qr_codes import generate_qr_code_base64, generate_qr_code_png
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
 from opendlp.service_layer.exceptions import (
@@ -22,6 +21,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     RegistrationPageNotFoundError,
 )
+from opendlp.service_layer.qr_codes import generate_qr_code_base64, generate_qr_code_png
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
