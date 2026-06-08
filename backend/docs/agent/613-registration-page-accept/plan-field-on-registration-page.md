@@ -282,29 +282,33 @@ if not str_value:
 ... (existing email / choice / integer / text validation on the non-empty value)
 ```
 
-New helper `_coerce_form_bool(str_value, *, required)`:
+New helper `_coerce_form_bool(str_value, *, required)`. Note a *required* bool
+must be **True** — an explicit "no" (or a blank/unchecked box) is an error, not a
+recorded `False`; only an *optional* bool records `False`:
 
 ```python
-truthy = {"yes", "true", "on", "1"}
-falsy = {"no", "false", "0"}
-v = str_value.lower()
-if v in truthy:
+v = str_value.strip().lower()
+if v in ("yes", "true", "on", "1"):
     return True, None
-if v in falsy:
-    return False, None
-if v == "":                        # checkbox unchecked OR radio not picked
+if v in ("no", "false", "0", ""):  # explicit no, or checkbox unchecked
     if required:
-        return None, _("Please tick this box to continue")
+        return None, "Please tick this box to continue"
     return False, None             # optional bool -> False, never None
-return None, _("Please select a valid option")
+return None, "Please select a valid option"
 ```
+
+(Strings are kept bare to match the existing `registration_submission_service` /
+`domain/validators.py` style, which does not gettext-wrap field-error messages.
+No `translate-regen` needed for this phase.)
 
 Key points:
 
 - A required checkbox left unchecked → key absent → `""` → error. ✔
+- A required checkbox with an explicit "no" → error (must be checked). ✔
 - An optional checkbox unchecked → `False` (GDPR-safe for `stay_on_db`). ✔
-- A free-form authored radio answering "no" → `False` (not `True`). ✔ (this is
-  why we parse the value rather than test truthiness — see the note in §3.2)
+- A free-form authored radio answering "no" on an *optional* field → `False`
+  (not `True`). ✔ (this is why we parse the value rather than test truthiness —
+  see the note in §3.2)
 - Never returns `None` for an on-form bool. ✔
 
 ### 5.3 Required non-bool blank
@@ -595,36 +599,38 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red — `tests/unit/` for `registration_submission_service`:**
 
-- [ ] `NO` field present in the POST body → ignored, not in `cleaned`, no error.
-- [ ] required (`YES_REQUIRED`) checkbox unchecked (key absent / `""`) → error.
-- [ ] optional (`YES_OPTIONAL`) checkbox unchecked → `False` (never `None`).
-- [ ] checkbox checked (`"yes"`) → `True`.
-- [ ] free-form authored radio `"no"` → `False` (value parsed, not truthy-tested).
-- [ ] unexpected bool value (e.g. `"maybe"`) → error.
-- [ ] optional non-bool blank → accepted, not stored; required non-bool blank →
+- [x] `NO` field present in the POST body → ignored, not in `cleaned`, no error.
+- [x] required (`YES_REQUIRED`) checkbox unchecked (key absent / `""`) → error.
+- [x] required checkbox with explicit `"no"` → error (must be checked).
+- [x] optional (`YES_OPTIONAL`) checkbox unchecked → `False` (never `None`).
+- [x] checkbox checked (`"yes"`) → `True`.
+- [x] optional field `"no"` → `False` (value parsed, not truthy-tested).
+- [x] unexpected bool value (e.g. `"maybe"`) → error.
+- [x] optional non-bool blank → accepted, not stored; required non-bool blank →
       error.
-- [ ] required choice unselected (`""`) → error.
+- [x] required choice unselected (`""`) → error.
 
 **Green — `service_layer/registration_submission_service.py`:**
 
-- [ ] add `_coerce_form_bool(str_value, *, required)`.
-- [ ] rewrite `_validate_field_value` to be enum-aware (requiredness from the
+- [x] add `_coerce_form_bool(str_value, *, required)`.
+- [x] rewrite `_validate_field_value` to be enum-aware (requiredness from the
       enum; bool branch via `_coerce_form_bool`; blank handling for non-bool).
-- [ ] update `_validate_form_data` to skip `NO` fields and only store
+- [x] update `_validate_form_data` to skip `NO` fields and only store
       non-`None` cleaned values.
-- [ ] gettext-wrap the new user-facing messages.
+- [x] messages kept bare to match existing `validators.py` style (no new
+      gettext strings → no translate-regen).
 
 **Red/Green — `tests/integration/`:**
 
-- [ ] `submit_registration` end-to-end against a schema mixing all three enum
+- [x] `submit_registration` end-to-end against a schema mixing all three enum
       values: PUBLISHED → `POOL`, TEST → `TEST_SUBMISSION`; assert the created
-      `Respondent` has correct `eligible`/`consent`/`stay_on_db`/`attributes`
-      and that `NO`/optional-blank fields keep their defaults.
+      `Respondent` has correct `consent`/`stay_on_db`/`attributes` and that
+      `NO`/optional-blank fields keep their defaults.
 
 **Verify:**
 
-- [ ] validator unit + integration tests green.
-- [ ] `just translate-regen` run; `just check` clean.
+- [x] validator unit + integration tests green.
+- [x] `just check` clean (no new translatable strings).
 
 ### Phase 4 — Starter generator: checkbox + enum-driven
 
