@@ -3,23 +3,51 @@ ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production e
 
 import uuid
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.registration_page import RegistrationPageHtml
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldGroup,
+)
+from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import (
+    create_assembly,
+    get_assembly_with_permissions,
     get_or_create_csv_config,
     get_or_create_selection_settings,
     import_targets_from_csv,
+    update_assembly,
     update_csv_config,
     update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.registration_page_service import (
+    close_registration_page,
+    create_registration_page,
+    generate_starter_form_html,
+    get_registration_page_with_source,
+    publish_registration_page,
+    reopen_registration_page,
+    unpublish_registration_page,
+    update_registration_page,
+    update_registration_page_html,
+)
+from opendlp.service_layer.registration_submission_service import (
+    submit_registration_by_assembly_id,
+)
+from opendlp.service_layer.respondent_field_schema_service import (
+    FieldDefinitionConflictError,
+    add_field,
+)
 from opendlp.service_layer.respondent_service import (
     get_respondents_for_assembly,
     import_respondents_from_csv,
@@ -80,7 +108,7 @@ def service_docs() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'respondents'
     active_tab = request.args.get("tab", "respondents")
-    valid_tabs = ["respondents", "targets", "config", "selection"]
+    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration", "fields"]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
 
@@ -368,6 +396,459 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
             return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
+def _handle_create_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle create_assembly service call."""
+    title = params["title"]
+    question = params.get("question", "")
+    number_to_select = params.get("number_to_select", 0)
+
+    with uow:
+        try:
+            assembly = create_assembly(
+                uow=uow,
+                created_by_user_id=current_user.id,
+                title=title,
+                question=question,
+                number_to_select=int(number_to_select) if number_to_select else 0,
+            )
+            return {
+                "status": "success",
+                "assembly": {
+                    "id": str(assembly.id),
+                    "title": assembly.title,
+                    "question": assembly.question,
+                    "number_to_select": assembly.number_to_select,
+                    "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+
+
+def _handle_get_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_assembly_with_permissions service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            assembly = get_assembly_with_permissions(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "assembly": {
+                    "id": str(assembly.id),
+                    "title": assembly.title,
+                    "question": assembly.question,
+                    "number_to_select": assembly.number_to_select,
+                    "first_assembly_date": assembly.first_assembly_date.isoformat()
+                    if assembly.first_assembly_date
+                    else None,
+                    "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
+                    "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_update_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_assembly service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    updates = {k: v for k, v in params.items() if k != "assembly_id" and v}
+
+    with uow:
+        try:
+            assembly = update_assembly(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                **updates,
+            )
+            return {
+                "status": "success",
+                "assembly": {
+                    "id": str(assembly.id),
+                    "title": assembly.title,
+                    "question": assembly.question,
+                    "number_to_select": assembly.number_to_select,
+                    "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle create_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = create_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "assembly_id": str(reg_page.assembly_id),
+                    "url_slug": reg_page.url_slug,
+                    "short_url_slug": reg_page.short_url_slug,
+                    "status": reg_page.status.value if reg_page.status else None,
+                    "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except ValueError as e:
+            return {"status": "error", "error": str(e), "error_type": "ValueError"}
+
+
+def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_registration_page_with_source service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            result = get_registration_page_with_source(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            if result is None:
+                return {
+                    "status": "success",
+                    "registration_page": None,
+                    "html_source": None,
+                }
+            reg_page, html_source = result
+            # Cast to RegistrationPageHtml since HtmlSource protocol doesn't expose id/form_html
+            html = cast(RegistrationPageHtml, html_source)
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "assembly_id": str(reg_page.assembly_id),
+                    "url_slug": reg_page.url_slug,
+                    "short_url_slug": reg_page.short_url_slug,
+                    "status": reg_page.status.value if reg_page.status else None,
+                    "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
+                },
+                "html_source": {
+                    "id": str(html.id),
+                    "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    url_slug = params.get("url_slug")
+    short_url_slug = params.get("short_url_slug")
+
+    with uow:
+        try:
+            reg_page = update_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                url_slug=url_slug,
+                short_url_slug=short_url_slug,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "url_slug": reg_page.url_slug,
+                    "short_url_slug": reg_page.short_url_slug,
+                    "updated_at": reg_page.updated_at.isoformat() if reg_page.updated_at else None,
+                },
+            }
+        except SlugError as e:
+            return {"status": "error", "error": str(e), "error_type": "SlugError", "field": e.field}
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle generate_starter_form_html service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            html = generate_starter_form_html(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "html": html,
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_registration_page_html service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    form_html = params.get("form_html", "")
+
+    with uow:
+        try:
+            html_source = update_registration_page_html(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                form_html=form_html,
+            )
+            return {
+                "status": "success",
+                "html_source": {
+                    "id": str(html_source.id),
+                    "form_html_preview": html_source.form_html[:200] + "..."
+                    if len(html_source.form_html) > 200
+                    else html_source.form_html,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except ValueError as e:
+            return {"status": "error", "error": str(e), "error_type": "ValueError"}
+
+
+def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle publish_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = publish_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            # Catch RegistrationPageNotReady or other validation errors
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle unpublish_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = unpublish_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle close_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = close_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle reopen_registration_page service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    with uow:
+        try:
+            reg_page = reopen_registration_page(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+            )
+            return {
+                "status": "success",
+                "registration_page": {
+                    "id": str(reg_page.id),
+                    "status": reg_page.status.value if reg_page.status else None,
+                },
+            }
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle submit_registration_by_assembly_id service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    form_data = params.get("form_data", {})
+    is_test = params.get("is_test", False)
+
+    with uow:
+        try:
+            result = submit_registration_by_assembly_id(
+                uow=uow,
+                assembly_id=assembly_id,
+                form_data=form_data,
+                is_test=is_test,
+            )
+            return {
+                "status": "success" if result.is_valid else "validation_error",
+                "respondent": {
+                    "id": str(result.respondent.id),
+                    "external_id": result.respondent.external_id,
+                    "selection_status": result.respondent.selection_status.value,
+                    "attributes": result.respondent.attributes,
+                }
+                if result.respondent
+                else None,
+                "is_test": result.is_test,
+                "field_errors": result.field_errors,
+                "form_errors": result.form_errors,
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+
+
+def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle add_field service call for creating a new field definition."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    field_key = params.get("field_key", "")
+    label = params.get("label") or None
+    group_str = params.get("group", "GENERAL")
+    field_type_str = params.get("field_type", "TEXT")
+    options_raw = params.get("options")  # List of option values (strings) or None
+
+    # Parse group enum
+    try:
+        group = RespondentFieldGroup(group_str)
+    except ValueError:
+        return {
+            "status": "error",
+            "error": f"Invalid group: {group_str}. Valid values: {[g.value for g in RespondentFieldGroup]}",
+            "error_type": "ValidationError",
+        }
+
+    # Parse field_type enum
+    try:
+        field_type = FieldType(field_type_str)
+    except ValueError:
+        return {
+            "status": "error",
+            "error": f"Invalid field_type: {field_type_str}. Valid values: {[ft.value for ft in FieldType]}",
+            "error_type": "ValidationError",
+        }
+
+    # Parse options if provided (for choice fields)
+    options = None
+    if options_raw:
+        if isinstance(options_raw, list):
+            options = [ChoiceOption(value=str(v)) for v in options_raw]
+        else:
+            return {
+                "status": "error",
+                "error": "options must be a list of strings",
+                "error_type": "ValidationError",
+            }
+
+    with uow:
+        try:
+            field = add_field(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                field_key=field_key,
+                label=label,
+                group=group,
+                field_type=field_type,
+                options=options,
+            )
+            return {
+                "status": "success",
+                "field": {
+                    "id": str(field.id),
+                    "field_key": field.field_key,
+                    "label": field.label,
+                    "group": field.group.value,
+                    "field_type": field.field_type.value,
+                    "sort_order": field.sort_order,
+                    "options": [{"value": o.value, "help_text": o.help_text} for o in (field.options or [])],
+                },
+            }
+        except FieldDefinitionConflictError as e:
+            return {"status": "error", "error": str(e), "error_type": "FieldDefinitionConflictError"}
+        except InsufficientPermissions as e:
+            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+        except NotFoundError as e:
+            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -376,6 +857,20 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "import_targets_from_csv": _handle_import_targets,
     "get_or_create_csv_config": _handle_get_csv_config,
     "update_csv_config": _handle_update_csv_config,
+    "create_assembly": _handle_create_assembly,
+    "get_assembly_with_permissions": _handle_get_assembly,
+    "update_assembly": _handle_update_assembly,
+    "create_registration_page": _handle_create_registration_page,
+    "get_registration_page_with_source": _handle_get_registration_page,
+    "update_registration_page": _handle_update_registration_page,
+    "update_registration_page_html": _handle_update_registration_page_html,
+    "generate_starter_form_html": _handle_generate_starter_html,
+    "publish_registration_page": _handle_publish_registration_page,
+    "unpublish_registration_page": _handle_unpublish_registration_page,
+    "close_registration_page": _handle_close_registration_page,
+    "reopen_registration_page": _handle_reopen_registration_page,
+    "submit_registration": _handle_submit_registration,
+    "add_field": _handle_add_field,
 }
 
 

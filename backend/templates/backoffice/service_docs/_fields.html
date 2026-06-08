@@ -1,0 +1,556 @@
+{#
+ABOUTME: Service documentation for respondent field schema service
+ABOUTME: Lists all field-related service methods with parameters and return types
+#}
+<div class="space-y-6">
+
+    {# ===== INTERACTIVE: add_field ===== #}
+    {% call card(title="add_field()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    respondent_field_schema_service.py:204
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100);
+                                 color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Add a single field to an assembly's respondent schema. This is the only field operation not available in the UI.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers)">Name</th>
+                                <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers)">Type</th>
+                                <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers)">Required</th>
+                                <th class="px-3 py-2 text-left" style="border-bottom: 1px solid var(--color-borders-dividers)">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">field_key</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Unique key (e.g., "age_range", "gender")</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">label</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str | None</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Human-readable label; defaults to humanised field_key</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">group</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">eligibility, name_and_contact, address, about_you, consent, other</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">field_type</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">text, email, integer, bool, bool_or_none, choice_radio, choice_dropdown, longtext</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">options</td>
+                                <td class="px-3 py-2">list[str] | None</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">For choice fields: list of option values</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels)">
+                    RespondentFieldDefinition { id, field_key, label, group, field_type, sort_order, options, is_fixed, is_derived }
+                </code>
+            </div>
+            {# Try It Section #}
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="addFieldAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Field Key") }}</label>
+                    <input type="text" x-model="addFieldKey" placeholder="e.g., age_range, gender, district"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Label (optional)") }}</label>
+                    <input type="text" x-model="addFieldLabel" placeholder="Human-readable label (defaults to humanised key)"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Group") }}</label>
+                    <select x-model="addFieldGroup" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="eligibility">Eligibility</option>
+                        <option value="name_and_contact">Name and Contact</option>
+                        <option value="address">Address</option>
+                        <option value="about_you">About You</option>
+                        <option value="consent">Consent</option>
+                        <option value="other" selected>Other</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Field Type") }}</label>
+                    <select x-model="addFieldType" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="text" selected>Text</option>
+                        <option value="email">Email</option>
+                        <option value="integer">Integer</option>
+                        <option value="bool">Boolean (Yes/No)</option>
+                        <option value="bool_or_none">Boolean (Yes/No/Unknown)</option>
+                        <option value="choice_radio">Choice (Radio Buttons)</option>
+                        <option value="choice_dropdown">Choice (Dropdown)</option>
+                        <option value="longtext">Long Text</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Options (for choice fields, comma-separated)") }}</label>
+                    <input type="text" x-model="addFieldOptions" placeholder="e.g., 18-30, 31-50, 51-65, 65+"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                        {{ _("Required for choice_radio and choice_dropdown field types") }}
+                    </p>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeAddField()" :disabled="loading.add_field"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.add_field">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.add_field">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.add_field">
+                    <div class="rounded-lg p-4"
+                         :style="responses.add_field.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.add_field.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.add_field.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('add_field')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== STATIC DOCUMENTATION ===== #}
+    <div class="pt-4">
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Other Field Schema Methods") }}</h2>
+        <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+            {{ _("These methods are available in the UI via the Fields tab. Listed here for reference.") }}
+        </p>
+    </div>
+
+    {# get_schema #}
+    {% call card(title="get_schema()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:75
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Return the schema for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">list[RespondentFieldDefinition]</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# get_schema_grouped #}
+    {% call card(title="get_schema_grouped()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:87
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Return the schema as a map keyed by group, in display order. All groups are present even if empty.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">dict[RespondentFieldGroup, list[RespondentFieldDefinition]]</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# update_field #}
+    {% call card(title="update_field()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:271
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update a field's label, group, sort_order, field_type, or options. UI: Edit field row and click Save.") }}
+            </p>
+            <div class="mb-4">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>assembly_id: UUID ✅</li>
+                    <li>field_id: UUID ✅</li>
+                    <li>label: str | None ❌</li>
+                    <li>group: RespondentFieldGroup | None ❌</li>
+                    <li>sort_order: int | None ❌</li>
+                    <li>field_type: FieldType | None ❌</li>
+                    <li>options: list[ChoiceOption] | None ❌ (sentinel for "leave alone")</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">RespondentFieldDefinition</code>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# delete_field #}
+    {% call card(title="delete_field()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:515
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Delete a non-fixed field from the schema. Fixed fields cannot be deleted. UI: Click Remove button on field row.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>field_id: UUID ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">None</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# reorder_group #}
+    {% call card(title="reorder_group()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:487
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Re-issue sort_order values for every field in a group. UI: Use ↑/↓ buttons on field rows.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>group: RespondentFieldGroup ✅</li>
+                        <li>ordered_field_ids: list[UUID] ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">None</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# add_choice_option #}
+    {% call card(title="add_choice_option()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:398
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Append a ChoiceOption to a choice field's options list. UI: Add option form below choice field row.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>field_id: UUID ✅</li>
+                        <li>value: str ✅</li>
+                        <li>help_text: str ❌ (default: "")</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RespondentFieldDefinition</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# update_choice_option #}
+    {% call card(title="update_choice_option()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:427
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update the value and/or help_text of an existing ChoiceOption. UI: Edit option inline and click Save.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>field_id: UUID ✅</li>
+                        <li>old_value: str ✅</li>
+                        <li>new_value: str ✅</li>
+                        <li>new_help_text: str ❌ (default: "")</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RespondentFieldDefinition</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# remove_choice_option #}
+    {% call card(title="remove_choice_option()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:462
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Remove a ChoiceOption from a choice field's options list. Must keep at least one option. UI: Click Remove on option row.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>field_id: UUID ✅</li>
+                        <li>value: str ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RespondentFieldDefinition</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# guess_field_types #}
+    {% call card(title="guess_field_types()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:338
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Overwrite field_type for non-fixed, non-derived, text-typed fields based on attribute-value distribution. Matches target categories first, then infers bool/int/choice from data. UI: Click 'Guess field types from data' button.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">dict[str, FieldType]</code>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">Map of field_key → new type for changed fields</p>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# initialise_empty_schema #}
+    {% call card(title="initialise_empty_schema()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:184
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Seed a schema containing only the fixed-field rows (email, consent, eligible, etc.). For registration-first assemblies. No-op if schema exists. UI: Click 'Initialise empty schema' button.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">int</code>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">Number of rows inserted (0 if schema existed)</p>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# populate_schema_from_headers #}
+    {% call card(title="populate_schema_from_headers()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py:138
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Internal</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Seed a fresh schema from CSV headers. Creates fixed-field rows plus one row per non-fixed, non-id header. Uses heuristics to bucket into groups. Called automatically during CSV import.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>headers: list[str] ✅</li>
+                        <li>id_column: str ✅</li>
+                        <li>target_category_names: list[str] | None ❌</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">int</code>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">Number of rows inserted</p>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# Data Types Reference #}
+    {% call card(title="Data Types Reference", composed=true) %}
+        {% call card_body() %}
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentFieldGroup</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>eligibility</li>
+                        <li>name_and_contact</li>
+                        <li>address</li>
+                        <li>about_you</li>
+                        <li>consent</li>
+                        <li>other</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">FieldType</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>text</li>
+                        <li>longtext</li>
+                        <li>email</li>
+                        <li>integer</li>
+                        <li>bool</li>
+                        <li>bool_or_none</li>
+                        <li>choice_radio</li>
+                        <li>choice_dropdown</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentFieldDefinition</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+  id: UUID,
+  assembly_id: UUID,
+  field_key: str,
+  label: str,
+  group: RespondentFieldGroup,
+  field_type: FieldType,
+  sort_order: int,
+  options: list[ChoiceOption] | None,
+  is_fixed: bool,
+  is_derived: bool,
+  created_at: datetime,
+  updated_at: datetime
+}</pre>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">ChoiceOption</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+  value: str,
+  help_text: str
+}</pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+</div>

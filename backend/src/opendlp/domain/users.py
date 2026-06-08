@@ -4,7 +4,8 @@ ABOUTME: Contains User and UserAssemblyRole classes as plain Python objects"""
 import uuid
 from datetime import UTC, datetime
 
-from .value_objects import AssemblyRole, GlobalRole, validate_email
+from .validators import validate_email
+from .value_objects import AssemblyRole, GlobalRole
 
 
 class User:

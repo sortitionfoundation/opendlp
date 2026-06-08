@@ -1,0 +1,11 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Registration Closed") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-xl">{{ _("Registration Closed") }}</h1>
+            <p class="govuk-body-l">{{ _("Sorry, registration for this event is now closed.") }}</p>
+            <p class="govuk-body">{{ _("If you have any questions, please contact the event organisers.") }}</p>
+        </div>
+    </div>
+{% endblock %}

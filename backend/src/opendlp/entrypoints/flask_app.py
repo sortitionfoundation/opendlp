@@ -7,6 +7,7 @@ import uuid
 import structlog
 from flask import Config, Flask, Response, g, render_template, request
 from flask_login import current_user
+from flask_wtf.csrf import CSRFError
 from secure import Secure, headers
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -86,6 +87,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.admin import admin_bp  # noqa: PLC0415
     from .blueprints.auth import auth_bp  # noqa: PLC0415
     from .blueprints.backoffice import backoffice_bp  # noqa: PLC0415
+    from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
     from .blueprints.db_selection_legacy import db_selection_legacy_bp  # noqa: PLC0415
     from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
@@ -93,6 +95,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
+    from .blueprints.registration import registration_bp  # noqa: PLC0415
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
     from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
@@ -108,6 +111,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
+    app.register_blueprint(backoffice_registration_bp, url_prefix="/backoffice")
     if not config.is_production():
         from .blueprints.dev import dev_bp  # noqa: PLC0415
 
@@ -120,6 +124,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(targets_legacy_bp)
     app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)
+    app.register_blueprint(registration_bp)  # No url_prefix - routes define full paths
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -145,6 +150,11 @@ def register_error_handlers(app: Flask) -> None:
     def request_entity_too_large(error: HTTPException) -> tuple[str, int]:
         """Handle 413 Request Entity Too Large errors (file upload size limit)."""
         return render_template("errors/413.html"), 413
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(error: HTTPException) -> tuple[str, int]:
+        """Handle expired or invalid CSRF tokens with a friendly page."""
+        return render_template("errors/400.html"), 400
 
 
 def register_before_request_handlers(app: Flask) -> None:
@@ -186,8 +196,8 @@ def get_secure_headers(config: Config) -> Secure:
             "'strict-dynamic'",
             "https://cdn.jsdelivr.net",
         )
-        .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
-        .font_src("'self'", "https://cdn.jsdelivr.net")
+        .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
+        .font_src("'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com")
         .img_src("'self'", "data:")
         .frame_ancestors("'none'")
         .form_action("'self'", "https://accounts.google.com", "https://login.microsoftonline.com")

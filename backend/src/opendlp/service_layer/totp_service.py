@@ -2,13 +2,11 @@
 ABOUTME: Handles TOTP secret generation, encryption, QR codes, and code verification"""
 
 import base64
-import io
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
 import pyotp
-import qrcode
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -17,6 +15,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from opendlp.config import get_totp_encryption_key
 from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.user_backup_codes import UserBackupCode
+from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -92,24 +91,9 @@ def generate_qr_code_data_url(secret: str, email: str, issuer: str = "OpenDLP") 
     Returns:
         Data URL string (data:image/png;base64,...)
     """
-    # Create provisioning URI for the authenticator app
     totp = pyotp.TOTP(secret)
     provisioning_uri = totp.provisioning_uri(name=email, issuer_name=issuer)
-
-    # Generate QR code
-    qr = qrcode.QRCode(version=1, box_size=10, border=4)
-    qr.add_data(provisioning_uri)
-    qr.make(fit=True)
-
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    # Convert to data URL
-    buffer = io.BytesIO()
-    img.save(buffer)
-    buffer.seek(0)
-    img_base64 = base64.b64encode(buffer.getvalue()).decode("ascii")
-
-    return f"data:image/png;base64,{img_base64}"
+    return generate_qr_code_base64(provisioning_uri)
 
 
 def verify_totp_code(secret: str, code: str) -> bool:

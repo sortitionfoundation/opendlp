@@ -3,6 +3,7 @@ ABOUTME: Tests Flask app creation, configuration, blueprints, and error handlers
 
 import os
 import uuid
+from datetime import timedelta
 
 import pytest
 from flask import Flask
@@ -237,6 +238,17 @@ class TestErrorHandlers:
         # Should contain elements from our 404 template
         assert b"Page Not Found" in response.data or b"404" in response.data
 
+    def test_csrf_error_handler_returns_friendly_page(self) -> None:
+        """An expired/missing CSRF token renders the friendly 400 page, not a bare error."""
+        app = create_app("testing")
+        # CSRF is disabled in the testing config, so enable it to exercise the handler.
+        app.config["WTF_CSRF_ENABLED"] = True
+        client = app.test_client()
+        # POST to a CSRF-protected form without a token to trigger a CSRFError.
+        response = client.post("/auth/login", data={"email": "a@b.com", "password": "x"})
+        assert response.status_code == 400
+        assert b"Form Expired" in response.data
+
 
 class TestConfiguration:
     """Test application configuration handling."""
@@ -273,6 +285,16 @@ class TestConfiguration:
         # Should not raise an error with unknown config
         app = create_app("unknown")
         assert isinstance(app, Flask)
+
+    def test_csrf_token_has_no_separate_time_limit(self) -> None:
+        """CSRF token validity is tied to the session, not a short separate clock."""
+        app = create_app("development")
+        assert app.config["WTF_CSRF_TIME_LIMIT"] is None
+
+    def test_session_lifetime_is_seven_days(self) -> None:
+        """Sessions (and thus CSRF tokens) remain valid for seven days."""
+        app = create_app("development")
+        assert app.config["PERMANENT_SESSION_LIFETIME"] == timedelta(days=7)
 
     def test_secret_key_configured(self) -> None:
         """Test that secret key is configured."""

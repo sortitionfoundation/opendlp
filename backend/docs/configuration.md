@@ -136,6 +136,18 @@ TASK_TIMEOUT_HOURS=24
 INVITE_EXPIRY_HOURS=168
 ```
 
+### Registration Page Configuration
+
+```bash
+# Maximum size in bytes for a registration page's form HTML
+# (default: 204800 = 200 KB, clamped to [1 KB, 10 MB])
+REGISTRATION_FORM_HTML_MAX_BYTES=204800
+
+# Maximum size in bytes for a registration page's thank-you HTML
+# (default: 51200 = 50 KB, clamped to [1 KB, 10 MB])
+REGISTRATION_THANK_YOU_HTML_MAX_BYTES=51200
+```
+
 ### Monitoring
 
 Enable end-to-end selection monitoring (issue #582) by pointing both
@@ -268,6 +280,12 @@ if has_feature("my_feature"):
   <p>This is only shown when the feature is enabled.</p>
 {% endif %}
 ```
+
+**Known flags:**
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `FF_REGISTRATION_PAGE` | `false` | Enables the public registration page routes (`/register/<slug>`, `/register/<slug>/thank-you`, `/r/<short_slug>`, `/registration-closed`). When unset or `false`, those routes return 404. |
 
 ## Environment Files
 

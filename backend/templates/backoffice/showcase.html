@@ -6,6 +6,7 @@
 {% from "backoffice/showcase/responsive.html" import responsive_section %}
 {% from "backoffice/showcase/typography.html" import typography_section %}
 {% from "backoffice/showcase/button_component.html" import button_section %}
+{% from "backoffice/showcase/split_button_component.html" import split_button_section %}
 {% from "backoffice/showcase/input_component.html" import input_section %}
 {% from "backoffice/showcase/checkbox_component.html" import checkbox_section %}
 {% from "backoffice/showcase/radio_component.html" import radio_section %}
@@ -69,6 +70,7 @@
         {# Components tab content #}
         <div x-show="tab === 'components'" x-cloak>
             {{ button_section() }}
+            {{ split_button_section() }}
             {{ input_section() }}
             {{ checkbox_section() }}
             {{ radio_section() }}

@@ -1,0 +1,542 @@
+<div class="space-y-6">
+                {# import_respondents_from_csv #}
+    {% call card(title="import_respondents_from_csv()", composed=true) %}
+        {% call card_body() %}
+                        {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    respondent_service.py:63
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <button @click="copyRespondentServiceRef()"
+                            class="text-body-sm px-2 py-1 rounded transition-colors"
+                            style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                </div>
+            </div>
+                        {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Imports respondents from CSV with flexible column mapping. Extracts special fields (consent, eligible, can_attend, email) and stores remaining columns as attributes.") }}
+            </p>
+                        {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Required
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    UUID
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    csv_content
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    CSV file contents (UTF-8)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    replace_existing
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    bool
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Delete existing respondents before import (default: false)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">id_column</td>
+                                <td class="px-3 py-2">str | None</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">Column name for respondent ID (default: first column)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                        {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    tuple[list[Respondent], list[str], str]  →  (respondents, errors, resolved_id_column)
+                </code>
+            </div>
+                        {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">InvalidSelection</code> — CSV has no header, missing id_column, or parsing fails
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">InsufficientPermissions</code> — User lacks can_manage_assembly() permission
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">NotFoundError</code> — Assembly or user not found
+                    </li>
+                </ul>
+            </div>
+                        {# Try It Section #}
+            <div class="pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                            {# Assembly Select #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="importRespondentsAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                            {# CSV Content #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
+                        <button @click="loadRespondentsSample()"
+                                class="text-body-sm px-2 py-1 rounded transition-colors"
+                                style="background-color: var(--color-info-100);
+                                       color: var(--color-info-600)">📄 {{ _("Load Sample") }}</button>
+                    </div>
+                    <textarea x-model="importRespondentsCsvContent"
+                              rows="8"
+                              class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                              style="background-color: var(--color-page-background);
+                                     border: 1px solid var(--color-borders-dividers);
+                                     color: var(--color-body-text)"
+                              placeholder="external_id,name,email,gender,consent&#10;001,Alice Smith,alice@example.com,Female,true&#10;002,Bob Jones,bob@example.com,Male,true"></textarea>
+                </div>
+                            {# Options Row #}
+                <div class="flex gap-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox"
+                               x-model="importRespondentsReplaceExisting"
+                               id="resp_replace"
+                               class="rounded"
+                               style="accent-color: var(--color-primary-action)">
+                        <label for="resp_replace"
+                               class="text-body-sm"
+                               style="color: var(--color-body-text)">
+                            {{ _("Replace existing") }}
+                            <span class="text-body-sm" style="color: var(--color-error-600);">(⚠️ destructive)</span>
+                        </label>
+                    </div>
+                    <div class="flex-1">
+                        <input type="text"
+                               x-model="importRespondentsIdColumn"
+                               class="w-full px-3 py-2 rounded-lg text-body-sm"
+                               style="background-color: var(--color-page-background);
+                                      border: 1px solid var(--color-borders-dividers);
+                                      color: var(--color-body-text)"
+                               placeholder="{{ _('ID Column (leave empty for first column)') }}">
+                    </div>
+                </div>
+                            {# Action Buttons #}
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeImportRespondents()"
+                            :disabled="loading.import_respondents"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action);
+                                   color: var(--color-page-background)">
+                        <span x-show="!loading.import_respondents">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.import_respondents">⏳ {{ _("Running...") }}</span>
+                    </button>
+                    <button @click="resetImportRespondents()"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: transparent;
+                                   color: var(--color-headings);
+                                   border: 1px solid var(--color-borders-dividers)">
+                        🔄 {{ _("Reset") }}
+                    </button>
+                </div>
+                            {# Response Display #}
+                <template x-if="responses.import_respondents">
+                    <div class="rounded-lg p-4"
+                         :style="responses.import_respondents.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.import_respondents.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.import_respondents.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyImportRespondentsResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">
+                                📋 {{ _("Copy JSON") }}
+                            </button>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('import_respondents')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+                {# reset_selection_status #}
+    {% call card(title="reset_selection_status()", composed=true) %}
+        {% call card_body() %}
+                        {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    respondent_service.py:171
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+                        {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Resets all respondents for an assembly back to POOL status. Use this to clear selection results and start fresh. Returns the count of respondents updated.") }}
+            </p>
+                        {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Required
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">assembly_id</td>
+                                <td class="px-3 py-2">UUID</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">Target assembly ID</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                        {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    int  →  Count of people whose selection status was reset
+                </code>
+            </div>
+                        {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">InsufficientPermissions</code> — User lacks can_manage_assembly() permission
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">UserNotFoundError</code> — User not found
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">AssemblyNotFoundError</code> — Assembly not found
+                    </li>
+                </ul>
+            </div>
+                        {# Used By #}
+            <div class="mb-6 p-3 rounded-lg"
+                 style="background-color: var(--color-info-100);
+                        border: 1px solid var(--color-info-400)">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Used By") }}</h4>
+                <p class="text-body-sm" style="color: var(--color-body-text);">
+                    <code>respondents_legacy.reset_respondent_status</code> — POST /assemblies/&lt;id&gt;/respondents/reset-status
+                </p>
+            </div>
+                        {# Try It Section #}
+            <div class="pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                            {# Assembly Select #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="resetStatusAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                            {# Warning #}
+                <div class="mb-4 p-3 rounded-lg"
+                     style="background-color: var(--color-warning-100);
+                            border: 1px solid var(--color-warning-400)">
+                    <p class="text-body-sm" style="color: var(--color-warning-600);">
+                        ⚠️ {{ _("This operation resets ALL respondents to POOL status, clearing any selection results.") }}
+                    </p>
+                </div>
+                            {# Action Buttons #}
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeResetStatus()"
+                            :disabled="loading.reset_status"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-warning-400);
+                                   color: var(--color-page-background)">
+                        <span x-show="!loading.reset_status">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.reset_status">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                            {# Response Display #}
+                <template x-if="responses.reset_status">
+                    <div class="rounded-lg p-4"
+                         :style="responses.reset_status.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.reset_status.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.reset_status.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyResetStatusResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">
+                                📋 {{ _("Copy JSON") }}
+                            </button>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('reset_status')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+                {# get_respondents_for_assembly #}
+    {% call card(title="get_respondents_for_assembly()", composed=true) %}
+        {% call card_body() %}
+                        {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    respondent_service.py:197
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100);
+                                 color: var(--color-success-600)">👁️ can_view_assembly()</span>
+                </div>
+            </div>
+                        {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Retrieves respondents for an assembly with optional status filtering. Returns detached copies safe for use outside the unit of work context.") }}
+            </p>
+                        {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Required
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    UUID
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">status</td>
+                                <td class="px-3 py-2">RespondentStatus | None</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">Filter by status: POOL, SELECTED, CONFIRMED, WITHDRAWN</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                        {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    list[Respondent]  →  List of respondent objects with external_id, attributes, status, etc.
+                </code>
+            </div>
+                        {# Try It Section #}
+            <div class="pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                            {# Assembly and Status Select #}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-label-md block mb-1"
+                               style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                        <select x-model="getRespondentsAssemblyId"
+                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-page-background);
+                                       border: 1px solid var(--color-borders-dividers);
+                                       color: var(--color-body-text)">
+                            <option value="">{{ _("Select an assembly...") }}</option>
+                            {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1"
+                               style="color: var(--color-headings)">{{ _("Status Filter") }}</label>
+                        <select x-model="getRespondentsStatus"
+                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-page-background);
+                                       border: 1px solid var(--color-borders-dividers);
+                                       color: var(--color-body-text)">
+                            <option value="">{{ _("All statuses") }}</option>
+                            <option value="POOL">POOL</option>
+                            <option value="SELECTED">SELECTED</option>
+                            <option value="CONFIRMED">CONFIRMED</option>
+                            <option value="WITHDRAWN">WITHDRAWN</option>
+                        </select>
+                    </div>
+                </div>
+                            {# Action Buttons #}
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeGetRespondents()"
+                            :disabled="loading.get_respondents"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action);
+                                   color: var(--color-page-background)">
+                        <span x-show="!loading.get_respondents">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.get_respondents">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                            {# Response Display #}
+                <template x-if="responses.get_respondents">
+                    <div class="rounded-lg p-4"
+                         :style="responses.get_respondents.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.get_respondents.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.get_respondents.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyGetRespondentsResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">
+                                📋 {{ _("Copy JSON") }}
+                            </button>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('get_respondents')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>

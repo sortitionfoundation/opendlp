@@ -14,6 +14,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
 from tests.e2e.helpers import get_csrf_token
@@ -53,6 +54,42 @@ class TestBackofficeAssemblyDetails:
         response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}")
         # Regular users without assembly roles should get permission error
         assert response.status_code in [302, 403, 500]
+
+    def test_registration_url_copy_widget_uses_csp_safe_data_attributes(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The copy-URL button must drive the clipboard through utilities.js
+        data attributes, not an inline navigator.clipboard expression — the
+        latter fails silently under the CSP-safe Alpine build (`@alpinejs/csp`)."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert b"Registration Page Details" in response.data
+        assert b"data-copy-text=" in response.data
+        assert b'data-copy-feedback="inline"' in response.data
+        # No inline JS expression — incompatible with the CSP-safe build.
+        assert b"navigator.clipboard.writeText(" not in response.data
+
+    def test_registration_qr_code_endpoint_returns_png(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """GET .../registration/qr-code.png returns a PNG attachment for the short URL."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
+        assert response.status_code == 200
+        assert response.mimetype == "image/png"
+        # PNG signature: 89 50 4E 47 0D 0A 1A 0A
+        assert response.data.startswith(b"\x89PNG\r\n\x1a\n")
+        assert "attachment" in response.headers.get("Content-Disposition", "")
+
+    def test_registration_qr_code_endpoint_404_without_short_url(self, logged_in_admin, existing_assembly):
+        """A QR code encodes the short URL, so it 404s when no registration page exists."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
+        assert response.status_code == 404
 
 
 class TestBackofficeAssemblyCreate:

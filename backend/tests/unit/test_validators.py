@@ -1,10 +1,21 @@
 """ABOUTME: Unit tests for OpenDLP domain validators
-ABOUTME: Tests URL validation and Google Spreadsheet URL validation"""
+ABOUTME: Tests field validators, URL validators, and email validation"""
 
 import pytest
 from wtforms import ValidationError
 
-from opendlp.domain.validators import GoogleSpreadsheetURLValidator, MockField
+from opendlp.domain.validators import (
+    RESERVED_SLUGS,
+    GoogleSpreadsheetURLValidator,
+    InvalidSlug,
+    MockField,
+    UrlSlugValidator,
+    validate_bool,
+    validate_choice,
+    validate_email,
+    validate_email_field,
+    validate_integer,
+)
 
 
 class TestGoogleSpreadsheetURLValidator:
@@ -125,3 +136,153 @@ class TestGoogleSpreadsheetURLValidator:
 
         with pytest.raises(ValidationError, match="Invalid URL"):
             validator(None, field)
+
+
+class TestUrlSlugValidator:
+    """Test cases for the registration page URL slug validator."""
+
+    @pytest.mark.parametrize("slug", ["my-assembly", "abc", "a1-b2", "x", "a-b-c-d", "2024-citizens"])
+    def test_accepts_valid_slugs(self, slug):
+        assert UrlSlugValidator().validate(slug) == slug
+
+    def test_rejects_empty_string(self):
+        with pytest.raises(InvalidSlug, match="cannot be empty") as exc:
+            UrlSlugValidator().validate("")
+        assert exc.value.reason == "empty"
+
+    @pytest.mark.parametrize(
+        "slug",
+        [
+            "MyAssembly",
+            "UPPER",
+            "-leading",
+            "trailing-",
+            "has space",
+            "under_score",
+            "café",
+            "double--hyphen",
+            "dot.dot",
+        ],
+    )
+    def test_rejects_malformed_slugs(self, slug):
+        with pytest.raises(InvalidSlug) as exc:
+            UrlSlugValidator().validate(slug)
+        assert exc.value.reason == "malformed"
+
+    def test_rejects_too_long_slug(self):
+        with pytest.raises(InvalidSlug, match="longer than") as exc:
+            UrlSlugValidator().validate("a" * 101)
+        assert exc.value.reason == "too_long"
+
+    @pytest.mark.parametrize("slug", sorted(RESERVED_SLUGS))
+    def test_rejects_reserved_slugs(self, slug):
+        with pytest.raises(InvalidSlug, match="reserved") as exc:
+            UrlSlugValidator().validate(slug)
+        assert exc.value.reason == "reserved"
+
+    def test_invalid_slug_subclasses_value_error(self):
+        with pytest.raises(ValueError):
+            UrlSlugValidator().validate("BAD")
+
+
+class TestValidateEmail:
+    def test_accepts_valid_email(self):
+        validate_email("alice@example.com")
+
+    def test_rejects_missing_at(self):
+        with pytest.raises(ValueError, match="Invalid email"):
+            validate_email("not-an-email")
+
+    def test_rejects_empty_string(self):
+        with pytest.raises(ValueError, match="Invalid email"):
+            validate_email("")
+
+
+class TestValidateEmailField:
+    def test_accepts_valid_email(self):
+        value, error = validate_email_field("alice@example.com")
+        assert value == "alice@example.com"
+        assert error is None
+
+    def test_empty_returns_required_error(self):
+        value, error = validate_email_field("")
+        assert value is None
+        assert error == "This field is required"
+
+    def test_invalid_email_returns_error(self):
+        value, error = validate_email_field("not-an-email")
+        assert value is None
+        assert "valid email" in error.lower()
+
+    def test_rejects_at_only_value(self):
+        value, error = validate_email_field("missing@domain")
+        assert value is None
+        assert "valid email" in error.lower()
+
+
+class TestValidateBool:
+    @pytest.mark.parametrize("raw", ["yes", "true", "1", "Yes", "TRUE"])
+    def test_accepts_truthy_values(self, raw):
+        cleaned, error = validate_bool(raw, allow_none=False)
+        assert cleaned is True
+        assert error is None
+
+    @pytest.mark.parametrize("raw", ["no", "false", "0", "No"])
+    def test_accepts_falsy_values(self, raw):
+        cleaned, error = validate_bool(raw, allow_none=False)
+        assert cleaned is False
+        assert error is None
+
+    def test_blank_returns_error_when_not_allowed(self):
+        cleaned, error = validate_bool("", allow_none=False)
+        assert cleaned is None
+        assert error is not None
+
+    def test_blank_returns_none_when_allowed(self):
+        cleaned, error = validate_bool("", allow_none=True)
+        assert cleaned is None
+        assert error is None
+
+
+class TestValidateChoice:
+    def test_accepts_value_in_set(self):
+        cleaned, error = validate_choice("blue", {"blue", "green"})
+        assert cleaned == "blue"
+        assert error is None
+
+    def test_accepts_value_when_no_constraints(self):
+        cleaned, error = validate_choice("anything", None)
+        assert cleaned == "anything"
+        assert error is None
+
+    def test_empty_returns_error(self):
+        cleaned, error = validate_choice("", {"blue", "green"})
+        assert cleaned is None
+        assert error is not None
+
+    def test_unknown_value_returns_error(self):
+        cleaned, error = validate_choice("purple", {"blue", "green"})
+        assert cleaned is None
+        assert "valid option" in error.lower()
+
+
+class TestValidateInteger:
+    def test_accepts_integer_string(self):
+        cleaned, error = validate_integer("42")
+        assert cleaned == 42
+        assert error is None
+
+    def test_accepts_negative(self):
+        cleaned, error = validate_integer("-7")
+        assert cleaned == -7
+        assert error is None
+
+    def test_empty_returns_error(self):
+        cleaned, error = validate_integer("")
+        assert cleaned is None
+        assert error is not None
+
+    def test_non_numeric_returns_error(self):
+        cleaned, error = validate_integer("abc")
+        assert cleaned is None
+        assert "valid number" in error.lower()

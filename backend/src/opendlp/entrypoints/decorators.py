@@ -11,6 +11,7 @@ from flask_login import current_user
 
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
+from opendlp.feature_flags import has_feature
 from opendlp.service_layer.permissions import (
     can_call_confirmations,
     can_manage_assembly,
@@ -21,6 +22,28 @@ from opendlp.service_layer.permissions import (
 from opendlp.translations import _
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def require_feature(flag_name: str) -> Callable[[F], F]:
+    """Decorator that returns 404 unless the named feature flag is enabled.
+
+    Args:
+        flag_name: Name of the feature flag (without the FF_ prefix) to require
+
+    Returns:
+        Decorator function that enforces the feature flag requirement
+    """
+
+    def decorator(f: F) -> F:
+        @wraps(f)
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
+            if not has_feature(flag_name):
+                abort(404)
+            return f(*args, **kwargs)
+
+        return decorated_function  # type: ignore[return-value]
+
+    return decorator
 
 
 def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:

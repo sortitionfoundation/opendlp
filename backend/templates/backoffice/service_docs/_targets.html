@@ -1,0 +1,195 @@
+<div>
+                {# import_targets_from_csv #}
+    {% call card(title="import_targets_from_csv()", composed=true) %}
+        {% call card_body() %}
+                        {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    assembly_service.py:501
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <button @click="copyAssemblyServiceTargetsRef()"
+                            class="text-body-sm px-2 py-1 rounded transition-colors"
+                            style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                </div>
+            </div>
+                        {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Imports target categories from CSV using sortition-algorithms library. Parses and validates category definitions with min/max quotas.") }}
+            </p>
+                        {# Parameters Table #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Name
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Type
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Required
+                                </th>
+                                <th class="px-3 py-2 text-left"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Description
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    assembly_id
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    UUID
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Target assembly ID
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    csv_content
+                                </td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    CSV with columns: feature, value, min, max, [min_flex, max_flex]
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">replace_existing</td>
+                                <td class="px-3 py-2">bool</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">Always replaces (default: true)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                        {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    list[TargetCategory]  →  List of imported categories with their values
+                </code>
+            </div>
+                        {# CSV Format Example #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("CSV Format") }}</h4>
+                            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">feature,value,min,max,min_flex,max_flex
+Gender,Male,3,7,0,2
+Gender,Female,3,7,0,2
+Age,18-30,2,5,1,1
+Age,31-50,2,5,1,1
+Age,51+,2,5,1,1</pre>
+            </div>
+                        {# Try It Section #}
+            <div class="pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                            {# Assembly Select #}
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1"
+                           style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="importTargetsAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                            {# CSV Content #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-label-md" style="color: var(--color-headings);">{{ _("CSV Content") }}</label>
+                        <button @click="loadTargetsSample()"
+                                class="text-body-sm px-2 py-1 rounded transition-colors"
+                                style="background-color: var(--color-info-100);
+                                       color: var(--color-info-600)">📄 {{ _("Load Sample") }}</button>
+                    </div>
+                    <textarea x-model="importTargetsCsvContent"
+                              rows="8"
+                              class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                              style="background-color: var(--color-page-background);
+                                     border: 1px solid var(--color-borders-dividers);
+                                     color: var(--color-body-text)"
+                              placeholder="feature,value,min,max&#10;Gender,Male,3,7&#10;Gender,Female,3,7"></textarea>
+                </div>
+                            {# Warning about replace #}
+                <div class="mb-4 p-3 rounded-lg"
+                     style="background-color: var(--color-warning-100);
+                            border: 1px solid var(--color-warning-400)">
+                    <p class="text-body-sm" style="color: var(--color-warning-600);">
+                        ⚠️ {{ _("This operation always replaces existing targets for the selected assembly.") }}
+                    </p>
+                </div>
+                            {# Action Buttons #}
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeImportTargets()"
+                            :disabled="loading.import_targets"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action);
+                                   color: var(--color-page-background)">
+                        <span x-show="!loading.import_targets">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.import_targets">⏳ {{ _("Running...") }}</span>
+                    </button>
+                    <button @click="resetImportTargets()"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: transparent;
+                                   color: var(--color-headings);
+                                   border: 1px solid var(--color-borders-dividers)">
+                        🔄 {{ _("Reset") }}
+                    </button>
+                </div>
+                            {# Response Display #}
+                <template x-if="responses.import_targets">
+                    <div class="rounded-lg p-4"
+                         :style="responses.import_targets.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.import_targets.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.import_targets.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyImportTargetsResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">
+                                📋 {{ _("Copy JSON") }}
+                            </button>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('import_targets')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>

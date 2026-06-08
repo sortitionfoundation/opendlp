@@ -14,6 +14,7 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
@@ -38,6 +39,8 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RegistrationPageHtmlRepository,
+    RegistrationPageRepository,
     RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
@@ -446,6 +449,66 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
 
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyRegistrationPageRepository(SqlAlchemyRepository, RegistrationPageRepository):
+    """SQLAlchemy implementation of RegistrationPageRepository."""
+
+    def add(self, item: RegistrationPage) -> None:
+        """Add a RegistrationPage to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationPage | None:
+        """Get a RegistrationPage by its ID."""
+        return self.session.query(RegistrationPage).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[RegistrationPage]:
+        """Get all RegistrationPages."""
+        return self.session.query(RegistrationPage).all()
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
+        """Get the registration page for an assembly, or None if it has none."""
+        return self.session.query(RegistrationPage).filter_by(assembly_id=assembly_id).first()
+
+    def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its url_slug. Empty input returns None."""
+        if not url_slug:
+            return None
+        return self.session.query(RegistrationPage).filter_by(url_slug=url_slug).first()
+
+    def get_by_short_url_slug(self, short_url_slug: str) -> RegistrationPage | None:
+        """Get a registration page by its short_url_slug. Empty input returns None."""
+        if not short_url_slug:
+            return None
+        return self.session.query(RegistrationPage).filter_by(short_url_slug=short_url_slug).first()
+
+    def delete(self, item: RegistrationPage) -> None:
+        """Delete a RegistrationPage from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyRegistrationPageHtmlRepository(SqlAlchemyRepository, RegistrationPageHtmlRepository):
+    """SQLAlchemy implementation of RegistrationPageHtmlRepository."""
+
+    def add(self, item: RegistrationPageHtml) -> None:
+        """Add a RegistrationPageHtml to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationPageHtml | None:
+        """Get a RegistrationPageHtml by its ID."""
+        return self.session.query(RegistrationPageHtml).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[RegistrationPageHtml]:
+        """Get all RegistrationPageHtml sources."""
+        return self.session.query(RegistrationPageHtml).all()
+
+    def get_by_page_id(self, registration_page_id: uuid.UUID) -> RegistrationPageHtml | None:
+        """Get the HTML source for a registration page, or None if it has none."""
+        return self.session.query(RegistrationPageHtml).filter_by(registration_page_id=registration_page_id).first()
+
+    def delete(self, item: RegistrationPageHtml) -> None:
+        """Delete a RegistrationPageHtml from the repository."""
         self.session.delete(item)
 
 

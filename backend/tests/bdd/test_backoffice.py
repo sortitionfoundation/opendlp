@@ -532,15 +532,23 @@ def breadcrumbs_contain_text(page: Page, text: str):
 @then("I should see the assembly question section")
 def see_assembly_question_section(page: Page):
     """Verify the assembly question section is visible."""
-    section = page.locator("section", has_text="Assembly Question")
-    expect(section).to_be_visible()
+    # The section() macro renders a div, not a section element
+    # Look for h2 heading containing "Assembly Question"
+    heading = page.locator("h2", has_text="Assembly Question")
+    expect(heading).to_be_visible()
 
 
 @then("I should see the assembly details summary")
 def see_assembly_details_summary(page: Page):
     """Verify the assembly details summary (dl/dd section) is visible."""
-    details_section = page.locator("section", has_text="Details").locator("dl")
-    expect(details_section).to_be_visible()
+    # The section() macro renders a div, not a section element.
+    # Use exact-match role lookup so we don't collide with the "Registration
+    # Page Details" h2 added when the registration page section landed.
+    heading = page.get_by_role("heading", name="Details", exact=True)
+    expect(heading).to_be_visible()
+    # The dl should be a sibling of the h2 within the same container
+    details_list = page.locator("dl").first
+    expect(details_list).to_be_visible()
 
 
 @then(parsers.parse('I should see "{text}"'))
@@ -552,7 +560,10 @@ def see_text_on_page(page: Page, text: str):
 @then(parsers.parse('I should see the "{button_text}" button'))
 def see_button_with_text(page: Page, button_text: str):
     """Verify a button with specific text is visible."""
-    button = page.locator("a, button", has_text=button_text)
+    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    button = page.get_by_role("link", name=button_text, exact=True).or_(
+        page.get_by_role("button", name=button_text, exact=True)
+    )
     expect(button).to_be_visible()
 
 
@@ -562,7 +573,10 @@ def see_button_with_text(page: Page, button_text: str):
 @when(parsers.parse('I click the "{button_text}" button'))
 def click_button_with_text(page: Page, button_text: str):
     """Click a button with specific text."""
-    button = page.locator("a, button", has_text=button_text)
+    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    button = page.get_by_role("link", name=button_text, exact=True).or_(
+        page.get_by_role("button", name=button_text, exact=True)
+    )
     button.click()
     # Wait for navigation if the button triggers a form submission or link
     page.wait_for_load_state("networkidle")

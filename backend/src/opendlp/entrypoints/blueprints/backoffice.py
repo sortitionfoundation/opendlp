@@ -9,7 +9,14 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.entrypoints.blueprints.registration import (
+    registration_url,
+    registration_url_prefix,
+    short_url,
+    short_url_prefix,
+)
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
@@ -31,6 +38,11 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.qr_codes import generate_qr_code_base64
+from opendlp.service_layer.registration_page_service import (
+    get_registration_page_with_source,
+    update_registration_page,
+)
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.service_layer.user_service import (
     get_assembly_members,
@@ -114,6 +126,21 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.args.get("source", ""),
         )
 
+        # Get registration page data from service layer
+        uow = bootstrap.bootstrap()
+        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        registration_page = reg_result[0] if reg_result else None
+
+        # Build registration URLs and a QR code for the short URL, when configured
+        registration_page_url = None
+        registration_short_url = None
+        qr_code_data_url = None
+        if registration_page:
+            registration_page_url = registration_url(registration_page.url_slug)
+            if registration_page.short_url_slug:
+                registration_short_url = short_url(registration_page.short_url_slug)
+                qr_code_data_url = generate_qr_code_base64(registration_short_url)
+
         return render_template(
             "backoffice/assembly_details.html",
             assembly=nav.assembly,
@@ -122,6 +149,10 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            registration_page=registration_page,
+            registration_url=registration_page_url,
+            short_url=registration_short_url,
+            qr_code_data_url=qr_code_data_url,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -149,11 +180,20 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         form = EditAssemblyForm(obj=assembly)
 
+        # Get registration page data from service layer
+        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        registration_page = reg_result[0] if reg_result else None
+
         if form.validate_on_submit():
             try:
-                with uow:
+                # Extract URL slug data from form (not part of WTForms, added as extra fields)
+                url_slug = request.form.get("url_slug", "").strip()
+                short_url_slug = request.form.get("short_url_slug", "").strip()
+
+                uow2 = bootstrap.bootstrap()
+                with uow2:
                     updated_assembly = update_assembly(
-                        uow=uow,
+                        uow=uow2,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
                         title=form.title.data,
@@ -162,8 +202,34 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
+                # Save URL slugs via registration page service if registration page exists.
+                # Skip entirely once slugs are frozen — disabled inputs in the template send
+                # nothing, and the service layer would no-op anyway, but this avoids the
+                # round-trip and any audit noise.
+                if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
+                    uow3 = bootstrap.bootstrap()
+                    update_registration_page(
+                        uow=uow3,
+                        user_id=current_user.id,
+                        assembly_id=assembly_id,
+                        url_slug=url_slug if url_slug else None,
+                        short_url_slug=short_url_slug if short_url_slug else None,
+                    )
+
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+            except SlugError as e:
+                current_app.logger.warning(f"Slug error editing assembly {assembly_id}: {e}")
+                flash(_("The URL slug '%(slug)s' is already in use", slug=str(e)), "error")
+                # Re-render form with error
+                return render_template(
+                    "backoffice/edit_assembly.html",
+                    form=form,
+                    assembly=assembly,
+                    registration_page=registration_page,
+                    registration_url_prefix=registration_url_prefix(),
+                    short_url_prefix=short_url_prefix(),
+                ), 200
             except InsufficientPermissions as e:
                 current_app.logger.warning(
                     f"Insufficient permissions to edit assembly {assembly_id} for user {current_user.id}: {e}"
@@ -185,6 +251,9 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "backoffice/edit_assembly.html",
             form=form,
             assembly=assembly,
+            registration_page=registration_page,
+            registration_url_prefix=registration_url_prefix(),
+            short_url_prefix=short_url_prefix(),
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")

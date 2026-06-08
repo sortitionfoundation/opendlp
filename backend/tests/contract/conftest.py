@@ -17,6 +17,8 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationPageHtmlRepository,
+    SqlAlchemyRegistrationPageRepository,
     SqlAlchemyRespondentFieldDefinitionRepository,
     SqlAlchemyRespondentRepository,
     SqlAlchemySelectionRunRecordRepository,
@@ -29,6 +31,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
 )
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
@@ -40,6 +43,8 @@ from tests.fakes import (
     FakeAssemblyRepository,
     FakeEmailConfirmationTokenRepository,
     FakePasswordResetTokenRepository,
+    FakeRegistrationPageHtmlRepository,
+    FakeRegistrationPageRepository,
     FakeRespondentFieldDefinitionRepository,
     FakeRespondentRepository,
     FakeSelectionRunRecordRepository,
@@ -104,6 +109,13 @@ def make_assembly(
     )
 
 
+def make_registration_page(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationPage:
+    """Create a RegistrationPage domain object with sensible defaults."""
+    if assembly_id is None:
+        assembly_id = uuid.uuid4()
+    return RegistrationPage(assembly_id=assembly_id, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Backend abstraction
 # ---------------------------------------------------------------------------
@@ -138,6 +150,14 @@ class ContractBackend:
         self.persist(assembly)
         self.commit()
         return assembly
+
+    def make_registration_page(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationPage:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        page = make_registration_page(assembly_id=assembly_id, **kwargs)
+        self.persist(page)
+        self.commit()
+        return page
 
 
 class FakeContractBackend(ContractBackend):
@@ -281,3 +301,17 @@ def respondent_field_definition_backend(request, postgres_session) -> ContractBa
     return SqlContractBackend(
         repo=SqlAlchemyRespondentFieldDefinitionRepository(postgres_session), session=postgres_session
     )
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def registration_page_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRegistrationPageRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyRegistrationPageRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def registration_page_html_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRegistrationPageHtmlRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyRegistrationPageHtmlRepository(postgres_session), session=postgres_session)

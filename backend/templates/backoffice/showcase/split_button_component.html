@@ -1,0 +1,91 @@
+{#
+ABOUTME: Showcase section for the split button component
+ABOUTME: Demonstrates primary action + dropdown menu for grouped secondary actions
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/split_button.html" import split_button %}
+
+{% macro split_button_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Split Button") }}
+        {{ showcase_description("A primary action joined to a chevron dropdown that reveals related, less-frequent actions. Useful for lifecycle controls where there is one obvious next step plus a rewind step.") }}
+
+        {# Lifecycle example #}
+        {% call showcase_example('{% from "backoffice/components/split_button.html" import split_button %}
+
+{# Inside a form: each menu item submits the form with a different action value #}
+            <form method="POST" action="...">
+                {{ split_button(
+                primary_text=_("Stop Accepting Submissions"),
+                primary_attrs=\'name="action" value="close"\',
+                items=[
+                { "text": _("Back to Test"), "attrs": \'name="action" value="unpublish"\' },
+                ],
+                variant="secondary",
+                ) }}
+            </form>') %}
+            <div class="flex flex-col gap-4">
+                <div>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Published state — primary = forward, dropdown = rewind</p>
+                    <form @submit.prevent class="inline-block">
+                        {{ split_button(
+                        primary_text="Stop Accepting Submissions",
+                        primary_attrs='name="action" value="close"',
+                        items=[
+                        { "text": "Back to Test", "attrs": 'name="action" value="unpublish"' },
+                        ],
+                        variant="secondary",
+                        id="demo-published",
+                        ) }}
+                    </form>
+                </div>
+
+                <div>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Primary variant — one prominent action with a less-common alternative</p>
+                    <form @submit.prevent class="inline-block">
+                        {{ split_button(
+                        primary_text="Accept Submissions Again",
+                        primary_attrs='name="action" value="reopen"',
+                        items=[
+                        { "text": "Back to Test", "attrs": 'name="action" value="unpublish"' },
+                        ],
+                        variant="primary",
+                        id="demo-primary",
+                        ) }}
+                    </form>
+                </div>
+
+                <div>
+                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">Primary variant with several menu items</p>
+                    <form @submit.prevent class="inline-block">
+                        {{ split_button(
+                        primary_text="Save and Continue",
+                        primary_attrs='name="action" value="save_continue"',
+                        items=[
+                        { "text": "Save as Draft", "attrs": 'name="action" value="draft"' },
+                        { "text": "Save and Close", "attrs": 'name="action" value="save_close"' },
+                        { "text": "Discard Changes", "attrs": 'name="action" value="discard"' },
+                        ],
+                        variant="primary",
+                        id="demo-multi",
+                        ) }}
+                    </form>
+                </div>
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-button-primary-bg",
+        "--color-button-primary-bg-hover",
+        "--color-button-primary-text",
+        "--color-button-secondary-bg",
+        "--color-button-secondary-bg-hover",
+        "--color-button-secondary-border",
+        "--color-button-secondary-text",
+        "--color-tables-cards",
+        "--color-borders-dividers",
+        "--color-subtle-background-panels",
+        "--color-focus-ring",
+        ]) }}
+    {% endcall %}
+{% endmacro %}

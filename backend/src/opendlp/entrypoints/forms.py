@@ -23,8 +23,8 @@ from opendlp.bootstrap import bootstrap
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
+from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
-from opendlp.domain.value_objects import validate_email as domain_validate_email
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 

@@ -17,6 +17,8 @@ from opendlp.config import (
     get_monitor_assembly_id,
     get_monitor_health_max_age_minutes,
     get_monitor_user_id,
+    get_registration_form_html_max_bytes,
+    get_registration_thank_you_html_max_bytes,
     get_task_timeout_hours,
     to_bool,
 )
@@ -301,3 +303,59 @@ class TestGetMaxCsvUploadMb:
     def test_bytes_helper_multiplies_by_1024_squared(self, temp_env_vars):
         temp_env_vars(MAX_CSV_UPLOAD_MB="3")
         assert get_max_csv_upload_bytes() == 3 * 1024 * 1024
+
+
+class TestGetRegistrationFormHtmlMaxBytes:
+    """Test the get_registration_form_html_max_bytes function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("REGISTRATION_FORM_HTML_MAX_BYTES")
+        assert get_registration_form_html_max_bytes() == 204800
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="")
+        assert get_registration_form_html_max_bytes() == 204800
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="300000")
+        assert get_registration_form_html_max_bytes() == 300000
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="not-a-number")
+        assert get_registration_form_html_max_bytes() == 204800
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="10")
+        assert get_registration_form_html_max_bytes() == 1024
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="99999999")
+        assert get_registration_form_html_max_bytes() == 10 * 1024 * 1024
+
+
+class TestGetRegistrationThankYouHtmlMaxBytes:
+    """Test the get_registration_thank_you_html_max_bytes function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("REGISTRATION_THANK_YOU_HTML_MAX_BYTES")
+        assert get_registration_thank_you_html_max_bytes() == 51200
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="")
+        assert get_registration_thank_you_html_max_bytes() == 51200
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="80000")
+        assert get_registration_thank_you_html_max_bytes() == 80000
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="not-a-number")
+        assert get_registration_thank_you_html_max_bytes() == 51200
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="10")
+        assert get_registration_thank_you_html_max_bytes() == 1024
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="99999999")
+        assert get_registration_thank_you_html_max_bytes() == 10 * 1024 * 1024

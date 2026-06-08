@@ -201,6 +201,73 @@ def initialise_empty_schema(
         return len(rows)
 
 
+def add_field(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    field_key: str,
+    *,
+    label: str | None = None,
+    group: RespondentFieldGroup = RespondentFieldGroup.OTHER,
+    field_type: FieldType = FieldType.TEXT,
+    options: list[ChoiceOption] | None = None,
+) -> RespondentFieldDefinition:
+    """Add a single field to an assembly's schema.
+
+    This is the granular building block for field creation. The CSV import
+    workflow uses bulk operations for performance, but this function enables
+    manual field creation via service-docs or a future UI.
+
+    Args:
+        uow: Unit of work for database access.
+        user_id: The user performing the action (must have manage permission).
+        assembly_id: The assembly to add the field to.
+        field_key: The unique key for the field (e.g., "age_range", "gender").
+        label: Human-readable label; defaults to humanise_field_key(field_key).
+        group: Which section the field belongs to; defaults to GENERAL.
+        field_type: The data type; defaults to TEXT.
+        options: For choice fields, the list of options.
+
+    Returns:
+        The newly created RespondentFieldDefinition.
+
+    Raises:
+        FieldDefinitionConflictError: If a field with this key already exists.
+        InsufficientPermissions: If the user cannot manage the assembly.
+    """
+    with uow:
+        _ensure_manage_permission(uow, user_id, assembly_id)
+
+        field_key = field_key.strip()
+        if not field_key:
+            raise FieldDefinitionConflictError("Field key cannot be empty")
+
+        # Check for duplicate field_key
+        existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+        if any(f.field_key == field_key for f in existing):
+            raise FieldDefinitionConflictError(f"Field '{field_key}' already exists in this assembly")
+
+        # Compute next sort_order for this group
+        per_group_next: dict[RespondentFieldGroup, int] = {}
+        for f in existing:
+            per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
+
+        effective_label = label.strip() if label else humanise_field_key(field_key)
+
+        field = RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key=field_key,
+            label=effective_label,
+            group=group,
+            sort_order=_next_sort_order(per_group_next, group),
+            field_type=field_type,
+            options=options,
+        )
+        uow.respondent_field_definitions.add(field)
+        uow.commit()
+        return field.create_detached_copy()
+
+
 def update_field(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

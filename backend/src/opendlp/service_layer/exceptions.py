@@ -1,7 +1,38 @@
 """ABOUTME: Custom exceptions for service layer operations
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
+# Re-exported so service-layer callers import it from the usual exceptions module.
+from opendlp.domain.registration_page import RegistrationPageNotReady
+from opendlp.domain.validators import SlugError
 from opendlp.translations import gettext as _
+
+__all__ = [
+    "AssemblyNotFoundError",
+    "CannotRemoveLastAuthMethod",
+    "EmailNotConfirmed",
+    "GoogleSheetConfigNotFoundError",
+    "InsufficientPermissions",
+    "InvalidConfirmationToken",
+    "InvalidCredentials",
+    "InvalidInvite",
+    "InvalidResetToken",
+    "InvalidSelection",
+    "InviteNotFoundError",
+    "NotFoundError",
+    "OAuthError",
+    "OAuthStateError",
+    "OpenDLPError",
+    "PasswordTooWeak",
+    "RateLimitExceeded",
+    "RegistrationPageNotFoundError",
+    "RegistrationPageNotReady",
+    "RespondentNotFoundError",
+    "SelectionRunRecordNotFoundError",
+    "ServiceLayerError",
+    "SlugError",
+    "UserAlreadyExists",
+    "UserNotFoundError",
+]
 
 
 class OpenDLPError(Exception):
@@ -144,6 +175,10 @@ class InviteNotFoundError(NotFoundError):
 
 class GoogleSheetConfigNotFoundError(NotFoundError):
     """A Google Sheets configuration could not be found in the database"""
+
+
+class RegistrationPageNotFoundError(NotFoundError):
+    """A registration page could not be found in the database"""
 
 
 class SelectionRunRecordNotFoundError(NotFoundError):

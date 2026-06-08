@@ -4,9 +4,6 @@ ABOUTME: Defines shared enums and validation functions used across domain object
 from dataclasses import dataclass
 from enum import Enum
 
-from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator
-
 from opendlp.translations import lazy_gettext as _l
 
 
@@ -108,8 +105,13 @@ class SelectionTaskType(Enum):
 
 
 class RespondentStatus(Enum):
-    """Status of a respondent in the selection process"""
+    """Status of a respondent in the selection process.
 
+    TEST_SUBMISSION is for respondents created via a TEST registration page.
+    They are quarantined from the selection pool but can be promoted to POOL.
+    """
+
+    TEST_SUBMISSION = "TEST_SUBMISSION"
     POOL = "POOL"
     SELECTED = "SELECTED"
     CONFIRMED = "CONFIRMED"
@@ -130,7 +132,9 @@ class RespondentStatus(Enum):
 # Manual transitions allowed from the backoffice view-respondent page.
 # Any move between the four active statuses is permitted; moves to or from
 # DELETED are excluded (DELETED is reached only via the GDPR delete form).
+# TEST_SUBMISSION can only be promoted to POOL (one-way).
 ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+    RespondentStatus.TEST_SUBMISSION: [RespondentStatus.POOL],
     RespondentStatus.POOL: [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.SELECTED: [RespondentStatus.POOL, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.CONFIRMED: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN],
@@ -186,17 +190,3 @@ class ProgressInfo:
         if self.total and self.current is not None:
             return self.current / self.total * 100
         return None
-
-
-def validate_email(email: str) -> None:
-    """Basic email validation."""
-    # we use the well-tested and maintained Django EmailValidator
-    # Note that passing in the message is important - if we don't do that then
-    # the validator will try to use the default message, which will trigger the
-    # auto localisation of the string which then blows up.
-    # If this breaks, consider copying in the whole file.
-    validator = EmailValidator(message="Invalid email address")
-    try:
-        validator(email)
-    except ValidationError as error:
-        raise ValueError("Invalid email address") from error

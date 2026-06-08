@@ -1,0 +1,185 @@
+<!--
+  EXAMPLE REGISTRATION FORM — OPTION B (validation-round-trip discussion):
+  Jinja sandbox + small purpose-built helper API.
+
+  Context: after Q15 settled on Option A (two render-time tokens), we
+  realised that supporting server-side form-validation failure (re-show
+  the form with previous values + per-field error messages) requires a
+  richer template. This file shows the "small helper API" flavour.
+
+  Authoring experience: the system generates a complete unstyled HTML
+  form from the assembly's RespondentFieldDefinition set — one
+  <input>/<select>/<fieldset> per field, with explicit per-option
+  markup (exactly the shape of example-form-a-raw-html.html). The
+  author then restyles, reorders, and rewords the HTML by hand or via
+  an LLM styling pass. Authors with no Jinja knowledge use only the
+  helpers; advanced authors can drop into {% if %}/{% for %} when
+  they want.
+
+  Templating engine: jinja2.sandbox.SandboxedEnvironment.
+
+  Render context — globals plus helper callables:
+    csrf_form_element                          — full hidden <input> for CSRF
+    form_action                                — URL the form POSTs to
+    value(field_key) -> str                    — previously submitted value, or ""
+    checked(field_key, option_value) -> str    — " checked" or "" (radio/checkbox)
+    selected(field_key, option_value) -> str   — " selected" or "" (<option>)
+    field_errors(field_key) -> Markup          — full HTML error block for this
+                                                 field, or "". Default markup is
+                                                 a system-owned
+                                                   <p class="error">{{ msg }}</p>
+                                                 per error.
+    has_error(field_key) -> bool               — handy for class toggling
+    first_error(field_key) -> str              — raw first error string (for
+                                                 authors who want their own
+                                                 wrapper)
+    form_errors() -> Markup                    — full HTML block for cross-field
+                                                 / form-level errors, or ""
+
+  Round-trip on POST that fails validation:
+    - text/email/number/textarea values are re-populated by value('email')
+    - radio/checkbox state is preserved by checked('eligible', 'yes')
+    - <option selected> is preserved by selected('geo_bucket', 'Glasgow')
+    - per-field errors render via field_errors('email')
+    - cross-field errors render via form_errors()
+
+  Initial GET (no submission yet): every helper returns "" / no-op, so the
+  rendered page is visually identical to example-form-a-raw-html.html.
+
+  Trade-offs:
+   + Simple, discoverable helper API. Function-call syntax makes it obvious
+     these bits are server-evaluated.
+   + No loop knowledge required for basic use — the author writes plain
+     HTML with helper calls dropped into attributes / next to fields.
+   + LLM-friendly. An LLM styling pass round-trips cleanly because the
+     "Jinja-ness" is confined to attribute values and one-liner expressions,
+     not block structure.
+   + Schema-driven: helpers accept any field_key as a string, so the API
+     doesn't bake in field names.
+   + Easy to extend later (honeypot field name, captcha site key, etc.)
+     without changing syntax — just add another helper.
+   - Adds a Jinja-sandbox dependency. Jinja is already in the project for
+     server templates, but the sandbox is a new use of it.
+   - Each option for radios/selects is still hand-written — no for-loops
+     in the basic shape. Authors who want loops can drop into {% for %}
+     but it isn't in the generated starter.
+   - Schema changes (e.g. a new ChoiceOption for `gender`) don't propagate
+     automatically; the author must hand-edit (a publish-time check can
+     warn).
+   - Authors who include literal {{ ... }} in prose must wrap it in
+     {% raw %} / {% endraw %} to escape.
+
+  Note: the surrounding <head> and page chrome are provided by the system;
+  this file is only the author-editable region.
+-->
+<form action="{{ form_action }}" method="post">
+  {{ csrf_form_element }}
+
+  <h1>Register your interest</h1>
+  <p>Fill in the form below to register for the citizens' assembly.</p>
+  {{ form_errors() }}
+
+  <h2>Eligibility</h2>
+
+  <fieldset>
+    <legend>Eligible</legend>
+    <label><input type="radio" name="eligible" value="yes" {{ checked('eligible', 'yes') }}> Yes</label>
+    <label><input type="radio" name="eligible" value="no" {{ checked('eligible', 'no') }}> No</label>
+    {{ field_errors('eligible') }}
+  </fieldset>
+
+  <fieldset>
+    <legend>Can attend</legend>
+    <label><input type="radio" name="can_attend" value="yes" {{ checked('can_attend', 'yes') }}> Yes</label>
+    <label><input type="radio" name="can_attend" value="no" {{ checked('can_attend', 'no') }}> No</label>
+    {{ field_errors('can_attend') }}
+  </fieldset>
+
+  <h2>Your name and contact details</h2>
+
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" value="{{ value('email') }}" required>
+  {{ field_errors('email') }}
+
+  <label for="first_name">First name</label>
+  <input type="text" id="first_name" name="first_name" value="{{ value('first_name') }}">
+  {{ field_errors('first_name') }}
+
+  <label for="last_name">Last name</label>
+  <input type="text" id="last_name" name="last_name" value="{{ value('last_name') }}">
+  {{ field_errors('last_name') }}
+
+  <label for="mobile_number">Mobile number</label>
+  <input type="text" id="mobile_number" name="mobile_number" value="{{ value('mobile_number') }}">
+  {{ field_errors('mobile_number') }}
+
+  <h2>Your address</h2>
+
+  <label for="primary_address1">Primary address1</label>
+  <input type="text" id="primary_address1" name="primary_address1" value="{{ value('primary_address1') }}">
+  {{ field_errors('primary_address1') }}
+
+  <label for="primary_address2">Primary address2</label>
+  <input type="text" id="primary_address2" name="primary_address2" value="{{ value('primary_address2') }}">
+  {{ field_errors('primary_address2') }}
+
+  <label for="primary_city">Primary city</label>
+  <input type="text" id="primary_city" name="primary_city" value="{{ value('primary_city') }}">
+  {{ field_errors('primary_city') }}
+
+  <label for="primary_zip">Primary zip</label>
+  <input type="text" id="primary_zip" name="primary_zip" value="{{ value('primary_zip') }}">
+  {{ field_errors('primary_zip') }}
+
+  <h2>About you</h2>
+
+  <fieldset>
+    <legend>Gender</legend>
+    <label><input type="radio" name="gender" value="Female" {{ checked('gender', 'Female') }}> Female</label>
+    <label><input type="radio" name="gender" value="Male" {{ checked('gender', 'Male') }}> Male</label>
+    <label><input type="radio" name="gender" value="Non-binary or other" {{ checked('gender', 'Non-binary or other') }}> Non-binary or other</label>
+    {{ field_errors('gender') }}
+  </fieldset>
+
+  <fieldset>
+    <legend>Age bracket</legend>
+    <label><input type="radio" name="age_bracket" value="0-15" {{ checked('age_bracket', '0-15') }}> 0-15</label>
+    <label><input type="radio" name="age_bracket" value="16-29" {{ checked('age_bracket', '16-29') }}> 16-29</label>
+    <label><input type="radio" name="age_bracket" value="30-44" {{ checked('age_bracket', '30-44') }}> 30-44</label>
+    <label><input type="radio" name="age_bracket" value="45-59" {{ checked('age_bracket', '45-59') }}> 45-59</label>
+    <label><input type="radio" name="age_bracket" value="60+" {{ checked('age_bracket', '60+') }}> 60+</label>
+    {{ field_errors('age_bracket') }}
+  </fieldset>
+
+  <label for="geo_bucket">Geo bucket</label>
+  <select id="geo_bucket" name="geo_bucket">
+    <option value="">— Please choose —</option>
+    <option value="Central Scotland" {{ selected('geo_bucket', 'Central Scotland') }}>Central Scotland</option>
+    <option value="Glasgow" {{ selected('geo_bucket', 'Glasgow') }}>Glasgow</option>
+    <option value="Highlands and Islands" {{ selected('geo_bucket', 'Highlands and Islands') }}>Highlands and Islands</option>
+    <option value="Lothian" {{ selected('geo_bucket', 'Lothian') }}>Lothian</option>
+    <option value="Mid Scotland and Fife" {{ selected('geo_bucket', 'Mid Scotland and Fife') }}>Mid Scotland and Fife</option>
+    <option value="North East Scotland" {{ selected('geo_bucket', 'North East Scotland') }}>North East Scotland</option>
+    <option value="South Scotland" {{ selected('geo_bucket', 'South Scotland') }}>South Scotland</option>
+    <option value="West Scotland" {{ selected('geo_bucket', 'West Scotland') }}>West Scotland</option>
+  </select>
+  {{ field_errors('geo_bucket') }}
+
+  <fieldset>
+    <legend>Edu level</legend>
+    <label><input type="radio" name="edu_level" value="Level 1" {{ checked('edu_level', 'Level 1') }}> Level 1</label>
+    <label><input type="radio" name="edu_level" value="Level 2 or 3" {{ checked('edu_level', 'Level 2 or 3') }}> Level 2 or 3</label>
+    <label><input type="radio" name="edu_level" value="Level 4 and above" {{ checked('edu_level', 'Level 4 and above') }}> Level 4 and above</label>
+    <label><input type="radio" name="edu_level" value="No qualifications" {{ checked('edu_level', 'No qualifications') }}> No qualifications</label>
+    {{ field_errors('edu_level') }}
+  </fieldset>
+
+  <h2>Consent</h2>
+
+  <label><input type="checkbox" name="consent" value="yes" {{ checked('consent', 'yes') }}> Consent</label>
+  {{ field_errors('consent') }}
+  <label><input type="checkbox" name="stay_on_db" value="yes" {{ checked('stay_on_db', 'yes') }}> Stay on database</label>
+  {{ field_errors('stay_on_db') }}
+
+  <button type="submit">Register</button>
+</form>
