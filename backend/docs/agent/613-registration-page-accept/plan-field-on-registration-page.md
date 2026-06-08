@@ -710,12 +710,12 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 No production code change. (Plan §7.)
 
-- [ ] **Red/Green** — add
-      `test_edit_respondent_form_bool_is_three_state_regardless_of_on_registration_page`
-      asserting `edit_respondent_form` bool fields keep Yes/No/Not-set choices
-      and `radio_or_none_to_bool` behaviour even when the field is `NO` on the
-      registration form.
-- [ ] **Verify** — test green; no diff to `edit_respondent_form.py`.
+- [x] **Pin test** — added
+      `test_bool_is_three_state_regardless_of_on_registration_page` asserting
+      `edit_respondent_form` bool fields keep Yes/No/Not-set choices even when the
+      field is `NO` on the registration form. (A regression guard — passes
+      immediately because the edit form never reads the enum.)
+- [x] **Verify** — test green; no diff to `edit_respondent_form.py`.
 
 ### Phase 7 — Final verification
 
