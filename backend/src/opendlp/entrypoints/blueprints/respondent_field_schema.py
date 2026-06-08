@@ -15,6 +15,7 @@ from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
 )
@@ -72,6 +73,16 @@ def _parse_field_type(raw: str | None) -> FieldType | None:
         return None
 
 
+def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | None:
+    """Parse a submitted on_registration_page value; returns None if empty or unrecognised."""
+    if not raw:
+        return None
+    try:
+        return FieldOnRegistrationPage(raw)
+    except ValueError:
+        return None
+
+
 @respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema")
 @login_required
 def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -110,6 +121,11 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         field_type_choices = [(ft.value, FIELD_TYPE_LABELS[ft]) for ft in FieldType]
         field_type_labels_by_value = {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType}
         choice_type_values = {ft.value for ft in CHOICE_TYPES}
+        on_registration_page_choices = [
+            (FieldOnRegistrationPage.NO.value, _("Not shown")),
+            (FieldOnRegistrationPage.YES_OPTIONAL.value, _("Optional")),
+            (FieldOnRegistrationPage.YES_REQUIRED.value, _("Required")),
+        ]
 
         all_fields = [f for group_fields in grouped.values() for f in group_fields]
         has_guessable_text_rows = any(
@@ -128,6 +144,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             field_type_choices=field_type_choices,
             field_type_labels_by_value=field_type_labels_by_value,
             choice_type_values=choice_type_values,
+            on_registration_page_choices=on_registration_page_choices,
             schema_has_rows=schema_has_rows,
             show_guess_button=show_guess_button,
             data_source=data_source,
@@ -175,8 +192,9 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     label = request.form.get("label", "").strip() or None
     group = _parse_group(request.form.get("group"))
     field_type = _parse_field_type(request.form.get("field_type"))
+    on_registration_page = _parse_on_registration_page(request.form.get("on_registration_page"))
 
-    if label is None and group is None and field_type is None:
+    if label is None and group is None and field_type is None and on_registration_page is None:
         flash(_("No changes submitted."), "info")
         return _schema_page_redirect(assembly_id)
 
@@ -202,6 +220,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
                 group=group,
                 field_type=field_type,
                 options=seed_options,
+                on_registration_page=on_registration_page,
             )
         else:
             update_field(
@@ -212,6 +231,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
                 label=label,
                 group=group,
                 field_type=field_type,
+                on_registration_page=on_registration_page,
             )
         flash(_("Field updated."), "success")
     except FieldDefinitionConflictError as e:

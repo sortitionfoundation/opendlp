@@ -7,6 +7,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
 )
@@ -622,6 +623,41 @@ class TestAddField:
         )
 
         assert second.sort_order > first.sort_order
+
+    def test_new_field_defaults_to_yes_required(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="favourite_colour"
+        )
+
+        assert field.on_registration_page is FieldOnRegistrationPage.YES_REQUIRED
+
+
+class TestOnRegistrationPageSeedAndUpdate:
+    def test_initialise_seeds_fixed_field_registration_defaults(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        by_key = {f.field_key: f for f in schema}
+
+        assert by_key["stay_on_db"].on_registration_page is FieldOnRegistrationPage.YES_OPTIONAL
+        for key in ("email", "eligible", "can_attend", "consent"):
+            assert by_key[key].on_registration_page is FieldOnRegistrationPage.YES_REQUIRED
+
+    def test_update_field_sets_on_registration_page(self, uow, admin_user, test_assembly):
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        can_attend = next(f for f in schema if f.field_key == "can_attend")
+
+        updated = respondent_field_schema_service.update_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            can_attend.id,
+            on_registration_page=FieldOnRegistrationPage.NO,
+        )
+
+        assert updated.on_registration_page is FieldOnRegistrationPage.NO
 
 
 class TestPermissions:

@@ -120,6 +120,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                             <col />
                             <col style="width: 10rem;" />
                             <col style="width: 10rem;" />
+                            <col style="width: 10rem;" />
                             <col style="width: 14rem;" />
                             <col style="width: 6rem;" />
                             <col style="width: 12rem;" />
@@ -129,6 +130,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Section") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Field Type") }}</th>
+                                <th class="text-body-md font-bold py-2">{{ _("On registration form") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Field key") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Order") }}</th>
                                 <th class="text-body-md font-bold py-2">{{ _("Actions") }}</th>
@@ -178,6 +180,23 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                         {% if field.is_derived %}<br><strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
                                     </td>
                                     <td class="py-2">
+                                        {% if field.is_derived %}
+                                            {{ _("Not shown") }}
+                                        {% else %}
+                                            <select form="edit-field-{{ field.id }}"
+                                                    name="on_registration_page"
+                                                    class="govuk-select"
+                                                    aria-label="{{ _('On registration form for %(key)s', key=field.field_key) }}">
+                                                {% for value, label in on_registration_page_choices %}
+                                                    <option value="{{ value }}"
+                                                            {% if field.on_registration_page.value == value %}selected{% endif %}>
+                                                        {{ label }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2">
                                         <code>{{ field.field_key }}</code>
                                     </td>
                                     <td class="py-2">
@@ -215,7 +234,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 </tr>
                                 {% if not field.is_fixed and field.field_type.value in choice_type_values %}
                                     <tr>
-                                        <td colspan="6" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
+                                        <td colspan="7" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
                                             <div class="text-body-sm font-bold mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
                                             {% if field.options %}
                                                 <ul class="mb-2">

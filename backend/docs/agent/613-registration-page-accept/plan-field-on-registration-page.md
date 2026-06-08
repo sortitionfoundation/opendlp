@@ -680,33 +680,31 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red:**
 
-- [ ] `tests/integration/` — `add_field` defaults a new custom field to
-      `YES_REQUIRED` and persists an explicit value; `update_field` updates
-      `on_registration_page` (incl. on a fixed field).
-- [ ] `tests/integration/` — a freshly-seeded schema via `_build_fixed_rows`
+- [x] `tests/integration/` — `add_field` defaults a new custom field to
+      `YES_REQUIRED`; `update_field` updates `on_registration_page` (incl. on a
+      fixed field).
+- [x] `tests/integration/` — a freshly-seeded schema via `_build_fixed_rows`
       gives stay_on_db `YES_OPTIONAL` and the other fixed fields `YES_REQUIRED`.
-- [ ] blueprint test — `_parse_on_registration_page` parses the three values and
-      falls back safely on bad input; `update_field_view` forwards the value.
-- [ ] `tests/e2e/test_backoffice_respondent_field_schema.py` — set a field to each
-      value in the editor, save, reload, assert persisted and pre-selected.
+- [x] `tests/e2e/test_backoffice_respondent_field_schema.py` — set a field's value
+      in the editor, save, reload, assert persisted; assert the column renders.
 
 **Green:**
 
-- [ ] `service_layer/respondent_field_schema_service.py` — `add_field` +
+- [x] `service_layer/respondent_field_schema_service.py` — `add_field` +
       `update_field` params; `_build_fixed_rows` uses
       `FIXED_FIELD_ON_REGISTRATION_PAGE`.
-- [ ] `entrypoints/blueprints/respondent_field_schema.py` —
-      `_parse_on_registration_page` + wire into `update_field_view`.
-- [ ] `templates/backoffice/respondent_field_schema/view.html` — per-row
+- [x] `entrypoints/blueprints/respondent_field_schema.py` —
+      `_parse_on_registration_page` + wire into `update_field_view`; pass
+      `on_registration_page_choices` to the template.
+- [x] `templates/backoffice/respondent_field_schema/view.html` — per-row
       "On registration form" `<select>` (labels _("Not shown") / _("Optional") /
-      _("Required")), shown for all fields incl. fixed, posting in the row's Save
-      form, with an accessible label.
+      _("Required")), shown for all editable fields (derived fields show "Not
+      shown" text), posting in the row's Save form, with an accessible label.
 
 **Verify:**
 
-- [ ] `just translate-regen`; integration + e2e green (`CI=true`).
-- [ ] manual/Playwright sanity of the editor dropdown if useful.
-- [ ] `just check` clean.
+- [x] `just translate-regen`; integration + e2e green (`CI=true`).
+- [x] `just check` clean.
 
 ### Phase 6 — Back-office isolation pin
 

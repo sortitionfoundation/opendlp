@@ -3,6 +3,7 @@ ABOUTME: Covers view, edit label/group, reorder, delete, and initialise flows"""
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
 )
@@ -105,6 +106,47 @@ class TestUpdateField:
             moved = next(f for f in updated if f.field_key == "custom_notes")
             assert moved.label == "Notes from organiser"
             assert moved.group == RespondentFieldGroup.ABOUT_YOU
+
+
+class TestOnRegistrationPage:
+    def test_schema_page_renders_registration_column(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "On registration form" in body
+        assert 'name="on_registration_page"' in body
+
+    def test_update_sets_on_registration_page(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom_field = next(f for f in schema if f.field_key == "custom_notes")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
+            data={
+                "label": "Custom notes",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            updated = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in updated if f.field_key == "custom_notes")
+            assert field.on_registration_page == FieldOnRegistrationPage.NO
 
 
 class TestMoveField:
