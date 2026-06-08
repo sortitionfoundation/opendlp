@@ -99,7 +99,7 @@ Args:
             name="url_slug",
             label=_("Registration URL"),
             hint=_("The URL path for your registration form"),
-            prefix=request.host_url ~ "register/",
+            prefix=registration_url_prefix,
             placeholder="my-assembly-2026",
             value=registration_page.url_slug if registration_page else "",
             disabled=slugs_locked
@@ -110,7 +110,7 @@ Args:
             name="short_url_slug",
             label=_("Short URL (optional)"),
             hint=_("A shorter URL for QR codes and paper invitations"),
-            prefix=request.host_url ~ "r/",
+            prefix=short_url_prefix,
             placeholder="ma26",
             value=registration_page.short_url_slug if registration_page else "",
             disabled=slugs_locked

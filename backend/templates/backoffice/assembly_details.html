@@ -111,7 +111,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     {{ readonly_url_display(
                     label=_("Registration URL"),
                     hint=_("The URL for your registration form"),
-                    url=request.host_url ~ "register/" ~ registration_page.url_slug
+                    url=registration_url
                     ) }}
 
                     {# Short URL (read-only) - only shown if configured #}
@@ -119,7 +119,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                         {{ readonly_url_display(
                         label=_("Short URL"),
                         hint=_("A shorter URL for QR codes and paper invitations"),
-                        url=request.host_url ~ "r/" ~ registration_page.short_url_slug
+                        url=short_url
                         ) }}
                     {% endif %}
 

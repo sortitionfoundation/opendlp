@@ -11,6 +11,12 @@ from opendlp.domain.registration_page import (
     RegistrationPage,
     RegistrationPageStatus,
 )
+from opendlp.entrypoints.blueprints.registration import (
+    registration_url,
+    registration_url_prefix,
+    short_url,
+    short_url_prefix,
+)
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.registration_page_service import (
@@ -298,3 +304,23 @@ class TestRegistrationClosed:
         response = client.get("/registration-closed")
         assert response.status_code == 200
         assert b"Registration Closed" in response.data
+
+
+class TestUrlHelpers:
+    """The URL helpers derive their paths from the registered route rules."""
+
+    def test_registration_url_matches_route(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
+        reload_flags()
+        app = create_app("testing")
+        with app.test_request_context("http://example.org/"):
+            assert registration_url("my-slug") == "http://example.org/register/my-slug"
+            assert short_url("ma26") == "http://example.org/r/ma26"
+
+    def test_prefixes_are_urls_without_a_slug(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
+        reload_flags()
+        app = create_app("testing")
+        with app.test_request_context("http://example.org/"):
+            assert registration_url_prefix() == "http://example.org/register/"
+            assert short_url_prefix() == "http://example.org/r/"

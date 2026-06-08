@@ -24,6 +24,26 @@ from opendlp.service_layer.registration_submission_service import (
 registration_bp = Blueprint("registration", __name__)
 
 
+def registration_url(url_slug: str) -> str:
+    """External URL of the public registration form for a slug."""
+    return url_for("registration.show_registration_form", url_slug=url_slug, _external=True)
+
+
+def short_url(short_url_slug: str) -> str:
+    """External short URL that redirects to the registration form."""
+    return url_for("registration.short_url_redirect", short_url_slug=short_url_slug, _external=True)
+
+
+def registration_url_prefix() -> str:
+    """External URL up to but not including the slug, for prefixed inputs."""
+    return registration_url("")
+
+
+def short_url_prefix() -> str:
+    """External short URL up to but not including the slug, for prefixed inputs."""
+    return short_url("")
+
+
 @registration_bp.route("/register/<url_slug>", methods=["GET"])
 @require_feature("registration_page")
 def show_registration_form(url_slug: str) -> ResponseReturnValue:

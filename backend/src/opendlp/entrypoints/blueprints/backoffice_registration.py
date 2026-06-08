@@ -4,9 +4,10 @@ ABOUTME: View / save / create / skeleton / QR-download routes for the assembly r
 import uuid
 from typing import cast
 
-from flask import Blueprint, Response, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from werkzeug.exceptions import HTTPException
 
 from opendlp import bootstrap
 from opendlp.domain.registration_page import (
@@ -14,6 +15,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
+from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
 from opendlp.service_layer.exceptions import (
@@ -66,11 +68,15 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             thank_you_html = ""
             registration_status = "TEST"  # Default for new pages
 
-        # Generate QR code from the short URL (only when a short slug is configured)
+        # Build registration URLs and a QR code for the short URL, when configured
+        registration_page_url = None
+        registration_short_url = None
         qr_code_data_url = None
-        if registration_page and registration_page.short_url_slug:
-            short_url = request.host_url + "r/" + registration_page.short_url_slug
-            qr_code_data_url = generate_qr_code_base64(short_url)
+        if registration_page:
+            registration_page_url = registration_url(registration_page.url_slug)
+            if registration_page.short_url_slug:
+                registration_short_url = short_url(registration_page.short_url_slug)
+                qr_code_data_url = generate_qr_code_base64(registration_short_url)
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -81,6 +87,8 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             registration_page=registration_page,
+            registration_url=registration_page_url,
+            short_url=registration_short_url,
             qr_code_data_url=qr_code_data_url,
             registration_status=registration_status,
             html_content=html_content,
@@ -254,10 +262,14 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
             "",
         )
 
-        # TODO: Get real short URL from service layer when available
-        # For now, use assembly ID as a placeholder slug
-        placeholder_short_url = request.host_url + "r/" + str(assembly_id)[:8]
-        qr_png = generate_qr_code_png(placeholder_short_url)
+        # The QR code encodes the short URL, so a short slug must be configured
+        uow = bootstrap.bootstrap()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        registration_page = result[0] if result else None
+        if not registration_page or not registration_page.short_url_slug:
+            abort(404)
+
+        qr_png = generate_qr_code_png(short_url(registration_page.short_url_slug))
 
         return Response(
             qr_png,
@@ -267,6 +279,9 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
                 "Cache-Control": "no-cache",
             },
         )
+    except HTTPException:
+        # abort(404) for a missing short URL should surface as a real 404, not a redirect
+        raise
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("You don't have permission to access this assembly"), "error")

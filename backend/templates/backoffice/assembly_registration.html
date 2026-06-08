@@ -340,7 +340,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         {{ readonly_url_display(
                                         label=_("Registration URL"),
                                         hint=_("The URL for your registration form"),
-                                        url=request.host_url ~ "register/" ~ registration_page.url_slug
+                                        url=registration_url
                                         ) }}
 
                                     {# Short URL - only if configured #}
@@ -348,7 +348,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             {{ readonly_url_display(
                                             label=_("Short URL"),
                                             hint=_("A shorter URL for QR codes and paper invitations"),
-                                            url=request.host_url ~ "r/" ~ registration_page.short_url_slug
+                                            url=short_url
                                             ) }}
                                         {% endif %}
 

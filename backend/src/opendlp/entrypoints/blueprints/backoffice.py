@@ -11,6 +11,12 @@ from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.entrypoints.blueprints.registration import (
+    registration_url,
+    registration_url_prefix,
+    short_url,
+    short_url_prefix,
+)
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
@@ -125,11 +131,15 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
         registration_page = reg_result[0] if reg_result else None
 
-        # Generate QR code for the short URL if registration page has a short slug
+        # Build registration URLs and a QR code for the short URL, when configured
+        registration_page_url = None
+        registration_short_url = None
         qr_code_data_url = None
-        if registration_page and registration_page.short_url_slug:
-            short_url = request.host_url + "r/" + registration_page.short_url_slug
-            qr_code_data_url = generate_qr_code_base64(short_url)
+        if registration_page:
+            registration_page_url = registration_url(registration_page.url_slug)
+            if registration_page.short_url_slug:
+                registration_short_url = short_url(registration_page.short_url_slug)
+                qr_code_data_url = generate_qr_code_base64(registration_short_url)
 
         return render_template(
             "backoffice/assembly_details.html",
@@ -140,6 +150,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             registration_page=registration_page,
+            registration_url=registration_page_url,
+            short_url=registration_short_url,
             qr_code_data_url=qr_code_data_url,
         ), 200
     except InsufficientPermissions as e:
@@ -215,6 +227,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     form=form,
                     assembly=assembly,
                     registration_page=registration_page,
+                    registration_url_prefix=registration_url_prefix(),
+                    short_url_prefix=short_url_prefix(),
                 ), 200
             except InsufficientPermissions as e:
                 current_app.logger.warning(
@@ -238,6 +252,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             form=form,
             assembly=assembly,
             registration_page=registration_page,
+            registration_url_prefix=registration_url_prefix(),
+            short_url_prefix=short_url_prefix(),
         ), 200
     except NotFoundError as e:
         current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")

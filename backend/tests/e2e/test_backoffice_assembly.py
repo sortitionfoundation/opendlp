@@ -72,14 +72,24 @@ class TestBackofficeAssemblyDetails:
         # No inline JS expression — incompatible with the CSP-safe build.
         assert b"navigator.clipboard.writeText(" not in response.data
 
-    def test_registration_qr_code_endpoint_returns_png(self, logged_in_admin, existing_assembly):
-        """GET .../registration/qr-code.png returns a PNG attachment for the assembly."""
+    def test_registration_qr_code_endpoint_returns_png(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """GET .../registration/qr-code.png returns a PNG attachment for the short URL."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
         assert response.status_code == 200
         assert response.mimetype == "image/png"
         # PNG signature: 89 50 4E 47 0D 0A 1A 0A
         assert response.data.startswith(b"\x89PNG\r\n\x1a\n")
         assert "attachment" in response.headers.get("Content-Disposition", "")
+
+    def test_registration_qr_code_endpoint_404_without_short_url(self, logged_in_admin, existing_assembly):
+        """A QR code encodes the short URL, so it 404s when no registration page exists."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
+        assert response.status_code == 404
 
 
 class TestBackofficeAssemblyCreate:
