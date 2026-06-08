@@ -557,37 +557,36 @@ Pure domain, no DB needed. (Plan §3.1.)
 
 **Red — `tests/contract/test_respondent_field_definition_repo.py`:**
 
-- [ ] add/get round-trips `on_registration_page` for each of the three enum
-      values (fails first because the ORM column doesn't exist yet).
+- [x] add/get round-trips `on_registration_page` for each of the three enum
+      values (fails first because the ORM column doesn't exist yet). Uses a
+      fresh-session read (`fresh_get_field_definition`, added to the contract
+      backend) so the test genuinely exercises the DB column rather than the
+      identity-mapped in-memory instance.
 
 **Green:**
 
-- [ ] add the `on_registration_page` `EnumAsString(FieldOnRegistrationPage, 32)`
+- [x] add the `on_registration_page` `EnumAsString(FieldOnRegistrationPage, 32)`
       column to `adapters/orm.py` (import the enum there) with
       `nullable=False, default=FieldOnRegistrationPage.YES_REQUIRED`.
-- [ ] confirm the contract/integration test DB picks the column up (metadata
-      `create_all` vs migrations — check `tests/conftest.py`; if it builds from
-      metadata, the ORM column is enough for tests).
-- [ ] generate the migration:
-      `uv run alembic revision --autogenerate -m "add on_registration_page to respondent field definitions"`
-      (parent = head `28ad0135cfe8`).
-- [ ] hand-edit the migration to the §4.2 shape: `add_column` with
+- [x] confirmed the test DB builds from `orm.metadata.create_all`
+      (`tests/conftest.py:200`), so the ORM column is enough for tests.
+- [x] generate the migration (parent = head `28ad0135cfe8`).
+- [x] hand-edit the migration to the §4.2 shape: `add_column` with
       `server_default="yes_required"`, then backfill `derived → 'no'` and
       `stay_on_db → 'yes_optional'`; `downgrade` drops the column.
 
-**Red/Green — migration test (if a harness exists; see `tests/` for existing
-migration tests):**
+**Red/Green — migration test:**
 
-- [ ] upgrade backfills derived→`no`, stay_on_db→`yes_optional`, else→
-      `yes_required`; downgrade drops the column.
+- [x] N/A — the repo has **no** migration-test harness (no migration is tested
+      anywhere); the backfill is verified by the alembic upgrade/downgrade run
+      below.
 
 **Verify:**
 
-- [ ] `uv run alembic upgrade head` then `uv run alembic downgrade -1` then
-      `upgrade head` all succeed on a scratch DB.
-- [ ] `uv run alembic revision --autogenerate` shows **no** further diff
-      (column matches the ORM).
-- [ ] contract tests green; `just check` clean.
+- [x] `uv run alembic upgrade head` then `uv run alembic downgrade -1` then
+      `upgrade head` all succeed.
+- [x] `uv run alembic check` shows **no** further diff (column matches the ORM).
+- [x] contract tests green; `just check` clean.
 
 ### Phase 3 — Submission validator
 
