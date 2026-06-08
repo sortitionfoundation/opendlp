@@ -22,6 +22,19 @@ rationale; `form_action` is still an explicit substitution so a future story
 can re-introduce a separate submit URL if multi-language / A/B variants need
 it.
 
+**Updated 2026-06-08** — §6 Q14/Q15 revised. The two-boolean plan
+(`is_required` + `for_registration_page`) is replaced by a **single
+`FieldOnRegistrationPage` enum** (`NO` / `YES_OPTIONAL` / `YES_REQUIRED`) on
+`RespondentFieldDefinition`, which makes the illegal combination "not on the
+form but required" unrepresentable. Bool fields on the public form render as
+**checkboxes** (`YES_REQUIRED` → must be checked, e.g. `consent`/`eligible`;
+`YES_OPTIONAL` → optional, e.g. `stay_on_db`), so a form submission never
+produces `None` for them. The **back-office edit-registrant form is unchanged**
+— it keeps full True/False/None handling for bool fields, because off-form
+fields and rows from CSV upload / manual entry can legitimately be `None`. The
+never-None behaviour is specific to the public registration form, not to the
+domain field. See Q14 for the full rationale.
+
 This document captures what's already in place from story 610, what story 613 actually
 adds, the main implementation options for each meaty decision, and the open technical
 questions that need answering before a detailed plan can be cut.
@@ -124,8 +137,9 @@ tests and unit tests are green (last verified 2026-05-15: 2764 passed).
 - `FF_REGISTRATION_PAGE` is gated by 610's public routes; 613's new POST and
   thank-you routes must gate the same way. The service layer intentionally
   doesn't check the flag — it stays a route-layer concern.
-- No `is_required` or `for_registration_page` on `RespondentFieldDefinition` yet
-  (both proposed here — see §6 Q14, Q15).
+- No `FieldOnRegistrationPage` enum on `RespondentFieldDefinition` yet (proposed
+  here — see §6 Q14; supersedes the earlier two-bool `is_required` /
+  `for_registration_page` plan).
 
 ### 1.5 The bigger picture — the HTML source is just the first source type
 
@@ -156,11 +170,12 @@ Implications for story 613:
   shape any presentation layer can consume (the v1 Jinja path renders them via
   `field_errors(key)` / `form_errors()`; a future form builder attaches them to
   its rendered widgets). Don't pre-bake HTML inside the service. See §4.7.
-- The respondent field schema may grow a `for_registration_page` flag (or an
-  enum: `registration_page`, `derived_target`, `confirmation_call_only`, ...)
-  so the validator and the form builder both know which fields belong on a
-  registration form vs which are derived later or only collected during
-  confirmation calls. See §6 — Q15 (**decided: add the bool now**).
+- The respondent field schema grows a `FieldOnRegistrationPage` enum (`NO` /
+  `YES_OPTIONAL` / `YES_REQUIRED`) so the validator and the form builder both
+  know which fields belong on a registration form (anything `!= NO`) and which
+  are required. A richer *scope* enum (`registration_page`, `derived_target`,
+  `confirmation_call_only`, ...) for the non-form contexts remains a separate,
+  later axis. See §6 — Q14 (**decided: add the enum**) and Q15.
 
 ---
 
@@ -655,14 +670,13 @@ domain layer.
 **A fixed field that the form doesn't collect is expected.** Not every form
 collects every one of those five keys — a simple "register interest" form might
 omit `eligible`, `can_attend`, and `stay_on_db`, leaving only `email` and
-`consent`. The validator uses `for_registration_page` (§6 — Q15) to know which
-fields the form is meant to collect: a fixed field **not** flagged for the
-registration page is simply not expected, and its `Respondent` column keeps its
-default (`None` for the booleans, `""` for email). This is distinct from the
-strict-required handling in Q9: required-ness (`is_required`, §6 — Q14) only
-bites on fields that _are_ on the form. So "not on the form" → ignored; "on the
-form and required" → must be present/checked; "on the form and optional" (e.g.
-`stay_on_db`) → may be blank.
+`consent`. The validator uses `FieldOnRegistrationPage` (§6 — Q14) to know which
+fields the form is meant to collect: a fixed field set to `NO` is simply not
+expected, and its `Respondent` column keeps its default (`None` for the
+booleans, `""` for email). The required/optional distinction is the same enum's
+`YES_REQUIRED` vs `YES_OPTIONAL`. So `NO` → ignored; `YES_REQUIRED` → must be
+present (non-bool) / checked (bool checkbox); `YES_OPTIONAL` (e.g. `stay_on_db`)
+→ may be blank / left unchecked.
 
 ### Q8 — Preserve typed values across a re-render after a validation failure? **DECIDED → yes, via the Jinja helpers**
 
@@ -682,36 +696,38 @@ selection, `<select>` keeps its option. No new tokens, no HTML post-processing.
 (This is what makes Q3 a plain redisplay rather than a post/redirect/get — the
 submitted values are still in scope on the failed POST.)
 
-### Q9 — How strict is the validation? **DECIDED → Option B (strict), backed by `is_required`**
+### Q9 — How strict is the validation? **DECIDED → Option B (strict), backed by `FieldOnRegistrationPage`**
 
 Doctor Chewie's steer: **Option B — almost all fields are required.** The only
 standard exception is the "stay on database" checkbox. So the validator enforces
-required-ness server-side, sourced from the new `is_required` column added in
-§6 — Q14 (default `True`), plus the fixed-boolean rules captured there.
+required-ness server-side, sourced from the new `FieldOnRegistrationPage` enum
+added in §6 — Q14 (a field is required iff `YES_REQUIRED`), plus the
+fixed-boolean checkbox rules captured there.
 
 The author writes the HTML, the schema is the source of truth, and the two can
 drift. Five sub-questions, now answered:
 
-1. **Missing required field:** schema has `email` (or any `is_required` field)
+1. **Missing required field:** schema has `email` (or any `YES_REQUIRED` field)
    but the form omitted/blanked it → **reject** with a per-field "this is
-   required" error. Missing _optional_ field → stored as `None` / empty string.
+   required" error. Missing `YES_OPTIONAL` field → stored as `None` / empty string.
 2. **Extra fields:** form posts `name="favourite_colour"` with no matching
    schema field → **silently dropped** (not stored in `attributes`). The schema
    is the source of truth for what to collect.
-3. **Required-ness:** comes from `RespondentFieldDefinition.is_required` (§6 —
-   Q14, default `True`). For the fixed booleans the rule is: when the form
-   collects them, `eligible` / `can_attend` / `consent` must be **checked**
-   (truthy), while `stay_on_db` is optional. See Q14 for the "is this fixed
-   boolean even in use?" mechanism.
+3. **Required-ness:** comes from `RespondentFieldDefinition.on_registration_page`
+   (§6 — Q14). A field is required iff `YES_REQUIRED`. For bool fields,
+   `YES_REQUIRED` renders a **checkbox that must be checked** (so `eligible` /
+   `can_attend` / `consent` must be truthy), while `YES_OPTIONAL` (e.g.
+   `stay_on_db`) is an optional checkbox. A field set to `NO` is not on the form
+   at all. See Q14.
 4. **Choice values:** form posts `gender=Martian` for a choice field whose
    options are {Female, Male, Non-binary or other} → **rejected**.
 5. **Type errors:** integer field gets `"abc"` → **rejected**, with a
    user-visible per-field message (rendered via `field_errors`).
 
-This depends on the §6 Q14 / Q15 schema additions (`is_required`,
-`for_registration_page`), which Doctor Chewie has approved adding in 613. The
-earlier "Option A lenient for v1, defer the migration" lean is therefore
-**dropped** — we are doing the migration in this story.
+This depends on the §6 Q14 schema addition (the `FieldOnRegistrationPage` enum),
+which Doctor Chewie has approved adding in 613. The earlier "Option A lenient for
+v1, defer the migration" lean is therefore **dropped** — we are doing the
+migration in this story.
 
 > **QUESTION (Doctor Chewie):** for a required _choice_ field that the visitor
 > simply leaves unselected (no radio chosen, `<select>` left on the "— Please
@@ -760,9 +776,10 @@ before code lands. As of the 2026-05-22 revision, the §5 questions that were
 parked are now resolved: Q3 (errors surface via the Jinja helpers — standard
 redisplay), Q8 (typed values re-populated via the same helpers), and Q9
 (strict, Option B). In §6, Q1, Q2, Q4, Q5, Q6, Q7, Q11, Q12, Q13 are decided;
-Q8 and Q10 are agreed as written; Q14 (`is_required`) and Q15
-(`for_registration_page` flag) are decided by Doctor Chewie's comments
-(add both); Q16 (blueprint split) is **out of scope**. Nothing in §5/§6
+Q8 and Q10 are agreed as written; Q14 and Q15 are decided by Doctor Chewie's
+comments — **revised 2026-06-08 to a single `FieldOnRegistrationPage` enum**
+replacing the earlier two-bool (`is_required` + `for_registration_page`) plan;
+Q16 (blueprint split) is **out of scope**. Nothing in §5/§6
 remains genuinely open except the two clarifying questions flagged inline (in
 §4.7 and §5 — Q9) and the dedicated **§9 — Questions for Doctor Chewie** at the
 end of this doc.
@@ -893,62 +910,102 @@ otherwise identical to a real submission:
 - `RespondentSourceType.REGISTRATION_FORM` (no separate source type — the
   status carries the test-ness).
 
-### Q14 — Source of `RespondentFieldDefinition.is_required` **DECIDED → add `is_required`, default `True`**
+### Q14 — How is "on the registration page" + "required" represented? **REVISED 2026-06-08 → single `FieldOnRegistrationPage` enum (supersedes the two-bool plan)**
 
-Add `is_required: bool` to `RespondentFieldDefinition`, **defaulting to `True`**
-(matching Q9's "almost all fields are required"). This is a schema change, done
-in 613. `generate_starter_form_html` already takes a `required_field_keys`
-parameter; the field-editing UI / schema setup populates `is_required` and the
-starter generator derives `required_field_keys` from it.
+The earlier decision (this question + Q15) was to add **two booleans** to
+`RespondentFieldDefinition`: `is_required` (default `True`) and
+`for_registration_page`. Doctor Chewie has since revised this: **replace both
+booleans with a single enum**, so the illegal state "not on the form but
+required" (`for_registration_page=False, is_required=True`) is unrepresentable.
 
-**Fixed booleans need a separate "is this field even in use?" signal.** Not
-every form collects all of `eligible` / `can_attend` / `consent` / `stay_on_db`.
-The rule Doctor Chewie set:
+**Decision: add `on_registration_page: FieldOnRegistrationPage` to
+`RespondentFieldDefinition`** (schema change, done in 613). The enum:
 
-- We need a way to mark whether each fixed boolean is actually used on this
-  assembly's form (candidate mechanism: the `for_registration_page` flag from
-  Q15 — see the QUESTION below).
-- **When a fixed boolean is in use:** `eligible`, `can_attend` and `consent`
-  are required to be **checked** (i.e. a truthy "yes" — an unchecked/"no"
-  consent is a validation failure, not just a recorded `False`); `stay_on_db`
-  is **optional** (unchecked is a legitimate "no, don't keep me on the
-  database").
-- **When a fixed boolean is not in use:** it's absent from the form, the
-  validator doesn't expect it, and the `Respondent` column keeps its default.
+- **`NO`** — not on the registration page at all. The validator neither expects
+  nor stores it; a fixed boolean in this state keeps its `Respondent` default
+  (`None` for the bools, `""` for email). `NO` is also the "is this fixed
+  boolean even in use?" signal — `NO` means not in use, so the question that the
+  old two-bool plan needed a second flag (or a separate mechanism) to answer is
+  now answered by the single enum.
+- **`YES_OPTIONAL`** — on the form, may be left unsatisfied.
+  - non-bool field: rendered as its normal input, may be left blank.
+  - bool field: rendered as a **checkbox**, may be left unchecked → records
+    `True` if checked, `False` if not. This is the `stay_on_db` / "keep my
+    details so you can contact me about future events" case.
+- **`YES_REQUIRED`** — on the form, the user must actively satisfy it.
+  - non-bool field: must have a value (blank → reject).
+  - bool field: rendered as a **checkbox with `required`** — must be checked
+    (i.e. must be `True`); unchecked is a validation failure, not a recorded
+    `False`. This is the `eligible` / `can_attend` / `consent` ("I am eligible",
+    "I consent to you keeping my data") case.
 
-This intersects with Q9 (strict validation) and Q15 (`for_registration_page`).
-Adding `is_required` here means the field-editing story no longer owns it; 613
-ships the column and the migration.
+**Why an enum over two bools:**
 
-> **QUESTION (Doctor Chewie):** two ways to express "is this fixed boolean in
-> use", and I want your call before the detailed plan:
-> (a) **reuse `for_registration_page`** (Q15) — a fixed boolean is "in use" iff
-> it's flagged for the registration page. Simple, one flag does double duty.
-> (b) a **dedicated mechanism** (e.g. presence in the form HTML / a separate
-> per-field toggle). More explicit but more state.
-> My lean is (a) — `for_registration_page` already means "this field belongs on
-> the form", which is exactly "in use". Also: does the
-> "`consent`/`eligible`/`can_attend` must be checked when in use" rule belong in
-> the **validator** (reject on submit) or also surface as `required` in the
-> generated HTML? I'd do both — `required` attribute for the browser, validator
-> for the server — but flagging since "must be _checked_" is stronger than HTML
-> `required` gives for a single checkbox.
+- Removes the illegal `(for_registration_page=False, is_required=True)` state by
+  construction.
+- `YES_REQUIRED` maps cleanly onto the HTML `required` attribute for **both**
+  text inputs (must fill) and checkboxes (browsers enforce "must be checked"),
+  so one uniform rule — "the user must actively satisfy this field" — covers
+  both rendering cases.
+- "Must be checked" becomes a **per-field property** (`YES_REQUIRED` on any bool
+  field) rather than a rule hardcoded into the validator for the three fixed
+  consent fields. A custom "I agree to the code of conduct" checkbox just works
+  with no special-casing.
 
-### Q15 — Add a `for_registration_page` flag (or scope enum) to `RespondentFieldDefinition`? **DECIDED → add the bool now**
+**Render bool fields as checkboxes, not radios.** The current starter
+(`_render_yes_no_radios` in `domain/registration_page.py`) renders bool fields
+as yes/no radios with no enforcement — which cannot express "must be True" (a
+required radio only forces *a* pick, allowing "No"). The starter generator must
+route bool types to a **checkbox** renderer (with `required` when
+`YES_REQUIRED`).
 
-Doctor Chewie's steer: **add the bool now; the enum can evolve later.**
+**Invariants that follow from checkbox rendering:**
 
-Add `for_registration_page: bool` to `RespondentFieldDefinition` (schema change,
-done in 613). It tells the validator "these are the keys you should expect on a
-submission" and tells a future form builder "these are the keys to offer as
-components". Anything not flagged is implicitly derived / back-office-only and
-the validator neither expects nor stores it. (See the Q14 QUESTION for whether
-this same flag also answers "is this fixed boolean in use?".)
+- A bool field on the form is binary — it can **never** produce `None`. `None`
+  survives only for fields set to `NO` (not on the form), where it correctly
+  means "not collected / unknown".
+- The "must be True-or-False, never None" case therefore collapses into
+  `YES_OPTIONAL` for a checkbox — there is no separate state to model.
+- The one case the enum cannot express — a bool that must be *answered* but
+  where *either* answer is valid (a yes/no screening question feeding targets) —
+  is modelled as a **`CHOICE_RADIO`** with explicit yes/no options, not a BOOL.
+  Rule: **BOOL ⇒ checkbox; required-but-either-answer ⇒ CHOICE.**
 
-The richer alternative — an enum `field_scope: registration_page |
-derived_target | confirmation_call_only | back_office_only | ...` — is **not**
-done now. The bool is forward-compatible: a later story can widen it to the
-enum without invalidating the "is it on the form?" question the validator asks.
+**The back-office edit-registrant form is NOT changed.** It keeps full
+True / False / None (three-state) handling for the bool fields. Fields that are
+not on the registration form — and rows created by CSV upload or manual entry —
+can legitimately be `None`, and the back-office must continue to represent and
+edit that. The checkbox-only / never-None behaviour is specific to the **public
+registration form**, not to the domain field or the back-office editor.
+
+**Enforce server-side regardless of HTML.** The `required` attribute is a
+browser hint only; the validator independently rejects an unchecked
+`YES_REQUIRED` bool and a blank `YES_REQUIRED` non-bool.
+
+**Defaults.** `is_derived=True` fields default to `NO` — they are computed,
+never collected on the form. New custom fields default to `YES_REQUIRED` (most
+are about-you target fields). `generate_starter_form_html` derives its
+`required_field_keys` (and which fields to emit at all) from this enum rather
+than taking a separately hand-maintained parameter.
+
+(Enum name `FieldOnRegistrationPage` per Doctor Chewie's proposal; value set
+`NO` / `YES_OPTIONAL` / `YES_REQUIRED`.)
+
+### Q15 — A `for_registration_page` flag (or scope enum)? **REVISED 2026-06-08 → folded into the Q14 enum; richer scope enum still deferred**
+
+The standalone `for_registration_page: bool` is **dropped**. Its job — "is this
+field on the registration form, so the validator should expect it / the form
+builder should offer it?" — is now carried by `on_registration_page != NO`
+(Q14). One field, no redundancy, no illegal combinations.
+
+The richer alternative floated earlier — a `field_scope` enum
+(`registration_page | derived_target | confirmation_call_only |
+back_office_only | ...`) — is still **not** done now. Note it addresses a
+*different axis* from the Q14 enum: Q14 answers "on the registration form, and
+required?"; a future `field_scope` would answer "which of several non-form
+contexts does this field belong to?". The two can coexist later (a field is `NO`
+on the registration form but `confirmation_call_only` for scope). Adding the
+Q14 enum now does not block that.
 
 ### Q16 — Separate blueprint for the `/r/` short-URL redirect? **OUT OF SCOPE**
 
@@ -1003,11 +1060,13 @@ Chewie.
   `value()`; a future form builder attaches errors to its widgets. See §4.7.
 - **Schema-driven validator** as a pure helper (no Flask, no WTForms), called by
   the service. Strictness is **strict (§5 Q9, Option B)**: required-ness from
-  the new `is_required` column (default `True`); missing required → reject;
-  extras → dropped; type / choice violations → rejected. Fixed-field keys land
-  on `Respondent` top-level; rest in `attributes`. Fixed booleans only expected
-  when in use; when in use `eligible`/`can_attend`/`consent` must be checked,
-  `stay_on_db` optional (§6 Q14).
+  the new `on_registration_page` enum (`YES_REQUIRED`); missing required →
+  reject; extras → dropped; type / choice violations → rejected. Fixed-field
+  keys land on `Respondent` top-level; rest in `attributes`. Bool fields render
+  as checkboxes: a field set to `NO` is not expected; `YES_REQUIRED` bools
+  (`eligible`/`can_attend`/`consent`) must be checked; `YES_OPTIONAL` bools
+  (`stay_on_db`) may be left unchecked. A form checkbox never yields `None`
+  (§6 Q14).
 - **`external_id`** = freshly-generated UUID per submission. **No email dedup** —
   shared-email submissions are explicit valid usage.
 - **Errors + typed-value round-trip** (§5 Q3, Q8) — standard server re-render
@@ -1021,9 +1080,11 @@ Chewie.
   610's gate on the GET routes.
 - **Templates:** 610 owns the form wrapper and closed page (re-used by 613 for
   the failed-POST re-render); 613 adds the thank-you wrapper.
-- **Schema additions in 613:** `RespondentFieldDefinition.is_required`
-  (default `True`, §6 Q14) and `for_registration_page: bool` (§6 Q15). One
-  schema migration covers both.
+- **Schema additions in 613:** `RespondentFieldDefinition.on_registration_page`
+  (a `FieldOnRegistrationPage` enum — `NO` / `YES_OPTIONAL` / `YES_REQUIRED`,
+  §6 Q14), replacing the earlier two-bool plan. One schema migration. The
+  back-office edit-registrant form is unchanged (still True/False/None for bool
+  fields).
 - **Rate-limiting:** out of scope for 613, but the detailed plan reserves the
   seam (decorator on the POST route) so the follow-up doesn't have to retrofit.
 - **Sequencing:** developed in parallel with 610's `plan-frontend.md` backoffice
@@ -1034,13 +1095,15 @@ Chewie.
   assembly.
 
 Estimated rough size: ~400 LOC of new src code (route + service + validator +
-structured-error value object + status enum + the two schema fields), ~700 LOC
-of tests, one new template (thank-you wrapper), one domain enum addition, one
-schema migration (`is_required` + `for_registration_page`). Note:
-`RespondentStatus` is stored via `EnumAsString` (confirmed in
+structured-error value object + status enum + the `FieldOnRegistrationPage`
+enum + schema field), ~700 LOC of tests, one new template (thank-you wrapper),
+two domain enum additions (`RespondentStatus.TEST_SUBMISSION` and
+`FieldOnRegistrationPage`), one schema migration (the `on_registration_page`
+column). Note: `RespondentStatus` is stored via `EnumAsString` (confirmed in
 `domain/value_objects.py` + ORM code), so **adding the new status value does NOT
 need a column-type migration** — it's just a code change. The
-`RespondentFieldDefinition` schema migration (Q14/Q15) is the DB change in play.
+`RespondentFieldDefinition.on_registration_page` column (Q14) is the DB change in
+play.
 
 ---
 
@@ -1084,17 +1147,29 @@ inline at the relevant section.
    Happy with that split, or should the service hand back the grouped dict so
    the route is a pure pass-through?
 
+I'm happy with that split.
+
 2. **"Fixed boolean in use" mechanism (§6 Q14).** You said the fixed booleans
    need "some way to select whether they are actually used". My lean is to
    **reuse the new `for_registration_page` flag** (Q15) — a fixed boolean is
    "in use" iff it's flagged for the registration page — rather than add a
    separate per-field toggle. Agree, or do you want a dedicated mechanism?
 
+**RESOLVED (2026-06-08):** subsumed by the single `FieldOnRegistrationPage`
+enum (Q14). A fixed boolean is "in use" iff `on_registration_page != NO` — no
+separate flag or mechanism needed.
+
 3. **"Must be checked" enforcement (§6 Q14).** For `eligible`/`can_attend`/
    `consent` when in use, "must be checked" is stronger than an HTML `required`
    attribute gives for a single checkbox. I plan to enforce it in the
    **validator** (server-side reject) _and_ mark `required` in the generated
    HTML (browser hint). Sound right?
+
+**RESOLVED (2026-06-08):** yes — these render as **checkboxes** (not radios), so
+`YES_REQUIRED` → HTML `required` on the checkbox (which browsers enforce as
+"must be checked") *and* a server-side validator reject. Doctor Chewie confirmed
+the checkbox rendering for these fields; the back-office edit form keeps
+True/False/None and is unchanged.
 
 4. **Unselected required choice fields (§5 Q9).** A required radio with nothing
    chosen, or a `<select>` left on the blank "— Please choose —" option → I'll
@@ -1108,3 +1183,5 @@ inline at the relevant section.
    submission service / validator / `TEST_SUBMISSION` status / schema
    additions. If the thank-you route or the closed page actually landed in 610
    too, say so and I'll move them out of 613's scope.
+
+The stories have been combined now, so all of 613's scope is now in 610.
