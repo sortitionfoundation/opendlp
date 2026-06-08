@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-08 14:09+0100\n"
+"POT-Creation-Date: 2026-06-08 14:30+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1898,6 +1898,12 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #, fuzzy
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/registration.py:145
+msgid ""
+"Your form had been open too long and couldn't be submitted securely. "
+"Please check your answers and submit again."
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:157
 #, python-format

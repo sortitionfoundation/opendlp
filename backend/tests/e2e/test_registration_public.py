@@ -304,6 +304,78 @@ class TestRegistrationFormSubmission:
             assert len(respondents) == initial_count + 1
 
 
+class TestRegistrationCsrfExpiry:
+    """An expired/invalid CSRF token re-renders the form with the user's values preserved.
+
+    These tests enable CSRF (disabled in the test config) on the function-scoped
+    app so the manual validate_csrf check in the submit view is exercised.
+    """
+
+    @staticmethod
+    def _real_csrf_token(client: FlaskClient, form_url: str) -> str:
+        """Extract the real CSRF token rendered into the form."""
+        response = client.get(form_url)
+        match = re.search(rb'name="csrf_token" value="([^"]+)"', response.data)
+        assert match, "No CSRF token found in rendered form"
+        return match.group(1).decode()
+
+    def test_expired_token_rerenders_form_with_values(
+        self, app, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory
+    ) -> None:
+        app.config["WTF_CSRF_ENABLED"] = True
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
+
+        form_url = f"/register/{published_registration_page.url_slug}"
+        response = client.post(
+            form_url,
+            data={
+                "csrf_token": "stale-or-invalid-token",
+                "name": "Jo Public",
+                "email": "jo@example.com",
+            },
+        )
+
+        # Form is re-rendered (200), not the generic 400 error page
+        assert response.status_code == 200
+        # The friendly expiry message is shown
+        assert b"open too long" in response.data
+        # The submitted values are preserved so the user doesn't lose their work
+        assert b'value="Jo Public"' in response.data
+        assert b"jo@example.com" in response.data
+
+        # No respondent was created - the route is still protected
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.respondents.count_by_assembly_id(published_registration_page.assembly_id) == initial_count
+
+    def test_valid_token_still_creates_respondent(
+        self, app, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory
+    ) -> None:
+        app.config["WTF_CSRF_ENABLED"] = True
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
+
+        form_url = f"/register/{published_registration_page.url_slug}"
+        csrf_token = self._real_csrf_token(client, form_url)
+
+        response = client.post(
+            form_url,
+            data={
+                "csrf_token": csrf_token,
+                "name": "Valid User",
+                "email": "valid@example.com",
+            },
+        )
+
+        assert response.status_code == 302
+        assert f"/register/{published_registration_page.url_slug}/thank-you" in response.location
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.respondents.count_by_assembly_id(published_registration_page.assembly_id) == initial_count + 1
+
+
 class TestThankYouPage:
     """Test GET /register/<url_slug>/thank-you route."""
 
