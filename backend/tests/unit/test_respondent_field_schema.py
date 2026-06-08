@@ -8,11 +8,13 @@ from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
     FIELD_TYPE_LABELS,
+    FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -192,6 +194,104 @@ class TestRespondentFieldDefinition:
         assert copy.derived_from == ["a", "b"]
         assert copy.derived_from is not original.derived_from  # actual copy
         assert copy.derivation_kind == "some_kind"
+
+
+class TestFieldOnRegistrationPage:
+    def test_enum_values(self) -> None:
+        assert FieldOnRegistrationPage.NO.value == "no"
+        assert FieldOnRegistrationPage.YES_OPTIONAL.value == "yes_optional"
+        assert FieldOnRegistrationPage.YES_REQUIRED.value == "yes_required"
+        assert len(list(FieldOnRegistrationPage)) == 3
+
+    def test_constructor_defaults_to_yes_required(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="first_name",
+            label="First name",
+            group=RespondentFieldGroup.NAME_AND_CONTACT,
+            sort_order=10,
+        )
+        assert field.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
+
+    def test_constructor_accepts_explicit_value(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="nickname",
+            label="Nickname",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+            on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
+        )
+        assert field.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+    def test_derived_field_is_forced_to_no(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["dob"],
+            on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+        )
+        assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def test_update_changes_on_registration_page(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="x",
+            label="X",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+        )
+        original_updated_at = field.updated_at
+        field.update(on_registration_page=FieldOnRegistrationPage.NO)
+        assert field.on_registration_page == FieldOnRegistrationPage.NO
+        assert field.updated_at > original_updated_at
+
+    def test_update_changes_on_registration_page_for_fixed_field(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="can_attend",
+            label="Can attend",
+            group=RespondentFieldGroup.ELIGIBILITY,
+            sort_order=10,
+            is_fixed=True,
+        )
+        field.update(on_registration_page=FieldOnRegistrationPage.NO)
+        assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def test_update_leaves_on_registration_page_unchanged_when_omitted(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="x",
+            label="X",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+            on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
+        )
+        field.update(label="Xylophone")
+        assert field.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+    def test_create_detached_copy_preserves_on_registration_page(self) -> None:
+        original = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="x",
+            label="X",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+            on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
+        )
+        copy = original.create_detached_copy()
+        assert copy.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+    def test_fixed_field_seed_defaults(self) -> None:
+        assert FIXED_FIELD_ON_REGISTRATION_PAGE["email"] == FieldOnRegistrationPage.YES_REQUIRED
+        assert FIXED_FIELD_ON_REGISTRATION_PAGE["eligible"] == FieldOnRegistrationPage.YES_REQUIRED
+        assert FIXED_FIELD_ON_REGISTRATION_PAGE["can_attend"] == FieldOnRegistrationPage.YES_REQUIRED
+        assert FIXED_FIELD_ON_REGISTRATION_PAGE["consent"] == FieldOnRegistrationPage.YES_REQUIRED
+        assert FIXED_FIELD_ON_REGISTRATION_PAGE["stay_on_db"] == FieldOnRegistrationPage.YES_OPTIONAL
 
 
 class TestGroupMetadata:

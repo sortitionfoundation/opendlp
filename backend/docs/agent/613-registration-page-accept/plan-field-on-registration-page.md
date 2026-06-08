@@ -525,31 +525,31 @@ Pure domain, no DB needed. (Plan §3.1.)
 
 **Red — `tests/unit/test_respondent_field_schema.py`:**
 
-- [ ] `FieldOnRegistrationPage` exists with members `NO` / `YES_OPTIONAL` /
+- [x] `FieldOnRegistrationPage` exists with members `NO` / `YES_OPTIONAL` /
       `YES_REQUIRED` and string values `"no"` / `"yes_optional"` / `"yes_required"`.
-- [ ] constructor defaults `on_registration_page` to `YES_REQUIRED` when omitted.
-- [ ] constructor with `is_derived=True` forces `on_registration_page = NO`
+- [x] constructor defaults `on_registration_page` to `YES_REQUIRED` when omitted.
+- [x] constructor with `is_derived=True` forces `on_registration_page = NO`
       (even if a non-`NO` value is passed).
-- [ ] `update(on_registration_page=...)` sets the value and touches `updated_at`,
+- [x] `update(on_registration_page=...)` sets the value and touches `updated_at`,
       on both a fixed and a non-fixed field; `update()` with it omitted leaves it
       unchanged.
-- [ ] `create_detached_copy()` carries `on_registration_page` through.
-- [ ] `FIXED_FIELD_ON_REGISTRATION_PAGE` maps email/eligible/can_attend/consent →
+- [x] `create_detached_copy()` carries `on_registration_page` through.
+- [x] `FIXED_FIELD_ON_REGISTRATION_PAGE` maps email/eligible/can_attend/consent →
       `YES_REQUIRED` and stay_on_db → `YES_OPTIONAL`.
 
 **Green — `src/opendlp/domain/respondent_field_schema.py`:**
 
-- [ ] add the `FieldOnRegistrationPage` enum.
-- [ ] add the `FIXED_FIELD_ON_REGISTRATION_PAGE` seed-default map.
-- [ ] add the constructor param (default `YES_REQUIRED`) + the `is_derived → NO`
+- [x] add the `FieldOnRegistrationPage` enum.
+- [x] add the `FIXED_FIELD_ON_REGISTRATION_PAGE` seed-default map.
+- [x] add the constructor param (default `YES_REQUIRED`) + the `is_derived → NO`
       guard with an explanatory comment; store the attribute.
-- [ ] extend `update()` with the optional param.
-- [ ] extend `create_detached_copy()`.
+- [x] extend `update()` with the optional param.
+- [x] extend `create_detached_copy()`.
 
 **Verify:**
 
-- [ ] `CI=true uv run pytest tests/unit/test_respondent_field_schema.py` green.
-- [ ] `just check` (mypy/ruff) clean for the edited file.
+- [x] `CI=true uv run pytest tests/unit/test_respondent_field_schema.py` green.
+- [x] `just check` (mypy/ruff) clean for the edited file.
 
 ### Phase 2 — Persistence: ORM column + migration
 
