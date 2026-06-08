@@ -25,6 +25,7 @@ from opendlp.domain.registration_page import (
 from opendlp.domain.respondent_field_schema import (
     GROUP_LABELS,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -44,6 +45,7 @@ def _field(
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
     is_fixed: bool = False,
+    on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_OPTIONAL,
 ) -> RespondentFieldDefinition:
     return RespondentFieldDefinition(
         assembly_id=ASSEMBLY_ID,
@@ -54,6 +56,7 @@ def _field(
         is_fixed=is_fixed,
         field_type=field_type,
         options=options,
+        on_registration_page=on_registration_page,
     )
 
 
@@ -962,24 +965,23 @@ class TestGenerateStarterFormHtml:
         assert ('<input type="number" id="age" name="age" value="{{ value(\'age\') }}">') in html
         assert "{{ field_errors('age') }}" in html
 
-    def test_bool_field_renders_two_radios_with_checked_helpers(self):
+    def test_bool_field_renders_checkbox_with_checked_helper(self):
         fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL)]
         html = generate_starter_form_html(fields)
 
-        assert "<fieldset>" in html
-        assert "<legend>Eligible</legend>" in html
-        assert ('<input type="radio" name="eligible" value="yes" {{ checked(\'eligible\', \'yes\') }}>') in html
-        assert ('<input type="radio" name="eligible" value="no" {{ checked(\'eligible\', \'no\') }}>') in html
+        assert (
+            '<label><input type="checkbox" id="eligible" name="eligible" value="yes" '
+            "{{ checked('eligible', 'yes') }}> Eligible</label>"
+        ) in html
         assert "{{ field_errors('eligible') }}" in html
+        assert 'type="radio"' not in html
 
-    def test_bool_or_none_field_renders_two_radios_no_third_option(self):
+    def test_bool_or_none_field_renders_single_checkbox(self):
         fields = [_field("can_attend", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
         html = generate_starter_form_html(fields)
 
-        radio_count = html.count('type="radio" name="can_attend"')
-        assert radio_count == 2
-        assert ('<input type="radio" name="can_attend" value="yes" {{ checked(\'can_attend\', \'yes\') }}>') in html
-        assert ('<input type="radio" name="can_attend" value="no" {{ checked(\'can_attend\', \'no\') }}>') in html
+        assert html.count('name="can_attend"') == 1
+        assert 'type="checkbox" id="can_attend" name="can_attend" value="yes"' in html
         assert "Not set" not in html
 
     def test_choice_radio_renders_per_option_radios_with_checked_helpers(self):
@@ -1096,14 +1098,52 @@ class TestGenerateStarterFormHtml:
         fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
         html = generate_starter_form_html(fields)
 
-        assert ('<input type="radio" name="eligible" value="yes" {{ checked(\'eligible\', \'yes\') }}>') in html
-        assert "<legend>Eligible</legend>" in html
+        assert 'type="checkbox" id="eligible" name="eligible" value="yes"' in html
 
     def test_required_attribute_on_required_text_field(self):
-        fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
-        html = generate_starter_form_html(fields, required_field_keys={"email"})
+        fields = [
+            _field(
+                "email",
+                RespondentFieldGroup.NAME_AND_CONTACT,
+                0,
+                field_type=FieldType.EMAIL,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html(fields)
 
         assert ('<input type="email" id="email" name="email" value="{{ value(\'email\') }}" required>') in html
+
+    def test_required_attribute_on_required_checkbox(self):
+        fields = [
+            _field(
+                "consent",
+                RespondentFieldGroup.CONSENT,
+                0,
+                field_type=FieldType.BOOL_OR_NONE,
+                is_fixed=True,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert "{{ checked('consent', 'yes') }} required>" in html
+
+    def test_no_field_is_omitted(self):
+        fields = [
+            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field(
+                "internal_note",
+                RespondentFieldGroup.OTHER,
+                0,
+                on_registration_page=FieldOnRegistrationPage.NO,
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert 'name="first_name"' in html
+        assert 'name="internal_note"' not in html
+        assert str(GROUP_LABELS[RespondentFieldGroup.OTHER]) not in html
 
     def test_required_dropdown_omits_placeholder_and_marks_required(self):
         fields = [
@@ -1113,9 +1153,10 @@ class TestGenerateStarterFormHtml:
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North")],
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
             ),
         ]
-        html = generate_starter_form_html(fields, required_field_keys={"geo"})
+        html = generate_starter_form_html(fields)
 
         assert '<select id="geo" name="geo" required>' in html
         assert '<option value="">' not in html

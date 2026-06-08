@@ -638,39 +638,41 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red — `tests/unit/` for `registration_page` (starter generator):**
 
-- [ ] bool field renders an `<input type="checkbox" ... value="yes">` with the
+- [x] bool field renders an `<input type="checkbox" ... value="yes">` with the
       `checked('key','yes')` helper, **not** yes/no radios.
-- [ ] `YES_REQUIRED` bool checkbox carries the `required` attribute;
+- [x] `YES_REQUIRED` bool checkbox carries the `required` attribute;
       `YES_OPTIONAL` does not.
-- [ ] `NO` fields are omitted entirely; a group whose every field is `NO`
+- [x] `NO` fields are omitted entirely; a group whose every field is `NO`
       renders no `<h2>`.
-- [ ] non-bool `YES_REQUIRED` gets `required`; `YES_OPTIONAL` does not (incl. the
+- [x] non-bool `YES_REQUIRED` gets `required`; `YES_OPTIONAL` does not (incl. the
       dropdown "— Please choose —" only on optional).
-- [ ] **update existing tests** that assert yes/no radio markup → expect checkbox
-      markup (these go red on the change; fix them as part of this phase).
+- [x] **updated existing tests** that asserted yes/no radio markup → expect
+      checkbox markup; the `_field` test helper now defaults to `YES_OPTIONAL`
+      and takes `on_registration_page`, and the two `required_field_keys=` tests
+      now drive required-ness via the enum.
 
 **Green — `src/opendlp/domain/registration_page.py`:**
 
-- [ ] add `_render_checkbox`.
-- [ ] change `_render_field` to drop the `required_field_keys` param, read
-      `field.on_registration_page`, skip `NO`, route bools to `_render_checkbox`.
-- [ ] change `generate_starter_form_html` to drop the `required_field_keys` param
-      and skip `NO` fields.
-- [ ] remove `_render_yes_no_radios` (no remaining callers).
+- [x] add `_render_checkbox`.
+- [x] change `_render_field` to drop the `required_field_keys` param, read
+      `field.on_registration_page`, route bools to `_render_checkbox`.
+- [x] change `generate_starter_form_html` to drop the `required_field_keys` param
+      and skip `NO` fields (per-group bucket filter).
+- [x] remove `_render_yes_no_radios` (no remaining callers); drop the now-unused
+      `Iterable` import.
 
 **Green — callers of the changed signatures:**
 
-- [ ] `service_layer/registration_page_service.py` `_build_starter_html` —
-      confirm/adjust the call.
-- [ ] `entrypoints/blueprints/dev.py` and
-      `entrypoints/blueprints/backoffice_registration.py` — update the
-      `generate_starter_form_html` calls.
+- [x] `service_layer/registration_page_service.py` `_build_starter_html` already
+      calls with just `list(fields)` — no change needed.
+- [x] `dev.py` / `backoffice_registration.py` call the **service-layer** wrapper
+      (`uow, user_id, assembly_id`), not the domain function — no change needed.
 
 **Verify:**
 
-- [ ] starter-generator unit tests green; existing registration-submission BDD
-      scenarios still pass with checkbox markup.
-- [ ] `just check` clean.
+- [x] starter-generator unit tests green; registration route/backoffice/
+      submission suites still green with checkbox markup.
+- [x] `just check` clean.
 
 ### Phase 5 — Schema-editor: service + blueprint + template
 
