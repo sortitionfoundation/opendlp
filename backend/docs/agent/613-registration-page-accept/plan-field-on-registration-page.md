@@ -4,7 +4,7 @@
 **Date:** 2026-06-08
 **Elaborates:** `docs/agent/613-registration-page-accept/research.md` §6 Q14/Q15
 (revised 2026-06-08)
-**Status:** Draft plan — ready for review before code lands.
+**Status:** Implemented — all phases complete (see the §12 checklist).
 
 This plan implements the schema change decided in the 613 research doc: replace
 the never-built two-bool plan (`is_required` + `for_registration_page`) with a
@@ -719,9 +719,10 @@ No production code change. (Plan §7.)
 
 ### Phase 7 — Final verification
 
-- [ ] full suite: `CI=true just test` green (including BDD).
-- [ ] `just check` clean (mypy, ruff, `deptry src`).
-- [ ] `uv run alembic upgrade head` clean; autogenerate shows no diff.
-- [ ] `just translate-regen` leaves no uncommitted churn beyond the intended new
-      strings.
-- [ ] re-read the diff against this plan; note any deviations back into the doc.
+- [x] full suite: `CI=true just test` green (exit 0, 91% coverage; incl. BDD).
+- [x] `just check` clean (mypy, ruff, `deptry src`, pre-commit hooks).
+- [x] `uv run alembic upgrade head` clean; `alembic check` shows no diff.
+- [x] `just translate-regen` ran in Phase 5; the `hu` catalogue is committed and
+      the working tree is clean.
+- [x] re-read the diff against this plan; deviations folded into §5.2/§3.2
+      (bool-coercion refinement) and §9 (decisions) as the work progressed.
