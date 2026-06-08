@@ -141,9 +141,9 @@ def _create_and_save_respondent(
         selection_status=respondent_status,
     )
 
-    comment_text = "Submitted via registration form"
+    comment_text = "Created via registration form"
     if is_test:
-        comment_text += " (test submission)"
+        comment_text += " (test submission — page in TEST status)"
 
     system_author_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     respondent.add_comment(

@@ -8,7 +8,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentAction, RespondentStatus
 from opendlp.service_layer.registration_submission_service import (
     submit_registration_by_assembly_id,
 )
@@ -68,3 +68,42 @@ class TestSubmitRegistrationValidationErrors:
         assert result.respondent is None
         assert result.values == {"name": ""}
         assert "name" in result.field_errors
+
+
+class TestSubmitRegistrationCreateComment:
+    """A successful submission records a CREATE comment whose text makes clear,
+    for test submissions, that the page was in TEST status (Q13)."""
+
+    def test_live_submission_records_create_comment(self):
+        uow, assembly = _populated_uow_with_text_field()
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"name": "Ada"},
+            is_test=False,
+        )
+
+        assert result.respondent is not None
+        assert result.respondent.selection_status == RespondentStatus.POOL
+        create_comments = [c for c in result.respondent.comments if c.action == RespondentAction.CREATE]
+        assert len(create_comments) == 1
+        assert create_comments[0].text == "Created via registration form"
+
+    def test_test_submission_comment_flags_test_status(self):
+        uow, assembly = _populated_uow_with_text_field()
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"name": "Ada"},
+            is_test=True,
+        )
+
+        assert result.respondent is not None
+        assert result.respondent.selection_status == RespondentStatus.TEST_SUBMISSION
+        create_comments = [c for c in result.respondent.comments if c.action == RespondentAction.CREATE]
+        assert len(create_comments) == 1
+        assert create_comments[0].text == "Created via registration form (test submission — page in TEST status)"
+        # the test-ness must be visible in the comment, not only in the status field
+        assert "TEST status" in create_comments[0].text
