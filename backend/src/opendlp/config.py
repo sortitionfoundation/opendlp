@@ -334,6 +334,12 @@ class FlaskBaseConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
+    # Don't expire CSRF tokens on a separate short clock; tie their validity to
+    # the session instead. This avoids the common "form expired" 400 error when
+    # a user leaves a page open longer than the default one hour.
+    WTF_CSRF_TIME_LIMIT = None
+    # How long a session (and thus a CSRF token) remains valid.
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     TESTING = False
 
     def __init__(self) -> None:

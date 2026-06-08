@@ -7,6 +7,7 @@ import uuid
 import structlog
 from flask import Config, Flask, Response, g, render_template, request
 from flask_login import current_user
+from flask_wtf.csrf import CSRFError
 from secure import Secure, headers
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -149,6 +150,11 @@ def register_error_handlers(app: Flask) -> None:
     def request_entity_too_large(error: HTTPException) -> tuple[str, int]:
         """Handle 413 Request Entity Too Large errors (file upload size limit)."""
         return render_template("errors/413.html"), 413
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(error: HTTPException) -> tuple[str, int]:
+        """Handle expired or invalid CSRF tokens with a friendly page."""
+        return render_template("errors/400.html"), 400
 
 
 def register_before_request_handlers(app: Flask) -> None:
