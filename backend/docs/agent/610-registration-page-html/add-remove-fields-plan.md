@@ -281,6 +281,9 @@ Per repo convention (docs separate from code):
 - [x] **Phase 4 — Template.** Bottom-of-page "Add a field" form.
 - [x] **Phase 5 — e2e tests.** `TestAddField`.
 - [x] **Phase 6 — Wrap-up.** `just translate-regen`, tests, lint/type/dep checks, commit code.
+- [x] **Phase 7 — Error i18n.** Translate the Fields-page `FieldDefinitionConflictError`
+      messages; introduce `FixedFieldError` so the fixed-field case is recognised by type
+      rather than the brittle `"fixed" in str(exc)` check (Option C, service-owned message).
 
 > Note: `just check`'s prek step can't run in this sandbox (read-only uv tools dir), so
 > the equivalent tools were run directly — `mypy`, `deptry src`, `ruff check`, `ruff format`
@@ -291,6 +294,24 @@ Per repo convention (docs separate from code):
 
 ## Follow-up (after this round)
 
-- Translate the service-layer `FieldDefinitionConflictError` messages so the duplicate/empty
-  cases don't `flash(str(e))` untranslated (decision 5). Affects the existing
-  update/option/delete routes too, so do it as a separate pass.
+- **Done (Phase 7):** the Fields-page `FieldDefinitionConflictError` messages are now
+  `_l()`-wrapped, and the fixed-field guard is a typed `FixedFieldError` (domain) caught in
+  the service, which raises a translated conflict. The `NotFoundError`/`AssemblyNotFoundError`
+  messages were intentionally left English — the blueprint flashes its own translated strings
+  and only logs `str(e)` — as was the `reorder_group` programming guard (never user-facing).
+
+- **`InvalidSelection` half-translated flash (separate, CSV-upload feature).**
+  `_parse_csv_headers` raises `InvalidSelection("CSV file is empty or has no header row")`
+  (in this service), and `respondents.py` surfaces it as
+  `flash(_("Invalid CSV format: %(error)s", error=str(e)))` — the wrapper is translated but
+  the interpolated message is not, so users see a half-translated flash. Fixing it belongs
+  with the CSV-upload / reconciliation work, not the Fields page.
+
+- **Broader flash-message i18n audit (its own ticket).** The `InvalidSelection` case above is
+  an instance of a general pattern: `flash(_("… %(error)s", error=str(e)))` where the inner
+  exception message is plain English. The same shape appears across `respondents.py`,
+  `gsheets*.py`, `targets*.py`, and `db_selection*.py` (many `except InvalidSelection as e`
+  sites). A focused pass should audit every such site, decide which inner messages are
+  genuinely user-facing, and `_l()`-wrap them at the raise site in the relevant services
+  (`respondent_service`, `assembly_service`, `sortition`, …). Scope it separately — it spans
+  several features and is larger than this branch.
