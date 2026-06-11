@@ -32,6 +32,7 @@ def upgrade() -> None:
         sa.Column("height", sa.Integer(), nullable=False),
         sa.Column("sha256", sa.String(length=64), nullable=False),
         sa.Column("data", sa.LargeBinary(), nullable=False),
+        sa.Column("alt", sa.String(), nullable=False, server_default=""),
         sa.Column("created_by", sa.UUID(), nullable=True),
         sa.Column("created_at", orm.TZAwareDatetime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(

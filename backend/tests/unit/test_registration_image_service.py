@@ -126,6 +126,25 @@ class TestAddRegistrationImage:
         with pytest.raises(ImageValidationError):
             service.add_registration_image(uow, admin.id, assembly.id, b"not an image")
 
+    def test_stores_alt_text(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        image = service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="A red square")
+
+        assert image.alt == "A red square"
+
+    def test_dedup_keeps_first_alt(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="First caption")
+        second = service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="Second caption")
+
+        assert second.alt == "First caption"
+
     def test_dedup_returns_existing_without_new_row_or_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
@@ -231,6 +250,49 @@ class TestListImageSnippets:
         image, html = snippets[0]
         assert f'src="/x/{image.sha256}.png"' in html
         assert html.startswith("<img ")
+
+    def test_snippet_includes_stored_alt(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+        service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="A red square")
+
+        snippets = service.list_image_snippets(uow, admin.id, assembly.id, lambda img: f"/x/{img.sha256}.png")
+        _, html = snippets[0]
+        assert 'alt="A red square"' in html
+
+
+class TestSetRegistrationImageAlt:
+    def test_updates_alt_and_records_activity(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = _page(uow, assembly)
+        image = _stored_image(uow, page)
+
+        updated = service.set_registration_image_alt(uow, admin.id, assembly.id, image.id, "New caption")
+
+        assert updated.alt == "New caption"
+        assert uow.registration_images.get(image.id).alt == "New caption"
+        assert page.activity[-1].text == "Updated a registration image caption"
+        assert uow.committed
+
+    def test_permission_denied_for_viewer(self):
+        uow = FakeUnitOfWork()
+        assembly = _assembly(uow)
+        viewer = _viewer(uow, assembly)
+        page = _page(uow, assembly)
+        image = _stored_image(uow, page)
+
+        with pytest.raises(InsufficientPermissions):
+            service.set_registration_image_alt(uow, viewer.id, assembly.id, image.id, "New caption")
+
+    def test_missing_image_raises(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        with pytest.raises(RegistrationImageNotFoundError):
+            service.set_registration_image_alt(uow, admin.id, assembly.id, uuid.uuid4(), "New caption")
 
 
 class TestGetRegistrationImageForServing:

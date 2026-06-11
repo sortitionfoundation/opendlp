@@ -43,6 +43,18 @@ class TestRegistrationImage:
         assert img.byte_size == 8
         assert isinstance(img.id, uuid.UUID)
 
+    def test_alt_defaults_to_empty_string(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed())
+        assert img.alt == ""
+
+    def test_from_processed_keeps_alt(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed(), alt="A red square")
+        assert img.alt == "A red square"
+
+    def test_detached_copy_preserves_alt(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed(), alt="A red square")
+        assert img.create_detached_copy().alt == "A red square"
+
     def test_detached_copy_equal_by_id(self):
         img = RegistrationImage.from_processed(uuid.uuid4(), _processed())
         copy = img.create_detached_copy()

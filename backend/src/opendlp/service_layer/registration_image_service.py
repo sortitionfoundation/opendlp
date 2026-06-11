@@ -50,7 +50,7 @@ def _load_page(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationP
 
 
 def add_registration_image(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, raw: bytes
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, raw: bytes, alt: str = ""
 ) -> RegistrationImage:
     with uow:
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
@@ -63,6 +63,8 @@ def add_registration_image(
             max_bytes=get_max_image_upload_bytes(),
             max_edge_px=get_registration_image_max_edge_px(),
         )
+        # Content-addressed dedup: identical bytes on a page collapse to one row.
+        # The first upload's alt text is kept; change it via set_registration_image_alt.
         existing = uow.registration_images.get_by_page_and_sha(page.id, processed.sha256)
         if existing is not None:
             return existing.create_detached_copy()
@@ -71,7 +73,7 @@ def add_registration_image(
         if uow.registration_images.count_by_page_id(page.id) >= limit:
             raise ImageQuotaExceeded(limit)
 
-        image = RegistrationImage.from_processed(page.id, processed, created_by=user.id)
+        image = RegistrationImage.from_processed(page.id, processed, created_by=user.id, alt=alt)
         uow.registration_images.add(image)
         page.record_edit(user.id, "Added a registration image")
         uow.commit()
@@ -107,6 +109,23 @@ def delete_registration_image(
         uow.commit()
 
 
+def set_registration_image_alt(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, image_id: uuid.UUID, alt: str
+) -> RegistrationImage:
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="edit registration image", required_role=_MANAGE_ROLE)
+        page = _load_page(uow, assembly_id)
+        image: RegistrationImage | None = uow.registration_images.get(image_id)
+        if image is None or image.registration_page_id != page.id:
+            raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
+        image.alt = alt
+        page.record_edit(user.id, "Updated a registration image caption")
+        uow.commit()
+        return image.create_detached_copy()
+
+
 def list_image_snippets(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -114,7 +133,7 @@ def list_image_snippets(
     url_for_image: Callable[[RegistrationImage], str],
 ) -> list[tuple[RegistrationImage, str]]:
     images = list_registration_images(uow, user_id, assembly_id)
-    return [(image, generate_image_html(url_for_image(image))) for image in images]
+    return [(image, generate_image_html(url_for_image(image), alt=image.alt)) for image in images]
 
 
 def get_registration_image_for_serving(

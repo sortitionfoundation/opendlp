@@ -30,6 +30,13 @@ class TestAddAndGet:
         assert retrieved.data == data
         assert retrieved.sha256 == "hash1"
 
+    def test_add_and_get_preserves_alt(self, registration_image_backend: ContractBackend):
+        image = registration_image_backend.make_registration_image(alt="A red square")
+
+        retrieved = registration_image_backend.repo.get(image.id)
+        assert retrieved is not None
+        assert retrieved.alt == "A red square"
+
     def test_get_nonexistent_returns_none(self, registration_image_backend: ContractBackend):
         assert registration_image_backend.repo.get(uuid.uuid4()) is None
 

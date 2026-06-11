@@ -38,6 +38,7 @@ class RegistrationImage:
         height: int,
         sha256: str,
         data: bytes,
+        alt: str = "",
         created_by: uuid.UUID | None = None,
         image_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -49,6 +50,7 @@ class RegistrationImage:
         self.height = height
         self.sha256 = sha256
         self.data = data
+        self.alt = alt
         self.created_by = created_by
         self.created_at = created_at or datetime.now(UTC)
 
@@ -58,6 +60,7 @@ class RegistrationImage:
         registration_page_id: uuid.UUID,
         processed: ProcessedImage,
         created_by: uuid.UUID | None = None,
+        alt: str = "",
     ) -> "RegistrationImage":
         return cls(
             registration_page_id=registration_page_id,
@@ -66,6 +69,7 @@ class RegistrationImage:
             height=processed.height,
             sha256=processed.sha256,
             data=processed.data,
+            alt=alt,
             created_by=created_by,
         )
 
@@ -77,6 +81,7 @@ class RegistrationImage:
             height=self.height,
             sha256=self.sha256,
             data=self.data,
+            alt=self.alt,
             created_by=self.created_by,
             image_id=self.id,
             created_at=self.created_at,
