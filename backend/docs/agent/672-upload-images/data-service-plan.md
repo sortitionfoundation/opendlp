@@ -77,7 +77,7 @@ satisfies `deptry` / `just check`). **Not yet committed** — it will go in as t
 first commit of the implementation (§12). **No other new deps**
 (`python-magic`/`libmagic1` avoided — Pillow does the format gate; no ClamAV).
 
-## 4. Config additions (`src/opendlp/config.py`)
+## 4. Config additions (`src/opendlp/config.py`) — ✅ done (`e9476ac`)
 
 Follow the existing `get_max_csv_upload_*` / `get_registration_*_max_bytes`
 patterns (env override, clamp, warn-on-out-of-range). Add getters:
@@ -99,7 +99,7 @@ patterns (env override, clamp, warn-on-out-of-range). Add getters:
 test per getter: default, env override, below-min clamp + warning, above-max
 clamp + warning. _(Red: assert getter exists/returns default → Green: implement.)_
 
-## 5. Phase 1 — Domain (`domain/registration_image.py`)
+## 5. Phase 1 — Domain (`domain/registration_image.py`) — ✅ done
 
 All pure Python. Unit tests in `tests/unit/domain/test_registration_image.py`
 (mirrors `tests/unit/domain/test_registration_page.py`).
