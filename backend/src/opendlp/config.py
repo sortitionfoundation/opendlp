@@ -275,6 +275,61 @@ def get_registration_thank_you_html_max_bytes() -> int:
     return _registration_html_max_bytes("REGISTRATION_THANK_YOU_HTML_MAX_BYTES", 51200)
 
 
+def _clamped_int_env(env_key: str, default: int, minimum: int, maximum: int) -> int:
+    """Read an integer from the environment, falling back to ``default`` on a
+    missing or invalid value and clamping to [minimum, maximum] with a logged
+    warning so an operator sees the override."""
+    raw = os.environ.get(env_key, "")
+    if not raw:
+        return default
+
+    try:
+        value = int(raw)
+    except ValueError:
+        logging.warning(f"Invalid {env_key} value '{raw}'. Using default {default}.")
+        return default
+
+    if value < minimum:
+        logging.warning(f"{env_key}={value} is below the minimum ({minimum}). Using {minimum}.")
+        return minimum
+    if value > maximum:
+        logging.warning(f"{env_key}={value} is above the hard ceiling ({maximum}). Using {maximum}.")
+        return maximum
+    return value
+
+
+def get_max_image_upload_mb() -> int:
+    """Maximum allowed size for an uploaded registration image, in megabytes.
+
+    Default 10 MB (phone photos can exceed 5 MB; we downscale afterwards).
+    Bounded to [1, 25]. Environment variable: ``MAX_IMAGE_UPLOAD_MB``.
+    """
+    return _clamped_int_env("MAX_IMAGE_UPLOAD_MB", 10, 1, 25)
+
+
+def get_max_image_upload_bytes() -> int:
+    """Convenience: ``get_max_image_upload_mb()`` expressed in bytes."""
+    return get_max_image_upload_mb() * 1024 * 1024
+
+
+def get_registration_image_max_edge_px() -> int:
+    """Maximum length of a registration image's longest edge, in pixels.
+
+    Larger uploads are downscaled to this. Default 2048 (banner width).
+    Bounded to [256, 4096]. Environment variable: ``REGISTRATION_IMAGE_MAX_EDGE_PX``.
+    """
+    return _clamped_int_env("REGISTRATION_IMAGE_MAX_EDGE_PX", 2048, 256, 4096)
+
+
+def get_max_images_per_registration_page() -> int:
+    """Maximum number of images stored per registration page.
+
+    Default 10. Bounded to [1, 50]. Environment variable:
+    ``MAX_IMAGES_PER_REGISTRATION_PAGE``.
+    """
+    return _clamped_int_env("MAX_IMAGES_PER_REGISTRATION_PAGE", 10, 1, 50)
+
+
 def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
     value = os.environ.get(env_key, "").strip()
     if not value:
