@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-11 13:09+0100\n"
+"POT-Creation-Date: 2026-06-11 13:53+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -6723,7 +6723,7 @@ msgstr "Vezetéknév"
 
 #: templates/backoffice/patterns/_progress.html:125
 #: templates/backoffice/respondent_field_schema/view.html:130
-#: templates/backoffice/respondent_field_schema/view.html:313
+#: templates/backoffice/respondent_field_schema/view.html:344
 msgid "Label"
 msgstr ""
 
@@ -7043,27 +7043,30 @@ msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:131
 #: templates/backoffice/respondent_field_schema/view.html:154
-#: templates/backoffice/respondent_field_schema/view.html:314
+#: templates/backoffice/respondent_field_schema/view.html:320
+#: templates/backoffice/respondent_field_schema/view.html:348
 #, fuzzy
 msgid "Section"
 msgstr "Kiválasztás"
 
 #: templates/backoffice/respondent_field_schema/view.html:132
 #: templates/backoffice/respondent_field_schema/view.html:171
-#: templates/backoffice/respondent_field_schema/view.html:317
+#: templates/backoffice/respondent_field_schema/view.html:321
+#: templates/backoffice/respondent_field_schema/view.html:356
 #: templates/backoffice/service_docs/_fields.html:125
 #, fuzzy
 msgid "Field Type"
 msgstr "Utoljára módosítva"
 
 #: templates/backoffice/respondent_field_schema/view.html:133
-#: templates/backoffice/respondent_field_schema/view.html:324
+#: templates/backoffice/respondent_field_schema/view.html:322
+#: templates/backoffice/respondent_field_schema/view.html:364
 #, fuzzy
 msgid "On registration form"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/respondent_field_schema/view.html:134
-#: templates/backoffice/respondent_field_schema/view.html:308
+#: templates/backoffice/respondent_field_schema/view.html:338
 msgid "Field key"
 msgstr ""
 
@@ -7138,21 +7141,26 @@ msgstr "Kiválasztás"
 msgid "Add a field"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:307
+#: templates/backoffice/respondent_field_schema/view.html:319
+#, fuzzy
+msgid "Field key and label"
+msgstr "Utoljára módosítva"
+
+#: templates/backoffice/respondent_field_schema/view.html:337
 msgid "field_key (e.g. age_range)"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:312
+#: templates/backoffice/respondent_field_schema/view.html:343
 #: templates/backoffice/service_docs/_fields.html:107
 #, fuzzy
 msgid "Label (optional)"
 msgstr "Email cím"
 
-#: templates/backoffice/respondent_field_schema/view.html:329
+#: templates/backoffice/respondent_field_schema/view.html:373
 msgid "Add field"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:332
+#: templates/backoffice/respondent_field_schema/view.html:379
 msgid ""
 "The field key is normalised to lowercase letters, numbers and "
 "underscores. Choice fields start with one placeholder option you can "
