@@ -236,9 +236,12 @@ mirroring `TestUpdateField` / `TestDeleteField` patterns (seed via `_seed_schema
 - `test_add_duplicate_key_flashes_error` — add a key that already exists (e.g. `custom_notes`
   or fixed `email`); assert no second row created (follow_redirects + check flash / count).
 - `test_add_empty_key_is_rejected` — post blank field_key; assert no row added.
-- `test_add_field_form_renders` — GET the page with a schema present; assert the
-  "Add a field" form / `add_field_view` action URL appears in the body, and is **absent**
-  for a gsheet-sourced assembly (if OQ3 = hide for gsheet).
+- `test_add_field_creates_row` also asserts the submitted `Age Range` is stored normalised
+  as `age_range`.
+- `test_add_form_renders_when_schema_exists` / `test_add_form_absent_without_schema` — assert
+  the form + `add_field_view` action URL appear only once a schema exists (the gsheet branch
+  hides the whole edit UI via the same template guard, so it is covered structurally rather
+  than with a separate gsheet fixture).
 
 **Unit** (`tests/unit/test_respondent_field_schema.py`): cover `normalise_field_key()` —
 lowercasing, space/hyphen → `_`, dropping punctuation, collapsing/trimming `_`, and the
@@ -273,11 +276,16 @@ Per repo convention (docs separate from code):
 ## Phase checklist
 
 - [x] **Phase 1 — Plan doc.** Integrate review decisions, commit doc on its own.
-- [ ] **Phase 2 — Domain.** `normalise_field_key()` helper + unit tests.
-- [ ] **Phase 3 — Route.** `add_field_view` in the schema blueprint.
-- [ ] **Phase 4 — Template.** Bottom-of-page "Add a field" form.
-- [ ] **Phase 5 — e2e tests.** `TestAddField`.
-- [ ] **Phase 6 — Wrap-up.** `just translate-regen`, `CI=true just test`, `just check`, commit code.
+- [x] **Phase 2 — Domain.** `normalise_field_key()` helper + unit tests.
+- [x] **Phase 3 — Route.** `add_field_view` in the schema blueprint.
+- [x] **Phase 4 — Template.** Bottom-of-page "Add a field" form.
+- [x] **Phase 5 — e2e tests.** `TestAddField`.
+- [x] **Phase 6 — Wrap-up.** `just translate-regen`, tests, lint/type/dep checks, commit code.
+
+> Note: `just check`'s prek step can't run in this sandbox (read-only uv tools dir), so
+> the equivalent tools were run directly — `mypy`, `deptry src`, `ruff check`, `ruff format`
+> all clean. The full test suite passes except the Playwright BDD tests, which fail only
+> because the browser executable isn't installed in this environment.
 
 ---
 
