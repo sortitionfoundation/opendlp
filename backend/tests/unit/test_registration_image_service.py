@@ -14,10 +14,12 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import registration_image_service as service
 from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
     RegistrationImageNotFoundError,
     RegistrationPageNotFoundError,
+    UserNotFoundError,
 )
 from opendlp.service_layer.image_processing import process_image
 from tests.fakes import FakeUnitOfWork
@@ -101,6 +103,20 @@ class TestAddRegistrationImage:
 
         with pytest.raises(RegistrationPageNotFoundError):
             service.add_registration_image(uow, admin.id, assembly.id, _png())
+
+    def test_unknown_user_raises(self):
+        uow = FakeUnitOfWork()
+        assembly = _assembly(uow)
+
+        with pytest.raises(UserNotFoundError):
+            service.add_registration_image(uow, uuid.uuid4(), assembly.id, _png())
+
+    def test_unknown_assembly_raises(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            service.add_registration_image(uow, admin.id, uuid.uuid4(), _png())
 
     def test_invalid_image_propagates(self):
         uow = FakeUnitOfWork()
