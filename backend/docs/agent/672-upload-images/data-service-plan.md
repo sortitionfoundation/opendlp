@@ -355,7 +355,14 @@ the sha; `get_by_page_and_sha`; return the (detached) `RegistrationImage` or
 **TDD:** serves for TEST and PUBLISHED; `None` for CLOSED; `None` for unknown
 slug; `None` for unknown sha; ignores a mismatched extension gracefully.
 
-## 9. Phase 5 — Serving route (`entrypoints/blueprints/registration.py`)
+## 9. Phase 5 — Serving route (`entrypoints/blueprints/registration.py`) — ✅ done
+
+> **Note (caching):** the app's global `secure` headers force `Cache-Control:
+> no-store` on every response. To make the content-addressed immutable caching
+> work, `flask_app.py` now exempts the `registration.serve_registration_image`
+> endpoint (a public, content-hashed asset) from the no-store policy and serves
+> it `public, max-age=31536000, immutable`. The route itself sets `nosniff` + the
+> sha `ETag` and returns `make_conditional(request)` for 304 support.
 
 The single in-scope entrypoint. Public GET, `@require_feature("registration_page")`.
 

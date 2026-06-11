@@ -215,6 +215,9 @@ def get_secure_headers(config: Config) -> Secure:
     return secure_headers
 
 
+PUBLIC_IMMUTABLE_ASSET_ENDPOINTS = frozenset({"registration.serve_registration_image"})
+
+
 def register_after_request_handlers(app: Flask) -> None:
     """Register after request handlers."""
 
@@ -228,6 +231,9 @@ def register_after_request_handlers(app: Flask) -> None:
         This prevents browsers from caching pages that contain user-specific or sensitive information
         when a user is logged in. Public pages (when not logged in) can still be cached normally.
         """
+        # Public content-addressed assets are immutable and safe to cache regardless of auth.
+        if request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS:
+            return response
         # Check if user is authenticated
         if current_user.is_authenticated:
             # Add comprehensive no-cache headers
@@ -243,6 +249,11 @@ def register_after_request_handlers(app: Flask) -> None:
         Add security headers to the response, replacing CSP nonce placeholder with actual nonce.
         """
         secure_headers.set_headers(response)
+
+        # The global policy is Cache-Control: no-store. Content-addressed public assets
+        # carry their content hash in the URL, so they are safe to cache immutably.
+        if request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
 
         # Replace nonce placeholder with actual nonce for this request
         nonce = g.get("csp_nonce", "")

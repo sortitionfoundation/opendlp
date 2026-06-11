@@ -1,14 +1,16 @@
 """ABOUTME: Public registration page routes for assembly registration forms
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
-from flask import Blueprint, abort, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf, validate_csrf
 from wtforms import ValidationError
 
 from opendlp import bootstrap
+from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
 from opendlp.entrypoints.extensions import csrf
+from opendlp.service_layer.registration_image_service import get_registration_image_for_serving
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
     find_registration_page_by_short_url_slug,
@@ -166,6 +168,22 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         field_errors=result.field_errors,
         form_errors=result.form_errors,
     )
+
+
+@registration_bp.route("/register/<url_slug>/assets/<image_name>", methods=["GET"])
+@require_feature("registration_page")
+def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnValue:
+    """Serve a registration page image from the database (public, image-only)."""
+    uow = bootstrap.bootstrap()
+
+    served = get_registration_image_for_serving(uow, url_slug, image_name)
+    if served is None:
+        abort(404)
+
+    response = Response(served.data, mimetype=IMAGE_CONTENT_TYPE)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.set_etag(served.sha256)
+    return response.make_conditional(request)
 
 
 @registration_bp.route("/register/<url_slug>/thank-you", methods=["GET"])
