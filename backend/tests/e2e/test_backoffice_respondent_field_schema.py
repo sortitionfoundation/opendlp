@@ -290,6 +290,8 @@ class TestAddField:
             follow_redirects=True,
         )
         assert response.status_code == 200
+        # The translated conflict message (a LazyString) renders via flash(str(e)).
+        assert b"already exists" in response.data
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             after = len(respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id))

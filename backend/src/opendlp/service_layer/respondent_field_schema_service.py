@@ -20,6 +20,7 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
+    FixedFieldError,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
@@ -34,6 +35,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.translations import lazy_gettext as _l
 
 _MAX_RADIO_OPTIONS = 6
 
@@ -244,12 +246,12 @@ def add_field(
 
         field_key = field_key.strip()
         if not field_key:
-            raise FieldDefinitionConflictError("Field key cannot be empty")
+            raise FieldDefinitionConflictError(_l("Field key cannot be empty"))
 
         # Check for duplicate field_key
         existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
         if any(f.field_key == field_key for f in existing):
-            raise FieldDefinitionConflictError(f"Field '{field_key}' already exists in this assembly")
+            raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this assembly", key=field_key))
 
         # Compute next sort_order for this group
         per_group_next: dict[RespondentFieldGroup, int] = {}
@@ -304,10 +306,8 @@ def update_field(
                 options=options,
                 on_registration_page=on_registration_page,
             )
-        except ValueError as exc:
-            if "fixed" in str(exc):
-                raise FieldDefinitionConflictError(str(exc)) from exc
-            raise
+        except FixedFieldError as exc:
+            raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc
         uow.commit()
         detached: RespondentFieldDefinition = field.create_detached_copy()
         return detached
@@ -418,13 +418,13 @@ def add_choice_option(
         if field is None or field.assembly_id != assembly_id:
             raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
         if field.field_type not in {FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}:
-            raise FieldDefinitionConflictError("Options can only be set on choice fields")
+            raise FieldDefinitionConflictError(_l("Options can only be set on choice fields"))
         value = value.strip()
         if not value:
-            raise FieldDefinitionConflictError("Option value cannot be blank")
+            raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
         new_options = list(field.options or [])
         if any(o.value == value for o in new_options):
-            raise FieldDefinitionConflictError(f"Option '{value}' already exists")
+            raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=value))
         new_options.append(ChoiceOption(value=value, help_text=help_text))
         field.update(options=new_options)
         uow.commit()
@@ -452,12 +452,12 @@ def update_choice_option(
             raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
         new_value = new_value.strip()
         if not new_value:
-            raise FieldDefinitionConflictError("Option value cannot be blank")
+            raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
         existing = list(field.options or [])
         if not any(o.value == old_value for o in existing):
             raise FieldDefinitionNotFoundError(f"Option '{old_value}' not found on field {field_id}")
         if new_value != old_value and any(o.value == new_value for o in existing):
-            raise FieldDefinitionConflictError(f"Option '{new_value}' already exists")
+            raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=new_value))
         updated_options = [
             ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
         ]
@@ -485,7 +485,7 @@ def remove_choice_option(
         if len(remaining) == len(existing):
             raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
         if not remaining:
-            raise FieldDefinitionConflictError("A choice field must keep at least one option")
+            raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
         field.update(options=remaining)
         uow.commit()
         detached: RespondentFieldDefinition = field.create_detached_copy()
@@ -538,7 +538,7 @@ def delete_field(
         if field is None or field.assembly_id != assembly_id:
             raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
         if field.is_fixed:
-            raise FieldDefinitionConflictError(f"Fixed field '{field.field_key}' cannot be deleted")
+            raise FieldDefinitionConflictError(_l("Fixed field '%(key)s' cannot be deleted", key=field.field_key))
         uow.respondent_field_definitions.delete(field)
         uow.commit()
 

@@ -32,6 +32,15 @@ from opendlp.translations import lazy_gettext as _l
 _UNSET: Any = object()
 
 
+class FixedFieldError(ValueError):
+    """Raised when an edit is rejected because the field is a fixed field.
+
+    Subclasses ``ValueError`` so existing ``except ValueError`` callers still
+    catch it; the distinct type lets the service layer recognise this case and
+    surface a translated message without matching on the message text.
+    """
+
+
 class RespondentFieldGroup(Enum):
     """Fixed catalogue of groups that a respondent field can belong to.
 
@@ -247,7 +256,7 @@ class RespondentFieldDefinition:
             changed = True
         if field_type is not None or options is not _UNSET:
             if self.is_fixed:
-                raise ValueError("Cannot change field_type or options on a fixed field")
+                raise FixedFieldError("Cannot change field_type or options on a fixed field")
             new_type = field_type if field_type is not None else self.field_type
             # When the caller didn't pass options explicitly, preserve the
             # current list across choice<->choice transitions, but drop it
