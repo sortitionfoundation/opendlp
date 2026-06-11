@@ -19,6 +19,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
+    normalise_field_key,
 )
 
 
@@ -471,3 +472,23 @@ class TestHumaniseFieldKey:
     )
     def test_humanise(self, field_key: str, expected: str) -> None:
         assert humanise_field_key(field_key) == expected
+
+
+class TestNormaliseFieldKey:
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("age_range", "age_range"),
+            ("Age Range", "age_range"),
+            ("  Favourite Colour  ", "favourite_colour"),
+            ("address-line-1", "address_line_1"),
+            ("First   name", "first_name"),
+            ("Gender (self-described)", "gender_self_described"),
+            ("naïve", "nave"),
+            ("__weird__key__", "weird_key"),
+            ("!!!", ""),
+            ("", ""),
+        ],
+    )
+    def test_normalise(self, raw: str, expected: str) -> None:
+        assert normalise_field_key(raw) == expected

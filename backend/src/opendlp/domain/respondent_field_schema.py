@@ -20,6 +20,7 @@ schema from here via ``respondent_field_schema_service`` rather than introducing
 a parallel configuration. See docs/agent/446-grouped-registrant-view/respondent_field_schema.md
 for the design rationale."""
 
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -300,6 +301,20 @@ IN_SCHEMA_FIXED_FIELDS: list[tuple[str, RespondentFieldGroup, str]] = [
     ("consent", RespondentFieldGroup.CONSENT, "Consent"),
     ("stay_on_db", RespondentFieldGroup.CONSENT, "Stay on database"),
 ]
+
+
+def normalise_field_key(raw: str) -> str:
+    """Normalise a user-entered field key for use as a registration-form name attribute.
+
+    Lowercases, turns runs of whitespace or hyphens into a single underscore,
+    drops any remaining character outside ``[a-z0-9_]``, and trims leading and
+    trailing underscores. Returns the empty string when nothing usable remains.
+    """
+    lowered = raw.strip().lower()
+    underscored = re.sub(r"[\s-]+", "_", lowered)
+    cleaned = re.sub(r"[^a-z0-9_]", "", underscored)
+    collapsed = re.sub(r"_+", "_", cleaned)
+    return collapsed.strip("_")
 
 
 def humanise_field_key(field_key: str) -> str:

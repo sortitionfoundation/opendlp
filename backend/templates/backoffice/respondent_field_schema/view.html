@@ -294,5 +294,43 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                 </section>
             {% endif %}
         {% endfor %}
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Add a field") }}</h2>
+            <form method="post"
+                  action="{{ url_for('respondent_field_schema.add_field_view', assembly_id=assembly.id) }}"
+                  class="flex flex-wrap gap-3 items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text"
+                       name="field_key"
+                       required
+                       class="govuk-input"
+                       placeholder="{{ _('field_key (e.g. age_range)') }}"
+                       aria-label="{{ _('Field key') }}">
+                <input type="text"
+                       name="label"
+                       class="govuk-input"
+                       placeholder="{{ _('Label (optional)') }}"
+                       aria-label="{{ _('Label') }}">
+                <select name="group" class="govuk-select" aria-label="{{ _('Section') }}">
+                    {% for value, label in group_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select>
+                <select name="field_type" class="govuk-select" aria-label="{{ _('Field Type') }}">
+                    {% for value, label in field_type_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="on_registration_page"
+                        class="govuk-select"
+                        aria-label="{{ _('On registration form') }}">
+                    {% for value, label in on_registration_page_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {{ button(_("Add field") , type="submit", variant="primary") }}
+            </form>
+            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                {{ _("The field key is normalised to lowercase letters, numbers and underscores. Choice fields start with one placeholder option you can rename above.") }}
+            </p>
+        </section>
     {% endif %}
 {% endblock %}

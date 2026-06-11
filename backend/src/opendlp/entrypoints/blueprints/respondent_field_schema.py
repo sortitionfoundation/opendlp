@@ -18,6 +18,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
+    normalise_field_key,
 )
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
@@ -34,6 +35,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     add_choice_option,
+    add_field,
     delete_field,
     get_schema,
     get_schema_grouped,
@@ -176,6 +178,53 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Schema already exists."), "info")
     except InsufficientPermissions:
         flash(_("You don't have permission to initialise the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/add",
+    methods=["POST"],
+)
+@login_required
+def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Add a new field to the schema from the schema page's add form."""
+    field_key = normalise_field_key(request.form.get("field_key", ""))
+    label = request.form.get("label", "").strip() or None
+    group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
+    field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT
+    on_registration_page = (
+        _parse_on_registration_page(request.form.get("on_registration_page")) or FieldOnRegistrationPage.YES_REQUIRED
+    )
+
+    if not field_key:
+        flash(_("Field key is required (letters, numbers and underscores)."), "error")
+        return _schema_page_redirect(assembly_id)
+
+    # Choice types need at least one option to satisfy the domain invariant;
+    # seed a placeholder the organiser can rename, mirroring update_field_view.
+    options = [ChoiceOption(value="option_1")] if field_type in CHOICE_TYPES else None
+
+    try:
+        uow = bootstrap.bootstrap()
+        add_field(
+            uow,
+            current_user.id,
+            assembly_id,
+            field_key,
+            label=label,
+            group=group,
+            field_type=field_type,
+            options=options,
+            on_registration_page=on_registration_page,
+        )
+        flash(_("Field added."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
