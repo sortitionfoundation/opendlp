@@ -459,3 +459,16 @@ All previously-open questions are now settled and folded into the plan above:
    stay intact. `created_by` is therefore a plain non-cascading FK to `users`
    (no `ON DELETE SET NULL`); nullable only so a future system/script upload has
    a home (§7.1).
+
+## 14. Follow-up: alt text (added after original scope)
+
+`RegistrationImage` gained an optional `alt` field (default `""`), persisted on
+the image and used when generating the `<img>` snippet. The column was folded
+into the unreleased `add-registration-images` migration rather than adding a
+separate one. Dedup keeps the **first** upload's alt; `set_registration_image_alt`
+edits it later with a `RegistrationPageActivity` audit entry.
+
+Rationale: today the alt lives in the page HTML once the snippet is pasted, so
+the stored value is a snippet default. In the planned drag-and-drop builder an
+image *section* becomes a first-class object whose alt is fetched from the
+database at render time — so this field is the natural home in both eras.
