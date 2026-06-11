@@ -12,6 +12,7 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
@@ -552,4 +553,28 @@ class RegistrationPageHtmlRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a registration page HTML source from the repository."""
+        raise NotImplementedError
+
+
+class RegistrationImageRepository(AbstractRepository):
+    """Repository interface for RegistrationImage domain objects."""
+
+    @abc.abstractmethod
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+        """Get an image for a page by its content hash, or None."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+        """Get all images for a registration page, oldest first."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count images for a registration page."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RegistrationImage) -> None:
+        """Delete a registration image from the repository."""
         raise NotImplementedError

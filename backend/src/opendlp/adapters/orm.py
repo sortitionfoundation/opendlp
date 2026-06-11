@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Table,
     Text,
@@ -618,4 +619,26 @@ registration_page_html_sources = Table(
     Column("form_html", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
+# Registration images table — re-encoded PNG bytes embedded in a page's form HTML.
+registration_images = Table(
+    "registration_images",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "registration_page_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("registration_pages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("byte_size", Integer, nullable=False),
+    Column("width", Integer, nullable=False),
+    Column("height", Integer, nullable=False),
+    Column("sha256", String(64), nullable=False),
+    Column("data", LargeBinary, nullable=False),
+    Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Index("ix_registration_images_page_sha_unique", "registration_page_id", "sha256", unique=True),
 )

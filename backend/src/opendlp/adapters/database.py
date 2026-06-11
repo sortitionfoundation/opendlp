@@ -12,6 +12,7 @@ from opendlp.domain import (
     assembly_csv,
     email_confirmation,
     password_reset,
+    registration_image,
     registration_page,
     respondent_field_schema,
     respondents,
@@ -212,6 +213,7 @@ def start_mappers() -> None:
         # source_type rather than an ORM relationship.
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPage, orm.registration_pages)
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPageHtml, orm.registration_page_html_sources)
+        orm.mapper_registry.map_imperatively(registration_image.RegistrationImage, orm.registration_images)
 
         _mappers_started = True
 

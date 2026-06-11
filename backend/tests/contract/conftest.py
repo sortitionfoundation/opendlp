@@ -17,6 +17,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationImageRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
     SqlAlchemyRegistrationPageRepository,
     SqlAlchemyRespondentFieldDefinitionRepository,
@@ -31,6 +32,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
 )
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
@@ -43,6 +45,7 @@ from tests.fakes import (
     FakeAssemblyRepository,
     FakeEmailConfirmationTokenRepository,
     FakePasswordResetTokenRepository,
+    FakeRegistrationImageRepository,
     FakeRegistrationPageHtmlRepository,
     FakeRegistrationPageRepository,
     FakeRespondentFieldDefinitionRepository,
@@ -116,6 +119,15 @@ def make_registration_page(assembly_id: uuid.UUID | None = None, **kwargs: Any) 
     return RegistrationPage(assembly_id=assembly_id, **kwargs)
 
 
+def make_registration_image(registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationImage:
+    """Create a RegistrationImage domain object with sensible defaults."""
+    if not sha256:
+        sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
+    defaults: dict[str, Any] = {"byte_size": 8, "width": 10, "height": 10, "data": b"pngbytes"}
+    defaults.update(kwargs)
+    return RegistrationImage(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+
+
 # ---------------------------------------------------------------------------
 # Backend abstraction
 # ---------------------------------------------------------------------------
@@ -158,6 +170,16 @@ class ContractBackend:
         self.persist(page)
         self.commit()
         return page
+
+    def make_registration_image(
+        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
+    ) -> RegistrationImage:
+        if registration_page_id is None:
+            registration_page_id = self.make_registration_page().id
+        image = make_registration_image(registration_page_id=registration_page_id, **kwargs)
+        self.repo.add(image)
+        self.commit()
+        return image
 
 
 class FakeContractBackend(ContractBackend):
@@ -315,3 +337,10 @@ def registration_page_html_backend(request, postgres_session) -> ContractBackend
     if request.param == "fake":
         return FakeContractBackend(repo=FakeRegistrationPageHtmlRepository(), commit=lambda: None)
     return SqlContractBackend(repo=SqlAlchemyRegistrationPageHtmlRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def registration_image_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRegistrationImageRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyRegistrationImageRepository(postgres_session), session=postgres_session)

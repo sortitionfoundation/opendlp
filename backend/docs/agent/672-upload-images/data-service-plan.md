@@ -209,7 +209,7 @@ Pipeline (research §5/§6):
 - `test_strips_exif` (input with EXIF → output has none).
 - `test_same_input_same_sha` and `test_different_input_different_sha`.
 
-## 7. Phase 3 — Adapters (storage)
+## 7. Phase 3 — Adapters (storage) — ✅ done
 
 ### 7.1 ORM table (`adapters/orm.py`)
 
