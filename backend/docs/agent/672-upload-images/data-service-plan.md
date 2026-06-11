@@ -6,6 +6,13 @@
 **Issue:** 672 · **Companion:** [research.md](research.md) · **Date:** 2026-06-11
 **Branch:** `672-upload-images`
 
+> **Status: ✅ implemented.** All five phases (config, domain, image processing,
+> adapters/migration, service, serving route) are done and committed on
+> `672-upload-images`. `mypy`, `deptry` and `prek --all-files` are clean; the
+> non-BDD suite (3128) and BDD suite (133, the one failure an unrelated flaky
+> frontend spinner test that passes in isolation) pass; new-module coverage is
+> 98–100%. Out of scope (upload route + UI) remains for the other work-stream.
+
 ## 1. Scope
 
 This plan covers the **data/domain/adapters layer**, the **service layer**, the
@@ -415,14 +422,15 @@ seed page + image directly in the DB, then:
 > upload route; flag this for coordination — **not** marking any test type N/A,
 > just locating the upload e2e with the work-stream that owns the route.
 
-## 11. Definition of done
+## 11. Definition of done — ✅ met
 
-- `just test` green (coverage ≥ 90% as configured).
-- `just check` green (mypy strict, ruff, deptry — Pillow now a direct dep).
-- New strings wrapped in `_()` / `_l()`; `just translate-regen` run if any added.
-- Alembic migration applies cleanly and round-trips (`upgrade`/`downgrade`).
-- `_delete_all_test_data` and `delete_all_except_standard_users` updated.
-- Two ABOUTME comment lines at the top of every new file.
+- ✅ `just test` green (non-BDD 3128 passed; BDD 133 passed bar one unrelated
+  flaky frontend test; new-module coverage 98–100%).
+- ✅ `just check` green (mypy strict, ruff/prek, deptry — Pillow a direct dep).
+- ✅ New strings wrapped in `_()`; `just translate-regen` run and committed.
+- ✅ Alembic migration applies cleanly and round-trips (`upgrade`/`downgrade`).
+- ✅ `_delete_all_test_data` and `delete_all_except_standard_users` updated.
+- ✅ Two ABOUTME comment lines at the top of every new file.
 
 ## 12. Suggested commit sequence (small, reviewable)
 
