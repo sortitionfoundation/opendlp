@@ -164,7 +164,7 @@ snippet assembly with a fake builder.
   `test_generate_image_html_escapes_src`, `test_generate_image_html_structure`.
 - **Green:** implement.
 
-## 6. Phase 2 — Image processing (`service_layer/image_processing.py`)
+## 6. Phase 2 — Image processing (`service_layer/image_processing.py`) — ✅ done
 
 The keystone. One public function; **real images in tests** (generate with
 Pillow — no mocks, per project rules). Tests:
