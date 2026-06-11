@@ -292,7 +292,7 @@ Insert `orm.registration_images.delete()` **before**
 - `tests/conftest.py::_delete_all_test_data`
 - `tests/bdd/conftest.py::delete_all_except_standard_users`
 
-## 8. Phase 4 — Service layer (`service_layer/registration_image_service.py`)
+## 8. Phase 4 — Service layer (`service_layer/registration_image_service.py`) — ✅ done
 
 Mirrors `registration_page_service.py` (uses `with uow:`, `can_manage_assembly`,
 `create_detached_copy()`, raises from `service_layer/exceptions.py`). Tests use
