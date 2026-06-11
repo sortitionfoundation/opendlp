@@ -136,6 +136,8 @@ apt-get install -qyy \
   unattended-upgrades
 
 /usr/bin/unattended-upgrade
+# this is not being upgraded as a security fix for some reason, remove again later 2026-06-11
+apt-get upgrade -qy libssl3t64
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

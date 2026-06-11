@@ -19,7 +19,7 @@ jobs:
         working-directory: ./backend
     steps:
       - name: Check out
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           persist-credentials: false
 
@@ -83,7 +83,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           persist-credentials: false
 
@@ -108,7 +108,7 @@ jobs:
         run: uv run mypy
 
       - name: Upload coverage reports to Codecov with GitHub Action on Python 3.12
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         if: ${{ matrix.python-version == '3.12' }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
