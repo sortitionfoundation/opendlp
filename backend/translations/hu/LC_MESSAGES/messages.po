@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-11 13:53+0100\n"
+"POT-Creation-Date: 2026-06-11 14:30+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -61,64 +61,64 @@ msgstr ""
 msgid "Processing…"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:62
+#: src/opendlp/domain/respondent_field_schema.py:71
 msgid "Eligibility"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:63
+#: src/opendlp/domain/respondent_field_schema.py:72
 msgid "Name and contact"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:64
+#: src/opendlp/domain/respondent_field_schema.py:73
 #, fuzzy
 msgid "Address"
 msgstr "Email cím"
 
-#: src/opendlp/domain/respondent_field_schema.py:65
+#: src/opendlp/domain/respondent_field_schema.py:74
 msgid "About you"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:66
+#: src/opendlp/domain/respondent_field_schema.py:75
 #: templates/backoffice/assembly_view_respondent.html:177
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:67
+#: src/opendlp/domain/respondent_field_schema.py:76
 msgid "Other"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:96
+#: src/opendlp/domain/respondent_field_schema.py:105
 #, fuzzy
 msgid "Text"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/domain/respondent_field_schema.py:97
+#: src/opendlp/domain/respondent_field_schema.py:106
 msgid "Long text"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:98
+#: src/opendlp/domain/respondent_field_schema.py:107
 msgid "Yes / No"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:99
+#: src/opendlp/domain/respondent_field_schema.py:108
 msgid "Yes / No / Not set"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:100
+#: src/opendlp/domain/respondent_field_schema.py:109
 msgid "Choice (radios)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:101
+#: src/opendlp/domain/respondent_field_schema.py:110
 msgid "Choice (dropdown)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:102
+#: src/opendlp/domain/respondent_field_schema.py:111
 #, fuzzy
 msgid "Whole number"
 msgstr "Módosítsa a számot."
 
-#: src/opendlp/domain/respondent_field_schema.py:103
+#: src/opendlp/domain/respondent_field_schema.py:112
 #: templates/admin/invite_view.html:47 templates/admin/invites.html:66
 #: templates/admin/user_view.html:22 templates/admin/users.html:113
 #: templates/backoffice/assembly_members.html:53
@@ -2687,6 +2687,46 @@ msgstr ""
 #, fuzzy
 msgid "login"
 msgstr "Bejelentkezés"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:249
+#, fuzzy
+msgid "Field key cannot be empty"
+msgstr "Utoljára módosítva"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:255
+#, python-format
+msgid "Field '%(key)s' already exists in this assembly"
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:313
+#, fuzzy
+msgid "You can't change the type or options of a fixed field"
+msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:425
+msgid "Options can only be set on choice fields"
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:428
+#: src/opendlp/service_layer/respondent_field_schema_service.py:459
+#, fuzzy
+msgid "Option value cannot be blank"
+msgstr "Kiválasztás"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:431
+#: src/opendlp/service_layer/respondent_field_schema_service.py:464
+#, fuzzy, python-format
+msgid "Option '%(value)s' already exists"
+msgstr "A felhasználó már létezik"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:492
+msgid "A choice field must keep at least one option"
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:545
+#, python-format
+msgid "Fixed field '%(key)s' cannot be deleted"
+msgstr ""
 
 #: src/opendlp/service_layer/selection_report.py:193
 #: templates/backoffice/patterns/_dropdown.html:148

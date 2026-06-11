@@ -16,6 +16,7 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
+    FixedFieldError,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     humanise_field_key,
@@ -396,7 +397,9 @@ class TestRespondentFieldDefinitionTyping:
 
     def test_update_refuses_type_change_on_fixed_row(self) -> None:
         field = self._field(field_key="email", is_fixed=True)
-        with pytest.raises(ValueError, match="fixed"):
+        # FixedFieldError is a ValueError subclass, but the distinct type lets the
+        # service layer translate the message without matching on its text.
+        with pytest.raises(FixedFieldError):
             field.update(field_type=FieldType.TEXT)
 
     def test_update_changes_type_and_options_together_for_non_fixed_row(self) -> None:
