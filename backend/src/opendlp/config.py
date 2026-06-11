@@ -174,23 +174,7 @@ def get_max_csv_upload_mb() -> int:
 
     Environment variable: ``MAX_CSV_UPLOAD_MB``.
     """
-    raw = os.environ.get("MAX_CSV_UPLOAD_MB", "")
-    if not raw:
-        return 50
-
-    try:
-        value = int(raw)
-    except ValueError:
-        logging.warning(f"Invalid MAX_CSV_UPLOAD_MB value '{raw}'. Using default 50 MB.")
-        return 50
-
-    if value < 1:
-        logging.warning(f"MAX_CSV_UPLOAD_MB={value} is below the minimum (1). Using 1 MB.")
-        return 1
-    if value > 500:
-        logging.warning(f"MAX_CSV_UPLOAD_MB={value} is above the hard ceiling (500). Using 500 MB.")
-        return 500
-    return value
+    return _clamped_int_env("MAX_CSV_UPLOAD_MB", 50, 1, 500)
 
 
 def get_max_csv_upload_bytes() -> int:
@@ -232,29 +216,7 @@ def _registration_html_max_bytes(env_key: str, default: int) -> int:
     Falls back to ``default`` on a missing or invalid value, and clamps to
     [1 KB, 10 MB] with a logged warning so an operator sees the override.
     """
-    raw = os.environ.get(env_key, "")
-    if not raw:
-        return default
-
-    try:
-        value = int(raw)
-    except ValueError:
-        logging.warning(f"Invalid {env_key} value '{raw}'. Using default {default} bytes.")
-        return default
-
-    if value < _REGISTRATION_HTML_MIN_BYTES:
-        logging.warning(
-            f"{env_key}={value} is below the minimum ({_REGISTRATION_HTML_MIN_BYTES}). "
-            f"Using {_REGISTRATION_HTML_MIN_BYTES} bytes."
-        )
-        return _REGISTRATION_HTML_MIN_BYTES
-    if value > _REGISTRATION_HTML_MAX_BYTES:
-        logging.warning(
-            f"{env_key}={value} is above the hard ceiling ({_REGISTRATION_HTML_MAX_BYTES}). "
-            f"Using {_REGISTRATION_HTML_MAX_BYTES} bytes."
-        )
-        return _REGISTRATION_HTML_MAX_BYTES
-    return value
+    return _clamped_int_env(env_key, default, _REGISTRATION_HTML_MIN_BYTES, _REGISTRATION_HTML_MAX_BYTES)
 
 
 def get_registration_form_html_max_bytes() -> int:
