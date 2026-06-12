@@ -18,6 +18,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldGroup,
 )
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
     get_assembly_gsheet,
@@ -49,7 +50,9 @@ respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
 
 def _schema_page_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
+    # Preserve the submitting form's scroll position so saving a field, moving a
+    # row, or editing an option doesn't bounce the user back to the top of the page.
+    return redirect_preserving_scroll(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
 
 
 def _parse_group(raw: str | None) -> RespondentFieldGroup | None:
