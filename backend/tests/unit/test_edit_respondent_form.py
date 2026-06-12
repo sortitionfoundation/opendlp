@@ -8,6 +8,7 @@ from wtforms import IntegerField, RadioField, SelectField, StringField, TextArea
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -109,6 +110,17 @@ class TestBuildFormFieldRendering:
         schema = [_bool_or_none_fixed("eligible")]
         form, _ = build_edit_respondent_form(schema, _respondent(eligible=True))
         assert form["eligible"].data == "true"
+
+    def test_bool_is_three_state_regardless_of_on_registration_page(self, app_ctx):
+        # The back-office edit form keeps Yes/No/Not-set for bool fields even when
+        # the field is not on the registration form; on_registration_page must not
+        # influence it (the never-None checkbox rule is public-form only).
+        field = _bool_or_none_fixed("eligible")
+        field.on_registration_page = FieldOnRegistrationPage.NO
+        form, _ = build_edit_respondent_form([field], _respondent(eligible=None))
+        assert isinstance(form["eligible"], RadioField)
+        values = [v for v, _label in form["eligible"].choices]
+        assert values == ["true", "false", ""]
 
     def test_choice_radio_renders_radio_field(self, app_ctx):
         options = [ChoiceOption(value="a", help_text="A-help"), ChoiceOption(value="b")]

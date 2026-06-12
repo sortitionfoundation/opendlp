@@ -29,7 +29,12 @@ from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
 from opendlp.domain.registration_page import RegistrationPageActivity, RegistrationPageSource, RegistrationPageStatus
-from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType, RespondentFieldGroup
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldOnRegistrationPage,
+    FieldType,
+    RespondentFieldGroup,
+)
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
@@ -555,6 +560,12 @@ respondent_field_definitions = Table(
     Column("derivation_kind", String(100), nullable=False, default=""),
     Column("field_type", EnumAsString(FieldType, 32), nullable=False, default=FieldType.TEXT),
     Column("options", ChoiceOptionListJSON, nullable=True),
+    Column(
+        "on_registration_page",
+        EnumAsString(FieldOnRegistrationPage, 32),
+        nullable=False,
+        default=FieldOnRegistrationPage.YES_REQUIRED,
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique field_key per assembly

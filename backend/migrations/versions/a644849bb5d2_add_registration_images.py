@@ -1,7 +1,7 @@
 """add registration images
 
 Revision ID: a644849bb5d2
-Revises: 28ad0135cfe8
+Revises: 974f13035459
 Create Date: 2026-06-11 17:21:52.662358
 
 """
@@ -15,7 +15,7 @@ from opendlp.adapters import orm
 
 # revision identifiers, used by Alembic.
 revision: str = "a644849bb5d2"
-down_revision: str | Sequence[str] | None = "28ad0135cfe8"
+down_revision: str | Sequence[str] | None = "974f13035459"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

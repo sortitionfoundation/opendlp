@@ -4,7 +4,7 @@
 **Date:** 2026-06-08
 **Elaborates:** `docs/agent/613-registration-page-accept/research.md` §6 Q14/Q15
 (revised 2026-06-08)
-**Status:** Draft plan — ready for review before code lands.
+**Status:** Implemented — all phases complete (see the §12 checklist).
 
 This plan implements the schema change decided in the 613 research doc: replace
 the never-built two-bool plan (`is_required` + `for_registration_page`) with a
@@ -282,29 +282,33 @@ if not str_value:
 ... (existing email / choice / integer / text validation on the non-empty value)
 ```
 
-New helper `_coerce_form_bool(str_value, *, required)`:
+New helper `_coerce_form_bool(str_value, *, required)`. Note a *required* bool
+must be **True** — an explicit "no" (or a blank/unchecked box) is an error, not a
+recorded `False`; only an *optional* bool records `False`:
 
 ```python
-truthy = {"yes", "true", "on", "1"}
-falsy = {"no", "false", "0"}
-v = str_value.lower()
-if v in truthy:
+v = str_value.strip().lower()
+if v in ("yes", "true", "on", "1"):
     return True, None
-if v in falsy:
-    return False, None
-if v == "":                        # checkbox unchecked OR radio not picked
+if v in ("no", "false", "0", ""):  # explicit no, or checkbox unchecked
     if required:
-        return None, _("Please tick this box to continue")
+        return None, "Please tick this box to continue"
     return False, None             # optional bool -> False, never None
-return None, _("Please select a valid option")
+return None, "Please select a valid option"
 ```
+
+(Strings are kept bare to match the existing `registration_submission_service` /
+`domain/validators.py` style, which does not gettext-wrap field-error messages.
+No `translate-regen` needed for this phase.)
 
 Key points:
 
 - A required checkbox left unchecked → key absent → `""` → error. ✔
+- A required checkbox with an explicit "no" → error (must be checked). ✔
 - An optional checkbox unchecked → `False` (GDPR-safe for `stay_on_db`). ✔
-- A free-form authored radio answering "no" → `False` (not `True`). ✔ (this is
-  why we parse the value rather than test truthiness — see the note in §3.2)
+- A free-form authored radio answering "no" on an *optional* field → `False`
+  (not `True`). ✔ (this is why we parse the value rather than test truthiness —
+  see the note in §3.2)
 - Never returns `None` for an on-form bool. ✔
 
 ### 5.3 Required non-bool blank
@@ -525,31 +529,31 @@ Pure domain, no DB needed. (Plan §3.1.)
 
 **Red — `tests/unit/test_respondent_field_schema.py`:**
 
-- [ ] `FieldOnRegistrationPage` exists with members `NO` / `YES_OPTIONAL` /
+- [x] `FieldOnRegistrationPage` exists with members `NO` / `YES_OPTIONAL` /
       `YES_REQUIRED` and string values `"no"` / `"yes_optional"` / `"yes_required"`.
-- [ ] constructor defaults `on_registration_page` to `YES_REQUIRED` when omitted.
-- [ ] constructor with `is_derived=True` forces `on_registration_page = NO`
+- [x] constructor defaults `on_registration_page` to `YES_REQUIRED` when omitted.
+- [x] constructor with `is_derived=True` forces `on_registration_page = NO`
       (even if a non-`NO` value is passed).
-- [ ] `update(on_registration_page=...)` sets the value and touches `updated_at`,
+- [x] `update(on_registration_page=...)` sets the value and touches `updated_at`,
       on both a fixed and a non-fixed field; `update()` with it omitted leaves it
       unchanged.
-- [ ] `create_detached_copy()` carries `on_registration_page` through.
-- [ ] `FIXED_FIELD_ON_REGISTRATION_PAGE` maps email/eligible/can_attend/consent →
+- [x] `create_detached_copy()` carries `on_registration_page` through.
+- [x] `FIXED_FIELD_ON_REGISTRATION_PAGE` maps email/eligible/can_attend/consent →
       `YES_REQUIRED` and stay_on_db → `YES_OPTIONAL`.
 
 **Green — `src/opendlp/domain/respondent_field_schema.py`:**
 
-- [ ] add the `FieldOnRegistrationPage` enum.
-- [ ] add the `FIXED_FIELD_ON_REGISTRATION_PAGE` seed-default map.
-- [ ] add the constructor param (default `YES_REQUIRED`) + the `is_derived → NO`
+- [x] add the `FieldOnRegistrationPage` enum.
+- [x] add the `FIXED_FIELD_ON_REGISTRATION_PAGE` seed-default map.
+- [x] add the constructor param (default `YES_REQUIRED`) + the `is_derived → NO`
       guard with an explanatory comment; store the attribute.
-- [ ] extend `update()` with the optional param.
-- [ ] extend `create_detached_copy()`.
+- [x] extend `update()` with the optional param.
+- [x] extend `create_detached_copy()`.
 
 **Verify:**
 
-- [ ] `CI=true uv run pytest tests/unit/test_respondent_field_schema.py` green.
-- [ ] `just check` (mypy/ruff) clean for the edited file.
+- [x] `CI=true uv run pytest tests/unit/test_respondent_field_schema.py` green.
+- [x] `just check` (mypy/ruff) clean for the edited file.
 
 ### Phase 2 — Persistence: ORM column + migration
 
@@ -557,37 +561,36 @@ Pure domain, no DB needed. (Plan §3.1.)
 
 **Red — `tests/contract/test_respondent_field_definition_repo.py`:**
 
-- [ ] add/get round-trips `on_registration_page` for each of the three enum
-      values (fails first because the ORM column doesn't exist yet).
+- [x] add/get round-trips `on_registration_page` for each of the three enum
+      values (fails first because the ORM column doesn't exist yet). Uses a
+      fresh-session read (`fresh_get_field_definition`, added to the contract
+      backend) so the test genuinely exercises the DB column rather than the
+      identity-mapped in-memory instance.
 
 **Green:**
 
-- [ ] add the `on_registration_page` `EnumAsString(FieldOnRegistrationPage, 32)`
+- [x] add the `on_registration_page` `EnumAsString(FieldOnRegistrationPage, 32)`
       column to `adapters/orm.py` (import the enum there) with
       `nullable=False, default=FieldOnRegistrationPage.YES_REQUIRED`.
-- [ ] confirm the contract/integration test DB picks the column up (metadata
-      `create_all` vs migrations — check `tests/conftest.py`; if it builds from
-      metadata, the ORM column is enough for tests).
-- [ ] generate the migration:
-      `uv run alembic revision --autogenerate -m "add on_registration_page to respondent field definitions"`
-      (parent = head `28ad0135cfe8`).
-- [ ] hand-edit the migration to the §4.2 shape: `add_column` with
+- [x] confirmed the test DB builds from `orm.metadata.create_all`
+      (`tests/conftest.py:200`), so the ORM column is enough for tests.
+- [x] generate the migration (parent = head `28ad0135cfe8`).
+- [x] hand-edit the migration to the §4.2 shape: `add_column` with
       `server_default="yes_required"`, then backfill `derived → 'no'` and
       `stay_on_db → 'yes_optional'`; `downgrade` drops the column.
 
-**Red/Green — migration test (if a harness exists; see `tests/` for existing
-migration tests):**
+**Red/Green — migration test:**
 
-- [ ] upgrade backfills derived→`no`, stay_on_db→`yes_optional`, else→
-      `yes_required`; downgrade drops the column.
+- [x] N/A — the repo has **no** migration-test harness (no migration is tested
+      anywhere); the backfill is verified by the alembic upgrade/downgrade run
+      below.
 
 **Verify:**
 
-- [ ] `uv run alembic upgrade head` then `uv run alembic downgrade -1` then
-      `upgrade head` all succeed on a scratch DB.
-- [ ] `uv run alembic revision --autogenerate` shows **no** further diff
-      (column matches the ORM).
-- [ ] contract tests green; `just check` clean.
+- [x] `uv run alembic upgrade head` then `uv run alembic downgrade -1` then
+      `upgrade head` all succeed.
+- [x] `uv run alembic check` shows **no** further diff (column matches the ORM).
+- [x] contract tests green; `just check` clean.
 
 ### Phase 3 — Submission validator
 
@@ -596,36 +599,38 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red — `tests/unit/` for `registration_submission_service`:**
 
-- [ ] `NO` field present in the POST body → ignored, not in `cleaned`, no error.
-- [ ] required (`YES_REQUIRED`) checkbox unchecked (key absent / `""`) → error.
-- [ ] optional (`YES_OPTIONAL`) checkbox unchecked → `False` (never `None`).
-- [ ] checkbox checked (`"yes"`) → `True`.
-- [ ] free-form authored radio `"no"` → `False` (value parsed, not truthy-tested).
-- [ ] unexpected bool value (e.g. `"maybe"`) → error.
-- [ ] optional non-bool blank → accepted, not stored; required non-bool blank →
+- [x] `NO` field present in the POST body → ignored, not in `cleaned`, no error.
+- [x] required (`YES_REQUIRED`) checkbox unchecked (key absent / `""`) → error.
+- [x] required checkbox with explicit `"no"` → error (must be checked).
+- [x] optional (`YES_OPTIONAL`) checkbox unchecked → `False` (never `None`).
+- [x] checkbox checked (`"yes"`) → `True`.
+- [x] optional field `"no"` → `False` (value parsed, not truthy-tested).
+- [x] unexpected bool value (e.g. `"maybe"`) → error.
+- [x] optional non-bool blank → accepted, not stored; required non-bool blank →
       error.
-- [ ] required choice unselected (`""`) → error.
+- [x] required choice unselected (`""`) → error.
 
 **Green — `service_layer/registration_submission_service.py`:**
 
-- [ ] add `_coerce_form_bool(str_value, *, required)`.
-- [ ] rewrite `_validate_field_value` to be enum-aware (requiredness from the
+- [x] add `_coerce_form_bool(str_value, *, required)`.
+- [x] rewrite `_validate_field_value` to be enum-aware (requiredness from the
       enum; bool branch via `_coerce_form_bool`; blank handling for non-bool).
-- [ ] update `_validate_form_data` to skip `NO` fields and only store
+- [x] update `_validate_form_data` to skip `NO` fields and only store
       non-`None` cleaned values.
-- [ ] gettext-wrap the new user-facing messages.
+- [x] messages kept bare to match existing `validators.py` style (no new
+      gettext strings → no translate-regen).
 
 **Red/Green — `tests/integration/`:**
 
-- [ ] `submit_registration` end-to-end against a schema mixing all three enum
+- [x] `submit_registration` end-to-end against a schema mixing all three enum
       values: PUBLISHED → `POOL`, TEST → `TEST_SUBMISSION`; assert the created
-      `Respondent` has correct `eligible`/`consent`/`stay_on_db`/`attributes`
-      and that `NO`/optional-blank fields keep their defaults.
+      `Respondent` has correct `consent`/`stay_on_db`/`attributes` and that
+      `NO`/optional-blank fields keep their defaults.
 
 **Verify:**
 
-- [ ] validator unit + integration tests green.
-- [ ] `just translate-regen` run; `just check` clean.
+- [x] validator unit + integration tests green.
+- [x] `just check` clean (no new translatable strings).
 
 ### Phase 4 — Starter generator: checkbox + enum-driven
 
@@ -633,39 +638,41 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red — `tests/unit/` for `registration_page` (starter generator):**
 
-- [ ] bool field renders an `<input type="checkbox" ... value="yes">` with the
+- [x] bool field renders an `<input type="checkbox" ... value="yes">` with the
       `checked('key','yes')` helper, **not** yes/no radios.
-- [ ] `YES_REQUIRED` bool checkbox carries the `required` attribute;
+- [x] `YES_REQUIRED` bool checkbox carries the `required` attribute;
       `YES_OPTIONAL` does not.
-- [ ] `NO` fields are omitted entirely; a group whose every field is `NO`
+- [x] `NO` fields are omitted entirely; a group whose every field is `NO`
       renders no `<h2>`.
-- [ ] non-bool `YES_REQUIRED` gets `required`; `YES_OPTIONAL` does not (incl. the
+- [x] non-bool `YES_REQUIRED` gets `required`; `YES_OPTIONAL` does not (incl. the
       dropdown "— Please choose —" only on optional).
-- [ ] **update existing tests** that assert yes/no radio markup → expect checkbox
-      markup (these go red on the change; fix them as part of this phase).
+- [x] **updated existing tests** that asserted yes/no radio markup → expect
+      checkbox markup; the `_field` test helper now defaults to `YES_OPTIONAL`
+      and takes `on_registration_page`, and the two `required_field_keys=` tests
+      now drive required-ness via the enum.
 
 **Green — `src/opendlp/domain/registration_page.py`:**
 
-- [ ] add `_render_checkbox`.
-- [ ] change `_render_field` to drop the `required_field_keys` param, read
-      `field.on_registration_page`, skip `NO`, route bools to `_render_checkbox`.
-- [ ] change `generate_starter_form_html` to drop the `required_field_keys` param
-      and skip `NO` fields.
-- [ ] remove `_render_yes_no_radios` (no remaining callers).
+- [x] add `_render_checkbox`.
+- [x] change `_render_field` to drop the `required_field_keys` param, read
+      `field.on_registration_page`, route bools to `_render_checkbox`.
+- [x] change `generate_starter_form_html` to drop the `required_field_keys` param
+      and skip `NO` fields (per-group bucket filter).
+- [x] remove `_render_yes_no_radios` (no remaining callers); drop the now-unused
+      `Iterable` import.
 
 **Green — callers of the changed signatures:**
 
-- [ ] `service_layer/registration_page_service.py` `_build_starter_html` —
-      confirm/adjust the call.
-- [ ] `entrypoints/blueprints/dev.py` and
-      `entrypoints/blueprints/backoffice_registration.py` — update the
-      `generate_starter_form_html` calls.
+- [x] `service_layer/registration_page_service.py` `_build_starter_html` already
+      calls with just `list(fields)` — no change needed.
+- [x] `dev.py` / `backoffice_registration.py` call the **service-layer** wrapper
+      (`uow, user_id, assembly_id`), not the domain function — no change needed.
 
 **Verify:**
 
-- [ ] starter-generator unit tests green; existing registration-submission BDD
-      scenarios still pass with checkbox markup.
-- [ ] `just check` clean.
+- [x] starter-generator unit tests green; registration route/backoffice/
+      submission suites still green with checkbox markup.
+- [x] `just check` clean.
 
 ### Phase 5 — Schema-editor: service + blueprint + template
 
@@ -673,50 +680,49 @@ Depends on Phase 1 (domain attr) for unit tests; Phase 2 for integration.
 
 **Red:**
 
-- [ ] `tests/integration/` — `add_field` defaults a new custom field to
-      `YES_REQUIRED` and persists an explicit value; `update_field` updates
-      `on_registration_page` (incl. on a fixed field).
-- [ ] `tests/integration/` — a freshly-seeded schema via `_build_fixed_rows`
+- [x] `tests/integration/` — `add_field` defaults a new custom field to
+      `YES_REQUIRED`; `update_field` updates `on_registration_page` (incl. on a
+      fixed field).
+- [x] `tests/integration/` — a freshly-seeded schema via `_build_fixed_rows`
       gives stay_on_db `YES_OPTIONAL` and the other fixed fields `YES_REQUIRED`.
-- [ ] blueprint test — `_parse_on_registration_page` parses the three values and
-      falls back safely on bad input; `update_field_view` forwards the value.
-- [ ] `tests/e2e/test_backoffice_respondent_field_schema.py` — set a field to each
-      value in the editor, save, reload, assert persisted and pre-selected.
+- [x] `tests/e2e/test_backoffice_respondent_field_schema.py` — set a field's value
+      in the editor, save, reload, assert persisted; assert the column renders.
 
 **Green:**
 
-- [ ] `service_layer/respondent_field_schema_service.py` — `add_field` +
+- [x] `service_layer/respondent_field_schema_service.py` — `add_field` +
       `update_field` params; `_build_fixed_rows` uses
       `FIXED_FIELD_ON_REGISTRATION_PAGE`.
-- [ ] `entrypoints/blueprints/respondent_field_schema.py` —
-      `_parse_on_registration_page` + wire into `update_field_view`.
-- [ ] `templates/backoffice/respondent_field_schema/view.html` — per-row
+- [x] `entrypoints/blueprints/respondent_field_schema.py` —
+      `_parse_on_registration_page` + wire into `update_field_view`; pass
+      `on_registration_page_choices` to the template.
+- [x] `templates/backoffice/respondent_field_schema/view.html` — per-row
       "On registration form" `<select>` (labels _("Not shown") / _("Optional") /
-      _("Required")), shown for all fields incl. fixed, posting in the row's Save
-      form, with an accessible label.
+      _("Required")), shown for all editable fields (derived fields show "Not
+      shown" text), posting in the row's Save form, with an accessible label.
 
 **Verify:**
 
-- [ ] `just translate-regen`; integration + e2e green (`CI=true`).
-- [ ] manual/Playwright sanity of the editor dropdown if useful.
-- [ ] `just check` clean.
+- [x] `just translate-regen`; integration + e2e green (`CI=true`).
+- [x] `just check` clean.
 
 ### Phase 6 — Back-office isolation pin
 
 No production code change. (Plan §7.)
 
-- [ ] **Red/Green** — add
-      `test_edit_respondent_form_bool_is_three_state_regardless_of_on_registration_page`
-      asserting `edit_respondent_form` bool fields keep Yes/No/Not-set choices
-      and `radio_or_none_to_bool` behaviour even when the field is `NO` on the
-      registration form.
-- [ ] **Verify** — test green; no diff to `edit_respondent_form.py`.
+- [x] **Pin test** — added
+      `test_bool_is_three_state_regardless_of_on_registration_page` asserting
+      `edit_respondent_form` bool fields keep Yes/No/Not-set choices even when the
+      field is `NO` on the registration form. (A regression guard — passes
+      immediately because the edit form never reads the enum.)
+- [x] **Verify** — test green; no diff to `edit_respondent_form.py`.
 
 ### Phase 7 — Final verification
 
-- [ ] full suite: `CI=true just test` green (including BDD).
-- [ ] `just check` clean (mypy, ruff, `deptry src`).
-- [ ] `uv run alembic upgrade head` clean; autogenerate shows no diff.
-- [ ] `just translate-regen` leaves no uncommitted churn beyond the intended new
-      strings.
-- [ ] re-read the diff against this plan; note any deviations back into the doc.
+- [x] full suite: `CI=true just test` green (exit 0, 91% coverage; incl. BDD).
+- [x] `just check` clean (mypy, ruff, `deptry src`, pre-commit hooks).
+- [x] `uv run alembic upgrade head` clean; `alembic check` shows no diff.
+- [x] `just translate-regen` ran in Phase 5; the `hu` catalogue is committed and
+      the working tree is clean.
+- [x] re-read the diff against this plan; deviations folded into §5.2/§3.2
+      (bool-coercion refinement) and §9 (decisions) as the work progressed.

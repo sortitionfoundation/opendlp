@@ -64,7 +64,7 @@ def check_login_rate_limit(
     r = redis_client or _get_redis()
     retry_after_seconds = window_minutes * 60
 
-    raw_email_count: str | None = r.get(_email_key(email))  # type: ignore[assignment]
+    raw_email_count: bytes | str | None = r.get(_email_key(email))
     email_count = int(raw_email_count) if raw_email_count else 0
     if email_count >= max_per_email:
         logger.warning("Login rate limit exceeded for email: %s", email)
@@ -73,7 +73,7 @@ def check_login_rate_limit(
             retry_after_seconds=retry_after_seconds,
         )
 
-    raw_ip_count: str | None = r.get(_ip_key(ip_address))  # type: ignore[assignment]
+    raw_ip_count: bytes | str | None = r.get(_ip_key(ip_address))
     ip_count = int(raw_ip_count) if raw_ip_count else 0
     if ip_count >= max_per_ip:
         logger.warning("Login rate limit exceeded for IP: %s", ip_address)

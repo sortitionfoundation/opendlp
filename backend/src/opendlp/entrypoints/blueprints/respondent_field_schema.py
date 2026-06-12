@@ -15,9 +15,12 @@ from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
+    normalise_field_key,
 )
+from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
     get_assembly_gsheet,
@@ -33,6 +36,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     add_choice_option,
+    add_field,
     delete_field,
     get_schema,
     get_schema_grouped,
@@ -49,7 +53,9 @@ respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
 
 def _schema_page_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
+    # Preserve the submitting form's scroll position so saving a field, moving a
+    # row, or editing an option doesn't bounce the user back to the top of the page.
+    return redirect_preserving_scroll(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
 
 
 def _parse_group(raw: str | None) -> RespondentFieldGroup | None:
@@ -68,6 +74,16 @@ def _parse_field_type(raw: str | None) -> FieldType | None:
         return None
     try:
         return FieldType(raw)
+    except ValueError:
+        return None
+
+
+def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | None:
+    """Parse a submitted on_registration_page value; returns None if empty or unrecognised."""
+    if not raw:
+        return None
+    try:
+        return FieldOnRegistrationPage(raw)
     except ValueError:
         return None
 
@@ -110,6 +126,11 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         field_type_choices = [(ft.value, FIELD_TYPE_LABELS[ft]) for ft in FieldType]
         field_type_labels_by_value = {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType}
         choice_type_values = {ft.value for ft in CHOICE_TYPES}
+        on_registration_page_choices = [
+            (FieldOnRegistrationPage.NO.value, _("Not shown")),
+            (FieldOnRegistrationPage.YES_OPTIONAL.value, _("Optional")),
+            (FieldOnRegistrationPage.YES_REQUIRED.value, _("Required")),
+        ]
 
         all_fields = [f for group_fields in grouped.values() for f in group_fields]
         has_guessable_text_rows = any(
@@ -128,6 +149,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             field_type_choices=field_type_choices,
             field_type_labels_by_value=field_type_labels_by_value,
             choice_type_values=choice_type_values,
+            on_registration_page_choices=on_registration_page_choices,
             schema_has_rows=schema_has_rows,
             show_guess_button=show_guess_button,
             data_source=data_source,
@@ -166,6 +188,53 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/add",
+    methods=["POST"],
+)
+@login_required
+def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Add a new field to the schema from the schema page's add form."""
+    field_key = normalise_field_key(request.form.get("field_key", ""))
+    label = request.form.get("label", "").strip() or None
+    group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
+    field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT
+    on_registration_page = (
+        _parse_on_registration_page(request.form.get("on_registration_page")) or FieldOnRegistrationPage.YES_REQUIRED
+    )
+
+    if not field_key:
+        flash(_("Field key is required (letters, numbers and underscores)."), "error")
+        return _schema_page_redirect(assembly_id)
+
+    # Choice types need at least one option to satisfy the domain invariant;
+    # seed a placeholder the organiser can rename, mirroring update_field_view.
+    options = [ChoiceOption(value="option_1")] if field_type in CHOICE_TYPES else None
+
+    try:
+        uow = bootstrap.bootstrap()
+        add_field(
+            uow,
+            current_user.id,
+            assembly_id,
+            field_key,
+            label=label,
+            group=group,
+            field_type=field_type,
+            options=options,
+            on_registration_page=on_registration_page,
+        )
+        flash(_("Field added."), "success")
+    except FieldDefinitionConflictError as e:
+        flash(str(e), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
     "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/update",
     methods=["POST"],
 )
@@ -175,8 +244,9 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     label = request.form.get("label", "").strip() or None
     group = _parse_group(request.form.get("group"))
     field_type = _parse_field_type(request.form.get("field_type"))
+    on_registration_page = _parse_on_registration_page(request.form.get("on_registration_page"))
 
-    if label is None and group is None and field_type is None:
+    if label is None and group is None and field_type is None and on_registration_page is None:
         flash(_("No changes submitted."), "info")
         return _schema_page_redirect(assembly_id)
 
@@ -202,6 +272,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
                 group=group,
                 field_type=field_type,
                 options=seed_options,
+                on_registration_page=on_registration_page,
             )
         else:
             update_field(
@@ -212,6 +283,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
                 label=label,
                 group=group,
                 field_type=field_type,
+                on_registration_page=on_registration_page,
             )
         flash(_("Field updated."), "success")
     except FieldDefinitionConflictError as e:

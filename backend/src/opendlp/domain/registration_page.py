@@ -3,7 +3,6 @@ ABOUTME: Holds page config plus the HTML source that supplies the registration f
 
 import html as html_lib
 import uuid
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -17,6 +16,7 @@ from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -417,18 +417,13 @@ def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> li
     ]
 
 
-def _render_yes_no_radios(field: RespondentFieldDefinition) -> list[str]:
+def _render_checkbox(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
-    legend = html_lib.escape(field.label)
-    yes_checked = _jinja_call("checked", field.field_key, "yes")
-    no_checked = _jinja_call("checked", field.field_key, "no")
+    label = html_lib.escape(field.label)
+    checked_expr = _jinja_call("checked", field.field_key, "yes")
     return [
-        "<fieldset>",
-        f"<legend>{legend}</legend>",
-        f'<label><input type="radio" name="{key}" value="yes" {yes_checked}> Yes</label>',
-        f'<label><input type="radio" name="{key}" value="no" {no_checked}> No</label>',
+        f'<label><input type="checkbox" id="{key}" name="{key}" value="yes" {checked_expr}{required_attr}> {label}</label>',
         _jinja_call("field_errors", field.field_key),
-        "</fieldset>",
     ]
 
 
@@ -466,8 +461,8 @@ def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool)
     return parts
 
 
-def _render_field(field: RespondentFieldDefinition, required_field_keys: Iterable[str]) -> list[str]:
-    is_required = field.field_key in required_field_keys
+def _render_field(field: RespondentFieldDefinition) -> list[str]:
+    is_required = field.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
     required_attr = " required" if is_required else ""
     field_type = field.effective_field_type
 
@@ -480,7 +475,7 @@ def _render_field(field: RespondentFieldDefinition, required_field_keys: Iterabl
     if field_type == FieldType.LONGTEXT:
         return _render_textarea(field, required_attr)
     if field_type in BOOL_TYPES:
-        return _render_yes_no_radios(field)
+        return _render_checkbox(field, required_attr)
     if field_type == FieldType.CHOICE_RADIO:
         return _render_choice_radios(field)
     if field_type == FieldType.CHOICE_DROPDOWN:
@@ -499,10 +494,7 @@ def _group_fields(
     return grouped
 
 
-def generate_starter_form_html(
-    fields: list[RespondentFieldDefinition],
-    required_field_keys: Iterable[str] = (),
-) -> str:
+def generate_starter_form_html(fields: list[RespondentFieldDefinition]) -> str:
     """Generate an unstyled starter HTML form from a respondent field schema.
 
     Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
@@ -512,9 +504,10 @@ def generate_starter_form_html(
     intro paragraph by default; both substitute to the empty string when
     not supplied. Fields are grouped by ``RespondentFieldGroup`` in
     ``GROUP_DISPLAY_ORDER`` and ordered by ``sort_order`` within each
-    group; empty groups are suppressed.
+    group; empty groups are suppressed. Fields whose ``on_registration_page``
+    is ``NO`` are omitted, and a field is marked ``required`` when it is
+    ``YES_REQUIRED``.
     """
-    required_set = set(required_field_keys)
     grouped = _group_fields(fields)
 
     parts: list[str] = [
@@ -525,12 +518,12 @@ def generate_starter_form_html(
         "{{ form_errors() }}",
     ]
     for group in GROUP_DISPLAY_ORDER:
-        bucket = grouped.get(group, [])
+        bucket = [f for f in grouped.get(group, []) if f.on_registration_page != FieldOnRegistrationPage.NO]
         if not bucket:
             continue
         parts.append(f"<h2>{html_lib.escape(str(GROUP_LABELS[group]))}</h2>")
         for field_def in bucket:
-            parts.extend(_render_field(field_def, required_set))
+            parts.extend(_render_field(field_def))
     parts.append('<button type="submit">Register</button>')
     parts.append("</form>")
     return "\n".join(parts) + "\n"

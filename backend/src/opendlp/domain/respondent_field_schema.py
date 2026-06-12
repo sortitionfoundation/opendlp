@@ -20,6 +20,7 @@ schema from here via ``respondent_field_schema_service`` rather than introducing
 a parallel configuration. See docs/agent/446-grouped-registrant-view/respondent_field_schema.md
 for the design rationale."""
 
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -29,6 +30,15 @@ from typing import Any
 from opendlp.translations import lazy_gettext as _l
 
 _UNSET: Any = object()
+
+
+class FixedFieldError(ValueError):
+    """Raised when an edit is rejected because the field is a fixed field.
+
+    Subclasses ``ValueError`` so existing ``except ValueError`` callers still
+    catch it; the distinct type lets the service layer recognise this case and
+    surface a translated message without matching on the message text.
+    """
 
 
 class RespondentFieldGroup(Enum):
@@ -78,6 +88,19 @@ class FieldType(Enum):
     EMAIL = "email"
 
 
+class FieldOnRegistrationPage(Enum):
+    """Whether a field appears on the public registration form, and how strictly.
+
+    For bool fields, the form renders a checkbox: YES_REQUIRED must be checked,
+    YES_OPTIONAL may be left unchecked. For non-bool fields, YES_REQUIRED must
+    have a value and YES_OPTIONAL may be blank. NO fields are not on the form.
+    """
+
+    NO = "no"
+    YES_OPTIONAL = "yes_optional"
+    YES_REQUIRED = "yes_required"
+
+
 FIELD_TYPE_LABELS: dict[FieldType, str] = {
     FieldType.TEXT: _l("Text"),
     FieldType.LONGTEXT: _l("Long text"),
@@ -102,6 +125,17 @@ FIXED_FIELD_TYPES: dict[str, FieldType] = {
     "can_attend": FieldType.BOOL_OR_NONE,
     "consent": FieldType.BOOL_OR_NONE,
     "stay_on_db": FieldType.BOOL_OR_NONE,
+}
+
+
+# Seed defaults for fixed-field rows. Unlike FIXED_FIELD_TYPES this is only a
+# default at seeding time — the stored value is freely editable per field.
+FIXED_FIELD_ON_REGISTRATION_PAGE: dict[str, FieldOnRegistrationPage] = {
+    "email": FieldOnRegistrationPage.YES_REQUIRED,
+    "eligible": FieldOnRegistrationPage.YES_REQUIRED,
+    "can_attend": FieldOnRegistrationPage.YES_REQUIRED,
+    "consent": FieldOnRegistrationPage.YES_REQUIRED,
+    "stay_on_db": FieldOnRegistrationPage.YES_OPTIONAL,
 }
 
 
@@ -156,6 +190,7 @@ class RespondentFieldDefinition:
         derivation_kind: str = "",
         field_type: FieldType = FieldType.TEXT,
         options: list[ChoiceOption] | None = None,
+        on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
         field_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -182,6 +217,8 @@ class RespondentFieldDefinition:
         self.derivation_kind = derivation_kind.strip()
         self.field_type = field_type
         self.options = list(options) if options else None
+        # A derived field is computed, never collected on the registration form.
+        self.on_registration_page = FieldOnRegistrationPage.NO if is_derived else on_registration_page
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
@@ -196,6 +233,7 @@ class RespondentFieldDefinition:
         sort_order: int | None = None,
         field_type: FieldType | None = None,
         options: list[ChoiceOption] | None = _UNSET,
+        on_registration_page: FieldOnRegistrationPage | None = None,
     ) -> None:
         """Update mutable fields. Touches ``updated_at`` on any change.
 
@@ -218,7 +256,7 @@ class RespondentFieldDefinition:
             changed = True
         if field_type is not None or options is not _UNSET:
             if self.is_fixed:
-                raise ValueError("Cannot change field_type or options on a fixed field")
+                raise FixedFieldError("Cannot change field_type or options on a fixed field")
             new_type = field_type if field_type is not None else self.field_type
             # When the caller didn't pass options explicitly, preserve the
             # current list across choice<->choice transitions, but drop it
@@ -227,6 +265,9 @@ class RespondentFieldDefinition:
             _validate_type_and_options(new_type, new_options)
             self.field_type = new_type
             self.options = list(new_options) if new_options else None
+            changed = True
+        if on_registration_page is not None:
+            self.on_registration_page = on_registration_page
             changed = True
         if changed:
             self.updated_at = datetime.now(UTC)
@@ -253,6 +294,7 @@ class RespondentFieldDefinition:
             derivation_kind=self.derivation_kind,
             field_type=self.field_type,
             options=list(self.options) if self.options else None,
+            on_registration_page=self.on_registration_page,
             field_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
@@ -268,6 +310,20 @@ IN_SCHEMA_FIXED_FIELDS: list[tuple[str, RespondentFieldGroup, str]] = [
     ("consent", RespondentFieldGroup.CONSENT, "Consent"),
     ("stay_on_db", RespondentFieldGroup.CONSENT, "Stay on database"),
 ]
+
+
+def normalise_field_key(raw: str) -> str:
+    """Normalise a user-entered field key for use as a registration-form name attribute.
+
+    Lowercases, turns runs of whitespace or hyphens into a single underscore,
+    drops any remaining character outside ``[a-z0-9_]``, and trims leading and
+    trailing underscores. Returns the empty string when nothing usable remains.
+    """
+    lowered = raw.strip().lower()
+    underscored = re.sub(r"[\s-]+", "_", lowered)
+    cleaned = re.sub(r"[^a-z0-9_]", "", underscored)
+    collapsed = re.sub(r"_+", "_", cleaned)
+    return collapsed.strip("_")
 
 
 def humanise_field_key(field_key: str) -> str:

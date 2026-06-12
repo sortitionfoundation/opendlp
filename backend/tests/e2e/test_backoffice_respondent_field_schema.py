@@ -3,6 +3,7 @@ ABOUTME: Covers view, edit label/group, reorder, delete, and initialise flows"""
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
 )
@@ -107,6 +108,47 @@ class TestUpdateField:
             assert moved.group == RespondentFieldGroup.ABOUT_YOU
 
 
+class TestOnRegistrationPage:
+    def test_schema_page_renders_registration_column(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "On registration form" in body
+        assert 'name="on_registration_page"' in body
+
+    def test_update_sets_on_registration_page(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom_field = next(f for f in schema if f.field_key == "custom_notes")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
+            data={
+                "label": "Custom notes",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            updated = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in updated if f.field_key == "custom_notes")
+            assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+
 class TestMoveField:
     def test_move_up_swaps_with_previous_field(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -170,6 +212,129 @@ class TestMoveField:
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
             after = [f.field_key for f in schema if f.group == RespondentFieldGroup.OTHER]
             assert after == ["a", "b"]
+
+
+class TestAddField:
+    def test_add_field_creates_row(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            data={
+                "field_key": "Age Range",
+                "label": "Age range",
+                "group": RespondentFieldGroup.ABOUT_YOU.value,
+                "field_type": FieldType.TEXT.value,
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            # The submitted "Age Range" is normalised to a name-attribute-safe key.
+            added = next(f for f in schema if f.field_key == "age_range")
+            assert added.label == "Age range"
+            assert added.group == RespondentFieldGroup.ABOUT_YOU
+            assert added.field_type == FieldType.TEXT
+            assert added.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+    def test_add_choice_field_seeds_placeholder_option(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            data={
+                "field_key": "preferred_contact",
+                "field_type": FieldType.CHOICE_RADIO.value,
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            added = next(f for f in schema if f.field_key == "preferred_contact")
+            assert added.field_type == FieldType.CHOICE_RADIO
+            assert [opt.value for opt in added.options] == ["option_1"]
+
+    def test_add_duplicate_key_is_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            before = len(respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id))
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            data={
+                "field_key": "custom_notes",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        # The translated conflict message (a LazyString) renders via flash(str(e)).
+        assert b"already exists" in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            after = len(respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id))
+            assert after == before
+
+    def test_add_empty_key_is_rejected(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            before = len(respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id))
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            data={
+                "field_key": "!!!",
+                "csrf_token": get_csrf_token(
+                    logged_in_admin,
+                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                ),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            after = len(respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id))
+            assert after == before
+
+    def test_add_form_renders_when_schema_exists(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        assert b"Add a field" in response.data
+        assert f"/assembly/{existing_assembly.id}/respondent-schema/fields/add".encode() in response.data
+
+    def test_add_form_absent_without_schema(self, logged_in_admin, existing_assembly):
+        # No schema yet: the Initialise prompt shows instead of the add form.
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        assert b"Add a field" not in response.data
 
 
 class TestDeleteField:

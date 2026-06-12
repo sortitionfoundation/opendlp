@@ -151,6 +151,10 @@ class ContractBackend:
         """Fetch a respondent from storage without any instance-cache effects."""
         raise NotImplementedError
 
+    def fresh_get_field_definition(self, field_id: uuid.UUID) -> Any:
+        """Fetch a field definition from storage without any instance-cache effects."""
+        raise NotImplementedError
+
     def make_user(self, **kwargs: Any) -> User:
         user = make_user(**kwargs)
         self.persist(user)
@@ -191,6 +195,9 @@ class FakeContractBackend(ContractBackend):
     def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
         return self.repo.get(respondent_id)  # type: ignore[no-any-return]
 
+    def fresh_get_field_definition(self, field_id: uuid.UUID) -> Any:
+        return self.repo.get(field_id)
+
 
 class SqlContractBackend(ContractBackend):
     """Backend using real SqlAlchemy repositories with a Postgres session."""
@@ -209,6 +216,11 @@ class SqlContractBackend(ContractBackend):
         assert self._session_factory is not None, "session_factory required for fresh reads"
         with self._session_factory() as fresh_session:
             return SqlAlchemyRespondentRepository(fresh_session).get(respondent_id)
+
+    def fresh_get_field_definition(self, field_id: uuid.UUID) -> Any:
+        assert self._session_factory is not None, "session_factory required for fresh reads"
+        with self._session_factory() as fresh_session:
+            return SqlAlchemyRespondentFieldDefinitionRepository(fresh_session).get(field_id)
 
 
 # ---------------------------------------------------------------------------
@@ -317,11 +329,13 @@ def assembly_gsheet_backend(request, postgres_session) -> ContractBackend:
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def respondent_field_definition_backend(request, postgres_session) -> ContractBackend:
+def respondent_field_definition_backend(request, postgres_session, postgres_session_factory) -> ContractBackend:
     if request.param == "fake":
         return FakeContractBackend(repo=FakeRespondentFieldDefinitionRepository(), commit=lambda: None)
     return SqlContractBackend(
-        repo=SqlAlchemyRespondentFieldDefinitionRepository(postgres_session), session=postgres_session
+        repo=SqlAlchemyRespondentFieldDefinitionRepository(postgres_session),
+        session=postgres_session,
+        session_factory=postgres_session_factory,
     )
 
 
