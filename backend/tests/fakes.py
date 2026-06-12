@@ -9,6 +9,7 @@ from typing import Any
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
@@ -34,6 +35,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
     RespondentFieldDefinitionRepository,
@@ -367,6 +369,31 @@ class FakeRegistrationPageHtmlRepository(FakeRepository, RegistrationPageHtmlRep
 
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a RegistrationPageHtml from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeRegistrationImageRepository(FakeRepository, RegistrationImageRepository):
+    """Fake implementation of RegistrationImageRepository."""
+
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+        """Get an image for a page by its content hash, or None."""
+        for item in self._items:
+            if item.registration_page_id == registration_page_id and item.sha256 == sha256:
+                return item
+        return None
+
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+        """Get all images for a registration page, oldest first."""
+        items = [item for item in self._items if item.registration_page_id == registration_page_id]
+        return sorted(items, key=lambda item: item.created_at)
+
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count images for a registration page."""
+        return sum(1 for item in self._items if item.registration_page_id == registration_page_id)
+
+    def delete(self, item: RegistrationImage) -> None:
+        """Delete a RegistrationImage from the repository."""
         if item in self._items:
             self._items.remove(item)
 
@@ -776,6 +803,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.registration_page_html_sources = self.fake_registration_page_html_sources = (
             FakeRegistrationPageHtmlRepository()
         )
+        self.registration_images = self.fake_registration_images = FakeRegistrationImageRepository()
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -809,6 +837,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_respondent_field_definitions._items.clear()
         self.fake_registration_pages._items.clear()
         self.fake_registration_page_html_sources._items.clear()
+        self.fake_registration_images._items.clear()
         self.committed = False
 
     def expire_all(self) -> None:

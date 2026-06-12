@@ -11,6 +11,7 @@ __all__ = [
     "CannotRemoveLastAuthMethod",
     "EmailNotConfirmed",
     "GoogleSheetConfigNotFoundError",
+    "ImageQuotaExceeded",
     "InsufficientPermissions",
     "InvalidConfirmationToken",
     "InvalidCredentials",
@@ -24,6 +25,7 @@ __all__ = [
     "OpenDLPError",
     "PasswordTooWeak",
     "RateLimitExceeded",
+    "RegistrationImageNotFoundError",
     "RegistrationPageNotFoundError",
     "RegistrationPageNotReady",
     "RespondentNotFoundError",
@@ -179,6 +181,17 @@ class GoogleSheetConfigNotFoundError(NotFoundError):
 
 class RegistrationPageNotFoundError(NotFoundError):
     """A registration page could not be found in the database"""
+
+
+class RegistrationImageNotFoundError(NotFoundError):
+    """A registration image could not be found in the database"""
+
+
+class ImageQuotaExceeded(ServiceLayerError):
+    """Raised when a registration page already has the maximum number of images."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(_("This registration page already has the maximum of %(limit)s images", limit=limit))
 
 
 class SelectionRunRecordNotFoundError(NotFoundError):
