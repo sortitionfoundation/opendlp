@@ -10,6 +10,7 @@ __all__ = [
     "AssemblyNotFoundError",
     "CannotRemoveLastAuthMethod",
     "EmailNotConfirmed",
+    "EmailTemplateNotFoundError",
     "GoogleSheetConfigNotFoundError",
     "InsufficientPermissions",
     "InvalidConfirmationToken",
@@ -179,6 +180,10 @@ class GoogleSheetConfigNotFoundError(NotFoundError):
 
 class RegistrationPageNotFoundError(NotFoundError):
     """A registration page could not be found in the database"""
+
+
+class EmailTemplateNotFoundError(NotFoundError):
+    """An email template could not be found in the database"""
 
 
 class SelectionRunRecordNotFoundError(NotFoundError):

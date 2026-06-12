@@ -12,6 +12,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
+    SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
     SqlAlchemyRegistrationPageRepository,
@@ -30,6 +31,7 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    EmailTemplateRepository,
     PasswordResetTokenRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
@@ -65,6 +67,7 @@ class AbstractUnitOfWork(abc.ABC):
     respondent_field_definitions: RespondentFieldDefinitionRepository
     registration_pages: RegistrationPageRepository
     registration_page_html_sources: RegistrationPageHtmlRepository
+    email_templates: EmailTemplateRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -133,6 +136,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.respondent_field_definitions = SqlAlchemyRespondentFieldDefinitionRepository(self.session)
         self.registration_pages = SqlAlchemyRegistrationPageRepository(self.session)
         self.registration_page_html_sources = SqlAlchemyRegistrationPageHtmlRepository(self.session)
+        self.email_templates = SqlAlchemyEmailTemplateRepository(self.session)
 
         return self
 

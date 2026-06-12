@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
@@ -38,6 +39,7 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    EmailTemplateRepository,
     PasswordResetTokenRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
@@ -509,6 +511,35 @@ class SqlAlchemyRegistrationPageHtmlRepository(SqlAlchemyRepository, Registratio
 
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a RegistrationPageHtml from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyEmailTemplateRepository(SqlAlchemyRepository, EmailTemplateRepository):
+    """SQLAlchemy implementation of EmailTemplateRepository."""
+
+    def add(self, item: EmailTemplate) -> None:
+        """Add an EmailTemplate to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> EmailTemplate | None:
+        """Get an EmailTemplate by its ID."""
+        return self.session.query(EmailTemplate).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[EmailTemplate]:
+        """Get all EmailTemplates."""
+        return self.session.query(EmailTemplate).all()
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> Iterable[EmailTemplate]:
+        """Get all email templates for an assembly, newest first."""
+        return (
+            self.session.query(EmailTemplate)
+            .filter_by(assembly_id=assembly_id)
+            .order_by(orm.email_templates.c.created_at.desc())
+            .all()
+        )
+
+    def delete(self, item: EmailTemplate) -> None:
+        """Delete an EmailTemplate from the repository."""
         self.session.delete(item)
 
 

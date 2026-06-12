@@ -242,6 +242,7 @@ def _delete_all_test_data(session_factory):
         session.execute(orm.respondent_field_definitions.delete())
         session.execute(orm.registration_page_html_sources.delete())
         session.execute(orm.registration_pages.delete())
+        session.execute(orm.email_templates.delete())
         session.execute(orm.target_categories.delete())
         session.execute(orm.assembly_gsheets.delete())
         session.execute(orm.assembly_csv.delete())

@@ -8,6 +8,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
@@ -33,6 +34,7 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    EmailTemplateRepository,
     PasswordResetTokenRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
@@ -367,6 +369,20 @@ class FakeRegistrationPageHtmlRepository(FakeRepository, RegistrationPageHtmlRep
 
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a RegistrationPageHtml from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeEmailTemplateRepository(FakeRepository, EmailTemplateRepository):
+    """Fake implementation of EmailTemplateRepository."""
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[EmailTemplate]:
+        """Get all email templates for an assembly, newest first."""
+        items = [item for item in self._items if item.assembly_id == assembly_id]
+        return sorted(items, key=lambda t: t.created_at, reverse=True)
+
+    def delete(self, item: EmailTemplate) -> None:
+        """Delete an EmailTemplate from the repository."""
         if item in self._items:
             self._items.remove(item)
 

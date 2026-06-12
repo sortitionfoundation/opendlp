@@ -7,8 +7,10 @@ from flask_wtf.csrf import generate_csrf, validate_csrf
 from wtforms import ValidationError
 
 from opendlp import bootstrap
+from opendlp.bootstrap import get_email_adapter
 from opendlp.entrypoints.decorators import require_feature
 from opendlp.entrypoints.extensions import csrf
+from opendlp.service_layer.email_template_service import send_registration_auto_reply
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
     find_registration_page_by_short_url_slug,
@@ -156,6 +158,15 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         return redirect(url_for("registration.registration_closed"), 302)
 
     if result.is_valid:
+        # Best-effort registration auto-reply. Only for live (non-test)
+        # submissions; never blocks the redirect if sending fails.
+        if not result.is_test and result.respondent is not None:
+            send_registration_auto_reply(
+                uow,
+                get_email_adapter(),
+                assembly_id=result.respondent.assembly_id,
+                respondent=result.respondent,
+            )
         return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
 
     # Validation failed - re-render form with errors

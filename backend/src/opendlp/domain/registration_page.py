@@ -169,6 +169,7 @@ class RegistrationPage:
         source_type: RegistrationPageSource = RegistrationPageSource.HTML,
         thank_you_html: str = "",
         activity: list[RegistrationPageActivity] | None = None,
+        auto_reply_email_template_id: uuid.UUID | None = None,
         registration_page_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -182,6 +183,9 @@ class RegistrationPage:
         self.source_type = source_type
         self.thank_you_html = thank_you_html
         self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
+        # Optional FK to the EmailTemplate sent as an auto-reply on submission.
+        # None means no auto-reply is configured for this page.
+        self.auto_reply_email_template_id = auto_reply_email_template_id
         self.created_at = created_at or now
         self.updated_at = updated_at or now
 
@@ -208,6 +212,11 @@ class RegistrationPage:
 
     def update_thank_you_html(self, thank_you_html: str) -> None:
         self.thank_you_html = thank_you_html
+        self.updated_at = datetime.now(UTC)
+
+    def set_auto_reply_template(self, email_template_id: uuid.UUID | None) -> None:
+        """Set (or clear, with None) the auto-reply email template for this page."""
+        self.auto_reply_email_template_id = email_template_id
         self.updated_at = datetime.now(UTC)
 
     def readiness_problems(self, source: HtmlSource) -> list[str]:
@@ -281,6 +290,7 @@ class RegistrationPage:
             source_type=self.source_type,
             thank_you_html=self.thank_you_html,
             activity=list(self.activity),
+            auto_reply_email_template_id=self.auto_reply_email_template_id,
             registration_page_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

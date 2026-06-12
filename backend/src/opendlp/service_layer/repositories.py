@@ -11,6 +11,7 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
@@ -552,4 +553,18 @@ class RegistrationPageHtmlRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a registration page HTML source from the repository."""
+        raise NotImplementedError
+
+
+class EmailTemplateRepository(AbstractRepository):
+    """Repository interface for EmailTemplate domain objects."""
+
+    @abc.abstractmethod
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> Iterable[EmailTemplate]:
+        """Get all email templates for an assembly, newest first."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: EmailTemplate) -> None:
+        """Delete an email template from the repository."""
         raise NotImplementedError

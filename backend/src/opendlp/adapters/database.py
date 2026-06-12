@@ -11,6 +11,7 @@ from opendlp.domain import (
     assembly,
     assembly_csv,
     email_confirmation,
+    email_template,
     password_reset,
     registration_page,
     respondent_field_schema,
@@ -212,6 +213,9 @@ def start_mappers() -> None:
         # source_type rather than an ORM relationship.
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPage, orm.registration_pages)
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPageHtml, orm.registration_page_html_sources)
+
+        # Map EmailTemplate domain object to email_templates table.
+        orm.mapper_registry.map_imperatively(email_template.EmailTemplate, orm.email_templates)
 
         _mappers_started = True
 

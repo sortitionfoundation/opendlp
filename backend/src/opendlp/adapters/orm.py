@@ -586,6 +586,14 @@ registration_pages = Table(
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
     Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
+    # Optional auto-reply email sent on submission. ON DELETE SET NULL so
+    # deleting a template just detaches it; the page keeps working.
+    Column(
+        "auto_reply_email_template_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("email_templates.id", ondelete="SET NULL"),
+        nullable=True,
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Partial unique indexes — only enforce uniqueness when the slug is set.
@@ -616,6 +624,27 @@ registration_page_html_sources = Table(
         unique=True,
     ),
     Column("form_html", Text, nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
+# Email templates table — reusable, database-stored templated emails scoped to
+# an assembly. Used initially for registration auto-replies and, later, mass
+# emails to a group of respondents.
+email_templates = Table(
+    "email_templates",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("name", String(255), nullable=False, default=""),
+    Column("subject", Text, nullable=False, default=""),
+    Column("body_html", Text, nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
