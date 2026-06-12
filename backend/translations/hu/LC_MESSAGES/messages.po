@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-08 14:30+0100\n"
+"POT-Creation-Date: 2026-06-11 13:53+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -61,64 +61,64 @@ msgstr ""
 msgid "Processing…"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:61
+#: src/opendlp/domain/respondent_field_schema.py:62
 msgid "Eligibility"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:62
+#: src/opendlp/domain/respondent_field_schema.py:63
 msgid "Name and contact"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:63
+#: src/opendlp/domain/respondent_field_schema.py:64
 #, fuzzy
 msgid "Address"
 msgstr "Email cím"
 
-#: src/opendlp/domain/respondent_field_schema.py:64
+#: src/opendlp/domain/respondent_field_schema.py:65
 msgid "About you"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:65
+#: src/opendlp/domain/respondent_field_schema.py:66
 #: templates/backoffice/assembly_view_respondent.html:177
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:66
+#: src/opendlp/domain/respondent_field_schema.py:67
 msgid "Other"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:82
+#: src/opendlp/domain/respondent_field_schema.py:96
 #, fuzzy
 msgid "Text"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/domain/respondent_field_schema.py:83
+#: src/opendlp/domain/respondent_field_schema.py:97
 msgid "Long text"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:84
+#: src/opendlp/domain/respondent_field_schema.py:98
 msgid "Yes / No"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:85
+#: src/opendlp/domain/respondent_field_schema.py:99
 msgid "Yes / No / Not set"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:86
+#: src/opendlp/domain/respondent_field_schema.py:100
 msgid "Choice (radios)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:87
+#: src/opendlp/domain/respondent_field_schema.py:101
 msgid "Choice (dropdown)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:88
+#: src/opendlp/domain/respondent_field_schema.py:102
 #, fuzzy
 msgid "Whole number"
 msgstr "Módosítsa a számot."
 
-#: src/opendlp/domain/respondent_field_schema.py:89
+#: src/opendlp/domain/respondent_field_schema.py:103
 #: templates/admin/invite_view.html:47 templates/admin/invites.html:66
 #: templates/admin/user_view.html:22 templates/admin/users.html:113
 #: templates/backoffice/assembly_members.html:53
@@ -884,169 +884,169 @@ msgstr ""
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:109
-#: src/opendlp/entrypoints/blueprints/auth.py:231
-#: src/opendlp/entrypoints/blueprints/auth.py:603
-#: src/opendlp/entrypoints/blueprints/auth.py:711
+#: src/opendlp/entrypoints/blueprints/auth.py:110
+#: src/opendlp/entrypoints/blueprints/auth.py:232
+#: src/opendlp/entrypoints/blueprints/auth.py:604
+#: src/opendlp/entrypoints/blueprints/auth.py:712
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:116
-#: src/opendlp/entrypoints/blueprints/auth.py:123
+#: src/opendlp/entrypoints/blueprints/auth.py:117
+#: src/opendlp/entrypoints/blueprints/auth.py:124
 msgid "Invalid email or password."
 msgstr "Érvénytelen email cím vagy jelszó."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:126
+#: src/opendlp/entrypoints/blueprints/auth.py:127
 msgid ""
 "Please confirm your email address before logging in. Check your inbox for"
 " the confirmation link."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:132
+#: src/opendlp/entrypoints/blueprints/auth.py:133
 #, python-format
 msgid "Didn't receive the email? <a href=\"%(url)s\">Resend confirmation</a>"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:140
+#: src/opendlp/entrypoints/blueprints/auth.py:141
 msgid "An error occurred during login. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:153
+#: src/opendlp/entrypoints/blueprints/auth.py:154
 msgid "No pending two-factor authentication. Please log in first."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:166
+#: src/opendlp/entrypoints/blueprints/auth.py:167
 msgid "Two-factor authentication session expired. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:173
+#: src/opendlp/entrypoints/blueprints/auth.py:174
 msgid "Invalid session. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:225
+#: src/opendlp/entrypoints/blueprints/auth.py:226
 #, python-format
 msgid ""
 "Backup code used successfully. You have %(remaining)s backup codes "
 "remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:251
+#: src/opendlp/entrypoints/blueprints/auth.py:252
 msgid "Please enter a verification code"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:263
-#: src/opendlp/entrypoints/blueprints/auth.py:291
+#: src/opendlp/entrypoints/blueprints/auth.py:264
+#: src/opendlp/entrypoints/blueprints/auth.py:292
 msgid ""
 "Too many failed attempts. Please try again in 15 minutes or use a backup "
 "code."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:272
+#: src/opendlp/entrypoints/blueprints/auth.py:273
 msgid "Two-factor authentication is not enabled for this account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:286
+#: src/opendlp/entrypoints/blueprints/auth.py:287
 #, python-format
 msgid "Invalid verification code. %(attempts)s attempts remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:304
+#: src/opendlp/entrypoints/blueprints/auth.py:305
 #, fuzzy
 msgid "An error occurred during verification. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:316
+#: src/opendlp/entrypoints/blueprints/auth.py:317
 msgid "You have been logged out."
 msgstr "Kijelentkeztél."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:354
+#: src/opendlp/entrypoints/blueprints/auth.py:355
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:363
+#: src/opendlp/entrypoints/blueprints/auth.py:364
 msgid "Registration successful! Please check your email to confirm your account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:373
-#: src/opendlp/entrypoints/blueprints/auth.py:530
+#: src/opendlp/entrypoints/blueprints/auth.py:374
+#: src/opendlp/entrypoints/blueprints/auth.py:531
 #: src/opendlp/entrypoints/blueprints/profile.py:310
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:376
+#: src/opendlp/entrypoints/blueprints/auth.py:377
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:395
-#: src/opendlp/entrypoints/blueprints/auth.py:409
-#: src/opendlp/entrypoints/blueprints/auth.py:440
-#: src/opendlp/entrypoints/blueprints/auth.py:493
-#: src/opendlp/entrypoints/blueprints/auth.py:533
+#: src/opendlp/entrypoints/blueprints/auth.py:396
+#: src/opendlp/entrypoints/blueprints/auth.py:410
+#: src/opendlp/entrypoints/blueprints/auth.py:441
+#: src/opendlp/entrypoints/blueprints/auth.py:494
+#: src/opendlp/entrypoints/blueprints/auth.py:534
 #, fuzzy
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:401
+#: src/opendlp/entrypoints/blueprints/auth.py:402
 msgid "Email confirmed successfully! You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:431
+#: src/opendlp/entrypoints/blueprints/auth.py:432
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:484
+#: src/opendlp/entrypoints/blueprints/auth.py:485
 msgid "If an account exists with this email, a password reset link has been sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:523
+#: src/opendlp/entrypoints/blueprints/auth.py:524
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:576
+#: src/opendlp/entrypoints/blueprints/auth.py:577
 #: src/opendlp/entrypoints/blueprints/profile.py:149
 msgid "Failed to get user information from Google"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:601
-#: src/opendlp/entrypoints/blueprints/auth.py:709
+#: src/opendlp/entrypoints/blueprints/auth.py:602
+#: src/opendlp/entrypoints/blueprints/auth.py:710
 #, fuzzy
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:615
+#: src/opendlp/entrypoints/blueprints/auth.py:616
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:684
+#: src/opendlp/entrypoints/blueprints/auth.py:685
 #: src/opendlp/entrypoints/blueprints/profile.py:210
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:723
+#: src/opendlp/entrypoints/blueprints/auth.py:724
 #, fuzzy
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:99
-#: src/opendlp/entrypoints/blueprints/main.py:200
+#: src/opendlp/entrypoints/blueprints/main.py:203
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:103
-#: src/opendlp/entrypoints/blueprints/main.py:204
+#: src/opendlp/entrypoints/blueprints/main.py:207
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:107
 #: src/opendlp/entrypoints/blueprints/backoffice.py:111
-#: src/opendlp/entrypoints/blueprints/main.py:208
 #: src/opendlp/entrypoints/blueprints/main.py:211
+#: src/opendlp/entrypoints/blueprints/main.py:214
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
@@ -1071,11 +1071,11 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:826
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:882
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1125
-#: src/opendlp/entrypoints/blueprints/main.py:80
-#: src/opendlp/entrypoints/blueprints/main.py:129
-#: src/opendlp/entrypoints/blueprints/main.py:172
-#: src/opendlp/entrypoints/blueprints/main.py:271
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:145
+#: src/opendlp/entrypoints/blueprints/main.py:83
+#: src/opendlp/entrypoints/blueprints/main.py:132
+#: src/opendlp/entrypoints/blueprints/main.py:175
+#: src/opendlp/entrypoints/blueprints/main.py:274
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:164
 #: src/opendlp/entrypoints/blueprints/respondents.py:418
 #: src/opendlp/entrypoints/blueprints/respondents.py:525
 #: src/opendlp/entrypoints/blueprints/respondents.py:674
@@ -1118,19 +1118,20 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:820
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:876
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1119
-#: src/opendlp/entrypoints/blueprints/main.py:75
-#: src/opendlp/entrypoints/blueprints/main.py:125
-#: src/opendlp/entrypoints/blueprints/main.py:168
-#: src/opendlp/entrypoints/blueprints/main.py:265
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:141
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:163
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:224
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:246
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:274
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:314
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:341
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:390
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:413
+#: src/opendlp/entrypoints/blueprints/main.py:78
+#: src/opendlp/entrypoints/blueprints/main.py:128
+#: src/opendlp/entrypoints/blueprints/main.py:171
+#: src/opendlp/entrypoints/blueprints/main.py:268
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:160
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:182
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:229
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:293
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:315
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:343
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:383
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:410
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:459
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:482
 #: src/opendlp/entrypoints/blueprints/respondents.py:204
 #: src/opendlp/entrypoints/blueprints/respondents.py:323
 #: src/opendlp/entrypoints/blueprints/respondents.py:414
@@ -1157,7 +1158,7 @@ msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:219
-#: src/opendlp/entrypoints/blueprints/main.py:240
+#: src/opendlp/entrypoints/blueprints/main.py:243
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
@@ -1170,14 +1171,14 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice.py:237
 #: src/opendlp/entrypoints/blueprints/backoffice.py:266
 #: src/opendlp/entrypoints/blueprints/backoffice.py:295
-#: src/opendlp/entrypoints/blueprints/main.py:246
+#: src/opendlp/entrypoints/blueprints/main.py:249
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:243
 #: src/opendlp/entrypoints/blueprints/backoffice.py:247
-#: src/opendlp/entrypoints/blueprints/main.py:252
 #: src/opendlp/entrypoints/blueprints/main.py:255
+#: src/opendlp/entrypoints/blueprints/main.py:258
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
@@ -1201,7 +1202,7 @@ msgid "An error occurred while loading team members"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:488
-#: src/opendlp/entrypoints/blueprints/main.py:313
+#: src/opendlp/entrypoints/blueprints/main.py:316
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
@@ -1216,37 +1217,37 @@ msgid "Could not add user to assembly: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:507
-#: src/opendlp/entrypoints/blueprints/main.py:332
+#: src/opendlp/entrypoints/blueprints/main.py:335
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:513
-#: src/opendlp/entrypoints/blueprints/main.py:338
+#: src/opendlp/entrypoints/blueprints/main.py:341
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:533
-#: src/opendlp/entrypoints/blueprints/main.py:358
+#: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:541
-#: src/opendlp/entrypoints/blueprints/main.py:366
+#: src/opendlp/entrypoints/blueprints/main.py:369
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:547
-#: src/opendlp/entrypoints/blueprints/main.py:372
+#: src/opendlp/entrypoints/blueprints/main.py:375
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:553
-#: src/opendlp/entrypoints/blueprints/main.py:378
+#: src/opendlp/entrypoints/blueprints/main.py:381
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -1741,12 +1742,12 @@ msgstr "Az oldal nem elérhető"
 msgid "Unknown task type"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:320
+#: src/opendlp/entrypoints/blueprints/main.py:323
 #, fuzzy
 msgid "Please check the form and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:326
+#: src/opendlp/entrypoints/blueprints/main.py:329
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
@@ -1905,102 +1906,127 @@ msgid ""
 "Please check your answers and submit again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:157
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:127
+#: templates/backoffice/respondent_field_schema/view.html:184
+msgid "Not shown"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:128
+#, fuzzy
+msgid "Optional"
+msgstr "Kiválasztás"
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:129
+#: templates/backoffice/patterns/_custom.html:71
+msgid "Required"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:176
 #, python-format
 msgid "Schema initialised with %(count)d fixed fields."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:159
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:178
 #, fuzzy
 msgid "Schema already exists."
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:161
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:180
 #, fuzzy
 msgid "You don't have permission to initialise the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:180
-msgid "No changes submitted."
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:203
+msgid "Field key is required (letters, numbers and underscores)."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:216
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:223
 #, fuzzy
-msgid "Field updated."
+msgid "Field added."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:220
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:270
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:367
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:409
-#, fuzzy
-msgid "Field not found."
-msgstr "Az oldal nem elérhető"
-
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:222
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:244
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:272
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:312
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:339
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:411
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:227
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:291
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:313
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:341
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:381
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:408
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:480
 #, fuzzy
 msgid "You don't have permission to edit the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:240
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:247
+msgid "No changes submitted."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:285
+#, fuzzy
+msgid "Field updated."
+msgstr "Utoljára módosítva"
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:289
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:339
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:436
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:478
+#, fuzzy
+msgid "Field not found."
+msgstr "Az oldal nem elérhető"
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:309
 #, python-format
 msgid "Guessed types for %(count)d fields."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:242
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:311
 msgid "No fields were guessed — no untouched text rows to update."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:261
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:328
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:330
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:397
 msgid "Option value is required."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:266
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:335
 #, fuzzy
 msgid "Option added."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:290
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:359
 msgid "Original option value is required."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:293
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:362
 msgid "Option value cannot be blank."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:306
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:375
 #, fuzzy
 msgid "Option updated."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:310
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:337
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:379
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:406
 #, fuzzy
 msgid "Option not found."
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:333
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:402
 #, fuzzy
 msgid "Option removed."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:359
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:428
 #, fuzzy
 msgid "Invalid move direction."
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:388
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:457
 #, fuzzy
 msgid "You don't have permission to reorder fields"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:405
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:474
 msgid "Field removed."
 msgstr ""
 
@@ -2851,11 +2877,11 @@ msgstr "Ugrás a főoldalra"
 msgid "Sortition Foundation Logo"
 msgstr "Sortition Foundation Logo"
 
-#: templates/base.html:48 templates/base.html:95
+#: templates/base.html:48 templates/base.html:89
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:54 templates/base.html:101
+#: templates/base.html:54 templates/base.html:95
 msgid "Close menu"
 msgstr "Menü bezárása"
 
@@ -2884,36 +2910,31 @@ msgstr "Menü bezárása"
 msgid "Dashboard"
 msgstr "Irányító pult"
 
-#: templates/base.html:63
-#, fuzzy
-msgid "Back Office Dashboard (preview)"
-msgstr "Vissza az irányító pulthoz"
-
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:10
 #: templates/admin/invites.html:7 templates/admin/user_2fa_audit_log.html:10
 #: templates/admin/user_edit.html:10 templates/admin/user_view.html:10
 #: templates/admin/users.html:7 templates/backoffice/base_page.html:17
-#: templates/base.html:68
+#: templates/base.html:62
 msgid "Site Admin"
 msgstr ""
 
-#: templates/backoffice/base_page.html:18 templates/base.html:74
-#: templates/base.html:113
+#: templates/backoffice/base_page.html:18 templates/base.html:68
+#: templates/base.html:107
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/backoffice/base_page.html:19 templates/base.html:79
-#: templates/base.html:118
+#: templates/backoffice/base_page.html:19 templates/base.html:73
+#: templates/base.html:112
 msgid "Help"
 msgstr ""
 
-#: templates/backoffice/base_page.html:22 templates/base.html:82
+#: templates/backoffice/base_page.html:22 templates/base.html:76
 #: templates/profile/view.html:2 templates/profile/view.html:6
 #, fuzzy
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/base_page.html:24 templates/base.html:85
+#: templates/backoffice/base_page.html:24 templates/base.html:79
 msgid "Sign out"
 msgstr "Kilépés"
 
@@ -2921,14 +2942,14 @@ msgstr "Kilépés"
 #: templates/auth/login.html:6 templates/auth/login.html:30
 #: templates/auth/register.html:169 templates/auth/register_google.html:79
 #: templates/auth/register_microsoft.html:72
-#: templates/auth/resend_confirmation.html:41 templates/base.html:105
+#: templates/auth/resend_confirmation.html:41 templates/base.html:99
 #: templates/errors/400.html:29 templates/errors/403.html:27
 #: templates/errors/404.html:28 templates/errors/413.html:24
 #: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
 msgstr "Jelentkezzen be"
 
-#: templates/auth/register.html:166 templates/base.html:108
+#: templates/auth/register.html:166 templates/base.html:102
 #: templates/main/index.html:31
 #, fuzzy
 msgid "Create Account"
@@ -2936,7 +2957,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:176 templates/base.html:133
+#: templates/backoffice/assembly_targets.html:176 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -2945,23 +2966,28 @@ msgstr "Hozzon létre fiókot"
 msgid "There is a problem"
 msgstr "Valami probléma van"
 
-#: templates/base.html:146 templates/profile/2fa_backup_codes.html:9
+#: templates/base.html:140 templates/profile/2fa_backup_codes.html:9
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:148
+#: templates/base.html:142
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/backoffice/components/footer.html:16 templates/base.html:182
+#: templates/backoffice/components/footer.html:16 templates/base.html:176
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
+
+#: templates/base.html:181
+#, fuzzy
+msgid "New Dashboard"
+msgstr "Irányító pult"
 
 #: templates/base.html:185
 msgid "OpenDLP Version"
 msgstr ""
 
-#: templates/backoffice/components/footer.html:25 templates/base.html:190
+#: templates/backoffice/components/footer.html:30 templates/base.html:190
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -3286,7 +3312,7 @@ msgstr ""
 #: templates/backoffice/assembly_respondents.html:113
 #: templates/backoffice/assembly_selection.html:186
 #: templates/backoffice/assembly_selection.html:371
-#: templates/backoffice/respondent_field_schema/view.html:134
+#: templates/backoffice/respondent_field_schema/view.html:136
 #: templates/backoffice/targets/category_block.html:111
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
@@ -4402,8 +4428,8 @@ msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
 #: templates/backoffice/assembly_members.html:83
-#: templates/backoffice/respondent_field_schema/view.html:210
-#: templates/backoffice/respondent_field_schema/view.html:247
+#: templates/backoffice/respondent_field_schema/view.html:229
+#: templates/backoffice/respondent_field_schema/view.html:266
 #: templates/main/view_assembly_members.html:31 templates/profile/view.html:57
 msgid "Remove"
 msgstr ""
@@ -4528,8 +4554,8 @@ msgstr ""
 
 #: templates/backoffice/assembly_registration.html:198
 #: templates/backoffice/components/edit_number_to_select_modal.html:38
-#: templates/backoffice/respondent_field_schema/view.html:203
-#: templates/backoffice/respondent_field_schema/view.html:240
+#: templates/backoffice/respondent_field_schema/view.html:222
+#: templates/backoffice/respondent_field_schema/view.html:259
 #: templates/backoffice/targets/category_block.html:46
 #: templates/backoffice/targets/category_block.html:227
 #: templates/backoffice/targets/category_name_edit.html:22
@@ -5621,7 +5647,12 @@ msgstr "Kiválasztandó emberek száma"
 msgid "Enter a positive number"
 msgstr ""
 
-#: templates/backoffice/components/footer.html:19
+#: templates/backoffice/components/footer.html:20
+#, fuzzy
+msgid "Old Dashboard"
+msgstr "Irányító pult"
+
+#: templates/backoffice/components/footer.html:24
 msgid "Version"
 msgstr ""
 
@@ -5905,10 +5936,6 @@ msgstr ""
 
 #: templates/backoffice/patterns/_custom.html:70
 msgid "Parameter"
-msgstr ""
-
-#: templates/backoffice/patterns/_custom.html:71
-msgid "Required"
 msgstr ""
 
 #: templates/backoffice/patterns/_custom.html:72
@@ -6695,7 +6722,8 @@ msgid "Phase"
 msgstr "Vezetéknév"
 
 #: templates/backoffice/patterns/_progress.html:125
-#: templates/backoffice/respondent_field_schema/view.html:129
+#: templates/backoffice/respondent_field_schema/view.html:130
+#: templates/backoffice/respondent_field_schema/view.html:344
 msgid "Label"
 msgstr ""
 
@@ -7013,84 +7041,131 @@ msgid ""
 "are left alone."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:130
-#: templates/backoffice/respondent_field_schema/view.html:152
+#: templates/backoffice/respondent_field_schema/view.html:131
+#: templates/backoffice/respondent_field_schema/view.html:154
+#: templates/backoffice/respondent_field_schema/view.html:320
+#: templates/backoffice/respondent_field_schema/view.html:348
 #, fuzzy
 msgid "Section"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/respondent_field_schema/view.html:131
-#: templates/backoffice/respondent_field_schema/view.html:169
+#: templates/backoffice/respondent_field_schema/view.html:132
+#: templates/backoffice/respondent_field_schema/view.html:171
+#: templates/backoffice/respondent_field_schema/view.html:321
+#: templates/backoffice/respondent_field_schema/view.html:356
 #: templates/backoffice/service_docs/_fields.html:125
 #, fuzzy
 msgid "Field Type"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/respondent_field_schema/view.html:132
+#: templates/backoffice/respondent_field_schema/view.html:133
+#: templates/backoffice/respondent_field_schema/view.html:322
+#: templates/backoffice/respondent_field_schema/view.html:364
+#, fuzzy
+msgid "On registration form"
+msgstr "Vissza a regisztrációhoz"
+
+#: templates/backoffice/respondent_field_schema/view.html:134
+#: templates/backoffice/respondent_field_schema/view.html:338
 msgid "Field key"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:133
+#: templates/backoffice/respondent_field_schema/view.html:135
 msgid "Order"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:146
+#: templates/backoffice/respondent_field_schema/view.html:148
 #, python-format
 msgid "Label for %(key)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:164
+#: templates/backoffice/respondent_field_schema/view.html:166
 msgid "Fixed"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:178
+#: templates/backoffice/respondent_field_schema/view.html:180
 msgid "Derived"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:190
+#: templates/backoffice/respondent_field_schema/view.html:189
+#, fuzzy, python-format
+msgid "On registration form for %(key)s"
+msgstr "Vissza a regisztrációhoz"
+
+#: templates/backoffice/respondent_field_schema/view.html:209
 msgid "Move up"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:197
+#: templates/backoffice/respondent_field_schema/view.html:216
 msgid "Move down"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:207
+#: templates/backoffice/respondent_field_schema/view.html:226
 msgid ""
 "Remove this field from the schema? Respondent data keeps its values; they"
 " just stop being rendered."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:219
+#: templates/backoffice/respondent_field_schema/view.html:238
 #, python-format
 msgid "Options for %(label)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:233
-#: templates/backoffice/respondent_field_schema/view.html:261
+#: templates/backoffice/respondent_field_schema/view.html:252
+#: templates/backoffice/respondent_field_schema/view.html:280
 #, fuzzy
 msgid "Option value"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/respondent_field_schema/view.html:238
-#: templates/backoffice/respondent_field_schema/view.html:266
+#: templates/backoffice/respondent_field_schema/view.html:257
+#: templates/backoffice/respondent_field_schema/view.html:285
 msgid "Option help text"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:239
-#: templates/backoffice/respondent_field_schema/view.html:264
+#: templates/backoffice/respondent_field_schema/view.html:258
+#: templates/backoffice/respondent_field_schema/view.html:283
 #, fuzzy
 msgid "help text (optional)"
 msgstr "Email cím"
 
-#: templates/backoffice/respondent_field_schema/view.html:259
+#: templates/backoffice/respondent_field_schema/view.html:278
 msgid "value"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/view.html:267
+#: templates/backoffice/respondent_field_schema/view.html:286
 #, fuzzy
 msgid "Add option"
 msgstr "Kiválasztás"
+
+#: templates/backoffice/respondent_field_schema/view.html:298
+msgid "Add a field"
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:319
+#, fuzzy
+msgid "Field key and label"
+msgstr "Utoljára módosítva"
+
+#: templates/backoffice/respondent_field_schema/view.html:337
+msgid "field_key (e.g. age_range)"
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:343
+#: templates/backoffice/service_docs/_fields.html:107
+#, fuzzy
+msgid "Label (optional)"
+msgstr "Email cím"
+
+#: templates/backoffice/respondent_field_schema/view.html:373
+msgid "Add field"
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/view.html:379
+msgid ""
+"The field key is normalised to lowercase letters, numbers and "
+"underscores. Choice fields start with one placeholder option you can "
+"rename above."
+msgstr ""
 
 #: templates/backoffice/respondents/confirm_upload_diff.html:9
 #: templates/backoffice/respondents/confirm_upload_diff.html:17
@@ -7359,11 +7434,6 @@ msgstr ""
 #, fuzzy
 msgid "Field Key"
 msgstr "Utoljára módosítva"
-
-#: templates/backoffice/service_docs/_fields.html:107
-#, fuzzy
-msgid "Label (optional)"
-msgstr "Email cím"
 
 #: templates/backoffice/service_docs/_fields.html:113
 msgid "Group"
@@ -12521,3 +12591,6 @@ msgstr ""
 
 #~ msgid "Your registration has been received. We'll be in touch."
 #~ msgstr ""
+
+#~ msgid "Back Office Dashboard (preview)"
+#~ msgstr "Vissza az irányító pulthoz"

@@ -12,11 +12,13 @@ from io import StringIO
 from opendlp.config import to_bool
 from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
+    FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     SORT_ORDER_STEP,
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -121,6 +123,7 @@ def _build_fixed_rows(assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]
                 sort_order=(idx + 1) * SORT_ORDER_STEP,
                 is_fixed=True,
                 field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
+                on_registration_page=FIXED_FIELD_ON_REGISTRATION_PAGE.get(key, FieldOnRegistrationPage.YES_REQUIRED),
             )
         )
     return rows
@@ -211,6 +214,7 @@ def add_field(
     group: RespondentFieldGroup = RespondentFieldGroup.OTHER,
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
+    on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
 ) -> RespondentFieldDefinition:
     """Add a single field to an assembly's schema.
 
@@ -262,6 +266,7 @@ def add_field(
             sort_order=_next_sort_order(per_group_next, group),
             field_type=field_type,
             options=options,
+            on_registration_page=on_registration_page,
         )
         uow.respondent_field_definitions.add(field)
         uow.commit()
@@ -278,8 +283,10 @@ def update_field(
     sort_order: int | None = None,
     field_type: FieldType | None = None,
     options: list[ChoiceOption] | None = _UNSET_OPTIONS,
+    on_registration_page: FieldOnRegistrationPage | None = None,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, sort_order, field_type, or options.
+    """Update a field's label, group, sort_order, field_type, options, or
+    on_registration_page.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
     """
@@ -295,6 +302,7 @@ def update_field(
                 sort_order=sort_order,
                 field_type=field_type,
                 options=options,
+                on_registration_page=on_registration_page,
             )
         except ValueError as exc:
             if "fixed" in str(exc):

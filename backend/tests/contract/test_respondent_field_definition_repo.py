@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -242,3 +245,40 @@ class TestFieldTypeAndOptions:
             ChoiceOption(value="level_0", help_text="None"),
             ChoiceOption(value="level_3", help_text="Post-secondary non-tertiary"),
         ]
+
+
+class TestOnRegistrationPage:
+    def test_defaults_to_yes_required(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = _make_field(respondent_field_definition_backend, assembly.id, field_key="freeform")
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            FieldOnRegistrationPage.NO,
+            FieldOnRegistrationPage.YES_OPTIONAL,
+            FieldOnRegistrationPage.YES_REQUIRED,
+        ],
+    )
+    def test_round_trips_each_value(
+        self, respondent_field_definition_backend: ContractBackend, value: FieldOnRegistrationPage
+    ) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="nickname",
+            label="Nickname",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+            on_registration_page=value,
+        )
+        respondent_field_definition_backend.repo.add(field)
+        respondent_field_definition_backend.commit()
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.on_registration_page == value

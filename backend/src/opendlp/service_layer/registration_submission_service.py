@@ -7,9 +7,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from opendlp.domain.registration_page import RegistrationPageStatus
-from opendlp.domain.respondent_field_schema import FieldType, RespondentFieldDefinition
+from opendlp.domain.respondent_field_schema import (
+    FieldOnRegistrationPage,
+    FieldType,
+    RespondentFieldDefinition,
+)
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.validators import validate_bool, validate_choice, validate_email_field, validate_integer
+from opendlp.domain.validators import validate_choice, validate_email_field, validate_integer
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
 from opendlp.service_layer.registration_page_service import (
     find_registration_page_by_url_slug,
@@ -55,15 +59,44 @@ def _generate_external_id() -> str:
     return f"reg-{uuid.uuid4().hex[:12]}"
 
 
+def _coerce_form_bool(str_value: str, *, required: bool) -> tuple[bool | None, str | None]:
+    """Coerce a registration-form bool value. Returns (value, error_message or None).
+
+    A bool on the form is a checkbox: checked -> True, unchecked (absent or a
+    falsy value) -> False. A required bool must be checked, so a falsy value is an
+    error. Authored markup may submit yes/no radios, so falsy text values are
+    parsed rather than treated as truthy.
+    """
+    lower = str_value.strip().lower()
+    if lower in ("yes", "true", "on", "1"):
+        return True, None
+    if lower in ("no", "false", "0", ""):
+        if required:
+            return None, "Please tick this box to continue"
+        return False, None
+    return None, "Please select a valid option"
+
+
 def _validate_field_value(
     fd: RespondentFieldDefinition,
     value: Any,
+    *,
+    required: bool,
 ) -> tuple[Any, str | None]:
     """Validate a single field value. Returns (cleaned_value, error_message or None).
 
-    All fields are required except BOOL_OR_NONE (which explicitly allows None).
+    A cleaned value of None means "nothing to store" (an optional field left
+    blank); the caller skips those. Required fields reject a blank value.
     """
     str_value = str(value).strip() if value is not None else ""
+
+    if fd.effective_field_type in (FieldType.BOOL, FieldType.BOOL_OR_NONE):
+        return _coerce_form_bool(str_value, required=required)
+
+    if not str_value:
+        if required:
+            return None, "This field is required"
+        return None, None
 
     if fd.effective_field_type == FieldType.EMAIL:
         return validate_email_field(str_value)
@@ -72,15 +105,9 @@ def _validate_field_value(
         valid_values = {opt.value for opt in fd.options} if fd.options else None
         return validate_choice(str_value, valid_values)
 
-    if fd.effective_field_type in (FieldType.BOOL, FieldType.BOOL_OR_NONE):
-        return validate_bool(str_value, allow_none=fd.effective_field_type == FieldType.BOOL_OR_NONE)
-
     if fd.effective_field_type == FieldType.INTEGER:
         return validate_integer(str_value)
 
-    # TEXT, LONGTEXT, PHONE, DATE, etc. - require non-empty
-    if not str_value:
-        return None, "This field is required"
     return str_value, None
 
 
@@ -91,22 +118,25 @@ def _validate_form_data(
     """Validate form data against field definitions.
 
     Returns (cleaned_data, field_errors).
-    Iterates over all field definitions to handle missing fields (e.g. unselected
-    radio buttons which don't appear in form_data at all).
+    Iterates over all field definitions to handle missing fields (e.g. unchecked
+    checkboxes which don't appear in form_data at all). Fields not on the
+    registration page are skipped; required-ness comes from the field's
+    on_registration_page enum.
     """
     cleaned: dict[str, Any] = {}
     errors: dict[str, list[str]] = {}
 
     for fd in field_definitions:
+        if fd.on_registration_page == FieldOnRegistrationPage.NO:
+            continue
         key = fd.field_key
-        # Get value from form_data, defaulting to empty string if missing
-        # (unselected radio buttons won't be in form_data)
+        required = fd.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
         value = form_data.get(key, "")
 
-        cleaned_value, error = _validate_field_value(fd, value)
+        cleaned_value, error = _validate_field_value(fd, value, required=required)
         if error:
             errors.setdefault(key, []).append(error)
-        else:
+        elif cleaned_value is not None:
             cleaned[key] = cleaned_value
 
     return cleaned, errors
