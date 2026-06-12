@@ -960,7 +960,7 @@ requires-dist = [
     { name = "redis", specifier = ">=6.4.0" },
     { name = "secure", specifier = ">=1.0.1" },
     { name = "sortition-algorithms", specifier = "==0.12.8" },
-    { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.49" },
+    { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.50" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "werkzeug", specifier = ">=3.1.3" },
