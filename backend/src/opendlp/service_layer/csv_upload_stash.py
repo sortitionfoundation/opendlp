@@ -58,7 +58,7 @@ def fetch(
 ) -> StashedUpload | None:
     """Read a stashed upload, or None if expired / missing."""
     r = redis_client or _get_redis()
-    raw: bytes | str | None = r.get(_key(user_id, assembly_id))  # type: ignore[assignment]
+    raw: bytes | str | None = r.get(_key(user_id, assembly_id))
     if raw is None:
         return None
     if isinstance(raw, bytes):
