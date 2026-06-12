@@ -21,13 +21,23 @@ apt-get install -qyy \
   ca-certificates \
   libffi-dev \
   python3-setuptools \
-  python3.12-dev \
-  nodejs \
-  npm
+  python3.12-dev
 EOT
 
 # Security-conscious organizations should package/review uv themselves.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Ubuntu noble's apt nodejs is 18.x, which is EOL and cannot `require()` an
+# ESM module - this breaks sass >=1.93 (it pulls in the ESM-only chokidar 5,
+# which needs Node >=20.19 where require(ESM) was backported). Copy a modern
+# Node LTS from the official image instead, mirroring the uv copy above. We
+# copy only the node binary and the npm package (not the whole bin/ dir, which
+# also carries yarn/corepack/docker-entrypoint cruft) and recreate the npm/npx
+# launcher symlinks ourselves.
+COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules/npm/ /usr/local/lib/node_modules/npm/
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # - Silence uv complaining about not being able to use hard links,
 # - tell uv to byte-compile packages for faster application startups,
