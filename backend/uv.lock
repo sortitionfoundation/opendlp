@@ -960,7 +960,7 @@ requires-dist = [
     { name = "qrcode", extras = ["pil"], specifier = ">=8.2" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "secure", specifier = ">=1.0.1" },
-    { name = "sortition-algorithms", specifier = "==0.12.8" },
+    { name = "sortition-algorithms", specifier = "==0.12.9" },
     { name = "sqlalchemy", extras = ["postgresql-psycopg2binary"], specifier = ">=2.0.49" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
@@ -1504,7 +1504,7 @@ wheels = [
 
 [[package]]
 name = "sortition-algorithms"
-version = "0.12.8"
+version = "0.12.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1518,9 +1518,9 @@ dependencies = [
     { name = "requests" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/5e/9a5d243bd1e32e172ec19c96ae8e35f520e085cfb7c7b169d277cc413fbc/sortition_algorithms-0.12.8.tar.gz", hash = "sha256:6f91a0b0dc19bcd9797b624e0d05a67313d58b4ec15d522c4796d6024c52e16c", size = 389568, upload-time = "2026-05-19T08:57:17.458Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/be/386b62c8edd7488faa9cd3266106e3b6aeaf0e0f3460766499e4e79b395c/sortition_algorithms-0.12.9.tar.gz", hash = "sha256:47bbd71eadf71ac26b0f03fc9aad8f23b06e6003bd11a471fe812f1b0e00f15b", size = 396430, upload-time = "2026-06-16T15:23:31.223Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/c5/edb1079fb974de9105bddf727c6ff554287798b3dc3784f229837c6eb740/sortition_algorithms-0.12.8-py3-none-any.whl", hash = "sha256:3e942f2f8d5dc1cde52639de1f10792a9d62e480c984399a93550517cb96a510", size = 97710, upload-time = "2026-05-19T08:57:15.818Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/b1/74329e90a710d30f4057052a8042f20559042a9ced5d132db703f683f36e/sortition_algorithms-0.12.9-py3-none-any.whl", hash = "sha256:8861edbe8119d8e982c034b857a37cef9fb2dafe889d38b0f9603eddeea5d479", size = 98203, upload-time = "2026-06-16T15:23:29.884Z" },
 ]
 
 [[package]]
