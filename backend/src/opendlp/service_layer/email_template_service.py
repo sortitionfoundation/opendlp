@@ -1,10 +1,15 @@
 """ABOUTME: Service layer for managing assembly-scoped email templates
 ABOUTME: Handles CRUD with permission checks, validation and auto-reply assignment"""
 
+import logging
 import uuid
+from dataclasses import dataclass
+from enum import Enum
 
 from opendlp.config import get_email_template_body_max_bytes
 from opendlp.domain.email_template import EmailTemplate
+from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
+from opendlp.translations import gettext as _
 
 from .exceptions import (
     AssemblyNotFoundError,
@@ -17,8 +22,61 @@ from .exceptions import (
 from .permissions import can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
 
+logger = logging.getLogger(__name__)
+
 _MANAGE_ROLE = "assembly-manager, global-organiser or admin"
 _VIEW_ROLE = "assembly role or global privileges"
+_EMAIL_FIELD_KEY = "email"
+
+
+class AutoReplyReadinessSeverity(Enum):
+    """Severity of an auto-reply configuration readiness problem."""
+
+    ERROR = "error"
+    WARNING = "warning"
+
+
+@dataclass(frozen=True)
+class AutoReplyReadinessProblem:
+    """A readiness problem with the auto-reply configuration for display to a manager."""
+
+    severity: AutoReplyReadinessSeverity
+    message: str
+
+
+def _auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
+    email_field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, _EMAIL_FIELD_KEY)
+    if email_field is None or email_field.on_registration_page == FieldOnRegistrationPage.NO:
+        return [
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.ERROR,
+                _(
+                    "The registration page does not collect an email address, so the auto-reply "
+                    "can never be sent. Add a required email field to the page."
+                ),
+            )
+        ]
+    if email_field.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL:
+        return [
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "The email address is optional on the registration page, so respondents who "
+                    "leave it blank will not receive the auto-reply."
+                ),
+            )
+        ]
+    return []
+
+
+def auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
+    """Readiness problems for sending an auto-reply, based on how the page collects email.
+
+    Returns an ERROR when no email is collected (the auto-reply can never send), a
+    WARNING when email is optional, and an empty list when email is required.
+    """
+    with uow:
+        return _auto_reply_readiness_problems(uow, assembly_id)
 
 
 def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]
@@ -137,5 +195,14 @@ def assign_auto_reply_template(
             template = uow.email_templates.get(template_id)
             if template is None or template.assembly_id != assembly_id:
                 raise EmailTemplateNotFoundError(f"Email template {template_id} not found for this assembly")
+            # Advisory only - never block configuring the auto-reply. The eventual
+            # config UI surfaces these via auto_reply_readiness_problems().
+            for problem in _auto_reply_readiness_problems(uow, assembly_id):
+                logger.warning(
+                    "Auto-reply readiness (%s) for assembly %s: %s",
+                    problem.severity.value,
+                    assembly_id,
+                    problem.message,
+                )
         page.set_auto_reply_template(template_id)
         uow.commit()
