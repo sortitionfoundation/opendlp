@@ -75,7 +75,7 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
-# django = "0 days"
+cryptography = "0 days"
 
 [tool.mypy]
 files = ["src"]
