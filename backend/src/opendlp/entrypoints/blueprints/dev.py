@@ -1,6 +1,8 @@
 """ABOUTME: Developer tools routes for interactive testing and documentation
 ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments"""
 
+import base64
+import binascii
 import uuid
 from collections.abc import Callable
 from typing import Any, cast
@@ -10,6 +12,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
 from opendlp.domain.registration_page import RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -28,8 +31,22 @@ from opendlp.service_layer.assembly_service import (
     update_csv_config,
     update_selection_settings,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.exceptions import (
+    ImageQuotaExceeded,
+    InsufficientPermissions,
+    InvalidSelection,
+    NotFoundError,
+    RegistrationImageNotFoundError,
+)
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.registration_image_service import (
+    add_registration_image,
+    delete_registration_image,
+    get_registration_image_for_serving,
+    list_image_snippets,
+    list_registration_images,
+    set_registration_image_alt,
+)
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page,
@@ -108,7 +125,7 @@ def service_docs() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'respondents'
     active_tab = request.args.get("tab", "respondents")
-    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration", "fields"]
+    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration", "fields", "images"]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
 
@@ -849,6 +866,171 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
             return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
+def _serialise_image(image: RegistrationImage) -> dict[str, Any]:
+    return {
+        "id": str(image.id),
+        "registration_page_id": str(image.registration_page_id),
+        "byte_size": image.byte_size,
+        "width": image.width,
+        "height": image.height,
+        "sha256": image.sha256,
+        "alt": image.alt,
+        "created_by": str(image.created_by) if image.created_by else None,
+        "created_at": image.created_at.isoformat() if image.created_at else None,
+        "file_name": f"{image.sha256}.{IMAGE_FILE_EXTENSION}",
+    }
+
+
+def _handle_add_registration_image(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle add_registration_image service call.
+
+    The image bytes are expected as a base64-encoded string under ``image_base64``
+    (a ``data:`` URL prefix is stripped if present).
+    """
+    assembly_id = uuid.UUID(params["assembly_id"])
+    alt = params.get("alt", "")
+    raw_b64 = params.get("image_base64", "")
+    if "," in raw_b64 and raw_b64.startswith("data:"):
+        raw_b64 = raw_b64.split(",", 1)[1]
+    try:
+        raw_bytes = base64.b64decode(raw_b64, validate=True)
+    except (binascii.Error, ValueError):
+        return {"status": "error", "error": "image_base64 is not valid base64", "error_type": "ValidationError"}
+    if not raw_bytes:
+        return {"status": "error", "error": "image_base64 is empty", "error_type": "ValidationError"}
+
+    try:
+        image = add_registration_image(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            raw=raw_bytes,
+            alt=alt,
+        )
+        return {"status": "success", "image": _serialise_image(image)}
+    except ImageValidationError as e:
+        return {"status": "error", "error": e.message, "error_type": "ImageValidationError", "reason": e.reason}
+    except ImageQuotaExceeded as e:
+        return {"status": "error", "error": str(e), "error_type": "ImageQuotaExceeded"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_list_registration_images(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_registration_images service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    try:
+        images = list_registration_images(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
+        return {
+            "status": "success",
+            "total_count": len(images),
+            "images": [_serialise_image(image) for image in images],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_delete_registration_image(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle delete_registration_image service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    image_id = uuid.UUID(params["image_id"])
+    try:
+        delete_registration_image(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            image_id=image_id,
+        )
+        return {"status": "success", "deleted_image_id": str(image_id)}
+    except RegistrationImageNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "RegistrationImageNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_set_registration_image_alt(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle set_registration_image_alt service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    image_id = uuid.UUID(params["image_id"])
+    alt = params.get("alt", "")
+    try:
+        image = set_registration_image_alt(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            image_id=image_id,
+            alt=alt,
+        )
+        return {"status": "success", "image": _serialise_image(image)}
+    except RegistrationImageNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "RegistrationImageNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_image_snippets service call.
+
+    Uses the same URL builder as the public registration route so the snippets
+    show the URL the public page would render.
+    """
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    page_repo_uow = bootstrap.bootstrap()
+    with page_repo_uow:
+        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+    url_slug = page.url_slug if page else ""
+
+    def url_for_image(image: RegistrationImage) -> str:
+        if url_slug:
+            return url_for(
+                "registration.serve_registration_image",
+                url_slug=url_slug,
+                image_name=f"{image.sha256}.{IMAGE_FILE_EXTENSION}",
+            )
+        return f"<no-slug>/{image.sha256}.{IMAGE_FILE_EXTENSION}"
+
+    try:
+        pairs = list_image_snippets(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            url_for_image=url_for_image,
+        )
+        return {
+            "status": "success",
+            "total_count": len(pairs),
+            "snippets": [{"image": _serialise_image(image), "html": html_snippet} for image, html_snippet in pairs],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_get_registration_image_for_serving(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_registration_image_for_serving service call.
+
+    Bytes are not returned in the JSON response - we report metadata and whether
+    the lookup succeeded. Use the public /register/<slug>/assets/<image_name>
+    route to actually fetch the image.
+    """
+    url_slug = params.get("url_slug", "")
+    image_name = params.get("image_name", "")
+    image = get_registration_image_for_serving(uow, url_slug, image_name)
+    if image is None:
+        return {"status": "success", "found": False, "image": None}
+    return {"status": "success", "found": True, "image": _serialise_image(image)}
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -871,6 +1053,12 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "reopen_registration_page": _handle_reopen_registration_page,
     "submit_registration": _handle_submit_registration,
     "add_field": _handle_add_field,
+    "add_registration_image": _handle_add_registration_image,
+    "list_registration_images": _handle_list_registration_images,
+    "delete_registration_image": _handle_delete_registration_image,
+    "set_registration_image_alt": _handle_set_registration_image_alt,
+    "list_image_snippets": _handle_list_image_snippets,
+    "get_registration_image_for_serving": _handle_get_registration_image_for_serving,
 }
 
 

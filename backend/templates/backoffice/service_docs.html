@@ -44,7 +44,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         {"key": "respondents", "label": _("Respondents"), "href": url_for('dev.service_docs', tab='respondents'), "active": active_tab == 'respondents'},
         {"key": "targets", "label": _("Targets"), "href": url_for('dev.service_docs', tab='targets'), "active": active_tab == 'targets'},
         {"key": "config", "label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
-        {"key": "selection", "label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'}
+        {"key": "selection", "label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'},
+        {"key": "images", "label": _("Images"), "href": url_for('dev.service_docs', tab='images'), "active": active_tab == 'images'}
         ],
         aria_label=_("Service categories"),
         preserve_scroll=true
@@ -77,6 +78,10 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {% if active_tab == 'selection' %}
             {% include "backoffice/service_docs/_selection.html" %}
+        {% endif %}
+
+        {% if active_tab == 'images' %}
+            {% include "backoffice/service_docs/_images.html" %}
         {% endif %}
 
         {# Toast Notification #}
@@ -134,6 +139,21 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                 addFieldType: 'text',
                 addFieldOptions: '',
 
+                // Image form properties
+                addImageAssemblyId: '',
+                addImageBase64: '',
+                addImageFileName: '',
+                addImageAlt: '',
+                listImagesAssemblyId: '',
+                deleteImageAssemblyId: '',
+                deleteImageImageId: '',
+                setAltAssemblyId: '',
+                setAltImageId: '',
+                setAltText: '',
+                listSnippetsAssemblyId: '',
+                serveImageUrlSlug: '',
+                serveImageImageName: '',
+
                 // Registration form properties
                 createRegistrationAssemblyId: '',
                 getRegistrationAssemblyId: '',
@@ -172,7 +192,13 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     reopen_registration: false,
                     generate_starter_html: false,
                     submit_registration: false,
-                    add_field: false
+                    add_field: false,
+                    add_image: false,
+                    list_images: false,
+                    delete_image: false,
+                    set_image_alt: false,
+                    list_snippets: false,
+                    serve_image: false
                 },
 
                 // Response data for each service
@@ -196,7 +222,13 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     reopen_registration: null,
                     generate_starter_html: null,
                     submit_registration: null,
-                    add_field: null
+                    add_field: null,
+                    add_image: null,
+                    list_images: null,
+                    delete_image: null,
+                    set_image_alt: null,
+                    list_snippets: null,
+                    serve_image: null
                 },
 
                 // Sample data for each service
@@ -245,7 +277,13 @@ Age,51+,2,5,1,1`,
                         'reopen_registration_page': 'reopen_registration',
                         'generate_starter_form_html': 'generate_starter_html',
                         'submit_registration': 'submit_registration',
-                        'add_field': 'add_field'
+                        'add_field': 'add_field',
+                        'add_registration_image': 'add_image',
+                        'list_registration_images': 'list_images',
+                        'delete_registration_image': 'delete_image',
+                        'set_registration_image_alt': 'set_image_alt',
+                        'list_image_snippets': 'list_snippets',
+                        'get_registration_image_for_serving': 'serve_image'
                     };
                     const key = keyMap[serviceName];
 
@@ -439,6 +477,69 @@ Age,51+,2,5,1,1`,
                         group: this.addFieldGroup,
                         field_type: this.addFieldType,
                         options: options
+                    });
+                },
+
+                // ===== Image service execute methods =====
+                handleImageFileChange(event) {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file) {
+                        this.addImageBase64 = '';
+                        this.addImageFileName = '';
+                        return;
+                    }
+                    this.addImageFileName = file.name;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        // FileReader.readAsDataURL returns "data:<mime>;base64,<payload>"
+                        const result = String(reader.result || '');
+                        const idx = result.indexOf(',');
+                        this.addImageBase64 = idx >= 0 ? result.slice(idx + 1) : result;
+                    };
+                    reader.onerror = () => {
+                        this.addImageBase64 = '';
+                        this.showToast('Failed to read file', 'error');
+                    };
+                    reader.readAsDataURL(file);
+                },
+                executeAddRegistrationImage() {
+                    if (!this.addImageBase64) {
+                        this.responses.add_image = { status: 'error', error: 'Please choose an image file first', error_type: 'ValidationError' };
+                        return;
+                    }
+                    this.executeService('add_registration_image', {
+                        assembly_id: this.addImageAssemblyId,
+                        image_base64: this.addImageBase64,
+                        alt: this.addImageAlt
+                    });
+                },
+                executeListRegistrationImages() {
+                    this.executeService('list_registration_images', {
+                        assembly_id: this.listImagesAssemblyId
+                    });
+                },
+                executeDeleteRegistrationImage() {
+                    this.executeService('delete_registration_image', {
+                        assembly_id: this.deleteImageAssemblyId,
+                        image_id: this.deleteImageImageId
+                    });
+                },
+                executeSetRegistrationImageAlt() {
+                    this.executeService('set_registration_image_alt', {
+                        assembly_id: this.setAltAssemblyId,
+                        image_id: this.setAltImageId,
+                        alt: this.setAltText
+                    });
+                },
+                executeListImageSnippets() {
+                    this.executeService('list_image_snippets', {
+                        assembly_id: this.listSnippetsAssemblyId
+                    });
+                },
+                executeGetRegistrationImageForServing() {
+                    this.executeService('get_registration_image_for_serving', {
+                        url_slug: this.serveImageUrlSlug,
+                        image_name: this.serveImageImageName
                     });
                 },
 
