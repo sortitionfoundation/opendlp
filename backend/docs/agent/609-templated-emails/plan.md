@@ -502,17 +502,41 @@ manager. There are two quite different causes that currently look the same:
   dropped and `respondent.email` is empty.)
 - **Per-respondent gap** — email is optional and this one person left it blank.
 
-Open questions for the team:
+**Proposed fix — a configuration-time readiness check on the email field.** Catch
+the misconfiguration when the auto-reply is configured, not silently at send time.
+The email field is a **fixed field** (`field_key == "email"`) whose
+`RespondentFieldDefinition.on_registration_page` is one of `NO` / `YES_OPTIONAL` /
+`YES_REQUIRED`. So when an auto-reply template is assigned (and/or at publish), a
+check loads that field definition and maps it to a severity:
 
-- Should configuring an auto-reply **require** the page to capture an email field
-  (validate at publish/assign time), so the misconfiguration can't arise?
-- Should a no-email skip be **surfaced to the assembly manager** (a counter, a
-  dashboard warning, or a `RespondentEmailSendRecord` with a new
-  `NO_RECIPIENT`/`SKIPPED` outcome) rather than only logged? This revisits the Q5
-  decision and depends on the eventual send-record/admin UI (still out of scope).
-- Is a missing recipient address ever worth alerting an **admin/operator** (vs. an
-  assembly manager) about — e.g. if a whole assembly's auto-replies are failing?
+| Email field `on_registration_page`         | Result                                                     |
+| ------------------------------------------- | ---------------------------------------------------------- |
+| `YES_REQUIRED`                              | **OK** — every valid submission has an email; send is safe |
+| `YES_OPTIONAL`                              | **Warning** — some respondents will have no email          |
+| `NO` (or no email field defined at all)     | **Error** — the auto-reply can never reach anyone          |
 
-Recommendation (for discussion): keep the warning log now; when the send-record
-admin UI lands, decide whether to record no-recipient skips and/or gate auto-reply
-configuration on the page capturing an email field.
+This **cannot** live on `RegistrationPage.readiness_problems()` (pure domain — it
+has no access to the field schema). It belongs as a **service-layer** check, e.g.
+`auto_reply_readiness_problems(uow, assembly_id) -> list[ReadinessProblem]`
+(severity + message), loading the email `RespondentFieldDefinition` via
+`uow.respondent_field_definitions`. The eventual auto-reply config UI calls it and
+shows a prominent error / warning; `assign_auto_reply_template` (and publish) can
+reuse it.
+
+Decisions still needed from the team:
+
+- **Block or advise?** Should an `Error` (email field `NO`/missing) **hard-block**
+  assigning/publishing the auto-reply, or just show a prominent error the manager
+  can override? (The `Warning` for `YES_OPTIONAL` is clearly non-blocking.)
+- **Send-time surfacing.** Independent of the config check, should a no-email skip
+  at send time still be surfaced to the assembly manager (a counter, or a
+  `RespondentEmailSendRecord` with a new `NO_RECIPIENT`/`SKIPPED` outcome) rather
+  than only logged? Revisits the Q5 "a skip isn't a send" decision and depends on
+  the send-record/admin UI (out of scope this round).
+- **Operator alerting.** Is a whole assembly's auto-replies failing ever worth an
+  admin/operator alert, distinct from the per-assembly manager signal?
+
+Recommendation (for discussion): build the service-layer readiness check above with
+the `REQUIRED→ok / OPTIONAL→warning / NO→error` mapping, surfaced in the auto-reply
+config UI; keep the send-time warning log as a backstop. The check logic is small
+and testable now even though its prominent display lands with the UI.
