@@ -16,6 +16,7 @@ from opendlp.domain.registration_image import (
     IMAGE_FILE_EXTENSION,
     ImageValidationError,
     RegistrationImage,
+    generate_image_html,
 )
 from opendlp.domain.registration_page import (
     RegistrationPageHtml,
@@ -37,6 +38,7 @@ from opendlp.service_layer.registration_image_service import (
     add_registration_image,
     delete_registration_image,
     list_registration_images,
+    set_registration_image_alt,
 )
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
@@ -73,7 +75,7 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
         "file_name": file_name,
         "display_name": display_name,
         "public_url": public_url,
-        "img_snippet": f'<img src="{public_url}" alt="{image.alt}">' if public_url else "",
+        "img_snippet": generate_image_html(public_url, alt=image.alt) if public_url else "",
         "width": image.width,
         "height": image.height,
         "byte_size": image.byte_size,
@@ -360,6 +362,20 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return result[0].url_slug
 
 
+def _add_image_honouring_alt(assembly_id: uuid.UUID, raw: bytes, alt: str) -> RegistrationImage:
+    """Add an image and, on dedup, ensure the stored alt matches the user's input.
+
+    ``add_registration_image`` collapses identical bytes to one row and KEEPS the
+    first upload's alt. When the user supplies a different alt for an already-stored
+    image (typically replacing an empty legacy alt), we follow up with
+    ``set_registration_image_alt`` so the snippet they copy reflects what they typed.
+    """
+    image = add_registration_image(bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt)
+    if image.alt != alt:
+        image = set_registration_image_alt(bootstrap.bootstrap(), current_user.id, assembly_id, image.id, alt=alt)
+    return image
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -379,10 +395,11 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return jsonify({"error": _("Failed to read the uploaded file")}), 400
 
     alt = (request.form.get("alt") or "").strip()
+    if not alt:
+        return jsonify({"error": _("Alt text is required for accessibility")}), 400
 
     try:
-        uow = bootstrap.bootstrap()
-        image = add_registration_image(uow, current_user.id, assembly_id, raw, alt=alt)
+        image = _add_image_honouring_alt(assembly_id, raw, alt)
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except ImageQuotaExceeded as e:
@@ -399,6 +416,33 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
 
     return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
+@login_required
+def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
+    """Update an image's alt text. Returns the updated image metadata as JSON."""
+    data = request.get_json(silent=True) or {}
+    alt = (data.get("alt") or "").strip()
+    if not alt:
+        return jsonify({"error": _("Alt text is required for accessibility")}), 400
+
+    try:
+        uow = bootstrap.bootstrap()
+        image = set_registration_image_alt(uow, current_user.id, assembly_id, image_id, alt=alt)
+    except RegistrationImageNotFoundError:
+        return jsonify({"error": _("Image not found")}), 404
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Registration page not found")}), 404
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        current_app.logger.error(f"Update image alt error for assembly {assembly_id} image {image_id}: {e}")
+        return jsonify({"error": _("An error occurred while updating the image")}), 500
+
+    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 200
 
 
 @backoffice_registration_bp.route(

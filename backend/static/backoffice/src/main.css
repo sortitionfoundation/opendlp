@@ -141,6 +141,17 @@
         background-color: var(--color-button-danger-bg-hover) !important;
     }
 
+    /* Runtime-disabled look (toggled by Alpine via the button macro's
+       `alpine_disabled` param). Layers on top of the variant's inline style
+       without touching padding/base styles. */
+    .btn-runtime-disabled {
+        background-color: var(--color-disabled-borders) !important;
+        color: var(--color-placeholder-text) !important;
+        border: none !important;
+        cursor: not-allowed !important;
+        opacity: 0.5 !important;
+    }
+
     /* Focus ring for buttons - use browser default outline for keyboard navigation */
     /* The .btn-focus class enables :focus-visible styling (no custom override needed) */
 

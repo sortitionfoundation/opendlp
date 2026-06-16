@@ -3,7 +3,7 @@ ABOUTME: Button component macro for backoffice design system
 ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and full a11y support
 #}
 
-{% macro button(text="", variant="primary", disabled=false, type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false, aria_label="", aria_pressed="", aria_haspopup="", aria_expanded="", aria_describedby="") %}
+{% macro button(text="", variant="primary", disabled=false, alpine_disabled="", type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false, aria_label="", aria_pressed="", aria_haspopup="", aria_expanded="", aria_describedby="") %}
     {#
     Button component based on Figma OpenDLP UI specification.
     Renders as <a> when href is provided, otherwise <button>.
@@ -14,7 +14,11 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and ful
         variant: "primary" | "secondary" | "tertiary" | "danger" | "icon" | "outline" (default: "primary")
                  Note: "outline" is deprecated, use "secondary" instead
                  "danger" is a transparent-background red-text button for destructive actions
-        disabled: boolean to disable the button
+        disabled: boolean to disable the button (Jinja-time)
+        alpine_disabled: Alpine.js boolean expression — when truthy at runtime the button
+                         renders the HTML `disabled` attribute AND the muted variant style.
+                         Use this when the disabled state depends on Alpine state. Example:
+                         alpine_disabled="!form.name || saving"
         type: button type attribute (default: "button")
         href: if provided, renders as <a> instead of <button>
         id: optional id attribute
@@ -90,7 +94,9 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and ful
         {% set width_styles = "" %}
     {% endif %}
 
-    {# Variant-specific styles #}
+    {# Variant-specific styles. Jinja-time `disabled=true` swaps to the muted look
+       inline; the same muted look is applied at runtime via the `.btn-runtime-disabled`
+       class toggled by Alpine when `alpine_disabled` is set. #}
     {% if disabled %}
         {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed; border: none; opacity: 0.5;" %}
         {% set hover_class = "" %}
@@ -160,6 +166,11 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and ful
             type="{{ type }}"
             {% if id %}id="{{ id }}"{% endif %}
             {% if disabled %}disabled aria-disabled="true"{% endif %}
+            {% if alpine_disabled %}
+                :disabled="{{ alpine_disabled }}"
+                :aria-disabled="({{ alpine_disabled }}) ? 'true' : 'false'"
+                :class="{ 'btn-runtime-disabled': ({{ alpine_disabled }}) }"
+            {% endif %}
             {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
             {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
             {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
