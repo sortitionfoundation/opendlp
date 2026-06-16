@@ -37,7 +37,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
 COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules/npm/ /usr/local/lib/node_modules/npm/
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
- && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+  && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # - Silence uv complaining about not being able to use hard links,
 # - tell uv to byte-compile packages for faster application startups,
@@ -146,8 +146,8 @@ apt-get install -qyy \
   unattended-upgrades
 
 /usr/bin/unattended-upgrade
-# this is not being upgraded as a security fix for some reason, remove again later 2026-06-11
-apt-get upgrade -qy libssl3t64
+# these are not being upgraded as security fixes for some reason, remove again later 2026-06-11
+apt-get upgrade -qy libssl3t64 libcap2
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
