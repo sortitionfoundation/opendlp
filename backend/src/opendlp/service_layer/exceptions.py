@@ -10,6 +10,8 @@ __all__ = [
     "AssemblyNotFoundError",
     "CannotRemoveLastAuthMethod",
     "EmailNotConfirmed",
+    "EmailTemplateInvalid",
+    "EmailTemplateNotFoundError",
     "GoogleSheetConfigNotFoundError",
     "ImageQuotaExceeded",
     "InsufficientPermissions",
@@ -185,6 +187,18 @@ class RegistrationPageNotFoundError(NotFoundError):
 
 class RegistrationImageNotFoundError(NotFoundError):
     """A registration image could not be found in the database"""
+
+
+class EmailTemplateNotFoundError(NotFoundError):
+    """An email template could not be found in the database"""
+
+
+class EmailTemplateInvalid(ServiceLayerError):
+    """Raised when an email template fails validation, carrying the problem list."""
+
+    def __init__(self, problems: list[str]) -> None:
+        self.problems = problems
+        super().__init__("; ".join(problems))
 
 
 class ImageQuotaExceeded(ServiceLayerError):

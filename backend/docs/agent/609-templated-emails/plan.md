@@ -287,7 +287,7 @@ in the original Q4.
 
 ---
 
-## 4. Phase 3 — `service_layer/email_template_service.py` (CRUD + permissions)
+## 4. Phase 3 — `service_layer/email_template_service.py` (CRUD + permissions) ✅ DONE
 
 Mirror `assembly_service`/`respondent_service` patterns (permission checks via
 `service_layer/permissions.py`, operate through `uow`, return detached copies).
