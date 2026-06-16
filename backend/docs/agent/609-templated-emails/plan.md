@@ -400,7 +400,14 @@ submission triggers none.
 
 ---
 
-## 7. Phase 6 — Integration + BDD/e2e
+## 7. Phase 6 — Integration + BDD/e2e ✅ DONE
+
+> **Implementation note:** the e2e lives in `tests/e2e/` (full HTTP stack against
+> real Postgres with the console adapter), not `tests/bdd/` — the BDD server
+> doesn't enable `FF_REGISTRATION_PAGE` and there is no existing registration
+> browser flow, whereas `tests/e2e/test_registration_public.py` already drives the
+> public form against a real DB. Integration coverage is in
+> `tests/integration/test_registration_auto_reply_integration.py`.
 
 CLAUDE.md mandates unit **and** integration **and** e2e — no skipping.
 
@@ -468,3 +475,44 @@ All previously-open questions are now settled; the plan body above reflects them
     bare email (the adapter's `_format_address` already handles both shapes).
 
 _No open questions remain — ready for your review of the plan as a whole._
+
+---
+
+## 11. Issues for the team to discuss (beyond this round's scope)
+
+These surfaced during implementation and need a higher-level decision; they are
+**not** addressed by the current work.
+
+### 11.1 No deliverable email address for a respondent
+
+**What happens today.** `send_registration_auto_reply` skips the send when the
+respondent has no email address. As implemented this round, when an auto-reply
+**is configured** but the respondent has no email, we **log a WARNING** and write
+**no send record** (consistent with the Q5 "a skip isn't a send" decision); when no
+auto-reply is configured the skip is silent. Locked in by
+`tests/unit/test_email_send_service.py` and
+`tests/e2e/test_registration_auto_reply.py::test_submission_without_captured_email_writes_no_record`.
+
+**Why it needs discussion.** A WARNING in the logs is invisible to an assembly
+manager. There are two quite different causes that currently look the same:
+
+- **Page misconfiguration** — the registration page never captures an email field,
+  so _every_ auto-reply silently fails for that assembly. (This is exactly how it
+  bit us in development: with no `email` field definition, the submitted address is
+  dropped and `respondent.email` is empty.)
+- **Per-respondent gap** — email is optional and this one person left it blank.
+
+Open questions for the team:
+
+- Should configuring an auto-reply **require** the page to capture an email field
+  (validate at publish/assign time), so the misconfiguration can't arise?
+- Should a no-email skip be **surfaced to the assembly manager** (a counter, a
+  dashboard warning, or a `RespondentEmailSendRecord` with a new
+  `NO_RECIPIENT`/`SKIPPED` outcome) rather than only logged? This revisits the Q5
+  decision and depends on the eventual send-record/admin UI (still out of scope).
+- Is a missing recipient address ever worth alerting an **admin/operator** (vs. an
+  assembly manager) about — e.g. if a whole assembly's auto-replies are failing?
+
+Recommendation (for discussion): keep the warning log now; when the send-record
+admin UI lands, decide whether to record no-recipient skips and/or gate auto-reply
+configuration on the page capturing an email field.
