@@ -1,0 +1,456 @@
+<div class="space-y-6">
+    {# Overview #}
+    {% call card(title="Registration Image Services", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Upload, list, retag and delete images attached to an assembly's registration page. Uploaded files are validated, EXIF-stripped, downscaled to PNG and de-duplicated by SHA-256.") }}
+            </p>
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                {{ _("Allowed input formats: PNG, JPEG, WebP. The page must already exist (use the Registration tab to create one).") }}
+            </p>
+        {% endcall %}
+    {% endcall %}
+
+    {# add_registration_image #}
+    {% call card(title="add_registration_image()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:52
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Validate, process and store an image for the assembly's registration page. Identical bytes on the same page collapse to one row.") }}
+            </p>
+
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">raw</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">bytes</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    Image bytes. Sent as <code>image_base64</code> over the wire and decoded server-side.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono">alt</td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">Alt text for accessibility (default: empty)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationImage  →  Stored image metadata (existing row on dedup)
+                </code>
+            </div>
+
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ImageValidationError</code> — too large, unsupported format, decompression bomb, or undecodable
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">ImageQuotaExceeded</code> — page already at the per-page image limit
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">RegistrationPageNotFoundError</code> — assembly has no registration page
+                    </li>
+                </ul>
+            </div>
+
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="addImageAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Image file (PNG/JPEG/WebP)</label>
+                        <input type="file"
+                               accept="image/png,image/jpeg,image/webp"
+                               @change="handleImageFileChange($event)"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                        <p class="text-body-sm mt-1" x-show="addImageFileName" x-cloak style="color: var(--color-secondary-text);">
+                            <span x-text="addImageFileName"></span>
+                            (<span x-text="addImageBase64.length"></span> base64 chars)
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Alt text (optional)</label>
+                        <input type="text"
+                               x-model="addImageAlt"
+                               placeholder="Assembly venue exterior"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeAddRegistrationImage()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.add_image">
+                        <span x-show="!loading.add_image">Execute</span>
+                        <span x-show="loading.add_image">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.add_image" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('add_image')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# list_registration_images #}
+    {% call card(title="list_registration_images()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:83
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_view_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Return every image attached to the assembly's registration page. Empty list when no page exists yet.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    list[RegistrationImage]
+                </code>
+            </div>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="listImagesAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeListRegistrationImages()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.list_images">
+                        <span x-show="!loading.list_images">Execute</span>
+                        <span x-show="loading.list_images">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.list_images" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('list_images')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# delete_registration_image #}
+    {% call card(title="delete_registration_image()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:96
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Permanently delete an image. The image_id must belong to the assembly's registration page.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="deleteImageAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Image ID (UUID)</label>
+                        <input type="text"
+                               x-model="deleteImageImageId"
+                               placeholder="copy from list_registration_images() response"
+                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeDeleteRegistrationImage()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-error-500); color: white;"
+                            :disabled="loading.delete_image">
+                        <span x-show="!loading.delete_image">Delete</span>
+                        <span x-show="loading.delete_image">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.delete_image" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('delete_image')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# set_registration_image_alt #}
+    {% call card(title="set_registration_image_alt()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:112
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update an image's alt text in place. Records an edit on the parent registration page.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="setAltAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Image ID (UUID)</label>
+                        <input type="text"
+                               x-model="setAltImageId"
+                               placeholder="copy from list_registration_images() response"
+                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">New alt text</label>
+                        <input type="text"
+                               x-model="setAltText"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeSetRegistrationImageAlt()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.set_image_alt">
+                        <span x-show="!loading.set_image_alt">Execute</span>
+                        <span x-show="loading.set_image_alt">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.set_image_alt" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('set_image_alt')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# list_image_snippets #}
+    {% call card(title="list_image_snippets()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:129
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_view_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("List images paired with ready-to-paste <img> snippets. URLs point at the public /register/<slug>/assets/<sha>.png route.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <select x-model="listSnippetsAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeListImageSnippets()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.list_snippets">
+                        <span x-show="!loading.list_snippets">Execute</span>
+                        <span x-show="loading.list_snippets">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.list_snippets" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('list_snippets')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# get_registration_image_for_serving #}
+    {% call card(title="get_registration_image_for_serving()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_image_service.py:139
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-info-100);
+                                 color: var(--color-info-700)">🌐 public (no auth)</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Lookup helper used by the public /register/<slug>/assets/<image_name> route. Returns None unless the registration page is publicly loadable (TEST or PUBLISHED). The response here reports metadata; fetch the actual bytes from the public URL.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">URL slug</label>
+                        <input type="text"
+                               x-model="serveImageUrlSlug"
+                               placeholder="my-assembly-2026"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-body-sm font-medium block mb-1">Image name (sha256.png)</label>
+                        <input type="text"
+                               x-model="serveImageImageName"
+                               placeholder="ab12...cd.png"
+                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeGetRegistrationImageForServing()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.serve_image">
+                        <span x-show="!loading.serve_image">Execute</span>
+                        <span x-show="loading.serve_image">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.serve_image" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('serve_image')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>
