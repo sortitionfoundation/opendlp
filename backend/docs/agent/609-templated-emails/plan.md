@@ -82,10 +82,16 @@ P6 integration + BDD/e2e coverage
 
 ---
 
-## 2. Phase 1 — Domain layer
+## 2. Phase 1 — Domain layer ✅ DONE
 
 All plain-Python, no Flask/SQLAlchemy. Mirror `domain/registration_page.py`
 style (ABOUTME header, frozen dataclasses for value objects, `create_detached_copy`).
+
+> **Implementation note:** `RenderedEmail` lives in `email_template_render.py`
+> (not `email_template.py` as sketched) to avoid a circular import; the aggregate
+> re-exports it. The body byte-cap (Q3) is enforced in the Phase 3 service via a
+> config getter, mirroring the registration page's `_check_size` precedent, rather
+> than in the pure-domain `validation_problems()`.
 
 ### 2.1 `domain/email_template_render.py` (new) — the rendering seam
 
