@@ -55,6 +55,20 @@ class TestConsoleEmailAdapter:
         assert "This is the email body" in caplog.text
         assert "Has HTML: No" in caplog.text
 
+    def test_send_email_logs_reply_to(self, caplog: pytest.LogCaptureFixture) -> None:
+        """ConsoleEmailAdapter includes the reply-to address when provided."""
+        adapter = ConsoleEmailAdapter()
+
+        with caplog.at_level(logging.INFO):
+            adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Subject",
+                text_body="Body",
+                reply_to="team@example.com",
+            )
+
+        assert "Reply-To: team@example.com" in caplog.text
+
     def test_send_email_with_html(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test console logging with HTML body."""
         adapter = ConsoleEmailAdapter()
@@ -163,6 +177,51 @@ class TestSMTPEmailAdapter:
             message_str = call_args[0][2]
             assert "Plain text" in message_str
             assert "<p>HTML content</p>" in message_str
+
+    def test_send_email_sets_reply_to_header(self) -> None:
+        """Reply-To header is set when reply_to is provided."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Test",
+                text_body="Plain text",
+                reply_to=("The Team", "team@example.com"),
+            )
+
+            message_str = mock_server.sendmail.call_args[0][2]
+            assert "Reply-To: The Team <team@example.com>" in message_str
+
+    def test_send_email_without_reply_to_has_no_header(self) -> None:
+        """No Reply-To header is added when reply_to is omitted."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Plain text")
+
+            message_str = mock_server.sendmail.call_args[0][2]
+            assert "Reply-To:" not in message_str
 
     def test_send_email_with_multiple_recipients(self) -> None:
         """Test sending email to multiple recipients."""

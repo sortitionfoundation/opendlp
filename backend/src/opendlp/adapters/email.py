@@ -22,6 +22,7 @@ class EmailAdapter(ABC):
         text_body: str,
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
+        reply_to: str | tuple[str, str] | None = None,
     ) -> bool:
         """Send an email to one or more recipients.
 
@@ -32,6 +33,7 @@ class EmailAdapter(ABC):
             text_body: Plain text version of the email body
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address. Uses default if None.
+            reply_to: Optional Reply-To address (string or (name, email) tuple).
 
         Returns:
             True if email sent successfully, False otherwise
@@ -82,6 +84,7 @@ class ConsoleEmailAdapter(EmailAdapter):
         text_body: str,
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
+        reply_to: str | tuple[str, str] | None = None,
     ) -> bool:
         """Log email details to console.
 
@@ -91,12 +94,14 @@ class ConsoleEmailAdapter(EmailAdapter):
             text_body: Plain text version of the email body
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address
+            reply_to: Optional Reply-To address
 
         Returns:
             Always returns True
         """
         from_addr = self._format_address(from_email) if from_email else "noreply@opendlp.local"
         to_addrs = [self._format_address(addr) for addr in to]
+        reply_to_line = f"\n  Reply-To: {self._format_address(reply_to)}" if reply_to else ""
 
         # Truncate text body for logging
         text_preview = text_body[:400] + ("..." if len(text_body) > 400 else "")
@@ -105,7 +110,8 @@ class ConsoleEmailAdapter(EmailAdapter):
         logger.info(
             "EMAIL (Console):\n"
             f"  From: {from_addr}\n"
-            f"  To: {', '.join(to_addrs)}\n"
+            f"  To: {', '.join(to_addrs)}"
+            f"{reply_to_line}\n"
             f"  Subject: {subject}\n"
             f"  Has HTML: {has_html}\n"
             f"  Text Body Preview: {text_preview}"
@@ -153,6 +159,7 @@ class SMTPEmailAdapter(EmailAdapter):
         text_body: str,
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
+        reply_to: str | tuple[str, str] | None = None,
     ) -> bool:
         """Send an email via SMTP.
 
@@ -162,6 +169,7 @@ class SMTPEmailAdapter(EmailAdapter):
             text_body: Plain text version of the email body
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address
+            reply_to: Optional Reply-To address
 
         Returns:
             True if email sent successfully, False if an error occurred
@@ -179,6 +187,8 @@ class SMTPEmailAdapter(EmailAdapter):
             msg["Subject"] = subject
             msg["From"] = self._format_address((from_name, from_addr))
             msg["To"] = ", ".join([self._format_address(addr) for addr in to])
+            if reply_to:
+                msg["Reply-To"] = self._format_address(reply_to)
 
             # Attach plain text part
             msg.attach(MIMEText(text_body, "plain"))

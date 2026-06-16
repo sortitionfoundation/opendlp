@@ -319,7 +319,7 @@ validation failures, permission denials, list/get scoping.
 
 ---
 
-## 5. Phase 4 — Send path + send record
+## 5. Phase 4 — Send path + send record ✅ DONE
 
 ### 5.0 Extend the email adapter with `reply_to` (Q7)
 
