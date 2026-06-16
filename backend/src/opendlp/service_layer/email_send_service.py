@@ -85,14 +85,24 @@ def send_registration_auto_reply(
     respondent: Respondent,
     assembly_id: uuid.UUID,
 ) -> RespondentEmailSendRecord | None:
-    """Send the registration auto-reply if configured. Returns None (no record) when skipped."""
+    """Send the registration auto-reply if configured. Returns None (no record) when skipped.
+
+    Skips silently when no auto-reply is configured or the submission is a test
+    submission. When an auto-reply *is* configured but the respondent has no email
+    address, logs a warning (a likely page misconfiguration) and writes no record.
+    """
     with uow:
-        if not respondent.email:
+        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        if page is None or page.auto_reply_email_template_id is None:
             return None
         if respondent.selection_status == RespondentStatus.TEST_SUBMISSION:
             return None
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
-        if page is None or page.auto_reply_email_template_id is None:
+        if not respondent.email:
+            logger.warning(
+                "Auto-reply is configured for assembly %s but respondent %s has no email; skipping send",
+                assembly_id,
+                respondent.id,
+            )
             return None
         template = uow.email_templates.get(page.auto_reply_email_template_id)
         assembly = uow.assemblies.get(assembly_id)

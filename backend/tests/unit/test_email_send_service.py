@@ -167,16 +167,31 @@ class TestSendRegistrationAutoReply:
         assert result is None
         adapter.send_email.assert_not_called()
 
-    def test_skips_when_respondent_has_no_email(self):
+    def test_skips_and_warns_when_respondent_has_no_email(self, caplog):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
         assembly, _ = self._setup(uow)
         no_email = _respondent(assembly.id, email="")
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=no_email, assembly_id=assembly.id)
+        with caplog.at_level("WARNING"):
+            result = service.send_registration_auto_reply(uow, adapter, respondent=no_email, assembly_id=assembly.id)
 
         assert result is None
         adapter.send_email.assert_not_called()
+        assert uow.respondent_email_send_records.list_by_respondent(no_email.id) == []
+        assert "has no email" in caplog.text
+
+    def test_no_email_without_template_is_silent(self, caplog):
+        uow = FakeUnitOfWork()
+        adapter = MagicMock()
+        assembly, _ = self._setup(uow, with_template=False)
+        no_email = _respondent(assembly.id, email="")
+
+        with caplog.at_level("WARNING"):
+            result = service.send_registration_auto_reply(uow, adapter, respondent=no_email, assembly_id=assembly.id)
+
+        assert result is None
+        assert "has no email" not in caplog.text
 
     def test_skips_test_submission(self):
         uow = FakeUnitOfWork()
