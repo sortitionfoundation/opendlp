@@ -14,6 +14,7 @@ from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
@@ -39,6 +40,7 @@ from opendlp.service_layer.repositories import (
     AssemblyRepository,
     EmailConfirmationTokenRepository,
     PasswordResetTokenRepository,
+    RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
     RespondentFieldDefinitionRepository,
@@ -509,6 +511,49 @@ class SqlAlchemyRegistrationPageHtmlRepository(SqlAlchemyRepository, Registratio
 
     def delete(self, item: RegistrationPageHtml) -> None:
         """Delete a RegistrationPageHtml from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyRegistrationImageRepository(SqlAlchemyRepository, RegistrationImageRepository):
+    """SQLAlchemy implementation of RegistrationImageRepository."""
+
+    def add(self, item: RegistrationImage) -> None:
+        """Add a RegistrationImage to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationImage | None:
+        """Get a RegistrationImage by its ID."""
+        return self.session.query(RegistrationImage).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[RegistrationImage]:
+        """Get all RegistrationImages."""
+        return self.session.query(RegistrationImage).all()
+
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+        """Get an image for a page by its content hash, or None."""
+        return (
+            self.session
+            .query(RegistrationImage)
+            .filter_by(registration_page_id=registration_page_id, sha256=sha256)
+            .first()
+        )
+
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+        """Get all images for a registration page, oldest first."""
+        return (
+            self.session
+            .query(RegistrationImage)
+            .filter_by(registration_page_id=registration_page_id)
+            .order_by(orm.registration_images.c.created_at)
+            .all()
+        )
+
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count images for a registration page."""
+        return self.session.query(RegistrationImage).filter_by(registration_page_id=registration_page_id).count()
+
+    def delete(self, item: RegistrationImage) -> None:
+        """Delete a RegistrationImage from the repository."""
         self.session.delete(item)
 
 
