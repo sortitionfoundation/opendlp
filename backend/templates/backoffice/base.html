@@ -6,6 +6,10 @@
         <title>
             {% block title %}Backoffice{% endblock %}
             - OpenDLP</title>
+        <link rel="shortcut icon"
+              sizes="16x16 32x32 48x48"
+              href="/static/img/favicon.ico"
+              type="image/x-icon">
         <!-- Tailwind CSS (compiled) -->
         <link rel="stylesheet"
               href="{{ url_for('static', filename='backoffice/dist/main.css', v=static_hashes('backoffice/dist/main.css') ) }}">
@@ -54,7 +58,8 @@
         {% endif %}
         {% block body %}
             <main class="max-w-screen-2xl mx-auto px-6 py-8">
-                {% block content %}{% endblock %}
+                {% block content %}
+                {% endblock %}
             </main>
         {% endblock %}
     </body>
