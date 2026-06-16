@@ -28,6 +28,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import registry
 
+from opendlp.domain.email_send_record import EmailSendOutcome
 from opendlp.domain.registration_page import RegistrationPageActivity, RegistrationPageSource, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -276,6 +277,8 @@ assemblies = Table(
     Column("status", EnumAsString(AssemblyStatus, 50), index=True, nullable=False),
     Column("created_at", TZAwareDatetime(), index=True, nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("reply_to_name", String(255), nullable=False, server_default=""),
+    Column("reply_to_email", String(255), nullable=False, server_default=""),
     # JSON column for flexible assembly configuration
     Column("config", JSON, nullable=True),
 )
@@ -598,6 +601,12 @@ registration_pages = Table(
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
     Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
+    Column(
+        "auto_reply_email_template_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("email_templates.id", ondelete="SET NULL"),
+        nullable=True,
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Partial unique indexes — only enforce uniqueness when the slug is set.
@@ -654,4 +663,49 @@ registration_images = Table(
     Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Index("ix_registration_images_page_sha_unique", "registration_page_id", "sha256", unique=True),
+)
+
+# Email templates table — assembly-scoped, database-stored templated emails.
+email_templates = Table(
+    "email_templates",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("name", String(255), nullable=False, default=""),
+    Column("subject", Text, nullable=False, default=""),
+    Column("body_html", Text, nullable=False, default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
+# Respondent email send records — audit trail of templated emails sent to respondents.
+respondent_email_send_records = Table(
+    "respondent_email_send_records",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "respondent_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("respondents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column(
+        "email_template_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("email_templates.id", ondelete="SET NULL"),
+        nullable=True,
+    ),
+    Column("to_email", String(255), nullable=False, default=""),
+    Column("from_email", String(255), nullable=False, default=""),
+    Column("subject", Text, nullable=False, default=""),
+    Column("outcome", EnumAsString(EmailSendOutcome, 16), nullable=False),
+    Column("missing_variables", JSON, nullable=False, default=list),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

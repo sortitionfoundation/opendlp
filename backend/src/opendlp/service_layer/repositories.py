@@ -11,6 +11,8 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_send_record import RespondentEmailSendRecord
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -577,4 +579,27 @@ class RegistrationImageRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: RegistrationImage) -> None:
         """Delete a registration image from the repository."""
+        raise NotImplementedError
+
+
+class EmailTemplateRepository(AbstractRepository):
+    """Repository interface for EmailTemplate domain objects."""
+
+    @abc.abstractmethod
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[EmailTemplate]:
+        """Get all email templates for an assembly, oldest first."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: EmailTemplate) -> None:
+        """Delete an email template from the repository."""
+        raise NotImplementedError
+
+
+class RespondentEmailSendRecordRepository(AbstractRepository):
+    """Repository interface for RespondentEmailSendRecord domain objects."""
+
+    @abc.abstractmethod
+    def list_by_respondent(self, respondent_id: uuid.UUID) -> list[RespondentEmailSendRecord]:
+        """Get all send records for a respondent, oldest first."""
         raise NotImplementedError

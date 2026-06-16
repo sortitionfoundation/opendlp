@@ -477,11 +477,13 @@ def delete_all_except_standard_users(session: Session) -> None:
     # Delete in order respecting foreign key constraints
     # First delete tables that reference other tables
     session.execute(orm.selection_run_records.delete())
+    session.execute(orm.respondent_email_send_records.delete())
     session.execute(orm.respondents.delete())
     session.execute(orm.respondent_field_definitions.delete())
     session.execute(orm.registration_images.delete())
     session.execute(orm.registration_page_html_sources.delete())
     session.execute(orm.registration_pages.delete())
+    session.execute(orm.email_templates.delete())
     session.execute(orm.target_categories.delete())
     session.execute(orm.assembly_gsheets.delete())
     session.execute(orm.assembly_csv.delete())

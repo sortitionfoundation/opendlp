@@ -180,7 +180,11 @@ missing-variable recording, validation_problems, detached copy, escaping of a
 
 ---
 
-## 3. Phase 2 — Persistence
+## 3. Phase 2 — Persistence ✅ DONE
+
+> **Implementation note:** the real current Alembic head was `a644849bb5d2`
+> (registration images), not `974f13035459` as the plan guessed — autogenerate
+> chained onto it correctly; new head is `5e06447b7861`.
 
 Follow the `RegistrationPage` persistence checklist exactly, adapted to one table
 

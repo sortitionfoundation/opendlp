@@ -8,6 +8,8 @@ from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_send_record import RespondentEmailSendRecord
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -34,10 +36,12 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    EmailTemplateRepository,
     PasswordResetTokenRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
+    RespondentEmailSendRecordRepository,
     RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
@@ -779,6 +783,25 @@ class FakeRespondentFieldDefinitionRepository(FakeRepository, RespondentFieldDef
         return before - len(self._items)
 
 
+class FakeEmailTemplateRepository(FakeRepository, EmailTemplateRepository):
+    """Fake implementation of EmailTemplateRepository."""
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[EmailTemplate]:
+        templates = [t for t in self._items if t.assembly_id == assembly_id]
+        return sorted(templates, key=lambda t: t.created_at)
+
+    def delete(self, item: EmailTemplate) -> None:
+        self._items = [t for t in self._items if t.id != item.id]
+
+
+class FakeRespondentEmailSendRecordRepository(FakeRepository, RespondentEmailSendRecordRepository):
+    """Fake implementation of RespondentEmailSendRecordRepository."""
+
+    def list_by_respondent(self, respondent_id: uuid.UUID) -> list[RespondentEmailSendRecord]:
+        records = [r for r in self._items if r.respondent_id == respondent_id]
+        return sorted(records, key=lambda r: r.created_at)
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing."""
 
@@ -804,6 +827,10 @@ class FakeUnitOfWork(AbstractUnitOfWork):
             FakeRegistrationPageHtmlRepository()
         )
         self.registration_images = self.fake_registration_images = FakeRegistrationImageRepository()
+        self.email_templates = self.fake_email_templates = FakeEmailTemplateRepository()
+        self.respondent_email_send_records = self.fake_respondent_email_send_records = (
+            FakeRespondentEmailSendRecordRepository()
+        )
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
         self.user_assembly_roles._uow = self
         self.committed = False
@@ -838,6 +865,8 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.fake_registration_pages._items.clear()
         self.fake_registration_page_html_sources._items.clear()
         self.fake_registration_images._items.clear()
+        self.fake_email_templates._items.clear()
+        self.fake_respondent_email_send_records._items.clear()
         self.committed = False
 
     def expire_all(self) -> None:
