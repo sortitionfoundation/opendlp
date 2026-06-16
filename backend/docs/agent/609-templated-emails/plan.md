@@ -373,7 +373,7 @@ with `to=[respondent.email]`, a send record persisted with the right outcome and
 
 ---
 
-## 6. Phase 5 — Wire into the registration submission flow
+## 6. Phase 5 — Wire into the registration submission flow ✅ DONE
 
 Per the §2 decision (send logic in the **service layer**, Flask-side deps passed
 in from the blueprint). The existing precedent is blueprint-orchestrates

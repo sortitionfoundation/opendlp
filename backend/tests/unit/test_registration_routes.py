@@ -185,7 +185,10 @@ class TestSubmitRegistrationForm:
             is_test=False,
         )
 
-        with patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit:
+        with (
+            patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit,
+            patch("opendlp.entrypoints.blueprints.registration.send_registration_auto_reply"),
+        ):
             mock_submit.return_value = result
             response = client.post("/register/valid-slug", data={"name": "Test"})
             assert response.status_code == 302
@@ -224,6 +227,57 @@ class TestSubmitRegistrationForm:
             render_kwargs = mock_render.call_args.kwargs
             assert render_kwargs["errors"] == {"email": ["Invalid email"]}
             assert render_kwargs["values"] == {"name": "Test"}
+
+
+class TestAutoReplyWiring:
+    """The blueprint triggers the auto-reply send after a valid submission."""
+
+    def test_valid_submission_triggers_auto_reply(self, client: FlaskClient) -> None:
+        respondent = MagicMock()
+        result = RegistrationSubmissionResult(
+            respondent=respondent, values={}, field_errors={}, form_errors=[], is_test=False
+        )
+        with (
+            patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit,
+            patch("opendlp.entrypoints.blueprints.registration.send_registration_auto_reply") as mock_auto_reply,
+        ):
+            mock_submit.return_value = result
+            client.post("/register/valid-slug", data={"name": "Test"})
+
+            mock_auto_reply.assert_called_once()
+            assert mock_auto_reply.call_args.kwargs["respondent"] is respondent
+            assert mock_auto_reply.call_args.kwargs["assembly_id"] == respondent.assembly_id
+
+    def test_invalid_submission_does_not_trigger_auto_reply(self, client: FlaskClient) -> None:
+        result = RegistrationSubmissionResult(
+            respondent=None,
+            values={"name": "Test"},
+            field_errors={"email": ["Invalid email"]},
+            form_errors=[],
+            is_test=False,
+        )
+        page = MagicMock(spec=RegistrationPage)
+        page.url_slug = "test-slug"
+        page.status = RegistrationPageStatus.PUBLISHED
+
+        with (
+            patch("opendlp.entrypoints.blueprints.registration.submit_registration") as mock_submit,
+            patch("opendlp.entrypoints.blueprints.registration.send_registration_auto_reply") as mock_auto_reply,
+            patch("opendlp.entrypoints.blueprints.registration.find_registration_page_by_url_slug") as mock_find,
+            patch("opendlp.entrypoints.blueprints.registration.resolve_visibility") as mock_resolve,
+            patch("opendlp.entrypoints.blueprints.registration.render_registration_form") as mock_render,
+            patch("opendlp.entrypoints.blueprints.registration.bootstrap"),
+        ):
+            mock_submit.return_value = result
+            mock_find.return_value = page
+            mock_resolve.return_value = RegistrationPageVisibility(
+                page=page, state=RegistrationPageVisibilityState.LIVE
+            )
+            mock_render.return_value = "<form>errors</form>"
+
+            client.post("/register/test-slug", data={"name": "Test"})
+
+            mock_auto_reply.assert_not_called()
 
 
 class TestThankYouPage:
