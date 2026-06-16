@@ -1,8 +1,8 @@
 """ABOUTME: Backoffice registration-page editor routes
-ABOUTME: View / save / create / skeleton / QR-download routes for the assembly registration tab"""
+ABOUTME: View / save / create / skeleton / QR-download / image upload routes for the assembly registration tab"""
 
 import uuid
-from typing import cast
+from typing import Any, cast
 
 from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
@@ -10,6 +10,13 @@ from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
 
 from opendlp import bootstrap
+from opendlp.config import get_max_image_upload_mb
+from opendlp.domain.registration_image import (
+    ALLOWED_INPUT_FORMATS,
+    IMAGE_FILE_EXTENSION,
+    ImageValidationError,
+    RegistrationImage,
+)
 from opendlp.domain.registration_page import (
     RegistrationPageHtml,
     RegistrationPageNotReady,
@@ -19,11 +26,18 @@ from opendlp.entrypoints.blueprints.registration import registration_url, short_
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
 from opendlp.service_layer.exceptions import (
+    ImageQuotaExceeded,
     InsufficientPermissions,
     NotFoundError,
+    RegistrationImageNotFoundError,
     RegistrationPageNotFoundError,
 )
 from opendlp.service_layer.qr_codes import generate_qr_code_base64, generate_qr_code_png
+from opendlp.service_layer.registration_image_service import (
+    add_registration_image,
+    delete_registration_image,
+    list_registration_images,
+)
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
@@ -37,6 +51,33 @@ from opendlp.service_layer.registration_page_service import (
 from opendlp.translations import gettext as _
 
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
+
+
+def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
+    """Serialise an image for the Assets panel.
+
+    ``public_url`` is the public ``/register/<slug>/assets/<sha>.png`` route. If the
+    page has no slug yet (newly created), we return a placeholder so the front-end
+    can still render the row.
+    """
+    file_name = f"{image.sha256}.{IMAGE_FILE_EXTENSION}"
+    public_url = (
+        url_for("registration.serve_registration_image", url_slug=url_slug, image_name=file_name) if url_slug else ""
+    )
+    display_name = (
+        image.alt.strip() if image.alt and image.alt.strip() else f"{image.sha256[:8]}.{IMAGE_FILE_EXTENSION}"
+    )
+    return {
+        "id": str(image.id),
+        "alt": image.alt,
+        "file_name": file_name,
+        "display_name": display_name,
+        "public_url": public_url,
+        "img_snippet": f'<img src="{public_url}" alt="{image.alt}">' if public_url else "",
+        "width": image.width,
+        "height": image.height,
+        "byte_size": image.byte_size,
+    }
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
@@ -78,6 +119,13 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 registration_short_url = short_url(registration_page.short_url_slug)
                 qr_code_data_url = generate_qr_code_base64(registration_short_url)
 
+        # Load registration images for the Assets panel
+        images: list[dict[str, Any]] = []
+        if has_registration_page and registration_page:
+            uow = bootstrap.bootstrap()
+            stored_images = list_registration_images(uow, current_user.id, assembly_id)
+            images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -94,6 +142,9 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             html_content=html_content,
             thank_you_html=thank_you_html,
             has_registration_page=has_registration_page,
+            images=images,
+            max_image_upload_mb=get_max_image_upload_mb(),
+            allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -294,3 +345,81 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
         current_app.logger.error(f"Download QR code error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while generating QR code"), "error")
         return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
+
+
+def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
+    """Look up the registration page's url_slug for serialising image URLs.
+
+    Returns an empty string when the page doesn't exist yet — the caller can
+    decide whether to omit the public URL.
+    """
+    uow = bootstrap.bootstrap()
+    result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+    if result is None:
+        return ""
+    return result[0].url_slug
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
+@login_required
+def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Accept a multipart image upload and return the stored image metadata as JSON.
+
+    The Assets panel calls this from the registration tab so uploads don't disturb
+    the HTML editor's unsaved state — no full-page reload is required.
+    """
+    upload = request.files.get("image")
+    if upload is None or not upload.filename:
+        return jsonify({"error": _("No file was selected")}), 400
+
+    try:
+        raw = upload.read()
+    except Exception as e:
+        current_app.logger.warning(f"Failed to read uploaded image for assembly {assembly_id}: {e}")
+        return jsonify({"error": _("Failed to read the uploaded file")}), 400
+
+    alt = (request.form.get("alt") or "").strip()
+
+    try:
+        uow = bootstrap.bootstrap()
+        image = add_registration_image(uow, current_user.id, assembly_id, raw, alt=alt)
+    except ImageValidationError as e:
+        return jsonify({"error": e.message, "reason": e.reason}), 400
+    except ImageQuotaExceeded as e:
+        return jsonify({"error": str(e)}), 400
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        current_app.logger.error(f"Image upload error for assembly {assembly_id}: {e}")
+        current_app.logger.exception("Full traceback:")
+        return jsonify({"error": _("An error occurred while uploading the image")}), 500
+
+    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+
+
+@backoffice_registration_bp.route(
+    "/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["DELETE"]
+)
+@login_required
+def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
+    """Delete a registration image. Returns 204 on success."""
+    try:
+        uow = bootstrap.bootstrap()
+        delete_registration_image(uow, current_user.id, assembly_id, image_id)
+    except RegistrationImageNotFoundError:
+        return jsonify({"error": _("Image not found")}), 404
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Registration page not found")}), 404
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        current_app.logger.error(f"Delete image error for assembly {assembly_id} image {image_id}: {e}")
+        return jsonify({"error": _("An error occurred while deleting the image")}), 500
+
+    return "", 204
