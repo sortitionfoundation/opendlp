@@ -703,6 +703,18 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     // Assets panel state. `images` is seeded from server-side render and mutated in place
                     // so the page never reloads — uncommitted edits in the HTML editor survive.
                     images: {{ images|tojson }},
+                    // URL contract: the upload endpoint is its own POST URL; the per-image
+                    // PATCH/DELETE URL is rendered once via url_for with a sentinel UUID,
+                    // and imageItemUrl() swaps in the real id at call time. This keeps the
+                    // route-name dependency explicit instead of implying the URL hierarchy.
+                    uploadImageUrl: '{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}',
+                    imageItemUrlTemplate: '{{ url_for("backoffice_registration.update_assembly_registration_image", assembly_id=assembly.id, image_id="00000000-0000-0000-0000-000000000000") }}',
+                    imageItemUrl(id) {
+                        return this.imageItemUrlTemplate.replace(
+                            '00000000-0000-0000-0000-000000000000',
+                            encodeURIComponent(id),
+                        );
+                    },
                     imageUploadModalOpen: false,
                     imageUploading: false,
                     imageFile: null,
@@ -804,7 +816,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         const formData = new FormData();
                         formData.append('image', this.imageFile);
                         formData.append('alt', alt);
-                        fetch('{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}', {
+                        fetch(this.uploadImageUrl, {
                             method: 'POST',
                             headers: {
                                 'X-CSRFToken': '{{ csrf_token() }}'
@@ -839,8 +851,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         if (!image || this.imageBeingDeletedId) return;
                         if (!confirm('{{ _("Delete this image?") }} ' + (image.display_name || ''))) return;
                         this.imageBeingDeletedId = image.id;
-                        const url = '{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}/' + encodeURIComponent(image.id);
-                        fetch(url, {
+                        fetch(this.imageItemUrl(image.id), {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': '{{ csrf_token() }}'
@@ -898,8 +909,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         }
                         this.imageEditing = true;
                         this.imageEditError = '';
-                        const url = '{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}/' + encodeURIComponent(this.editingImage.id);
-                        fetch(url, {
+                        fetch(this.imageItemUrl(this.editingImage.id), {
                             method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',
