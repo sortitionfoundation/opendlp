@@ -24,7 +24,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.e2e.helpers import get_csrf_token
+from tests.e2e.helpers import get_csrf_token, route_url
 
 MINIMAL_FORM_HTML = """
 <form method="post" action="{{ form_action }}">
@@ -50,6 +50,13 @@ def enable_registration_feature(monkeypatch: pytest.MonkeyPatch) -> None:
 def _build_page_with_auto_reply(
     session_factory, admin_id, *, publish: bool, capture_email: bool = True
 ) -> RegistrationPage:
+    """Create an assembly with a reply-to, a registration page whose form is wired to
+    an assigned auto-reply template, and (optionally) an email field on the page.
+
+    ``publish=True`` makes submissions live (POOL); ``publish=False`` leaves the page
+    in TEST mode (test submissions). ``capture_email=False`` omits the email field so
+    submitted respondents have no address.
+    """
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         assembly = create_assembly(
             uow=uow,
@@ -111,6 +118,8 @@ def _build_page_with_auto_reply(
 
 
 def _records_for_latest_respondent(session_factory, assembly_id, status):
+    """Return the send records (detached) for the most recent respondent of the given
+    status in the assembly, asserting at least one respondent exists."""
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status)
         assert respondents, "expected a respondent to have been created"
@@ -119,8 +128,10 @@ def _records_for_latest_respondent(session_factory, assembly_id, status):
 
 
 def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+    """A live (published) submission to a page with an auto-reply configured sends
+    the email and records a SENT RespondentEmailSendRecord addressed to the respondent."""
     page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=True)
-    form_url = f"/register/{page.url_slug}"
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
 
     response = client.post(
@@ -138,10 +149,11 @@ def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, pos
 def test_submission_without_captured_email_writes_no_record(
     client: FlaskClient, admin_user, postgres_session_factory
 ) -> None:
-    # An auto-reply is configured, but the page only captures a name (no email
-    # field), so the respondent has no address. The send is skipped with no record.
+    """When an auto-reply is configured but the page collects no email field, a live
+    submission produces a respondent with no address, so the send is skipped and no
+    record is written (the misconfiguration case from plan section 11.1)."""
     page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=True, capture_email=False)
-    form_url = f"/register/{page.url_slug}"
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
 
     response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada"})
@@ -152,8 +164,10 @@ def test_submission_without_captured_email_writes_no_record(
 
 
 def test_test_mode_submission_writes_no_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+    """A submission to a TEST-mode (unpublished) page creates a test-submission
+    respondent, which the auto-reply deliberately skips, so no record is written."""
     page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=False)
-    form_url = f"/register/{page.url_slug}"
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
 
     response = client.post(

@@ -19,6 +19,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.e2e.helpers import route_url
 
 MINIMAL_FORM_HTML = "<form method='post' action='{{ form_action }}'>{{ csrf_form_element }}</form>"
 
@@ -72,7 +73,11 @@ class TestServeRegistrationImage:
     ) -> None:
         url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user)
 
-        response = client.get(f"/register/{url_slug}/assets/{image.sha256}.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
 
         assert response.status_code == 200
         assert response.mimetype == "image/png"
@@ -84,30 +89,48 @@ class TestServeRegistrationImage:
     def test_serves_test_mode_image(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
         url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user, status="test")
 
-        response = client.get(f"/register/{url_slug}/assets/{image.sha256}.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
         assert response.status_code == 200
 
     def test_404_for_closed_page(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
         url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user, status="closed")
 
-        response = client.get(f"/register/{url_slug}/assets/{image.sha256}.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
         assert response.status_code == 404
 
     def test_404_for_unknown_slug(self, client: FlaskClient) -> None:
-        response = client.get("/register/no-such-slug/assets/deadbeef.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug="no-such-slug", image_name="deadbeef.png"
+            )
+        )
         assert response.status_code == 404
 
     def test_404_for_unknown_sha(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
         url_slug, _image = _seed_page_with_image(postgres_session_factory, admin_user)
 
-        response = client.get(f"/register/{url_slug}/assets/0000000000000000.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name="0000000000000000.png"
+            )
+        )
         assert response.status_code == 404
 
     def test_304_with_matching_etag(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
         url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user)
 
         response = client.get(
-            f"/register/{url_slug}/assets/{image.sha256}.png",
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            ),
             headers={"If-None-Match": f'"{image.sha256}"'},
         )
         assert response.status_code == 304
@@ -119,5 +142,9 @@ class TestServeRegistrationImage:
         monkeypatch.setenv("FF_REGISTRATION_PAGE", "false")
         reload_flags()
 
-        response = client.get(f"/register/{url_slug}/assets/{image.sha256}.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
         assert response.status_code == 404

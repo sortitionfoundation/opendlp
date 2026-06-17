@@ -18,7 +18,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.e2e.helpers import get_csrf_token
+from tests.e2e.helpers import get_csrf_token, route_url
 
 # A minimal valid form HTML that includes the required placeholders
 MINIMAL_FORM_HTML = """
@@ -171,7 +171,9 @@ class TestCspNonceNotLeakedToAuthorHtml:
     def test_author_script_does_not_receive_request_nonce(
         self, client: FlaskClient, nonce_probe_registration_page: RegistrationPage
     ) -> None:
-        response = client.get(f"/register/{nonce_probe_registration_page.url_slug}")
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=nonce_probe_registration_page.url_slug)
+        )
         assert response.status_code == 200
 
         # The real nonce is in the CSP header. It legitimately appears in the
@@ -192,7 +194,9 @@ class TestRegistrationFormRendering:
     """Test GET /register/<url_slug> route."""
 
     def test_renders_published_form(self, client: FlaskClient, published_registration_page: RegistrationPage) -> None:
-        response = client.get(f"/register/{published_registration_page.url_slug}")
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
+        )
         assert response.status_code == 200
         assert b"govuk-button" in response.data
         assert b"name" in response.data
@@ -200,12 +204,16 @@ class TestRegistrationFormRendering:
     def test_renders_test_mode_form_with_banner(
         self, client: FlaskClient, test_mode_registration_page: RegistrationPage
     ) -> None:
-        response = client.get(f"/register/{test_mode_registration_page.url_slug}")
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=test_mode_registration_page.url_slug)
+        )
         assert response.status_code == 200
         assert b"Test Mode" in response.data
 
     def test_returns_404_for_nonexistent_slug(self, client: FlaskClient) -> None:
-        response = client.get("/register/nonexistent-slug-12345")
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug="nonexistent-slug-12345")
+        )
         assert response.status_code == 404
 
     def test_closed_page_redirects(
@@ -215,9 +223,11 @@ class TestRegistrationFormRendering:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             close_registration_page(uow, admin_user.id, published_registration_page.assembly_id)
 
-        response = client.get(f"/register/{published_registration_page.url_slug}")
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
+        )
         assert response.status_code == 302
-        assert "/registration-closed" in response.location
+        assert route_url(client, "registration.registration_closed") in response.location
 
 
 class TestRegistrationFormSubmission:
@@ -227,7 +237,9 @@ class TestRegistrationFormSubmission:
         self, client: FlaskClient, published_registration_page: RegistrationPage
     ) -> None:
         # Get CSRF token from the form page
-        form_url = f"/register/{published_registration_page.url_slug}"
+        form_url = route_url(
+            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
+        )
         csrf_token = get_csrf_token(client, form_url)
 
         response = client.post(
@@ -239,7 +251,10 @@ class TestRegistrationFormSubmission:
             },
         )
         assert response.status_code == 302
-        assert f"/register/{published_registration_page.url_slug}/thank-you" in response.location
+        assert (
+            route_url(client, "registration.thank_you", url_slug=published_registration_page.url_slug)
+            in response.location
+        )
 
     def test_submission_creates_respondent_with_pool_status(
         self, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory
@@ -249,7 +264,9 @@ class TestRegistrationFormSubmission:
             initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
 
         # Get CSRF token and submit
-        form_url = f"/register/{published_registration_page.url_slug}"
+        form_url = route_url(
+            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
+        )
         csrf_token = get_csrf_token(client, form_url)
 
         response = client.post(
@@ -282,7 +299,9 @@ class TestRegistrationFormSubmission:
             )
 
         # Get CSRF token and submit
-        form_url = f"/register/{test_mode_registration_page.url_slug}"
+        form_url = route_url(
+            client, "registration.show_registration_form", url_slug=test_mode_registration_page.url_slug
+        )
         csrf_token = get_csrf_token(client, form_url)
 
         response = client.post(
@@ -327,7 +346,9 @@ class TestRegistrationCsrfExpiry:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
 
-        form_url = f"/register/{published_registration_page.url_slug}"
+        form_url = route_url(
+            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
+        )
         response = client.post(
             form_url,
             data={
@@ -357,7 +378,9 @@ class TestRegistrationCsrfExpiry:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
 
-        form_url = f"/register/{published_registration_page.url_slug}"
+        form_url = route_url(
+            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
+        )
         csrf_token = self._real_csrf_token(client, form_url)
 
         response = client.post(
@@ -370,7 +393,10 @@ class TestRegistrationCsrfExpiry:
         )
 
         assert response.status_code == 302
-        assert f"/register/{published_registration_page.url_slug}/thank-you" in response.location
+        assert (
+            route_url(client, "registration.thank_you", url_slug=published_registration_page.url_slug)
+            in response.location
+        )
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert uow.respondents.count_by_assembly_id(published_registration_page.assembly_id) == initial_count + 1
@@ -380,13 +406,15 @@ class TestThankYouPage:
     """Test GET /register/<url_slug>/thank-you route."""
 
     def test_renders_thank_you_page(self, client: FlaskClient, published_registration_page: RegistrationPage) -> None:
-        response = client.get(f"/register/{published_registration_page.url_slug}/thank-you")
+        response = client.get(
+            route_url(client, "registration.thank_you", url_slug=published_registration_page.url_slug)
+        )
         assert response.status_code == 200
         # The page uses DEFAULT_THANK_YOU_HTML from the domain
         assert b"Thank you for registering" in response.data
 
     def test_returns_404_for_nonexistent_slug(self, client: FlaskClient) -> None:
-        response = client.get("/register/nonexistent-slug-12345/thank-you")
+        response = client.get(route_url(client, "registration.thank_you", url_slug="nonexistent-slug-12345"))
         assert response.status_code == 404
 
 
@@ -394,12 +422,19 @@ class TestShortUrlRedirect:
     """Test GET /r/<short_url_slug> route."""
 
     def test_redirects_to_full_url(self, client: FlaskClient, published_registration_page: RegistrationPage) -> None:
-        response = client.get(f"/r/{published_registration_page.short_url_slug}")
+        response = client.get(
+            route_url(
+                client, "registration.short_url_redirect", short_url_slug=published_registration_page.short_url_slug
+            )
+        )
         assert response.status_code == 302
-        assert f"/register/{published_registration_page.url_slug}" in response.location
+        assert (
+            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
+            in response.location
+        )
 
     def test_returns_404_for_nonexistent_short_slug(self, client: FlaskClient) -> None:
-        response = client.get("/r/999999")
+        response = client.get(route_url(client, "registration.short_url_redirect", short_url_slug="999999"))
         assert response.status_code == 404
 
 
@@ -407,6 +442,6 @@ class TestRegistrationClosedPage:
     """Test GET /registration-closed route."""
 
     def test_renders_closed_page(self, client: FlaskClient) -> None:
-        response = client.get("/registration-closed")
+        response = client.get(route_url(client, "registration.registration_closed"))
         assert response.status_code == 200
         assert b"Registration Closed" in response.data
