@@ -335,6 +335,14 @@ class TestImageDetailsModalTemplate:
         # Copy uses the new generic clipboard helper
         assert "copyToClipboard(editingImage.file_name" in modal_block
 
+    def test_original_filename_row_is_hidden_unless_present(self, modal_block):
+        """The Original filename row uses x-show so it disappears for older
+        uploads that have no original_filename stored."""
+        assert 'id="image-details-original-filename"' in modal_block
+        assert 'x-show="editingImage.original_filename"' in modal_block
+        assert ":value=\"editingImage.original_filename || ''\"" in modal_block
+        assert "copyToClipboard(editingImage.original_filename" in modal_block
+
     def test_read_only_snippet_input_has_copy_handler(self, modal_block):
         assert 'id="image-details-snippet"' in modal_block
         assert ':value="editingImage.img_snippet"' in modal_block
