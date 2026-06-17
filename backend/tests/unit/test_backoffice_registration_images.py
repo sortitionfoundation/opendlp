@@ -3,6 +3,7 @@ ABOUTME: Covers _image_to_dict, _add_image_honouring_alt and the POST/PATCH/DELE
 
 import io
 import uuid
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -285,3 +286,74 @@ class TestDeleteRouteHappyPath:
         assert response.status_code == 204
         assert response.data == b""
         delete.assert_called_once()
+
+
+class TestImageDetailsModalTemplate:
+    """Structural assertions on the Image Details modal in assembly_registration.html.
+
+    The modal HTML lives inline in the registration template, gated by
+    ``<template x-if="imageDetailsModalOpen && editingImage">`` so Alpine controls
+    visibility client-side. Rendering the page through the route requires a real
+    authenticated user (the base layout reads ``current_user.global_role`` in a
+    context processor), which is heavyweight for verifying static modal markup.
+
+    We instead scan the template file and confirm the enhanced modal carries the
+    expected structural markers — thumbnail binding, read-only inputs with copy
+    handlers, danger-styled Delete button, and the renamed "Save alt" button.
+    """
+
+    @pytest.fixture
+    def modal_block(self) -> str:
+        """Return only the Image Details modal subsection of the template."""
+        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
+        text = path.read_text(encoding="utf-8")
+        start_marker = "{# Image Details / Edit Alt Modal #}"
+        end_marker = "{# Toast notification #}"
+        start = text.find(start_marker)
+        end = text.find(end_marker, start)
+        assert start != -1 and end != -1, "Image Details modal section not found in template"
+        return text[start:end]
+
+    @pytest.fixture
+    def alpine_data_block(self) -> str:
+        """Return the Alpine data block (where the JS handlers live)."""
+        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
+        return path.read_text(encoding="utf-8")
+
+    def test_thumbnail_binds_to_public_url_with_no_preview_fallback(self, modal_block):
+        assert ':src="editingImage.public_url"' in modal_block
+        assert ':alt="editingImage.alt' in modal_block
+        # Fallback hint when the page has no slug yet (public_url is blank)
+        assert "No preview" in modal_block
+
+    def test_read_only_filename_input_has_copy_handler(self, modal_block):
+        assert 'id="image-details-filename"' in modal_block
+        assert "readonly" in modal_block
+        assert ':value="editingImage.file_name"' in modal_block
+        # Click-to-select the value
+        assert "$event.target.select()" in modal_block
+        # Copy uses the new generic clipboard helper
+        assert "copyToClipboard(editingImage.file_name" in modal_block
+
+    def test_read_only_snippet_input_has_copy_handler(self, modal_block):
+        assert 'id="image-details-snippet"' in modal_block
+        assert ':value="editingImage.img_snippet"' in modal_block
+        # Snippet copy reuses the existing helper (which guards on missing public URL)
+        assert "copyImageSnippet(editingImage)" in modal_block
+
+    def test_footer_has_delete_on_left_and_renamed_save_button(self, modal_block):
+        # Danger-styled Delete handler exists and is wired through a non-confirming method
+        assert 'variant="danger"' in modal_block
+        assert "deleteEditingImage()" in modal_block
+        assert "Delete image" in modal_block
+        # The primary save button is renamed to clarify what's persisted
+        assert "Save alt" in modal_block
+        # Old generic "Save" label is no longer the button text
+        assert 'button(_("Save"),' not in modal_block
+
+    def test_alpine_data_block_exposes_copy_helper_and_delete_method(self, alpine_data_block):
+        # Generic clipboard helper used by the filename copy button
+        assert "copyToClipboard(text, successMessage)" in alpine_data_block
+        # Modal-scoped delete that closes the modal on success and skips the panel's confirm()
+        assert "deleteEditingImage()" in alpine_data_block
+        assert "this.imageDetailsModalOpen = false" in alpine_data_block
