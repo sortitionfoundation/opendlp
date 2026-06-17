@@ -5,9 +5,11 @@ import uuid
 
 from opendlp.domain.registration_image import (
     IMAGE_CONTENT_TYPE,
+    MAX_ORIGINAL_FILENAME_LENGTH,
     ProcessedImage,
     RegistrationImage,
     generate_image_html,
+    sanitise_original_filename,
 )
 
 
@@ -55,6 +57,18 @@ class TestRegistrationImage:
         img = RegistrationImage.from_processed(uuid.uuid4(), _processed(), alt="A red square")
         assert img.create_detached_copy().alt == "A red square"
 
+    def test_original_filename_defaults_to_empty_string(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed())
+        assert img.original_filename == ""
+
+    def test_from_processed_keeps_original_filename(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed(), original_filename="holiday photo.jpg")
+        assert img.original_filename == "holiday photo.jpg"
+
+    def test_detached_copy_preserves_original_filename(self):
+        img = RegistrationImage.from_processed(uuid.uuid4(), _processed(), original_filename="holiday photo.jpg")
+        assert img.create_detached_copy().original_filename == "holiday photo.jpg"
+
     def test_detached_copy_equal_by_id(self):
         img = RegistrationImage.from_processed(uuid.uuid4(), _processed())
         copy = img.create_detached_copy()
@@ -65,6 +79,28 @@ class TestRegistrationImage:
     def test_not_equal_to_other_type(self):
         img = RegistrationImage.from_processed(uuid.uuid4(), _processed())
         assert img != "not an image"
+
+
+class TestSanitiseOriginalFilename:
+    def test_keeps_a_plain_readable_name(self):
+        assert sanitise_original_filename("holiday photo.JPG") == "holiday photo.JPG"
+
+    def test_strips_unix_path_components(self):
+        assert sanitise_original_filename("/home/user/photos/cat.png") == "cat.png"
+
+    def test_strips_windows_path_components(self):
+        assert sanitise_original_filename(r"C:\\Users\\me\\cat.png") == "cat.png"
+
+    def test_strips_control_characters(self):
+        assert sanitise_original_filename("ca\x00t\x1f.png") == "cat.png"
+
+    def test_truncates_to_max_length(self):
+        long_name = "a" * (MAX_ORIGINAL_FILENAME_LENGTH + 50)
+        result = sanitise_original_filename(long_name)
+        assert len(result) == MAX_ORIGINAL_FILENAME_LENGTH
+
+    def test_empty_stays_empty(self):
+        assert sanitise_original_filename("") == ""
 
 
 class TestGenerateImageHtml:

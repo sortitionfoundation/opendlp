@@ -2,6 +2,7 @@
 ABOUTME: Holds a stored registration image plus pure <img> HTML generation"""
 
 import html as html_lib
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -9,6 +10,25 @@ from datetime import UTC, datetime
 IMAGE_CONTENT_TYPE = "image/png"
 IMAGE_FILE_EXTENSION = "png"
 ALLOWED_INPUT_FORMATS = {"PNG", "JPEG", "WEBP"}
+
+# Bound on the stored original filename to stop an oversized name bloating the row.
+MAX_ORIGINAL_FILENAME_LENGTH = 255
+
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def sanitise_original_filename(name: str) -> str:
+    """Reduce an uploaded filename to a safe, readable, bounded basename.
+
+    Strips any directory components (handling both ``/`` and ``\\`` separators) and
+    control characters, then truncates to ``MAX_ORIGINAL_FILENAME_LENGTH``. Spaces,
+    unicode and case are preserved so the name still reflects what the user called
+    the file.
+    """
+    # Take the basename relative to either separator so a Windows path doesn't slip through.
+    basename = re.split(r"[\\/]", name)[-1]
+    cleaned = _CONTROL_CHARS.sub("", basename).strip()
+    return cleaned[:MAX_ORIGINAL_FILENAME_LENGTH]
 
 
 class ImageValidationError(Exception):
@@ -39,6 +59,7 @@ class RegistrationImage:
         sha256: str,
         data: bytes,
         alt: str = "",
+        original_filename: str = "",
         created_by: uuid.UUID | None = None,
         image_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -51,6 +72,7 @@ class RegistrationImage:
         self.sha256 = sha256
         self.data = data
         self.alt = alt
+        self.original_filename = original_filename
         self.created_by = created_by
         self.created_at = created_at or datetime.now(UTC)
 
@@ -61,6 +83,7 @@ class RegistrationImage:
         processed: ProcessedImage,
         created_by: uuid.UUID | None = None,
         alt: str = "",
+        original_filename: str = "",
     ) -> "RegistrationImage":
         return cls(
             registration_page_id=registration_page_id,
@@ -70,6 +93,7 @@ class RegistrationImage:
             sha256=processed.sha256,
             data=processed.data,
             alt=alt,
+            original_filename=original_filename,
             created_by=created_by,
         )
 
@@ -82,6 +106,7 @@ class RegistrationImage:
             sha256=self.sha256,
             data=self.data,
             alt=self.alt,
+            original_filename=self.original_filename,
             created_by=self.created_by,
             image_id=self.id,
             created_at=self.created_at,

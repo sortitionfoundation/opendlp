@@ -30,7 +30,7 @@ def assembly_id() -> uuid.UUID:
     return uuid.uuid4()
 
 
-def _image(*, alt: str = "Logo", sha256: str = "a" * 64) -> RegistrationImage:
+def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str = "") -> RegistrationImage:
     return RegistrationImage(
         registration_page_id=uuid.uuid4(),
         byte_size=123,
@@ -39,6 +39,7 @@ def _image(*, alt: str = "Logo", sha256: str = "a" * 64) -> RegistrationImage:
         sha256=sha256,
         data=b"\x89PNG...",
         alt=alt,
+        original_filename=original_filename,
         created_by=uuid.uuid4(),
     )
 
@@ -62,7 +63,19 @@ class TestImageToDict:
         assert result["height"] == 80
         assert result["byte_size"] == 123
 
-    def test_falls_back_to_short_sha_when_alt_blank(self, app):
+    def test_includes_original_filename(self, app):
+        image = _image(alt="A nice logo", original_filename="logo.png")
+        with app.test_request_context():
+            result = _image_to_dict(image, url_slug="my-slug")
+        assert result["original_filename"] == "logo.png"
+
+    def test_falls_back_to_original_filename_when_alt_blank(self, app):
+        image = _image(alt="   ", sha256="c" * 64, original_filename="holiday photo.png")
+        with app.test_request_context():
+            result = _image_to_dict(image, url_slug="my-slug")
+        assert result["display_name"] == "holiday photo.png"
+
+    def test_falls_back_to_short_sha_when_alt_and_filename_blank(self, app):
         image = _image(alt="   ", sha256="c" * 64)
         with app.test_request_context():
             result = _image_to_dict(image, url_slug="my-slug")
@@ -183,6 +196,9 @@ class TestUploadRouteHappyPath:
         assert body["image"]["alt"] == "Hello world"
         assert body["image"]["id"] == str(stored.id)
         helper.assert_called_once()
+        # The uploaded filename is threaded through to the service layer.
+        _, kwargs = helper.call_args
+        assert kwargs.get("original_filename") == "logo.png"
 
     def test_upload_rejects_missing_alt(self, authed_client, assembly_id):
         response = authed_client.post(

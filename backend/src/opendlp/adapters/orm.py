@@ -650,6 +650,7 @@ registration_images = Table(
     Column("sha256", String(64), nullable=False),
     Column("data", LargeBinary, nullable=False),
     Column("alt", String, nullable=False, server_default=""),
+    Column("original_filename", String(255), nullable=False, server_default=""),
     Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Index("ix_registration_images_page_sha_unique", "registration_page_id", "sha256", unique=True),

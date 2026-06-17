@@ -10,7 +10,11 @@ from opendlp.config import (
     get_registration_image_max_edge_px,
 )
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.registration_image import RegistrationImage, generate_image_html
+from opendlp.domain.registration_image import (
+    RegistrationImage,
+    generate_image_html,
+    sanitise_original_filename,
+)
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.users import User
 
@@ -50,7 +54,12 @@ def _load_page(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationP
 
 
 def add_registration_image(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, raw: bytes, alt: str = ""
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    raw: bytes,
+    alt: str = "",
+    original_filename: str = "",
 ) -> RegistrationImage:
     with uow:
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
@@ -64,7 +73,8 @@ def add_registration_image(
             max_edge_px=get_registration_image_max_edge_px(),
         )
         # Content-addressed dedup: identical bytes on a page collapse to one row.
-        # The first upload's alt text is kept; change it via set_registration_image_alt.
+        # The first upload's alt text and original filename are kept; change the alt
+        # via set_registration_image_alt.
         existing = uow.registration_images.get_by_page_and_sha(page.id, processed.sha256)
         if existing is not None:
             return existing.create_detached_copy()
@@ -73,7 +83,13 @@ def add_registration_image(
         if uow.registration_images.count_by_page_id(page.id) >= limit:
             raise ImageQuotaExceeded(limit)
 
-        image = RegistrationImage.from_processed(page.id, processed, created_by=user.id, alt=alt)
+        image = RegistrationImage.from_processed(
+            page.id,
+            processed,
+            created_by=user.id,
+            alt=alt,
+            original_filename=sanitise_original_filename(original_filename),
+        )
         uow.registration_images.add(image)
         page.record_edit(user.id, "Added a registration image")
         uow.commit()
