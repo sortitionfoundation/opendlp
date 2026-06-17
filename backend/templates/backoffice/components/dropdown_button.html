@@ -3,7 +3,7 @@ ABOUTME: Dropdown button component - single trigger that opens a menu of actions
 ABOUTME: Sibling of split_button; use when no primary action should be elevated outside the menu
 #}
 
-{% macro dropdown_button(label="", items=None, variant="secondary", id="", aria_label="") %}
+{% macro dropdown_button(label="", items=None, variant="secondary", id="", aria_label="", disabled=false) %}
     {#
     Dropdown button: a single button that opens a menu of related actions. Unlike
     split_button, no action is elevated outside the menu — every option lives in
@@ -17,6 +17,9 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
         variant: Style variant: "primary" | "secondary" | "danger" (default: "secondary").
         id: Optional id prefix used for the toggle and menu (defaults to "dropdown-btn").
         aria_label: aria-label for the trigger (defaults to the label).
+        disabled: When true, renders the trigger with the muted look and the HTML
+            `disabled` attribute — clicks and keyboard activation are blocked. The
+            menu cannot open in this state.
 
     Accessibility:
         - Trigger uses aria-haspopup="menu" and aria-expanded bound to open state.
@@ -38,22 +41,33 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
     {% set menu_id = prefix ~ "-menu" %}
     {% set toggle_id = prefix ~ "-toggle" %}
 
-    {# Variant styling - mirrors split_button so visually they look identical #}
-    {% if variant == "primary" %}
+    {# Variant styling - mirrors split_button so visually they look identical.
+       The disabled look mirrors button.html's disabled state so the two
+       components feel consistent when both are rendered side by side. #}
+    {% if disabled %}
+        {% set var_bg = "var(--color-disabled-borders)" %}
+        {% set var_fg = "var(--color-placeholder-text)" %}
+        {% set var_border = "transparent" %}
+        {% set hover_class = "" %}
+        {% set disabled_extra = "cursor: not-allowed; opacity: 0.5;" %}
+    {% elif variant == "primary" %}
         {% set var_bg = "var(--color-button-primary-bg)" %}
         {% set var_fg = "var(--color-button-primary-text)" %}
         {% set var_border = "transparent" %}
         {% set hover_class = "btn-primary-hover" %}
+        {% set disabled_extra = "" %}
     {% elif variant == "danger" %}
         {% set var_bg = "var(--color-button-danger-bg)" %}
         {% set var_fg = "var(--color-button-danger-text)" %}
         {% set var_border = "transparent" %}
         {% set hover_class = "btn-danger-hover" %}
+        {% set disabled_extra = "" %}
     {% else %}
         {% set var_bg = "var(--color-button-secondary-bg)" %}
         {% set var_fg = "var(--color-button-secondary-text)" %}
         {% set var_border = "var(--color-button-secondary-border)" %}
         {% set hover_class = "btn-secondary-hover" %}
+        {% set disabled_extra = "" %}
     {% endif %}
 
     {% set base_styles %}
@@ -75,6 +89,7 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
         border: 1px solid {{ var_border }};
         padding: 8px 12px;
         border-radius: 4px;
+        {{ disabled_extra }}
     {% endset %}
 
     <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
@@ -82,8 +97,7 @@ ABOUTME: Sibling of split_button; use when no primary action should be elevated 
         <button
             type="button"
             id="{{ toggle_id }}"
-            @click="open = !open"
-            @click.outside="open = false"
+            {% if disabled %}disabled aria-disabled="true"{% else %}@click="open = !open" @click.outside="open = false"{% endif %}
             aria-haspopup="menu"
             x-bind:aria-expanded="open ? 'true' : 'false'"
             aria-controls="{{ menu_id }}"

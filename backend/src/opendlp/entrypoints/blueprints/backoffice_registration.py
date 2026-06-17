@@ -132,6 +132,10 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
             images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
 
+        # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
+        # have no save path so we always keep them read-only regardless of the param.
+        edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -151,6 +155,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             images=images,
             max_image_upload_mb=get_max_image_upload_mb(),
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
+            edit_mode=edit_mode,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -201,6 +206,15 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
 @login_required
 def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save and publish registration form HTML content."""
+    action = request.form.get("action", "save")
+    # If the user was editing (action="save") and the request fails, keep them in
+    # edit mode so they can fix and retry; status transitions only fire from
+    # read-only mode (the dropdown is disabled while editing), so they land back
+    # in read-only on error.
+    view_kwargs: dict[str, Any] = {"assembly_id": assembly_id}
+    if action == "save":
+        view_kwargs["edit"] = "1"
+    error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **view_kwargs)
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         get_assembly_nav_context(
@@ -211,7 +225,6 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
         html_content = request.form.get("html_content", "")
-        action = request.form.get("action", "save")
 
         # Update HTML content (will raise RegistrationPageNotFoundError if page doesn't exist)
         uow = bootstrap.bootstrap()
@@ -219,6 +232,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
+        # Success drops ?edit=1 — the user lands back in read-only.
         return redirect_preserving_scroll(
             url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
         )
@@ -227,9 +241,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         error_message = "; ".join(e.problems)
         current_app.logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
         flash(error_message, "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
-        )
+        return redirect_preserving_scroll(error_redirect_url)
     except RegistrationPageNotFoundError:
         # Registration page doesn't exist yet - redirect to Details tab to create it
         flash(_("Please create a registration page first from the Details tab."), "warning")
@@ -245,18 +257,14 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except ValueError as e:
         current_app.logger.warning(f"Validation error for assembly {assembly_id}: {e}")
         flash(str(e), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
-        )
+        return redirect_preserving_scroll(error_redirect_url)
     except Exception as e:
         current_app.logger.error(
             f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
         )
         current_app.logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
-        )
+        return redirect_preserving_scroll(error_redirect_url)
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
