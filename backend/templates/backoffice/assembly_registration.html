@@ -150,6 +150,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     items=status_items,
                                     variant="secondary",
                                     id="status-control",
+                                    disabled=edit_mode,
                                     ) }}
                                 </div>
                      {# Header right: editorial helper only (status controls live on the left next to the badge) #}
@@ -173,18 +174,25 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
                                 </p>
 
-                    {# HTML Textarea with monospace font #}
+                    {# HTML Textarea with monospace font. `readonly` is the default;
+                       ?edit=1 unlocks it via the Edit CTA below. #}
+                                {% set textarea_attrs %}
+                                    {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                                {% endset %}
                                 {{ textarea(
                                 name="html_content",
                                 label="",
                                 value=html_content,
                                 placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
                                 rows=25,
-                                attrs="style=\"font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;\""
+                                attrs=textarea_attrs|trim
                                 ) }}
 
-                    {# Footer: review the form + save edits. Status transitions live in the header dropdown. #}
+                    {# Footer: review the form + save edits. Status transitions live in the header dropdown.
+                       The primary action slot toggles between Edit (read-only, default) and Save/Cancel (edit_mode). #}
                                 <div class="flex justify-end gap-3">
+                                    {% set edit_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, edit="1") %}
+                                    {% set view_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id) %}
                         {# Preview / Share lives next to Save — "view what you just edited" pairs with "save it" #}
                                     {% if registration_status == "TEST" %}
                                         {% set eye_icon %}
@@ -199,7 +207,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         leading_icon=eye_icon,
                                         attrs='@click="openPreviewModal()"'
                                         ) }}
-                                        {{ button(_("Save"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                        {% if edit_mode %}
+                                            {{ button(_("Cancel"), variant="secondary", href=view_url) }}
+                                            {{ button(_("Save"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                        {% else %}
+                                            {{ button(_("Edit"), variant="primary", href=edit_url) }}
+                                        {% endif %}
                                     {% else %}
                                         {% set link_icon %}
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -213,9 +226,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             leading_icon=link_icon,
                                             attrs='@click="openPreviewModal()"'
                                             ) }}
-                                            {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                            {% if edit_mode %}
+                                                {{ button(_("Cancel"), variant="secondary", href=view_url) }}
+                                                {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                            {% else %}
+                                                {{ button(_("Edit"), variant="primary", href=edit_url) }}
+                                            {% endif %}
                                         {% else %}
-                                {# CLOSED: no save (form is redirecting), but keep Share Form visible-but-disabled so the user can see why #}
+                                {# CLOSED: no save (form is redirecting) and no Edit — admins must reopen first. #}
                                             {{ button(
                                             _("Share Form"),
                                             variant="tertiary",
