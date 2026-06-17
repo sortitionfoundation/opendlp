@@ -623,7 +623,21 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 <div class="rounded-md p-3 mb-4 grid grid-cols-3 gap-y-1 gap-x-3 text-body-sm"
                                      style="background-color: var(--color-subtle-background-panels);">
                                     <span class="font-medium" style="color: var(--color-headings);">{{ _("File name") }}</span>
-                                    <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" x-text="editingImage.file_name"></span>
+                                    <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.file_name" x-text="editingImage.file_name"></span>
+
+                                    <template x-if="editingImage.original_filename">
+                                        <span class="contents">
+                                            <span class="font-medium" style="color: var(--color-headings);">{{ _("Original filename") }}</span>
+                                            <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.original_filename" x-text="editingImage.original_filename"></span>
+                                        </span>
+                                    </template>
+
+                                    <template x-if="editingImage.public_url">
+                                        <span class="contents">
+                                            <span class="font-medium" style="color: var(--color-headings);">{{ _("URL") }}</span>
+                                            <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.public_url" x-text="editingImage.public_url"></span>
+                                        </span>
+                                    </template>
 
                                     <span class="font-medium" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
                                     <span class="col-span-2" style="color: var(--color-body-text);">
