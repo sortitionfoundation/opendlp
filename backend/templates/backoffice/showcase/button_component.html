@@ -4,6 +4,7 @@ ABOUTME: Displays button variants and usage examples
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import switch %}
 
 {# Sample SVG icons for demonstration #}
 {% set edit_icon %}
@@ -40,13 +41,22 @@ ABOUTME: Displays button variants and usage examples
 
         {# Variants Section #}
         {% call showcase_example('{% from "backoffice/components/button.html" import button %}
+            {% from "backoffice/components/input.html" import switch %}
 
 {# Basic variants #}
             {{ button("Primary", variant="primary") }}
             {{ button("Secondary", variant="secondary") }}
             {{ button("Tertiary", variant="tertiary") }}
             {{ button("Delete", variant="danger") }}
-            {{ button("Disabled", disabled=true) }}') %}
+            {{ button("Disabled", disabled=true) }}
+
+{# Reactive disabled — the HTML disabled attribute AND the muted look are
+   toggled at runtime from an Alpine expression. Pair with form state, e.g.
+   alpine_disabled="!form.name || saving". #}
+            <div x-data="{ enabled: false }">
+                {{ switch("demo-toggle", label="Enable", attrs=\'x-model="enabled"\') }}
+                {{ button("Save", variant="primary", alpine_disabled="!enabled") }}
+            </div>') %}
             <div class="flex flex-wrap gap-4 items-center">
                 <div class="flex flex-col items-center gap-2">
                     {{ button("Primary", variant="primary", id="btn-primary") }}
@@ -66,7 +76,15 @@ ABOUTME: Displays button variants and usage examples
                 </div>
                 <div class="flex flex-col items-center gap-2">
                     {{ button("Disabled", disabled=true, id="btn-disabled") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled</span>
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Jinja)</span>
+                </div>
+                <div class="flex flex-col items-center gap-3" x-data="{ enabled: false }">
+                    {{ button("Save",
+                    variant="primary",
+                    id="btn-reactive",
+                    alpine_disabled="!enabled") }}
+                    {{ switch("btn-reactive-toggle", label="Enable", attrs='x-model="enabled"') }}
+                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Alpine)</span>
                 </div>
             </div>
         {% endcall %}
