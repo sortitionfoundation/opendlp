@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-17 16:50+0100\n"
+"POT-Creation-Date: 2026-06-17 16:52+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1356,8 +1356,8 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:407
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:436
-#: templates/backoffice/assembly_registration.html:825
-#: templates/backoffice/assembly_registration.html:921
+#: templates/backoffice/assembly_registration.html:837
+#: templates/backoffice/assembly_registration.html:933
 msgid "Alt text is required for accessibility"
 msgstr ""
 
@@ -3180,7 +3180,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/assembly_edit_respondent.html:139
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_registration.html:580
-#: templates/backoffice/assembly_registration.html:681
+#: templates/backoffice/assembly_registration.html:693
 #: templates/backoffice/assembly_view_respondent.html:310
 #: templates/backoffice/components/edit_number_to_select_modal.html:37
 #: templates/backoffice/components/respondent_status_form.html:87
@@ -4669,7 +4669,7 @@ msgid "Preview and Test Responses"
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:202
-#: templates/backoffice/assembly_registration.html:682
+#: templates/backoffice/assembly_registration.html:694
 #: templates/backoffice/components/edit_number_to_select_modal.html:38
 #: templates/backoffice/respondent_field_schema/view.html:230
 #: templates/backoffice/respondent_field_schema/view.html:271
@@ -4775,13 +4775,13 @@ msgid "Image file"
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:555
-#: templates/backoffice/assembly_registration.html:656
+#: templates/backoffice/assembly_registration.html:668
 #, fuzzy
 msgid "Alt text"
 msgstr "Kezdés dátuma"
 
 #: templates/backoffice/assembly_registration.html:567
-#: templates/backoffice/assembly_registration.html:668
+#: templates/backoffice/assembly_registration.html:680
 msgid ""
 "Describes the image for screen-reader users and is used as the file's "
 "display name in the asset list."
@@ -4805,87 +4805,91 @@ msgstr ""
 msgid "URL"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:642
+#: templates/backoffice/assembly_registration.html:645
+msgid "Open image in new tab"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:654
 #, fuzzy
 msgid "Dimensions"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:647
+#: templates/backoffice/assembly_registration.html:659
 msgid "px"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:650
+#: templates/backoffice/assembly_registration.html:662
 msgid "File size"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:766
+#: templates/backoffice/assembly_registration.html:778
 #, fuzzy
 msgid "An error occurred while fetching the form skeleton"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: templates/backoffice/assembly_registration.html:785
+#: templates/backoffice/assembly_registration.html:797
 #: templates/backoffice/components/url_display.html:37
 msgid "Copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:788
-#: templates/backoffice/assembly_registration.html:898
+#: templates/backoffice/assembly_registration.html:800
+#: templates/backoffice/assembly_registration.html:910
 msgid "Failed to copy to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:843
+#: templates/backoffice/assembly_registration.html:855
 #, fuzzy
 msgid "Upload failed"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:854
+#: templates/backoffice/assembly_registration.html:866
 #, fuzzy
 msgid "Image uploaded"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_registration.html:857
+#: templates/backoffice/assembly_registration.html:869
 #, fuzzy
 msgid "Network error while uploading the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:866
+#: templates/backoffice/assembly_registration.html:878
 #, fuzzy
 msgid "Delete this image?"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:877
+#: templates/backoffice/assembly_registration.html:889
 msgid "Failed to delete image"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:881
+#: templates/backoffice/assembly_registration.html:893
 #, fuzzy
 msgid "Image deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:884
+#: templates/backoffice/assembly_registration.html:896
 #, fuzzy
 msgid "Network error while deleting the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:893
+#: templates/backoffice/assembly_registration.html:905
 msgid "No public URL available yet"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:897
+#: templates/backoffice/assembly_registration.html:909
 msgid "Snippet copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:937
+#: templates/backoffice/assembly_registration.html:949
 #, fuzzy
 msgid "Failed to update image"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:945
+#: templates/backoffice/assembly_registration.html:957
 #, fuzzy
 msgid "Image updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:948
+#: templates/backoffice/assembly_registration.html:960
 #, fuzzy
 msgid "Network error while updating the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
