@@ -30,7 +30,7 @@ def assembly_id() -> uuid.UUID:
     return uuid.uuid4()
 
 
-def _image(*, alt: str = "Logo", sha256: str = "a" * 64) -> RegistrationImage:
+def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str = "") -> RegistrationImage:
     return RegistrationImage(
         registration_page_id=uuid.uuid4(),
         byte_size=321,
@@ -39,18 +39,20 @@ def _image(*, alt: str = "Logo", sha256: str = "a" * 64) -> RegistrationImage:
         sha256=sha256,
         data=b"\x89PNG-bytes",
         alt=alt,
+        original_filename=original_filename,
         created_by=uuid.uuid4(),
     )
 
 
 class TestSerialiseImage:
     def test_emits_expected_fields(self):
-        image = _image(alt="Hello", sha256="e" * 64)
+        image = _image(alt="Hello", sha256="e" * 64, original_filename="logo.png")
         result = _serialise_image(image)
         assert result["id"] == str(image.id)
         assert result["alt"] == "Hello"
         assert result["sha256"] == "e" * 64
         assert result["file_name"] == f"{'e' * 64}.png"
+        assert result["original_filename"] == "logo.png"
         assert result["width"] == 200
         assert result["height"] == 150
         assert result["byte_size"] == 321
@@ -72,7 +74,12 @@ class TestHandleAddRegistrationImage:
             cu.id = uuid.uuid4()
             result = _handle_add_registration_image(
                 uow=MagicMock(),
-                params={"assembly_id": str(assembly_id), "image_base64": b64, "alt": "Decoded"},
+                params={
+                    "assembly_id": str(assembly_id),
+                    "image_base64": b64,
+                    "alt": "Decoded",
+                    "original_filename": "logo.png",
+                },
             )
 
         assert result["status"] == "success"
@@ -80,6 +87,7 @@ class TestHandleAddRegistrationImage:
         _, kwargs = add.call_args
         assert kwargs["raw"] == raw_bytes
         assert kwargs["alt"] == "Decoded"
+        assert kwargs["original_filename"] == "logo.png"
 
     def test_strips_data_url_prefix(self, app, assembly_id):
         stored = _image()

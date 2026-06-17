@@ -37,6 +37,13 @@ class TestAddAndGet:
         assert retrieved is not None
         assert retrieved.alt == "A red square"
 
+    def test_add_and_get_preserves_original_filename(self, registration_image_backend: ContractBackend):
+        image = registration_image_backend.make_registration_image(original_filename="holiday photo.png")
+
+        retrieved = registration_image_backend.repo.get(image.id)
+        assert retrieved is not None
+        assert retrieved.original_filename == "holiday photo.png"
+
     def test_get_nonexistent_returns_none(self, registration_image_backend: ContractBackend):
         assert registration_image_backend.repo.get(uuid.uuid4()) is None
 

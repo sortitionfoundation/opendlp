@@ -66,12 +66,16 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
     public_url = (
         url_for("registration.serve_registration_image", url_slug=url_slug, image_name=file_name) if url_slug else ""
     )
-    display_name = (
-        image.alt.strip() if image.alt and image.alt.strip() else f"{image.sha256[:8]}.{IMAGE_FILE_EXTENSION}"
-    )
+    if image.alt and image.alt.strip():
+        display_name = image.alt.strip()
+    elif image.original_filename:
+        display_name = image.original_filename
+    else:
+        display_name = f"{image.sha256[:8]}.{IMAGE_FILE_EXTENSION}"
     return {
         "id": str(image.id),
         "alt": image.alt,
+        "original_filename": image.original_filename,
         "file_name": file_name,
         "display_name": display_name,
         "public_url": public_url,
@@ -362,7 +366,9 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return result[0].url_slug
 
 
-def _add_image_honouring_alt(assembly_id: uuid.UUID, raw: bytes, alt: str) -> RegistrationImage:
+def _add_image_honouring_alt(
+    assembly_id: uuid.UUID, raw: bytes, alt: str, original_filename: str = ""
+) -> RegistrationImage:
     """Add an image and, on dedup, ensure the stored alt matches the user's input.
 
     ``add_registration_image`` collapses identical bytes to one row and KEEPS the
@@ -370,7 +376,9 @@ def _add_image_honouring_alt(assembly_id: uuid.UUID, raw: bytes, alt: str) -> Re
     image (typically replacing an empty legacy alt), we follow up with
     ``set_registration_image_alt`` so the snippet they copy reflects what they typed.
     """
-    image = add_registration_image(bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt)
+    image = add_registration_image(
+        bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt, original_filename=original_filename
+    )
     if image.alt != alt:
         image = set_registration_image_alt(bootstrap.bootstrap(), current_user.id, assembly_id, image.id, alt=alt)
     return image
@@ -399,7 +407,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return jsonify({"error": _("Alt text is required for accessibility")}), 400
 
     try:
-        image = _add_image_honouring_alt(assembly_id, raw, alt)
+        image = _add_image_honouring_alt(assembly_id, raw, alt, original_filename=upload.filename or "")
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except ImageQuotaExceeded as e:

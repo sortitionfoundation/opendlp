@@ -878,6 +878,7 @@ def _serialise_image(image: RegistrationImage) -> dict[str, Any]:
         "created_by": str(image.created_by) if image.created_by else None,
         "created_at": image.created_at.isoformat() if image.created_at else None,
         "file_name": f"{image.sha256}.{IMAGE_FILE_EXTENSION}",
+        "original_filename": image.original_filename,
     }
 
 
@@ -889,6 +890,7 @@ def _handle_add_registration_image(uow: Any, params: dict[str, Any]) -> dict[str
     """
     assembly_id = uuid.UUID(params["assembly_id"])
     alt = params.get("alt", "")
+    original_filename = params.get("original_filename", "")
     raw_b64 = params.get("image_base64", "")
     if "," in raw_b64 and raw_b64.startswith("data:"):
         raw_b64 = raw_b64.split(",", 1)[1]
@@ -906,6 +908,7 @@ def _handle_add_registration_image(uow: Any, params: dict[str, Any]) -> dict[str
             assembly_id=assembly_id,
             raw=raw_bytes,
             alt=alt,
+            original_filename=original_filename,
         )
         return {"status": "success", "image": _serialise_image(image)}
     except ImageValidationError as e:

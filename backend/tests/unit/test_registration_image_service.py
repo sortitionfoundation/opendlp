@@ -145,6 +145,40 @@ class TestAddRegistrationImage:
 
         assert second.alt == "First caption"
 
+    def test_stores_original_filename(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        image = service.add_registration_image(
+            uow, admin.id, assembly.id, _png(), alt="A red square", original_filename="red square.png"
+        )
+
+        assert image.original_filename == "red square.png"
+
+    def test_sanitises_original_filename(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        image = service.add_registration_image(
+            uow, admin.id, assembly.id, _png(), alt="A red square", original_filename="/home/user/red square.png"
+        )
+
+        assert image.original_filename == "red square.png"
+
+    def test_dedup_keeps_first_original_filename(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _page(uow, assembly)
+
+        service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="x", original_filename="first.png")
+        second = service.add_registration_image(
+            uow, admin.id, assembly.id, _png(), alt="x", original_filename="second.png"
+        )
+
+        assert second.original_filename == "first.png"
+
     def test_dedup_returns_existing_without_new_row_or_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
