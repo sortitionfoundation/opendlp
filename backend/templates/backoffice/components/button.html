@@ -19,6 +19,10 @@ ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and ful
                          renders the HTML `disabled` attribute AND the muted variant style.
                          Use this when the disabled state depends on Alpine state. Example:
                          alpine_disabled="!form.name || saving"
+                         The expression is rendered into double-quoted attributes; Jinja
+                         autoescape handles any `"` inside the expression, but prefer
+                         single quotes for string literals (e.g. `status === 'ready'`) to
+                         keep the rendered HTML readable.
         type: button type attribute (default: "button")
         href: if provided, renders as <a> instead of <button>
         id: optional id attribute
