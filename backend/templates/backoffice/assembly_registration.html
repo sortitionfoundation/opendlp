@@ -620,56 +620,83 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             </div>
                         {# Content #}
                             <div class="px-6 py-4">
-                                <div class="rounded-md p-3 mb-4 grid grid-cols-3 gap-y-1 gap-x-3 text-body-sm"
+                            {# Thumbnail + compact metadata #}
+                                <div class="rounded-md p-3 mb-4 flex gap-3"
                                      style="background-color: var(--color-subtle-background-panels);">
-                                    <span class="font-medium" style="color: var(--color-headings);">{{ _("File name") }}</span>
-                                    <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.file_name" x-text="editingImage.file_name"></span>
-
-                                    <template x-if="editingImage.original_filename">
-                                        <span class="contents">
-                                            <span class="font-medium" style="color: var(--color-headings);">{{ _("Original filename") }}</span>
-                                            <span class="col-span-2 font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.original_filename" x-text="editingImage.original_filename"></span>
+                                    <div class="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden flex items-center justify-center"
+                                         style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);">
+                                        <template x-if="editingImage.public_url">
+                                            <img :src="editingImage.public_url"
+                                                 :alt="editingImage.alt || ''"
+                                                 class="max-w-full max-h-full object-contain" />
+                                        </template>
+                                        <template x-if="!editingImage.public_url">
+                                            <span class="text-body-sm text-center px-1 leading-tight" style="color: var(--color-placeholder-text);">{{ _("No preview") }}</span>
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 min-w-0 grid gap-y-1 gap-x-3 text-body-sm content-center"
+                                         style="grid-template-columns: auto 1fr;">
+                                        <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
+                                        <span class="min-w-0" style="color: var(--color-body-text);">
+                                            <span x-text="editingImage.width"></span>
+                                            ×
+                                            <span x-text="editingImage.height"></span>
+                                            {{ _("px") }}
                                         </span>
-                                    </template>
 
-                                    <template x-if="editingImage.public_url">
-                                        <span class="contents">
-                                            <span class="font-medium" style="color: var(--color-headings);">{{ _("URL") }}</span>
-                                            <span class="col-span-2 flex items-center gap-1 min-w-0">
-                                                <span class="font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.public_url" x-text="editingImage.public_url"></span>
-                                                <button type="button"
-                                                        @click="copyImageUrl(editingImage)"
-                                                        class="shrink-0 p-1 rounded-md transition-colors hover:bg-gray-100"
-                                                        style="color: var(--color-secondary-text);"
-                                                        :aria-label="'{{ _('Copy URL to clipboard') }}'">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                </button>
-                                                <a :href="editingImage.public_url"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="shrink-0 p-1 rounded-md transition-colors hover:bg-gray-100"
-                                                   style="color: var(--color-secondary-text);"
-                                                   :aria-label="'{{ _('Open image in new tab') }}'">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                    </svg>
-                                                </a>
-                                            </span>
-                                        </span>
-                                    </template>
+                                        <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("File size") }}</span>
+                                        <span class="min-w-0" style="color: var(--color-body-text);" x-text="formatBytes(editingImage.byte_size)"></span>
+                                    </div>
+                                </div>
 
-                                    <span class="font-medium" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
-                                    <span class="col-span-2" style="color: var(--color-body-text);">
-                                        <span x-text="editingImage.width"></span>
-                                        ×
-                                        <span x-text="editingImage.height"></span>
-                                        {{ _("px") }}
-                                    </span>
+                            {# File name (read-only + copy) #}
+                                <div class="mb-3">
+                                    <label for="image-details-filename" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                        {{ _("File name") }}
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input type="text"
+                                               id="image-details-filename"
+                                               readonly
+                                               :value="editingImage.file_name"
+                                               @click="$event.target.select()"
+                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                                        <button type="button"
+                                                @click="copyToClipboard(editingImage.file_name, '{{ _('File name copied to clipboard') }}')"
+                                                class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                                                aria-label="{{ _('Copy file name') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                    <span class="font-medium" style="color: var(--color-headings);">{{ _("File size") }}</span>
-                                    <span class="col-span-2" style="color: var(--color-body-text);" x-text="formatBytes(editingImage.byte_size)"></span>
+                            {# <img> snippet (read-only + copy) — hidden when there's no public URL yet #}
+                                <div class="mb-3" x-show="editingImage.img_snippet">
+                                    <label for="image-details-snippet" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                        {{ _("Image snippet") }}
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input type="text"
+                                               id="image-details-snippet"
+                                               readonly
+                                               :value="editingImage.img_snippet"
+                                               @click="$event.target.select()"
+                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                                        <button type="button"
+                                                @click="copyImageSnippet(editingImage)"
+                                                class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                                                aria-label="{{ _('Copy image snippet') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -697,10 +724,13 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 </div>
                             </div>
                         {# Footer #}
-                            <div class="px-6 py-3 flex gap-2 justify-end"
+                            <div class="px-6 py-3 flex gap-2 justify-between items-center"
                                  style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
-                                {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeImageDetailsModalIfAllowed()"', alpine_disabled="imageEditing") }}
-                                {{ button(_("Save"), variant="primary", attrs='type="button" @click="submitImageEdit()"', alpine_disabled="!editingImageAlt.trim() || imageEditing") }}
+                                {{ button(_("Delete image"), variant="danger", attrs='type="button" @click="deleteEditingImage()"', alpine_disabled="imageEditing || imageBeingDeletedId === editingImage.id") }}
+                                <div class="flex gap-2">
+                                    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeImageDetailsModalIfAllowed()"', alpine_disabled="imageEditing") }}
+                                    {{ button(_("Save alt"), variant="primary", attrs='type="button" @click="submitImageEdit()"', alpine_disabled="!editingImageAlt.trim() || imageEditing") }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -919,13 +949,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             .catch(() => this.showToast('{{ _("Failed to copy to clipboard") }}', 'error'));
                     },
 
-                    copyImageUrl(image) {
-                        if (!image || !image.public_url) {
-                            this.showToast('{{ _("No public URL available yet") }}', 'error');
-                            return;
-                        }
-                        navigator.clipboard.writeText(image.public_url)
-                            .then(() => this.showToast('{{ _("URL copied to clipboard") }}', 'success'))
+                    copyToClipboard(text, successMessage) {
+                        if (!text) return;
+                        navigator.clipboard.writeText(text)
+                            .then(() => this.showToast(successMessage || '{{ _("Copied to clipboard") }}', 'success'))
                             .catch(() => this.showToast('{{ _("Failed to copy to clipboard") }}', 'error'));
                     },
 
@@ -943,6 +970,36 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         this.editingImage = null;
                         this.editingImageAlt = '';
                         this.imageEditError = '';
+                    },
+
+                    deleteEditingImage() {
+                        if (!this.editingImage || this.imageEditing || this.imageBeingDeletedId) return;
+                        const image = this.editingImage;
+                        this.imageBeingDeletedId = image.id;
+                        fetch(this.imageItemUrl(image.id), {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token() }}'
+                            }
+                        })
+                            .then(async (response) => {
+                                if (!response.ok) {
+                                    const data = await response.json().catch(() => ({}));
+                                    this.showToast(data.error || '{{ _("Failed to delete image") }}', 'error');
+                                    return;
+                                }
+                                this.images = this.images.filter(img => img.id !== image.id);
+                                this.imageDetailsModalOpen = false;
+                                this.editingImage = null;
+                                this.editingImageAlt = '';
+                                this.showToast('{{ _("Image deleted") }}', 'success');
+                            })
+                            .catch(() => {
+                                this.showToast('{{ _("Network error while deleting the image") }}', 'error');
+                            })
+                            .finally(() => {
+                                this.imageBeingDeletedId = '';
+                            });
                     },
 
                     submitImageEdit() {
