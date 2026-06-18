@@ -73,10 +73,13 @@ def add_registration_image(
             max_edge_px=get_registration_image_max_edge_px(),
         )
         # Content-addressed dedup: identical bytes on a page collapse to one row.
-        # The first upload's alt text and original filename are kept; change the alt
-        # via set_registration_image_alt.
+        # The original filename is kept; the caller's alt always wins on re-upload.
         existing = uow.registration_images.get_by_page_and_sha(page.id, processed.sha256)
         if existing is not None:
+            if existing.alt != alt:
+                existing.alt = alt
+                page.record_edit(user.id, "Updated a registration image caption")
+                uow.commit()
             return existing.create_detached_copy()
 
         limit = get_max_images_per_registration_page()
