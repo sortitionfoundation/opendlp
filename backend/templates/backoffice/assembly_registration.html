@@ -24,7 +24,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% endblock %}
 
 {% block page_content %}
-    <div x-data="registrationPageController()">
+    <div x-data="registrationPageController()"
+         @clipboard-copied="showToast('{{ _("Copied to clipboard") }}', 'success')"
+         @clipboard-copy-failed="showToast('{{ _("Failed to copy to clipboard") }}', 'error')">
         {# Page Heading #}
         <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
         <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
@@ -298,18 +300,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     {# Copy <img> snippet to clipboard #}
                                         <button type="button"
                                                 :disabled="!image.img_snippet"
+                                                @click.stop="copyText($el)"
                                                 class="p-1.5 rounded-md transition-colors hover:bg-gray-100 disabled:opacity-50"
                                                 style="color: var(--color-secondary-text);"
                                                 :data-copy-text="image.img_snippet"
-                                                data-copy-feedback="inline"
-                                                :data-copy-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name"
-                                                data-copied-label="{{ _('Copied to clipboard') }}"
+                                                data-copy-feedback="none"
                                                 :aria-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name">
-                                            <svg class="copy-icon-default h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                            <svg class="copy-icon-copied hidden h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--color-success-text);">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </button>
                                     {# Delete #}
@@ -387,7 +385,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {# Footer #}
                             <div class="px-6 py-3 flex gap-2 justify-end"
                                  style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
-                                {{ button(_("Copy All"), variant="secondary", attrs='data-copy-target="skeleton-html-textarea" data-copy-message="' ~ _("Copied to clipboard") ~ '"') }}
+                                {{ button(_("Copy All"), variant="secondary", attrs='@click.stop="copyText($el)" data-copy-target="skeleton-html-textarea" data-copy-feedback="none"') }}
                             </div>
                         </div>
                     </div>
@@ -646,18 +644,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             <span class="col-span-2 flex items-center gap-1 min-w-0">
                                                 <span class="font-mono truncate" style="color: var(--color-body-text);" :title="editingImage.public_url" x-text="editingImage.public_url"></span>
                                                 <button type="button"
+                                                        @click.stop="copyText($el)"
                                                         class="shrink-0 p-1 rounded-md transition-colors hover:bg-gray-100"
                                                         style="color: var(--color-secondary-text);"
                                                         :data-copy-text="editingImage.public_url"
-                                                        data-copy-feedback="inline"
-                                                        data-copy-label="{{ _('Copy URL to clipboard') }}"
-                                                        data-copied-label="{{ _('Copied to clipboard') }}"
+                                                        data-copy-feedback="none"
                                                         aria-label="{{ _('Copy URL to clipboard') }}">
-                                                    <svg class="copy-icon-default h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                    <svg class="copy-icon-copied hidden h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--color-success-text);">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                                     </svg>
                                                 </button>
                                                 <a :href="editingImage.public_url"
@@ -821,6 +815,16 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         setTimeout(() => {
                             this.toastVisible = false;
                         }, 3000);
+                    },
+
+                    // Copy via the shared utilities.js helpers. We call them directly
+                    // (rather than relying on the document-level data-copy handler)
+                    // because these buttons live inside modals whose panels use
+                    // @click.stop, which would stop the click reaching that handler.
+                    // The helper dispatches clipboard-copied / clipboard-copy-failed,
+                    // which this controller turns into a toast.
+                    copyText(el) {
+                        copyToClipboard(copyButtonText(el), el);
                     },
 
                     openImageUploadModal() {

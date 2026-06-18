@@ -86,7 +86,7 @@ function copyButtonText(button) {
 async function copyToClipboard(text, button) {
   try {
     await navigator.clipboard.writeText(text);
-    showCopyFeedback(button);
+    handleCopySuccess(button);
   } catch (err) {
     // Fallback for older browsers and insecure contexts where the async
     // clipboard API is unavailable
@@ -104,20 +104,42 @@ function fallbackCopyToClipboard(text, button) {
 
   try {
     document.execCommand("copy");
-    showCopyFeedback(button);
+    handleCopySuccess(button);
   } catch (err) {
-    alert("Failed to copy to clipboard");
+    handleCopyFailure(button);
   }
 
   document.body.removeChild(textarea);
 }
 
+// Notify on a successful copy: show the button's own feedback (see
+// showCopyFeedback) and dispatch a bubbling "clipboard-copied" event so a
+// surrounding component (e.g. an Alpine controller) can show a toast.
+function handleCopySuccess(button) {
+  showCopyFeedback(button);
+  button.dispatchEvent(new CustomEvent("clipboard-copied", { bubbles: true }));
+}
+
+// Notify on a failed copy. Pages opting into event-driven feedback
+// (data-copy-feedback="none") handle the "clipboard-copy-failed" event; others
+// keep the inline alert so the failure is never silent.
+function handleCopyFailure(button) {
+  button.dispatchEvent(new CustomEvent("clipboard-copy-failed", { bubbles: true }));
+  if (button.dataset.copyFeedback !== "none") {
+    alert("Failed to copy to clipboard");
+  }
+}
+
 // Confirm a successful copy. With data-copy-feedback="inline" the button swaps
-// its .copy-icon-default / .copy-icon-copied SVGs and aria-label for 2s;
-// otherwise fall back to an alert with the button's data-copy-message.
+// its .copy-icon-default / .copy-icon-copied SVGs and aria-label for 2s; with
+// data-copy-feedback="none" it shows nothing (the caller listens for the
+// clipboard-copied event instead); otherwise it falls back to an alert with the
+// button's data-copy-message.
 function showCopyFeedback(button) {
   if (button.dataset.copyFeedback === "inline") {
     showInlineCopyFeedback(button);
+  } else if (button.dataset.copyFeedback === "none") {
+    // No inline feedback; a listener on the clipboard-copied event handles it.
   } else {
     alert(button.dataset.copyMessage || "Copied!");
   }
