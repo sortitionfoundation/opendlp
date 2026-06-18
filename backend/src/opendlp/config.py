@@ -7,6 +7,7 @@ import logging.config
 import os
 import tempfile
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache
@@ -274,6 +275,26 @@ def get_max_image_upload_bytes() -> int:
     return get_max_image_upload_mb() * 1024 * 1024
 
 
+# Register every per-upload-type limit here so get_max_content_length() stays
+# correct automatically. Add a new entry whenever a new upload type is introduced.
+_UPLOAD_SIZE_CONTRIBUTORS: list[Callable[[], int]] = [
+    get_max_csv_upload_bytes,
+    get_max_image_upload_bytes,
+    get_registration_form_html_max_bytes,
+    get_registration_thank_you_html_max_bytes,
+]
+
+
+def get_max_content_length() -> int:
+    """Flask MAX_CONTENT_LENGTH: the largest request body any endpoint accepts.
+
+    Derived as the maximum of all per-upload-type limits so the WSGI gateway
+    rejects obviously oversized requests while each route still enforces its own
+    tighter limit. Add new upload types to ``_UPLOAD_SIZE_CONTRIBUTORS`` above.
+    """
+    return max(f() for f in _UPLOAD_SIZE_CONTRIBUTORS)
+
+
 def get_registration_image_max_edge_px() -> int:
     """Maximum length of a registration image's longest edge, in pixels.
 
@@ -407,10 +428,10 @@ class FlaskBaseConfig:
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
         self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
 
-        # File upload limit — driven by MAX_CSV_UPLOAD_MB so the WSGI layer
-        # rejects oversize requests before we allocate memory. CSV upload is
-        # the largest expected request body; smaller forms are unaffected.
-        self.MAX_CONTENT_LENGTH = get_max_csv_upload_bytes()
+        # File upload limit — the maximum across all per-upload-type limits so
+        # the WSGI layer rejects obviously oversized requests before allocating
+        # memory. Each route still enforces its own tighter limit.
+        self.MAX_CONTENT_LENGTH = get_max_content_length()
 
         # Deployment configuration
         self.APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "/")
