@@ -10,7 +10,6 @@ from opendlp.domain.email_context import AssemblyContext, RespondentContext, bui
 from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
 
 from .unit_of_work import AbstractUnitOfWork
 
@@ -87,15 +86,13 @@ def send_registration_auto_reply(
 ) -> RespondentEmailSendRecord | None:
     """Send the registration auto-reply if configured. Returns None (no record) when skipped.
 
-    Skips silently when no auto-reply is configured or the submission is a test
-    submission. When an auto-reply *is* configured but the respondent has no email
-    address, logs a warning (a likely page misconfiguration) and writes no record.
+    Skips silently when no auto-reply is configured. When an auto-reply *is*
+    configured but the respondent has no email address, logs a warning (a likely
+    page misconfiguration) and writes no record.
     """
     with uow:
         page = uow.registration_pages.get_by_assembly_id(assembly_id)
         if page is None or page.auto_reply_email_template_id is None:
-            return None
-        if respondent.selection_status == RespondentStatus.TEST_SUBMISSION:
             return None
         if not respondent.email:
             logger.warning(

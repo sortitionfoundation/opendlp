@@ -131,9 +131,10 @@ def test_console_adapter_send_succeeds_end_to_end() -> None:
     assert record.outcome is EmailSendOutcome.SENT
 
 
-def test_test_submission_does_not_send_auto_reply() -> None:
+def test_test_submission_sends_auto_reply() -> None:
     uow, slug = _build(RegistrationPageStatus.TEST)
     adapter = MagicMock()
+    adapter.send_email.return_value = True
 
     result = submit_registration(
         uow,
@@ -145,5 +146,6 @@ def test_test_submission_does_not_send_auto_reply() -> None:
         uow, adapter, respondent=result.respondent, assembly_id=result.respondent.assembly_id
     )
 
-    assert record is None
-    adapter.send_email.assert_not_called()
+    assert record is not None
+    assert record.outcome is EmailSendOutcome.SENT
+    adapter.send_email.assert_called_once()

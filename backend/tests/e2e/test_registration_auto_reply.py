@@ -163,9 +163,9 @@ def test_submission_without_captured_email_writes_no_record(
     assert records == []
 
 
-def test_test_mode_submission_writes_no_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+def test_test_mode_submission_writes_sent_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
     """A submission to a TEST-mode (unpublished) page creates a test-submission
-    respondent, which the auto-reply deliberately skips, so no record is written."""
+    respondent and the auto-reply is still sent, writing a SENT record."""
     page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=False)
     form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
@@ -179,4 +179,6 @@ def test_test_mode_submission_writes_no_record(client: FlaskClient, admin_user, 
     records = _records_for_latest_respondent(
         postgres_session_factory, page.assembly_id, RespondentStatus.TEST_SUBMISSION
     )
-    assert records == []
+    assert len(records) == 1
+    assert records[0].outcome is EmailSendOutcome.SENT
+    assert records[0].to_email == "ada-testmode@example.com"

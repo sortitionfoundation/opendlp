@@ -193,13 +193,15 @@ class TestSendRegistrationAutoReply:
         assert result is None
         assert "has no email" not in caplog.text
 
-    def test_skips_test_submission(self):
+    def test_sends_for_test_submission(self):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
+        adapter.send_email.return_value = True
         assembly, _ = self._setup(uow)
         test_respondent = _respondent(assembly.id, selection_status=RespondentStatus.TEST_SUBMISSION)
 
         result = service.send_registration_auto_reply(uow, adapter, respondent=test_respondent, assembly_id=assembly.id)
 
-        assert result is None
-        adapter.send_email.assert_not_called()
+        assert result is not None
+        assert result.outcome is EmailSendOutcome.SENT
+        adapter.send_email.assert_called_once()
