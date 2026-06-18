@@ -17,7 +17,7 @@ from opendlp.domain.email_send_record import EmailSendOutcome
 
 # revision identifiers, used by Alembic.
 revision: str = "5e06447b7861"  # pragma: allowlist secret
-down_revision: str | Sequence[str] | None = "a644849bb5d2"  # pragma: allowlist secret
+down_revision: str | Sequence[str] | None = "b7c2f1a4d8e3"  # pragma: allowlist secret
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
