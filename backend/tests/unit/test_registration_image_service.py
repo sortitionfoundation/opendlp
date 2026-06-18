@@ -135,7 +135,7 @@ class TestAddRegistrationImage:
 
         assert image.alt == "A red square"
 
-    def test_dedup_keeps_first_alt(self):
+    def test_dedup_updates_alt(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
@@ -143,7 +143,7 @@ class TestAddRegistrationImage:
         service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="First caption")
         second = service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="Second caption")
 
-        assert second.alt == "First caption"
+        assert second.alt == "Second caption"
 
     def test_stores_original_filename(self):
         uow = FakeUnitOfWork()

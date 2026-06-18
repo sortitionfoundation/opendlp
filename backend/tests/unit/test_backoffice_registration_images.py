@@ -1,5 +1,5 @@
 """ABOUTME: Unit tests for the backoffice registration image helpers and JSON routes
-ABOUTME: Covers _image_to_dict, _add_image_honouring_alt and the POST/PATCH/DELETE endpoints"""
+ABOUTME: Covers _image_to_dict and the POST/PATCH/DELETE endpoints"""
 
 import io
 import uuid
@@ -10,7 +10,6 @@ import pytest
 
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.entrypoints.blueprints.backoffice_registration import (
-    _add_image_honouring_alt,
     _image_to_dict,
 )
 from opendlp.entrypoints.flask_app import create_app
@@ -90,54 +89,6 @@ class TestImageToDict:
         assert result["img_snippet"] == ""
 
 
-class TestAddImageHonouringAlt:
-    def test_no_dedup_returns_image_directly(self, app, assembly_id):
-        stored = _image(alt="Hello")
-        with (
-            app.test_request_context(),
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.add_registration_image",
-                return_value=stored,
-            ) as add,
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_image_alt",
-            ) as set_alt,
-        ):
-            cu.id = uuid.uuid4()
-            result = _add_image_honouring_alt(assembly_id, b"raw-bytes", alt="Hello")
-
-        add.assert_called_once()
-        set_alt.assert_not_called()
-        assert result is stored
-
-    def test_dedup_returning_different_alt_triggers_followup_update(self, app, assembly_id):
-        stored = _image(alt="")  # existing row with empty alt (legacy upload)
-        updated = _image(alt="New alt")
-        with (
-            app.test_request_context(),
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.add_registration_image",
-                return_value=stored,
-            ),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_image_alt",
-                return_value=updated,
-            ) as set_alt,
-        ):
-            cu.id = uuid.uuid4()
-            result = _add_image_honouring_alt(assembly_id, b"raw-bytes", alt="New alt")
-
-        set_alt.assert_called_once()
-        _, kwargs = set_alt.call_args
-        # alt argument is passed by keyword in the helper
-        assert kwargs.get("alt") == "New alt"
-        assert result is updated
-
-
 class TestImageRoutesRequireLogin:
     def test_upload_redirects_anonymous_to_login(self, client, assembly_id):
         response = client.post(f"/backoffice/assembly/{assembly_id}/registration/images")
@@ -173,10 +124,11 @@ class TestUploadRouteHappyPath:
         stored = _image(alt="Hello world")
         with (
             patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
             patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration._add_image_honouring_alt",
+                "opendlp.entrypoints.blueprints.backoffice_registration.add_registration_image",
                 return_value=stored,
-            ) as helper,
+            ) as add,
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration._resolve_page_url_slug",
                 return_value="my-slug",
@@ -196,9 +148,9 @@ class TestUploadRouteHappyPath:
         body = response.get_json()
         assert body["image"]["alt"] == "Hello world"
         assert body["image"]["id"] == str(stored.id)
-        helper.assert_called_once()
+        add.assert_called_once()
         # The uploaded filename is threaded through to the service layer.
-        _, kwargs = helper.call_args
+        _, kwargs = add.call_args
         assert kwargs.get("original_filename") == "logo.png"
 
     def test_upload_rejects_missing_alt(self, authed_client, assembly_id):

@@ -366,24 +366,6 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return result[0].url_slug
 
 
-def _add_image_honouring_alt(
-    assembly_id: uuid.UUID, raw: bytes, alt: str, original_filename: str = ""
-) -> RegistrationImage:
-    """Add an image and, on dedup, ensure the stored alt matches the user's input.
-
-    ``add_registration_image`` collapses identical bytes to one row and KEEPS the
-    first upload's alt. When the user supplies a different alt for an already-stored
-    image (typically replacing an empty legacy alt), we follow up with
-    ``set_registration_image_alt`` so the snippet they copy reflects what they typed.
-    """
-    image = add_registration_image(
-        bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt, original_filename=original_filename
-    )
-    if image.alt != alt:
-        image = set_registration_image_alt(bootstrap.bootstrap(), current_user.id, assembly_id, image.id, alt=alt)
-    return image
-
-
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -407,7 +389,9 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return jsonify({"error": _("Alt text is required for accessibility")}), 400
 
     try:
-        image = _add_image_honouring_alt(assembly_id, raw, alt, original_filename=upload.filename or "")
+        image = add_registration_image(
+            bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt, original_filename=upload.filename or ""
+        )
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except ImageQuotaExceeded as e:
