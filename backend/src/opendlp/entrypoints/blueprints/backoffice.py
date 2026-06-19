@@ -67,7 +67,7 @@ def showcase() -> ResponseReturnValue:
 def dashboard() -> ResponseReturnValue:
     """Backoffice dashboard showing user's assemblies."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assemblies = get_user_assemblies(uow, current_user.id)
 
@@ -85,7 +85,7 @@ def new_assembly() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 assembly = create_assembly(
                     uow=uow,
@@ -120,14 +120,14 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
     try:
         nav = get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             request.args.get("source", ""),
         )
 
         # Get registration page data from service layer
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
         registration_page = reg_result[0] if reg_result else None
 
@@ -174,7 +174,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice edit assembly page."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -190,7 +190,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_slug = request.form.get("url_slug", "").strip()
                 short_url_slug = request.form.get("short_url_slug", "").strip()
 
-                uow2 = bootstrap.bootstrap()
+                uow2 = bootstrap.get_flask_uow()
                 with uow2:
                     updated_assembly = update_assembly(
                         uow=uow2,
@@ -207,7 +207,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 # nothing, and the service layer would no-op anyway, but this avoids the
                 # round-trip and any audit noise.
                 if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
-                    uow3 = bootstrap.bootstrap()
+                    uow3 = bootstrap.get_flask_uow()
                     update_registration_page(
                         uow=uow3,
                         user_id=current_user.id,
@@ -277,7 +277,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Please enter a valid positive number"), "error")
             return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, edit_number=1))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             updated_assembly = update_assembly(
                 uow=uow,
@@ -308,7 +308,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
         nav = get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             request.args.get("source", ""),
@@ -317,7 +317,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get selection settings for gsheet display and form population
         sel_settings = None
         try:
-            uow_sel = bootstrap.bootstrap()
+            uow_sel = bootstrap.get_flask_uow()
             sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
         except Exception as sel_error:
             current_app.logger.error(f"Error loading selection settings: {sel_error}")
@@ -350,7 +350,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_mode = "edit" if mode_param == "edit" else "view"
 
             # Get or create CSV config
-            uow_csv_config = bootstrap.bootstrap()
+            uow_csv_config = bootstrap.get_flask_uow()
             with uow_csv_config:
                 csv_config = get_or_create_csv_config(uow_csv_config, current_user.id, assembly_id)
 
@@ -409,13 +409,13 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly team members page."""
     try:
         nav = get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             request.args.get("source", ""),
         )
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
@@ -457,7 +457,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     form = AddUserToAssemblyForm()
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             if form.validate_on_submit():
                 user_id = uuid.UUID(form.user_id.data)
@@ -519,7 +519,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
     """Remove a user from an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Call service layer to remove user from assembly
             _assembly_role, target_user = revoke_user_assembly_role(
@@ -564,7 +564,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         search_term = request.args.get("q", "").strip()
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         # Return JSON array with id, label, sublabel format expected by autocomplete

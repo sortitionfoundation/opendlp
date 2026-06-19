@@ -74,7 +74,7 @@ def _run_csv_import(
     Shared by the immediate-upload path and the confirm-diff path so both
     flows emit the same flash messages and saved-config side effects.
     """
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         respondents, errors, resolved_id_column = import_respondents_from_csv(
             uow=uow,
@@ -86,7 +86,7 @@ def _run_csv_import(
             filename=filename,
         )
 
-    uow2 = bootstrap.bootstrap()
+    uow2 = bootstrap.get_flask_uow()
     update_csv_config(
         uow=uow2,
         user_id=current_user.id,
@@ -153,7 +153,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # If a schema already exists, compute the diff against the new headers.
         # When the diff has changes the organiser sees a confirmation page first;
         # otherwise we proceed straight to the import as before.
-        uow_diff = bootstrap.bootstrap()
+        uow_diff = bootstrap.get_flask_uow()
         diff = compute_diff_for_pending_csv(
             uow_diff,
             current_user.id,
@@ -222,7 +222,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
     try:
-        uow_diff = bootstrap.bootstrap()
+        uow_diff = bootstrap.get_flask_uow()
         diff = compute_diff_for_pending_csv(
             uow_diff,
             current_user.id,
@@ -247,7 +247,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
             replace_existing=pending.replace_existing,
         )
 
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -297,7 +297,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete all respondents for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             count = delete_respondents_for_assembly(
                 uow=uow,
@@ -345,7 +345,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         status_filter = RespondentStatus.from_str(status_filter_str)
 
         # Get assembly with permissions
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -372,7 +372,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Determine data source and whether tabs should be enabled
         gsheet = None
         try:
-            uow_gsheet = bootstrap.bootstrap()
+            uow_gsheet = bootstrap.get_flask_uow()
             gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
         except Exception:  # noqa: S110
             pass  # No gsheet config exists - this is expected for new assemblies
@@ -380,7 +380,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get CSV status
         csv_status: CSVUploadStatus | None = None
         try:
-            uow_csv = bootstrap.bootstrap()
+            uow_csv = bootstrap.get_flask_uow()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
         except Exception:  # noqa: S110
             pass  # No CSV data - expected for new assemblies
@@ -438,7 +438,7 @@ def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) ->
         flash(_("A comment is required when deleting a respondent"), "error")
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             delete_respondent(
                 uow=uow,
@@ -477,7 +477,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
     """View one respondent"""
     try:
         # Get assembly with permissions
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             respondent, comment_authors = get_respondent_with_comment_authors(
@@ -490,7 +490,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
         # Load the per-assembly field schema and pack it into display sections.
         # Empty groups are filtered out so the template renders only populated sections.
-        uow_schema = bootstrap.bootstrap()
+        uow_schema = bootstrap.get_flask_uow()
         grouped_schema = get_schema_grouped(uow_schema, current_user.id, assembly_id)
         schema_sections = [
             {"label": GROUP_LABELS[group], "fields": grouped_schema[group]}
@@ -589,7 +589,7 @@ def _edit_respondent_post(
     attribute_updates = _collect_attribute_updates(form, schema)
     try:
         update_respondent(
-            uow=bootstrap.bootstrap(),
+            uow=bootstrap.get_flask_uow(),
             user_id=current_user.id,
             assembly_id=assembly_id,
             respondent_id=respondent_id,
@@ -615,7 +615,7 @@ def _edit_respondent_post(
 def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Edit respondent attributes with a required change-note comment."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             viewer = uow.users.get(current_user.id)
@@ -626,14 +626,14 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
                     url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
                 )
 
-        respondent = get_respondent(bootstrap.bootstrap(), current_user.id, assembly_id, respondent_id)
+        respondent = get_respondent(bootstrap.get_flask_uow(), current_user.id, assembly_id, respondent_id)
         if respondent.selection_status == RespondentStatus.DELETED:
             flash(_("Cannot edit a deleted respondent"), "error")
             return redirect(
                 url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
             )
 
-        schema = get_schema(bootstrap.bootstrap(), current_user.id, assembly_id)
+        schema = get_schema(bootstrap.get_flask_uow(), current_user.id, assembly_id)
         form, warnings = build_edit_respondent_form(schema, respondent)
 
         if request.method == "POST" and form.validate_on_submit():
@@ -644,7 +644,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         for warning in warnings:
             flash(warning, "warning")
 
-        grouped_schema = get_schema_grouped(bootstrap.bootstrap(), current_user.id, assembly_id)
+        grouped_schema = get_schema_grouped(bootstrap.get_flask_uow(), current_user.id, assembly_id)
         ordered_sections = []
         for group in GROUP_DISPLAY_ORDER:
             fields_in_group = [f for f in grouped_schema.get(group, []) if not f.is_derived]
@@ -696,7 +696,7 @@ def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respo
         return redirect(view_url)
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         transition_respondent_status(
             uow=uow,
             user_id=current_user.id,

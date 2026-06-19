@@ -31,7 +31,7 @@ def check_database() -> tuple[bool, int | str]:
         Tuple of (success: bool, user_count: int | "UNKNOWN")
     """
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Get all users and count them
             all_users = list(uow.users.all())
@@ -111,7 +111,7 @@ def _check_monitor_selection() -> MonitorSelectionStatus:
     Returns an UNKNOWN status if bootstrap itself fails (eg. DB unreachable).
     """
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             return check_monitor_selection(uow)
     except Exception as error:

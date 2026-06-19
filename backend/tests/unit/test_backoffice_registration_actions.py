@@ -40,7 +40,7 @@ class TestHandleRegistrationAction:
 
     def test_publish_action_calls_publish_when_page_is_test(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
             ) as get_page,
@@ -55,7 +55,7 @@ class TestHandleRegistrationAction:
 
     def test_publish_action_on_already_published_page_does_not_republish(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
             ) as get_page,
@@ -70,7 +70,7 @@ class TestHandleRegistrationAction:
 
     def test_unpublish_action_calls_unpublish(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch("opendlp.entrypoints.blueprints.backoffice_registration.unpublish_registration_page") as unpublish,
         ):
             message = _handle_registration_action("unpublish", user_id, assembly_id)
@@ -80,7 +80,7 @@ class TestHandleRegistrationAction:
 
     def test_close_action_calls_close(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch("opendlp.entrypoints.blueprints.backoffice_registration.close_registration_page") as close,
         ):
             message = _handle_registration_action("close", user_id, assembly_id)
@@ -90,7 +90,7 @@ class TestHandleRegistrationAction:
 
     def test_reopen_action_calls_reopen(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch("opendlp.entrypoints.blueprints.backoffice_registration.reopen_registration_page") as reopen,
         ):
             message = _handle_registration_action("reopen", user_id, assembly_id)
@@ -100,7 +100,7 @@ class TestHandleRegistrationAction:
 
     def test_save_action_uses_saved_message_for_test_pages(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
             ) as get_page,
@@ -114,7 +114,7 @@ class TestHandleRegistrationAction:
 
     def test_save_action_uses_republished_message_when_page_published(self, app_ctx, user_id, assembly_id):
         with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_registration_page_with_source"
             ) as get_page,

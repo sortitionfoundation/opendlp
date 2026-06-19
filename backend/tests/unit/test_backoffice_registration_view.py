@@ -77,7 +77,7 @@ class TestViewEditModeFlag:
                 "opendlp.entrypoints.blueprints.backoffice_registration.current_user",
                 new=MagicMock(id=uuid.uuid4()),
             ),
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_assembly_nav_context",
                 return_value=_nav_context(assembly_id),
@@ -155,7 +155,7 @@ def _patches_with_full_render(status: RegistrationPageStatus, assembly_id: uuid.
             "opendlp.entrypoints.blueprints.backoffice_registration.current_user",
             new=MagicMock(id=uuid.uuid4()),
         ),
-        patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+        patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
         patch(
             "opendlp.entrypoints.blueprints.backoffice_registration.get_assembly_nav_context",
             return_value=_nav_context(assembly_id),
@@ -260,7 +260,7 @@ class TestSaveRedirectPreservesEditMode:
                 "opendlp.entrypoints.blueprints.backoffice_registration.current_user",
                 new=MagicMock(id=uuid.uuid4()),
             ),
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch("opendlp.entrypoints.blueprints.backoffice_registration.get_assembly_nav_context"),
         )
 

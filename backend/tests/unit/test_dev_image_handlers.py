@@ -198,7 +198,7 @@ class TestHandleListImageSnippets:
         with (
             app.test_request_context(),
             patch("opendlp.entrypoints.blueprints.dev.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.dev.bootstrap.bootstrap", return_value=repo_uow),
+            patch("opendlp.entrypoints.blueprints.dev.bootstrap.get_flask_uow", return_value=repo_uow),
             patch(
                 "opendlp.entrypoints.blueprints.dev.list_image_snippets",
                 return_value=[(image_a, '<img src="..." alt="Alpha">'), (image_b, '<img src="..." alt="Beta">')],

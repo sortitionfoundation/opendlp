@@ -180,7 +180,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Manage tabs variables (extracted to helper for complexity)
         current_manage_tabs_param = request.args.get("current_manage_tabs")
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -219,7 +219,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Check if gsheet is configured
         gsheet = None
         try:
-            uow_gsheet = bootstrap.bootstrap()
+            uow_gsheet = bootstrap.get_flask_uow()
             gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
         except Exception as gsheet_error:
             current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
@@ -229,7 +229,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_count = 0
         total_pages = 0
         try:
-            uow_history = bootstrap.bootstrap()
+            uow_history = bootstrap.get_flask_uow()
             with uow_history:
                 run_history, total_count = uow_history.selection_run_records.get_by_assembly_id_paginated(
                     assembly_id, page, per_page
@@ -244,7 +244,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get CSV status for tab enabled states
         csv_status = None
         try:
-            uow_csv = bootstrap.bootstrap()
+            uow_csv = bootstrap.get_flask_uow()
             csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
         except Exception:  # noqa: S110
             pass  # No CSV data - expected for new assemblies
@@ -265,7 +265,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
             # Get count of respondents that have been selected (not in Pool status)
             try:
-                uow_count = bootstrap.bootstrap()
+                uow_count = bootstrap.get_flask_uow()
                 with uow_count:
                     csv_selected_count = count_non_pool_respondents(uow_count, assembly_id)
             except Exception as count_error:
@@ -337,7 +337,7 @@ def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
 def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return modal progress HTML fragment for HTMX polling of selection task status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -381,7 +381,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
 def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return replacement modal progress HTML fragment for HTMX polling."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -438,7 +438,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a load/validation task for selection data."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
 
@@ -473,7 +473,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Check if test mode
         test_mode = request.args.get("test") == "1"
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
 
@@ -505,7 +505,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running selection task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -545,7 +545,7 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start listing old tabs task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
 
@@ -573,7 +573,7 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start deleting old tabs task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
 
@@ -601,7 +601,7 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """HTMX endpoint for manage tabs progress modal."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -650,7 +650,7 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running manage tabs task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -692,7 +692,7 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
     Redirects to the appropriate section based on task type.
     """
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Verify user has permissions for this assembly
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
@@ -764,7 +764,7 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
 def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement data validation task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
@@ -816,7 +816,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Number of people to select must be a valid integer"), "error")
             return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_replace_task(uow, current_user.id, assembly_id, number_to_select)
 
@@ -854,7 +854,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running replacement task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -943,7 +943,7 @@ def _handle_gsheet_save_success(
 def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save Google Spreadsheet configuration for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         is_update = existing_gsheet is not None
         form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
@@ -963,12 +963,12 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
         # Form validation failed or service error - re-render the page with errors
-        uow_err = bootstrap.bootstrap()
+        uow_err = bootstrap.get_flask_uow()
         with uow_err:
             assembly = get_assembly_with_permissions(uow_err, assembly_id, current_user.id)
         sel_settings = None
         try:
-            uow_sel = bootstrap.bootstrap()
+            uow_sel = bootstrap.get_flask_uow()
             sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
         except Exception:  # noqa: S110 — selection_settings is optional for form re-render
             pass
@@ -1005,7 +1005,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete Google Spreadsheet configuration for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
