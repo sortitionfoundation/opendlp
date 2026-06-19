@@ -128,7 +128,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Load registration images for the Assets panel
         images: list[dict[str, Any]] = []
         if has_registration_page and registration_page:
-            uow = bootstrap.get_flask_uow()
+            # Reuse the UnitOfWork from the page lookup above.
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
             images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
 
@@ -179,7 +179,6 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
         uow = bootstrap.get_flask_uow()
         result = get_registration_page_with_source(uow, user_id, assembly_id)
         if result and result[0].status == RegistrationPageStatus.TEST:
-            uow = bootstrap.get_flask_uow()
             publish_registration_page(uow, user_id, assembly_id)
             return _("Registration form published successfully")
         return _("Registration form HTML updated successfully")
