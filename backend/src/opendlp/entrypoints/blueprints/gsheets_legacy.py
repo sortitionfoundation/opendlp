@@ -46,7 +46,7 @@ gsheets_legacy_bp = Blueprint("gsheets_legacy", __name__)
 def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
     """Create or edit Google Spreadsheet configuration for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -169,7 +169,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
 def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Remove Google Spreadsheet configuration from an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
 
@@ -197,7 +197,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets selection page for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -231,7 +231,7 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets selection page with task status for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -279,7 +279,7 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
 def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return progress fragment for HTMX polling of Google Sheets selection task status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -343,7 +343,7 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
     # the form has a hidden parameter
     test_selection = request.form.get("test_selection") == "1"
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # TODO: set number_people_wanted properly
             task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_selection)
@@ -380,7 +380,7 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets loading task for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
 
@@ -417,7 +417,7 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running selection task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -457,7 +457,7 @@ def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets replacement selection page for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -495,7 +495,7 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets replacement selection page with task status for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -583,7 +583,7 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
 def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return progress fragment for HTMX polling of Google Sheets replacement task status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -663,7 +663,7 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
 def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets replacement data loading task for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
@@ -720,7 +720,7 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Number of people to select must be a valid integer"), "error")
             return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_replace_task(uow, current_user.id, assembly_id, number_to_select)
 
@@ -759,7 +759,7 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running replacement task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -799,7 +799,7 @@ def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
 def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets tab management page for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -836,7 +836,7 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Display Google Sheets tab management page with task status for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -892,7 +892,7 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
 def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return progress fragment for HTMX polling of Google Sheets tab management task status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -962,7 +962,7 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
 def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets tab listing task for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
 
@@ -994,7 +994,7 @@ def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a Google Sheets tab deletion task for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
 
@@ -1026,7 +1026,7 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running tab management task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -1066,7 +1066,7 @@ def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Resp
 def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Generic redirect endpoint that routes to correct task-specific view."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             run_record = uow.selection_run_records.get(run_id)
 
