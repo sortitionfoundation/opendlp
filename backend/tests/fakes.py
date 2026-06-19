@@ -819,6 +819,14 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         """Mark as committed."""
         self.committed = True
 
+    def commit_and_reset(self) -> None:
+        """Commit the work so far, then carry on against the same in-memory store.
+
+        Nothing needs flushing for the fake; the repositories already hold the
+        data, so this just records the commit and continues.
+        """
+        self.committed = True
+
     def rollback(self) -> None:
         """Clear all repositories."""
         self.fake_users._items.clear()

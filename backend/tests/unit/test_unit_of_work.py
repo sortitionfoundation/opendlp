@@ -13,6 +13,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 
 class TestSqlAlchemyUnitOfWork:
@@ -90,6 +91,25 @@ class TestSqlAlchemyUnitOfWork:
         mock_session.rollback.assert_called_once()
         mock_session.commit.assert_called_once()
 
+    def test_commit_and_reset_commits_without_closing(self):
+        """commit_and_reset commits the work so far but keeps the session usable."""
+        mock_session = MagicMock(spec=Session)
+        mock_session_factory = MagicMock(spec=sessionmaker)
+        mock_session_factory.return_value = mock_session
+
+        with SqlAlchemyUnitOfWork(mock_session_factory) as uow:
+            uow.commit_and_reset()
+
+            # Committed mid-context, but the session must not be closed yet so
+            # work can continue against the same session and repositories.
+            mock_session.commit.assert_called_once()
+            mock_session.close.assert_not_called()
+            assert uow.session is mock_session
+
+        # The context exit then commits again and closes.
+        assert mock_session.commit.call_count == 2
+        mock_session.close.assert_called_once()
+
     def test_flush_operation(self):
         """Test flush operation."""
         mock_session = MagicMock(spec=Session)
@@ -121,3 +141,17 @@ class TestSqlAlchemyUnitOfWork:
             assert uow.assemblies.session is mock_session
             assert uow.user_invites.session is mock_session
             assert uow.user_assembly_roles.session is mock_session
+
+
+class TestFakeUnitOfWorkCommitAndReset:
+    def test_commit_and_reset_keeps_data(self):
+        """commit_and_reset marks committed and carries on against the same store."""
+        uow = FakeUnitOfWork()
+        sentinel = object()
+        uow.fake_users._items.append(sentinel)
+
+        uow.commit_and_reset()
+
+        assert uow.committed is True
+        # Unlike rollback (which clears the store), the data carries on.
+        assert sentinel in uow.fake_users._items
