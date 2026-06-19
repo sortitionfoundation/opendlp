@@ -627,3 +627,53 @@ are the ones that describe behaviour Phase 1 changes.
 - `docs/monitoring.md`, `docs/spec.md`, `docs/postfix_configuration.md` — their
   references are conceptual ("bootstraps a Unit of Work", "Repository and
   UnitOfWork abstractions", `get_email_adapter` import) and remain accurate.
+
+## 10. Phase 2 pilot results (2026-06-19)
+
+Built the fake-backed e2e mechanism and ran it against
+`test_assembly_crud.py` (27 tests, the recommended pilot — pure
+request→service→assertion, exercises `load_user` + the assembly permission
+decorator + the route, plus cross-request persistence).
+
+**What was built:**
+
+- `FakeStore` (`tests/fakes.py`) holding the 17 repositories; `FakeUnitOfWork`
+  now takes an optional `store=` so several instances share one store. Zero-arg
+  `FakeUnitOfWork()` keeps its old private-store behaviour (1657 unit tests
+  unchanged).
+- Shared-store rollback semantics (D5 option b): `__enter__` snapshots each
+  repo's items, `__exit__` rolls back on exception, `commit`/`commit_and_reset`
+  advance the baseline. Private stores keep the legacy "clear everything"
+  rollback.
+- `tests/e2e/fake_pilot/` — a conftest overriding `app` (via
+  `create_app("testing", uow_factory=lambda: FakeUnitOfWork(store=fake_store))`)
+  and the `admin_user`/`regular_user`/`existing_assembly` data fixtures to seed
+  the shared store; `test_assembly_crud_fake.py` re-runs the exact CRUD test
+  bodies against it.
+
+**Results:**
+
+| Run | Result | Wall-clock |
+| --- | --- | --- |
+| Fake-backed | 27 passed | ~3.6s |
+| PostgreSQL | 27 passed | ~4.7s |
+
+- **All 27 pass on the fake backend, first try** — the shared store works across
+  `load_user`, the permission decorator and the route, and persists across
+  requests within a test.
+- **~22% faster wall-clock** at this scale (~38ms/test saved). Setup times are
+  comparable; the delta is per-test DB round-trips. App creation, the Flask test
+  client, template rendering and the login flow dominate and are identical in
+  both — so the speed win is real but modest, exactly as §6 predicted.
+- **No PostgreSQL required:** with the Postgres container stopped (Redis still up
+  for login rate limiting), the fake pilot still passed 27/27, while the
+  Postgres version errored on 25/27. This is the headline benefit — fast,
+  DB-free smoke coverage — more than the modest single-file speed-up.
+
+**Conclusion / recommendation:** the mechanism is sound and cheap to extend.
+Worth using for pure request→service→assertion suites as fast, DB-free smoke
+tests. Do **not** convert suites whose assertions depend on repository-level
+pagination/filtering/search, DB constraints/cascades, or Celery — keep those on
+PostgreSQL (the divergence risk in §6). Treat fake-backed e2e as complementary
+to A6 (xdist), not a replacement. Broad rollout remains a per-suite judgement;
+this pilot just proves it works and is worth it where it fits.
