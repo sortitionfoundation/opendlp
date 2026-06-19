@@ -52,7 +52,7 @@ def _is_htmx() -> bool:
 
 def _can_manage(assembly_id: uuid.UUID) -> bool:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             user = uow.users.get(current_user.id)
             assembly = uow.assemblies.get(assembly_id)
@@ -68,14 +68,14 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     """Get common assembly context needed for the targets page layout (tabs, data source)."""
     gsheet = None
     try:
-        uow_gsheet = bootstrap.bootstrap()
+        uow_gsheet = bootstrap.get_flask_uow()
         gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
     except Exception:  # noqa: S110
         pass  # No gsheet config exists - expected for new assemblies
 
     csv_status: CSVUploadStatus | None = None
     try:
-        uow_csv = bootstrap.bootstrap()
+        uow_csv = bootstrap.get_flask_uow()
         csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
     except Exception:  # noqa: S110
         pass  # No CSV data - expected for new assemblies
@@ -97,11 +97,11 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
 def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly targets page."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
@@ -157,10 +157,10 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvForm) -> ResponseReturnValue:
     """Re-render the targets page so the user sees their upload error inline."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-    uow2 = bootstrap.bootstrap()
+    uow2 = bootstrap.get_flask_uow()
     target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
 
     context = _get_assembly_context(assembly_id)
@@ -191,7 +191,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         csv_content = csv_file.read().decode("utf-8-sig")
         filename = csv_file.filename or "unknown.csv"
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         categories = import_targets_from_csv(
             uow=uow,
             user_id=current_user.id,
@@ -238,7 +238,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete all targets for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             count = delete_targets_for_assembly(
                 uow=uow,
@@ -288,8 +288,8 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
-        uow2 = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
+        uow2 = bootstrap.get_flask_uow()
         existing = get_targets_for_assembly(uow2, current_user.id, assembly_id)
         sort_order = len(existing)
         assert form.name.data is not None  # this is basically a type hint
@@ -363,7 +363,7 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         assert form.name.data is not None
         category = update_target_category(
             uow=uow,
@@ -414,7 +414,7 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
 def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Delete a target category and all its values."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         delete_target_category(
             uow=uow,
             user_id=current_user.id,
@@ -446,7 +446,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
     try:
         if not form.validate_on_submit():
             if _is_htmx():
-                uow = bootstrap.bootstrap()
+                uow = bootstrap.get_flask_uow()
                 categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
@@ -468,7 +468,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         assert form.value.data is not None
         assert form.min_count.data is not None
         assert form.max_count.data is not None
@@ -504,7 +504,7 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
     except ValueError as e:
         if _is_htmx():
             form.value.errors.append(str(e))  # type: ignore[attr-defined]
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
@@ -541,7 +541,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
     try:
         if not form.validate_on_submit():
             if _is_htmx():
-                uow = bootstrap.bootstrap()
+                uow = bootstrap.get_flask_uow()
                 categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
@@ -563,7 +563,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
             flash(_("Please correct the errors below"), "error")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         assert form.value.data is not None
         assert form.min_count.data is not None
         assert form.max_count.data is not None
@@ -600,7 +600,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         if _is_htmx():
             form.value.errors.append(str(e))  # type: ignore[attr-defined]
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
@@ -631,7 +631,7 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
 def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UUID) -> ResponseReturnValue:
     """Delete a target value from a category."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         category = delete_target_value(
             uow=uow,
             user_id=current_user.id,
@@ -676,7 +676,7 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
         if not missing_values:
             flash(_("No values to add"), "warning")
             if _is_htmx():
-                uow = bootstrap.bootstrap()
+                uow = bootstrap.get_flask_uow()
                 categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
@@ -692,7 +692,7 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
 
         category = None
         for value_name in missing_values:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             category = add_target_value(
                 uow=uow,
                 user_id=current_user.id,
@@ -737,11 +737,11 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
 def respondent_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the respondent data columns section (HTMX partial)."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
@@ -778,7 +778,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("No columns selected"), "warning")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
         sort_order = len(existing)
 
@@ -789,7 +789,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         values_added_count = 0
         for column_name in selected_columns:
             try:
-                uow = bootstrap.bootstrap()
+                uow = bootstrap.get_flask_uow()
                 category = create_target_category(
                     uow=uow,
                     user_id=current_user.id,
@@ -803,11 +803,11 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 # Auto-add all distinct values for low-cardinality columns
                 distinct_count = column_distinct_counts.get(column_name, 0)
                 if distinct_count > 0 and distinct_count < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
-                    uow2 = bootstrap.bootstrap()
+                    uow2 = bootstrap.get_flask_uow()
                     with uow2:
                         value_counts = get_respondent_attribute_value_counts(uow2, assembly_id, column_name)
                     for value_name in sorted(value_counts.keys()):
-                        uow3 = bootstrap.bootstrap()
+                        uow3 = bootstrap.get_flask_uow()
                         add_target_value(
                             uow=uow3,
                             user_id=current_user.id,
@@ -853,14 +853,14 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run detailed target validation and display results."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         with uow2:
             check_result = check_targets_detailed(uow2, current_user.id, assembly_id)
 
-        uow3 = bootstrap.bootstrap()
+        uow3 = bootstrap.get_flask_uow()
         target_categories = get_targets_for_assembly(uow3, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()

@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 from flask import abort, current_app, flash, redirect, request, url_for
 from flask_login import current_user
 
-from opendlp.bootstrap import bootstrap
+from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
 from opendlp.feature_flags import has_feature
 from opendlp.service_layer.permissions import (
@@ -121,7 +121,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
             try:
                 assembly_uuid = uuid.UUID(str(assembly_id))
 
-                uow = bootstrap()
+                uow = get_flask_uow()
                 with uow:
                     assembly = uow.assemblies.get(assembly_uuid)
                     if not assembly:

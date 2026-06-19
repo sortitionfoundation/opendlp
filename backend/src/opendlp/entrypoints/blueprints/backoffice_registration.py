@@ -92,14 +92,14 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice registration form configuration page."""
     try:
         nav = get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             request.args.get("source", ""),
         )
 
         # Get registration page and HTML source from service layer
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         result = get_registration_page_with_source(uow, current_user.id, assembly_id)
 
         # HTML content
@@ -128,7 +128,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Load registration images for the Assets panel
         images: list[dict[str, Any]] = []
         if has_registration_page and registration_page:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
             images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
 
@@ -176,26 +176,26 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
     """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message."""
     if action == "publish":
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         result = get_registration_page_with_source(uow, user_id, assembly_id)
         if result and result[0].status == RegistrationPageStatus.TEST:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             publish_registration_page(uow, user_id, assembly_id)
             return _("Registration form published successfully")
         return _("Registration form HTML updated successfully")
     if action == "unpublish":
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         unpublish_registration_page(uow, user_id, assembly_id)
         return _("Registration form unpublished")
     if action == "close":
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         close_registration_page(uow, user_id, assembly_id)
         return _("Registration form closed")
     if action == "reopen":
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         reopen_registration_page(uow, user_id, assembly_id)
         return _("Registration form reopened")
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     result = get_registration_page_with_source(uow, user_id, assembly_id)
     if result and result[0].status == RegistrationPageStatus.PUBLISHED:
         return _("Registration form saved and republished")
@@ -218,7 +218,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             "",
@@ -227,7 +227,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         html_content = request.form.get("html_content", "")
 
         # Update HTML content (will raise RegistrationPageNotFoundError if page doesn't exist)
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         update_registration_page_html(uow, current_user.id, assembly_id, html_content)
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
@@ -272,7 +272,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Create a registration page with auto-generated slugs from the assembly name."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         create_registration_page_with_slugs(uow, current_user.id, assembly_id)
         flash(
             _("Registration page created. URLs have been generated automatically and can be edited below."),
@@ -302,7 +302,7 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
 def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Generate starter HTML form skeleton based on assembly's field definitions."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         html = generate_starter_form_html(uow, current_user.id, assembly_id)
         return jsonify({"html": html})
     except InsufficientPermissions:
@@ -321,14 +321,14 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
     try:
         # Verify user has permission to access this assembly
         get_assembly_nav_context(
-            bootstrap.bootstrap,
+            bootstrap.get_flask_uow,
             current_user.id,
             assembly_id,
             "",
         )
 
         # The QR code encodes the short URL, so a short slug must be configured
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         result = get_registration_page_with_source(uow, current_user.id, assembly_id)
         registration_page = result[0] if result else None
         if not registration_page or not registration_page.short_url_slug:
@@ -367,7 +367,7 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     Returns an empty string when the page doesn't exist yet — the caller can
     decide whether to omit the public URL.
     """
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     result = get_registration_page_with_source(uow, current_user.id, assembly_id)
     if result is None:
         return ""
@@ -398,7 +398,12 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     try:
         image = add_registration_image(
-            bootstrap.bootstrap(), current_user.id, assembly_id, raw, alt=alt, original_filename=upload.filename or ""
+            bootstrap.get_flask_uow(),
+            current_user.id,
+            assembly_id,
+            raw,
+            alt=alt,
+            original_filename=upload.filename or "",
         )
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
@@ -428,7 +433,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
         return jsonify({"error": _("Alt text is required for accessibility")}), 400
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         image = set_registration_image_alt(uow, current_user.id, assembly_id, image_id, alt=alt)
     except RegistrationImageNotFoundError:
         return jsonify({"error": _("Image not found")}), 404
@@ -452,7 +457,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
 def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
     """Delete a registration image. Returns 204 on success."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         delete_registration_image(uow, current_user.id, assembly_id, image_id)
     except RegistrationImageNotFoundError:
         return jsonify({"error": _("Image not found")}), 404

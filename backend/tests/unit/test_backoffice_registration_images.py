@@ -124,7 +124,7 @@ class TestUploadRouteHappyPath:
         stored = _image(alt="Hello world")
         with (
             patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.add_registration_image",
                 return_value=stored,
@@ -182,7 +182,7 @@ class TestPatchRouteHappyPath:
         image_id = uuid.uuid4()
         with (
             patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_image_alt",
                 return_value=updated,
@@ -224,7 +224,7 @@ class TestDeleteRouteHappyPath:
         image_id = uuid.uuid4()
         with (
             patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
+            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.get_flask_uow"),
             patch(
                 "opendlp.entrypoints.blueprints.backoffice_registration.delete_registration_image",
                 return_value=None,

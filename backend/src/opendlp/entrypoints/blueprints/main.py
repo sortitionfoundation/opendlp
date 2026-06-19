@@ -48,7 +48,7 @@ def dashboard() -> ResponseReturnValue:
     if not old_dashboard_route_enabled():
         abort(404)
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assemblies = get_user_assemblies(uow, current_user.id)
 
@@ -63,7 +63,7 @@ def dashboard() -> ResponseReturnValue:
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """View assembly details page."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -97,7 +97,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         page = request.args.get("page", 1, type=int)
         per_page = 50
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
@@ -142,7 +142,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """View assembly team members page."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -188,7 +188,7 @@ def create_assembly_page() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 # ignoring warning for title and number_to_select - they will not be None due to form validation
                 assembly = create_assembly(
@@ -221,7 +221,7 @@ def create_assembly_page() -> ResponseReturnValue:
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Edit an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -285,7 +285,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     form = AddUserToAssemblyForm()
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             if form.validate_on_submit():
                 user_id = uuid.UUID(form.user_id.data)
@@ -347,7 +347,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
     """Remove a user from an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Call service layer to remove user from assembly
             _assembly_role, target_user = revoke_user_assembly_role(
@@ -394,7 +394,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # HTMX sends the input value as a form parameter with the input's name
         search_term = request.args.get("user_search", "").strip()
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Verify assembly exists and user can manage it
             if not has_global_admin(current_user):

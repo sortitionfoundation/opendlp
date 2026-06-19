@@ -86,7 +86,7 @@ def login() -> ResponseReturnValue:
                 window_minutes=current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", 15),
             )
 
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 user = authenticate_user(uow, form.email.data, form.password.data)
 
@@ -253,7 +253,7 @@ def verify_2fa() -> ResponseReturnValue:
             return render_template("auth/verify_2fa.html")
 
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
 
             # Check rate limit
             with uow:
@@ -333,7 +333,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 # After form validation, required fields are guaranteed to be non-None
                 assert form.email.data is not None
@@ -382,7 +382,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 @auth_bp.route("/confirm-email/<token>", methods=["GET", "POST"])
 def confirm_email(token: str) -> ResponseReturnValue:
     """Confirm email with token. GET shows confirmation page, POST confirms."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     if request.method == "GET":
         try:
@@ -419,7 +419,7 @@ def resend_confirmation() -> ResponseReturnValue:
     if form.validate_on_submit():
         try:
             assert form.email.data is not None
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             email_adapter = get_email_adapter()
             template_renderer = get_template_renderer(current_app)
             url_generator = get_url_generator(current_app)
@@ -454,7 +454,7 @@ def forgot_password() -> ResponseReturnValue:
     if form.validate_on_submit():
         try:
             assert form.email.data is not None
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
 
             # Request password reset (creates token if valid user)
             success = request_password_reset(uow, form.email.data)
@@ -507,7 +507,7 @@ def reset_password(token: str) -> ResponseReturnValue:
     # Validate token on GET request
     if request.method == "GET":
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             validate_reset_token(uow, token)
         except InvalidResetToken as e:
             flash(str(e), "error")
@@ -516,7 +516,7 @@ def reset_password(token: str) -> ResponseReturnValue:
     if form.validate_on_submit():
         try:
             assert form.password.data is not None
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
 
             # Reset the password
             reset_password_with_token(uow, token, form.password.data)
@@ -577,7 +577,7 @@ def google_callback() -> ResponseReturnValue:
             flash(_("Failed to get user information from Google"), "error")
             return redirect(url_for("auth.login"))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
         user, created = find_or_create_oauth_user(
@@ -685,7 +685,7 @@ def microsoft_callback() -> ResponseReturnValue:
             flash(_("Failed to get user information from Microsoft"), "error")
             return redirect(url_for("auth.login"))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
         user, created = find_or_create_oauth_user(

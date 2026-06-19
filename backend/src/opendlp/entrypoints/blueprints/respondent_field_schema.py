@@ -93,11 +93,11 @@ def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | No
 def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display and edit the respondent field schema for an assembly."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow_schema = bootstrap.bootstrap()
+        uow_schema = bootstrap.get_flask_uow()
         grouped = get_schema_grouped(uow_schema, current_user.id, assembly_id)
         sections = [
             {
@@ -113,10 +113,10 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Both lookups are optional — a fresh assembly has neither.
         gsheet = None
         with contextlib.suppress(Exception):
-            gsheet = get_assembly_gsheet(bootstrap.bootstrap(), assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(bootstrap.get_flask_uow(), assembly_id, current_user.id)
         csv_status = None
         with contextlib.suppress(Exception):
-            csv_status = get_csv_upload_status(bootstrap.bootstrap(), current_user.id, assembly_id)
+            csv_status = get_csv_upload_status(bootstrap.get_flask_uow(), current_user.id, assembly_id)
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
         targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
@@ -136,7 +136,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         has_guessable_text_rows = any(
             not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
         )
-        uow_count = bootstrap.bootstrap()
+        uow_count = bootstrap.get_flask_uow()
         with uow_count:
             has_respondents = uow_count.respondents.count_by_assembly_id(assembly_id) > 0
         show_guess_button = has_guessable_text_rows and has_respondents
@@ -173,7 +173,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Seed an empty schema (fixed-field rows only) for registration-first assemblies."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         inserted = initialise_empty_schema(uow, current_user.id, assembly_id)
         if inserted:
             flash(_("Schema initialised with %(count)d fixed fields.", count=inserted), "success")
@@ -211,7 +211,7 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     options = [ChoiceOption(value="option_1")] if field_type in CHOICE_TYPES else None
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         add_field(
             uow,
             current_user.id,
@@ -254,14 +254,14 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     # invariant ("choice fields need at least one option") holds on first save.
     seed_options = None
     if field_type in CHOICE_TYPES:
-        uow_peek = bootstrap.bootstrap()
+        uow_peek = bootstrap.get_flask_uow()
         with uow_peek:
             existing = uow_peek.respondent_field_definitions.get(field_id)
             if existing is not None and existing.field_type not in CHOICE_TYPES:
                 seed_options = [ChoiceOption(value="option_1")]
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         if seed_options is not None:
             update_field(
                 uow,
@@ -306,7 +306,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
 def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Overwrite TEXT-typed schema rows with guessed types based on respondent data."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         changed = guess_field_types(uow, current_user.id, assembly_id)
         if changed:
             flash(_("Guessed types for %(count)d fields.", count=len(changed)), "success")
@@ -333,7 +333,7 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
         flash(_("Option value is required."), "error")
         return _schema_page_redirect(assembly_id)
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
         flash(_("Option added."), "success")
     except FieldDefinitionConflictError as e:
@@ -365,7 +365,7 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
         flash(_("Option value cannot be blank."), "error")
         return _schema_page_redirect(assembly_id)
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         update_choice_option(
             uow,
             current_user.id,
@@ -400,7 +400,7 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
         flash(_("Option value is required."), "error")
         return _schema_page_redirect(assembly_id)
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
         flash(_("Option removed."), "success")
     except FieldDefinitionConflictError as e:
@@ -432,7 +432,7 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
         return _schema_page_redirect(assembly_id)
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         fields = get_schema(uow, current_user.id, assembly_id)
         target = next((f for f in fields if f.id == field_id), None)
         if target is None:
@@ -448,7 +448,7 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
 
         new_order = same_group[:]
         new_order[index], new_order[swap_with] = new_order[swap_with], new_order[index]
-        uow_reorder = bootstrap.bootstrap()
+        uow_reorder = bootstrap.get_flask_uow()
         reorder_group(
             uow_reorder,
             current_user.id,
@@ -472,7 +472,7 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
 def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Delete a non-fixed field from the schema. Fixed fields are protected by the service layer."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         delete_field(uow, current_user.id, assembly_id, field_id)
         flash(_("Field removed."), "success")
     except FieldDefinitionConflictError as e:

@@ -130,7 +130,7 @@ def service_docs() -> ResponseReturnValue:
         active_tab = "respondents"
 
     # Get all assemblies for the dropdown (admin can see all via get_user_assemblies)
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     assemblies = get_user_assemblies(uow, current_user.id)
 
     return render_template("backoffice/service_docs.html", assemblies=assemblies, active_tab=active_tab), 200
@@ -379,7 +379,7 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
                 **csv_kwargs,
             )
             if sel_kwargs:
-                uow2 = bootstrap.bootstrap()
+                uow2 = bootstrap.get_flask_uow()
                 sel_settings = update_selection_settings(
                     uow=uow2,
                     user_id=current_user.id,
@@ -388,7 +388,7 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
                 )
             else:
                 sel_settings = get_or_create_selection_settings(
-                    uow=bootstrap.bootstrap(),
+                    uow=bootstrap.get_flask_uow(),
                     user_id=current_user.id,
                     assembly_id=assembly_id,
                 )
@@ -987,7 +987,7 @@ def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, A
     """
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    page_repo_uow = bootstrap.bootstrap()
+    page_repo_uow = bootstrap.get_flask_uow()
     with page_repo_uow:
         page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
     url_slug = page.url_slug if page else ""
@@ -1071,7 +1071,7 @@ def _execute_service(service_name: str, params: dict[str, Any]) -> dict[str, Any
     if handler is None:
         return {"status": "error", "error": f"Unknown service: {service_name}", "error_type": "ValidationError"}
 
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     return handler(uow, params)
 
 
@@ -1100,7 +1100,7 @@ def patterns() -> ResponseReturnValue:
         active_tab = "dropdown"
 
     # Get assemblies for live examples
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     assemblies = get_user_assemblies(uow, current_user.id)
 
     return render_template("backoffice/patterns.html", assemblies=assemblies, active_tab=active_tab), 200

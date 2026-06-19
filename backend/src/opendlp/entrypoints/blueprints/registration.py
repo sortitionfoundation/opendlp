@@ -54,7 +54,7 @@ def short_url_prefix() -> str:
 @require_feature("registration_page")
 def show_registration_form(url_slug: str) -> ResponseReturnValue:
     """Render the public registration form for the given URL slug."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     page = find_registration_page_by_url_slug(uow, url_slug)
     visibility = resolve_visibility(page)
@@ -130,7 +130,7 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     route is exempt from automatic protection but is NOT unprotected - see the
     validate_csrf call below.
     """
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     # Gate on WTF_CSRF_ENABLED exactly as the global CSRFProtect hook does, so
     # disabling CSRF (e.g. in tests) skips validation here too.
@@ -174,7 +174,7 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
 @require_feature("registration_page")
 def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnValue:
     """Serve a registration page image from the database (public, image-only)."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     served = get_registration_image_for_serving(uow, url_slug, image_name)
     if served is None:
@@ -190,7 +190,7 @@ def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnVa
 @require_feature("registration_page")
 def thank_you(url_slug: str) -> ResponseReturnValue:
     """Display the thank-you page after successful registration submission."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     page = find_registration_page_by_url_slug(uow, url_slug)
     if page is None:
@@ -214,7 +214,7 @@ def short_url_redirect(short_url_slug: str) -> ResponseReturnValue:
 
     Uses 302 (not 301) because short slugs may be reused.
     """
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
 
     page = find_registration_page_by_short_url_slug(uow, short_url_slug)
     if page is None or not page.url_slug:
