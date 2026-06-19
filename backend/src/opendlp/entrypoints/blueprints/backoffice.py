@@ -190,10 +190,9 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 url_slug = request.form.get("url_slug", "").strip()
                 short_url_slug = request.form.get("short_url_slug", "").strip()
 
-                uow2 = bootstrap.get_flask_uow()
-                with uow2:
+                with uow:
                     updated_assembly = update_assembly(
-                        uow=uow2,
+                        uow=uow,
                         assembly_id=assembly_id,
                         user_id=current_user.id,
                         title=form.title.data,
@@ -207,9 +206,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 # nothing, and the service layer would no-op anyway, but this avoids the
                 # round-trip and any audit noise.
                 if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
-                    uow3 = bootstrap.get_flask_uow()
                     update_registration_page(
-                        uow=uow3,
+                        uow=uow,
                         user_id=current_user.id,
                         assembly_id=assembly_id,
                         url_slug=url_slug if url_slug else None,
@@ -314,11 +312,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.args.get("source", ""),
         )
 
-        # Get selection settings for gsheet display and form population
+        # Get selection settings for gsheet display and form population.
+        # A single UnitOfWork is reused for the sequential reads below.
+        uow = bootstrap.get_flask_uow()
         sel_settings = None
         try:
-            uow_sel = bootstrap.get_flask_uow()
-            sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
         except Exception as sel_error:
             current_app.logger.error(f"Error loading selection settings: {sel_error}")
 
@@ -349,13 +348,12 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             mode_param = request.args.get("mode", "")
             csv_mode = "edit" if mode_param == "edit" else "view"
 
-            # Get or create CSV config
-            uow_csv_config = bootstrap.get_flask_uow()
-            with uow_csv_config:
-                csv_config = get_or_create_csv_config(uow_csv_config, current_user.id, assembly_id)
+            # Get or create CSV config (reusing the UnitOfWork from above)
+            with uow:
+                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
                 # Get available columns from respondents for validation hints
-                csv_available_columns = get_respondent_attribute_columns(uow_csv_config, assembly_id)
+                csv_available_columns = get_respondent_attribute_columns(uow, assembly_id)
 
             # Create form with current values from SelectionSettings
             csv_settings_form = DbSelectionSettingsForm(
