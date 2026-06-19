@@ -97,8 +97,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow_schema = bootstrap.get_flask_uow()
-        grouped = get_schema_grouped(uow_schema, current_user.id, assembly_id)
+        grouped = get_schema_grouped(uow, current_user.id, assembly_id)
         sections = [
             {
                 "group": group,
@@ -113,10 +112,10 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Both lookups are optional — a fresh assembly has neither.
         gsheet = None
         with contextlib.suppress(Exception):
-            gsheet = get_assembly_gsheet(bootstrap.get_flask_uow(), assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         csv_status = None
         with contextlib.suppress(Exception):
-            csv_status = get_csv_upload_status(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
         targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
@@ -136,9 +135,8 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         has_guessable_text_rows = any(
             not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
         )
-        uow_count = bootstrap.get_flask_uow()
-        with uow_count:
-            has_respondents = uow_count.respondents.count_by_assembly_id(assembly_id) > 0
+        with uow:
+            has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
         show_guess_button = has_guessable_text_rows and has_respondents
 
         return render_template(
@@ -252,16 +250,16 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
 
     # Seed a starter option when switching to a choice type so the domain's
     # invariant ("choice fields need at least one option") holds on first save.
+    # One UnitOfWork is reused for the optional peek and the update below.
+    uow = bootstrap.get_flask_uow()
     seed_options = None
     if field_type in CHOICE_TYPES:
-        uow_peek = bootstrap.get_flask_uow()
-        with uow_peek:
-            existing = uow_peek.respondent_field_definitions.get(field_id)
+        with uow:
+            existing = uow.respondent_field_definitions.get(field_id)
             if existing is not None and existing.field_type not in CHOICE_TYPES:
                 seed_options = [ChoiceOption(value="option_1")]
 
     try:
-        uow = bootstrap.get_flask_uow()
         if seed_options is not None:
             update_field(
                 uow,
@@ -448,9 +446,8 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
 
         new_order = same_group[:]
         new_order[index], new_order[swap_with] = new_order[swap_with], new_order[index]
-        uow_reorder = bootstrap.get_flask_uow()
         reorder_group(
-            uow_reorder,
+            uow,
             current_user.id,
             assembly_id,
             target.group,
