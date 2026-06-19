@@ -493,10 +493,16 @@ tests qualify and how much time they currently take.
 - Add `commit_and_reset()` to `AbstractUnitOfWork` /
   `SqlAlchemyUnitOfWork` / `FakeUnitOfWork`.
 - Migrate **all ~256** web call sites (including the four `*_legacy`
-  blueprints, so no copy of the old pattern remains — D6); collapse multi-UoW
-  routes onto `commit_and_reset()`.
+  blueprints, so no copy of the old pattern remains — D6).
+- Add `commit_and_reset()` to the UoW classes (with tests). Adopting it in
+  routes is a separate, test-guarded follow-up (see D8 finding).
 - Update prose docs that describe the old pattern (§9).
 - Keep everything green; self-contained PR.
+
+**Phase 1b — route `commit_and_reset()` / UoW-reduction (follow-up).** Reduce
+multi-UoW routes to a single reused UoW and/or `commit_and_reset()`, route by
+route, with the e2e suite as a guard. Separated from Phase 1 because it is
+behaviour-sensitive (see D8 finding), not mechanical.
 
 **Phase 2 — fake-backed e2e pilot (the speed payoff; build later).** Shared-store
 `FakeUnitOfWork` (`FakeStore`, §5.2) + rollback semantics (option (b) for shared
@@ -539,8 +545,34 @@ seam in the meantime.)
   is worth the consistency.)
 - **D7 — Celery.** Convert to an injected `uow_factory` as a follow-on phase
   (DB-only; no fakes in the worker). CLI stays as-is.
-- **D8 — `commit_and_reset()`.** Adopt it (§2.3) and apply to all multi-UoW
-  routes (legacy included) during Phase 1.
+- **D8 — `commit_and_reset()`.** Add the method (done, with tests). Adopting it
+  in routes is **deferred to a focused follow-up**, not bundled with the seam
+  migration — see the finding below.
+
+### Implementation finding (2026-06-19): route collapse is riskier than assumed
+
+While migrating call sites I confirmed the `commit_and_reset()` route collapse is
+genuinely per-route and behaviour-sensitive, so it should NOT ride along with the
+mechanical seam swap:
+
+- Many services own their own `with uow:` block and `commit()` internally (e.g.
+  `assembly_service.update_csv_config`). Routes create a UoW and hand it to such
+  a service without entering a `with` themselves.
+- `with uow:` re-entry is only safe **sequentially** (each block fully exits
+  before the next). The codebase already relies on this — e.g.
+  `backoffice.edit_assembly` creates one `uow`, uses it in a `with`, then reuses
+  the same instance via a service after that block has exited. A naive collapse
+  that calls `commit_and_reset()` and then a service that does `with uow:` would
+  nest the contexts, and the inner `__exit__` closes the session out from under
+  the outer block.
+- Net: the safe refactor is reducing UoW *creations* per route to a single
+  reused instance and/or `commit_and_reset()`, decided route by route, with the
+  e2e suite green as a guard.
+
+**Plan:** land the seam migration (every web call site now uses
+`get_flask_uow()`, so the old `bootstrap.bootstrap()` pattern is gone — D6
+satisfied), then do the route-level `commit_and_reset()`/UoW-reduction pass as a
+separate, test-guarded change.
 
 ### Remaining things to confirm during implementation (not blocking)
 
