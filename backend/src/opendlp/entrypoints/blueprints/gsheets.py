@@ -1,6 +1,7 @@
 """ABOUTME: Backoffice Google Sheets routes for configuration, selection, replacement, and tab management
 ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, and manage-tabs/* routes"""
 
+import contextlib
 import uuid
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
@@ -216,11 +217,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # check/test/run buttons.
             active_initial_selection_run_id = get_active_initial_selection_run_id(uow, assembly_id)
 
+        # Reuse the same UnitOfWork for the remaining sequential reads.
         # Check if gsheet is configured
         gsheet = None
         try:
-            uow_gsheet = bootstrap.get_flask_uow()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         except Exception as gsheet_error:
             current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
 
@@ -229,9 +230,8 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_count = 0
         total_pages = 0
         try:
-            uow_history = bootstrap.get_flask_uow()
-            with uow_history:
-                run_history, total_count = uow_history.selection_run_records.get_by_assembly_id_paginated(
+            with uow:
+                run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
                     assembly_id, page, per_page
                 )
                 total_pages = (total_count + per_page - 1) // per_page
@@ -243,11 +243,9 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Get CSV status for tab enabled states
         csv_status = None
-        try:
-            uow_csv = bootstrap.get_flask_uow()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception:  # noqa: S110
-            pass  # No CSV data - expected for new assemblies
+        # No CSV data is expected for new assemblies.
+        with contextlib.suppress(Exception):
+            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # Determine data source and tab enabled states
         csv_selected_count = 0
@@ -265,9 +263,8 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
             # Get count of respondents that have been selected (not in Pool status)
             try:
-                uow_count = bootstrap.get_flask_uow()
-                with uow_count:
-                    csv_selected_count = count_non_pool_respondents(uow_count, assembly_id)
+                with uow:
+                    csv_selected_count = count_non_pool_respondents(uow, assembly_id)
             except Exception as count_error:
                 current_app.logger.error(f"Error counting non-pool respondents: {count_error}")
         else:
@@ -962,16 +959,14 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
-        # Form validation failed or service error - re-render the page with errors
-        uow_err = bootstrap.get_flask_uow()
-        with uow_err:
-            assembly = get_assembly_with_permissions(uow_err, assembly_id, current_user.id)
+        # Form validation failed or service error - re-render the page with errors.
+        # Reuse the UnitOfWork from the lookup above.
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         sel_settings = None
-        try:
-            uow_sel = bootstrap.get_flask_uow()
-            sel_settings = get_or_create_selection_settings(uow_sel, current_user.id, assembly_id)
-        except Exception:  # noqa: S110 — selection_settings is optional for form re-render
-            pass
+        # selection_settings is optional for the form re-render.
+        with contextlib.suppress(Exception):
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
         return render_template(
             "backoffice/assembly_data.html",
