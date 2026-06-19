@@ -1,6 +1,7 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly respondents
 ABOUTME: Provides respondent viewing, CSV upload, and deletion under /backoffice/assembly/*/respondents"""
 
+import contextlib
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -86,9 +87,10 @@ def _run_csv_import(
             filename=filename,
         )
 
-    uow2 = bootstrap.get_flask_uow()
+    # Reuse the same UnitOfWork: the import block above has committed and the
+    # session is reusable for this second, separate unit of work.
     update_csv_config(
-        uow=uow2,
+        uow=uow,
         user_id=current_user.id,
         assembly_id=assembly_id,
         last_import_filename=filename,
@@ -222,9 +224,9 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
     try:
-        uow_diff = bootstrap.get_flask_uow()
+        uow = bootstrap.get_flask_uow()
         diff = compute_diff_for_pending_csv(
-            uow_diff,
+            uow,
             current_user.id,
             assembly_id,
             pending.csv_content,
@@ -247,7 +249,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
             replace_existing=pending.replace_existing,
         )
 
-    uow = bootstrap.get_flask_uow()
+    # Reuse the UnitOfWork from the diff computation above.
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
@@ -370,20 +372,17 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
 
         # Determine data source and whether tabs should be enabled
+        # Reuse the same UnitOfWork for the remaining sequential reads.
         gsheet = None
-        try:
-            uow_gsheet = bootstrap.get_flask_uow()
-            gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-        except Exception:  # noqa: S110
-            pass  # No gsheet config exists - this is expected for new assemblies
+        # No gsheet config exists is expected for new assemblies.
+        with contextlib.suppress(Exception):
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
         # Get CSV status
         csv_status: CSVUploadStatus | None = None
-        try:
-            uow_csv = bootstrap.get_flask_uow()
-            csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-        except Exception:  # noqa: S110
-            pass  # No CSV data - expected for new assemblies
+        # No CSV data is expected for new assemblies.
+        with contextlib.suppress(Exception):
+            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # Determine data source
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
@@ -490,8 +489,8 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
         # Load the per-assembly field schema and pack it into display sections.
         # Empty groups are filtered out so the template renders only populated sections.
-        uow_schema = bootstrap.get_flask_uow()
-        grouped_schema = get_schema_grouped(uow_schema, current_user.id, assembly_id)
+        # Reuse the same UnitOfWork (the block above has exited).
+        grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
         schema_sections = [
             {"label": GROUP_LABELS[group], "fields": grouped_schema[group]}
             for group in GROUP_DISPLAY_ORDER
@@ -626,14 +625,14 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
                     url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
                 )
 
-        respondent = get_respondent(bootstrap.get_flask_uow(), current_user.id, assembly_id, respondent_id)
+        respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
         if respondent.selection_status == RespondentStatus.DELETED:
             flash(_("Cannot edit a deleted respondent"), "error")
             return redirect(
                 url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
             )
 
-        schema = get_schema(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+        schema = get_schema(uow, current_user.id, assembly_id)
         form, warnings = build_edit_respondent_form(schema, respondent)
 
         if request.method == "POST" and form.validate_on_submit():
@@ -644,7 +643,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         for warning in warnings:
             flash(warning, "warning")
 
-        grouped_schema = get_schema_grouped(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+        grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
         ordered_sections = []
         for group in GROUP_DISPLAY_ORDER:
             fields_in_group = [f for f in grouped_schema.get(group, []) if not f.is_derived]
