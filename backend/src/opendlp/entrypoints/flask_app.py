@@ -13,7 +13,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
-from opendlp import config
+from opendlp import bootstrap, config
 from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
 
@@ -23,12 +23,16 @@ def generate_csp_nonce() -> str:
     return secrets.token_urlsafe(16)
 
 
-def create_app(config_name: str = "") -> Flask:
+def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None = None) -> Flask:
     """
     Flask application factory.
 
     Args:
         config_name: Configuration name (development, testing, production)
+        uow_factory: Optional UnitOfWork factory. Routes obtain UnitOfWork
+            instances via ``bootstrap.get_flask_uow()``, which reads this factory
+            from the app. Defaults to ``bootstrap.default_uow_factory`` (a real
+            SqlAlchemy-backed UnitOfWork); tests can inject a fake factory here.
 
     Returns:
         Configured Flask application instance
@@ -52,6 +56,9 @@ def create_app(config_name: str = "") -> Flask:
 
     # Initialize extensions
     init_extensions(app, flask_config)
+
+    # Register the UnitOfWork factory that get_flask_uow() resolves per request.
+    app.extensions["uow_factory"] = uow_factory or bootstrap.default_uow_factory
 
     # Register context processors
     register_context_processors(app)
