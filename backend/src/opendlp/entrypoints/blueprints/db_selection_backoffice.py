@@ -54,9 +54,8 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Please review and save the selection settings before checking data."), "warning")
             return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
-        uow2 = bootstrap.get_flask_uow()
-        with uow2:
-            check_result = check_db_selection_data(uow=uow2, user_id=current_user.id, assembly_id=assembly_id)
+        with uow:
+            check_result = check_db_selection_data(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
 
         if check_result.success:
             flash(
@@ -353,10 +352,10 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
         # Update selection settings (check_same_address, columns, etc.)
-        uow2 = bootstrap.get_flask_uow()
-        with uow2:
+        # Reuse the same UnitOfWork for the remaining sequential units of work.
+        with uow:
             update_selection_settings(
-                uow=uow2,
+                uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 check_same_address=form.check_same_address.data,
@@ -365,10 +364,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         # Mark CSV config as confirmed
-        uow3 = bootstrap.get_flask_uow()
-        with uow3:
+        with uow:
             update_csv_config(
-                uow=uow3,
+                uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 settings_confirmed=True,
