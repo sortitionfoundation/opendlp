@@ -499,10 +499,26 @@ tests qualify and how much time they currently take.
 - Update prose docs that describe the old pattern (§9).
 - Keep everything green; self-contained PR.
 
-**Phase 1b — route `commit_and_reset()` / UoW-reduction (follow-up).** Reduce
-multi-UoW routes to a single reused UoW and/or `commit_and_reset()`, route by
-route, with the e2e suite as a guard. Separated from Phase 1 because it is
-behaviour-sensitive (see D8 finding), not mechanical.
+**Phase 1b — route UoW-reduction (DONE).** Reduced non-legacy multi-UoW routes
+to a single reused UoW, route by route, with the e2e suite as a guard. Findings
+from doing the work:
+
+- The safe transformation is reusing one UoW instance across **sequential**
+  `with` blocks / service calls (verified against the real DB: a closed
+  SqlAlchemy session is reusable and sees prior commits). `commit_and_reset()`
+  was rarely needed because services own their own `with uow:` blocks.
+- Routes that create a UoW in **mutually-exclusive branches** (GET vs POST,
+  `if/else`, htmx-vs-not) were left unchanged — only one runs per request, so
+  there is nothing to collapse (e.g. `auth.reset_password`, `targets.add_value`,
+  `targets.edit_value`, `dev._handle_update_csv_config`, the non-publish
+  branches of `_handle_registration_action`).
+- Legacy blueprints were not collapsed (slated for deletion; already on the new
+  seam).
+- Where collapsing reduced a `try/except/pass` to a single statement, switched
+  to `contextlib.suppress` to satisfy ruff SIM105.
+
+Files changed: `respondents`, `targets`, `db_selection_backoffice`,
+`backoffice`, `backoffice_registration`, `gsheets`, `respondent_field_schema`.
 
 **Phase 2 — fake-backed e2e pilot (the speed payoff; build later).** Shared-store
 `FakeUnitOfWork` (`FakeStore`, §5.2) + rollback semantics (option (b) for shared
