@@ -495,6 +495,7 @@ tests qualify and how much time they currently take.
 - Migrate **all ~256** web call sites (including the four `*_legacy`
   blueprints, so no copy of the old pattern remains — D6); collapse multi-UoW
   routes onto `commit_and_reset()`.
+- Update prose docs that describe the old pattern (§9).
 - Keep everything green; self-contained PR.
 
 **Phase 2 — fake-backed e2e pilot (the speed payoff; build later).** Shared-store
@@ -548,3 +549,33 @@ seam in the meantime.)
   included).
 - Which single e2e file to use for the Phase 2 pilot (`test_assembly_crud.py` or
   `test_admin_user_management.py`).
+
+## 9. Documentation to update
+
+A sweep of `docs/` (excluding `docs/agent/`) found these prose references to the
+current UoW/bootstrap pattern. Most of `docs/` is unaffected; the items below
+are the ones that describe behaviour Phase 1 changes.
+
+**Update in Phase 1:**
+
+- **`docs/architecture.md`**
+  - The `bootstrap.py` paragraph (≈line 203) currently says it "builds a session
+    factory, and returns a `SqlAlchemyUnitOfWork`". Extend it to describe the new
+    web-layer seam: `default_uow_factory`, `get_flask_uow()` /
+    `get_flask_uow_factory()`, the `create_app(uow_factory=…)` parameter and
+    `app.extensions["uow_factory"]`, and that web entrypoints obtain UoWs through
+    this seam while CLI/Celery still pass an explicit `session_factory`.
+  - The `unit_of_work` service row (≈line 150): mention `commit_and_reset()`.
+- **`docs/background_tasks.md`** — the "In Flask routes or templates" snippet
+  (≈line 185) shows a bare `with uow:`. Change to
+  `with get_flask_uow() as uow:` (with the import) so the canonical example
+  reflects the new pattern and nobody copies the old one.
+
+**No change needed:**
+
+- `docs/testing.md` — Phase 1 adds no test-fixture changes; the
+  `create_app(uow_factory=…)` fake-backed fixture path is documented here when
+  **Phase 2** lands.
+- `docs/monitoring.md`, `docs/spec.md`, `docs/postfix_configuration.md` — their
+  references are conceptual ("bootstraps a Unit of Work", "Repository and
+  UnitOfWork abstractions", `get_email_adapter` import) and remain accurate.
