@@ -1,6 +1,7 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly targets
 ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backoffice/assembly/*/targets"""
 
+import contextlib
 import uuid
 
 from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
@@ -66,19 +67,16 @@ def _can_manage(assembly_id: uuid.UUID) -> bool:
 
 def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     """Get common assembly context needed for the targets page layout (tabs, data source)."""
+    uow = bootstrap.get_flask_uow()
     gsheet = None
-    try:
-        uow_gsheet = bootstrap.get_flask_uow()
-        gsheet = get_assembly_gsheet(uow_gsheet, assembly_id, current_user.id)
-    except Exception:  # noqa: S110
-        pass  # No gsheet config exists - expected for new assemblies
+    # No gsheet config exists is expected for new assemblies.
+    with contextlib.suppress(Exception):
+        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
     csv_status: CSVUploadStatus | None = None
-    try:
-        uow_csv = bootstrap.get_flask_uow()
-        csv_status = get_csv_upload_status(uow_csv, current_user.id, assembly_id)
-    except Exception:  # noqa: S110
-        pass  # No CSV data - expected for new assemblies
+    # No CSV data is expected for new assemblies.
+    with contextlib.suppress(Exception):
+        csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
@@ -101,8 +99,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.get_flask_uow()
-        target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
         add_category_form = AddTargetCategoryForm()
@@ -160,8 +157,7 @@ def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvFo
     uow = bootstrap.get_flask_uow()
     assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-    uow2 = bootstrap.get_flask_uow()
-    target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+    target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
     context = _get_assembly_context(assembly_id)
 
@@ -289,8 +285,7 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
-        uow2 = bootstrap.get_flask_uow()
-        existing = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+        existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
         sort_order = len(existing)
         assert form.name.data is not None  # this is basically a type hint
 
@@ -691,8 +686,8 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         category = None
+        uow = bootstrap.get_flask_uow()
         for value_name in missing_values:
-            uow = bootstrap.get_flask_uow()
             category = add_target_value(
                 uow=uow,
                 user_id=current_user.id,
@@ -741,8 +736,7 @@ def respondent_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.get_flask_uow()
-        target_categories = get_targets_for_assembly(uow2, current_user.id, assembly_id)
+        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
@@ -787,9 +781,10 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         created = []
         values_added_count = 0
+        # Reuse the same UnitOfWork across the loop; each call is a separate,
+        # sequential unit of work that commits independently.
         for column_name in selected_columns:
             try:
-                uow = bootstrap.get_flask_uow()
                 category = create_target_category(
                     uow=uow,
                     user_id=current_user.id,
@@ -803,13 +798,11 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 # Auto-add all distinct values for low-cardinality columns
                 distinct_count = column_distinct_counts.get(column_name, 0)
                 if distinct_count > 0 and distinct_count < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
-                    uow2 = bootstrap.get_flask_uow()
-                    with uow2:
-                        value_counts = get_respondent_attribute_value_counts(uow2, assembly_id, column_name)
+                    with uow:
+                        value_counts = get_respondent_attribute_value_counts(uow, assembly_id, column_name)
                     for value_name in sorted(value_counts.keys()):
-                        uow3 = bootstrap.get_flask_uow()
                         add_target_value(
-                            uow=uow3,
+                            uow=uow,
                             user_id=current_user.id,
                             assembly_id=assembly_id,
                             category_id=category.id,
@@ -856,12 +849,10 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-        uow2 = bootstrap.get_flask_uow()
-        with uow2:
-            check_result = check_targets_detailed(uow2, current_user.id, assembly_id)
+        with uow:
+            check_result = check_targets_detailed(uow, current_user.id, assembly_id)
 
-        uow3 = bootstrap.get_flask_uow()
-        target_categories = get_targets_for_assembly(uow3, current_user.id, assembly_id)
+        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
         add_category_form = AddTargetCategoryForm()
