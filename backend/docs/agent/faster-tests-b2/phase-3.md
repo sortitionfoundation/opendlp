@@ -465,11 +465,14 @@ DB behaviour. The §6.6 guard enforces that it never appears under `component/`.
    succeeded: added `FlaskTestComponentConfig` (`config "testing_component"`) with
    `SESSION_CACHELIB = SimpleCache()`, and login via session_transaction — so the
    component tier needs **no PostgreSQL and no Redis**.
-2. **Cheapest, highest fidelity first:** Group C (`test_registration_public.py`,
-   `test_registration_image_serve.py`) — only config mocks, pure request→
-   service→assertion, near-identical to the pilot. Move the behavioural coverage
-   to `tests/component/`; **keep one PG happy-path smoke per route in
-   `tests/e2e/`** (§8 D2).
+2. ✅ **Group C (done).** Behavioural coverage now lives in `tests/component/`
+   (`test_registration_routes.py` — the converted public-registration routes —
+   plus a new `test_registration_image_serve.py`). The e2e files were trimmed to
+   per-route PostgreSQL happy-path smokes (§8 D2), keeping the genuinely
+   full-stack security tests in e2e (`test_registration_public.py` retains the
+   CSP-nonce isolation test and the CSRF-expiry tests, which need real CSRF that
+   the component tier disables, plus the distinct real-DB respondent-status
+   submission smokes).
 3. ✅ **Group B (done).** Converted all five Group B files to `tests/component/`
    driving real services over a `FakeUnitOfWork` with state-based assertions
    (`test_dev_image_handlers`, `test_backoffice_registration_actions`,
