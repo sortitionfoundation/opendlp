@@ -1,12 +1,13 @@
-"""ABOUTME: Fixtures for the fake-backed e2e pilot (Phase 2 of the B2 plan)
-ABOUTME: Overrides app + data fixtures to run e2e tests against a shared in-memory FakeStore (no PostgreSQL)"""
+"""ABOUTME: Shared fixtures for component tests (Flask app over a FakeUnitOfWork)
+ABOUTME: Builds a fake-backed app with in-memory sessions and seeds data through a shared FakeStore — no PostgreSQL, no Redis"""
 
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from flask.testing import FlaskClient
 
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.entrypoints.celery.app import reset_celery_app
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.user_service import create_user
@@ -20,24 +21,32 @@ def fake_store():
 
 
 @pytest.fixture
-def app(temp_env_vars, fake_store, test_redis_client):
+def app(fake_store):
     """Flask app whose UnitOfWork factory is backed by the shared FakeStore.
 
-    No PostgreSQL is involved: routes resolve get_flask_uow() to a
-    FakeUnitOfWork over fake_store. Redis is still used for login rate limiting,
-    exactly as in the PostgreSQL e2e app.
+    No PostgreSQL and no Redis: routes resolve get_flask_uow() to a
+    FakeUnitOfWork over fake_store, and sessions use an in-memory cachelib cache.
     """
-    temp_env_vars(
-        REDIS_PORT="63792",
-        REDIS_DB=str(test_redis_client.connection_pool.connection_kwargs["db"]),
-    )
-    reset_celery_app()
-    return create_app("testing", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+
+
+@pytest.fixture
+def client(app):
+    """Test client for the fake-backed app."""
+    return app.test_client()
+
+
+def _login(client: FlaskClient, user: User) -> FlaskClient:
+    """Log a user in by writing the Flask-Login session directly (no auth round trip)."""
+    with client.session_transaction() as session:
+        session["_user_id"] = user.get_id()
+        session["_fresh"] = True
+    return client
 
 
 @pytest.fixture
 def admin_user(fake_store):
-    """Create an admin user in the shared store (mirrors the PostgreSQL fixture)."""
+    """Create a confirmed admin user in the shared store."""
     with FakeUnitOfWork(store=fake_store) as uow:
         admin, _ = create_user(
             uow=uow,
@@ -58,7 +67,7 @@ def admin_user(fake_store):
 
 @pytest.fixture
 def regular_user(fake_store):
-    """Create a regular user in the shared store (mirrors the PostgreSQL fixture)."""
+    """Create a confirmed regular user in the shared store."""
     with FakeUnitOfWork(store=fake_store) as uow:
         user, _ = create_user(
             uow=uow,
@@ -78,8 +87,20 @@ def regular_user(fake_store):
 
 
 @pytest.fixture
+def logged_in_admin(client, admin_user):
+    """Client logged in as the admin user."""
+    return _login(client, admin_user)
+
+
+@pytest.fixture
+def logged_in_user(client, regular_user):
+    """Client logged in as the regular user."""
+    return _login(client, regular_user)
+
+
+@pytest.fixture
 def existing_assembly(fake_store, admin_user):
-    """Create an assembly in the shared store (mirrors the PostgreSQL fixture)."""
+    """Create an assembly in the shared store."""
     with FakeUnitOfWork(store=fake_store) as uow:
         assembly = create_assembly(
             uow=uow,

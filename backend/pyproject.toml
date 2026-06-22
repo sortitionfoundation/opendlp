@@ -127,6 +127,13 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+  "requires_db: needs a real PostgreSQL database",
+  "requires_redis: needs a real Redis server",
+  "requires_celery: needs a Celery worker / broker",
+  "db_semantics: exercises real database behaviour (cascades/constraints/JSON operators) and must never be run against the fake backend",
+]
 
 [tool.ruff]
 target-version = "py312"

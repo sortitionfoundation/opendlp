@@ -14,7 +14,9 @@ from functools import cache
 from pathlib import Path
 
 import sortition_algorithms.settings
+from cachelib.base import BaseCache
 from cachelib.file import FileSystemCache
+from cachelib.simple import SimpleCache
 from dotenv import load_dotenv
 from redis import Redis
 
@@ -501,7 +503,20 @@ class FlaskTestConfig(FlaskBaseConfig):
         session_dir_name = f"flask_session_{worker_suffix}" if worker_suffix else "flask_session"
         session_file_dir = Path(tempfile.gettempdir()) / session_dir_name
         session_file_dir.mkdir(exist_ok=True)
-        self.SESSION_CACHELIB = FileSystemCache(str(session_file_dir))
+        self.SESSION_CACHELIB: BaseCache = FileSystemCache(str(session_file_dir))
+
+
+class FlaskTestComponentConfig(FlaskTestConfig):
+    """Test configuration for component tests: in-memory sessions, no external services.
+
+    Component tests drive the Flask app against a FakeUnitOfWork, so they need no
+    PostgreSQL and no Redis. Sessions use an in-memory cachelib backend so login
+    works without touching disk or a session server.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.SESSION_CACHELIB = SimpleCache()
 
 
 class FlaskProductionConfig(FlaskConfig):
@@ -540,6 +555,7 @@ def get_config(config_name: str = "") -> FlaskBaseConfig:
         "development": FlaskConfig,
         "testing": FlaskTestConfig,
         "testing_postgres": FlaskTestConfig,
+        "testing_component": FlaskTestComponentConfig,
         "production": FlaskProductionConfig,
     }
 
