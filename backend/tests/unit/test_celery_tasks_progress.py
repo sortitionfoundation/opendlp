@@ -4,6 +4,7 @@ ABOUTME: Asserts _internal_run_select and the gsheet load/write helpers forward 
 import uuid
 from unittest.mock import MagicMock, patch
 
+import pytest
 from sortition_algorithms import settings
 from sortition_algorithms.utils import RunReport
 
@@ -11,6 +12,8 @@ from opendlp.bootstrap import bootstrap as bootstrap_uow
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import tasks
+
+pytestmark = pytest.mark.requires_db
 
 
 class RecordingReporter:

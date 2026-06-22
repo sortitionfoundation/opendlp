@@ -1,9 +1,12 @@
 # Phase 3 — `patch`/`MagicMock` audit + test-organisation ideas
 
-> Status: **Audit only.** No code changed. This document inventories where the
-> test suite mocks/patches around the Flask app, groups those tests by the
-> strategy that fits them, and collects ideas for the long-term organisation of
-> the Flask tests. Decisions are for Doctor Chewie; nothing here is implemented.
+> Status: **Implemented.** Began as an audit; the agreed work (§7) is now built —
+> the `tests/component/` tier, the `requires_*`/`db_semantics` markers with
+> auto-marking and the placement guard, the Group B + Group C conversions, and
+> the `docs/testing.md` updates. Deferred by decision: centralising the Celery
+> boundary mock (§6.4 / §8 D6). This document inventories where the test suite
+> mocks/patches around the Flask app, groups those tests by strategy, and records
+> the decisions (§8).
 
 ## 1. Purpose & method
 
