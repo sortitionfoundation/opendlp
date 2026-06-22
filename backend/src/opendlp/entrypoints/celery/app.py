@@ -33,6 +33,10 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | 
         task_track_started=True,
         # Configure periodic tasks (Celery Beat schedule)
         beat_schedule={
+            "cleanup-old-password-reset-tokens": {
+                "task": "opendlp.entrypoints.celery.tasks.cleanup_old_password_reset_tokens",
+                "schedule": 3600.0,  # hourly
+            },
             "cleanup-orphaned-tasks": {
                 "task": "opendlp.entrypoints.celery.tasks.cleanup_orphaned_tasks",
                 "schedule": 300.0,  # Run every 5 minutes (300 seconds)
