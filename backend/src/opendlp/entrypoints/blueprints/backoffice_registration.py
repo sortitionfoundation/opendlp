@@ -175,26 +175,22 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
     """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message."""
+    uow = bootstrap.get_flask_uow()
     if action == "publish":
-        uow = bootstrap.get_flask_uow()
         result = get_registration_page_with_source(uow, user_id, assembly_id)
         if result and result[0].status == RegistrationPageStatus.TEST:
             publish_registration_page(uow, user_id, assembly_id)
             return _("Registration form published successfully")
         return _("Registration form HTML updated successfully")
     if action == "unpublish":
-        uow = bootstrap.get_flask_uow()
         unpublish_registration_page(uow, user_id, assembly_id)
         return _("Registration form unpublished")
     if action == "close":
-        uow = bootstrap.get_flask_uow()
         close_registration_page(uow, user_id, assembly_id)
         return _("Registration form closed")
     if action == "reopen":
-        uow = bootstrap.get_flask_uow()
         reopen_registration_page(uow, user_id, assembly_id)
         return _("Registration form reopened")
-    uow = bootstrap.get_flask_uow()
     result = get_registration_page_with_source(uow, user_id, assembly_id)
     if result and result[0].status == RegistrationPageStatus.PUBLISHED:
         return _("Registration form saved and republished")
@@ -207,7 +203,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save and publish registration form HTML content."""
     action = request.form.get("action", "save")
     # If the user was editing (action="save") and the request fails, keep them in
-    # edit mode so they can fix and retry; status transitions only fire from
+    # edit mode so they can fix and retry. Status transitions only fire from
     # read-only mode (the dropdown is disabled while editing), so they land back
     # in read-only on error.
     view_kwargs: dict[str, Any] = {"assembly_id": assembly_id}
