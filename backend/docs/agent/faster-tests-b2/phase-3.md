@@ -468,6 +468,11 @@ DB behaviour. The §6.6 guard enforces that it never appears under `component/`.
    succeeded: added `FlaskTestComponentConfig` (`config "testing_component"`) with
    `SESSION_CACHELIB = SimpleCache()`, and login via session_transaction — so the
    component tier needs **no PostgreSQL and no Redis**.
+   The Phase 2 pilot's re-export (a `tests/component/` file importing the e2e
+   assembly-CRUD bodies) was **removed** to keep a clean boundary — no component
+   module imports from `tests/e2e/`. The PG `tests/e2e/test_assembly_crud.py`
+   remains as the real-DB coverage; migrating those bodies into a native
+   component test is a follow-on stage.
 2. ✅ **Group C (done).** Behavioural coverage now lives in `tests/component/`
    (`test_registration_routes.py` — the converted public-registration routes —
    plus a new `test_registration_image_serve.py`). The e2e files were trimmed to
