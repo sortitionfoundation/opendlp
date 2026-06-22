@@ -1,4 +1,4 @@
-"""ABOUTME: E2E tests for the registration auto-reply through the full HTTP stack
+"""ABOUTME: E2E smoke for the registration auto-reply through the full HTTP + PostgreSQL stack
 ABOUTME: Submits the public form and checks a RespondentEmailSendRecord is written"""
 
 from datetime import UTC, datetime, timedelta
@@ -47,16 +47,9 @@ def enable_registration_feature(monkeypatch: pytest.MonkeyPatch) -> None:
     reload_flags()
 
 
-def _build_page_with_auto_reply(
-    session_factory, admin_id, *, publish: bool, capture_email: bool = True
-) -> RegistrationPage:
-    """Create an assembly with a reply-to, a registration page whose form is wired to
-    an assigned auto-reply template, and (optionally) an email field on the page.
-
-    ``publish=True`` makes submissions live (POOL); ``publish=False`` leaves the page
-    in TEST mode (test submissions). ``capture_email=False`` omits the email field so
-    submitted respondents have no address.
-    """
+def _build_published_page_with_auto_reply(session_factory, admin_id) -> RegistrationPage:
+    """Create a published registration page wired to an assigned auto-reply template,
+    with a reply-to address and an email field on the page."""
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         assembly = create_assembly(
             uow=uow,
@@ -67,9 +60,10 @@ def _build_page_with_auto_reply(
         )
         assembly_id = assembly.id
 
-    field_defs = [("name", FieldType.TEXT, False, FieldOnRegistrationPage.YES_OPTIONAL)]
-    if capture_email:
-        field_defs.insert(0, ("email", FieldType.EMAIL, True, FieldOnRegistrationPage.YES_REQUIRED))
+    field_defs = [
+        ("email", FieldType.EMAIL, True, FieldOnRegistrationPage.YES_REQUIRED),
+        ("name", FieldType.TEXT, False, FieldOnRegistrationPage.YES_OPTIONAL),
+    ]
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         for sort, (key, ftype, is_fixed, on_page) in enumerate(field_defs):
             uow.respondent_field_definitions.add(
@@ -109,28 +103,14 @@ def _build_page_with_auto_reply(
     )
     assign_auto_reply_template(SqlAlchemyUnitOfWork(session_factory), admin_id, assembly_id, template.id)
 
-    if publish:
-        with SqlAlchemyUnitOfWork(session_factory) as uow:
-            return publish_registration_page(uow, admin_id, assembly_id)
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
-        return page.create_detached_copy()
-
-
-def _records_for_latest_respondent(session_factory, assembly_id, status):
-    """Return the send records (detached) for the most recent respondent of the given
-    status in the assembly, asserting at least one respondent exists."""
-    with SqlAlchemyUnitOfWork(session_factory) as uow:
-        respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status)
-        assert respondents, "expected a respondent to have been created"
-        respondent = respondents[0]
-        return [r.create_detached_copy() for r in uow.respondent_email_send_records.list_by_respondent(respondent.id)]
+        return publish_registration_page(uow, admin_id, assembly_id)
 
 
 def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
-    """A live (published) submission to a page with an auto-reply configured sends
-    the email and records a SENT RespondentEmailSendRecord addressed to the respondent."""
-    page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=True)
+    """A live submission to a page with an auto-reply configured sends the email and
+    records a SENT RespondentEmailSendRecord addressed to the respondent (PostgreSQL smoke)."""
+    page = _build_published_page_with_auto_reply(postgres_session_factory, admin_user.id)
     form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
 
@@ -140,45 +120,10 @@ def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, pos
     )
     assert response.status_code == 302
 
-    records = _records_for_latest_respondent(postgres_session_factory, page.assembly_id, RespondentStatus.POOL)
-    assert len(records) == 1
-    assert records[0].outcome is EmailSendOutcome.SENT
-    assert records[0].to_email == "ada-autoreply@example.com"
-
-
-def test_submission_without_captured_email_writes_no_record(
-    client: FlaskClient, admin_user, postgres_session_factory
-) -> None:
-    """When an auto-reply is configured but the page collects no email field, a live
-    submission produces a respondent with no address, so the send is skipped and no
-    record is written (the misconfiguration case from plan section 11.1)."""
-    page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=True, capture_email=False)
-    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
-    csrf_token = get_csrf_token(client, form_url)
-
-    response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada"})
-    assert response.status_code == 302
-
-    records = _records_for_latest_respondent(postgres_session_factory, page.assembly_id, RespondentStatus.POOL)
-    assert records == []
-
-
-def test_test_mode_submission_writes_sent_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
-    """A submission to a TEST-mode (unpublished) page creates a test-submission
-    respondent and the auto-reply is still sent, writing a SENT record."""
-    page = _build_page_with_auto_reply(postgres_session_factory, admin_user.id, publish=False)
-    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
-    csrf_token = get_csrf_token(client, form_url)
-
-    response = client.post(
-        form_url,
-        data={"csrf_token": csrf_token, "name": "Ada", "email": "ada-testmode@example.com"},
-    )
-    assert response.status_code == 302
-
-    records = _records_for_latest_respondent(
-        postgres_session_factory, page.assembly_id, RespondentStatus.TEST_SUBMISSION
-    )
-    assert len(records) == 1
-    assert records[0].outcome is EmailSendOutcome.SENT
-    assert records[0].to_email == "ada-testmode@example.com"
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        respondents = uow.respondents.get_by_assembly_id(page.assembly_id, status=RespondentStatus.POOL)
+        assert respondents, "expected a respondent to have been created"
+        records = uow.respondent_email_send_records.list_by_respondent(respondents[0].id)
+        assert len(records) == 1
+        assert records[0].outcome is EmailSendOutcome.SENT
+        assert records[0].to_email == "ada-autoreply@example.com"

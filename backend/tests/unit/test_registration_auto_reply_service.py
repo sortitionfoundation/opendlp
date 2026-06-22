@@ -1,4 +1,4 @@
-"""ABOUTME: Integration tests for the registration auto-reply end-to-end flow.
+"""ABOUTME: Service-level tests for the registration auto-reply over a FakeUnitOfWork.
 ABOUTME: Submits a registration then sends the templated auto-reply and checks the record."""
 
 from unittest.mock import MagicMock
