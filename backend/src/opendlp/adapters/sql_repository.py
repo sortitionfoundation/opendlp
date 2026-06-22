@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.email_send_record import RespondentEmailSendRecord
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -39,10 +41,12 @@ from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
     EmailConfirmationTokenRepository,
+    EmailTemplateRepository,
     PasswordResetTokenRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
+    RespondentEmailSendRecordRepository,
     RespondentFieldDefinitionRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
@@ -1284,3 +1288,50 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
             )
         )
         return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+
+class SqlAlchemyEmailTemplateRepository(SqlAlchemyRepository, EmailTemplateRepository):
+    """SQLAlchemy implementation of EmailTemplateRepository."""
+
+    def add(self, item: EmailTemplate) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> EmailTemplate | None:
+        return self.session.query(EmailTemplate).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[EmailTemplate]:
+        return self.session.query(EmailTemplate).all()
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[EmailTemplate]:
+        return (
+            self.session
+            .query(EmailTemplate)
+            .filter(orm.email_templates.c.assembly_id == assembly_id)
+            .order_by(orm.email_templates.c.created_at)
+            .all()
+        )
+
+    def delete(self, item: EmailTemplate) -> None:
+        self.session.delete(item)
+
+
+class SqlAlchemyRespondentEmailSendRecordRepository(SqlAlchemyRepository, RespondentEmailSendRecordRepository):
+    """SQLAlchemy implementation of RespondentEmailSendRecordRepository."""
+
+    def add(self, item: RespondentEmailSendRecord) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RespondentEmailSendRecord | None:
+        return self.session.query(RespondentEmailSendRecord).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[RespondentEmailSendRecord]:
+        return self.session.query(RespondentEmailSendRecord).all()
+
+    def list_by_respondent(self, respondent_id: uuid.UUID) -> list[RespondentEmailSendRecord]:
+        return (
+            self.session
+            .query(RespondentEmailSendRecord)
+            .filter(orm.respondent_email_send_records.c.respondent_id == respondent_id)
+            .order_by(orm.respondent_email_send_records.c.created_at)
+            .all()
+        )

@@ -10,6 +10,7 @@ from opendlp import bootstrap
 from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
 from opendlp.entrypoints.extensions import csrf
+from opendlp.service_layer.email_send_service import send_registration_auto_reply
 from opendlp.service_layer.registration_image_service import get_registration_image_for_serving
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
@@ -158,6 +159,7 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         return redirect(url_for("registration.registration_closed"), 302)
 
     if result.is_valid:
+        _send_registration_auto_reply(result.respondent)
         return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
 
     # Validation failed - re-render form with errors
@@ -168,6 +170,19 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         field_errors=result.field_errors,
         form_errors=result.form_errors,
     )
+
+
+def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untyped-def]
+    """Best-effort auto-reply send. Never blocks the redirect to the thank-you page."""
+    try:
+        send_registration_auto_reply(
+            bootstrap.get_flask_uow(),
+            bootstrap.get_email_adapter(),
+            respondent=respondent,
+            assembly_id=respondent.assembly_id,
+        )
+    except Exception:
+        current_app.logger.exception("Failed to send registration auto-reply")
 
 
 @registration_bp.route("/register/<url_slug>/assets/<image_name>", methods=["GET"])

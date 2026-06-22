@@ -172,6 +172,7 @@ class RegistrationPage:
         registration_page_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        auto_reply_email_template_id: uuid.UUID | None = None,
     ):
         now = datetime.now(UTC)
         self.id = registration_page_id or uuid.uuid4()
@@ -181,6 +182,7 @@ class RegistrationPage:
         self.status = status
         self.source_type = source_type
         self.thank_you_html = thank_you_html
+        self.auto_reply_email_template_id = auto_reply_email_template_id
         self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
         self.created_at = created_at or now
         self.updated_at = updated_at or now
@@ -208,6 +210,10 @@ class RegistrationPage:
 
     def update_thank_you_html(self, thank_you_html: str) -> None:
         self.thank_you_html = thank_you_html
+        self.updated_at = datetime.now(UTC)
+
+    def set_auto_reply_template(self, template_id: uuid.UUID | None) -> None:
+        self.auto_reply_email_template_id = template_id
         self.updated_at = datetime.now(UTC)
 
     def readiness_problems(self, source: HtmlSource) -> list[str]:
@@ -284,6 +290,7 @@ class RegistrationPage:
             registration_page_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
+            auto_reply_email_template_id=self.auto_reply_email_template_id,
         )
 
     def __eq__(self, other: object) -> bool:

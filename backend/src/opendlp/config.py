@@ -240,6 +240,15 @@ def get_registration_thank_you_html_max_bytes() -> int:
     return _registration_html_max_bytes("REGISTRATION_THANK_YOU_HTML_MAX_BYTES", 51200)
 
 
+def get_email_template_body_max_bytes() -> int:
+    """Maximum allowed size for an email template's HTML body, in bytes.
+
+    Default 200 KB. Bounded to [1 KB, 10 MB]. Environment variable:
+    ``EMAIL_TEMPLATE_BODY_MAX_BYTES``.
+    """
+    return _registration_html_max_bytes("EMAIL_TEMPLATE_BODY_MAX_BYTES", 204800)
+
+
 def _clamped_int_env(env_key: str, default: int, minimum: int, maximum: int) -> int:
     """Read an integer from the environment, falling back to ``default`` on a
     missing or invalid value and clamping to [minimum, maximum] with a logged

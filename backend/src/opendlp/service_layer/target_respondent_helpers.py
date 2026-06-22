@@ -24,7 +24,7 @@ __all__ = [
 
 def get_assembly_respondent_attribute_columns(assembly_id: uuid.UUID) -> list[str]:
     """Get respondent attribute columns for an assembly."""
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         return get_respondent_attribute_columns(uow, assembly_id)
 
@@ -42,7 +42,7 @@ def get_respondent_counts_for_category(
     matched_col = columns_lower.get(category_name.lower())
     if matched_col is None:
         return None
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         return get_respondent_attribute_value_counts(uow, assembly_id, matched_col)
 
@@ -53,7 +53,7 @@ def get_column_distinct_counts(
 ) -> dict[str, int]:
     """Get the number of distinct values for each respondent attribute column."""
     counts: dict[str, int] = {}
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         for col in attribute_columns:
             value_counts = get_respondent_attribute_value_counts(uow, assembly_id, col)
@@ -88,7 +88,7 @@ def get_selected_counts_for_category(
     matched_col = columns_lower.get(category_name.lower())
     if matched_col is None:
         return None
-    uow = bootstrap.bootstrap()
+    uow = bootstrap.get_flask_uow()
     with uow:
         return get_selected_respondent_attribute_value_counts(uow, assembly_id, matched_col)
 

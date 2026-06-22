@@ -13,7 +13,7 @@ from sortition_algorithms.utils import RunReport
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.domain.respondents import normalise_field_name
-from opendlp.domain.validators import GoogleSpreadsheetURLValidator
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator, validate_email
 from opendlp.domain.value_objects import AssemblyStatus, ProgressInfo, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import lazy_gettext as _l
 
@@ -22,6 +22,12 @@ if TYPE_CHECKING:
     from opendlp.domain.respondents import Respondent
     from opendlp.domain.selection_settings import SelectionSettings
     from opendlp.domain.targets import TargetCategory
+
+
+def _validated_reply_to_email(email: str) -> str:
+    if email:
+        validate_email(email)
+    return email
 
 
 class Assembly:
@@ -42,6 +48,8 @@ class Assembly:
         respondents: list["Respondent"] | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        reply_to_name: str = "",
+        reply_to_email: str = "",
     ):
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
@@ -53,6 +61,8 @@ class Assembly:
         self.first_assembly_date = first_assembly_date
         self.number_to_select = number_to_select
         self.status = status
+        self.reply_to_name = reply_to_name
+        self.reply_to_email = _validated_reply_to_email(reply_to_email)
         self.gsheet = gsheet
         self.csv = csv
         self.selection_settings = selection_settings
@@ -99,6 +109,12 @@ class Assembly:
                 raise ValueError("Number to select cannot be negative")
             self.number_to_select = number_to_select
 
+        self.updated_at = datetime.now(UTC)
+
+    def set_reply_to(self, name: str = "", email: str = "") -> None:
+        """Set the reply-to name and email used when emailing respondents."""
+        self.reply_to_name = name
+        self.reply_to_email = _validated_reply_to_email(email)
         self.updated_at = datetime.now(UTC)
 
     def is_active(self) -> bool:
@@ -148,6 +164,8 @@ class Assembly:
             selection_settings=self.selection_settings.create_detached_copy() if self.selection_settings else None,
             created_at=self.created_at,
             updated_at=self.updated_at,
+            reply_to_name=self.reply_to_name,
+            reply_to_email=self.reply_to_email,
         )
         detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
         detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]

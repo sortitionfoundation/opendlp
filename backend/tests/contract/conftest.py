@@ -16,10 +16,12 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
+    SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
     SqlAlchemyRegistrationImageRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
     SqlAlchemyRegistrationPageRepository,
+    SqlAlchemyRespondentEmailSendRecordRepository,
     SqlAlchemyRespondentFieldDefinitionRepository,
     SqlAlchemyRespondentRepository,
     SqlAlchemySelectionRunRecordRepository,
@@ -32,6 +34,8 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
 )
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
+from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondents import Respondent
@@ -44,10 +48,12 @@ from tests.fakes import (
     FakeAssemblyGSheetRepository,
     FakeAssemblyRepository,
     FakeEmailConfirmationTokenRepository,
+    FakeEmailTemplateRepository,
     FakePasswordResetTokenRepository,
     FakeRegistrationImageRepository,
     FakeRegistrationPageHtmlRepository,
     FakeRegistrationPageRepository,
+    FakeRespondentEmailSendRecordRepository,
     FakeRespondentFieldDefinitionRepository,
     FakeRespondentRepository,
     FakeSelectionRunRecordRepository,
@@ -128,6 +134,35 @@ def make_registration_image(registration_page_id: uuid.UUID, sha256: str = "", *
     return RegistrationImage(registration_page_id=registration_page_id, sha256=sha256, **defaults)
 
 
+def make_respondent(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
+    """Create a Respondent domain object with sensible defaults."""
+    if assembly_id is None:
+        assembly_id = uuid.uuid4()
+    defaults: dict[str, Any] = {"external_id": _next_id(), "email": "respondent@example.com"}
+    defaults.update(kwargs)
+    return Respondent(assembly_id=assembly_id, **defaults)
+
+
+def make_email_template(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> EmailTemplate:
+    """Create an EmailTemplate domain object with sensible defaults."""
+    if assembly_id is None:
+        assembly_id = uuid.uuid4()
+    defaults: dict[str, Any] = {"name": "Auto-reply", "subject": "Thanks", "body_html": "<p>Hi</p>"}
+    defaults.update(kwargs)
+    return EmailTemplate(assembly_id=assembly_id, **defaults)
+
+
+def make_respondent_email_send_record(respondent_id: uuid.UUID, **kwargs: Any) -> RespondentEmailSendRecord:
+    """Create a RespondentEmailSendRecord domain object with sensible defaults."""
+    defaults: dict[str, Any] = {
+        "to_email": "respondent@example.com",
+        "subject": "Thanks",
+        "outcome": EmailSendOutcome.SENT,
+    }
+    defaults.update(kwargs)
+    return RespondentEmailSendRecord(respondent_id=respondent_id, **defaults)
+
+
 # ---------------------------------------------------------------------------
 # Backend abstraction
 # ---------------------------------------------------------------------------
@@ -184,6 +219,22 @@ class ContractBackend:
         self.repo.add(image)
         self.commit()
         return image
+
+    def make_respondent(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        respondent = make_respondent(assembly_id=assembly_id, **kwargs)
+        self.persist(respondent)
+        self.commit()
+        return respondent
+
+    def make_email_template(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> EmailTemplate:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        template = make_email_template(assembly_id=assembly_id, **kwargs)
+        self.repo.add(template)
+        self.commit()
+        return template
 
 
 class FakeContractBackend(ContractBackend):
@@ -358,3 +409,19 @@ def registration_image_backend(request, postgres_session) -> ContractBackend:
     if request.param == "fake":
         return FakeContractBackend(repo=FakeRegistrationImageRepository(), commit=lambda: None)
     return SqlContractBackend(repo=SqlAlchemyRegistrationImageRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def email_template_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeEmailTemplateRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyEmailTemplateRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def respondent_email_send_record_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRespondentEmailSendRecordRepository(), commit=lambda: None)
+    return SqlContractBackend(
+        repo=SqlAlchemyRespondentEmailSendRecordRepository(postgres_session), session=postgres_session
+    )

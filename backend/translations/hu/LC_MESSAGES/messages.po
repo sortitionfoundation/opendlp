@@ -18,46 +18,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: src/opendlp/domain/assembly.py:300
+#: src/opendlp/domain/assembly.py:318
 #, fuzzy
 msgid "Reading spreadsheet…"
 msgstr "Google táblázat módosítása"
 
-#: src/opendlp/domain/assembly.py:301
+#: src/opendlp/domain/assembly.py:319
 #: templates/backoffice/patterns/_progress.html:157
 msgid "Writing results back to spreadsheet…"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:302
+#: src/opendlp/domain/assembly.py:320
 #, python-format
 msgid "Running selection attempt %(current)s of %(total)s"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:303
+#: src/opendlp/domain/assembly.py:321
 #, python-format
 msgid "Finding diverse committees (%(current)s of %(total)s rounds)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:304
+#: src/opendlp/domain/assembly.py:322
 #, python-format
 msgid "Optimising for maximin fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:305
+#: src/opendlp/domain/assembly.py:323
 #, python-format
 msgid "Optimising for Nash fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:306
+#: src/opendlp/domain/assembly.py:324
 #, python-format
 msgid "Optimising for leximin fairness (%(current)s of %(total)s fixed)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:307
+#: src/opendlp/domain/assembly.py:325
 msgid "Running diversimax optimisation"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:310
+#: src/opendlp/domain/assembly.py:328
 msgid "Processing…"
 msgstr ""
 
@@ -1950,7 +1950,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/registration.py:147
+#: src/opendlp/entrypoints/blueprints/registration.py:148
 msgid ""
 "Your form had been open too long and couldn't be submitted securely. "
 "Please check your answers and submit again."
@@ -2602,6 +2602,18 @@ msgstr ""
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
+#: src/opendlp/service_layer/email_template_service.py:54
+msgid ""
+"The registration page does not collect an email address, so the auto-"
+"reply can never be sent. Add a required email field to the page."
+msgstr ""
+
+#: src/opendlp/service_layer/email_template_service.py:64
+msgid ""
+"The email address is optional on the registration page, so respondents "
+"who leave it blank will not receive the auto-reply."
+msgstr ""
+
 #: src/opendlp/service_layer/error_translation.py:105
 msgid "parse_error_multi_column"
 msgstr ""
@@ -2610,39 +2622,39 @@ msgstr ""
 msgid "parse_error_single_column"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:56
+#: src/opendlp/service_layer/exceptions.py:58
 #, python-format
 msgid "User with email '%(email)s' already exists"
 msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:56
+#: src/opendlp/service_layer/exceptions.py:58
 msgid "User already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:66
+#: src/opendlp/service_layer/exceptions.py:68
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:75
+#: src/opendlp/service_layer/exceptions.py:77
 #, python-format
 msgid "Invalid invite code '%(code)s': %(reason)s"
 msgstr "Érvénytelen meghívókód: '%(code)s': %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:77
+#: src/opendlp/service_layer/exceptions.py:79
 #, python-format
 msgid "Invalid invite code '%(code)s'"
 msgstr "Érvénytelen meghívókód: '%(code)s'"
 
-#: src/opendlp/service_layer/exceptions.py:79
+#: src/opendlp/service_layer/exceptions.py:81
 #, python-format
 msgid "Invalid invite code: %(reason)s"
 msgstr "Érvénytelen meghívókód: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:81
+#: src/opendlp/service_layer/exceptions.py:83
 msgid "Invalid invite code"
 msgstr "Érvénytelen meghívókód"
 
-#: src/opendlp/service_layer/exceptions.py:93
+#: src/opendlp/service_layer/exceptions.py:95
 #, python-format
 msgid ""
 "Insufficient permissions for action: %(action)s (requires role: "
@@ -2651,89 +2663,89 @@ msgstr ""
 "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
 "szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:98
+#: src/opendlp/service_layer/exceptions.py:100
 #, python-format
 msgid "Insufficient permissions for action: %(action)s"
 msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
 
-#: src/opendlp/service_layer/exceptions.py:100
+#: src/opendlp/service_layer/exceptions.py:102
 #, python-format
 msgid "Insufficient permissions (requires role: %(required_role)s)"
 msgstr "Nincsenek megfelelő jogosultságok (szükséges szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:102
+#: src/opendlp/service_layer/exceptions.py:104
 msgid "Insufficient permissions"
 msgstr "Nincsenek megfelelő jogosultságok"
 
-#: src/opendlp/service_layer/exceptions.py:113
+#: src/opendlp/service_layer/exceptions.py:115
 #, fuzzy, python-format
 msgid "Invalid password reset token: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:115
+#: src/opendlp/service_layer/exceptions.py:117
 #, fuzzy
 msgid "Invalid password reset token"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:124
+#: src/opendlp/service_layer/exceptions.py:126
 msgid "Please confirm your email address before logging in."
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:132
+#: src/opendlp/service_layer/exceptions.py:134
 #, fuzzy, python-format
 msgid "Invalid or expired confirmation link: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:134
+#: src/opendlp/service_layer/exceptions.py:136
 #, fuzzy
 msgid "Invalid or expired confirmation link"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/service_layer/exceptions.py:145
+#: src/opendlp/service_layer/exceptions.py:147
 #, python-format
 msgid ""
 "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s "
 "seconds"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:150
+#: src/opendlp/service_layer/exceptions.py:152
 #, python-format
 msgid "Rate limit exceeded for %(operation)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:152
+#: src/opendlp/service_layer/exceptions.py:154
 msgid "Rate limit exceeded. Please try again later"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:194
+#: src/opendlp/service_layer/exceptions.py:208
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:210
+#: src/opendlp/service_layer/exceptions.py:224
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:212
+#: src/opendlp/service_layer/exceptions.py:226
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:214
+#: src/opendlp/service_layer/exceptions.py:228
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:216
+#: src/opendlp/service_layer/exceptions.py:230
 msgid "OAuth authentication failed"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:226
+#: src/opendlp/service_layer/exceptions.py:240
 msgid "Invalid OAuth state parameter"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:233
+#: src/opendlp/service_layer/exceptions.py:247
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 

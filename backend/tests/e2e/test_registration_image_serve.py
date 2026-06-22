@@ -19,6 +19,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.e2e.helpers import route_url
 
 MINIMAL_FORM_HTML = "<form method='post' action='{{ form_action }}'>{{ csrf_form_element }}</form>"
 
@@ -72,7 +73,11 @@ class TestServeRegistrationImage:
     ) -> None:
         url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user)
 
-        response = client.get(f"/register/{url_slug}/assets/{image.sha256}.png")
+        response = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
 
         assert response.status_code == 200
         assert response.mimetype == "image/png"
