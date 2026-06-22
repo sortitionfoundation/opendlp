@@ -331,8 +331,8 @@ uv run pytest tests/contract/
 uv run pytest tests/integration/
 uv run pytest tests/e2e/
 
-# Run the fast, service-free tier (unit + component): no PostgreSQL, no Redis
-uv run pytest -m "not requires_db"
+# Run the service-free tier (no PostgreSQL, no Redis)
+uv run pytest -m "not requires_db and not requires_redis"
 ```
 
 ## Test Configuration
@@ -357,11 +357,14 @@ Test configuration is in `pyproject.toml` under the `[tool.pytest.ini_options]` 
 mark these by hand. `db_semantics` is applied by hand to the specific tests whose
 value is real database behaviour.
 
-Run the fast, service-free tier (unit + component) with:
+Run the fully service-free tier (no PostgreSQL, no Redis) with:
 
 ```bash
-uv run pytest -m "not requires_db"
+uv run pytest -m "not requires_db and not requires_redis"
 ```
+
+Use `-m "not requires_db"` to skip only PostgreSQL (a few service-layer unit
+tests still talk to Redis and carry `requires_redis`).
 
 The same hook also enforces test placement: it rejects a `tests/unit/` test that
 patches a blueprint's `get_flask_uow` (a disguised route test — move it to
