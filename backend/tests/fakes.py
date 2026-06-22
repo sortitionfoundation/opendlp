@@ -802,71 +802,127 @@ class FakeRespondentEmailSendRecordRepository(FakeRepository, RespondentEmailSen
         return sorted(records, key=lambda r: r.created_at)
 
 
-class FakeUnitOfWork(AbstractUnitOfWork):
-    """Fake Unit of Work implementation for testing."""
+# The repository attribute names a FakeUnitOfWork exposes, in one place so the
+# store, the aliases and the snapshot/rollback logic stay in sync.
+_REPO_NAMES = (
+    "users",
+    "assemblies",
+    "assembly_gsheets",
+    "user_invites",
+    "user_assembly_roles",
+    "selection_run_records",
+    "user_backup_codes",
+    "two_factor_audit_logs",
+    "totp_attempts",
+    "password_reset_tokens",
+    "email_confirmation_tokens",
+    "target_categories",
+    "respondents",
+    "respondent_field_definitions",
+    "registration_pages",
+    "registration_page_html_sources",
+    "registration_images",
+    "email_templates",
+    "respondent_email_send_records",
+)
+
+
+class FakeStore:
+    """In-memory repositories shared across FakeUnitOfWork instances.
+
+    A single FakeStore lets several FakeUnitOfWork instances created within one
+    request (``load_user``, a permission decorator, the route's own UoW) see the
+    same data, and lets data persist across requests within a test. This is what
+    makes fake-backed e2e tests possible.
+    """
 
     def __init__(self) -> None:
-        self.users = self.fake_users = FakeUserRepository()
-        self.assemblies = self.fake_assemblies = FakeAssemblyRepository()
-        self.assembly_gsheets = self.fake_assembly_gsheets = FakeAssemblyGSheetRepository()
-        self.user_invites = self.fake_user_invites = FakeUserInviteRepository()
-        self.user_assembly_roles = self.fake_user_assembly_roles = FakeUserAssemblyRoleRepository()
-        self.selection_run_records = self.fake_selection_run_records = FakeSelectionRunRecordRepository()
-        self.user_backup_codes = self.fake_user_backup_codes = FakeUserBackupCodeRepository()
-        self.two_factor_audit_logs = self.fake_two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
-        self.totp_attempts = self.fake_totp_attempts = FakeTotpVerificationAttemptRepository()
-        self.password_reset_tokens = self.fake_password_reset_tokens = FakePasswordResetTokenRepository()
-        self.email_confirmation_tokens = self.fake_email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
-        self.target_categories = self.fake_target_categories = FakeTargetCategoryRepository()
-        self.respondents = self.fake_respondents = FakeRespondentRepository()
-        self.respondent_field_definitions = self.fake_respondent_field_definitions = (
-            FakeRespondentFieldDefinitionRepository()
-        )
-        self.registration_pages = self.fake_registration_pages = FakeRegistrationPageRepository()
-        self.registration_page_html_sources = self.fake_registration_page_html_sources = (
-            FakeRegistrationPageHtmlRepository()
-        )
-        self.registration_images = self.fake_registration_images = FakeRegistrationImageRepository()
-        self.email_templates = self.fake_email_templates = FakeEmailTemplateRepository()
-        self.respondent_email_send_records = self.fake_respondent_email_send_records = (
-            FakeRespondentEmailSendRecordRepository()
-        )
-        # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly
+        self.users = FakeUserRepository()
+        self.assemblies = FakeAssemblyRepository()
+        self.assembly_gsheets = FakeAssemblyGSheetRepository()
+        self.user_invites = FakeUserInviteRepository()
+        self.user_assembly_roles = FakeUserAssemblyRoleRepository()
+        self.selection_run_records = FakeSelectionRunRecordRepository()
+        self.user_backup_codes = FakeUserBackupCodeRepository()
+        self.two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
+        self.totp_attempts = FakeTotpVerificationAttemptRepository()
+        self.password_reset_tokens = FakePasswordResetTokenRepository()
+        self.email_confirmation_tokens = FakeEmailConfirmationTokenRepository()
+        self.target_categories = FakeTargetCategoryRepository()
+        self.respondents = FakeRespondentRepository()
+        self.respondent_field_definitions = FakeRespondentFieldDefinitionRepository()
+        self.registration_pages = FakeRegistrationPageRepository()
+        self.registration_page_html_sources = FakeRegistrationPageHtmlRepository()
+        self.registration_images = FakeRegistrationImageRepository()
+        self.email_templates = FakeEmailTemplateRepository()
+        self.respondent_email_send_records = FakeRespondentEmailSendRecordRepository()
+
+
+class FakeUnitOfWork(AbstractUnitOfWork):
+    """Fake Unit of Work implementation for testing.
+
+    With no ``store`` it owns a private FakeStore (the long-standing behaviour
+    used by unit tests). With a shared ``store`` it behaves like a real UoW over
+    a shared database: every instance sees the same data, and the ``with`` block
+    rolls back on exception via a snapshot of each repository.
+    """
+
+    def __init__(self, store: FakeStore | None = None) -> None:
+        self._shared = store is not None
+        self._store = store if store is not None else FakeStore()
+        # Expose each repository both as ``uow.users`` and the legacy ``uow.fake_users``.
+        for name in _REPO_NAMES:
+            repo = getattr(self._store, name)
+            setattr(self, name, repo)
+            setattr(self, f"fake_{name}", repo)
+        # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly.
+        # All instances sharing a store share repositories, so pointing at the latest is fine.
         self.user_assembly_roles._uow = self
         self.committed = False
         self.expire_all_calls = 0
+        self._snapshot: dict[str, list[Any]] | None = None
 
     def __enter__(self) -> AbstractUnitOfWork:
+        if self._shared:
+            self._take_snapshot()
         return self
 
-    def __exit__(self, *args) -> None:
-        pass
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
+        # Match SqlAlchemyUnitOfWork: roll back the shared store on exception.
+        if self._shared and exc_type is not None:
+            self.rollback()
+
+    def _take_snapshot(self) -> None:
+        self._snapshot = {name: list(getattr(self._store, name)._items) for name in _REPO_NAMES}
 
     def commit(self) -> None:
-        """Mark as committed."""
+        """Mark as committed; for a shared store the committed state is the new baseline."""
         self.committed = True
+        if self._shared and self._snapshot is not None:
+            self._take_snapshot()
+
+    def commit_and_reset(self) -> None:
+        """Commit the work so far, then carry on against the same in-memory store.
+
+        Nothing needs flushing for the fake; the repositories already hold the
+        data, so this just records the commit and continues.
+        """
+        self.commit()
 
     def rollback(self) -> None:
-        """Clear all repositories."""
-        self.fake_users._items.clear()
-        self.fake_assemblies._items.clear()
-        self.fake_assembly_gsheets._items.clear()
-        self.fake_user_invites._items.clear()
-        self.fake_user_assembly_roles._items.clear()
-        self.fake_selection_run_records._items.clear()
-        self.fake_user_backup_codes._items.clear()
-        self.fake_two_factor_audit_logs._items.clear()
-        self.fake_totp_attempts._items.clear()
-        self.fake_password_reset_tokens._items.clear()
-        self.fake_email_confirmation_tokens._items.clear()
-        self.fake_target_categories._items.clear()
-        self.fake_respondents._items.clear()
-        self.fake_respondent_field_definitions._items.clear()
-        self.fake_registration_pages._items.clear()
-        self.fake_registration_page_html_sources._items.clear()
-        self.fake_registration_images._items.clear()
-        self.fake_email_templates._items.clear()
-        self.fake_respondent_email_send_records._items.clear()
+        """Undo uncommitted changes.
+
+        For a shared store, restore each repository to the snapshot taken on
+        ``__enter__`` (or the last commit). For a private store, clear everything
+        (the long-standing behaviour relied on by existing unit tests).
+        """
+        if self._shared:
+            if self._snapshot is not None:
+                for name, items in self._snapshot.items():
+                    getattr(self._store, name)._items[:] = items
+        else:
+            for name in _REPO_NAMES:
+                getattr(self._store, name)._items.clear()
         self.committed = False
 
     def expire_all(self) -> None:

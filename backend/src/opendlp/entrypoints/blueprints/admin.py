@@ -66,7 +66,7 @@ def list_users() -> ResponseReturnValue:
         if per_page < 1 or per_page > 100:
             per_page = 20
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             users, total_count, total_pages = list_users_paginated(
                 uow=uow,
@@ -110,7 +110,7 @@ def list_users() -> ResponseReturnValue:
 def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
     """View a single user's details."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             user = get_user_by_id(uow, user_id, current_user.id)
 
@@ -136,7 +136,7 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
 def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
     """Edit a user's details."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             user = get_user_by_id(uow, user_id, current_user.id)
 
@@ -201,7 +201,7 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
 def disable_user_2fa(user_id: uuid.UUID) -> ResponseReturnValue:
     """Admin route to disable 2FA for a user."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             two_factor_service.admin_disable_2fa(uow, user_id, current_user.id)
 
@@ -232,7 +232,7 @@ def disable_user_2fa(user_id: uuid.UUID) -> ResponseReturnValue:
 def view_user_2fa_audit_log(user_id: uuid.UUID) -> ResponseReturnValue:
     """Admin route to view 2FA audit log for a user."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             user = get_user_by_id(uow, user_id, current_user.id)
             audit_logs = two_factor_service.get_2fa_audit_logs(uow, user_id, limit=100)
@@ -273,7 +273,7 @@ def view_user_2fa_audit_log(user_id: uuid.UUID) -> ResponseReturnValue:
 def list_invites_page() -> ResponseReturnValue:
     """List all invites with statistics."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Get all invites (include expired to show full history)
             invites = list_invites(uow=uow, user_id=current_user.id, include_expired=True)
@@ -309,7 +309,7 @@ def create_invite() -> ResponseReturnValue:
                 # Get expiry hours, use default if not provided
                 expires_in_hours = form.expires_in_hours.data or 168
 
-                uow = bootstrap.bootstrap()
+                uow = bootstrap.get_flask_uow()
                 with uow:
                     invite = generate_invite(
                         uow=uow,
@@ -376,7 +376,7 @@ def create_invite() -> ResponseReturnValue:
 def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
     """View a single invite's details."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             invite = get_invite_details(uow, invite_id, current_user.id)
 
@@ -402,7 +402,7 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
 def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
     """Revoke an invite to prevent its use."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             invite = revoke_invite(uow=uow, invite_id=invite_id, user_id=current_user.id)
 
@@ -429,7 +429,7 @@ def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
 def cleanup_invites() -> ResponseReturnValue:
     """Clean up expired invites."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             count = cleanup_expired_invites(uow=uow)
 

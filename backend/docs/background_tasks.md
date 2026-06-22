@@ -180,9 +180,10 @@ See [docs/docker.md](docker.md) for detailed Docker setup.
 In Flask routes or templates:
 
 ```python
+from opendlp.bootstrap import get_flask_uow
 from opendlp.service_layer.sortition import get_selection_run_status
 
-with uow:
+with get_flask_uow() as uow:
     status = get_selection_run_status(uow, task_id)
     print(f"Status: {status.status}")
     print(f"Progress: {status.progress_percentage}%")

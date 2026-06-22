@@ -147,7 +147,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `error_translation`          | Translates `sortition-algorithms` errors (including `ParseTableMultiError`) to localized text/HTML | `sortition-algorithms`, `gettext`                                           |
 | `report_translation`         | Translates `sortition-algorithms` `RunReport` output to HTML                                       | `sortition-algorithms`, `tabulate`                                          |
 | `repositories`               | Abstract repository interfaces (one per aggregate)                                                 | ABC + domain types                                                          |
-| `unit_of_work`               | `AbstractUnitOfWork` + `SqlAlchemyUnitOfWork` managing session + repositories                      | SQLAlchemy                                                                  |
+| `unit_of_work`               | `AbstractUnitOfWork` + `SqlAlchemyUnitOfWork` managing session + repositories (incl. `commit_and_reset()` for multiple units of work in one context) | SQLAlchemy                                                                  |
 | `exceptions`                 | Service-layer exception hierarchy (auth, permissions, tokens, invites, OAuth)                      | —                                                                           |
 | `db_utils`                   | `create_tables`, `drop_tables`, `seed_database` helpers for dev/test                               | SQLAlchemy                                                                  |
 
@@ -201,6 +201,8 @@ Roughly grouped:
 | `sortition_progress.py`     | `DatabaseProgressReporter` — writes `sortition-algorithms` progress into `SelectionRunRecord` rows                   |
 
 `bootstrap.py` wires these together: it calls `start_mappers()`, builds a session factory, and returns a `SqlAlchemyUnitOfWork` along with an email adapter / template renderer / URL generator selected from config.
+
+It also provides the seam web entrypoints use to obtain a UnitOfWork. `default_uow_factory()` builds a `SqlAlchemyUnitOfWork` over the cached session factory; `create_app(uow_factory=…)` registers a factory on the app (`app.extensions["uow_factory"]`, defaulting to `default_uow_factory`); and routes/decorators/forms call `get_flask_uow()` (or `get_flask_uow_factory()`) to resolve that factory for the current request. Tests can inject a fake factory through `create_app`. CLI and Celery code run outside an app context and instead call `bootstrap()` with an explicit `session_factory`.
 
 ---
 

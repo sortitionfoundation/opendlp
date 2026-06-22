@@ -46,7 +46,7 @@ db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
 def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Validate database data before running selection."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
@@ -54,9 +54,8 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Please review and save the selection settings before checking data."), "warning")
             return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
-        uow2 = bootstrap.bootstrap()
-        with uow2:
-            check_result = check_db_selection_data(uow=uow2, user_id=current_user.id, assembly_id=assembly_id)
+        with uow:
+            check_result = check_db_selection_data(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
 
         if check_result.success:
             flash(
@@ -94,7 +93,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         test_mode = request.args.get("test") == "1"
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
@@ -133,7 +132,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return modal progress HTML fragment for HTMX polling of DB selection task status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
@@ -178,7 +177,7 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
 def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running DB selection task."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
@@ -217,7 +216,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
 def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Download the selected participants as CSV."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
             selected_csv, _remaining_csv = generate_selection_csvs(uow, assembly_id, run_id)
@@ -251,7 +250,7 @@ def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Download the remaining participants as CSV."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
             _selected_csv, remaining_csv = generate_selection_csvs(uow, assembly_id, run_id)
@@ -286,7 +285,7 @@ def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
 def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Download the selection summary report as CSV."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         url_generator = get_url_generator(current_app)
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
@@ -320,7 +319,7 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
 def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save DB selection settings."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             # Get available columns for form validation
             respondents = uow.respondents.get_by_assembly_id(assembly_id)
@@ -353,10 +352,10 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
         # Update selection settings (check_same_address, columns, etc.)
-        uow2 = bootstrap.bootstrap()
-        with uow2:
+        # Reuse the same UnitOfWork for the remaining sequential units of work.
+        with uow:
             update_selection_settings(
-                uow=uow2,
+                uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 check_same_address=form.check_same_address.data,
@@ -365,10 +364,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         # Mark CSV config as confirmed
-        uow3 = bootstrap.bootstrap()
-        with uow3:
+        with uow:
             update_csv_config(
-                uow=uow3,
+                uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 settings_confirmed=True,
@@ -400,7 +398,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Reset all respondents to Pool status, allowing a fresh selection."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         count = reset_selection_status(uow, current_user.id, assembly_id)
 
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")

@@ -171,7 +171,7 @@ def load_user(user_id: str) -> User | None:
 
     try:
         user_uuid = uuid.UUID(user_id)
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             db_user = uow.users.get(user_uuid)
             if db_user:

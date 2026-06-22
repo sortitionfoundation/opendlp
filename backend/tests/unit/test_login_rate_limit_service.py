@@ -11,6 +11,8 @@ from opendlp.service_layer.login_rate_limit_service import (
     record_failed_login,
 )
 
+pytestmark = pytest.mark.requires_redis
+
 
 @pytest.fixture(autouse=True)
 def clean_redis(test_redis_client):

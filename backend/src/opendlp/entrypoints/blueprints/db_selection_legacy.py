@@ -71,7 +71,7 @@ def _get_selection_readiness(
 @require_assembly_management
 def view_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
@@ -97,7 +97,7 @@ def view_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
@@ -132,7 +132,7 @@ def view_db_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
 @require_assembly_management
 def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
@@ -142,7 +142,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("Please review and save the selection settings before checking targets."), "warning")
             return redirect(url_for("db_selection_legacy.view_db_selection_settings", assembly_id=assembly_id))
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         with uow2:
             check_result = check_db_selection_data(uow=uow2, user_id=current_user.id, assembly_id=assembly_id)
 
@@ -173,7 +173,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     test_selection = request.form.get("test_selection") == "1"
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             if assembly.csv is None or not assembly.csv.settings_confirmed:
@@ -205,7 +205,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def db_selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             check_and_update_task_health(uow, run_id)
@@ -244,7 +244,7 @@ def db_selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
 @require_assembly_management
 def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             cancel_task(uow, current_user.id, assembly_id, run_id)
         flash(_("Task has been cancelled"), "success")
@@ -271,7 +271,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
 @require_assembly_management
 def download_selected_csv(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
             selected_csv, _remaining_csv = generate_selection_csvs(uow, assembly_id, run_id)
@@ -301,7 +301,7 @@ def download_selected_csv(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
 @require_assembly_management
 def download_remaining_csv(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
             _selected_csv, remaining_csv = generate_selection_csvs(uow, assembly_id, run_id)
@@ -329,7 +329,7 @@ def download_remaining_csv(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
 @require_assembly_management
 def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
@@ -365,7 +365,7 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
@@ -373,7 +373,7 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         form = DbSelectionSettingsForm(available_columns=available_columns)
         if form.validate_on_submit():
-            uow2 = bootstrap.bootstrap()
+            uow2 = bootstrap.get_flask_uow()
             update_selection_settings(
                 uow=uow2,
                 user_id=current_user.id,
@@ -383,7 +383,7 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
                 columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
             )
-            uow3 = bootstrap.bootstrap()
+            uow3 = bootstrap.get_flask_uow()
             update_csv_config(
                 uow=uow3,
                 user_id=current_user.id,
@@ -415,7 +415,7 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def view_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         return render_template(
@@ -436,7 +436,7 @@ def view_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @require_assembly_management
 def reset_respondents_for_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         count = reset_selection_status(uow, current_user.id, assembly_id)
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))

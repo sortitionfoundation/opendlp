@@ -12,7 +12,6 @@ from opendlp.domain.value_objects import RespondentStatus
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.registration_page_service import (
-    close_registration_page,
     create_registration_page_with_slugs,
     publish_registration_page,
     update_registration_page_html,
@@ -201,60 +200,9 @@ class TestRegistrationFormRendering:
         assert b"govuk-button" in response.data
         assert b"name" in response.data
 
-    def test_renders_test_mode_form_with_banner(
-        self, client: FlaskClient, test_mode_registration_page: RegistrationPage
-    ) -> None:
-        response = client.get(
-            route_url(client, "registration.show_registration_form", url_slug=test_mode_registration_page.url_slug)
-        )
-        assert response.status_code == 200
-        assert b"Test Mode" in response.data
-
-    def test_returns_404_for_nonexistent_slug(self, client: FlaskClient) -> None:
-        response = client.get(
-            route_url(client, "registration.show_registration_form", url_slug="nonexistent-slug-12345")
-        )
-        assert response.status_code == 404
-
-    def test_closed_page_redirects(
-        self, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory, admin_user
-    ) -> None:
-        # Close the registration page
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            close_registration_page(uow, admin_user.id, published_registration_page.assembly_id)
-
-        response = client.get(
-            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
-        )
-        assert response.status_code == 302
-        assert route_url(client, "registration.registration_closed") in response.location
-
 
 class TestRegistrationFormSubmission:
     """Test POST /register/<url_slug> route."""
-
-    def test_valid_submission_redirects_to_thank_you(
-        self, client: FlaskClient, published_registration_page: RegistrationPage
-    ) -> None:
-        # Get CSRF token from the form page
-        form_url = route_url(
-            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
-        )
-        csrf_token = get_csrf_token(client, form_url)
-
-        response = client.post(
-            form_url,
-            data={
-                "csrf_token": csrf_token,
-                "name": "Test User",
-                "email": "test@example.com",
-            },
-        )
-        assert response.status_code == 302
-        assert (
-            route_url(client, "registration.thank_you", url_slug=published_registration_page.url_slug)
-            in response.location
-        )
 
     def test_submission_creates_respondent_with_pool_status(
         self, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory
@@ -413,10 +361,6 @@ class TestThankYouPage:
         # The page uses DEFAULT_THANK_YOU_HTML from the domain
         assert b"Thank you for registering" in response.data
 
-    def test_returns_404_for_nonexistent_slug(self, client: FlaskClient) -> None:
-        response = client.get(route_url(client, "registration.thank_you", url_slug="nonexistent-slug-12345"))
-        assert response.status_code == 404
-
 
 class TestShortUrlRedirect:
     """Test GET /r/<short_url_slug> route."""
@@ -432,10 +376,6 @@ class TestShortUrlRedirect:
             route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
             in response.location
         )
-
-    def test_returns_404_for_nonexistent_short_slug(self, client: FlaskClient) -> None:
-        response = client.get(route_url(client, "registration.short_url_redirect", short_url_slug="999999"))
-        assert response.status_code == 404
 
 
 class TestRegistrationClosedPage:

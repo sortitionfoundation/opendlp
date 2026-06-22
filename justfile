@@ -13,6 +13,12 @@
 # `docker pussh` also needs to be set up - and the double-s in pussh is NOT a typo
 # See https://github.com/psviderski/unregistry#installation for how to do that
 
+default: safe-option
+
+# the default option should not do a deploy
+safe-option:
+  @echo "not deploying by default"
+
 # deploy the latest github docker image build to the test/demo server
 deploy-opendlp-test:
   #!/usr/bin/env bash

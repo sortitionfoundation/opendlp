@@ -1,7 +1,8 @@
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, current_app
 from sortition_algorithms import adapters
 from sqlalchemy.orm import sessionmaker
 
@@ -60,6 +61,36 @@ def bootstrap(
         uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
 
     return uow
+
+
+UowFactory = Callable[[], unit_of_work.AbstractUnitOfWork]
+
+
+def default_uow_factory() -> unit_of_work.AbstractUnitOfWork:
+    """Production UnitOfWork factory: a SqlAlchemyUnitOfWork over the cached session factory."""
+    return unit_of_work.SqlAlchemyUnitOfWork(bootstrap_session_factory())
+
+
+def get_flask_uow() -> unit_of_work.AbstractUnitOfWork:
+    """Return a UnitOfWork for the current request, using the app-configured factory.
+
+    Must be called within a Flask application context. The factory is registered
+    on the app by ``create_app`` (``app.extensions["uow_factory"]``); tests can
+    inject a fake factory there. CLI and Celery code run outside an app context
+    and must keep using ``bootstrap()`` with an explicit ``session_factory``.
+    """
+    factory: UowFactory = current_app.extensions.get("uow_factory", default_uow_factory)
+    return factory()
+
+
+def get_flask_uow_factory() -> UowFactory:
+    """Return the app-configured UnitOfWork factory itself.
+
+    For callers that need to create multiple UnitOfWork instances or pass the
+    factory down into a service. Must be called within a Flask application context.
+    """
+    factory: UowFactory = current_app.extensions.get("uow_factory", default_uow_factory)
+    return factory
 
 
 def update_data_source_from_assembly_gsheet(

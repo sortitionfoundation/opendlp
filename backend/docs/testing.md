@@ -6,14 +6,19 @@ OpenDLP follows a comprehensive testing approach with multiple levels of testing
 
 ### Unit Tests (`tests/unit/`)
 
-**Purpose:** Test domain logic in isolation without external dependencies.
+**Purpose:** Test domain logic and service-layer logic in isolation without external dependencies.
 
 **Characteristics:**
 
-- Test plain Python domain objects
-- No database, no Flask context
+- Test plain Python domain objects, or services driven over a `FakeUnitOfWork`
+- No database, no Redis, and no Flask request handling
 - Fast execution
 - Focus on business logic correctness
+
+A test that drives the Flask app (a test client) while mocking the UnitOfWork is
+a **disguised route test** — it belongs in `tests/component/`, not here. A
+collection-time guard (in `tests/conftest.py`) rejects unit tests that patch a
+blueprint's `get_flask_uow`.
 
 **Example:**
 
@@ -85,16 +90,57 @@ def test_user_repository_stores_and_retrieves_user(session):
     assert retrieved.email == "test@example.com"
 ```
 
-### End-to-End Tests (`tests/e2e/`)
+### Component Tests (`tests/component/`)
 
-**Purpose:** Test complete user workflows through the web interface.
+**Purpose:** Test Flask routes and request handling end-to-end through the real
+app, services and templates, but backed by an in-memory `FakeUnitOfWork` instead
+of PostgreSQL.
 
 **Characteristics:**
 
-- Full Flask application context
+- Full Flask app via `create_app("testing_component", uow_factory=...)`, a real
+  test client, real blueprints/decorators/templates/login
+- No PostgreSQL and no Redis: the UnitOfWork is a `FakeUnitOfWork` over a shared
+  `FakeStore`, and sessions use an in-memory cachelib backend. Login is done by
+  writing the Flask-Login session directly (`session_transaction`)
+- Assertions are **state-based**: drive the route, then assert on the real HTTP
+  response and on the `FakeStore` — not on `mock.assert_called_with`
+- The shared fixtures (`app`, `client`, `logged_in_admin`, `fake_store`, seeded
+  data) live in `tests/component/conftest.py`; `tests/e2e/fake_pilot` was the
+  original pilot and now lives here
+
+**When to use:** request → service → assertion flows (auth pages, profile,
+assembly/registration CRUD, image serving). Keep one PostgreSQL happy-path smoke
+per route in `tests/e2e/`; put the richer behavioural coverage here.
+
+**When NOT to use:** anything whose value is real database behaviour
+(constraints, cascades, JSON operators — mark those `db_semantics` and keep them
+in `tests/e2e/` or `tests/integration/`), anything dispatching Celery, or
+anything asserting real cross-process visibility.
+
+```python
+# tests/component/test_assembly_crud.py drives the real routes over a FakeStore
+def test_create_assembly_success(logged_in_admin, fake_store):
+    response = logged_in_admin.post("/assemblies/new", data={...})
+    assert response.status_code == 302
+    # assert on the real fake-store state, not on a mock
+```
+
+### End-to-End Tests (`tests/e2e/`)
+
+**Purpose:** Test complete user workflows through the web interface against a
+real PostgreSQL database (a genuine Flask → PostgreSQL → back round trip).
+
+**Characteristics:**
+
+- Full Flask application context backed by real PostgreSQL (and Redis)
 - Simulates HTTP requests
 - Tests authentication flows
 - Validates complete feature workflows
+- Keeps **at least one PostgreSQL happy-path smoke per route** even when the
+  detailed behavioural coverage has moved to `tests/component/`
+- Tests whose value is real database behaviour are marked `db_semantics` and
+  must never be converted to the fake backend
 
 **Example:**
 
@@ -280,14 +326,49 @@ just watch-tests
 
 # Run specific test level
 uv run pytest tests/unit/
+uv run pytest tests/component/
 uv run pytest tests/contract/
 uv run pytest tests/integration/
 uv run pytest tests/e2e/
+
+# Run the service-free tier (no PostgreSQL, no Redis)
+uv run pytest -m "not requires_db and not requires_redis"
 ```
 
 ## Test Configuration
 
 Test configuration is in `pyproject.toml` under the `[tool.pytest.ini_options]` section.
+
+### Markers
+
+`--strict-markers` is enabled, so every marker must be registered in
+`pyproject.toml`. The registered markers are:
+
+- `requires_db` — needs a real PostgreSQL database
+- `requires_redis` — needs a real Redis server
+- `requires_celery` — needs a Celery worker / broker
+- `db_semantics` — exercises real database behaviour (cascades/constraints/JSON
+  operators) and must never be run against the fake backend
+
+`requires_db` and `requires_redis` are applied **automatically by directory** in
+`tests/conftest.py` (`pytest_collection_modifyitems`): everything under
+`tests/e2e`, `tests/integration`, `tests/contract` and `tests/bdd` gets
+`requires_db`; `tests/e2e` and `tests/bdd` also get `requires_redis`. You do not
+mark these by hand. `db_semantics` is applied by hand to the specific tests whose
+value is real database behaviour.
+
+Run the fully service-free tier (no PostgreSQL, no Redis) with:
+
+```bash
+uv run pytest -m "not requires_db and not requires_redis"
+```
+
+Use `-m "not requires_db"` to skip only PostgreSQL (a few service-layer unit
+tests still talk to Redis and carry `requires_redis`).
+
+The same hook also enforces test placement: it rejects a `tests/unit/` test that
+patches a blueprint's `get_flask_uow` (a disguised route test — move it to
+`tests/component/`) and a `db_semantics` test placed under `tests/component/`.
 
 ## Reusable Test Fixtures
 
@@ -388,11 +469,12 @@ If logs are supposed to contain errors (e.g., testing error handling), those err
 
 ## Test Database
 
-Integration and e2e tests use:
+Test database/service needs by level:
 
 - **Development/Manual Testing:** PostgreSQL on port 54321
-- **Integration/E2E/BDD Tests:** PostgreSQL on port 54322 (isolation from manual testing)
-- **Unit Tests:** Mostly use `FakeUnitOfWork` (no database needed); some use PostgreSQL on port 54322
+- **Integration/E2E/Contract/BDD Tests:** PostgreSQL on port 54322 (isolation from manual testing)
+- **Unit Tests:** `FakeUnitOfWork` or plain objects — no database, no Redis
+- **Component Tests:** `FakeUnitOfWork` + in-memory cachelib sessions — no database, no Redis
 
 ### Parallel Execution with pytest-xdist
 
@@ -452,6 +534,20 @@ def test_user_can_delete_assembly():
     delete_assembly("some-id", "some-user-id")  # Where did this come from?
 ```
 
+### Mocking Policy
+
+**Mock only at the boundary.** Mock things the system genuinely talks to over a
+boundary: Celery dispatch (`.delay`/`.apply_async`/`AsyncResult`/`control.revoke`),
+SMTP/email sending, OAuth providers, Google Sheets / the `sortition-algorithms`
+library, the clock, and (where unavoidable) the password hasher. **Never** mock
+the UnitOfWork, a repository, or an internal service function — drive the real
+code over a `FakeUnitOfWork` instead.
+
+**Prefer state-based over interaction-based assertions.** Assert on the resulting
+state (the `FakeStore`, the rendered response) rather than `mock.assert_called_with(...)`.
+Interaction assertions re-encode the implementation and are brittle; state
+assertions survive refactors and exercise the real collaborators.
+
 ## Continuous Integration
 
 All tests are run in CI on every pull request. Tests must pass before code can be merged.
@@ -460,8 +556,9 @@ The CI pipeline:
 
 1. Runs linting and type checking
 2. Runs unit tests
-3. Runs contract tests (fake + SQL backends)
-4. Runs integration tests (with PostgreSQL)
-5. Runs e2e tests
-6. Runs BDD tests (headless mode)
-7. Generates coverage reports
+3. Runs component tests (Flask over `FakeUnitOfWork`)
+4. Runs contract tests (fake + SQL backends)
+5. Runs integration tests (with PostgreSQL)
+6. Runs e2e tests
+7. Runs BDD tests (headless mode)
+8. Generates coverage reports

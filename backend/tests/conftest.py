@@ -3,6 +3,7 @@ ABOUTME: Provides test fixtures and configuration for unit, integration, and e2e
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -28,6 +29,49 @@ pytest_plugins = [
     "tests.bdd.shared.ui_shared",
     "tests.bdd.shared.email_confirmation_steps",
 ]
+
+# Directories whose tests run against real infrastructure. The infra markers are
+# applied automatically by directory (pytest_collection_modifyitems) so that
+# `pytest -m "not requires_db"` runs the fast tier (unit + component) without
+# editing every test file.
+_REQUIRES_DB_DIRS = ("/tests/e2e/", "/tests/integration/", "/tests/contract/", "/tests/bdd/")
+_REQUIRES_REDIS_DIRS = ("/tests/e2e/", "/tests/bdd/")
+
+# A disguised route test patches a blueprint's UnitOfWork seam to fake out a
+# route while driving the Flask app. Such tests belong in tests/component/ on the
+# real fake-backed seam, not in tests/unit/.
+_DISGUISED_ROUTE_TEST = re.compile(r"blueprints\.[\w.]*get_flask_uow")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Auto-apply infra markers by directory and enforce test placement."""
+    placement_errors = []
+    source_cache: dict[str, str] = {}
+    for item in items:
+        path = str(item.path)
+        if any(directory in path for directory in _REQUIRES_DB_DIRS):
+            item.add_marker(pytest.mark.requires_db)
+        if any(directory in path for directory in _REQUIRES_REDIS_DIRS):
+            item.add_marker(pytest.mark.requires_redis)
+
+        if "/tests/unit/" in path:
+            source = source_cache.get(path)
+            if source is None:
+                source = item.path.read_text()
+                source_cache[path] = source
+            if _DISGUISED_ROUTE_TEST.search(source):
+                placement_errors.append(
+                    f"{path}: patches a blueprint's get_flask_uow — this is a disguised route "
+                    "test and belongs in tests/component/, not tests/unit/"
+                )
+        if "/tests/component/" in path and item.get_closest_marker("db_semantics"):
+            placement_errors.append(
+                f"{path}: marked db_semantics but lives in tests/component/ — db_semantics tests "
+                "exercise the real database and must live in tests/e2e/ or tests/integration/"
+            )
+
+    if placement_errors:
+        raise pytest.UsageError("Test placement errors:\n" + "\n".join(sorted(set(placement_errors))))
 
 
 @pytest.fixture(autouse=True)

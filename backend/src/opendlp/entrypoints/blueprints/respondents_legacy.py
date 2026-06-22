@@ -30,7 +30,7 @@ PER_PAGE = 50
 @login_required
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
         status_filter_str = request.args.get("status", "")
@@ -41,7 +41,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             except ValueError:
                 status_filter = None
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         with uow2:
             all_respondents = uow2.respondents.get_by_assembly_id(assembly_id, status=status_filter)
             total_count = len(all_respondents)
@@ -94,10 +94,10 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form = UploadRespondentsCsvForm()
 
         if not form.validate_on_submit():
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-            uow2 = bootstrap.bootstrap()
+            uow2 = bootstrap.get_flask_uow()
             with uow2:
                 all_respondents = uow2.respondents.get_by_assembly_id(assembly_id)
                 total_count = len(all_respondents)
@@ -122,7 +122,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         id_column = form.id_column.data.strip() if form.id_column.data else None
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         respondents, errors, resolved_id_column = import_respondents_from_csv(
             uow=uow,
             user_id=current_user.id,
@@ -132,7 +132,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             id_column=id_column if id_column else None,
         )
 
-        uow2 = bootstrap.bootstrap()
+        uow2 = bootstrap.get_flask_uow()
         update_csv_config(
             uow=uow2,
             user_id=current_user.id,
@@ -180,7 +180,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @login_required
 def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         count = reset_selection_status(uow, current_user.id, assembly_id)
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))

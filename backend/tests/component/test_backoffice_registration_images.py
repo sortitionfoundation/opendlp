@@ -1,33 +1,27 @@
-"""ABOUTME: Unit tests for the backoffice registration image helpers and JSON routes
-ABOUTME: Covers _image_to_dict and the POST/PATCH/DELETE endpoints"""
+# ABOUTME: Component tests for the backoffice registration image helpers and JSON routes
+# ABOUTME: Drives the real POST/PATCH/DELETE endpoints + services over a FakeUnitOfWork via the test client
 
-import io
 import uuid
+from io import BytesIO
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from opendlp.domain.registration_image import RegistrationImage
-from opendlp.entrypoints.blueprints.backoffice_registration import (
-    _image_to_dict,
-)
-from opendlp.entrypoints.flask_app import create_app
+from opendlp.entrypoints.blueprints.backoffice_registration import _image_to_dict
+from opendlp.service_layer.image_processing import process_image
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
+from tests.fakes import FakeUnitOfWork
+
+_MAX_BYTES = 10 * 1024 * 1024
+_MAX_EDGE = 2048
 
 
-@pytest.fixture
-def app():
-    return create_app("testing")
-
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
-
-
-@pytest.fixture
-def assembly_id() -> uuid.UUID:
-    return uuid.uuid4()
+def _png(color=(255, 0, 0)) -> bytes:
+    buffer = BytesIO()
+    Image.new("RGB", (20, 20), color).save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str = "") -> RegistrationImage:
@@ -42,6 +36,27 @@ def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str 
         original_filename=original_filename,
         created_by=uuid.uuid4(),
     )
+
+
+@pytest.fixture
+def registration_page(fake_store, admin_user, existing_assembly):
+    with FakeUnitOfWork(store=fake_store) as uow:
+        page = create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+    return page
+
+
+def _seed_image(fake_store, page, *, alt: str = "Logo", color=(255, 0, 0)) -> RegistrationImage:
+    processed = process_image(_png(color), max_bytes=_MAX_BYTES, max_edge_px=_MAX_EDGE)
+    image = RegistrationImage.from_processed(page.id, processed, alt=alt)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.registration_images.add(image)
+        uow.commit()
+    return image.create_detached_copy()
+
+
+def _stored_images(fake_store, page) -> list[RegistrationImage]:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return uow.registration_images.list_by_page_id(page.id)
 
 
 class TestImageToDict:
@@ -90,12 +105,14 @@ class TestImageToDict:
 
 
 class TestImageRoutesRequireLogin:
-    def test_upload_redirects_anonymous_to_login(self, client, assembly_id):
+    def test_upload_redirects_anonymous_to_login(self, client):
+        assembly_id = uuid.uuid4()
         response = client.post(f"/backoffice/assembly/{assembly_id}/registration/images")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
-    def test_patch_redirects_anonymous_to_login(self, client, assembly_id):
+    def test_patch_redirects_anonymous_to_login(self, client):
+        assembly_id = uuid.uuid4()
         image_id = uuid.uuid4()
         response = client.patch(
             f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}",
@@ -104,140 +121,102 @@ class TestImageRoutesRequireLogin:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
-    def test_delete_redirects_anonymous_to_login(self, client, assembly_id):
+    def test_delete_redirects_anonymous_to_login(self, client):
+        assembly_id = uuid.uuid4()
         image_id = uuid.uuid4()
         response = client.delete(f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
 
-class TestUploadRouteHappyPath:
-    """The route is shielded by login_required + current_user, so we bypass auth
-    via LOGIN_DISABLED and patch the service-layer functions."""
-
-    @pytest.fixture
-    def authed_client(self, app):
-        app.config["LOGIN_DISABLED"] = True
-        return app.test_client()
-
-    def test_upload_with_file_and_alt_returns_201_and_image_dict(self, app, authed_client, assembly_id):
-        stored = _image(alt="Hello world")
-        with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.add_registration_image",
-                return_value=stored,
-            ) as add,
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration._resolve_page_url_slug",
-                return_value="my-slug",
-            ),
-        ):
-            cu.id = uuid.uuid4()
-            response = authed_client.post(
-                f"/backoffice/assembly/{assembly_id}/registration/images",
-                data={
-                    "image": (io.BytesIO(b"\x89PNG-fake-bytes"), "logo.png"),
-                    "alt": "Hello world",
-                },
-                content_type="multipart/form-data",
-            )
+class TestUploadRoute:
+    def test_upload_with_file_and_alt_returns_201_and_stores_image(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            data={
+                "image": (BytesIO(_png()), "logo.png"),
+                "alt": "Hello world",
+            },
+            content_type="multipart/form-data",
+        )
 
         assert response.status_code == 201
         body = response.get_json()
         assert body["image"]["alt"] == "Hello world"
-        assert body["image"]["id"] == str(stored.id)
-        add.assert_called_once()
-        # The uploaded filename is threaded through to the service layer.
-        _, kwargs = add.call_args
-        assert kwargs.get("original_filename") == "logo.png"
+        assert body["image"]["original_filename"] == "logo.png"
+        assert registration_page.url_slug in body["image"]["public_url"]
 
-    def test_upload_rejects_missing_alt(self, authed_client, assembly_id):
-        response = authed_client.post(
-            f"/backoffice/assembly/{assembly_id}/registration/images",
-            data={"image": (io.BytesIO(b"bytes"), "logo.png"), "alt": "   "},
+        stored = _stored_images(fake_store, registration_page)
+        assert len(stored) == 1
+        assert stored[0].alt == "Hello world"
+        assert stored[0].original_filename == "logo.png"
+        assert body["image"]["id"] == str(stored[0].id)
+
+    def test_upload_rejects_missing_alt(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            data={"image": (BytesIO(_png()), "logo.png"), "alt": "   "},
             content_type="multipart/form-data",
         )
         assert response.status_code == 400
         assert "alt" in response.get_json()["error"].lower()
 
-    def test_upload_rejects_missing_file(self, authed_client, assembly_id):
-        response = authed_client.post(
-            f"/backoffice/assembly/{assembly_id}/registration/images",
+    def test_upload_rejects_missing_file(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
             data={"alt": "Logo"},
             content_type="multipart/form-data",
         )
         assert response.status_code == 400
 
 
-class TestPatchRouteHappyPath:
-    @pytest.fixture
-    def authed_client(self, app):
-        app.config["LOGIN_DISABLED"] = True
-        return app.test_client()
+class TestPatchRoute:
+    def test_patch_updates_alt_and_returns_image(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        image = _seed_image(fake_store, registration_page, alt="Original")
 
-    def test_patch_updates_alt_and_returns_image(self, authed_client, assembly_id):
-        updated = _image(alt="Renamed")
-        image_id = uuid.uuid4()
-        with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_image_alt",
-                return_value=updated,
-            ) as set_alt,
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration._resolve_page_url_slug",
-                return_value="my-slug",
-            ),
-        ):
-            cu.id = uuid.uuid4()
-            response = authed_client.patch(
-                f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}",
-                json={"alt": "Renamed"},
-            )
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+            json={"alt": "Renamed"},
+        )
 
         assert response.status_code == 200
         body = response.get_json()
         assert body["image"]["alt"] == "Renamed"
-        set_alt.assert_called_once()
-        _, kwargs = set_alt.call_args
-        assert kwargs.get("alt") == "Renamed"
+        assert body["image"]["id"] == str(image.id)
 
-    def test_patch_rejects_missing_alt(self, authed_client, assembly_id):
-        image_id = uuid.uuid4()
-        response = authed_client.patch(
-            f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}",
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_images.get(image.id).alt == "Renamed"
+
+    def test_patch_rejects_missing_alt(self, logged_in_admin, fake_store, existing_assembly, registration_page):
+        image = _seed_image(fake_store, registration_page, alt="Original")
+
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
             json={"alt": "  "},
         )
         assert response.status_code == 400
 
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_images.get(image.id).alt == "Original"
 
-class TestDeleteRouteHappyPath:
-    @pytest.fixture
-    def authed_client(self, app):
-        app.config["LOGIN_DISABLED"] = True
-        return app.test_client()
 
-    def test_delete_returns_204(self, authed_client, assembly_id):
-        image_id = uuid.uuid4()
-        with (
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.current_user") as cu,
-            patch("opendlp.entrypoints.blueprints.backoffice_registration.bootstrap.bootstrap"),
-            patch(
-                "opendlp.entrypoints.blueprints.backoffice_registration.delete_registration_image",
-                return_value=None,
-            ) as delete,
-        ):
-            cu.id = uuid.uuid4()
-            response = authed_client.delete(
-                f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}",
-            )
+class TestDeleteRoute:
+    def test_delete_returns_204_and_removes_image(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        image = _seed_image(fake_store, registration_page)
+
+        response = logged_in_admin.delete(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+        )
 
         assert response.status_code == 204
         assert response.data == b""
-        delete.assert_called_once()
+        assert _stored_images(fake_store, registration_page) == []
 
 
 class TestImageDetailsModalTemplate:

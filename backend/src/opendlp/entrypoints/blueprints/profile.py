@@ -45,7 +45,7 @@ def edit() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 update_own_profile(
                     uow=uow,
@@ -77,7 +77,7 @@ def change_password() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 # After form validation, required fields are guaranteed to be non-None
                 assert form.current_password.data is not None
@@ -149,7 +149,7 @@ def google_link_callback() -> ResponseReturnValue:
             flash(_("Failed to get user information from Google"), "error")
             return redirect(url_for("profile.view"))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
 
         # Link OAuth to current user
         link_oauth_to_user(uow=uow, user_id=current_user.id, provider="google", oauth_id=google_id, oauth_email=email)
@@ -210,7 +210,7 @@ def microsoft_link_callback() -> ResponseReturnValue:
             flash(_("Failed to get user information from Microsoft"), "error")
             return redirect(url_for("profile.view"))
 
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
 
         # Link OAuth to current user
         link_oauth_to_user(
@@ -234,7 +234,7 @@ def microsoft_link_callback() -> ResponseReturnValue:
 def remove_password() -> ResponseReturnValue:
     """Remove password authentication (requires OAuth)."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         remove_password_auth(uow=uow, user_id=current_user.id)
 
         flash(_("Password authentication removed successfully"), "success")
@@ -252,7 +252,7 @@ def remove_password() -> ResponseReturnValue:
 def remove_oauth() -> ResponseReturnValue:
     """Remove OAuth authentication (requires password)."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         remove_oauth_auth(uow=uow, user_id=current_user.id)
 
         flash(_("OAuth authentication removed successfully"), "success")
@@ -283,7 +283,7 @@ def set_password() -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
-            uow = bootstrap.bootstrap()
+            uow = bootstrap.get_flask_uow()
             with uow:
                 assert form.new_password.data is not None
 
@@ -322,7 +322,7 @@ def set_password() -> ResponseReturnValue:
 def two_factor_settings() -> ResponseReturnValue:
     """View 2FA settings and status."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             status = two_factor_service.get_2fa_status(uow, current_user.id)
 
@@ -339,7 +339,7 @@ def two_factor_settings() -> ResponseReturnValue:
 def setup_2fa() -> ResponseReturnValue:
     """Start 2FA setup - show QR code and backup codes."""
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             totp_secret, qr_code_url, backup_codes = two_factor_service.setup_2fa(uow, current_user.id)
 
@@ -382,7 +382,7 @@ def enable_2fa() -> ResponseReturnValue:
         return redirect(url_for("profile.two_factor_settings"))
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
 
         # Clear setup session data
@@ -412,7 +412,7 @@ def disable_2fa() -> ResponseReturnValue:
         return redirect(url_for("profile.two_factor_settings"))
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         two_factor_service.disable_2fa(uow, current_user.id, totp_code)
 
         flash(_("Two-factor authentication has been disabled"), "success")
@@ -438,7 +438,7 @@ def regenerate_backup_codes() -> ResponseReturnValue:
         return redirect(url_for("profile.two_factor_settings"))
 
     try:
-        uow = bootstrap.bootstrap()
+        uow = bootstrap.get_flask_uow()
         with uow:
             backup_codes = two_factor_service.regenerate_backup_codes(uow, current_user.id, totp_code)
 

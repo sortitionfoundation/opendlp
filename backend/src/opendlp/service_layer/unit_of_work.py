@@ -95,6 +95,17 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def commit_and_reset(self) -> None:
+        """Commit the work so far, then keep using the same UnitOfWork.
+
+        Lets a single ``with uow:`` block contain more than one logical unit of
+        work without opening a second context: the first unit is made durable,
+        then work continues against the same UnitOfWork. Replaces the older
+        pattern of opening ``uow``/``uow2``/``uow3`` in one request.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def rollback(self) -> None:
         """Rollback the current transaction."""
         raise NotImplementedError
@@ -163,6 +174,15 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def commit(self) -> None:
         """Commit the current transaction."""
+        self.session.commit()
+
+    def commit_and_reset(self) -> None:
+        """Commit the work so far, then keep using the same session.
+
+        The session remains usable after ``commit()`` because the session
+        factory is built with ``expire_on_commit=False``, so subsequent work in
+        the same ``with`` block runs against the same session and repositories.
+        """
         self.session.commit()
 
     def rollback(self) -> None:

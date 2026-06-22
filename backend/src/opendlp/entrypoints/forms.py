@@ -19,7 +19,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
 
-from opendlp.bootstrap import bootstrap
+from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
@@ -69,7 +69,7 @@ class EmailDoesNotExistValidator:
         if not field.data:
             return
         try:
-            with bootstrap() as uow:
+            with get_flask_uow() as uow:
                 existing_user = uow.users.get_by_email(field.data)
         except Exception:  # noqa: S110
             # If we can't check (e.g., database error), allow form to continue
@@ -154,7 +154,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         if not invite_code.data:
             return
         try:
-            with bootstrap() as uow:
+            with get_flask_uow() as uow:
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
                     raise ValidationError(_("Invalid or expired invite code."))
@@ -526,7 +526,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
         if not invite_code.data:
             return
         try:
-            with bootstrap() as uow:
+            with get_flask_uow() as uow:
                 invite = uow.user_invites.get_by_code(invite_code.data)
                 if not invite or not invite.is_valid():
                     raise ValidationError(_("Invalid or expired invite code."))

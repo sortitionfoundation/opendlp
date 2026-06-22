@@ -11,6 +11,8 @@ from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, SelectionRunStatus, SelectionTaskType
 
+pytestmark = pytest.mark.requires_db
+
 
 @pytest.fixture
 def session(postgres_session_factory):
