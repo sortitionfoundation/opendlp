@@ -484,7 +484,10 @@ DB behaviour. The §6.6 guard enforces that it never appears under `component/`.
    disguised-route-test tell, rather than the broader create_app/test_client
    heuristic which fires on legitimate template/middleware tests) and rejects
    `db_semantics` tests under `tests/component/`.
-5. **Update `docs/testing.md`** per §9 as the above lands.
+5. ✅ **Update `docs/testing.md` (done)** per §9 — added the Component Tests
+   level, tightened Unit/E2E, added a Mocking Policy subsection, documented the
+   markers + `--strict-markers` + fast-tier selection, fixed the test-DB matrix,
+   and added `tests/component/` to the run commands and CI list.
 6. ✅ **Leave Groups E/F/G alone** — their mocks are correct.
 
 Explicitly **out of this sequence:** centralising the Celery boundary mock (§6.4)
@@ -519,11 +522,10 @@ decided — Option 1 — and folded into step 1 as a spike, no longer deferred.)
   `flask_session.cachelib.CacheLibSessionInterface`); filesystem is the fallback.
   Confirm `cachelib` is an available dependency during the spike.
 
-## 9. `docs/testing.md` updates needed
+## 9. `docs/testing.md` updates (✅ applied)
 
-`docs/testing.md` is the canonical testing guide and currently predates all of
-this. When the component tier and markers land, it needs these changes (noted
-here, not yet applied):
+`docs/testing.md` is the canonical testing guide. The changes below have now been
+applied to it:
 
 - **Testing Levels — add a "Component Tests (`tests/component/`)" section**
   between Integration and End-to-End. Describe: full Flask app + test client, but
