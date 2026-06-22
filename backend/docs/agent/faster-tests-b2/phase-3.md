@@ -454,32 +454,35 @@ DB behaviour. The §6.6 guard enforces that it never appears under `component/`.
    `tests/conftest.py` is the natural home; it can hard-fail collection with a
    clear message pointing at the right directory.
 
-## 7. Suggested order of work (if Doctor Chewie wants to proceed)
+## 7. Order of work (implementation status)
 
-Nothing below is started — this is a proposed sequence for a future phase:
-
-1. **Infra first:** register the markers (`requires_db` / `requires_redis` /
-   `requires_celery` / `db_semantics`) + `--strict-markers`, and create
-   `tests/component/` with a shared `conftest.py` (generalise `fake_pilot`'s
-   `fake_app`/`fake_client`/`fake_store`). The directory decision is made (§8 D1),
-   so there is no "component vs marker-only" question left — it's both. As part of
-   this, **spike the cachelib in-memory session** (§6.5 / §8 D7 Option 1) so the
-   component conftest needs no Redis — if the spike snags, fall back to
-   filesystem sessions and proceed.
+1. ✅ **Infra (done).** Registered the markers (`requires_db` / `requires_redis` /
+   `requires_celery` / `db_semantics`) + `--strict-markers` in `pyproject.toml`,
+   with auto-marking by directory in `tests/conftest.py`
+   (`pytest_collection_modifyitems`). Created `tests/component/` with a shared
+   `conftest.py` (fake-backed `app`/`client`, session_transaction login, seeded
+   data fixtures). The cachelib in-memory session spike (§6.5 / §8 D7 Option 1)
+   succeeded: added `FlaskTestComponentConfig` (`config "testing_component"`) with
+   `SESSION_CACHELIB = SimpleCache()`, and login via session_transaction — so the
+   component tier needs **no PostgreSQL and no Redis**.
 2. **Cheapest, highest fidelity first:** Group C (`test_registration_public.py`,
    `test_registration_image_serve.py`) — only config mocks, pure request→
    service→assertion, near-identical to the pilot. Move the behavioural coverage
    to `tests/component/`; **keep one PG happy-path smoke per route in
    `tests/e2e/`** (§8 D2).
-3. **Group B happy paths** (`test_dev_image_handlers.py` is the gentlest — it
-   already takes `uow` as a parameter; then the `backoffice_registration_*`
-   files). Convert happy paths to state-based assertions; keep narrow stubs only
-   for `side_effect` error branches.
-4. **Add the placement guard** (§6.6): a `pytest_collection_modifyitems` hook
-   rejecting `create_app`/`test_client` under `tests/unit/` and `db_semantics`
-   under `tests/component/`.
+3. ✅ **Group B (done).** Converted all five Group B files to `tests/component/`
+   driving real services over a `FakeUnitOfWork` with state-based assertions
+   (`test_dev_image_handlers`, `test_backoffice_registration_actions`,
+   `test_backoffice_registration_view`, `test_backoffice_registration_images`,
+   `test_registration_routes`). Narrow single-service stubs kept only for a few
+   `side_effect` error branches in `test_backoffice_registration_view`.
+4. ✅ **Placement guard (done, §6.6):** the `pytest_collection_modifyitems` hook
+   rejects unit tests that patch a blueprint's `get_flask_uow` (the precise
+   disguised-route-test tell, rather than the broader create_app/test_client
+   heuristic which fires on legitimate template/middleware tests) and rejects
+   `db_semantics` tests under `tests/component/`.
 5. **Update `docs/testing.md`** per §9 as the above lands.
-6. **Leave Groups E/F/G alone** — their mocks are correct.
+6. ✅ **Leave Groups E/F/G alone** — their mocks are correct.
 
 Explicitly **out of this sequence:** centralising the Celery boundary mock (§6.4)
 — deferred to its own later round (§8 D6). (The session-backend seam is now
