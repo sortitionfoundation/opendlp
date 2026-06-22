@@ -176,7 +176,7 @@ def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untype
     """Best-effort auto-reply send. Never blocks the redirect to the thank-you page."""
     try:
         send_registration_auto_reply(
-            bootstrap.bootstrap(),
+            bootstrap.get_flask_uow(),
             bootstrap.get_email_adapter(),
             respondent=respondent,
             assembly_id=respondent.assembly_id,
