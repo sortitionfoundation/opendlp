@@ -26,6 +26,8 @@ jobs:
 
   docker-security:
     uses: ./.github/workflows/docker-security.yml
+    with:
+      skip_sarif_upload: true
     permissions:
       contents: read
       pull-requests: write
