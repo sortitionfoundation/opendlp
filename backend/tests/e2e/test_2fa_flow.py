@@ -1,5 +1,5 @@
-"""ABOUTME: End-to-end two-factor authentication flow tests
-ABOUTME: Tests complete 2FA user journeys including setup, login, backup codes, and disabling"""
+"""ABOUTME: End-to-end PostgreSQL happy-path smokes for two-factor authentication
+ABOUTME: Behavioural coverage (invalid-code, backup-code login, regenerate) lives in tests/component/"""
 
 import base64
 import secrets
@@ -112,25 +112,6 @@ class Test2FASetupFlow:
         assert response.status_code == 200
         assert b"Enabled" in response.data or b"enabled" in response.data
 
-    def test_setup_2fa_invalid_code_fails(self, logged_in_client: FlaskClient):
-        """Test that 2FA setup fails with an invalid verification code."""
-        # Start 2FA setup
-        response = logged_in_client.get("/profile/2fa/setup")
-        assert response.status_code == 200
-
-        # Try to enable with invalid code
-        response = logged_in_client.post(
-            "/profile/2fa/enable",
-            data={
-                "totp_code": "000000",  # Invalid code
-                "csrf_token": get_csrf_token(logged_in_client, "/profile/2fa/enable"),
-            },
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"Invalid" in response.data or b"invalid" in response.data
-
 
 class Test2FALoginFlow:
     """Test 2FA login workflows."""
@@ -212,81 +193,9 @@ class Test2FALoginFlow:
         with client.session_transaction() as session:
             assert "_user_id" in session
 
-    def test_login_with_2fa_backup_code(self, client: FlaskClient, user_with_2fa):
-        """Test successful login with 2FA using a backup code."""
-        # Step 1: Submit email and password
-        response = client.post(
-            "/auth/login",
-            data={
-                "email": user_with_2fa["email"],
-                "password": user_with_2fa["password"],
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "/auth/login/verify-2fa" in response.headers["Location"]
-
-        # Step 2: Submit backup code
-        backup_code = user_with_2fa["backup_codes"][0]
-
-        response = client.post(
-            "/auth/login/verify-2fa",
-            data={
-                "verification_code": backup_code,
-                "csrf_token": get_csrf_token(client, "/auth/login/verify-2fa"),
-            },
-            follow_redirects=False,
-        )
-
-        # Should redirect to dashboard
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
-
-        # Verify user is logged in
-        with client.session_transaction() as session:
-            assert "_user_id" in session
-            # Should have message about backup code usage
-            flashes = session.get("_flashes", [])
-            assert any("backup code" in message.lower() for _, message in flashes)
-
-    def test_login_with_2fa_invalid_code_fails(self, client: FlaskClient, user_with_2fa):
-        """Test that login with invalid 2FA code fails."""
-        # Step 1: Submit email and password
-        response = client.post(
-            "/auth/login",
-            data={
-                "email": user_with_2fa["email"],
-                "password": user_with_2fa["password"],
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-
-        # Step 2: Submit invalid code
-        response = client.post(
-            "/auth/login/verify-2fa",
-            data={
-                "verification_code": "000000",  # Invalid
-                "csrf_token": get_csrf_token(client, "/auth/login/verify-2fa"),
-            },
-            follow_redirects=True,
-        )
-
-        # Should stay on 2FA page with error
-        assert response.status_code == 200
-        assert b"Invalid" in response.data or b"invalid" in response.data
-
-        # Verify user is NOT logged in
-        with client.session_transaction() as session:
-            assert "_user_id" not in session or session.get("pending_2fa_user_id") is not None
-
 
 class Test2FAManagement:
-    """Test 2FA management features like regenerating codes and disabling."""
+    """Test 2FA management features like disabling."""
 
     @pytest.fixture
     def logged_in_2fa_user(self, client: FlaskClient, postgres_session_factory, temp_env_vars):
@@ -345,30 +254,6 @@ class Test2FAManagement:
         )
 
         return {"client": client, "totp_secret": totp_secret}
-
-    def test_regenerate_backup_codes(self, logged_in_2fa_user):
-        """Test regenerating backup codes."""
-        client = logged_in_2fa_user["client"]
-        totp_secret = logged_in_2fa_user["totp_secret"]
-
-        # Generate valid TOTP code
-        totp = pyotp.TOTP(totp_secret)
-        valid_code = totp.now()
-
-        # Regenerate backup codes
-        response = client.post(
-            "/profile/2fa/backup-codes/regenerate",
-            data={
-                "totp_code": valid_code,
-                "csrf_token": get_csrf_token(client, "/profile/2fa/backup-codes/regenerate"),
-            },
-            follow_redirects=False,
-        )
-
-        # Should show new backup codes
-        assert response.status_code == 200 or (
-            response.status_code == 302 and "backup-codes" in response.headers["Location"]
-        )
 
     def test_disable_2fa(self, logged_in_2fa_user):
         """Test disabling 2FA."""
