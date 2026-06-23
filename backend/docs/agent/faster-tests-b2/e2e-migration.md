@@ -14,16 +14,16 @@ Tick each file as its conversion lands (component file written, e2e trimmed to
 smokes + `db_semantics`, `just check` green, committed).
 
 **Phase 1 — clean, no-blocker files**
-- [ ] `test_profile_management.py`
-- [ ] `test_assembly_crud.py`
-- [ ] `test_backoffice_general.py`
-- [ ] `test_2fa_flow.py`
-- [ ] `test_resend_confirmation.py`
+- [x] `test_profile_management.py`
+- [x] `test_assembly_crud.py`
+- [x] `test_backoffice_general.py`
+- [x] `test_2fa_flow.py`
+- [x] `test_resend_confirmation.py`
 
 **Phase 2 — auth + admin (with db_semantics carve-outs)**
-- [ ] `test_auth_flow.py`
-- [ ] `test_admin_invite_management.py`
-- [ ] `test_admin_user_management.py`
+- [x] `test_auth_flow.py`
+- [x] `test_admin_invite_management.py`
+- [x] `test_admin_user_management.py`
 
 **Phase 3 — assembly + respondents + targets**
 - [ ] `test_backoffice_assembly.py`
@@ -311,7 +311,8 @@ Routes: upload-respondents, confirm-diff (GET/POST), delete-respondents, list, s
 |---|---|---|
 | upload-with-id-column, delete-respondents, list-with-csv-source, view-respondent, delete-with-comment, transition-status POST, edit POST | KEEP-SMOKE | one smoke per route (~7) |
 | `test_oversized_upload_is_rejected_with_friendly_error` | KEEP-E2E-OTHER | request-size limit boundary (monkeypatches `get_max_csv_upload_bytes`) |
-| diff-confirmation flow (keep 1 smoke `confirm_applies_import_and_extends_schema`, move ~6), upload branches, list render variants, view name-derivation/grouping/not-found, deletion UI states, transition button-render/validation, edit form/validation/refusal branches (~34) | MOVE-COMPONENT | inline import → state assertions; cachelib session + shared store cover the diff flow |
+| upload branches, list render variants, view name-derivation/grouping/not-found, deletion UI states, transition button-render/validation, edit form/validation/refusal branches (~32) | MOVE-COMPONENT | inline import → state assertions |
+| 4 Redis-backed diff tests (re-upload-added-column, diff-page-shows, cancel-discards, confirm-after-expiry) + 1 smoke | KEEP-E2E-OTHER (redis) | **Correction:** the pending-upload diff stash is **Redis-backed** (`service_layer/csv_upload_stash.py`), not cachelib — so these stay e2e (`requires_redis`); only the 2 genuinely-inline diff tests moved to component |
 
 **Recommendation:** ~7 smokes, ~34 component, 0 db_semantics, 1 e2e-other.
 
