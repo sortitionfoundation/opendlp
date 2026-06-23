@@ -1,150 +1,185 @@
 # Protecting OpenDLP registration pages from bots
 
-COMMENT: a "Background" section would be useful here, so we're not diving straight in - I'll put in some of what I started the chat with, but feel free to neaten it up.
-
 ## Background
 
-OpenDLP hosts public registration pages as part of a two-stage lottery. The first
-stage is inviting people to register, the second stage is picking a broadly
-representative sample from those who registered.
+OpenDLP hosts public registration pages as part of a two-stage lottery. The first stage
+invites people to register; the second stage picks a broadly representative sample from
+those who registered.
 
-We normally send invites on paper. In the UK it is "to the resident" at an address selected from the Postcode Address File. The paper invite has a QR code and a URL you can type in. The URL to type in must be short. And to keep printing costs down we use the same QR code on all invites, rather than vary the QR code for each invite. The paper invite also has a phone number you can call - that is answered by a call centre person who will fill in the web form on your behalf.
+The invite channel varies by job:
 
-In some countries there is a database of residents, so we can invite named individuals at addresses.
+- **Paper (the usual UK case).** Invites go "to the resident" at an address selected from
+  the Postcode Address File. The letter carries a QR code and a short URL you can type in.
+  The typed URL must be short, and to keep printing costs down we use the **same QR code
+  and URL on every invite** rather than varying them per recipient. The letter also gives a
+  **phone number**, answered by a call-centre agent who fills in the web form on the
+  caller's behalf.
+- **Resident database (some countries).** Where a register of residents exists, we can
+  invite **named individuals** at addresses.
+- **Door-knocking.** In some contexts the first stage selects points on a map and people go
+  out and knock on doors.
+- **Email (a few jobs).** We select email addresses from a database and email the invites
+  directly. These jobs **could** use long, unique per-recipient URLs.
 
-In other contexts the first stage of the lottery chooses points on a map, and
-people go out and knock on doors.
+This document plans how to protect the public registration pages from bots. The
+registration links are not publicly advertised, but might still be found and indexed. The
+starting ideas were a CAPTCHA or sitting behind a CDN that filters abusive clients. But the
+registration page should be **as accessible as possible** so we get the widest possible
+range of people signing up — and a CAPTCHA makes the page less accessible. It's also
+unclear how good CDNs really are at stopping bots.
 
-And for a few jobs we select email addresses from a database, so we can directly email the invites. For those jobs we could use long unique URLs.
-
-The idea of this document is to plan how to protect the public registration pages from bots. The links on the registration page will not be publicly advertised, but might still be found and indexed. The initial ideas are to use a CAPTCHA or be behind a CDN that will filter abusive clients. But the registration page should be as accessible as possible, so we get the widest possible range of people signing up. And a CAPTCHA makes the page less accessible. And I don't know how good CDNs are at stopping bots.
-
-One step, is that for many (but **not** all) jobs we have a list of the addresses we have sent the invites too. We have a step (currently implemented in a spreadsheet) where we check if the address typed into the registration form matches an address from our list, and flag any that don't match. We then manually review the flagged addresses - some are just typed in a slightly different format to how we sent it, or have a minor typo that we can see and correct. This gives us some spam resistance - as really bad addresses won't get to the selection round - but we still need to manually review, so we don't want loads of bad entries to review. And this isn't available for all jobs.
+One existing mitigation: for **many (but not all)** jobs we have a list of the addresses we
+mailed. Today, in a spreadsheet, we check whether the address typed into the form matches
+one on that list and flag any that don't. We then manually review the flagged ones — some
+are just a different format or a minor typo we can correct. This gives some spam resistance
+(really bad addresses don't reach selection), but it costs manual review, so we don't want
+loads of bad entries to wade through. Crucially, **this check isn't available for every
+job, and it isn't yet built into OpenDLP.**
 
 ## Threat model (what we're actually defending)
 
-The registration page feeds a two-stage lottery, and we **already cross-check each
-submitted address against the list of addresses we mailed**. That check is the real
-integrity control: bots don't know which PAF addresses we selected, a random UK address
-has a negligible chance of being in our sample, so bot submissions never match and never
-reach selection.
+Where we have a mailed-address list, the cross-check is a strong **integrity** control:
+bots don't know which addresses we selected, a random UK address has a negligible chance of
+being in our sample, so bot submissions don't match and don't reach selection. But two
+caveats matter:
 
-So bot protection here is **not** about selection integrity. It's about two operational
-harms:
+- **It isn't universal.** Some jobs have no address list (e.g. door-knocking, or jobs where
+  we simply weren't given one). For those, there is no address backstop, so junk
+  registrations land directly in the pool — we need protection that stands on its own.
+- **It isn't built yet.** Address matching in OpenDLP is later work (see the roadmap
+  below). For now we can't rely on it at all.
 
-1. **Manual review volume** — every non-matching submission is eyeballed by a human. This
-   is the main cost.
-2. **Email cost / abuse** — the registration auto-reply lets a bot fire mass emails, or
+So the harms we're defending against are:
+
+1. **Junk registrations polluting the pool** — most acute for jobs with no address list,
+   where nothing else filters them out.
+2. **Manual review volume** — for jobs *with* a list, every non-matching submission is
+   eyeballed by a human. The main ongoing cost.
+3. **Email cost / abuse** — the registration auto-reply lets a bot fire mass emails, or
    repeatedly submit a victim's address to email-bomb them.
 
-Residual integrity caveat: address matching is only as strong as the secrecy of _which_
-addresses we picked. It holds against bots and outsiders; it doesn't stop someone holding
-several genuinely-invited letters (a social problem, not a bot one).
+Residual integrity caveat even with a list: matching is only as strong as the secrecy of
+*which* addresses we picked. It holds against bots and outsiders; it doesn't stop someone
+holding several genuinely-invited letters (a social problem, not a bot one).
 
-**Design goal: cut junk volume invisibly, before it reaches the review queue or the
-mailer. No user-visible friction in the normal case.**
-
-COMMENT: the majority of registration pages will be able to check against an address list, **but not all**. So we also need protection against junk registrations.
+**Design goal: cut junk volume invisibly, before it reaches the pool, the review queue, or
+the mailer. No user-visible friction in the normal case.**
 
 ## Constraints that shape the design
 
-- **Paper is the default channel.** Same QR code + same short URL on every letter
-  (printing cost). → The short URL is effectively public and will leak/index.
-  **Per-invite tokens are not available for paper jobs.** "Did we invite them" = the
-  address match, not the URL.
-- **Phone channel → call-centre agents fill in the public form** on people's behalf: many
-  submissions, one IP/device, fast. Any naive rate limit / timing / honeypot tuning **will
-  block our own staff**.
-
-COMMENT: the number of registrations through the web is typically a few hundred over a few days, with the call-centre doing less than 5% of them. So their rate is very low. (And the call-centre handles calls for many clients, not just us.)
-COMMENT: I'll have to talk to the team about whether the call-centre would be up for having to sign in. We are one of many customers the call-centre serves, so we want to make their lives simple.
-
-- **Email jobs are occasional** and _can_ carry long unique links — a nice-to-have if
+- **Paper is the default channel.** Same QR code + same short URL on every letter (printing
+  cost). → The short URL is effectively public and will leak/index. **Per-invite tokens are
+  not available for paper jobs.** "Did we invite them" = the address match (where we have
+  one), not the URL.
+- **Phone channel → call-centre agents fill in the public form** on people's behalf. Volume
+  here is **very low**: a typical job sees a few hundred web registrations over a few days,
+  with the call-centre handling **under 5%** of them — at peak unlikely to exceed ~10
+  submissions an hour, and that would be a busy job. The call-centre also serves many
+  clients, not just us, so we want to keep their workflow simple.
+- **Email jobs are occasional** and *can* carry long unique links — a nice-to-have if
   cheap, not something to rely on generally.
-- **GOV.UK design system + EU/UK org** → accessibility and GDPR both matter. CAPTCHA is
-  out (excludes the very demographics sortition works to include; reCAPTCHA is a GDPR
-  problem; GDS discourages it).
+- **GOV.UK design system + EU/UK org** → accessibility and GDPR both matter. CAPTCHA is out
+  (excludes the very demographics sortition works to include; reCAPTCHA is a GDPR problem;
+  GDS discourages it).
 
-## The call-centre carve-out (do this first)
+## Call-centre handling
 
-Give agents a path that bypasses the public bot defences:
+Because agent submissions are humans typing one form at a time, they won't trip the
+honeypot or timing checks, and at ~10/hour they sit well under any *loosely* set rate
+limit. So the realistic options, simplest first:
 
-- **Recommended: an authenticated internal submission route** (we already have
-  flask-login). Bypasses rate limits and bot checks, and gives an audit trail of
-  agent-entered registrations.
-- Alternative: IP-allowlist the call-centre egress.
+1. **No special treatment.** Given the low rate, a loose rate limit shouldn't catch them
+   and the invisible checks don't apply to a real person filling the form. Quite possibly
+   sufficient.
+2. **Secret-token URL** — e.g. `/register/<slug>?call_centre=<UUID>`. No login; the agent
+   just uses a bookmarked link carrying a secret token only they hold. Submissions via that
+   token are exempted from rate limits and flagged as call-centre-entered (a useful audit
+   signal). Simplest explicit option, and keeps the agents' lives easy.
+3. **Authenticated internal route** — strongest audit trail, but adds friction. Whether the
+   call-centre is willing to sign in is **an open question to settle with the team**, given
+   we're one of many customers they serve.
 
-Without this, the measures below will lock out staff.
-
-COMMENT: the call centre is, at peak, unlikely to do more than 10 submissions an hour. 10 call-centre submissions an hour would be a really busy job.
+Recommendation: lean towards option 1 or 2; only pursue authentication (3) if we
+specifically want the audit trail and the call-centre is happy with it.
 
 ## Recommended layers (all invisible to legitimate users)
 
-1. **Honeypot field + form-timing token + existing CSRF.** Kills the bulk of dumb form
-   bots at zero accessibility cost. (Honeypot via `aria-hidden`/off-screen, not a
+These are the core of the **current round of work** — they don't depend on address data.
+
+1. **Honeypot field + form-timing token + existing CSRF.** Kills the bulk of dumb form bots
+   at zero accessibility cost. (Honeypot via `aria-hidden`/off-screen, not a
    `display:none` keyboard trap; piggyback the timing token on the CSRF token we already
    mint at render.)
 
 2. **Rate limiting** — reuse the existing `login_rate_limit_service` / Redis pattern:
-   - **Per-IP**, kept _loose_ (shared NATs: libraries, care homes, offices), **with the
-     call-centre exempted**.
-   - **Per-email-address cap** — this is what specifically closes the auto-reply
-     email-bomb / cost vector.
-
-COMMENT: we do occasionally have an elderly couple who share an email address who both register. In that case, both registrations would be legitimate. So the per-email address cap should not be 1. But it certainly can be low - especially as a rate limit.
+   - **Per-IP**, kept *loose* (shared NATs: libraries, care homes, offices), and loose
+     enough not to catch the low-rate call-centre.
+   - **Per-email rate limit** — closes the auto-reply email-bomb / cost vector. Note this is
+     a *low rate limit, not a cap of 1*: we occasionally get a couple (e.g. an elderly pair)
+     sharing one email address who both legitimately register, so allow a small number per
+     email over the window rather than forbidding repeats.
 
 3. **CDN/WAF + `noindex`** — Cloudflare (free tier) as a coarse outer filter for known-bad
-   IPs and volumetric abuse, plus `X-Robots-Tag: noindex` / robots meta so the leaked
-   short URL doesn't get indexed. Cheap, invisible. (Obscurity isn't a control — the URL is
-   on thousands of letters — but no reason to advertise it.)
+   IPs and volumetric abuse, plus `X-Robots-Tag: noindex` / robots meta so the leaked short
+   URL doesn't get indexed. Cheap, invisible. (Obscurity isn't a control — the URL is on
+   thousands of letters — but no reason to advertise it.)
 
-4. **Fold bot signals into the address-match step — the high-value change.** We already
-   classify each submission as match / no-match. Add the bot signals to that decision:
-   - **No match _and_ tripped a bot signal** (honeypot / impossible timing / rate) →
-     **silently drop**: no review, no auto-reply.
-   - **No match but looks human** → review queue (today's behaviour).
+## Later work (depends on address data, not yet in OpenDLP)
+
+Address data isn't in OpenDLP yet, so the next two items are a **later round** — but worth
+scoping now.
+
+4. **Fold bot signals into the address-match step — the high-value change.** Once matching
+   exists, each submission would be classified, and we add the bot signals to that decision:
+   - **No match _and_ tripped a bot signal** (honeypot / impossible timing / rate) → mark as
+     probable spam: no review, no auto-reply.
+   - **No match but looks human** → review queue (today's spreadsheet behaviour).
    - **Match** → straight through.
 
-   This directly attacks the review-volume pain: bots produce non-matching addresses _and_
-   trip signals, so they fall into the auto-drop bucket and never cost a review or an
+   This directly attacks the review-volume pain: bots produce non-matching addresses *and*
+   trip signals, so they fall into the probable-spam bucket and never cost a review or an
    email.
 
-COMMENT: the address data is not yet in OpenDLP, so address matching would be a later step to do, not in the current round of work. But we should scope it out.
-COMMENT: in terms of data, I would imagine, when we get there, we'd have an `address_match` field with values MATCH/NO_MATCH/TO_REVIEW - and we could add PROBABLY_SPAM to RespondentStatus
+   *Data sketch (for when we get there):* an `address_match` field with values
+   `MATCH` / `NO_MATCH` / `TO_REVIEW`, plus a new `PROBABLY_SPAM` value on `RespondentStatus`.
 
-5. **Tighten the auto-matcher itself** (orthogonal, but the sleeper win). Better
-   fuzzy/normalised address matching shrinks the _legitimate-but-mistyped_ share of flags —
-   which is probably a bigger chunk of the manual queue than spam — and makes the auto-drop
-   in (4) safer.
-
-COMMENT: this would be great.
+5. **Tighten the auto-matcher itself** (the sleeper win — and something we'd like). Better
+   fuzzy/normalised address matching shrinks the *legitimate-but-mistyped* share of flags —
+   probably a bigger chunk of the manual queue than spam — and makes the bucketing in (4)
+   safer.
 
 ## Optional / situational
 
 6. **Email-job signed links** — cheap with `itsdangerous`: sign a per-recipient token into
    the long URL, validate on load/submit. No schema change if not enforcing single-use
-   ("this came from our email" is enough; the address match backstops it). Ship as an
-   **opt-in per-assembly flag** for email campaigns. Gates bots out of those jobs entirely.
+   ("this came from our email" is enough; the address match backstops it where present).
+   Ship as an **opt-in per-assembly flag** for email campaigns. Gates bots out of those jobs
+   entirely.
 
 7. **Invisible challenge (Cloudflare Turnstile / Friendly Captcha / mCaptcha)** —
-   back-pocket option for an _active_ flood only. Prefer the EU proof-of-work options for
+   back-pocket option for an *active* flood only. Prefer the EU proof-of-work options for
    GDPR; never an image CAPTCHA.
 
 ## Roll-out order
 
-1. Call-centre authenticated route (unblocks everything else).
-2. Honeypot + timing + per-IP/per-email rate limits.
-3. Signal-into-match auto-drop — start as a **low-priority "probably-spam" bucket** you
-   spot-check, then promote to silent drop once you trust the signals.
-4. `noindex` + CDN.
+**This round (no address data needed):**
+
+1. Call-centre handling — likely nothing, or the secret-token URL.
+2. Honeypot + timing + per-IP / per-email rate limits.
+3. `noindex` + CDN.
+
+**Later (once address data lands in OpenDLP):**
+
+4. Signal-into-match bucketing — submissions become a low-priority `PROBABLY_SPAM` bucket we
+   spot-check; revisit auto-dropping once we see the volume.
 5. Fuzzy-match improvements (ongoing).
-6. Email-job signed links and any challenge only if needed.
 
-## Two decisions to pin down
+**Only if needed:** email-job signed links and any challenge.
 
-- **Call-centre path:** authenticated internal route (recommended) or IP allowlist?
-- **Auto-drop policy:** silently discard "no match + bot signal", or hold in a spot-check
-  bucket first? (Recommend bucket → drop.)
+## Decisions
 
-COMMENT: for call centre, given the low rate, could they not need any special treatment? Or another option is that we provide a URL of `/register/slug?call_centre=<UUID>` - so no authentication, but a secret token only they would have access to
-COMMENT: auto-drop should be bucket for now and we'll see how the volume goes
+- **Call-centre path:** settled direction is to keep it simple — no special treatment or a
+  no-auth secret-token URL. Authentication is an open question to raise with the call-centre
+  team, only worth it for the audit trail.
+- **Probable-spam handling:** start as a spot-check bucket (`PROBABLY_SPAM`), not a silent
+  drop, and revisit once we see real volume.
