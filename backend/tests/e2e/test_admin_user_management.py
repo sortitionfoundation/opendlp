@@ -1,7 +1,5 @@
-"""ABOUTME: End-to-end tests for admin user management features
-ABOUTME: Tests complete admin workflows for viewing, editing, and managing users"""
-
-import re
+"""ABOUTME: End-to-end PostgreSQL tests for admin user management
+ABOUTME: Smokes plus db_semantics filter/search/pagination tests; behavioural coverage lives in tests/component/"""
 
 import pytest
 from flask.testing import FlaskClient
@@ -11,25 +9,6 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
-
-
-@pytest.fixture
-def admin_user(postgres_session_factory):
-    """Create an admin user in the database."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        admin, _ = create_user(
-            uow,
-            email="admin@example.com",
-            global_role=GlobalRole.ADMIN,
-            password="adminpass123",  # pragma: allowlist secret
-        )
-
-    # Confirm email so admin can log in
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user = uow.users.get(admin.id)
-        user.confirm_email()
-        uow.commit()
-        return user.create_detached_copy()
 
 
 @pytest.fixture
@@ -109,26 +88,7 @@ class TestAdminUserList:
         assert b"inactive@example.com" in response.data
         assert b"organiser@example.com" in response.data
 
-    def test_list_users_page_not_accessible_to_regular_user(self, client: FlaskClient, regular_user: User):
-        """Test that regular users cannot access admin user list."""
-        client.post(
-            "/auth/login",
-            data={
-                "email": regular_user.email,
-                "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-        )
-
-        response = client.get("/admin/users")
-        assert response.status_code == 403  # Forbidden
-
-    def test_list_users_page_redirects_when_not_logged_in(self, client: FlaskClient):
-        """Test that non-authenticated users are redirected to login."""
-        response = client.get("/admin/users")
-        assert response.status_code == 302
-        assert "login" in response.location
-
+    @pytest.mark.db_semantics
     def test_list_users_shows_pagination(self, client: FlaskClient, admin_user: User, test_users: list[User]):
         """Test that user list shows pagination controls."""
         login_as_admin(client, admin_user)
@@ -141,6 +101,7 @@ class TestAdminUserList:
         data = response.data.decode()
         assert "page" in data.lower() or "next" in data.lower() or "previous" in data.lower()
 
+    @pytest.mark.db_semantics
     def test_list_users_filter_by_role(self, client: FlaskClient, admin_user: User, test_users: list[User]):
         """Test filtering users by role."""
         login_as_admin(client, admin_user)
@@ -155,6 +116,7 @@ class TestAdminUserList:
         # Should not show organiser
         assert b"organiser@example.com" not in response.data or b"Global Organiser" not in response.data
 
+    @pytest.mark.db_semantics
     def test_list_users_filter_by_active_status(self, client: FlaskClient, admin_user: User, test_users: list[User]):
         """Test filtering users by active status."""
         login_as_admin(client, admin_user)
@@ -168,6 +130,7 @@ class TestAdminUserList:
         # Inactive user might not be shown or might be shown with inactive badge
         assert b"inactive@example.com" not in response.data
 
+    @pytest.mark.db_semantics
     def test_list_users_search_by_name(self, client: FlaskClient, admin_user: User, test_users: list[User]):
         """Test searching users by name."""
         login_as_admin(client, admin_user)
@@ -195,96 +158,9 @@ class TestAdminUserView:
         assert regular_user.email.encode() in response.data
         assert regular_user.first_name.encode() in response.data if regular_user.first_name else True
 
-    def test_view_user_page_not_accessible_to_regular_user(self, client: FlaskClient, regular_user: User):
-        """Test that regular users cannot view user details page."""
-        client.post(
-            "/auth/login",
-            data={
-                "email": regular_user.email,
-                "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-        )
-
-        response = client.get(f"/admin/users/{regular_user.id}")
-        assert response.status_code == 403  # Forbidden
-
-    def test_view_user_page_shows_user_details(self, client: FlaskClient, admin_user: User, test_users: list[User]):
-        """Test that view user page shows all relevant user information."""
-        login_as_admin(client, admin_user)
-
-        user = test_users[0]
-        response = client.get(f"/admin/users/{user.id}")
-        assert response.status_code == 200
-
-        # Should show user details
-        assert user.email.encode() in response.data
-        assert user.first_name.encode() in response.data
-        assert user.last_name.encode() in response.data
-
 
 class TestAdminUserEdit:
     """Test admin edit user functionality."""
-
-    def test_edit_user_page_accessible_to_admin(self, client: FlaskClient, admin_user: User, regular_user: User):
-        """Test that admin can access edit user page."""
-        login_as_admin(client, admin_user)
-
-        response = client.get(f"/admin/users/{regular_user.id}/edit")
-        assert response.status_code == 200
-        assert b"Edit User" in response.data or b"edit" in response.data.lower()
-
-    def test_edit_user_form_preselects_current_role(
-        self, client: FlaskClient, admin_user: User, test_users: list[User]
-    ):
-        """Test that the edit form pre-selects the user's current role."""
-        login_as_admin(client, admin_user)
-
-        # Test with a regular user
-        user = test_users[0]  # Should be a USER role
-        assert user.global_role == GlobalRole.USER, f"Expected USER role but got {user.global_role}"
-
-        response = client.get(f"/admin/users/{user.id}/edit")
-        assert response.status_code == 200
-
-        # Check that the USER radio button is checked
-        data = response.data.decode()
-        # Look for: value="USER" checked (with any amount of whitespace)
-
-        user_radio = re.search(r'value="USER"[^>]*?checked', data)
-        assert user_radio is not None, "USER radio button should be checked but isn't"
-
-        # Ensure other radio buttons are not checked
-        admin_radio = re.search(r'value="ADMIN"[^>]*?checked', data)
-        assert admin_radio is None, "ADMIN radio button should not be checked"
-
-        # Test with a global organiser
-        organiser = test_users[6]  # The last one should be the organiser
-        assert organiser.global_role == GlobalRole.GLOBAL_ORGANISER, (
-            f"Expected GLOBAL_ORGANISER role but got {organiser.global_role}"
-        )
-
-        response = client.get(f"/admin/users/{organiser.id}/edit")
-        assert response.status_code == 200
-
-        data = response.data.decode()
-        # Look for the GLOBAL_ORGANISER radio button being checked
-        organiser_radio = re.search(r'value="GLOBAL_ORGANISER"[^>]*?checked', data)
-        assert organiser_radio is not None, "GLOBAL_ORGANISER radio button should be checked but isn't"
-
-    def test_edit_user_page_not_accessible_to_regular_user(self, client: FlaskClient, regular_user: User):
-        """Test that regular users cannot access edit user page."""
-        client.post(
-            "/auth/login",
-            data={
-                "email": regular_user.email,
-                "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-        )
-
-        response = client.get(f"/admin/users/{regular_user.id}/edit")
-        assert response.status_code == 403  # Forbidden
 
     def test_edit_user_name_success(self, client: FlaskClient, admin_user: User, test_users: list[User]):
         """Test successfully editing user name."""
@@ -310,112 +186,3 @@ class TestAdminUserEdit:
         view_response = client.get(f"/admin/users/{user.id}")
         assert b"NewFirst" in view_response.data
         assert b"NewLast" in view_response.data
-
-    def test_edit_user_role_success(self, client: FlaskClient, admin_user: User, test_users: list[User]):
-        """Test successfully changing user role."""
-        login_as_admin(client, admin_user)
-
-        user = test_users[0]  # Regular user
-        response = client.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "global_role": GlobalRole.GLOBAL_ORGANISER.name,
-                "is_active": "y",
-                "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302  # Redirect after success
-
-    def test_edit_user_deactivate_success(self, client: FlaskClient, admin_user: User, test_users: list[User]):
-        """Test successfully deactivating a user."""
-        login_as_admin(client, admin_user)
-
-        user = test_users[0]
-        response = client.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "global_role": user.global_role.name,
-                # Not including is_active means checkbox is unchecked (deactivate)
-                "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302  # Redirect after success
-
-    def test_admin_cannot_change_own_role(self, client: FlaskClient, admin_user: User):
-        """Test that admin cannot demote themselves."""
-        login_as_admin(client, admin_user)
-
-        response = client.post(
-            f"/admin/users/{admin_user.id}/edit",
-            data={
-                "first_name": admin_user.first_name or "Admin",
-                "last_name": admin_user.last_name or "User",
-                "global_role": GlobalRole.USER.name,  # Try to demote to regular user
-                "is_active": "y",
-                "csrf_token": get_csrf_token(client, f"/admin/users/{admin_user.id}/edit"),
-            },
-            follow_redirects=False,
-        )
-
-        # Should show error (could be 200 with error message or redirect)
-        assert response.status_code == 200
-        assert b"Cannot change your own" in response.data or b"error" in response.data.lower()
-
-    def test_admin_cannot_deactivate_self(self, client: FlaskClient, admin_user: User):
-        """Test that admin cannot deactivate their own account."""
-        login_as_admin(client, admin_user)
-
-        response = client.post(
-            f"/admin/users/{admin_user.id}/edit",
-            data={
-                "first_name": admin_user.first_name or "Admin",
-                "last_name": admin_user.last_name or "User",
-                "global_role": GlobalRole.ADMIN.name,
-                # Not including is_active checkbox (deactivate)
-                "csrf_token": get_csrf_token(client, f"/admin/users/{admin_user.id}/edit"),
-            },
-            follow_redirects=False,
-        )
-
-        # Should show error
-        assert response.status_code == 200
-        assert b"Cannot deactivate your own" in response.data or b"error" in response.data.lower()
-
-
-class TestAdminNavigation:
-    """Test admin navigation menu."""
-
-    def test_admin_menu_visible_to_admin(self, client: FlaskClient, admin_user: User):
-        """Test that Admin menu is visible to admin users."""
-        login_as_admin(client, admin_user)
-
-        response = client.get("/dashboard")
-        assert response.status_code == 200
-        assert b"Site Admin" in response.data  # Admin link in navigation
-
-    def test_admin_menu_not_visible_to_regular_user(self, client: FlaskClient, regular_user: User):
-        """Test that Admin menu is not visible to regular users."""
-        client.post(
-            "/auth/login",
-            data={
-                "email": regular_user.email,
-                "password": "userpass123",  # pragma: allowlist secret
-                "csrf_token": get_csrf_token(client, "/auth/login"),
-            },
-        )
-
-        response = client.get("/dashboard")
-        assert response.status_code == 200
-
-        # Admin link should not be in navigation for regular users
-        # This check might need adjustment based on actual HTML structure
-        data = response.data.decode()
-        assert "admin/users" not in data.lower() or "Admin" not in data
