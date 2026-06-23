@@ -9,9 +9,43 @@ from flask.testing import FlaskClient
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
+from opendlp.service_layer import sortition
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
+
+
+class _NoCeleryResult:
+    """Stub for a Celery AsyncResult when no result backend is present.
+
+    The component tier has no broker/result backend, so the selection-status
+    code path treats every task as "no live Celery result" and relies on the
+    seeded SelectionRunRecord (the authoritative source) instead.
+    """
+
+    id = None
+    state = "PENDING"
+
+    def successful(self) -> bool:
+        return False
+
+    def failed(self) -> bool:
+        return False
+
+    def ready(self) -> bool:
+        return False
+
+
+@pytest.fixture(autouse=True)
+def stub_celery_async_result(monkeypatch):
+    """Stub the Celery result-backend boundary for every component test.
+
+    Mirrors the no-PostgreSQL/no-Redis seams: the Celery result backend is an
+    external boundary the component tier does not run, so AsyncResult is
+    replaced with an inert stub. This keeps the progress/status routes driven
+    by the seeded SelectionRunRecord and avoids dangling AsyncResult objects.
+    """
+    monkeypatch.setattr(sortition.app.app, "AsyncResult", lambda *args, **kwargs: _NoCeleryResult())
 
 
 @pytest.fixture
