@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from flask.testing import FlaskClient
 
+from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
@@ -302,3 +303,66 @@ class TestEmailConfirmation:
         # Verify user is logged in
         with client.session_transaction() as sess:
             assert "_user_id" in sess
+
+
+class TestPasswordReset:
+    """PG happy-path smokes for the forgot/reset password routes.
+
+    Behavioural coverage (anti-enumeration, invalid/expired/used tokens, weak
+    passwords, rate limiting) lives in tests/component/test_password_reset_routes.py.
+    """
+
+    def test_forgot_password_creates_token_and_redirects(
+        self, client: FlaskClient, regular_user: User, postgres_session_factory
+    ):
+        """Requesting a reset for an active password user creates a token."""
+        response = client.post(
+            "/auth/forgot-password",
+            data={
+                "email": regular_user.email,
+                "csrf_token": get_csrf_token(client, "/auth/forgot-password"),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(regular_user.id))
+            assert len(tokens) == 1
+
+    def test_reset_password_with_valid_token_succeeds(
+        self, client: FlaskClient, regular_user: User, postgres_session_factory
+    ):
+        """A valid token resets the password and the user can log in with it."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            token = PasswordResetToken(user_id=regular_user.id)
+            token_str = token.token
+            uow.password_reset_tokens.add(token)
+            uow.commit()
+
+        response = client.post(
+            f"/auth/reset-password/{token_str}",
+            data={
+                "password": "FreshPassword789!",  # pragma: allowlist secret
+                "password_confirm": "FreshPassword789!",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, f"/auth/reset-password/{token_str}"),
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.password_reset_tokens.get_by_token(token_str).is_used()
+
+        login = client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "FreshPassword789!",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+            follow_redirects=False,
+        )
+        assert login.status_code == 302
