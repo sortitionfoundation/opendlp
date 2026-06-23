@@ -1,11 +1,16 @@
 """ABOUTME: End-to-end PostgreSQL tests for admin user management
 ABOUTME: Smokes plus db_semantics filter/search/pagination tests; behavioural coverage lives in tests/component/"""
 
+import base64
+import secrets
+
+import pyotp
 import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -186,3 +191,58 @@ class TestAdminUserEdit:
         view_response = client.get(f"/admin/users/{user.id}")
         assert b"NewFirst" in view_response.data
         assert b"NewLast" in view_response.data
+
+
+@pytest.fixture
+def user_with_2fa(postgres_session_factory, temp_env_vars) -> User:
+    """Create a confirmed user with 2FA enabled."""
+    raw_key = secrets.token_bytes(32)
+    temp_env_vars(TOTP_ENCRYPTION_KEY=base64.b64encode(raw_key).decode())
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        user, _ = create_user(
+            uow,
+            email="twofa-target@example.com",
+            global_role=GlobalRole.USER,
+            password="SecurePass123!",  # pragma: allowlist secret
+            first_name="Two",
+            last_name="Factor",
+        )
+        user_id = user.id
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        totp_secret, _, backup_codes = two_factor_service.setup_2fa(uow, user_id)
+        valid_code = pyotp.TOTP(totp_secret).now()
+        two_factor_service.enable_2fa(uow, user_id, totp_secret, valid_code, backup_codes)
+
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        return uow.users.get(user_id).create_detached_copy()
+
+
+class TestAdmin2FA:
+    """PG happy-path smokes for the admin 2FA management routes."""
+
+    def test_disable_user_2fa_success(
+        self, client: FlaskClient, admin_user: User, user_with_2fa: User, postgres_session_factory
+    ):
+        """Admin can disable a user's 2FA."""
+        login_as_admin(client, admin_user)
+
+        response = client.post(
+            f"/admin/users/{user_with_2fa.id}/2fa/disable",
+            data={"csrf_token": get_csrf_token(client, f"/admin/users/{user_with_2fa.id}")},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert f"/admin/users/{user_with_2fa.id}" in response.location
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get(user_with_2fa.id).totp_enabled is False
+
+    def test_view_user_2fa_audit_log_success(self, client: FlaskClient, admin_user: User, user_with_2fa: User):
+        """Admin can view a user's 2FA audit log."""
+        login_as_admin(client, admin_user)
+
+        response = client.get(f"/admin/users/{user_with_2fa.id}/2fa/audit-log")
+
+        assert response.status_code == 200
