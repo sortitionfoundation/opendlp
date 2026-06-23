@@ -16,6 +16,11 @@ from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
+# The selection-status routes build a Celery AsyncResult from a (possibly empty)
+# celery_task_id; the real redis result backend warns when GC removes it. Benign in
+# these PG smokes, which assert on the rendered fragment, not the Celery result.
+pytestmark = pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+
 
 @pytest.fixture
 def assembly_with_csv_config(postgres_session_factory, admin_user):

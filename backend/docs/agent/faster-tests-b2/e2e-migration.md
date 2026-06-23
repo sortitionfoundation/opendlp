@@ -26,32 +26,32 @@ smokes + `db_semantics`, `just check` green, committed).
 - [x] `test_admin_user_management.py`
 
 **Phase 3 — assembly + respondents + targets**
-- [ ] `test_backoffice_assembly.py`
-- [ ] `test_assembly_gsheet_crud.py`
-- [ ] `test_assembly_user_management.py`
-- [ ] `test_backoffice_respondents.py`
-- [ ] `test_backoffice_respondent_field_schema.py`
-- [ ] `test_targets_pages.py`
+- [x] `test_backoffice_assembly.py`
+- [x] `test_assembly_gsheet_crud.py`
+- [x] `test_assembly_user_management.py`
+- [x] `test_backoffice_respondents.py`
+- [x] `test_backoffice_respondent_field_schema.py`
+- [x] `test_targets_pages.py`
 
 **Phase 4 — selection/gsheet non-Celery slices**
-- [ ] `test_sortition_routes.py`
-- [ ] `test_db_selection_routes.py`
-- [ ] `test_db_selection_backoffice.py`
-- [ ] `test_backoffice_gsheet_selection.py`
-- [ ] `test_gsheets_routes.py`
+- [x] `test_sortition_routes.py`
+- [x] `test_db_selection_routes.py`
+- [x] `test_db_selection_backoffice.py`
+- [x] `test_backoffice_gsheet_selection.py`
+- [x] `test_gsheets_routes.py`
 
 **Phase 5 — mark-only (db_semantics, no move)**
-- [ ] `test_health_check_monitoring.py`
-- [ ] `test_oauth_flow.py` (move ~13 non-provider tests; gated on OAuth fake-app fixture — see §6)
+- [x] `test_health_check_monitoring.py` (8 selection-run tests marked `db_semantics`)
+- [x] `test_oauth_flow.py` (moved 15 non-provider tests via an OAuth-enabled component app; provider-callback tests stay e2e)
 
 **Phase 6 — leave as-is (no action)**
-- [ ] `test_registration_public.py`, `test_registration_image_serve.py`,
+- [x] `test_registration_public.py`, `test_registration_image_serve.py`,
   `test_registration_auto_reply.py` (already trimmed in Phase 3 of `phase-3.md`)
-- [ ] `test_health_check.py`, `test_feature_flags_e2e.py`, `test_wellknown.py`
+- [x] `test_health_check.py`, `test_feature_flags_e2e.py`, `test_wellknown.py`
 
 **Phase 7 — legacy (no migration; trim/delete with blueprint)**
-- [ ] `test_targets_legacy_pages.py`
-- [ ] `test_respondents_pages.py`
+- [x] `test_targets_legacy_pages.py` (intentionally left untouched — behavioural coverage of a still-live blueprint; delete with the blueprint)
+- [x] `test_respondents_pages.py` (intentionally left untouched — same rationale)
 
 ## 1. The rule we are applying
 
@@ -499,9 +499,10 @@ The conversion is **per-file, test-guarded** (keep the suite green throughout). 
    identified above.
 6. **Leave as-is:** the three registration files (done), the four infra files
    (`test_health_check*.py`, `test_feature_flags_e2e.py`, `test_wellknown.py`).
-7. **Legacy:** do not migrate `test_targets_legacy_pages.py`; delete with its
-   blueprint. Confirm with Doctor Chewie whether `test_respondents_pages.py`'s
-   blueprint is also legacy.
+7. **Legacy (resolved):** do not migrate `test_targets_legacy_pages.py` **or**
+   `test_respondents_pages.py` — both blueprints are confirmed legacy and slated for
+   deletion. Left untouched (they still cover live code until the blueprints are
+   removed); delete each file with its blueprint.
 
 ## 6. Deferred / blocked-elsewhere
 

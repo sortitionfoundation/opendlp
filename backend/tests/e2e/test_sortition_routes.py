@@ -12,6 +12,11 @@ from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
+# The selection-status routes build a Celery AsyncResult from a (possibly empty)
+# celery_task_id; the real redis result backend warns when GC removes it. Benign in
+# these PG smokes, which assert on the rendered fragment, not the Celery result.
+pytestmark = pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+
 
 class TestSortitionRoutes:
     """PG happy-path smoke tests for sortition routes."""
