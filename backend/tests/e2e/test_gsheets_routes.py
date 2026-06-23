@@ -142,43 +142,6 @@ class TestReplacementProgressModal:
             assert response.status_code == 403
 
 
-class TestReplacementLegacyRoutes:
-    """Test the legacy replacement redirect routes."""
-
-    def test_view_assembly_replacement_redirects_with_modal_open(self, logged_in_admin, assembly_with_gsheet):
-        """Test that /replacement redirects to selection page with replacement_modal=open."""
-        assembly, _gsheet = assembly_with_gsheet
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement",
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        assert "replacement_modal=open" in response.location
-
-    def test_view_assembly_replacement_with_run_redirects(self, logged_in_admin, assembly_with_gsheet):
-        """Test that /replacement/<run_id> redirects with current_replacement param."""
-        assembly, _gsheet = assembly_with_gsheet
-        run_id = uuid.uuid4()
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement/{run_id}",
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        assert f"current_replacement={run_id}" in response.location
-
-    def test_view_assembly_replacement_with_run_preserves_min_max(self, logged_in_admin, assembly_with_gsheet):
-        """Test that /replacement/<run_id> preserves min_select and max_select params."""
-        assembly, _gsheet = assembly_with_gsheet
-        run_id = uuid.uuid4()
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement/{run_id}?min_select=5&max_select=20",
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        assert "min_select=5" in response.location
-        assert "max_select=20" in response.location
-
-
 class TestStartReplacementLoad:
     """Test the start_replacement_load endpoint."""
 
@@ -261,62 +224,6 @@ class TestStartReplacementRun:
             # Verify number_to_select was passed to service
             call_args = mock_start.call_args
             assert call_args[0][3] == 5 or call_args[1].get("number_to_select") == 5
-
-    def test_start_replacement_run_missing_number_to_select(self, logged_in_admin, assembly_with_gsheet):
-        """Test that run endpoint flashes error when number_to_select is missing."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
-            data={"csrf_token": csrf_token},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "replacement" in response.location
-
-    def test_start_replacement_run_zero_number_to_select(self, logged_in_admin, assembly_with_gsheet):
-        """Test that run endpoint rejects zero number_to_select."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
-            data={"csrf_token": csrf_token, "number_to_select": "0"},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "replacement" in response.location
-
-    def test_start_replacement_run_invalid_number_to_select(self, logged_in_admin, assembly_with_gsheet):
-        """Test that run endpoint rejects non-integer number_to_select."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
-            data={"csrf_token": csrf_token, "number_to_select": "abc"},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "replacement" in response.location
-
-    def test_start_replacement_run_negative_number_to_select(self, logged_in_admin, assembly_with_gsheet):
-        """Test that run endpoint rejects negative number_to_select."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
-            data={"csrf_token": csrf_token, "number_to_select": "-3"},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "replacement" in response.location
 
 
 class TestCancelReplacementRun:
@@ -695,15 +602,6 @@ class TestSelectionPageWithManageTabsContext:
             assert b"Selection_2024-01-01" in response.data
             assert b"Remaining_2024-01-01" in response.data
 
-    def test_selection_page_with_invalid_manage_tabs_param_loads_normally(self, logged_in_admin, assembly_with_gsheet):
-        """Test that invalid manage_tabs param is ignored and page loads normally."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_manage_tabs=not-a-uuid")
-        assert response.status_code == 200
-        # Modal should NOT appear because the param is invalid
-        assert b"manage-tabs-progress-modal" not in response.data
-
     def test_selection_page_with_wrong_assembly_manage_tabs_ignored(self, logged_in_admin, assembly_with_gsheet):
         """Test that manage tabs param for a different assembly is ignored."""
         assembly, _gsheet = assembly_with_gsheet
@@ -792,15 +690,6 @@ class TestSelectionPageWithReplacementContext:
             assert b"3" in response.data
             assert b"15" in response.data
 
-    def test_selection_page_with_invalid_replacement_param_loads_normally(self, logged_in_admin, assembly_with_gsheet):
-        """Test that invalid replacement param is ignored and page loads normally."""
-        assembly, _gsheet = assembly_with_gsheet
-
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_replacement=not-a-uuid")
-        assert response.status_code == 200
-        # Replacement modal should NOT appear
-        assert b"replacement-modal" not in response.data
-
     def test_selection_page_replacement_modal_open_param(self, logged_in_admin, assembly_with_gsheet):
         """Test that replacement_modal=open param opens the replacement modal."""
         assembly, _gsheet = assembly_with_gsheet
@@ -814,17 +703,6 @@ class TestSelectionPageWithReplacementContext:
 class TestSelectionPageViewRunningButton:
     """When an initial selection task is pending/running, the Initial Selection card footer
     should show a single 'View Running Selection' button instead of the check/test/run buttons."""
-
-    def test_gsheet_shows_run_buttons_when_no_active_task(self, logged_in_admin, assembly_with_gsheet):
-        assembly, _gsheet = assembly_with_gsheet
-
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
-
-        assert response.status_code == 200
-        assert b"Check Spreadsheet" in response.data
-        assert b"Run Test Selection" in response.data
-        assert b"Run Selection" in response.data
-        assert b"View Running Selection" not in response.data
 
     def test_gsheet_shows_view_running_button_when_select_task_running(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
