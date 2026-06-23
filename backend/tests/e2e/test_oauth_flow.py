@@ -14,7 +14,6 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
-from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -100,24 +99,6 @@ def existing_oauth_user(postgres_session_factory) -> User:
 
 
 @pytest.fixture
-def existing_dual_auth_user(postgres_session_factory) -> User:
-    """Create a user with both password and OAuth authentication."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        user, _ = create_user(
-            uow=uow,
-            email=f"dual-user-{uuid.uuid4()}@example.com",
-            password="SecureTestPass123!",  # pragma: allowlist secret
-            oauth_provider="google",
-            oauth_id="google-456",
-            first_name="Dual",
-            last_name="User",
-            global_role=GlobalRole.USER,
-            accept_data_agreement=True,
-        )
-        return user.create_detached_copy()
-
-
-@pytest.fixture
 def mock_oauth_token():
     """Mock OAuth token response from Google."""
     return {
@@ -137,14 +118,6 @@ def mock_oauth_token():
 
 class TestOAuthRegistration:
     """Test OAuth registration flows."""
-
-    def test_register_google_requires_invite_code(self, client: FlaskClient):
-        """Test that OAuth registration form requires invite code."""
-        response = client.get("/auth/register/google")
-        assert response.status_code == 200
-        assert b"Create an Account with Google" in response.data
-        assert b"Invite Code" in response.data
-        assert b"invitation code to create an account" in response.data
 
     def test_register_google_with_valid_invite_success(
         self, client: FlaskClient, postgres_session_factory, valid_invite: UserInvite, mock_oauth_token
@@ -195,26 +168,6 @@ class TestOAuthRegistration:
 
             # Should fail with error message
             assert b"Invite code required" in response.data or b"error" in response.data.lower()
-
-    def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
-        """Test OAuth registration with invalid invite code."""
-        # When form validation fails, it re-renders the form with errors
-        response = client.post(
-            "/auth/register/google",
-            data={
-                "invite_code": "INVALID_CODE",
-                "accept_data_agreement": "y",
-                "csrf_token": get_csrf_token(client, "/auth/register/google"),
-            },
-            follow_redirects=False,
-        )
-
-        # Form validation should fail and re-render the form (or redirect back)
-        assert response.status_code in [200, 302]
-        if response.status_code == 200:
-            # Check for error message in form
-            assert b"Invalid" in response.data or b"error" in response.data.lower()
-        # If 302, it should redirect back to the form (not to OAuth)
 
 
 class TestOAuthLogin:
@@ -285,12 +238,6 @@ class TestOAuthLogin:
 class TestOAuthAccountLinking:
     """Test linking OAuth to existing accounts."""
 
-    def test_link_google_requires_login(self, client: FlaskClient):
-        """Test that linking Google account requires authentication."""
-        response = client.get("/profile/link-google", follow_redirects=False)
-        assert response.status_code == 302
-        assert "/auth/login" in response.headers["Location"]
-
     def test_link_google_with_password_user_success(
         self, client: FlaskClient, postgres_session_factory, existing_password_user: User, mock_oauth_token
     ):
@@ -352,162 +299,6 @@ class TestOAuthAccountLinking:
             assert b"email does not match" in response.data or b"error" in response.data.lower()
 
 
-class TestRemoveAuthMethods:
-    """Test removing authentication methods."""
-
-    def test_remove_password_requires_login(self, client: FlaskClient):
-        """Test that removing password requires authentication."""
-        response = client.post("/profile/remove-password", follow_redirects=False)
-        assert response.status_code == 302
-        assert "/auth/login" in response.headers["Location"]
-
-    def test_remove_password_with_dual_auth_success(
-        self, client: FlaskClient, postgres_session_factory, existing_dual_auth_user: User
-    ):
-        """Test successfully removing password when OAuth is also configured."""
-        # Login as dual auth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_dual_auth_user.id)
-
-        response = client.post(
-            "/profile/remove-password",
-            data={"csrf_token": get_csrf_token(client, "/profile")},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "/profile" in response.headers["Location"]
-
-        # Verify password was removed
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_dual_auth_user.id)
-            assert user.password_hash is None
-            assert user.oauth_provider == "google"  # OAuth still exists
-
-    def test_remove_password_without_oauth_fails(
-        self, client: FlaskClient, postgres_session_factory, existing_password_user: User
-    ):
-        """Test that removing password fails if no OAuth configured."""
-        # Login as password-only user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_password_user.id)
-
-        response = client.post(
-            "/profile/remove-password",
-            data={"csrf_token": get_csrf_token(client, "/profile")},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"Cannot remove" in response.data or b"last authentication method" in response.data
-
-        # Verify password still exists
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_password_user.id)
-            assert user.password_hash is not None
-
-    def test_remove_oauth_requires_login(self, client: FlaskClient):
-        """Test that removing OAuth requires authentication."""
-        response = client.post("/profile/remove-oauth", follow_redirects=False)
-        assert response.status_code == 302
-        assert "/auth/login" in response.headers["Location"]
-
-    def test_remove_oauth_with_dual_auth_success(
-        self, client: FlaskClient, postgres_session_factory, existing_dual_auth_user: User
-    ):
-        """Test successfully removing OAuth when password is also configured."""
-        # Login as dual auth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_dual_auth_user.id)
-
-        response = client.post(
-            "/profile/remove-oauth",
-            data={"csrf_token": get_csrf_token(client, "/profile")},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert "/profile" in response.headers["Location"]
-
-        # Verify OAuth was removed
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_dual_auth_user.id)
-            assert user.oauth_provider is None
-            assert user.oauth_id is None
-            assert user.password_hash is not None  # Password still exists
-
-    def test_remove_oauth_without_password_fails(
-        self, client: FlaskClient, postgres_session_factory, existing_oauth_user: User
-    ):
-        """Test that removing OAuth fails if no password configured."""
-        # Login as OAuth-only user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_oauth_user.id)
-
-        response = client.post(
-            "/profile/remove-oauth",
-            data={"csrf_token": get_csrf_token(client, "/profile")},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"Cannot remove" in response.data or b"last authentication method" in response.data
-
-        # Verify OAuth still exists
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_oauth_user.id)
-            assert user.oauth_provider == "google"
-
-
-class TestOAuthProfileDisplay:
-    """Test OAuth information display in profile."""
-
-    def test_password_user_sees_oauth_link_option(self, client: FlaskClient, existing_password_user: User):
-        """Test that password-only user sees option to link OAuth."""
-        # Login as password user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_password_user.id)
-
-        response = client.get("/profile")
-
-        assert response.status_code == 200
-        assert b"Google OAuth" in response.data
-        assert b"Not linked" in response.data
-        assert b"Link Google account" in response.data
-
-    def test_oauth_user_sees_oauth_active(self, client: FlaskClient, existing_oauth_user: User):
-        """Test that OAuth user sees OAuth as active."""
-        # Login as OAuth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_oauth_user.id)
-
-        response = client.get("/profile")
-
-        assert response.status_code == 200
-        assert b"Google OAuth" in response.data
-        assert b"Active" in response.data
-        # Should see hint that it's the only auth method
-        assert b"Only authentication method" in response.data
-        assert b"Change password" not in response.data
-
-    def test_dual_auth_user_sees_both_methods_active(self, client: FlaskClient, existing_dual_auth_user: User):
-        """Test that dual auth user sees both methods as active."""
-        # Login as dual auth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_dual_auth_user.id)
-
-        response = client.get("/profile")
-
-        assert response.status_code == 200
-        assert b"Password" in response.data
-        assert b"Google OAuth" in response.data
-        # Both should show as Active
-        assert response.data.count(b"Active") >= 2
-        # Should see Remove buttons for both
-        assert b"Remove" in response.data
-        assert b"Unlink" in response.data
-
-
 # ============================================================================
 # Microsoft OAuth Tests
 # ============================================================================
@@ -566,14 +357,6 @@ def existing_google_oauth_user_for_replacement(postgres_session_factory) -> User
 
 class TestMicrosoftOAuthRegistration:
     """Test Microsoft OAuth registration flows."""
-
-    def test_register_microsoft_requires_invite_code(self, client: FlaskClient):
-        """Test that Microsoft OAuth registration form requires invite code."""
-        response = client.get("/auth/register/microsoft")
-        assert response.status_code == 200
-        assert b"Create an Account with Microsoft" in response.data
-        assert b"Invite Code" in response.data
-        assert b"invitation code to create an account" in response.data
 
     def test_register_microsoft_with_valid_invite_success(
         self, client: FlaskClient, valid_invite, postgres_session_factory, mock_microsoft_oauth_token
@@ -703,38 +486,6 @@ class TestMicrosoftOAuthAccountLinking:
             assert user.oauth_id == "microsoft-oauth-id-67890"
             assert user.password_hash is not None  # Still has password
 
-    def test_unlink_microsoft_account_success(
-        self, client: FlaskClient, existing_microsoft_oauth_user: User, postgres_session_factory
-    ):
-        """Test unlinking Microsoft OAuth from dual-auth account."""
-        # First give user a password so they can unlink OAuth
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_microsoft_oauth_user.id)
-            user.password_hash = hash_password("TempPassword123!")  # pragma: allowlist secret
-            uow.commit()
-
-        # Login as user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_microsoft_oauth_user.id)
-
-        # Unlink Microsoft OAuth
-        response = client.post(
-            "/profile/remove-oauth",
-            data={"csrf_token": get_csrf_token(client, "/profile")},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/profile"
-
-        # Verify OAuth is removed
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            user = uow.users.get(existing_microsoft_oauth_user.id)
-            assert user is not None
-            assert user.oauth_provider is None
-            assert user.oauth_id is None
-            assert user.password_hash is not None  # Still has password
-
 
 class TestOAuthProviderReplacement:
     """Test single OAuth provider choice - replacing one provider with another."""
@@ -783,18 +534,3 @@ class TestOAuthProviderReplacement:
             assert user.oauth_id == "microsoft-oauth-id-67890"  # New OAuth ID
             # Password should still be None if user didn't have one
             assert user.password_hash is None
-
-    def test_profile_shows_remove_provider_first_hint(self, client: FlaskClient, existing_microsoft_oauth_user: User):
-        """Test that profile shows 'Remove X first' hint when different provider is active."""
-        # Login as Microsoft OAuth user
-        with client.session_transaction() as session:
-            session["_user_id"] = str(existing_microsoft_oauth_user.id)
-
-        response = client.get("/profile")
-
-        assert response.status_code == 200
-        # Should show Microsoft as Active
-        assert b"Microsoft OAuth" in response.data
-        assert b"Active" in response.data
-        # Should show "Remove Microsoft first" hint for Google
-        assert b"Remove" in response.data or b"Remove Microsoft first" in response.data

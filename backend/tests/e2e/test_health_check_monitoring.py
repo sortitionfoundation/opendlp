@@ -90,6 +90,7 @@ class TestMonitorSelectionHealth:
         data = response.get_json()
         assert data["monitor_selection_status"] == "NOT_CONFIGURED"
 
+    @pytest.mark.db_semantics
     def test_ok_when_recent_completed_select_and_completed_cleanup(
         self, client: FlaskClient, postgres_session_factory, configured_assembly
     ):
@@ -118,6 +119,7 @@ class TestMonitorSelectionHealth:
             assert "/assembly/" in data["monitor_selection_last_run_url"]
             assert "/selection/" in data["monitor_selection_last_run_url"]
 
+    @pytest.mark.db_semantics
     def test_stale_when_completed_select_too_old(
         self, client: FlaskClient, postgres_session_factory, configured_assembly
     ):
@@ -133,12 +135,14 @@ class TestMonitorSelectionHealth:
             assert response.status_code == 500, url
             assert response.get_json()["monitor_selection_status"] == "STALE"
 
+    @pytest.mark.db_semantics
     def test_stale_when_no_records_exist(self, client: FlaskClient, configured_assembly):
         for url in ("/health", "/health/monitor_selection"):
             response = _run_with_mocked_helpers(client, url)
             assert response.status_code == 500, url
             assert response.get_json()["monitor_selection_status"] == "STALE"
 
+    @pytest.mark.db_semantics
     def test_failed_when_latest_select_failed(self, client: FlaskClient, postgres_session_factory, configured_assembly):
         _seed_record(
             postgres_session_factory,
@@ -155,6 +159,7 @@ class TestMonitorSelectionHealth:
             assert data["monitor_selection_status"] == "FAILED"
             assert "permission denied" in data["monitor_selection_message"]
 
+    @pytest.mark.db_semantics
     def test_failed_when_latest_select_cancelled(
         self, client: FlaskClient, postgres_session_factory, configured_assembly
     ):
@@ -169,6 +174,7 @@ class TestMonitorSelectionHealth:
         assert response.status_code == 500
         assert response.get_json()["monitor_selection_status"] == "FAILED"
 
+    @pytest.mark.db_semantics
     def test_cleanup_failed_overrides_ok_status(
         self, client: FlaskClient, postgres_session_factory, configured_assembly
     ):
@@ -193,6 +199,7 @@ class TestMonitorSelectionHealth:
             data = response.get_json()
             assert data["monitor_cleanup_status"] == "FAILED"
 
+    @pytest.mark.db_semantics
     def test_pending_within_window(self, client: FlaskClient, postgres_session_factory, configured_assembly):
         _seed_record(
             postgres_session_factory,
@@ -206,6 +213,7 @@ class TestMonitorSelectionHealth:
             assert response.status_code == 200, url
             assert response.get_json()["monitor_selection_status"] == "PENDING"
 
+    @pytest.mark.db_semantics
     def test_stale_when_running_too_long(self, client: FlaskClient, postgres_session_factory, configured_assembly):
         _seed_record(
             postgres_session_factory,
