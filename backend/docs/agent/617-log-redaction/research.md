@@ -183,8 +183,68 @@ e.g. `logger.info("Password reset email sent to user %s", user.id)`.
 **Recommendation:** Option 1 for our own code (bounded list — ~6 files above)
 **plus** the redaction net (Option A) for everything else and future code.
 
+## Step 0 — make logger usage consistent (prerequisite)
+
+Today three logging styles coexist (see "Logger usage is mixed" above). This
+matters for redaction in two ways:
+
+- **Coverage:** a field-aware redactor (structlog processor, Option B) only
+  works if everything flows through structlog. Right now the PII-heavy modules
+  use plain stdlib logging, which is why Option A (a stdlib filter) is forced.
+- **The audit:** logging `user.id` as a *structured field* (`logger.info("...",
+  user_id=user.id)`) is cleaner and machine-queryable — but only consistently
+  available if we standardise the call style.
+
+Standardising first means the redaction layer has one well-defined path to
+guard, and later code has one obvious pattern to copy.
+
+### Options for the target style
+
+**Option S1 — standardise on `structlog.get_logger(__name__)` everywhere ✅ recommended**
+
+Convert the stdlib `logging.getLogger(__name__)` module loggers and, where
+practical, the blueprint `current_app.logger` calls to a module-level
+`structlog` logger.
+
+- **Pros:** structured key/value logging throughout (enables field-aware
+  redaction via Option B *and* clean `user_id=` audit fields); one idiom for
+  new code; aligns with the already-configured structlog stack.
+- **Cons:** largest diff; `current_app.logger` is the conventional Flask idiom
+  and some prefer keeping it in request-handling code; need to confirm
+  structlog's `merge_contextvars` gives us request context we'd otherwise get
+  from Flask.
+
+**Option S2 — standardise on stdlib `logging.getLogger(__name__)` everywhere**
+
+Move the three structlog modules and the blueprints onto stdlib loggers.
+
+- **Pros:** smaller conceptual surface; stdlib filter (Option A) is the natural
+  fit; no dependency on structlog call-site idioms.
+- **Cons:** loses structured-field logging where we already have it; pushes us
+  toward string-interpolated messages, which are exactly what's harder to
+  redact and audit. Feels like the wrong direction.
+
+**Option S3 — leave blueprints on `current_app.logger`, standardise the rest on structlog**
+
+Pragmatic middle ground: module/service code uses `structlog`; request handlers
+keep `current_app.logger` (which still funnels through the same handlers).
+
+- **Pros:** smaller diff than S1; keeps the idiomatic Flask logger in views;
+  redaction net (Option A) still covers blueprints because they hit the same
+  handlers.
+- **Cons:** two styles persist; blueprint logs stay string-interpolated (so the
+  email sites in `admin.py` rely on redaction rather than structured `user_id`).
+
+**Recommendation:** **S1** if we're willing to absorb the diff (best end state
+for both redaction and the audit); **S3** as the pragmatic fallback. Either way
+the service-layer PII modules (`*_service.py`, `adapters/email.py`) should move
+to structlog, since that's where the email sites are.
+
 ## Proposed shape of the work
 
+0. **Make logger usage consistent** (Step 0 above) — pick a target style and
+   converge the loggers. Do this first so the redaction layer guards a single
+   path and the audit can use structured fields.
 1. New module `backend/src/opendlp/log_redaction.py`: a `RedactingFilter`
    (and optionally a redacting formatter mixin), with the email regex + a
    sensitive-keys denylist seeded from `GunicornLogger.header_safe`.
@@ -197,6 +257,11 @@ e.g. `logger.info("Password reset email sent to user %s", user.id)`.
 
 ## Open questions for review
 
+- **Step 0 target style:** S1 (all structlog), S2 (all stdlib), or S3
+  (structlog for services, `current_app.logger` for blueprints)? Note: if we
+  adopt S1/S2 such that all PII flows through structlog, the **field-aware
+  structlog processor (Option B) becomes viable** and could replace or
+  complement the stdlib filter (Option A).
 - **Rate-limit-by-email logging** (`login_rate_limit_service.py:70`): redact,
   hash, or drop the email? No UUID exists at that point.
 - **Secret denylist scope:** start with the `header_safe` seed only, or also
