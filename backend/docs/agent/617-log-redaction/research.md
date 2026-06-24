@@ -271,11 +271,10 @@ This logs the email pre-auth, where no `user.id` exists. Options:
   line. Cost: not human readable, and needs the app secret available at that
   call site.
 
-**Recommendation / remaining decision:** use the **HMAC hash**. It satisfies
-GDPR better than masking while preserving the correlation we need. Masking is
-an acceptable lighter-weight fallback if we decide the residual domain/initial
-leakage is fine for this one line — flagging this as the one point that still
-needs Hamish's sign-off.
+**Decision (resolved):** use the **HMAC hash**. It satisfies GDPR better than
+masking while preserving the correlation we need. Implemented as
+`log_redaction.hash_email` (HMAC-SHA256 keyed on `SECRET_KEY`, truncated,
+`email#…` prefix); the login rate-limit log line now emits `email_hash`.
 
 ## Step 0 — make logger usage consistent (prerequisite) — S1 chosen
 

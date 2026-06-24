@@ -3,6 +3,7 @@ ABOUTME: Covers redact_emails, is_sensitive_key, censor_pii, and hash_email (TDD
 
 import pytest
 
+from opendlp.config import get_secret_key
 from opendlp.log_redaction import (
     EMAIL_PLACEHOLDER,
     REDACTED,
@@ -11,6 +12,16 @@ from opendlp.log_redaction import (
     is_sensitive_key,
     redact_emails,
 )
+
+
+class TestGetSecretKey:
+    def test_get_secret_key_reads_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("SECRET_KEY", "abc")
+        assert get_secret_key() == "abc"
+
+    def test_get_secret_key_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+        assert get_secret_key() == "dev-secret-key-change-in-production"  # pragma: allowlist secret
 
 
 class TestRedactEmails:

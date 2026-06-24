@@ -23,20 +23,9 @@ from opendlp.config import (
     get_registration_form_html_max_bytes,
     get_registration_image_max_edge_px,
     get_registration_thank_you_html_max_bytes,
-    get_secret_key,
     get_task_timeout_hours,
     to_bool,
 )
-
-
-class TestGetSecretKey:
-    def test_get_secret_key_reads_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("SECRET_KEY", "abc")
-        assert get_secret_key() == "abc"
-
-    def test_get_secret_key_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("SECRET_KEY", raising=False)
-        assert get_secret_key() == "dev-secret-key-change-in-production"
 
 
 class TestToBool:

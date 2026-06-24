@@ -8,6 +8,8 @@ from io import StringIO
 import pytest
 import structlog
 
+from opendlp.logging import pre_chain
+
 
 @pytest.fixture
 def capture_json_handler() -> Iterator[StringIO]:
@@ -17,8 +19,6 @@ def capture_json_handler() -> Iterator[StringIO]:
     removes the temporary handler again. Uses the real foreign_pre_chain from
     logging.py so redaction wiring is genuinely exercised.
     """
-    from opendlp.logging import pre_chain
-
     stream = StringIO()
     handler = logging.StreamHandler(stream)
     handler.setFormatter(

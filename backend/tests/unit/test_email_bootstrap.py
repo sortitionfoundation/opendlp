@@ -1,7 +1,6 @@
 """ABOUTME: Unit tests for email system including bootstrap factory
 ABOUTME: Tests email adapter configuration and multiple recipient handling"""
 
-import logging
 import os
 from unittest.mock import patch
 

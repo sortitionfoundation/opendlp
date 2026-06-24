@@ -213,6 +213,16 @@ This approach maintains the separation between domain objects (plain Python) and
 - Role-based access control throughout
 - **Frontend:** Follow [Frontend Security Guidelines](docs/frontend_security.md) for CSP compliance
 
+### Logging (PII / secrets)
+
+- Use `structlog.get_logger(__name__)` for all logging (services, adapters, and
+  blueprints). Do not use `logging.getLogger` or `current_app.logger` in new code.
+- Never log raw PII. Log `user_id` (a UUID), not email/name/etc. Where no UUID
+  exists (e.g. pre-auth), hash the value with `log_redaction.hash_email`.
+- `log_redaction.censor_pii` redacts emails and sensitive fields from all log
+  output as a backstop — treat it as a safety net, not a licence to log PII.
+- See [docs/agent/617-log-redaction/](docs/agent/617-log-redaction/) for the design.
+
 ### GDPR and the right to be forgotten
 
 We need to support people asking for their details to be deleted. So we should be able to find all persistent copies of someones details easily. Our strategy is to blank the details but keep a row with a unique ID - so anything that refers to that ID will not have a broken reference, but instead will know that the details have been deleted.

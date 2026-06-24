@@ -507,7 +507,7 @@ class FlaskTestConfig(FlaskBaseConfig):
             postgres_cfg = PostgresCfg.from_env()
             postgres_cfg.port = 54322
             self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
-        self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
+        self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105  # pragma: allowlist secret
         self.FLASK_ENV = "testing"
 
         # Use filesystem for session cache for testing
@@ -552,7 +552,7 @@ class FlaskProductionConfig(FlaskConfig):
         # self.LOG_TO_STDOUT = True
 
         # Ensure production has proper secret key
-        if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105
+        if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105  # pragma: allowlist secret
             raise InvalidConfig("SECRET_KEY must be set in production")
 
         # Ensure production has email adapter configured
