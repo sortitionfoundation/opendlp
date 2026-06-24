@@ -7,7 +7,8 @@ import uuid
 from collections.abc import Callable
 from typing import Any, cast
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+import structlog
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -85,6 +86,8 @@ def _is_safe_redirect_url(url: str) -> bool:
 
 dev_bp = Blueprint("dev", __name__)
 
+logger = structlog.get_logger(__name__)
+
 
 # =============================================================================
 # Developer Tools Dashboard (Admin-only)
@@ -159,8 +162,8 @@ def service_docs_execute() -> ResponseReturnValue:
         return jsonify(result), 200
 
     except Exception as e:
-        current_app.logger.error(f"Service docs execute error: {e}")
-        current_app.logger.exception("Full traceback:")
+        logger.error(f"Service docs execute error: {e}")
+        logger.exception("Full traceback:")
         return jsonify({
             "status": "error",
             "error": "An internal error occurred while executing the service.",

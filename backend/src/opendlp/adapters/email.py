@@ -1,14 +1,15 @@
 """ABOUTME: Email adapter implementations for sending emails via various backends
 ABOUTME: Supports SMTP, console logging, and future transactional email services"""
 
-import logging
 import smtplib
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class EmailAdapter(ABC):

@@ -1,15 +1,14 @@
 """ABOUTME: Redis-based rate limiting for login attempts
 ABOUTME: Tracks failed login attempts by email and IP address to prevent brute force attacks"""
 
-import logging
-
+import structlog
 from redis import Redis
 
 from opendlp.config import RedisCfg
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.translations import gettext as _
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Redis key prefixes for login rate limiting
 _KEY_PREFIX_EMAIL = "login_ratelimit:email:"

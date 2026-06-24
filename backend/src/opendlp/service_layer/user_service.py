@@ -1,9 +1,10 @@
 """ABOUTME: User management service layer with business logic for user operations
 ABOUTME: Handles user creation, authentication, role assignment, and invite validation"""
 
-import logging
 import uuid
 from datetime import UTC, datetime
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
@@ -31,7 +32,7 @@ from .permissions import can_manage_assembly, can_view_assembly, has_global_admi
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def create_user(

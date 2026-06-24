@@ -5,7 +5,8 @@ import math
 import uuid
 from datetime import UTC, datetime
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+import structlog
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -22,6 +23,8 @@ from opendlp.translations import gettext as _
 from ..forms import UploadRespondentsCsvForm
 
 respondents_legacy_bp = Blueprint("respondents_legacy", __name__)
+
+logger = structlog.get_logger(__name__)
 
 PER_PAGE = 50
 
@@ -81,8 +84,8 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Error viewing respondents for assembly {assembly_id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.error(f"Error viewing respondents for assembly {assembly_id}: {e}")
+        logger.exception("stacktrace")
         flash(_("An unexpected error occurred"), "error")
         return redirect(url_for("main.dashboard"))
 
@@ -157,7 +160,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
 
     except InvalidSelection as e:
-        current_app.logger.warning(f"Invalid respondents CSV for assembly {assembly_id}: {e}")
+        logger.warning(f"Invalid respondents CSV for assembly {assembly_id}: {e}")
         flash(_("CSV import failed: %(error)s", error=str(e)), "error")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
@@ -170,8 +173,8 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Could not read CSV file. Please ensure it is UTF-8 encoded."), "error")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Upload respondents error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.error(f"Upload respondents error for assembly {assembly_id}: {e}")
+        logger.exception("stacktrace")
         flash(_("An unexpected error occurred during import"), "error")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
 
@@ -191,7 +194,7 @@ def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to reset selection status"), "error")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
+        logger.exception("stacktrace")
         flash(_("An unexpected error occurred"), "error")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))

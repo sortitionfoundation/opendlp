@@ -1,9 +1,10 @@
 """ABOUTME: Email confirmation service layer for managing email verification
 ABOUTME: Handles confirmation token creation, validation, rate limiting, and email sending"""
 
-import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
@@ -14,7 +15,7 @@ from opendlp.domain.users import User
 from .exceptions import InvalidConfirmationToken, RateLimitExceeded
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Configuration constants
 DEFAULT_TOKEN_EXPIRY_HOURS = 24

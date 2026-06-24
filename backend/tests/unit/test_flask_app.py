@@ -6,10 +6,38 @@ import uuid
 from datetime import timedelta
 
 import pytest
+import structlog
 from flask import Flask
 from flask.testing import FlaskClient
 
 from opendlp.entrypoints.flask_app import create_app
+
+
+class TestRequestContextLogging:
+    """Characterisation tests for per-request structlog contextvars binding.
+
+    This contract (request_id / view / peer bound on every request, no PII) is
+    relied on by the log redaction work for request correlation - lock it so a
+    future change can't silently drop it.
+    """
+
+    def test_before_request_binds_request_id_contextvars(self) -> None:
+        app = create_app("testing")
+        with app.test_request_context("/dashboard", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}):
+            app.preprocess_request()
+            ctx = structlog.contextvars.get_contextvars()
+            assert ctx.get("request_id")
+            assert ctx.get("view") == "/dashboard"
+            assert ctx.get("peer") == "1.2.3.4"
+        structlog.contextvars.clear_contextvars()
+
+    def test_request_context_does_not_bind_pii(self) -> None:
+        app = create_app("testing")
+        with app.test_request_context("/dashboard", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}):
+            app.preprocess_request()
+            ctx = structlog.contextvars.get_contextvars()
+            assert "email" not in ctx
+        structlog.contextvars.clear_contextvars()
 
 
 class TestFlaskApp:

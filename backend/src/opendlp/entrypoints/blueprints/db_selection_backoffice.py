@@ -3,6 +3,7 @@ ABOUTME: Provides /backoffice/assembly/*/selection/db/* routes for selection, pr
 
 import uuid
 
+import structlog
 from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
@@ -38,6 +39,8 @@ from opendlp.service_layer.sortition import (
 from opendlp.translations import gettext as _
 
 db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 @db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/check", methods=["POST"])
@@ -79,8 +82,8 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Check DB data error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Check DB data error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An unexpected error occurred while checking data"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -121,8 +124,8 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Error starting DB selection for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Error starting DB selection for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An unexpected error occurred while starting the selection task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -147,9 +150,7 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             return "", 404
 
         if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
-            )
+            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
             return "", 404
 
         return render_template(
@@ -167,7 +168,7 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
     except InsufficientPermissions:
         return "", 403
     except Exception as e:
-        current_app.logger.error(f"DB selection progress modal error: {e}")
+        logger.error(f"DB selection progress modal error: {e}")
         return "", 500
 
 
@@ -190,20 +191,20 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
             )
         )
     except InvalidSelection as e:
-        current_app.logger.warning(f"Cannot cancel task: {e}")
+        logger.warning(f"Cannot cancel task: {e}")
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
-        current_app.logger.warning(f"Task not found for cancel: {e}")
+        logger.warning(f"Task not found for cancel: {e}")
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to cancel task: {e}")
+        logger.warning(f"Insufficient permissions to cancel task: {e}")
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Cancel DB selection error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Cancel DB selection error: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -236,8 +237,8 @@ def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Download selected CSV error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Download selected CSV error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while generating the download"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -270,8 +271,8 @@ def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Download remaining CSV error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Download remaining CSV error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while generating the download"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -307,8 +308,8 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Download selection report error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Download selection report error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while generating the download"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -384,8 +385,8 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Save DB settings error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Save DB settings error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while saving settings"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -411,7 +412,7 @@ def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to reset selection status"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Reset DB selection error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.error(f"Reset DB selection error for assembly {assembly_id}: {e}")
+        logger.exception("Full stacktrace:")
         flash(_("An error occurred while resetting respondent status"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))

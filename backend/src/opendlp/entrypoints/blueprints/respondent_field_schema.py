@@ -4,7 +4,8 @@ ABOUTME: View the schema, edit labels, move between groups, reorder, delete, ini
 import contextlib
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+import structlog
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -50,6 +51,8 @@ from opendlp.service_layer.respondent_field_schema_service import (
 from opendlp.translations import gettext as _
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 def _schema_page_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -157,11 +160,11 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id}: {e}")
+        logger.warning(f"Insufficient permissions for assembly {assembly_id}: {e}")
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
 

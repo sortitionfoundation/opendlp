@@ -4,7 +4,8 @@ ABOUTME: View / save / create / skeleton / QR-download / image upload routes for
 import uuid
 from typing import Any, cast
 
-from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+import structlog
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
@@ -53,6 +54,8 @@ from opendlp.service_layer.registration_page_service import (
 from opendlp.translations import gettext as _
 
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
@@ -158,17 +161,15 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             edit_mode=edit_mode,
         ), 200
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(
-            f"View assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
-        )
+        logger.error(f"View assembly registration error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while loading registration settings"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -234,7 +235,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing
         error_message = "; ".join(e.problems)
-        current_app.logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
+        logger.warning(f"Registration page not ready for assembly {assembly_id}: {error_message}")
         flash(error_message, "error")
         return redirect_preserving_scroll(error_redirect_url)
     except RegistrationPageNotFoundError:
@@ -242,22 +243,20 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Please create a registration page first from the Details tab."), "warning")
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("You don't have permission to modify this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
-        current_app.logger.warning(f"Validation error for assembly {assembly_id}: {e}")
+        logger.warning(f"Validation error for assembly {assembly_id}: {e}")
         flash(str(e), "error")
         return redirect_preserving_scroll(error_redirect_url)
     except Exception as e:
-        current_app.logger.error(
-            f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}"
-        )
-        current_app.logger.exception("Full traceback:")
+        logger.error(f"Save assembly registration error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
         return redirect_preserving_scroll(error_redirect_url)
 
@@ -282,12 +281,12 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
         # Already has a registration page
-        current_app.logger.warning(f"Cannot create registration page for assembly {assembly_id}: {e}")
+        logger.warning(f"Cannot create registration page for assembly {assembly_id}: {e}")
         flash(_("This assembly already has a registration page."), "warning")
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Error creating registration page for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full traceback:")
+        logger.error(f"Error creating registration page for assembly {assembly_id}: {e}")
+        logger.exception("Full traceback:")
         flash(_("An error occurred while creating the registration page"), "error")
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
@@ -305,7 +304,7 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError:
         return jsonify({"error": _("Assembly not found")}), 404
     except Exception as e:
-        current_app.logger.error(f"Generate skeleton error for assembly {assembly_id}: {e}")
+        logger.error(f"Generate skeleton error for assembly {assembly_id}: {e}")
         return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
 
 
@@ -343,15 +342,15 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
         # abort(404) for a missing short URL should surface as a real 404, not a redirect
         raise
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("You don't have permission to access this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Download QR code error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(f"Download QR code error for assembly {assembly_id} user {current_user.id}: {e}")
         flash(_("An error occurred while generating QR code"), "error")
         return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
 
@@ -384,7 +383,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         raw = upload.read()
     except Exception as e:
-        current_app.logger.warning(f"Failed to read uploaded image for assembly {assembly_id}: {e}")
+        logger.warning(f"Failed to read uploaded image for assembly {assembly_id}: {e}")
         return jsonify({"error": _("Failed to read the uploaded file")}), 400
 
     alt = (request.form.get("alt") or "").strip()
@@ -411,8 +410,8 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError:
         return jsonify({"error": _("Assembly not found")}), 404
     except Exception as e:
-        current_app.logger.error(f"Image upload error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full traceback:")
+        logger.error(f"Image upload error for assembly {assembly_id}: {e}")
+        logger.exception("Full traceback:")
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
 
     return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
@@ -439,7 +438,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     except NotFoundError:
         return jsonify({"error": _("Assembly not found")}), 404
     except Exception as e:
-        current_app.logger.error(f"Update image alt error for assembly {assembly_id} image {image_id}: {e}")
+        logger.error(f"Update image alt error for assembly {assembly_id} image {image_id}: {e}")
         return jsonify({"error": _("An error occurred while updating the image")}), 500
 
     return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 200
@@ -463,7 +462,7 @@ def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     except NotFoundError:
         return jsonify({"error": _("Assembly not found")}), 404
     except Exception as e:
-        current_app.logger.error(f"Delete image error for assembly {assembly_id} image {image_id}: {e}")
+        logger.error(f"Delete image error for assembly {assembly_id} image {image_id}: {e}")
         return jsonify({"error": _("An error occurred while deleting the image")}), 500
 
     return "", 204
