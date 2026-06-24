@@ -2,6 +2,7 @@
 ABOUTME: Builds a fake-backed app with in-memory sessions and seeds data through a shared FakeStore — no PostgreSQL, no Redis"""
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock
 
 import pytest
 from flask.testing import FlaskClient
@@ -46,6 +47,23 @@ def stub_celery_async_result(monkeypatch):
     by the seeded SelectionRunRecord and avoids dangling AsyncResult objects.
     """
     monkeypatch.setattr(sortition.app.app, "AsyncResult", lambda *args, **kwargs: _NoCeleryResult())
+
+
+@pytest.fixture(autouse=True)
+def _mock_registration_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prevent rate limiting service from connecting to Redis in component tests.
+
+    Component tests have no Redis. This stubs _get_redis so the service always
+    reports no prior activity (counters at zero) and writes are no-ops.
+    """
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = None  # no counter = not rate-limited
+    mock_pipeline = MagicMock()
+    mock_redis.pipeline.return_value = mock_pipeline
+    monkeypatch.setattr(
+        "opendlp.service_layer.registration_bot_protection_service._get_redis",
+        lambda: mock_redis,
+    )
 
 
 @pytest.fixture
