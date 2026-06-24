@@ -11,7 +11,6 @@ from flask import (
     abort,
     current_app,
     flash,
-    jsonify,
     make_response,
     redirect,
     render_template,
@@ -168,6 +167,12 @@ def _render_registration_page(
         if open_modal == "details" and open_image_id is not None:
             open_image = next((img for img in images if img["id"] == str(open_image_id)), None)
 
+        # The skeleton modal's content is generated server-side; build it for the
+        # full-page fallback so the modal renders without JS.
+        skeleton_html = ""
+        if open_modal == "skeleton":
+            skeleton_html = generate_starter_form_html(uow, current_user.id, assembly_id)
+
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
@@ -194,6 +199,7 @@ def _render_registration_page(
             edit_mode=edit_mode,
             open_modal=open_modal,
             open_image=open_image,
+            skeleton_html=skeleton_html,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -330,21 +336,32 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
-@login_required
-def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Generate starter HTML form skeleton based on assembly's field definitions."""
+def _render_skeleton_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the Form Skeleton modal fragment with server-generated starter HTML."""
     try:
         uow = bootstrap.get_flask_uow()
-        html = generate_starter_form_html(uow, current_user.id, assembly_id)
-        return jsonify({"html": html})
+        skeleton_html = generate_starter_form_html(uow, current_user.id, assembly_id)
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to access this assembly")}), 403
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
-    except Exception as e:
-        current_app.logger.error(f"Generate skeleton error for assembly {assembly_id}: {e}")
-        return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    return render_template(
+        "backoffice/registration/skeleton_modal.html",
+        assembly_id=assembly_id,
+        skeleton_html=skeleton_html,
+    )
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton-modal")
+@login_required
+def skeleton_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the Form Skeleton modal (HTMX fragment / full-page fallback)."""
+    if _is_htmx():
+        return _render_skeleton_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="skeleton")
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")

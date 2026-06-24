@@ -161,11 +161,15 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                                         </svg>
                                     {% endset %}
+                        {# Opens the skeleton modal over HTMX (swapped into #image-modal-container);
+                           a plain click navigates to the same URL for the full-page fallback. #}
+                                    {% set skeleton_modal_url = url_for("backoffice_registration.skeleton_modal", assembly_id=assembly.id) %}
                                     {{ button(
                                     _("Show Form Skeleton"),
                                     variant="tertiary",
                                     leading_icon=code_icon,
-                                    attrs='@click="fetchSkeleton()" :disabled="skeletonLoading"'
+                                    href=skeleton_modal_url,
+                                    attrs='hx-get="' ~ skeleton_modal_url ~ '" hx-target="#image-modal-container" hx-swap="innerHTML"'
                                     ) }}
                                 </div>
                             </div>
@@ -304,70 +308,13 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
             </div>
         {% endif %}
 
-        {# Form Skeleton Modal - only shown when registration page exists #}
+        {# Modals are only relevant when a registration page exists #}
         {% if has_registration_page %}
-            <template x-if="skeletonModalOpen">
-                <div x-cloak>
-                {# Backdrop overlay #}
-                    <div class="fixed inset-0 z-40"
-                         style="background-color: rgba(0, 0, 0, 0.5)"
-                         @click="closeSkeletonModal()"
-                         @keydown.escape.window="closeSkeletonModal()"></div>
-                {# Modal panel #}
-                    <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-                         role="dialog"
-                         aria-modal="true"
-                         aria-labelledby="skeleton-modal-title">
-                        <div class="pointer-events-auto w-full max-w-4xl mx-4 rounded-lg shadow-xl overflow-hidden"
-                             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)"
-                             @click.stop>
-                        {# Header #}
-                            <div class="px-6 py-4 flex items-center justify-between"
-                                 style="border-bottom: 1px solid var(--color-borders-dividers)">
-                                <h2 id="skeleton-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
-                                    {{ _("Form Skeleton") }}
-                                </h2>
-                                <button type="button"
-                                        @click="closeSkeletonModal()"
-                                        class="p-2 rounded-lg transition-colors hover:bg-gray-100"
-                                        style="color: var(--color-secondary-text);"
-                                        aria-label="{{ _('Close') }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        {# Content #}
-                            <div class="px-6 py-4">
-                                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                    {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form.") }}
-                                </p>
-                                <textarea readonly
-                                          x-ref="skeletonTextarea"
-                                          x-text="skeletonHtml"
-                                          class="w-full rounded-lg p-4"
-                                          rows="18"
-                                          style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-                                                 font-size: 0.875rem;
-                                                 line-height: 1.5;
-                                                 background-color: var(--color-subtle-background-panels);
-                                                 border: 1px solid var(--color-borders-dividers);
-                                                 color: var(--color-body-text);
-                                                 resize: none;"></textarea>
-                            </div>
-                        {# Footer #}
-                            <div class="px-6 py-3 flex gap-2 justify-end"
-                                 style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
-                                {{ button(_("Copy All"), variant="secondary", attrs='@click="copySkeletonToClipboard()"') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
 
-        {# Page modals (upload + per-image details + preview/share) are loaded from
-           the server via HTMX into this container. The no-JS fallback renders the
-           requested modal here server-side via ?modal=upload / details / preview. #}
+        {# Page modals (upload, per-image details, preview/share, form skeleton) are
+           loaded from the server via HTMX into this container. The no-JS fallback
+           renders the requested modal here server-side via ?modal=upload / details /
+           preview / skeleton. #}
             <div id="image-modal-container">
                 {% if open_modal == "upload" %}
                     {% with assembly_id = assembly.id %}
@@ -379,6 +326,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     {% endwith %}
                 {% elif open_modal == "preview" and registration_page %}
                     {% include "backoffice/registration/preview_modal.html" %}
+                {% elif open_modal == "skeleton" %}
+                    {% with assembly_id = assembly.id %}
+                        {% include "backoffice/registration/skeleton_modal.html" %}
+                    {% endwith %}
                 {% endif %}
             </div>
 
@@ -402,50 +353,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
         <script nonce="{{ csp_nonce }}">
             document.addEventListener('alpine:init', () => {
                 Alpine.data('registrationPageController', () => ({
-                    skeletonLoading: false,
-                    skeletonModalOpen: false,
-                    skeletonHtml: '',
                     toastVisible: false,
                     toastMessage: '',
                     toastType: 'success',
-
-                    fetchSkeleton() {
-                        this.skeletonLoading = true;
-                        fetch('{{ url_for("backoffice_registration.get_registration_skeleton", assembly_id=assembly.id) }}', {
-                            method: 'GET',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                this.skeletonLoading = false;
-                                if (data.error) {
-                                    this.showToast(data.error, 'error');
-                                } else {
-                                    this.skeletonHtml = data.html;
-                                    this.skeletonModalOpen = true;
-                                }
-                            })
-                            .catch(error => {
-                                this.skeletonLoading = false;
-                                this.showToast('{{ _("An error occurred while fetching the form skeleton") }}', 'error');
-                            });
-                    },
-
-                    closeSkeletonModal() {
-                        this.skeletonModalOpen = false;
-                    },
-
-                    copySkeletonToClipboard() {
-                        navigator.clipboard.writeText(this.skeletonHtml)
-                            .then(() => {
-                                this.showToast('{{ _("Copied to clipboard") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Failed to copy to clipboard") }}', 'error');
-                            });
-                    },
 
                     showToast(message, type) {
                         this.toastMessage = message;

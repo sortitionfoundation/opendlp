@@ -30,11 +30,14 @@ def test_create_assembly_registration_page_success(
         assert page.url_slug
 
 
-def test_get_registration_skeleton_success(logged_in_admin: FlaskClient, existing_assembly, admin_user: User):
-    """The skeleton endpoint returns generated starter HTML as JSON."""
-    response = logged_in_admin.get(_registration_url(existing_assembly.id, "/skeleton"))
+def test_get_registration_skeleton_modal_success(logged_in_admin: FlaskClient, existing_assembly, admin_user: User):
+    """The skeleton modal endpoint returns the generated starter HTML in a modal fragment."""
+    response = logged_in_admin.get(
+        _registration_url(existing_assembly.id, "/skeleton-modal"),
+        headers={"HX-Request": "true"},
+    )
 
     assert response.status_code == 200
-    payload = response.get_json()
-    assert "html" in payload
-    assert isinstance(payload["html"], str)
+    body = response.data.decode()
+    assert "Form Skeleton" in body
+    assert "<textarea" in body

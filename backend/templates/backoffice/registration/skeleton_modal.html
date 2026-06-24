@@ -1,0 +1,63 @@
+{#
+ABOUTME: Form Skeleton modal fragment — server-rendered starter HTML for the registration form
+ABOUTME: HTMX-loaded; copy uses the delegated clipboard helper in utilities.js
+#}
+{% set close_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly_id) %}
+{# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
+<a href="{{ close_url }}"
+   class="fixed inset-0 z-40 block"
+   style="background-color: rgba(0, 0, 0, 0.5)"
+   aria-label="{{ _('Close') }}"></a>
+{# Modal panel #}
+<div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="skeleton-modal-title">
+    <div class="pointer-events-auto w-full max-w-4xl mx-4 rounded-lg shadow-xl overflow-hidden"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
+        {# Header #}
+        <div class="px-6 py-4 flex items-center justify-between"
+             style="border-bottom: 1px solid var(--color-borders-dividers)">
+            <h2 id="skeleton-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                {{ _("Form Skeleton") }}
+            </h2>
+            <a href="{{ close_url }}"
+               class="p-2 rounded-lg transition-colors hover:bg-gray-100"
+               style="color: var(--color-secondary-text);"
+               aria-label="{{ _('Close') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </a>
+        </div>
+        {# Content #}
+        <div class="px-6 py-4">
+            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form.") }}
+            </p>
+            <textarea readonly
+                      id="skeleton-html-textarea"
+                      class="w-full rounded-lg p-4"
+                      rows="18"
+                      style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+                             font-size: 0.875rem;
+                             line-height: 1.5;
+                             background-color: var(--color-subtle-background-panels);
+                             border: 1px solid var(--color-borders-dividers);
+                             color: var(--color-body-text);
+                             resize: none;">{{ skeleton_html }}</textarea>
+        </div>
+        {# Footer — plain button so the data-copy-* attributes (incl. a translated
+           message) interpolate correctly; the macro's `attrs` would escape them. #}
+        <div class="px-6 py-3 flex gap-2 justify-end"
+             style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
+            <button type="button"
+                    data-copy-target="skeleton-html-textarea"
+                    data-copy-message="{{ _('Copied to clipboard') }}"
+                    class="btn-secondary-hover btn-focus"
+                    style="font-family: var(--font-button); font-weight: 700; font-size: 14px; line-height: 16px; letter-spacing: 0.4px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-secondary-border);">
+                {{ _("Copy All") }}
+            </button>
+        </div>
+    </div>
+</div>

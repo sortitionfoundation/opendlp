@@ -60,3 +60,39 @@ class TestPreviewModalRoute:
         response = logged_in_admin.get(self._url(existing_assembly.id), headers={"HX-Request": "true"})
         assert response.status_code == 302
         assert f"/backoffice/assembly/{existing_assembly.id}/registration" in response.location
+
+
+class TestSkeletonModalRoute:
+    """The Form Skeleton modal is loaded from the server via HTMX, with the
+    generated starter HTML server-rendered into the textarea."""
+
+    def _url(self, assembly_id) -> str:
+        return f"/backoffice/assembly/{assembly_id}/registration/skeleton-modal"
+
+    def test_htmx_request_returns_modal_fragment(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.get(self._url(existing_assembly.id), headers={"HX-Request": "true"})
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert "<html" not in body.lower()
+        assert "Form Skeleton" in body
+        assert "<textarea" in body
+        assert 'id="skeleton-html-textarea"' in body
+        # Copy uses the delegated clipboard helper, reading the textarea content
+        assert 'data-copy-target="skeleton-html-textarea"' in body
+
+    def test_plain_request_returns_full_page_with_modal_open(
+        self, logged_in_admin, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.get(self._url(existing_assembly.id))
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert "<html" in body.lower()
+        assert "Form Skeleton" in body
+        assert 'id="skeleton-html-textarea"' in body
+
+    def test_requires_login(self, client, existing_assembly):
+        response = client.get(self._url(existing_assembly.id))
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
