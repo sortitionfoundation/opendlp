@@ -533,6 +533,48 @@ def image_details_modal(assembly_id: uuid.UUID, image_id: uuid.UUID) -> Response
     return _render_registration_page(assembly_id, open_modal="details", open_image_id=image_id)
 
 
+def _render_preview_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the read-only Preview / Share modal fragment (URLs + QR code)."""
+    try:
+        nav = get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
+        uow = bootstrap.get_flask_uow()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    registration_page = result[0] if result else None
+    if registration_page is None:
+        flash(_("Please create a registration page first from the Details tab."), "warning")
+        return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
+
+    page_url = registration_url(registration_page.url_slug)
+    short = short_url(registration_page.short_url_slug) if registration_page.short_url_slug else None
+    qr_code_data_url = generate_qr_code_base64(short) if short else None
+
+    return render_template(
+        "backoffice/registration/preview_modal.html",
+        assembly=nav.assembly,
+        registration_page=registration_page,
+        registration_status=registration_page.status.value,
+        registration_url=page_url,
+        short_url=short,
+        qr_code_data_url=qr_code_data_url,
+    )
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/preview-modal")
+@login_required
+def preview_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the Preview / Share modal (HTMX fragment / full-page fallback)."""
+    if _is_htmx():
+        return _render_preview_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="preview")
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:

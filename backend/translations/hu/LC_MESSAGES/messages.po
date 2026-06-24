@@ -1055,6 +1055,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:442
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:200
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:521
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:543
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:79
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
@@ -1101,6 +1102,7 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:466
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:479
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:524
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:546
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:76
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:381
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:408
@@ -1298,6 +1300,7 @@ msgstr "Vissza a regisztrációhoz"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:280
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:476
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:551
 msgid "Please create a registration page first from the Details tab."
 msgstr ""
 
@@ -1347,7 +1350,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:461
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:528
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:614
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:656
 #, fuzzy
 msgid "Image not found"
 msgstr "Az oldal nem elérhető"
@@ -1357,47 +1360,47 @@ msgstr "Az oldal nem elérhető"
 msgid "Registration page not found"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:560
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:602
 #, fuzzy
 msgid "No file was selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:566
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:608
 msgid "Failed to read the uploaded file"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:569
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:616
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:611
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:658
 msgid "Alt text is required for accessibility"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:591
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:633
 #, fuzzy
 msgid "An error occurred while uploading the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:596
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:598
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:638
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:640
 #, fuzzy
 msgid "Image uploaded"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:626
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:668
 #, fuzzy
 msgid "An error occurred while updating the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:629
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:671
 #, fuzzy
 msgid "Image updated"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:649
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:691
 #, fuzzy
 msgid "An error occurred while deleting the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:652
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:694
 #, fuzzy
 msgid "Image deleted"
 msgstr "Kiválasztás"
@@ -3214,8 +3217,8 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/assembly_data.html:508
 #: templates/backoffice/assembly_edit_respondent.html:139
 #: templates/backoffice/assembly_form.html:96
-#: templates/backoffice/assembly_registration.html:212
-#: templates/backoffice/assembly_registration.html:231
+#: templates/backoffice/assembly_registration.html:217
+#: templates/backoffice/assembly_registration.html:237
 #: templates/backoffice/assembly_view_respondent.html:310
 #: templates/backoffice/components/edit_number_to_select_modal.html:37
 #: templates/backoffice/components/respondent_status_form.html:87
@@ -3258,8 +3261,8 @@ msgstr ""
 
 #: templates/admin/invite_view.html:34
 #: templates/backoffice/assembly_details.html:112
-#: templates/backoffice/assembly_registration.html:411
 #: templates/backoffice/edit_assembly.html:100
+#: templates/backoffice/registration/preview_modal.html:51
 #, fuzzy
 msgid "Registration URL"
 msgstr "Vissza a regisztrációhoz"
@@ -3590,8 +3593,8 @@ msgstr "Módosítsa a számot."
 
 #: templates/admin/user_edit.html:20 templates/admin/users.html:163
 #: templates/backoffice/assembly_edit_respondent.html:21
-#: templates/backoffice/assembly_registration.html:215
-#: templates/backoffice/assembly_registration.html:234
+#: templates/backoffice/assembly_registration.html:220
+#: templates/backoffice/assembly_registration.html:240
 #: templates/backoffice/assembly_respondents.html:126
 #: templates/backoffice/assembly_selection.html:81
 #: templates/backoffice/assembly_selection.html:299
@@ -4341,7 +4344,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:344
 #: templates/backoffice/assembly_data.html:402
-#: templates/backoffice/assembly_registration.html:273
+#: templates/backoffice/assembly_registration.html:279
 #: templates/backoffice/registration/image_upload_modal.html:93
 msgid "Upload"
 msgstr ""
@@ -4455,46 +4458,46 @@ msgid "Registration Page Details"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_details.html:113
-#: templates/backoffice/assembly_registration.html:412
+#: templates/backoffice/registration/preview_modal.html:52
 msgid "The URL for your registration form"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:120
-#: templates/backoffice/assembly_registration.html:419
+#: templates/backoffice/registration/preview_modal.html:59
 msgid "Short URL"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:121
-#: templates/backoffice/assembly_registration.html:420
 #: templates/backoffice/edit_assembly.html:112
+#: templates/backoffice/registration/preview_modal.html:60
 msgid "A shorter URL for QR codes and paper invitations"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:129
-#: templates/backoffice/assembly_registration.html:428
+#: templates/backoffice/registration/preview_modal.html:68
 #, fuzzy
 msgid "QR Code"
 msgstr "Meghívó kód"
 
 #: templates/backoffice/assembly_details.html:131
-#: templates/backoffice/assembly_registration.html:430
+#: templates/backoffice/registration/preview_modal.html:70
 msgid "Use this QR code on paper invitations"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:138
-#: templates/backoffice/assembly_registration.html:436
+#: templates/backoffice/registration/preview_modal.html:75
 #, fuzzy
 msgid "QR code for registration page"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_details.html:151
-#: templates/backoffice/assembly_registration.html:448
+#: templates/backoffice/registration/preview_modal.html:86
 #, fuzzy
 msgid "Download QR Code"
 msgstr "Táblázat lapfülei"
 
 #: templates/backoffice/assembly_details.html:154
-#: templates/backoffice/assembly_registration.html:451
+#: templates/backoffice/registration/preview_modal.html:89
 msgid "PNG format, 400x400 pixels"
 msgstr ""
 
@@ -4702,12 +4705,12 @@ msgid ""
 "}} for CSRF protection."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:206
-#: templates/backoffice/assembly_registration.html:364
+#: templates/backoffice/assembly_registration.html:210
+#: templates/backoffice/registration/preview_modal.html:8
 msgid "Preview and Test Responses"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:213
+#: templates/backoffice/assembly_registration.html:218
 #: templates/backoffice/components/edit_number_to_select_modal.html:38
 #: templates/backoffice/respondent_field_schema/view.html:230
 #: templates/backoffice/respondent_field_schema/view.html:271
@@ -4720,40 +4723,38 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:225
-#: templates/backoffice/assembly_registration.html:239
-#: templates/backoffice/assembly_registration.html:364
+#: templates/backoffice/assembly_registration.html:230
+#: templates/backoffice/assembly_registration.html:245
+#: templates/backoffice/registration/preview_modal.html:8
 msgid "Share Form"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:232
+#: templates/backoffice/assembly_registration.html:238
 #, fuzzy
 msgid "Save and Republish"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_registration.html:243
-#: templates/backoffice/assembly_registration.html:244
+#: templates/backoffice/assembly_registration.html:249
+#: templates/backoffice/assembly_registration.html:250
 msgid "Registration is closed — the form URL redirects to the closed page"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:262
+#: templates/backoffice/assembly_registration.html:268
 #, fuzzy
 msgid "Assets"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:288
+#: templates/backoffice/assembly_registration.html:294
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:322
+#: templates/backoffice/assembly_registration.html:328
 #, fuzzy
 msgid "Form Skeleton"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:328
-#: templates/backoffice/assembly_registration.html:390
-#: templates/backoffice/assembly_registration.html:462
+#: templates/backoffice/assembly_registration.html:334
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:54
@@ -4764,37 +4765,34 @@ msgstr "Rétegzett kiválasztás"
 #: templates/backoffice/registration/image_details_modal.html:29
 #: templates/backoffice/registration/image_upload_modal.html:12
 #: templates/backoffice/registration/image_upload_modal.html:37
+#: templates/backoffice/registration/preview_modal.html:13
+#: templates/backoffice/registration/preview_modal.html:30
+#: templates/backoffice/registration/preview_modal.html:100
 #, fuzzy
 msgid "Close"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/assembly_registration.html:337
+#: templates/backoffice/assembly_registration.html:343
 msgid ""
 "This skeleton is generated from your assembly's field definitions. Copy "
 "all or select specific parts to paste into your form."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:355
+#: templates/backoffice/assembly_registration.html:361
 msgid "Copy All"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:403
-msgid ""
-"The form is in test mode. Submissions made via these URLs are recorded as"
-" test submissions and will not enter the selection pool."
-msgstr ""
-
-#: templates/backoffice/assembly_registration.html:533
+#: templates/backoffice/assembly_registration.html:432
 #, fuzzy
 msgid "An error occurred while fetching the form skeleton"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: templates/backoffice/assembly_registration.html:552
+#: templates/backoffice/assembly_registration.html:443
 #: templates/backoffice/components/url_display.html:37
 msgid "Copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:555
+#: templates/backoffice/assembly_registration.html:446
 msgid "Failed to copy to clipboard"
 msgstr ""
 
@@ -7286,6 +7284,12 @@ msgstr ""
 
 #: templates/backoffice/registration/image_upload_modal.html:60
 msgid "Image file"
+msgstr ""
+
+#: templates/backoffice/registration/preview_modal.html:43
+msgid ""
+"The form is in test mode. Submissions made via these URLs are recorded as"
+" test submissions and will not enter the selection pool."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:22

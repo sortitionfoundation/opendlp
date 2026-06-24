@@ -1,0 +1,103 @@
+{#
+ABOUTME: Preview / Share modal fragment for the registration page (read-only)
+ABOUTME: Server-rendered + HTMX-loaded; closing is a full page reload to the page
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/url_display.html" import readonly_url_display %}
+{% set close_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) %}
+{% set preview_modal_title = _("Preview and Test Responses") if registration_status == "TEST" else _("Share Form") %}
+{# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
+<a href="{{ close_url }}"
+   class="fixed inset-0 z-40 block"
+   style="background-color: rgba(0, 0, 0, 0.5)"
+   aria-label="{{ _('Close') }}"></a>
+{# Modal panel #}
+<div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="preview-modal-title">
+    <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
+        {# Header #}
+        <div class="px-6 py-4 flex items-center justify-between"
+             style="border-bottom: 1px solid var(--color-borders-dividers)">
+            <h2 id="preview-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                {{ preview_modal_title }}
+            </h2>
+            <a href="{{ close_url }}"
+               class="p-2 rounded-lg transition-colors hover:bg-gray-100"
+               style="color: var(--color-secondary-text);"
+               aria-label="{{ _('Close') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </a>
+        </div>
+        {# Content #}
+        <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+            {# Test submission notice - TEST state only #}
+            {% if registration_status == "TEST" %}
+                <div class="rounded-lg p-4 mb-6"
+                     style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
+                    <p class="text-body-sm" style="color: var(--color-warning-600);">
+                        {{ _("The form is in test mode. Submissions made via these URLs are recorded as test submissions and will not enter the selection pool.") }}
+                    </p>
+                </div>
+            {% endif %}
+
+            <div class="space-y-6">
+                {# Registration URL #}
+                {{ readonly_url_display(
+                label=_("Registration URL"),
+                hint=_("The URL for your registration form"),
+                url=registration_url
+                ) }}
+
+                {# Short URL - only if configured #}
+                {% if registration_page.short_url_slug %}
+                    {{ readonly_url_display(
+                    label=_("Short URL"),
+                    hint=_("A shorter URL for QR codes and paper invitations"),
+                    url=short_url
+                    ) }}
+                {% endif %}
+
+                {# QR Code - only when short URL is configured #}
+                {% if qr_code_data_url %}
+                    <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
+                        <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("QR Code") }}</h3>
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("Use this QR code on paper invitations") }}
+                        </p>
+
+                        <div class="flex items-start gap-6">
+                            <div class="flex-shrink-0 p-4 rounded-lg" style="background-color: white; border: 1px solid var(--color-borders-dividers);">
+                                <img src="{{ qr_code_data_url }}" alt="{{ _('QR code for registration page') }}" class="w-40 h-40" />
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <a href="{{ url_for('backoffice_registration.download_registration_qr_code', assembly_id=assembly.id) }}"
+                                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
+                                   style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
+                                   download>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    {{ _("Download QR Code") }}
+                                </a>
+                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {{ _("PNG format, 400x400 pixels") }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {# Footer #}
+        <div class="px-6 py-3 flex gap-2 justify-end"
+             style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
+            {{ button(_("Close"), variant="secondary", href=close_url) }}
+        </div>
+    </div>
+</div>
