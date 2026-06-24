@@ -137,14 +137,14 @@ def send_confirmation_email(
         )
 
         if success:
-            logger.info(f"Email confirmation sent to {user.email}")
+            logger.info("Email confirmation sent", user_id=str(user.id))
         else:
-            logger.error(f"Failed to send email confirmation to {user.email}")
+            logger.error("Failed to send email confirmation", user_id=str(user.id))
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending email confirmation to {user.email}: {e}")
+        logger.error("Error sending email confirmation", user_id=str(user.id), error=str(e))
         return False
 
 

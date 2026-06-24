@@ -5,6 +5,7 @@ import structlog
 from redis import Redis
 
 from opendlp.config import RedisCfg
+from opendlp.log_redaction import hash_email
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.translations import gettext as _
 
@@ -66,7 +67,9 @@ def check_login_rate_limit(
     raw_email_count: bytes | str | None = r.get(_email_key(email))
     email_count = int(raw_email_count) if raw_email_count else 0
     if email_count >= max_per_email:
-        logger.warning("Login rate limit exceeded for email: %s", email)
+        # Log a stable HMAC of the email (not the address itself) so repeated
+        # attempts against one account can be correlated without storing PII.
+        logger.warning("Login rate limit exceeded for email", email_hash=hash_email(email))
         raise RateLimitExceeded(
             operation=_("login"),
             retry_after_seconds=retry_after_seconds,

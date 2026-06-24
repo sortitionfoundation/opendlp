@@ -346,7 +346,7 @@ def create_invite() -> ResponseReturnValue:
                                 "warning",
                             )
                     except Exception as e:
-                        logger.error(f"Error sending invite email to {form.email.data}: {e}")
+                        logger.error("Error sending invite email", invite_id=str(invite.id), error=str(e))
                         flash(
                             _("Error sending invitation email. Please share the invite code manually."),
                             "warning",
@@ -500,13 +500,16 @@ def _send_invite_email(
             html_body=html_body,
         )
 
+        # No user/invite UUID is available in this helper and the invite code is
+        # a sensitive token, so we deliberately log no identifier here. The
+        # censor_pii processor is the backstop for any address that does appear.
         if success:
-            logger.info(f"Invite email sent to {email_address}")
+            logger.info("Invite email sent")
         else:
-            logger.error(f"Failed to send invite email to {email_address}")
+            logger.error("Failed to send invite email")
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending invite email to {email_address}: {e}")
+        logger.error("Error sending invite email", error=str(e))
         return False

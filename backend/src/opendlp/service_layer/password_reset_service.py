@@ -318,12 +318,12 @@ def send_password_reset_email(
         )
 
         if success:
-            logger.info(f"Password reset email sent to {user.email}")
+            logger.info("Password reset email sent", user_id=str(user.id))
         else:
-            logger.error(f"Failed to send password reset email to {user.email}")
+            logger.error("Failed to send password reset email", user_id=str(user.id))
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending password reset email to {user.email}: {e}")
+        logger.error("Error sending password reset email", user_id=str(user.id), error=str(e))
         return False

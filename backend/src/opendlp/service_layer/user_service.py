@@ -1049,12 +1049,19 @@ def send_assembly_role_assigned_email(
         )
 
         if success:
-            logger.info(f"Assembly role assigned email sent to {user.email} for assembly {assembly.id}")
+            logger.info("Assembly role assigned email sent", user_id=str(user.id), assembly_id=str(assembly.id))
         else:
-            logger.error(f"Failed to send assembly role assigned email to {user.email}")
+            logger.error(
+                "Failed to send assembly role assigned email", user_id=str(user.id), assembly_id=str(assembly.id)
+            )
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending assembly role assigned email to {user.email}: {e}")
+        logger.error(
+            "Error sending assembly role assigned email",
+            user_id=str(user.id),
+            assembly_id=str(assembly.id),
+            error=str(e),
+        )
         return False
