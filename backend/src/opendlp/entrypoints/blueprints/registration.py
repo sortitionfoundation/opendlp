@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf, validate_csrf
-from itsdangerous import TimestampSigner
+from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from wtforms import ValidationError
 
 from opendlp import bootstrap
@@ -15,6 +15,11 @@ from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
 from opendlp.entrypoints.extensions import csrf
 from opendlp.service_layer.email_send_service import send_registration_auto_reply
+from opendlp.service_layer.exceptions import RateLimitExceeded
+from opendlp.service_layer.registration_bot_protection_service import (
+    check_registration_rate_limit,
+    record_registration_submission,
+)
 from opendlp.service_layer.registration_image_service import get_registration_image_for_serving
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
@@ -49,6 +54,30 @@ def _validate_timing_token(token: str, secret_key: str, min_fill_seconds: int, m
     age_seconds = (datetime.now(UTC) - timestamp.replace(tzinfo=UTC)).total_seconds()
     if age_seconds < min_fill_seconds:
         raise ValueError("too fast")
+
+
+def _secret_key() -> str:
+    """Return the application secret key as a plain string."""
+    key = current_app.secret_key
+    if isinstance(key, bytes):
+        return key.decode()
+    return key or ""
+
+
+def _build_security_form_elements() -> str:
+    """Build the hidden security elements injected into every registration form."""
+    csrf_input = f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">'
+    timing_input = f'<input type="hidden" name="_timing_token" value="{_generate_timing_token(_secret_key())}">'
+    # _opendlp_ttoken_ is a honeypot field — see docs/bot-protection.md
+    honeypot = (
+        '<div aria-hidden="true" style="position:absolute;left:-9999px;'
+        'width:1px;height:1px;overflow:hidden">'
+        '<label for="_opendlp_ttoken_">Leave this blank</label>'
+        '<input type="text" id="_opendlp_ttoken_" name="_opendlp_ttoken_" '
+        'tabindex="-1" autocomplete="off" value="">'
+        "</div>"
+    )
+    return csrf_input + timing_input + honeypot
 
 
 registration_bp = Blueprint("registration", __name__)
@@ -94,7 +123,7 @@ def show_registration_form(url_slug: str) -> ResponseReturnValue:
     rendered_form = render_registration_form(
         uow,
         page,
-        csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
+        csrf_form_element=_build_security_form_elements(),
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
     )
 
@@ -127,7 +156,7 @@ def _rerender_form_with_values(
     rendered_form = render_registration_form(
         uow,
         page,
-        csrf_form_element=f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">',
+        csrf_form_element=_build_security_form_elements(),
         form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
         values=values,
         errors=field_errors,
@@ -141,6 +170,57 @@ def _rerender_form_with_values(
     )
 
 
+_FORM_EXPIRED_ERROR = (
+    "Your form had been open too long and couldn't be submitted securely. Please check your answers and submit again."
+)
+
+
+def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturnValue | None:
+    """Validate CSRF and timing tokens from the submitted form.
+
+    Returns None when both tokens are acceptable. Returns a response (redirect
+    or re-rendered form) when a problem is detected. Skipped entirely when
+    WTF_CSRF_ENABLED is False (e.g. in tests).
+    """
+    if not current_app.config.get("WTF_CSRF_ENABLED", True):
+        return None
+
+    try:
+        validate_csrf(request.form.get("csrf_token"))
+    except ValidationError:
+        return _rerender_form_with_values(
+            uow,
+            url_slug,
+            values=dict(request.form),
+            form_errors=[_(_FORM_EXPIRED_ERROR)],
+        )
+
+    timing_token = request.form.get("_timing_token", "")
+    try:
+        _validate_timing_token(
+            timing_token,
+            _secret_key(),
+            min_fill_seconds=current_app.config["REGISTRATION_MIN_FILL_SECONDS"],
+            max_age_seconds=_TIMING_TOKEN_MAX_AGE_SECONDS,
+        )
+    except ValueError:
+        logger.warning(
+            "Bot protection: timing check failed (IP: %s, slug: %s)",
+            request.remote_addr,
+            url_slug,
+        )
+        return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
+    except (SignatureExpired, BadSignature):
+        return _rerender_form_with_values(
+            uow,
+            url_slug,
+            values=dict(request.form),
+            form_errors=[_(_FORM_EXPIRED_ERROR)],
+        )
+
+    return None
+
+
 @registration_bp.route("/register/<url_slug>", methods=["POST"])
 @csrf.exempt
 @require_feature("registration_page")
@@ -152,27 +232,41 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     submitted values preserved (members of the public may take a long time over
     a form) instead of discarding their answers to a generic error page. The
     route is exempt from automatic protection but is NOT unprotected - see the
-    validate_csrf call below.
+    _check_form_tokens call below.
     """
     uow = bootstrap.get_flask_uow()
 
-    # Gate on WTF_CSRF_ENABLED exactly as the global CSRFProtect hook does, so
-    # disabling CSRF (e.g. in tests) skips validation here too.
-    if current_app.config.get("WTF_CSRF_ENABLED", True):
-        try:
-            validate_csrf(request.form.get("csrf_token"))
-        except ValidationError:
-            return _rerender_form_with_values(
-                uow,
-                url_slug,
-                values=dict(request.form),
-                form_errors=[
-                    _(
-                        "Your form had been open too long and couldn't be submitted securely. "
-                        "Please check your answers and submit again."
-                    )
-                ],
-            )
+    if request.form.get("_opendlp_ttoken_"):
+        logger.warning(
+            "Bot protection: honeypot triggered (IP: %s, slug: %s)",
+            request.remote_addr,
+            url_slug,
+        )
+        return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
+
+    token_error = _check_form_tokens(uow, url_slug)
+    if token_error is not None:
+        return token_error
+
+    ip_address = request.remote_addr or ""
+    email = request.form.get("email", "").strip().lower()
+
+    try:
+        check_registration_rate_limit(
+            ip_address,
+            email,
+            max_per_ip=current_app.config["REGISTRATION_RATE_LIMIT_PER_IP"],
+            max_per_email=current_app.config["REGISTRATION_RATE_LIMIT_PER_EMAIL"],
+            ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
+            email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
+        )
+    except RateLimitExceeded:
+        return _rerender_form_with_values(
+            uow,
+            url_slug,
+            values=dict(request.form),
+            form_errors=[_("Too many registrations from your location. Please try again later.")],
+        )
 
     try:
         result = submit_registration(uow, url_slug=url_slug, form_data=request.form)
@@ -180,6 +274,13 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         abort(404)
     except RegistrationClosedError:
         return redirect(url_for("registration.registration_closed"), 302)
+
+    record_registration_submission(
+        ip_address,
+        email,
+        ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
+        email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
+    )
 
     if result.is_valid:
         _send_registration_auto_reply(result.respondent)
@@ -266,3 +367,10 @@ def short_url_redirect(short_url_slug: str) -> ResponseReturnValue:
 def registration_closed() -> ResponseReturnValue:
     """Display the static registration closed page."""
     return render_template("register/closed.html")
+
+
+@registration_bp.after_request
+def add_noindex_header(response: Response) -> Response:
+    """Prevent search engines from indexing registration pages."""
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response

@@ -16,6 +16,7 @@
         <link rel="stylesheet"
               href="{{ url_for('static', filename='css/application.css', v=static_hashes('css/application.css') ) }}">
         {% block extra_css %}{% endblock %}
+        {% block extra_head %}{% endblock %}
     </head>
     <body class="govuk-template__body govuk-frontend-supported register-page">
         <script nonce="{{ csp_nonce }}">document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
