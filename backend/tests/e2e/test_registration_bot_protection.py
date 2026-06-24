@@ -71,9 +71,9 @@ def published_registration_page(postgres_session_factory, admin_user) -> Registr
 class TestBotProtectionSmoke:
     """Smoke tests that verify bot protection with a real database and real Redis.
 
-    The timing-token check is gated on WTF_CSRF_ENABLED, which is False in the
-    test config, so these tests do not need to supply timing tokens — they cover
-    the honeypot path and the happy path only.
+    The timing-token check is gated on REGISTRATION_TIMING_CHECK_ENABLED, which
+    is False in the test config, so these tests do not need to supply timing
+    tokens — they cover the honeypot path and the happy path only.
     """
 
     def test_normal_submission_succeeds_with_real_redis(

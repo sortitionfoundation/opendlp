@@ -43,6 +43,18 @@ _TIMING_TOKEN_SALT = "reg-timing"  # noqa: S105 - this is a signer salt, not a p
 _TIMING_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 3600  # 7 days, matches session lifetime
 
 
+class TimingTooFastError(ValueError):
+    """Raised when a form was submitted faster than a human plausibly could.
+
+    Carries the measured age so the route can log it for false-positive
+    diagnosis. Subclasses ValueError for backwards-compatible handling.
+    """
+
+    def __init__(self, age_seconds: float) -> None:
+        self.age_seconds = age_seconds
+        super().__init__(f"too fast: {age_seconds:.1f}s")
+
+
 def _generate_timing_token(secret_key: str) -> str:
     signer = TimestampSigner(secret_key, salt=_TIMING_TOKEN_SALT)
     return signer.sign("t").decode()
@@ -53,7 +65,7 @@ def _validate_timing_token(token: str, secret_key: str, min_fill_seconds: int, m
     _unsigned, timestamp = signer.unsign(token, max_age=max_age_seconds, return_timestamp=True)
     age_seconds = (datetime.now(UTC) - timestamp.replace(tzinfo=UTC)).total_seconds()
     if age_seconds < min_fill_seconds:
-        raise ValueError("too fast")
+        raise TimingTooFastError(age_seconds)
 
 
 def _secret_key() -> str:
@@ -179,44 +191,47 @@ def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturn
     """Validate CSRF and timing tokens from the submitted form.
 
     Returns None when both tokens are acceptable. Returns a response (redirect
-    or re-rendered form) when a problem is detected. Skipped entirely when
-    WTF_CSRF_ENABLED is False (e.g. in tests).
+    or re-rendered form) when a problem is detected. The two checks are gated
+    independently: CSRF on WTF_CSRF_ENABLED, timing on
+    REGISTRATION_TIMING_CHECK_ENABLED. Both are disabled in the test config so
+    happy-path tests need not mint tokens; timing tests re-enable just the
+    timing gate without needing a CSRF round-trip.
     """
-    if not current_app.config.get("WTF_CSRF_ENABLED", True):
-        return None
+    if current_app.config.get("WTF_CSRF_ENABLED", True):
+        try:
+            validate_csrf(request.form.get("csrf_token"))
+        except ValidationError:
+            return _rerender_form_with_values(
+                uow,
+                url_slug,
+                values=dict(request.form),
+                form_errors=[_(_FORM_EXPIRED_ERROR)],
+            )
 
-    try:
-        validate_csrf(request.form.get("csrf_token"))
-    except ValidationError:
-        return _rerender_form_with_values(
-            uow,
-            url_slug,
-            values=dict(request.form),
-            form_errors=[_(_FORM_EXPIRED_ERROR)],
-        )
-
-    timing_token = request.form.get("_timing_token", "")
-    try:
-        _validate_timing_token(
-            timing_token,
-            _secret_key(),
-            min_fill_seconds=current_app.config["REGISTRATION_MIN_FILL_SECONDS"],
-            max_age_seconds=_TIMING_TOKEN_MAX_AGE_SECONDS,
-        )
-    except ValueError:
-        logger.warning(
-            "Bot protection: timing check failed (IP: %s, slug: %s)",
-            request.remote_addr,
-            url_slug,
-        )
-        return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
-    except (SignatureExpired, BadSignature):
-        return _rerender_form_with_values(
-            uow,
-            url_slug,
-            values=dict(request.form),
-            form_errors=[_(_FORM_EXPIRED_ERROR)],
-        )
+    if current_app.config.get("REGISTRATION_TIMING_CHECK_ENABLED", True):
+        timing_token = request.form.get("_timing_token", "")
+        try:
+            _validate_timing_token(
+                timing_token,
+                _secret_key(),
+                min_fill_seconds=current_app.config["REGISTRATION_MIN_FILL_SECONDS"],
+                max_age_seconds=_TIMING_TOKEN_MAX_AGE_SECONDS,
+            )
+        except TimingTooFastError as exc:
+            logger.warning(
+                "Bot protection: timing check failed (IP: %s, slug: %s, age: %.1fs)",
+                request.remote_addr,
+                url_slug,
+                exc.age_seconds,
+            )
+            return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
+        except (SignatureExpired, BadSignature):
+            return _rerender_form_with_values(
+                uow,
+                url_slug,
+                values=dict(request.form),
+                form_errors=[_(_FORM_EXPIRED_ERROR)],
+            )
 
     return None
 
