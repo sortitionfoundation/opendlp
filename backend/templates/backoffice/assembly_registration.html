@@ -169,7 +169,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     variant="tertiary",
                                     leading_icon=code_icon,
                                     href=skeleton_modal_url,
-                                    attrs='hx-get="' ~ skeleton_modal_url ~ '" hx-target="#image-modal-container" hx-swap="innerHTML"'
+                                    hx_get=skeleton_modal_url,
+                                    hx_target="#image-modal-container",
+                                    hx_swap="innerHTML"
                                     ) }}
                                 </div>
                             </div>
@@ -201,7 +203,6 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {# Preview / Share opens over HTMX (swapped into #image-modal-container); a plain
                            click navigates to the same URL and gets the full page with the modal open. #}
                                     {% set preview_modal_url = url_for("backoffice_registration.preview_modal", assembly_id=assembly.id) %}
-                                    {% set preview_attrs = 'hx-get="' ~ preview_modal_url ~ '" hx-target="#image-modal-container" hx-swap="innerHTML"' %}
                         {# Preview / Share lives next to Save — "view what you just edited" pairs with "save it" #}
                                     {% if registration_status == "TEST" %}
                                         {% set eye_icon %}
@@ -215,7 +216,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         variant="tertiary",
                                         leading_icon=eye_icon,
                                         href=preview_modal_url,
-                                        attrs=preview_attrs
+                                        hx_get=preview_modal_url,
+                                        hx_target="#image-modal-container",
+                                        hx_swap="innerHTML"
                                         ) }}
                                         {% if edit_mode %}
                                             {{ button(_("Cancel"), variant="secondary", href=view_url) }}
@@ -235,7 +238,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             variant="tertiary",
                                             leading_icon=link_icon,
                                             href=preview_modal_url,
-                                            attrs=preview_attrs
+                                            hx_get=preview_modal_url,
+                                            hx_target="#image-modal-container",
+                                            hx_swap="innerHTML"
                                             ) }}
                                             {% if edit_mode %}
                                                 {{ button(_("Cancel"), variant="secondary", href=view_url) }}
@@ -284,7 +289,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             variant="tertiary",
                             leading_icon=upload_icon,
                             href=upload_modal_url,
-                            attrs='hx-get="' ~ upload_modal_url ~ '" hx-target="#image-modal-container" hx-swap="innerHTML"'
+                            hx_get=upload_modal_url,
+                            hx_target="#image-modal-container",
+                            hx_swap="innerHTML"
                             ) }}
                         </div>
 
