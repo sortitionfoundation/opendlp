@@ -1,9 +1,13 @@
 """ABOUTME: Public registration page routes for assembly registration forms
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
+import logging
+from datetime import UTC, datetime
+
 from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf, validate_csrf
+from itsdangerous import TimestampSigner
 from wtforms import ValidationError
 
 from opendlp import bootstrap
@@ -27,6 +31,25 @@ from opendlp.service_layer.registration_submission_service import (
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
+
+logger = logging.getLogger(__name__)
+
+_TIMING_TOKEN_SALT = "reg-timing"  # noqa: S105 - this is a signer salt, not a password
+_TIMING_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 3600  # 7 days, matches session lifetime
+
+
+def _generate_timing_token(secret_key: str) -> str:
+    signer = TimestampSigner(secret_key, salt=_TIMING_TOKEN_SALT)
+    return signer.sign("t").decode()
+
+
+def _validate_timing_token(token: str, secret_key: str, min_fill_seconds: int, max_age_seconds: int) -> None:
+    signer = TimestampSigner(secret_key, salt=_TIMING_TOKEN_SALT)
+    _unsigned, timestamp = signer.unsign(token, max_age=max_age_seconds, return_timestamp=True)
+    age_seconds = (datetime.now(UTC) - timestamp.replace(tzinfo=UTC)).total_seconds()
+    if age_seconds < min_fill_seconds:
+        raise ValueError("too fast")
+
 
 registration_bp = Blueprint("registration", __name__)
 
