@@ -30,7 +30,7 @@ A signed timestamp (`itsdangerous.TimestampSigner`, salt `reg-timing`, key = Fla
 - The token is not older than 7 days (stale tab → re-render with "form was open too long" message).
 - The form was submitted at least `REGISTRATION_MIN_FILL_SECONDS` (default 3 s) after render (too fast → silently redirect to thank-you).
 
-Both checks are gated on `WTF_CSRF_ENABLED` (same gate as CSRF) so they are skipped in test environments where `WTF_CSRF_ENABLED = False`.
+The timing check is gated on its own `REGISTRATION_TIMING_CHECK_ENABLED` flag (CSRF is gated on `WTF_CSRF_ENABLED`). Both default to on and are disabled in the test config, so happy-path tests need not mint tokens; timing tests re-enable just the timing gate without a CSRF round-trip.
 
 ### 3. Rate limiting
 
