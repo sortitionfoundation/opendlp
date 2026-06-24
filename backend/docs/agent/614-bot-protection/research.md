@@ -53,13 +53,13 @@ So the harms we're defending against are:
 
 1. **Junk registrations polluting the pool** — most acute for jobs with no address list,
    where nothing else filters them out.
-2. **Manual review volume** — for jobs *with* a list, every non-matching submission is
+2. **Manual review volume** — for jobs _with_ a list, every non-matching submission is
    eyeballed by a human. The main ongoing cost.
 3. **Email cost / abuse** — the registration auto-reply lets a bot fire mass emails, or
    repeatedly submit a victim's address to email-bomb them.
 
 Residual integrity caveat even with a list: matching is only as strong as the secrecy of
-*which* addresses we picked. It holds against bots and outsiders; it doesn't stop someone
+_which_ addresses we picked. It holds against bots and outsiders; it doesn't stop someone
 holding several genuinely-invited letters (a social problem, not a bot one).
 
 **Design goal: cut junk volume invisibly, before it reaches the pool, the review queue, or
@@ -76,7 +76,7 @@ the mailer. No user-visible friction in the normal case.**
   with the call-centre handling **under 5%** of them — at peak unlikely to exceed ~10
   submissions an hour, and that would be a busy job. The call-centre also serves many
   clients, not just us, so we want to keep their workflow simple.
-- **Email jobs are occasional** and *can* carry long unique links — a nice-to-have if
+- **Email jobs are occasional** and _can_ carry long unique links — a nice-to-have if
   cheap, not something to rely on generally.
 - **GOV.UK design system + EU/UK org** → accessibility and GDPR both matter. CAPTCHA is out
   (excludes the very demographics sortition works to include; reCAPTCHA is a GDPR problem;
@@ -85,7 +85,7 @@ the mailer. No user-visible friction in the normal case.**
 ## Call-centre handling
 
 Because agent submissions are humans typing one form at a time, they won't trip the
-honeypot or timing checks, and at ~10/hour they sit well under any *loosely* set rate
+honeypot or timing checks, and at ~10/hour they sit well under any _loosely_ set rate
 limit. So the realistic options, simplest first:
 
 1. **No special treatment.** Given the low rate, a loose rate limit shouldn't catch them
@@ -112,15 +112,14 @@ These are the core of the **current round of work** — they don't depend on add
    mint at render.)
 
 2. **Rate limiting** — reuse the existing `login_rate_limit_service` / Redis pattern:
-   - **Per-IP**, kept *loose* (shared NATs: libraries, care homes, offices), and loose
+   - **Per-IP**, kept _loose_ (shared NATs: libraries, care homes, offices), and loose
      enough not to catch the low-rate call-centre.
    - **Per-email rate limit** — closes the auto-reply email-bomb / cost vector. Note this is
-     a *low rate limit, not a cap of 1*: we occasionally get a couple (e.g. an elderly pair)
+     a _low rate limit, not a cap of 1_: we occasionally get a couple (e.g. an elderly pair)
      sharing one email address who both legitimately register, so allow a small number per
      email over the window rather than forbidding repeats.
 
-3. **CDN/WAF + `noindex`** — Cloudflare (free tier) as a coarse outer filter for known-bad
-   IPs and volumetric abuse, plus `X-Robots-Tag: noindex` / robots meta so the leaked short
+3. **`noindex`** — `X-Robots-Tag: noindex` / robots meta so the leaked short
    URL doesn't get indexed. Cheap, invisible. (Obscurity isn't a control — the URL is on
    thousands of letters — but no reason to advertise it.)
 
@@ -136,15 +135,15 @@ scoping now.
    - **No match but looks human** → review queue (today's spreadsheet behaviour).
    - **Match** → straight through.
 
-   This directly attacks the review-volume pain: bots produce non-matching addresses *and*
+   This directly attacks the review-volume pain: bots produce non-matching addresses _and_
    trip signals, so they fall into the probable-spam bucket and never cost a review or an
    email.
 
-   *Data sketch (for when we get there):* an `address_match` field with values
+   _Data sketch (for when we get there):_ an `address_match` field with values
    `MATCH` / `NO_MATCH` / `TO_REVIEW`, plus a new `PROBABLY_SPAM` value on `RespondentStatus`.
 
 5. **Tighten the auto-matcher itself** (the sleeper win — and something we'd like). Better
-   fuzzy/normalised address matching shrinks the *legitimate-but-mistyped* share of flags —
+   fuzzy/normalised address matching shrinks the _legitimate-but-mistyped_ share of flags —
    probably a bigger chunk of the manual queue than spam — and makes the bucketing in (4)
    safer.
 
@@ -157,8 +156,11 @@ scoping now.
    entirely.
 
 7. **Invisible challenge (Cloudflare Turnstile / Friendly Captcha / mCaptcha)** —
-   back-pocket option for an *active* flood only. Prefer the EU proof-of-work options for
+   back-pocket option for an _active_ flood only. Prefer the EU proof-of-work options for
    GDPR; never an image CAPTCHA.
+
+8. **CDN/WAF** — Cloudflare (free tier) as a coarse outer filter for known-bad
+   IPs and volumetric abuse. Cheap, invisible.
 
 ## Roll-out order
 
