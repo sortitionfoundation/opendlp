@@ -1,10 +1,23 @@
 """ABOUTME: Backoffice registration-page editor routes
 ABOUTME: View / save / create / skeleton / QR-download / image upload routes for the assembly registration tab"""
 
+import json
 import uuid
 from typing import Any, cast
 
-from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    current_app,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
@@ -55,6 +68,10 @@ from opendlp.translations import gettext as _
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
 
 
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
 def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
     """Serialise an image for the Assets panel.
 
@@ -90,6 +107,16 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice registration form configuration page."""
+    return _render_registration_page(assembly_id, open_modal=request.args.get("modal", ""))
+
+
+def _render_registration_page(assembly_id: uuid.UUID, open_modal: str = "") -> ResponseReturnValue:
+    """Render the registration configuration page.
+
+    ``open_modal`` names a modal to render already-open server-side (e.g. "upload"),
+    which is the no-JS fallback for the HTMX-loaded modals — the page degrades to a
+    full reload that shows the requested modal.
+    """
     try:
         nav = get_assembly_nav_context(
             bootstrap.get_flask_uow,
@@ -156,6 +183,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             max_image_upload_mb=get_max_image_upload_mb(),
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
+            open_modal=open_modal,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -369,27 +397,81 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return result[0].url_slug
 
 
+def _upload_error_message(error: Exception) -> str:
+    """Map a known image-upload failure to a user-facing message."""
+    if isinstance(error, ImageValidationError):
+        return error.message
+    if isinstance(error, ImageQuotaExceeded):
+        return str(error)
+    if isinstance(error, RegistrationPageNotFoundError):
+        return _("Please create a registration page first from the Details tab.")
+    if isinstance(error, InsufficientPermissions):
+        return _("You don't have permission to modify this assembly")
+    return _("Assembly not found")
+
+
+def _render_image_upload_modal(
+    assembly_id: uuid.UUID, *, error: str = "", alt_value: str = "", status: int = 200
+) -> ResponseReturnValue:
+    """Render the upload-modal fragment (swapped into ``#image-modal-container`` by HTMX)."""
+    return render_template(
+        "backoffice/registration/image_upload_modal.html",
+        assembly_id=assembly_id,
+        allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
+        max_image_upload_mb=get_max_image_upload_mb(),
+        error=error,
+        alt_value=alt_value,
+    ), status
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/upload-modal")
+@login_required
+def image_upload_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the image-upload modal.
+
+    HTMX requests get just the modal fragment to swap into the Assets panel; a
+    plain navigation gets the whole registration page with the modal already open,
+    so opening the modal still works (via a full page load) when JS is unavailable.
+    """
+    if _is_htmx():
+        return _render_image_upload_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="upload")
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Accept a multipart image upload and return the stored image metadata as JSON.
+    """Accept a multipart image upload from the Assets panel modal.
 
-    The Assets panel calls this from the registration tab so uploads don't disturb
-    the HTML editor's unsaved state — no full-page reload is required.
+    Content-negotiates on HTMX: an HX-Request returns an empty body plus an
+    ``HX-Trigger`` carrying the new image (the page appends it client-side and
+    closes the modal), while a failure re-renders the modal with the error (422,
+    swapped back by the htmx-422 handler). A plain form post redirects back to the
+    registration page with a flash — the no-JS full-reload path.
     """
     upload = request.files.get("image")
+    alt = (request.form.get("alt") or "").strip()
+
+    def _fail(message: str) -> ResponseReturnValue:
+        if _is_htmx():
+            # 422 so the htmx-422-swap handler re-renders the modal with the error inline
+            return _render_image_upload_modal(assembly_id, error=message, alt_value=alt, status=422)
+        flash(message, "error")
+        return redirect(
+            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id, modal="upload")
+        )
+
     if upload is None or not upload.filename:
-        return jsonify({"error": _("No file was selected")}), 400
+        return _fail(_("No file was selected"))
 
     try:
         raw = upload.read()
     except Exception as e:
         current_app.logger.warning(f"Failed to read uploaded image for assembly {assembly_id}: {e}")
-        return jsonify({"error": _("Failed to read the uploaded file")}), 400
+        return _fail(_("Failed to read the uploaded file"))
 
-    alt = (request.form.get("alt") or "").strip()
     if not alt:
-        return jsonify({"error": _("Alt text is required for accessibility")}), 400
+        return _fail(_("Alt text is required for accessibility"))
 
     try:
         image = add_registration_image(
@@ -400,22 +482,29 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
             alt=alt,
             original_filename=upload.filename or "",
         )
-    except ImageValidationError as e:
-        return jsonify({"error": e.message, "reason": e.reason}), 400
-    except ImageQuotaExceeded as e:
-        return jsonify({"error": str(e)}), 400
-    except RegistrationPageNotFoundError:
-        return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
-    except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
-    except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+    except (
+        ImageValidationError,
+        ImageQuotaExceeded,
+        RegistrationPageNotFoundError,
+        InsufficientPermissions,
+        NotFoundError,
+    ) as e:
+        return _fail(_upload_error_message(e))
     except Exception as e:
         current_app.logger.error(f"Image upload error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full traceback:")
-        return jsonify({"error": _("An error occurred while uploading the image")}), 500
+        return _fail(_("An error occurred while uploading the image"))
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+    image_dict = _image_to_dict(image, _resolve_page_url_slug(assembly_id))
+    if _is_htmx():
+        # Empty body clears the modal container (closing the modal); the trigger
+        # hands the new image to the page so it can update the Assets list in place.
+        response = make_response("")
+        response.headers["HX-Trigger"] = json.dumps({"registration-image-uploaded": image_dict})
+        return response
+
+    flash(_("Image uploaded"), "success")
+    return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])

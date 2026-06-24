@@ -24,7 +24,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% endblock %}
 
 {% block page_content %}
-    <div x-data="registrationPageController()">
+    <div x-data="registrationPageController()"
+         x-on:registration-image-uploaded.window="onImageUploaded($event)">
         {# Page Heading #}
         <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
         <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
@@ -264,11 +265,16 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
                                 </svg>
                             {% endset %}
+                        {# Opens the upload modal via HTMX (swapped into #image-modal-container);
+                           a plain click navigates to the same URL and gets the full page with the
+                           modal already open, so it still works when JS is unavailable. #}
+                            {% set upload_modal_url = url_for('backoffice_registration.image_upload_modal', assembly_id=assembly.id) %}
                             {{ button(
                             _("Upload"),
                             variant="tertiary",
                             leading_icon=upload_icon,
-                            attrs='type="button" @click="openImageUploadModal()"'
+                            href=upload_modal_url,
+                            attrs='hx-get="' ~ upload_modal_url ~ '" hx-target="#image-modal-container" hx-swap="innerHTML"'
                             ) }}
                         </div>
 
@@ -512,96 +518,15 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 </template>
             {% endif %}
 
-        {# Image Upload Modal #}
-            <template x-if="imageUploadModalOpen">
-                <div x-cloak>
-                {# Backdrop overlay #}
-                    <div class="fixed inset-0 z-40"
-                         style="background-color: rgba(0, 0, 0, 0.5)"
-                         @click="closeImageUploadModalIfAllowed()"
-                         @keydown.escape.window="closeImageUploadModalIfAllowed()"></div>
-                {# Modal panel #}
-                    <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-                         role="dialog"
-                         aria-modal="true"
-                         aria-labelledby="image-upload-modal-title">
-                        <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-                             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)"
-                             @click.stop>
-                        {# Header #}
-                            <div class="px-6 py-4 flex items-center justify-between"
-                                 style="border-bottom: 1px solid var(--color-borders-dividers)">
-                                <h2 id="image-upload-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
-                                    {{ _("Upload image") }}
-                                </h2>
-                                <button type="button"
-                                        @click="closeImageUploadModalIfAllowed()"
-                                        :disabled="imageUploading"
-                                        class="p-2 rounded-lg transition-colors hover:bg-gray-100 disabled:opacity-50"
-                                        style="color: var(--color-secondary-text);"
-                                        aria-label="{{ _('Close') }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        {# Content #}
-                            <div class="px-6 py-4">
-                                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                    {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. Files are downscaled and re-encoded to PNG on upload.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
-                                </p>
-
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="image-upload-file" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
-                                            {{ _("Image file") }}
-                                        </label>
-                                        <input type="file"
-                                               id="image-upload-file"
-                                               x-ref="imageFileInput"
-                                               accept="image/png,image/jpeg,image/webp"
-                                               @change="onImageFileSelected($event)"
-                                               :disabled="imageUploading"
-                                               class="w-full px-3 py-2 rounded-md text-body-sm"
-                                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
-                                        <p x-show="imageFileName" x-cloak class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                                            <span x-text="imageFileName"></span>
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label for="image-upload-alt" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
-                                            {{ _("Alt text") }}
-                                            <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
-                                        </label>
-                                        <input type="text"
-                                               id="image-upload-alt"
-                                               x-model="imageAlt"
-                                               :disabled="imageUploading"
-                                               required
-                                               aria-required="true"
-                                               class="w-full px-3 py-2 rounded-md text-body-sm"
-                                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
-                                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                                            {{ _("Describes the image for screen-reader users and is used as the file's display name in the asset list.") }}
-                                        </p>
-                                    </div>
-                                {# Inline error #}
-                                    <div x-show="imageUploadError" x-cloak class="rounded-md p-3"
-                                         style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
-                                        <p class="text-body-sm" style="color: var(--color-error-600);" x-text="imageUploadError"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        {# Footer #}
-                            <div class="px-6 py-3 flex gap-2 justify-end"
-                                 style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
-                                {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeImageUploadModalIfAllowed()"', alpine_disabled="imageUploading") }}
-                                {{ button(_("Upload"), variant="primary", attrs='type="button" @click="submitImageUpload()"', alpine_disabled="!imageFile || !imageAlt.trim() || imageUploading") }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
+        {# Image Upload Modal — loaded from the server via HTMX into this container.
+           The no-JS fallback renders the modal here server-side when ?modal=upload. #}
+            <div id="image-modal-container">
+                {% if open_modal == "upload" %}
+                    {% with assembly_id = assembly.id %}
+                        {% include "backoffice/registration/image_upload_modal.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
 
         {# Image Details / Edit Alt Modal #}
             <template x-if="imageDetailsModalOpen && editingImage">
@@ -793,11 +718,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     // Assets panel state. `images` is seeded from server-side render and mutated in place
                     // so the page never reloads — uncommitted edits in the HTML editor survive.
                     images: {{ images|tojson }},
-                    // URL contract: the upload endpoint is its own POST URL; the per-image
-                    // PATCH/DELETE URL is rendered once via url_for with a sentinel UUID,
-                    // and imageItemUrl() swaps in the real id at call time. This keeps the
-                    // route-name dependency explicit instead of implying the URL hierarchy.
-                    uploadImageUrl: '{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}',
+                    // URL contract: the per-image PATCH/DELETE URL is rendered once via
+                    // url_for with a sentinel UUID, and imageItemUrl() swaps in the real id
+                    // at call time. This keeps the route-name dependency explicit instead of
+                    // implying the URL hierarchy. (Upload is handled by the HTMX modal.)
                     imageItemUrlTemplate: '{{ url_for("backoffice_registration.update_assembly_registration_image", assembly_id=assembly.id, image_id="00000000-0000-0000-0000-000000000000") }}',
                     imageItemUrl(id) {
                         return this.imageItemUrlTemplate.replace(
@@ -805,12 +729,6 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             encodeURIComponent(id),
                         );
                     },
-                    imageUploadModalOpen: false,
-                    imageUploading: false,
-                    imageFile: null,
-                    imageFileName: '',
-                    imageAlt: '',
-                    imageUploadError: '',
                     imageBeingDeletedId: '',
                     // Image details / edit-alt modal
                     imageDetailsModalOpen: false,
@@ -874,67 +792,20 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         }, 3000);
                     },
 
-                    openImageUploadModal() {
-                        this.imageFile = null;
-                        this.imageFileName = '';
-                        this.imageAlt = '';
-                        this.imageUploadError = '';
-                        this.imageUploadModalOpen = true;
-                    },
-
-                    closeImageUploadModalIfAllowed() {
-                        if (this.imageUploading) return;
-                        this.imageUploadModalOpen = false;
-                    },
-
-                    onImageFileSelected(event) {
-                        const file = event.target.files && event.target.files[0];
-                        this.imageFile = file || null;
-                        this.imageFileName = file ? file.name : '';
-                        this.imageUploadError = '';
-                    },
-
-                    submitImageUpload() {
-                        if (!this.imageFile || this.imageUploading) return;
-                        const alt = this.imageAlt.trim();
-                        if (!alt) {
-                            this.imageUploadError = '{{ _("Alt text is required for accessibility") }}';
-                            return;
+                    // The upload modal posts via HTMX; on success the server fires a
+                    // `registration-image-uploaded` event carrying the new image, which we
+                    // merge into the reactive list here (dedup against an existing row when
+                    // the same bytes were re-uploaded).
+                    onImageUploaded(event) {
+                        const image = event.detail;
+                        if (!image || !image.id) return;
+                        const existing = this.images.findIndex(img => img.id === image.id);
+                        if (existing >= 0) {
+                            this.images.splice(existing, 1, image);
+                        } else {
+                            this.images.push(image);
                         }
-                        this.imageUploading = true;
-                        this.imageUploadError = '';
-                        const formData = new FormData();
-                        formData.append('image', this.imageFile);
-                        formData.append('alt', alt);
-                        fetch(this.uploadImageUrl, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            },
-                            body: formData
-                        })
-                            .then(async (response) => {
-                                const data = await response.json().catch(() => ({}));
-                                if (!response.ok) {
-                                    this.imageUploadError = data.error || '{{ _("Upload failed") }}';
-                                    return;
-                                }
-                                // Dedup against existing list (server returns the existing row when bytes match)
-                                const existing = this.images.findIndex(img => img.id === data.image.id);
-                                if (existing >= 0) {
-                                    this.images.splice(existing, 1, data.image);
-                                } else {
-                                    this.images.push(data.image);
-                                }
-                                this.imageUploadModalOpen = false;
-                                this.showToast('{{ _("Image uploaded") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.imageUploadError = '{{ _("Network error while uploading the image") }}';
-                            })
-                            .finally(() => {
-                                this.imageUploading = false;
-                            });
+                        this.showToast('{{ _("Image uploaded") }}', 'success');
                     },
 
                     deleteImage(image) {

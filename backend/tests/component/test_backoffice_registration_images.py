@@ -129,47 +129,135 @@ class TestImageRoutesRequireLogin:
         assert "/auth/login" in response.location
 
 
+class TestUploadModalRoute:
+    """The Assets panel loads the upload modal from the server via HTMX.
+
+    HX-Request gets just the modal fragment (swapped into a container); a plain
+    browser navigation gets the whole registration page with the modal already
+    open, so the feature degrades to a full page reload when JS is unavailable.
+    """
+
+    def test_htmx_request_returns_modal_fragment(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/upload-modal",
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        # A fragment, not the whole document
+        assert "<html" not in body.lower()
+        # The modal form posts the upload back to the JSON-free upload endpoint
+        upload_url = f"/backoffice/assembly/{existing_assembly.id}/registration/images"
+        assert f'action="{upload_url}"' in body
+        assert f'hx-post="{upload_url}"' in body
+        assert 'name="image"' in body
+        assert 'name="alt"' in body
+        assert "csrf_token" in body
+
+    def test_plain_request_returns_full_page_with_modal_open(
+        self, logged_in_admin, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/upload-modal",
+        )
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        # Full document (fallback) ...
+        assert "<html" in body.lower()
+        # ... with the upload modal rendered open inside it
+        upload_url = f"/backoffice/assembly/{existing_assembly.id}/registration/images"
+        assert f'action="{upload_url}"' in body
+
+    def test_requires_login(self, client, existing_assembly):
+        response = client.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/upload-modal",
+        )
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+
 class TestUploadRoute:
-    def test_upload_with_file_and_alt_returns_201_and_stores_image(
+    """Upload is HTMX-aware: an HX-Request gets an empty body plus an HX-Trigger
+    carrying the new image so the page can update client-side and close the modal;
+    a plain form post redirects back with a flash (full page reload)."""
+
+    def test_htmx_upload_returns_trigger_and_stores_image(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/registration/images",
-            data={
-                "image": (BytesIO(_png()), "logo.png"),
-                "alt": "Hello world",
-            },
+            data={"image": (BytesIO(_png()), "logo.png"), "alt": "Hello world"},
             content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 201
-        body = response.get_json()
-        assert body["image"]["alt"] == "Hello world"
-        assert body["image"]["original_filename"] == "logo.png"
-        assert registration_page.url_slug in body["image"]["public_url"]
+        assert response.status_code == 200
+        trigger = response.headers.get("HX-Trigger", "")
+        assert "registration-image-uploaded" in trigger
 
         stored = _stored_images(fake_store, registration_page)
         assert len(stored) == 1
         assert stored[0].alt == "Hello world"
         assert stored[0].original_filename == "logo.png"
-        assert body["image"]["id"] == str(stored[0].id)
+        # The new image's id rides along in the trigger payload so Alpine can append it
+        assert str(stored[0].id) in trigger
 
-    def test_upload_rejects_missing_alt(self, logged_in_admin, existing_assembly, registration_page):
+    def test_htmx_upload_rejects_missing_alt_rerenders_modal(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            data={"image": (BytesIO(_png()), "logo.png"), "alt": "   "},
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+        # 422 so the htmx-422-swap handler re-renders the modal with the error
+        assert response.status_code == 422
+        body = response.data.decode()
+        assert "alt" in body.lower()
+        assert 'name="alt"' in body
+        assert _stored_images(fake_store, registration_page) == []
+
+    def test_htmx_upload_rejects_missing_file_rerenders_modal(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            data={"alt": "Logo"},
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert _stored_images(fake_store, registration_page) == []
+
+    def test_plain_form_upload_redirects_and_stores_image(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            data={"image": (BytesIO(_png()), "logo.png"), "alt": "Hello world"},
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 302
+        assert f"/backoffice/assembly/{existing_assembly.id}/registration" in response.location
+
+        stored = _stored_images(fake_store, registration_page)
+        assert len(stored) == 1
+        assert stored[0].alt == "Hello world"
+
+    def test_plain_form_upload_missing_alt_redirects_without_storing(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "   "},
             content_type="multipart/form-data",
         )
-        assert response.status_code == 400
-        assert "alt" in response.get_json()["error"].lower()
-
-    def test_upload_rejects_missing_file(self, logged_in_admin, existing_assembly, registration_page):
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
-            data={"alt": "Logo"},
-            content_type="multipart/form-data",
-        )
-        assert response.status_code == 400
+        assert response.status_code == 302
+        assert _stored_images(fake_store, registration_page) == []
 
 
 class TestPatchRoute:
