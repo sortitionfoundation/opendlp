@@ -2,6 +2,7 @@
 ABOUTME: Supports SMTP, console logging, and future transactional email services"""
 
 import smtplib
+import sys
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -104,18 +105,23 @@ class ConsoleEmailAdapter(EmailAdapter):
         to_addrs = [self._format_address(addr) for addr in to]
         reply_to_line = f"\n  Reply-To: {self._format_address(reply_to)}" if reply_to else ""
 
-        # Truncate text body for logging
+        # Truncate text body for display
         text_preview = text_body[:400] + ("..." if len(text_body) > 400 else "")
         has_html = "Yes" if html_body else "No"
 
-        logger.info(
+        # Write directly to stdout rather than via logging: this adapter is
+        # dev-only and intentionally shows the real recipient address, so it must
+        # not be routed through the logging system (where it would either trip the
+        # PII audit or be scrubbed by the redaction processor).
+        print(
             "EMAIL (Console):\n"
             f"  From: {from_addr}\n"
             f"  To: {', '.join(to_addrs)}"
             f"{reply_to_line}\n"
             f"  Subject: {subject}\n"
             f"  Has HTML: {has_html}\n"
-            f"  Text Body Preview: {text_preview}"
+            f"  Text Body Preview: {text_preview}",
+            file=sys.stdout,
         )
 
         return True
