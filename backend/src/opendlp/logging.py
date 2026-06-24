@@ -7,6 +7,7 @@ import structlog
 from dotenv import load_dotenv
 
 from opendlp import config
+from opendlp.log_redaction import censor_pii, is_sensitive_key
 
 if TYPE_CHECKING:
     try:
@@ -24,6 +25,8 @@ pre_chain = [
     # Add the log level and a timestamp to the event_dict if the log entry is not from structlog.
     structlog.stdlib.add_log_level,
     timestamper,
+    # Redact PII/secrets from foreign (stdlib / third-party) log records.
+    censor_pii,
 ]
 
 # switch to dev_console for development set up
@@ -77,6 +80,8 @@ structlog.configure(
         timestamper,
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        # Redact PII/secrets after positional args are interpolated into the event.
+        censor_pii,
         structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
     ],
     logger_factory=structlog.stdlib.LoggerFactory(),
@@ -139,14 +144,12 @@ class GunicornLogger:  # pragma: no cover
 
     @staticmethod
     def header_safe(header_name: str) -> bool:
-        """Return True if the header is safe to log"""
-        lower_header = header_name.lower()
-        if lower_header in ("authorization", "cookie", "csrf_token"):
-            return False
-        for partial_header in ("api-key", "api_key", "authorization", "security-token"):
-            if partial_header in lower_header:
-                return False
-        return True
+        """Return True if the header is safe to log.
+
+        Delegates to the shared sensitive-key denylist in log_redaction so there
+        is a single source of truth for sensitive field/header names.
+        """
+        return not is_sensitive_key(header_name)
 
     def access(
         self,

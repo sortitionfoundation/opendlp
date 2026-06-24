@@ -46,6 +46,11 @@ def should_log_all_requests() -> bool:
     return is_production() and bool_environ_get("LOG_ALL_REQUESTS")
 
 
+def get_secret_key() -> str:
+    """Return the application secret key (env-backed, app-context independent)."""
+    return os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+
+
 @dataclass(slots=True, kw_only=True)
 class PostgresCfg:
     user: str
@@ -393,7 +398,7 @@ class FlaskBaseConfig:
 
     def __init__(self) -> None:
         self.SQLALCHEMY_DATABASE_URI = get_db_uri()
-        self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+        self.SECRET_KEY: str = get_secret_key()
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
         self.DEBUG: bool = bool_environ_get("DEBUG")
 
