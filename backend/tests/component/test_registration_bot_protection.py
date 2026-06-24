@@ -9,6 +9,7 @@ from flask.testing import FlaskClient
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.blueprints.registration import _generate_timing_token
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import create_assembly
@@ -141,6 +142,93 @@ class TestHoneypot:
 
         assert response.status_code == 302
         assert f"/register/{page.url_slug}/thank-you" in response.location
+
+
+class TestTimingToken:
+    """Route-level coverage of the form-timing check.
+
+    The timing gate (REGISTRATION_TIMING_CHECK_ENABLED) is off in the test
+    config, so each test re-enables it on the app. CSRF stays disabled, so no
+    CSRF token is needed — the point is to exercise the timing path alone.
+    """
+
+    def test_valid_token_old_enough_allows_submission(
+        self, app, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        """A valid timing token older than the minimum fill time proceeds normally."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        app.config["REGISTRATION_MIN_FILL_SECONDS"] = 0
+        page = _seed_published_page(fake_store, admin_user)
+
+        response = client.post(
+            f"/register/{page.url_slug}",
+            data={
+                "name": "Real Person",
+                "email": "real@example.com",
+                "_timing_token": _generate_timing_token(app.secret_key),
+            },
+        )
+
+        assert response.status_code == 302
+        assert f"/register/{page.url_slug}/thank-you" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 1
+
+    def test_submission_too_fast_redirects_without_saving(
+        self, app, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        """A token submitted faster than MIN_FILL_SECONDS is silently rejected."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        app.config["REGISTRATION_MIN_FILL_SECONDS"] = 9999
+        page = _seed_published_page(fake_store, admin_user)
+
+        response = client.post(
+            f"/register/{page.url_slug}",
+            data={
+                "name": "Bot",
+                "email": "bot@example.com",
+                "_timing_token": _generate_timing_token(app.secret_key),
+            },
+        )
+
+        assert response.status_code == 302
+        assert f"/register/{page.url_slug}/thank-you" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 0
+
+    def test_missing_token_rerenders_with_error(self, app, client: FlaskClient, fake_store, admin_user: User) -> None:
+        """A submission with no timing token re-renders the form with the expiry message."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        page = _seed_published_page(fake_store, admin_user)
+
+        response = client.post(
+            f"/register/{page.url_slug}",
+            data={"name": "Bot", "email": "bot@example.com"},
+        )
+
+        assert response.status_code == 200
+        assert b"open too long" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 0
+
+    def test_forged_token_rerenders_with_error(self, app, client: FlaskClient, fake_store, admin_user: User) -> None:
+        """A tampered timing token re-renders the form rather than saving."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        page = _seed_published_page(fake_store, admin_user)
+
+        response = client.post(
+            f"/register/{page.url_slug}",
+            data={
+                "name": "Bot",
+                "email": "bot@example.com",
+                "_timing_token": "not-a-real-token",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"open too long" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 0
 
 
 class TestRateLimit:

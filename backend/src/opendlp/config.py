@@ -383,6 +383,10 @@ class FlaskBaseConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
+    # Registration form-timing bot check. Gated separately from CSRF so it can
+    # be exercised in tests without a CSRF round-trip. Disabled in the test
+    # config (see FlaskTestConfig) like WTF_CSRF_ENABLED.
+    REGISTRATION_TIMING_CHECK_ENABLED = True
     # Don't expire CSRF tokens on a separate short clock; tie their validity to
     # the session instead. This avoids the common "form expired" 400 error when
     # a user leaves a page open longer than the default one hour.
@@ -506,6 +510,7 @@ class FlaskTestConfig(FlaskBaseConfig):
 
     TESTING = True
     WTF_CSRF_ENABLED = False
+    REGISTRATION_TIMING_CHECK_ENABLED = False
 
     def __init__(self) -> None:
         super().__init__()
