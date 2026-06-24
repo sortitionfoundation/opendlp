@@ -3,7 +3,6 @@
 
 import uuid
 from io import BytesIO
-from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -183,7 +182,7 @@ class TestUploadRoute:
     carrying the new image so the page can update client-side and close the modal;
     a plain form post redirects back with a flash (full page reload)."""
 
-    def test_htmx_upload_returns_trigger_and_stores_image(
+    def test_htmx_upload_returns_asset_list_fragment_and_stores_image(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         response = logged_in_admin.post(
@@ -194,15 +193,18 @@ class TestUploadRoute:
         )
 
         assert response.status_code == 200
-        trigger = response.headers.get("HX-Trigger", "")
-        assert "registration-image-uploaded" in trigger
+        body = response.data.decode()
+        # An out-of-band asset-list fragment refreshes the panel (and empties the
+        # modal container, closing the modal); a toast trigger announces success.
+        assert 'id="image-asset-list"' in body
+        assert "hx-swap-oob" in body
+        assert "Hello world" in body
+        assert "show-toast" in response.headers.get("HX-Trigger", "")
 
         stored = _stored_images(fake_store, registration_page)
         assert len(stored) == 1
         assert stored[0].alt == "Hello world"
         assert stored[0].original_filename == "logo.png"
-        # The new image's id rides along in the trigger payload so Alpine can append it
-        assert str(stored[0].id) in trigger
 
     def test_htmx_upload_rejects_missing_alt_rerenders_modal(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
@@ -260,130 +262,146 @@ class TestUploadRoute:
         assert _stored_images(fake_store, registration_page) == []
 
 
+class TestDetailsModalRoute:
+    """The per-image details/edit modal is loaded from the server via HTMX, opened
+    from each Assets row. Like the upload modal, a plain navigation gets the full
+    page with the modal already open so it works without JS."""
+
+    def _url(self, assembly_id, image_id) -> str:
+        return f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}/details-modal"
+
+    def test_htmx_request_returns_details_fragment(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        image = _seed_image(fake_store, registration_page, alt="A logo")
+
+        response = logged_in_admin.get(self._url(existing_assembly.id, image.id), headers={"HX-Request": "true"})
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert "<html" not in body.lower()
+        # The alt-edit form patches this image and the current alt is pre-filled
+        item_url = f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}"
+        assert f'hx-patch="{item_url}"' in body
+        assert 'name="alt"' in body
+        assert "A logo" in body
+        # Delete control targets the same image
+        assert f'hx-delete="{item_url}"' in body
+
+    def test_plain_request_returns_full_page_with_modal_open(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
+        image = _seed_image(fake_store, registration_page, alt="A logo")
+
+        response = logged_in_admin.get(self._url(existing_assembly.id, image.id))
+
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert "<html" in body.lower()
+        item_url = f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}"
+        assert f'hx-patch="{item_url}"' in body
+
+    def test_requires_login(self, client, existing_assembly):
+        response = client.get(self._url(existing_assembly.id, uuid.uuid4()))
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_unknown_image_redirects_to_registration(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.get(self._url(existing_assembly.id, uuid.uuid4()), headers={"HX-Request": "true"})
+        assert response.status_code == 302
+        assert f"/backoffice/assembly/{existing_assembly.id}/registration" in response.location
+
+
 class TestPatchRoute:
-    def test_patch_updates_alt_and_returns_image(
+    """Alt edits post (PATCH) from the details modal and return the refreshed
+    asset-list fragment (out-of-band), which also closes the modal."""
+
+    def test_patch_updates_alt_and_returns_asset_list_fragment(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         image = _seed_image(fake_store, registration_page, alt="Original")
 
         response = logged_in_admin.patch(
             f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
-            json={"alt": "Renamed"},
+            data={"alt": "Renamed"},
+            headers={"HX-Request": "true"},
         )
 
         assert response.status_code == 200
-        body = response.get_json()
-        assert body["image"]["alt"] == "Renamed"
-        assert body["image"]["id"] == str(image.id)
+        body = response.data.decode()
+        assert 'id="image-asset-list"' in body
+        assert "hx-swap-oob" in body
+        assert "Renamed" in body
 
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_images.get(image.id).alt == "Renamed"
 
-    def test_patch_rejects_missing_alt(self, logged_in_admin, fake_store, existing_assembly, registration_page):
+    def test_patch_rejects_missing_alt_rerenders_modal(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page
+    ):
         image = _seed_image(fake_store, registration_page, alt="Original")
 
         response = logged_in_admin.patch(
             f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
-            json={"alt": "  "},
+            data={"alt": "  "},
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 400
+        # 422 so the modal re-renders with the error inline
+        assert response.status_code == 422
+        body = response.data.decode()
+        assert 'name="alt"' in body
+        assert "alt" in body.lower()
 
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_images.get(image.id).alt == "Original"
 
 
 class TestDeleteRoute:
-    def test_delete_returns_204_and_removes_image(
+    """Delete (DELETE) returns the refreshed asset-list fragment with the image gone."""
+
+    def test_delete_returns_asset_list_fragment_and_removes_image(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
-        image = _seed_image(fake_store, registration_page)
+        image = _seed_image(fake_store, registration_page, alt="Doomed")
 
         response = logged_in_admin.delete(
             f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 204
-        assert response.data == b""
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert 'id="image-asset-list"' in body
+        assert "hx-swap-oob" in body
         assert _stored_images(fake_store, registration_page) == []
 
 
-class TestImageDetailsModalTemplate:
-    """Structural assertions on the Image Details modal in assembly_registration.html.
-
-    The modal HTML lives inline in the registration template, gated by
-    ``<template x-if="imageDetailsModalOpen && editingImage">`` so Alpine controls
-    visibility client-side. Rendering the page through the route requires a real
-    authenticated user (the base layout reads ``current_user.global_role`` in a
-    context processor), which is heavyweight for verifying static modal markup.
-
-    We instead scan the template file and confirm the enhanced modal carries the
-    expected structural markers — thumbnail binding, read-only inputs with copy
-    handlers, danger-styled Delete button, and the renamed "Save alt" button.
-    """
+class TestImageDetailsModalRendering:
+    """Structural assertions on the server-rendered details modal, driven through
+    the route (the modal is now real HTML, so we assert on the actual response)."""
 
     @pytest.fixture
-    def modal_block(self) -> str:
-        """Return only the Image Details modal subsection of the template."""
-        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
-        text = path.read_text(encoding="utf-8")
-        start_marker = "{# Image Details / Edit Alt Modal #}"
-        end_marker = "{# Toast notification #}"
-        start = text.find(start_marker)
-        end = text.find(end_marker, start)
-        assert start != -1 and end != -1, "Image Details modal section not found in template"
-        return text[start:end]
+    def rendered_modal(self, logged_in_admin, fake_store, existing_assembly, registration_page) -> str:
+        image = _seed_image(fake_store, registration_page, alt="A logo")
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}/details-modal",
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        return response.data.decode()
 
-    @pytest.fixture
-    def alpine_data_block(self) -> str:
-        """Return the Alpine data block (where the JS handlers live)."""
-        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
-        return path.read_text(encoding="utf-8")
+    def test_thumbnail_and_metadata_present(self, rendered_modal):
+        # Thumbnail uses the public URL; metadata block shows dimensions and file size
+        assert "/assets/" in rendered_modal  # public image url
+        assert "Dimensions" in rendered_modal
+        assert "File size" in rendered_modal
 
-    def test_thumbnail_binds_to_public_url_with_no_preview_fallback(self, modal_block):
-        assert ':src="editingImage.public_url"' in modal_block
-        assert ':alt="editingImage.alt' in modal_block
-        # Fallback hint when the page has no slug yet (public_url is blank)
-        assert "No preview" in modal_block
+    def test_filename_and_snippet_copy_use_clipboard_data_attrs(self, rendered_modal):
+        # Copy buttons rely on the delegated clipboard helper in utilities.js
+        assert "data-copy-text" in rendered_modal
+        assert "image-details-filename" in rendered_modal
+        assert "image-details-snippet" in rendered_modal
 
-    def test_read_only_filename_input_has_copy_handler(self, modal_block):
-        assert 'id="image-details-filename"' in modal_block
-        assert "readonly" in modal_block
-        assert ':value="editingImage.file_name"' in modal_block
-        # Click-to-select the value
-        assert "$event.target.select()" in modal_block
-        # Copy uses the new generic clipboard helper
-        assert "copyToClipboard(editingImage.file_name" in modal_block
-
-    def test_original_filename_shown_in_metadata_block_only_when_present(self, modal_block):
-        """Original filename sits inside the top metadata block alongside Dimensions
-        and File size, gated by an x-if so the row collapses out of the grid for
-        older uploads that have no original_filename stored. It's display-only —
-        no input, no copy button."""
-        assert 'x-text="editingImage.original_filename"' in modal_block
-        assert 'x-if="editingImage.original_filename"' in modal_block
-        # No standalone copy input/button for the original filename
-        assert 'id="image-details-original-filename"' not in modal_block
-        assert "copyToClipboard(editingImage.original_filename" not in modal_block
-
-    def test_read_only_snippet_input_has_copy_handler(self, modal_block):
-        assert 'id="image-details-snippet"' in modal_block
-        assert ':value="editingImage.img_snippet"' in modal_block
-        # Snippet copy reuses the existing helper (which guards on missing public URL)
-        assert "copyImageSnippet(editingImage)" in modal_block
-
-    def test_footer_has_delete_on_left_and_renamed_save_button(self, modal_block):
-        # Danger-styled Delete handler exists and is wired through a non-confirming method
-        assert 'variant="danger"' in modal_block
-        assert "deleteEditingImage()" in modal_block
-        assert "Delete image" in modal_block
-        # The primary save button is renamed to clarify what's persisted
-        assert "Save alt" in modal_block
-        # Old generic "Save" label is no longer the button text
-        assert 'button(_("Save"),' not in modal_block
-
-    def test_alpine_data_block_exposes_copy_helper_and_delete_method(self, alpine_data_block):
-        # Generic clipboard helper used by the filename copy button
-        assert "copyToClipboard(text, successMessage)" in alpine_data_block
-        # Modal-scoped delete that closes the modal on success and skips the panel's confirm()
-        assert "deleteEditingImage()" in alpine_data_block
-        assert "this.imageDetailsModalOpen = false" in alpine_data_block
+    def test_footer_has_delete_and_save_alt(self, rendered_modal):
+        assert "Delete image" in rendered_modal
+        assert "Save alt" in rendered_modal

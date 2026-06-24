@@ -1,0 +1,159 @@
+{#
+ABOUTME: Image details / edit-alt modal fragment for the registration Assets panel
+ABOUTME: Server-rendered + HTMX-driven (hx-patch edit, hx-delete); copy uses utilities.js
+#}
+{% from "backoffice/components/button.html" import button %}
+{% set item_url = url_for('backoffice_registration.update_assembly_registration_image', assembly_id=assembly_id, image_id=image.id) %}
+{% set close_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly_id) %}
+{# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
+<a href="{{ close_url }}"
+   class="fixed inset-0 z-40 block"
+   style="background-color: rgba(0, 0, 0, 0.5)"
+   aria-label="{{ _('Close') }}"></a>
+{# Modal panel #}
+<div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="image-details-modal-title">
+    <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
+        {# Header #}
+        <div class="px-6 py-4 flex items-center justify-between"
+             style="border-bottom: 1px solid var(--color-borders-dividers)">
+            <h2 id="image-details-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                {{ _("Image details") }}
+            </h2>
+            <a href="{{ close_url }}"
+               class="p-2 rounded-lg transition-colors hover:bg-gray-100"
+               style="color: var(--color-secondary-text);"
+               aria-label="{{ _('Close') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </a>
+        </div>
+        {# Content #}
+        <div class="px-6 py-4">
+            {# Thumbnail + compact metadata #}
+            <div class="rounded-md p-3 mb-4 flex gap-3" style="background-color: var(--color-subtle-background-panels);">
+                <div class="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden flex items-center justify-center"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);">
+                    {% if image.public_url %}
+                        <img src="{{ image.public_url }}" alt="{{ image.alt or '' }}" class="max-w-full max-h-full object-contain" />
+                    {% else %}
+                        <span class="text-body-sm text-center px-1 leading-tight" style="color: var(--color-placeholder-text);">{{ _("No preview") }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0 grid gap-y-1 gap-x-3 text-body-sm content-center" style="grid-template-columns: auto 1fr;">
+                    {% if image.original_filename %}
+                        <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("Original filename") }}</span>
+                        <span class="min-w-0 truncate font-mono" style="color: var(--color-body-text);" title="{{ image.original_filename }}">{{ image.original_filename }}</span>
+                    {% endif %}
+
+                    <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
+                    <span class="min-w-0" style="color: var(--color-body-text);">{{ image.width }} × {{ image.height }} {{ _("px") }}</span>
+
+                    <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("File size") }}</span>
+                    <span class="min-w-0" style="color: var(--color-body-text);">{{ image.byte_size | filesizeformat(true) }}</span>
+                </div>
+            </div>
+
+            {# File name (read-only + copy) #}
+            <div class="mb-3">
+                <label for="image-details-filename" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                    {{ _("File name") }}
+                </label>
+                <div class="flex gap-2">
+                    <input type="text"
+                           id="image-details-filename"
+                           readonly
+                           value="{{ image.file_name }}"
+                           class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                           style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    <button type="button"
+                            data-copy-text="{{ image.file_name }}"
+                            data-copy-message="{{ _('File name copied to clipboard') }}"
+                            class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                            aria-label="{{ _('Copy file name') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {# <img> snippet (read-only + copy) — only when there's a public URL #}
+            {% if image.img_snippet %}
+                <div class="mb-3">
+                    <label for="image-details-snippet" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                        {{ _("Image snippet") }}
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text"
+                               id="image-details-snippet"
+                               readonly
+                               value="{{ image.img_snippet }}"
+                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                        <button type="button"
+                                data-copy-text="{{ image.img_snippet }}"
+                                data-copy-message="{{ _('Snippet copied to clipboard') }}"
+                                class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                                aria-label="{{ _('Copy image snippet') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Alt-text edit form — patches this image, returns the refreshed asset list #}
+            <form id="image-details-edit"
+                  hx-patch="{{ item_url }}"
+                  hx-target="#image-modal-container"
+                  hx-swap="innerHTML">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <label for="image-edit-alt" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                    {{ _("Alt text") }}
+                    <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
+                </label>
+                <input type="text"
+                       id="image-edit-alt"
+                       name="alt"
+                       value="{{ alt_value if error else image.alt }}"
+                       required
+                       aria-required="true"
+                       class="w-full px-3 py-2 rounded-md text-body-sm"
+                       style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                    {{ _("Describes the image for screen-reader users and is used as the file's display name in the asset list.") }}
+                </p>
+                {% if error %}
+                    <div class="rounded-md p-3 mt-3"
+                         style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                        <p class="text-body-sm" style="color: var(--color-error-600);">{{ error }}</p>
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+        {# Footer #}
+        <div class="px-6 py-3 flex gap-2 justify-between items-center"
+             style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
+            {# Delete is its own form so it doesn't nest inside the edit form #}
+            <form hx-delete="{{ item_url }}"
+                  hx-target="#image-modal-container"
+                  hx-swap="innerHTML"
+                  hx-confirm="{{ _('Delete this image?') }} {{ image.display_name }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                {{ button(_("Delete image"), variant="danger", type="submit") }}
+            </form>
+            <div class="flex gap-2">
+                {{ button(_("Cancel"), variant="secondary", href=close_url) }}
+                {{ button(_("Save alt"), variant="primary", type="submit", attrs='form="image-details-edit"') }}
+            </div>
+        </div>
+    </div>
+</div>
