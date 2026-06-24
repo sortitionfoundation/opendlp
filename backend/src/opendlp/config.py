@@ -439,6 +439,17 @@ class FlaskBaseConfig:
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
         self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
 
+        # Registration bot protection
+        self.REGISTRATION_RATE_LIMIT_PER_IP: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_IP", "30"))
+        self.REGISTRATION_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_EMAIL", "5"))
+        self.REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES: int = int(
+            os.environ.get("REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES", "60")
+        )
+        self.REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES: int = int(
+            os.environ.get("REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES", "1440")
+        )
+        self.REGISTRATION_MIN_FILL_SECONDS: int = int(os.environ.get("REGISTRATION_MIN_FILL_SECONDS", "3"))
+
         # File upload limit — the maximum across all per-upload-type limits so
         # the WSGI layer rejects obviously oversized requests before allocating
         # memory. Each route still enforces its own tighter limit.

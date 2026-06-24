@@ -18,6 +18,7 @@ dependencies = [
   "flask-session>=0.8.0",
   "flask-wtf>=1.2.2",
   "gspread>=6.2.1",
+  "itsdangerous>=2.2.0",
   "jinja2>=3.1.6",
   "markupsafe>=3.0.2",
   "pillow>=12.2.0",
@@ -242,8 +243,9 @@ fail_under = 80
 # these are not imported directly, but are used.
 # - alembic - sqlalchemy migration - might be used directly in cli when we write it
 # - gunicorn - web server for production
+# - itsdangerous - used by Flask internally for session signing
 # pending usage - delete the other exceptions once 2FA is fully working
-DEP002 = ["alembic", "gunicorn"]
+DEP002 = ["alembic", "gunicorn", "itsdangerous"]
 
 [tool.djlint]
 profile = "jinja"
