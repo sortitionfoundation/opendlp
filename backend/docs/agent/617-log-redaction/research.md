@@ -68,6 +68,8 @@ positional arg, not interpolated text. This is the case that separates
 "redact the rendered message string" from "redact structured fields" — see
 options below.
 
+COMMENT: the email console adapter should only be used in dev, so no production email addresses will go through it. Nonetheless we could change it to actually write to sys.stdout so it does not come up in audits, and it does not get caught by logging filters.
+
 ### Secrets/tokens in logs
 
 No passwords, tokens or secrets are currently interpolated into log messages:
@@ -174,6 +176,8 @@ e.g. `logger.info("Password reset email sent to user %s", user.id)`.
   pre-auth (no UUID available) — there, log a hash of the email or accept
   redaction-only; loses human readability when eyeballing logs.
 
+COMMENT: I think user.id is compatible. While the user is live, we can look up the email. But when we "delete" a user (by clearing most of their data fields, including email) the user ID can no longer be used to find the person. Let's record this expectation in the doc. (Or tell me that I'm wrong ...)
+
 ### Option 2 — redaction-only, leave statements as-is
 
 - **Pros:** zero churn in service code.
@@ -182,6 +186,8 @@ e.g. `logger.info("Password reset email sent to user %s", user.id)`.
 
 **Recommendation:** Option 1 for our own code (bounded list — ~6 files above)
 **plus** the redaction net (Option A) for everything else and future code.
+
+COMMENT: we should do Option 1
 
 ## Step 0 — make logger usage consistent (prerequisite)
 
@@ -240,6 +246,9 @@ for both redaction and the audit); **S3** as the pragmatic fallback. Either way
 the service-layer PII modules (`*_service.py`, `adapters/email.py`) should move
 to structlog, since that's where the email sites are.
 
+COMMENT: Agree, S1.
+COMMENT: In addition, maybe we could add in a request id to flask usage, something like the flask example in https://github.com/hynek/structlog/raw/refs/heads/main/docs/contextvars.md
+
 ## Proposed shape of the work
 
 0. **Make logger usage consistent** (Step 0 above) — pick a target style and
@@ -262,12 +271,29 @@ to structlog, since that's where the email sites are.
   adopt S1/S2 such that all PII flows through structlog, the **field-aware
   structlog processor (Option B) becomes viable** and could replace or
   complement the stdlib filter (Option A).
+
+COMMENT: I would prefer to do Step 0 and then Option B. I am undecided about Option C.
+
 - **Rate-limit-by-email logging** (`login_rate_limit_service.py:70`): redact,
   hash, or drop the email? No UUID exists at that point.
+
+COMMENT: I'm inclined to redact. Would `a****b@gmail.com` be enough redaction? If not, probably hash.
+
 - **Secret denylist scope:** start with the `header_safe` seed only, or also
   add generic long-token heuristics (with their false-positive risk)?
+
+We do include UUIDs, and may include hashes of passwords, so best to not to generic long-token stuff for now.
+
 - **Belt-and-braces:** ship Option A alone first, or A + C from the start?
+
+COMMENT: Step 0, option B. Hold off C for now.
+
 - **Dev console:** redact in development too (consistency) or only in
   production JSON logs (developer convenience)?
+
+COMMENT: Redact in Dev too
+
 - **Performance:** acceptable to run a few regexes per log line at INFO volume?
   (Likely yes; worth a sanity check on hot paths like gunicorn access logs.)
+
+COMMENT: yes, acceptable
