@@ -1,10 +1,12 @@
 # Bot protection — implementation plan (recommended layers only)
 
+**STATUS: COMPLETE** — all phases implemented and committed (see git log for branch `614-bot-protection`).
+
 This plan covers the three recommended layers from `research.md`:
 
-1. Honeypot field + form-timing token (+ existing CSRF)
-2. Rate limiting — per-IP and per-email
-3. `X-Robots-Tag: noindex` header
+1. ✅ Honeypot field + form-timing token (+ existing CSRF)
+2. ✅ Rate limiting — per-IP and per-email
+3. ✅ `X-Robots-Tag: noindex` header
 
 It does not cover the call-centre path, address-match integration, email-job signed links, or CDN/WAF — those are in the research doc as later or optional work.
 

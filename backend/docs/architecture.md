@@ -100,6 +100,7 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 | ------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | -------------------- | ------ |
 | `wellknown`               | —                            | robots.txt, security.txt, change-password redirect                                             | Public               | 3      |
 | `health`                  | —                            | JSON health check (`/health`, `/health/bdd`, `/health/monitor_selection`)                      | Public               | 3      |
+| `registration`            | `/register`, `/r`            | Public registration forms — form render, submit, thank-you, short-URL redirect; bot protection | Public               | ~8     |
 | `auth`                    | `/auth`                      | Login, register, password reset, email confirmation, Google/Microsoft OAuth, 2FA verify        | Mixed                | 18     |
 | `main`                    | —                            | Landing page, dashboard, assembly view, legacy member management                               | Mixed                | 11     |
 | `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
@@ -140,7 +141,8 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `totp_service`               | TOTP secret generation, Fernet encryption, QR codes, verification                                  | `pyotp`, `cryptography`, `qrcode`                                           |
 | `email_confirmation_service` | Email verification tokens with rate limiting + anti-enumeration                                    | email adapter, template renderer, URL generator                             |
 | `password_reset_service`     | Reset tokens, rate limiting, reset emails, cleanup                                                 | `security`, email adapter                                                   |
-| `login_rate_limit_service`   | Per-email / per-IP brute-force counters                                                            | `redis`                                                                     |
+| `login_rate_limit_service`   | Per-email / per-IP brute-force counters for login                                                  | `redis`                                                                     |
+| `registration_bot_protection_service` | Per-IP and per-email rate limiting for public registration form submissions          | `redis`                                                                     |
 | `security`                   | Password hashing, verification, strength validation                                                | `werkzeug.security`, vendored validators                                    |
 | `target_checking`            | Structured validation mapping `sortition-algorithms` errors to category/value UI annotations       | `sortition-algorithms`                                                      |
 | `target_respondent_helpers`  | Shared helpers linking target categories to respondent data                                        | `respondent_service`                                                        |
@@ -250,6 +252,7 @@ flowchart LR
     subgraph BPs["Blueprints"]
         admin_bp
         auth_bp
+        registration_bp
         main_bp
         profile_bp
         backoffice_bp
@@ -274,6 +277,7 @@ flowchart LR
         password_reset_svc[password_reset_service]
         totp_svc[totp_service]
         login_rate_svc[login_rate_limit_service]
+        reg_bot_svc[registration_bot_protection_service]
         permissions_svc[permissions]
         target_check_svc[target_checking]
         report_xl[report_translation]
@@ -281,6 +285,7 @@ flowchart LR
 
     admin_bp --> user_svc & invite_svc & two_factor_svc
     auth_bp --> user_svc & email_confirm_svc & password_reset_svc & totp_svc & login_rate_svc
+    registration_bp --> reg_bot_svc
     main_bp --> assembly_svc & user_svc & permissions_svc
     profile_bp --> user_svc & two_factor_svc
     backoffice_bp --> assembly_svc & user_svc & respondent_svc & permissions_svc
@@ -298,21 +303,22 @@ flowchart LR
 
 ### Dependency matrix
 
-|                    | assembly | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | perms | target_check |
-| ------------------ | :------: | :--: | :--------: | :-------: | :----: | :-: | :--------: | :------: | :--: | :------: | :---: | :----------: |
-| **admin**          |          |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |       |              |
-| **auth**           |          |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |       |              |
-| **main**           |    ✓     |  ✓   |            |           |        |     |            |          |      |          |   ✓   |              |
-| **profile**        |          |  ✓   |            |           |        |  ✓  |            |          |      |          |       |              |
-| **backoffice**     |    ✓     |  ✓   |     ✓      |           |        |     |            |          |      |          |   ✓   |              |
-| **dev**            |    ✓     |      |     ✓      |           |        |     |            |          |      |          |   ✓   |              |
-| **gsheets**        |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
-| **db_sel_bo**      |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
-| **targets**        |    ✓     |      |            |           |        |     |            |          |      |          |       |      ✓       |
-| **gsheets_legacy** |    ✓     |      |            |     ✓     |        |     |            |          |      |          |       |              |
-| **db_sel_legacy**  |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |       |              |
-| **targets_legacy** |    ✓     |      |            |           |        |     |            |          |      |          |       |      ✓       |
-| **respondents_lg** |    ✓     |      |     ✓      |           |        |     |            |          |      |          |       |              |
+|                    | assembly | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | bot_prot | perms | target_check |
+| ------------------ | :------: | :--: | :--------: | :-------: | :----: | :-: | :--------: | :------: | :--: | :------: | :------: | :---: | :----------: |
+| **admin**          |          |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |          |       |              |
+| **auth**           |          |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |          |       |              |
+| **registration**   |          |      |            |           |        |     |            |          |      |          |    ✓     |       |              |
+| **main**           |    ✓     |  ✓   |            |           |        |     |            |          |      |          |          |   ✓   |              |
+| **profile**        |          |  ✓   |            |           |        |  ✓  |            |          |      |          |          |       |              |
+| **backoffice**     |    ✓     |  ✓   |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
+| **dev**            |    ✓     |      |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
+| **gsheets**        |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **db_sel_bo**      |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **targets**        |    ✓     |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
+| **gsheets_legacy** |    ✓     |      |            |     ✓     |        |     |            |          |      |          |          |       |              |
+| **db_sel_legacy**  |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **targets_legacy** |    ✓     |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
+| **respondents_lg** |    ✓     |      |     ✓      |           |        |     |            |          |      |          |          |       |              |
 
 ---
 
@@ -354,6 +360,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 | `dev`                     | 4      | 3        | Non-production only; admin-guarded.                                                     |
 | `health`                  | 3      | —        | Public; includes `/health/monitor_selection` (focused, returns 500 on `NOT_CONFIGURED`).|
 | `wellknown`               | 3      | —        | Public.                                                                                 |
+| `registration`            | ~8     | 1        | Public; hosts all registration form pages; honeypot + timing token + rate limits + noindex. |
 
 ### Service observations
 
