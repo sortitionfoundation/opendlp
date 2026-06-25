@@ -187,7 +187,9 @@ _FORM_EXPIRED_ERROR = (
 )
 
 
-def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturnValue | None:
+def _check_form_tokens(
+    uow: AbstractUnitOfWork, url_slug: str, ip_address: str, email: str
+) -> ResponseReturnValue | None:
     """Validate CSRF and timing tokens from the submitted form.
 
     Returns None when both tokens are acceptable. Returns a response (redirect
@@ -196,6 +198,10 @@ def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturn
     REGISTRATION_TIMING_CHECK_ENABLED. Both are disabled in the test config so
     happy-path tests need not mint tokens; timing tests re-enable just the
     timing gate without needing a CSRF round-trip.
+
+    A too-fast timing rejection is a bot signal, so it is recorded against the
+    rate-limit counters. A missing/forged/expired token re-renders the form and
+    is not recorded, because a slow genuine user trips the same path.
     """
     if current_app.config.get("WTF_CSRF_ENABLED", True):
         try:
@@ -224,6 +230,7 @@ def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturn
                 url_slug,
                 exc.age_seconds,
             )
+            _record_submission(ip_address, email)
             return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
         except (SignatureExpired, BadSignature):
             return _rerender_form_with_values(
@@ -234,6 +241,16 @@ def _check_form_tokens(uow: AbstractUnitOfWork, url_slug: str) -> ResponseReturn
             )
 
     return None
+
+
+def _record_submission(ip_address: str, email: str) -> None:
+    """Count a submission against the per-IP and per-email rate-limit windows."""
+    record_registration_submission(
+        ip_address,
+        email,
+        ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
+        email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
+    )
 
 
 @registration_bp.route("/register/<url_slug>", methods=["POST"])
@@ -251,20 +268,21 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     """
     uow = bootstrap.get_flask_uow()
 
+    ip_address = request.remote_addr or ""
+    email = request.form.get("email", "").strip().lower()
+
     if request.form.get("_opendlp_ttoken_"):
         logger.warning(
             "Bot protection: honeypot triggered (IP: %s, slug: %s)",
             request.remote_addr,
             url_slug,
         )
+        _record_submission(ip_address, email)
         return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
 
-    token_error = _check_form_tokens(uow, url_slug)
+    token_error = _check_form_tokens(uow, url_slug, ip_address, email)
     if token_error is not None:
         return token_error
-
-    ip_address = request.remote_addr or ""
-    email = request.form.get("email", "").strip().lower()
 
     try:
         check_registration_rate_limit(
@@ -290,18 +308,14 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     except RegistrationClosedError:
         return redirect(url_for("registration.registration_closed"), 302)
 
-    record_registration_submission(
-        ip_address,
-        email,
-        ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
-        email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
-    )
-
     if result.is_valid:
+        _record_submission(ip_address, email)
         _send_registration_auto_reply(result.respondent)
         return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
 
-    # Validation failed - re-render form with errors
+    # Validation failed - re-render form with errors. We deliberately do not
+    # count this against the rate limit: members of the public may take several
+    # tries over a tricky form and must not lock themselves out by mistyping.
     return _rerender_form_with_values(
         uow,
         url_slug,
