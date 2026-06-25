@@ -117,6 +117,9 @@ class TestHoneypot:
         assert response.status_code == 302
         assert f"/register/{page.url_slug}/thank-you" in response.location
 
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 0
+
     def test_honeypot_triggered_does_not_save_respondent(
         self, client: FlaskClient, fake_store, admin_user: User
     ) -> None:
@@ -142,6 +145,9 @@ class TestHoneypot:
 
         assert response.status_code == 302
         assert f"/register/{page.url_slug}/thank-you" in response.location
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 1
 
 
 class TestTimingToken:
