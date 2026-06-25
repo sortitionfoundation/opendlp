@@ -79,8 +79,11 @@ class TestFlaskConfigClass:
 
         config = FlaskConfig()
 
-        assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54321/opendlp"
-        assert config.SECRET_KEY == "dev-secret-key-change-in-production"
+        assert (
+            config.SQLALCHEMY_DATABASE_URI
+            == "postgresql://opendlp:abc123@localhost:54321/opendlp"  # pragma: allowlist secret
+        )
+        assert config.SECRET_KEY == "dev-secret-key-change-in-production"  # pragma: allowlist secret
         assert config.FLASK_ENV == "development"
         assert config.INVITE_EXPIRY_HOURS == 168
         assert config.OAUTH_GOOGLE_CLIENT_ID == ""
@@ -90,23 +93,26 @@ class TestFlaskConfigClass:
         """Test that Config loads from environment variables."""
         temp_env_vars(
             DB_HOST="db.server.net",
-            DB_PASSWORD="db-secret",
+            DB_PASSWORD="db-secret",  # pragma: allowlist secret
             DB_PORT="5432",
-            SECRET_KEY="test-secret",
+            SECRET_KEY="test-secret",  # pragma: allowlist secret
             FLASK_ENV="production",
             INVITE_EXPIRY_HOURS="72",
             OAUTH_GOOGLE_CLIENT_ID="test-client-id",
-            OAUTH_GOOGLE_CLIENT_SECRET="test-client-secret",
+            OAUTH_GOOGLE_CLIENT_SECRET="test-client-secret",  # pragma: allowlist secret
         )
 
         config = FlaskConfig()
 
-        assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:db-secret@db.server.net:5432/opendlp"
-        assert config.SECRET_KEY == "test-secret"
+        assert (
+            config.SQLALCHEMY_DATABASE_URI
+            == "postgresql://opendlp:db-secret@db.server.net:5432/opendlp"  # pragma: allowlist secret
+        )
+        assert config.SECRET_KEY == "test-secret"  # pragma: allowlist secret
         assert config.FLASK_ENV == "production"
         assert config.INVITE_EXPIRY_HOURS == 72
         assert config.OAUTH_GOOGLE_CLIENT_ID == "test-client-id"
-        assert config.OAUTH_GOOGLE_CLIENT_SECRET == "test-client-secret"
+        assert config.OAUTH_GOOGLE_CLIENT_SECRET == "test-client-secret"  # pragma: allowlist secret
 
 
 class TestFlaskTestConfig:
@@ -117,8 +123,11 @@ class TestFlaskTestConfig:
         clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
         config = FlaskTestConfig()
 
-        assert config.SQLALCHEMY_DATABASE_URI == "postgresql://opendlp:abc123@localhost:54322/opendlp"
-        assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"
+        assert (
+            config.SQLALCHEMY_DATABASE_URI
+            == "postgresql://opendlp:abc123@localhost:54322/opendlp"  # pragma: allowlist secret
+        )
+        assert config.SECRET_KEY == "test-secret-key-aockgn298zx081238"  # pragma: allowlist secret
         assert config.FLASK_ENV == "testing"
         # Should inherit other defaults
         assert config.INVITE_EXPIRY_HOURS == 168
@@ -129,11 +138,11 @@ class TestFlaskProductionConfig:
 
     def test_production_config_with_secret_key(self, temp_env_vars):
         """Test that ProductionConfig works with proper SECRET_KEY."""
-        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="console")
+        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="console")  # pragma: allowlist secret
 
         config = FlaskProductionConfig()
 
-        assert config.SECRET_KEY == "production-secret-key"
+        assert config.SECRET_KEY == "production-secret-key"  # pragma: allowlist secret
 
     def test_production_config_without_secret_key(self, clear_env_vars):
         """Test that ProductionConfig raises error without proper SECRET_KEY."""
@@ -172,7 +181,11 @@ class TestGetConfig:
 
     def test_get_config_production(self, temp_env_vars):
         """Test get_config returns ProductionConfig for production."""
-        temp_env_vars(FLASK_ENV="production", SECRET_KEY="production-secret", EMAIL_ADAPTER="console")
+        temp_env_vars(
+            FLASK_ENV="production",
+            SECRET_KEY="production-secret",  # pragma: allowlist secret
+            EMAIL_ADAPTER="console",
+        )
 
         config = get_config()
 

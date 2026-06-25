@@ -88,7 +88,7 @@ class TestCliUsersIntegration:
             user, _ = create_user(
                 uow=uow,
                 email=user_email,
-                password="pass123oiua",
+                password="pass123oiua",  # pragma: allowlist secret
                 first_name="Deactivate",
                 last_name="Test",
                 global_role=GlobalRole.USER,
@@ -109,8 +109,8 @@ class TestCliUsersIntegration:
     def test_reset_password_flow(self, postgres_session_factory, cli_with_session_factory, monkeypatch):
         """Test user password reset flow."""
         user_email = "reset-password-test@example.com"
-        original_password = "original123abc"
-        new_password = "newpassword456def"
+        original_password = "original123abc"  # pragma: allowlist secret
+        new_password = "newpassword456def"  # pragma: allowlist secret
 
         # Create a user first
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
@@ -146,7 +146,12 @@ class TestCliInvitesIntegration:
         """Test complete invite generation and listing flow."""
         user_email = "gen-invite-test@example.com"
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
-            create_user(uow=uow, email=user_email, password="pass123oiua", global_role=GlobalRole.ADMIN)
+            create_user(
+                uow=uow,
+                email=user_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
+            )
 
         # Generate invites
         result = cli_with_session_factory(
@@ -171,7 +176,10 @@ class TestCliInvitesIntegration:
         admin_email = "revoke-admin@example.com"
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             admin_user, _ = create_user(
-                uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
+                uow=uow,
+                email=admin_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
             )
             uow.flush()  # make sqlalchemy commit enough to get a user ID
             invite = generate_invite(
@@ -203,11 +211,19 @@ class TestCliInvitesIntegration:
         # Create admin user and invite
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             admin_user, _ = create_user(
-                uow=uow, email=admin_email, password="pass123oiua", global_role=GlobalRole.ADMIN
+                uow=uow,
+                email=admin_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
             )
 
             # Create non-admin user
-            create_user(uow=uow, email=non_admin_email, password="pass123oiua", global_role=GlobalRole.USER)
+            create_user(
+                uow=uow,
+                email=non_admin_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.USER,
+            )
             uow.flush()  # make sqlalchemy commit enough to get a user ID
 
             invite = generate_invite(
@@ -234,7 +250,10 @@ class TestCliInvitesIntegration:
         """Test cleanup of expired invites."""
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             user, _ = create_user(
-                uow=uow, email="gen-invite-test@example.com", password="pass123oiua", global_role=GlobalRole.ADMIN
+                uow=uow,
+                email="gen-invite-test@example.com",
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
             )
 
         # Create an expired invite directly
@@ -322,7 +341,7 @@ class TestCliDatabaseIntegration:
             create_user(
                 uow=uow,
                 email="existing@example.com",
-                password="pass123,muq",
+                password="pass123,muq",  # pragma: allowlist secret
                 first_name="Existing",
                 last_name="User",
                 global_role=GlobalRole.USER,
@@ -344,7 +363,7 @@ class TestCliDatabaseIntegration:
             create_user(
                 uow=uow,
                 email="before-reset@example.com",
-                password="pass123oiua",
+                password="pass123oiua",  # pragma: allowlist secret
                 global_role=GlobalRole.USER,
             )
 

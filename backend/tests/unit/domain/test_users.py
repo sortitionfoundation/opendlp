@@ -15,7 +15,7 @@ class TestUser:
         user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hashed_password",
+            password_hash="hashed_password",  # pragma: allowlist secret
             first_name="Test",
             last_name="User",
         )
@@ -24,7 +24,7 @@ class TestUser:
         assert user.first_name == "Test"
         assert user.last_name == "User"
         assert user.global_role == GlobalRole.USER
-        assert user.password_hash == "hashed_password"
+        assert user.password_hash == "hashed_password"  # pragma: allowlist secret
         assert user.oauth_provider is None
         assert user.oauth_id is None
         assert user.is_active is True
@@ -55,7 +55,7 @@ class TestUser:
         user1 = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             first_name="John",
             last_name="Doe",
         )
@@ -79,10 +79,10 @@ class TestUser:
 
         # Invalid emails
         with pytest.raises(ValueError, match="Invalid email address"):
-            User(email="invalid", global_role=GlobalRole.USER, password_hash="hash")
+            User(email="invalid", global_role=GlobalRole.USER, password_hash="hash")  # pragma: allowlist secret
 
         with pytest.raises(ValueError, match="Invalid email address"):
-            User(email="", global_role=GlobalRole.USER, password_hash="hash")
+            User(email="", global_role=GlobalRole.USER, password_hash="hash")  # pragma: allowlist secret
 
     def test_has_global_admin(self):
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -103,7 +103,7 @@ class TestUser:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
         assert organiser_user.can_access_assembly(assembly_id) is True
 
@@ -171,7 +171,7 @@ class TestUser:
         user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             user_data_agreement_agreed_at=agreement_time,
         )
 
@@ -184,7 +184,7 @@ class TestUser:
             user_id=user_id,
             email="user1@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             first_name="First",
             last_name="User",
         )
@@ -193,7 +193,7 @@ class TestUser:
             user_id=user_id,
             email="user2@example.com",  # Different email but same ID
             global_role=GlobalRole.ADMIN,
-            password_hash="hash2",
+            password_hash="hash2",  # pragma: allowlist secret
             first_name="Second",
             last_name="User",
         )

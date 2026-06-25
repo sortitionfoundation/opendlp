@@ -92,13 +92,13 @@ class TestUserRepository:
         active_user = User(
             email="active@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             is_active=True,
         )
         inactive_user = User(
             email="inactive@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             is_active=False,
         )
 
@@ -117,7 +117,7 @@ class TestUserRepository:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
 
         user_repo.add(regular_user)

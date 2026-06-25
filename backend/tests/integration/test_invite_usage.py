@@ -20,7 +20,7 @@ class TestInviteUsage:
         admin_user, _ = create_user(
             uow=admin_uow,
             email="admin@test.com",
-            password="secure_password123",
+            password="secure_password123",  # pragma: allowlist secret
             first_name="Admin",
             last_name="User",
             global_role=GlobalRole.ADMIN,
@@ -49,7 +49,7 @@ class TestInviteUsage:
         new_user, _ = create_user(
             uow=user_uow,
             email="newuser@test.com",
-            password="secure_password456",
+            password="secure_password456",  # pragma: allowlist secret
             first_name="New",
             last_name="User",
             invite_code=invite.code,
@@ -77,7 +77,7 @@ class TestInviteUsage:
         admin_user, _ = create_user(
             uow=admin_uow,
             email="admin2@test.com",
-            password="secure_password123",
+            password="secure_password123",  # pragma: allowlist secret
             first_name="Admin",
             last_name="User",
             global_role=GlobalRole.ADMIN,
@@ -97,7 +97,7 @@ class TestInviteUsage:
         create_user(
             uow=first_user_uow,
             email="firstuser@test.com",
-            password="secure_password456",
+            password="secure_password456",  # pragma: allowlist secret
             first_name="First",
             last_name="User",
             invite_code=invite.code,
@@ -109,7 +109,7 @@ class TestInviteUsage:
             create_user(
                 uow=second_user_uow,
                 email="seconduser@test.com",
-                password="secure_password789",
+                password="secure_password789",  # pragma: allowlist secret
                 first_name="Second",
                 last_name="User",
                 invite_code=invite.code,
