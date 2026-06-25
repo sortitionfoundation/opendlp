@@ -162,7 +162,7 @@ def service_docs_execute() -> ResponseReturnValue:
         return jsonify(result), 200
 
     except Exception as e:
-        logger.error(f"Service docs execute error: {e}")
+        logger.error("Service docs execute error", error=str(e))
         logger.exception("Full traceback:")
         return jsonify({
             "status": "error",

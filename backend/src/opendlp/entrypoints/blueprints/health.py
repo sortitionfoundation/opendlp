@@ -104,7 +104,7 @@ def check_microsoft_oauth_expiry() -> tuple[int | None, str]:
 
     except ValueError:
         # Invalid date format
-        logger.warning(f"Invalid OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY format: {expiry_str}")
+        logger.warning("Invalid OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY format", expiry_str=expiry_str)
         return None, "UNKNOWN"
 
 

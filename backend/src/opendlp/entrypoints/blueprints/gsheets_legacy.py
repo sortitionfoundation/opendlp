@@ -134,30 +134,59 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except InsufficientPermissions as e:
                 logger.warning(
-                    f"Insufficient permissions to {action} gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
+                    "Insufficient permissions to manage gsheet for assembly",
+                    action=action,
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
                 )
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
             except NotFoundError as e:
-                logger.error(f"Gsheet {action} validation error for assembly {assembly_id} user {current_user.id}: {e}")
+                logger.error(
+                    "Gsheet validation error",
+                    action=action,
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
+                )
                 flash(_("Please check your input and try again"), "error")
             except Exception as e:
-                logger.error(f"Gsheet {action} error for assembly {assembly_id} user {current_user.id}: {e}")
+                logger.error(
+                    "Gsheet management error",
+                    action=action,
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
+                )
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
         return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet, current_tab="data"), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for gsheet management by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for gsheet management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions to view assembly {assembly_id} for gsheet management by user {current_user.id}: {e}"
+            "Insufficient permissions to view assembly for gsheet management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Gsheet management page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Gsheet management page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -173,17 +202,29 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except NotFoundError as e:
-        logger.warning(f"Assembly or gsheet not found for deletion by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly or gsheet not found for deletion",
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Google Spreadsheet configuration not found"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions to delete gsheet for assembly {assembly_id} by user {current_user.id}: {e}"
+            "Insufficient permissions to delete gsheet for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except Exception as e:
-        logger.error(f"Gsheet deletion error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Gsheet deletion error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
@@ -208,15 +249,30 @@ def select_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for assembly {assembly_id} selection user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Selection page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -235,7 +291,12 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
 
         # Validate that the run belongs to this assembly
         if result.run_record and result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             flash(_("Invalid task ID for this assembly"), "error")
             return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
@@ -252,15 +313,30 @@ def select_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for selection by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for assembly {assembly_id} selection user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Selection page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -282,12 +358,21 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
 
         # Check if run record exists
         if not result.run_record:
-            logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            logger.warning(
+                "Run not found for progress polling",
+                run_id=str(run_id),
+                user_id=str(current_user.id),
+            )
             return "", 404
 
         # Validate that the run belongs to this assembly
         if result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             # Return empty response for HTMX to handle gracefully
             return "", 404
 
@@ -310,15 +395,28 @@ def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
             response.headers["HX-Refresh"] = "true"
         return response
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 404
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+            "Insufficient permissions for assembly progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         return "", 403
     except Exception as e:
-        logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Progress polling error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 500
 
 
@@ -340,21 +438,38 @@ def start_gsheet_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except InvalidSelection as e:
-        logger.warning(f"Invalid Selection attempted with gsheet select for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Invalid Selection attempted with gsheet select",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet select for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet select",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for starting gsheet select {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for starting gsheet select",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet select for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet select",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the selection task"), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
@@ -374,22 +489,39 @@ def start_gsheet_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except InvalidSelection as e:
-        logger.warning(f"Invalid Selection attempted with gsheet load for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Invalid Selection attempted with gsheet load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Could not start load spreadsheet task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet load for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for starting gsheet load {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for starting gsheet load",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet load for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the loading task"), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
@@ -410,24 +542,42 @@ def cancel_gsheet_select(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         )
 
     except NotFoundError as e:
-        logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        logger.warning(
+            "Task not found for cancellation",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets_legacy.select_assembly_gsheet", assembly_id=assembly_id))
 
     except InvalidSelection as e:
-        logger.warning(f"Cannot cancel task {run_id}: {e}")
+        logger.warning(
+            "Cannot cancel task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(str(e), "error")
         return redirect(
             url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
         )
 
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions to cancel task",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error cancelling task {run_id}: {e}")
+        logger.error(
+            "Error cancelling task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(
             url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
@@ -454,17 +604,30 @@ def replace_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for replacement selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} replacement selection user {current_user.id}: {e}"
+            "Insufficient permissions for assembly replacement selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Replacement selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Replacement selection page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -483,7 +646,12 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
 
         # Validate that the run belongs to this assembly
         if result.run_record and result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             flash(_("Invalid task ID for this assembly"), "error")
             return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
@@ -536,17 +704,30 @@ def replace_assembly_gsheet_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) 
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for replacement selection by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for replacement selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} replacement selection user {current_user.id}: {e}"
+            "Insufficient permissions for assembly replacement selection",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Replacement selection page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Replacement selection page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -568,12 +749,21 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
 
         # Check if run record exists
         if not result.run_record:
-            logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            logger.warning(
+                "Run not found for progress polling",
+                run_id=str(run_id),
+                user_id=str(current_user.id),
+            )
             return "", 404
 
         # Validate that the run belongs to this assembly
         if result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             # Return empty response for HTMX to handle gracefully
             return "", 404
 
@@ -614,15 +804,28 @@ def gsheet_replace_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respon
             response.headers["HX-Refresh"] = "true"
         return response
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 404
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+            "Insufficient permissions for assembly progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         return "", 403
     except Exception as e:
-        logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Progress polling error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 500
 
 
@@ -641,24 +844,39 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except InvalidSelection as e:
-        logger.warning(f"Invalid Selection attempted with gsheet replace load for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Invalid Selection attempted with gsheet replace load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet replacement load for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet replacement load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for starting gsheet replacement load {assembly_id} user {current_user.id}: {e}"
+            "Insufficient permissions for starting gsheet replacement load",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet replacement load for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet replacement load",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the loading task"), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
@@ -703,19 +921,30 @@ def start_gsheet_replace(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet replacement for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet replacement",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for starting gsheet replacement {assembly_id} user {current_user.id}: {e}"
+            "Insufficient permissions for starting gsheet replacement",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet replacement for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet replacement",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
@@ -736,24 +965,42 @@ def cancel_gsheet_replace(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
         )
 
     except NotFoundError as e:
-        logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        logger.warning(
+            "Task not found for cancellation",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except InvalidSelection as e:
-        logger.warning(f"Cannot cancel task {run_id}: {e}")
+        logger.warning(
+            "Cannot cancel task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(str(e), "error")
         return redirect(
             url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
         )
 
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions to cancel task",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error cancelling task {run_id}: {e}")
+        logger.error(
+            "Error cancelling task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(
             url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
@@ -781,17 +1028,30 @@ def manage_assembly_gsheet_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for tab management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} tab management user {current_user.id}: {e}"
+            "Insufficient permissions for assembly tab management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Tab management page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Tab management page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -810,7 +1070,12 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
 
         # Validate that the run belongs to this assembly
         if result.run_record and result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             flash(_("Invalid task ID for this assembly"), "error")
             return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
@@ -833,17 +1098,30 @@ def manage_assembly_gsheet_tabs_with_run(assembly_id: uuid.UUID, run_id: uuid.UU
             selection_settings=sel_settings,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for tab management by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for tab management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} tab management user {current_user.id}: {e}"
+            "Insufficient permissions for assembly tab management",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Tab management page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Tab management page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -865,12 +1143,21 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
 
         # Check if run record exists
         if not result.run_record:
-            logger.warning(f"Run {run_id} not found for progress polling by user {current_user.id}")
+            logger.warning(
+                "Run not found for progress polling",
+                run_id=str(run_id),
+                user_id=str(current_user.id),
+            )
             return "", 404
 
         # Validate that the run belongs to this assembly
         if result.run_record.assembly_id != assembly_id:
-            logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+            )
             # Return empty response for HTMX to handle gracefully
             return "", 404
 
@@ -901,15 +1188,28 @@ def gsheet_manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             response.headers["HX-Refresh"] = "true"
         return response
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for progress polling by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 404
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for assembly {assembly_id} progress polling user {current_user.id}: {e}"
+            "Insufficient permissions for assembly progress polling",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         return "", 403
     except Exception as e:
-        logger.error(f"Progress polling error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Progress polling error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         return "", 500
 
 
@@ -928,19 +1228,30 @@ def start_gsheet_list_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet list tabs for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet list tabs",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start listing task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for starting gsheet list tabs {assembly_id} user {current_user.id}: {e}"
+            "Insufficient permissions for starting gsheet list tabs",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet list tabs for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet list tabs",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the listing task"), "error")
         return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
@@ -960,19 +1271,30 @@ def start_gsheet_delete_tabs(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except NotFoundError as e:
-        logger.warning(f"Failed to start gsheet delete tabs for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Failed to start gsheet delete tabs",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Failed to start deletion task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
-            f"Insufficient permissions for starting gsheet delete tabs {assembly_id} user {current_user.id}: {e}"
+            "Insufficient permissions for starting gsheet delete tabs",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error starting gsheet delete tabs for assembly {assembly_id}: {e}")
+        logger.error(
+            "Error starting gsheet delete tabs",
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("An unexpected error occurred while starting the deletion task"), "error")
         return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
@@ -993,24 +1315,42 @@ def cancel_gsheet_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Resp
         )
 
     except NotFoundError as e:
-        logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        logger.warning(
+            "Task not found for cancellation",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets_legacy.manage_assembly_gsheet_tabs", assembly_id=assembly_id))
 
     except InvalidSelection as e:
-        logger.warning(f"Cannot cancel task {run_id}: {e}")
+        logger.warning(
+            "Cannot cancel task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(str(e), "error")
         return redirect(
             url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
         )
 
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions to cancel task",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        logger.error(f"Error cancelling task {run_id}: {e}")
+        logger.error(
+            "Error cancelling task",
+            run_id=str(run_id),
+            error=str(e),
+        )
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(
             url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
@@ -1028,13 +1368,23 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
             run_record = uow.selection_run_records.get(run_id)
 
             if not run_record:
-                logger.warning(f"Run {run_id} not found for assembly {assembly_id} user {current_user.id}")
+                logger.warning(
+                    "Run not found for assembly",
+                    run_id=str(run_id),
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                )
                 flash(_("Task run not found"), "error")
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
             # Validate run belongs to this assembly
             if run_record.assembly_id != assembly_id:
-                logger.warning(f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}")
+                logger.warning(
+                    "Run does not belong to assembly",
+                    run_id=str(run_id),
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                )
                 flash(_("Invalid task ID for this assembly"), "error")
                 return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
@@ -1065,19 +1415,39 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
                 url_for("db_selection_legacy.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id)
             )
         else:
-            logger.error(f"Unknown task type {task_type} for run {run_id}")
+            logger.error(
+                "Unknown task type for run",
+                task_type=task_type,
+                run_id=str(run_id),
+            )
             flash(_("Unknown task type"), "error")
             return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for run view",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for assembly {assembly_id} run view user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly run view",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Run view error for assembly {assembly_id} run {run_id} user {current_user.id}: {e}")
+        logger.error(
+            "Run view error",
+            assembly_id=str(assembly_id),
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         logger.exception("stacktrace")
         return render_template("errors/500.html"), 500

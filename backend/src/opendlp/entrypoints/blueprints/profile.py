@@ -61,7 +61,7 @@ def edit() -> ResponseReturnValue:
             return redirect(url_for("profile.view"))
 
         except Exception as e:
-            logger.error(f"Unexpected profile update error for user {current_user.id}: {e}")
+            logger.error("Unexpected profile update error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while updating your profile"), "error")
 
     return render_template("profile/edit.html", form=form), 200
@@ -101,7 +101,7 @@ def change_password() -> ResponseReturnValue:
         except PasswordTooWeak as e:
             flash(_("New password is too weak: %(error)s", error=str(e)), "error")
         except Exception as e:
-            logger.error(f"Unexpected password change error for user {current_user.id}: {e}")
+            logger.error("Unexpected password change error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while changing your password"), "error")
 
     return render_template(
@@ -164,7 +164,7 @@ def google_link_callback() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.view"))
     except Exception as e:
-        logger.error(f"Google linking error: {e}")
+        logger.error("Google linking error", error=str(e))
         flash(_("An error occurred while linking your Google account"), "error")
         return redirect(url_for("profile.view"))
 
@@ -227,7 +227,7 @@ def microsoft_link_callback() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.view"))
     except Exception as e:
-        logger.error(f"Microsoft linking error: {e}")
+        logger.error("Microsoft linking error", error=str(e))
         flash(_("An error occurred while linking your Microsoft account"), "error")
         return redirect(url_for("profile.view"))
 
@@ -244,7 +244,7 @@ def remove_password() -> ResponseReturnValue:
     except CannotRemoveLastAuthMethod as e:
         flash(str(e), "error")
     except Exception as e:
-        logger.error(f"Remove password error: {e}")
+        logger.error("Remove password error", error=str(e))
         flash(_("An error occurred while removing password authentication"), "error")
 
     return redirect(url_for("profile.view"))
@@ -262,7 +262,7 @@ def remove_oauth() -> ResponseReturnValue:
     except CannotRemoveLastAuthMethod as e:
         flash(str(e), "error")
     except Exception as e:
-        logger.error(f"Remove OAuth error: {e}")
+        logger.error("Remove OAuth error", error=str(e))
         flash(_("An error occurred while removing OAuth authentication"), "error")
 
     return redirect(url_for("profile.view"))
@@ -312,7 +312,7 @@ def set_password() -> ResponseReturnValue:
         except PasswordTooWeak as e:
             flash(_("Password is too weak: %(error)s", error=str(e)), "error")
         except Exception as e:
-            logger.error(f"Unexpected set password error for user {current_user.id}: {e}")
+            logger.error("Unexpected set password error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while setting your password"), "error")
 
     return render_template(
@@ -332,7 +332,7 @@ def two_factor_settings() -> ResponseReturnValue:
         return render_template("profile/2fa_settings.html", status=status), 200
 
     except Exception as e:
-        logger.error(f"Error loading 2FA settings for user {current_user.id}: {e}")
+        logger.error("Error loading 2FA settings", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading 2FA settings"), "error")
         return redirect(url_for("profile.view"))
 
@@ -361,7 +361,7 @@ def setup_2fa() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.two_factor_settings"))
     except Exception as e:
-        logger.error(f"Error starting 2FA setup for user {current_user.id}: {e}")
+        logger.error("Error starting 2FA setup", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while setting up 2FA"), "error")
         return redirect(url_for("profile.two_factor_settings"))
 
@@ -399,7 +399,7 @@ def enable_2fa() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.setup_2fa"))
     except Exception as e:
-        logger.error(f"Error enabling 2FA for user {current_user.id}: {e}")
+        logger.error("Error enabling 2FA", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while enabling 2FA"), "error")
         return redirect(url_for("profile.two_factor_settings"))
 
@@ -425,7 +425,7 @@ def disable_2fa() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.two_factor_settings"))
     except Exception as e:
-        logger.error(f"Error disabling 2FA for user {current_user.id}: {e}")
+        logger.error("Error disabling 2FA", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while disabling 2FA"), "error")
         return redirect(url_for("profile.two_factor_settings"))
 
@@ -451,6 +451,6 @@ def regenerate_backup_codes() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("profile.two_factor_settings"))
     except Exception as e:
-        logger.error(f"Error regenerating backup codes for user {current_user.id}: {e}")
+        logger.error("Error regenerating backup codes", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while regenerating backup codes"), "error")
         return redirect(url_for("profile.two_factor_settings"))

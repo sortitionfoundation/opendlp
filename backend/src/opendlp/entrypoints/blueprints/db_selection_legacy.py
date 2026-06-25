@@ -164,7 +164,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Check data error for assembly {assembly_id}: {e}")
+        logger.error("Check data error", assembly_id=str(assembly_id), error=str(e))
         logger.exception("stacktrace")
         flash(_("An unexpected error occurred while checking data"), "error")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
@@ -198,7 +198,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error starting db select for assembly {assembly_id}: {e}")
+        logger.error("Error starting db select", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the selection task"), "error")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
 
@@ -238,7 +238,7 @@ def db_selection_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
     except (NotFoundError, InsufficientPermissions):
         return "", 404
     except Exception as e:
-        logger.error(f"Progress polling error for assembly {assembly_id}: {e}")
+        logger.error("Progress polling error", assembly_id=str(assembly_id), error=str(e))
         return "", 500
 
 
@@ -450,7 +450,7 @@ def reset_respondents_for_selection(assembly_id: uuid.UUID) -> ResponseReturnVal
         flash(_("You don't have permission to reset selection status"), "error")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error(f"Reset respondent status error for assembly {assembly_id}: {e}")
+        logger.error("Reset respondent status error", assembly_id=str(assembly_id), error=str(e))
         logger.exception("stacktrace")
         flash(_("An unexpected error occurred"), "error")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))

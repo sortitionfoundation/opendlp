@@ -98,11 +98,11 @@ def list_users() -> ResponseReturnValue:
         ), 200
 
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized access to user list by user {current_user.id}: {e}")
+        logger.warning("Unauthorized access to user list", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error listing users for admin {current_user.id}: {e}")
+        logger.error("Error listing users for admin", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the user list"), "error")
         return render_template("errors/500.html"), 500
 
@@ -120,15 +120,19 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("admin/user_view.html", user=user), 200
 
     except UserNotFoundError as e:
-        logger.warning(f"User {user_id} not found for admin {current_user.id}: {e}")
+        logger.warning(
+            "User not found for admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized access to user view by user {current_user.id}: {e}")
+        logger.warning("Unauthorized access to user view", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error viewing user {user_id} for admin {current_user.id}: {e}")
+        logger.error(
+            "Error viewing user for admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while loading the user details"), "error")
         return redirect(url_for("admin.list_users"))
 
@@ -168,32 +172,48 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
                 return redirect(url_for("admin.view_user", user_id=user_id))
 
             except UserNotFoundError as e:
-                logger.warning(f"User {user_id} not found for edit by admin {current_user.id}: {e}")
+                logger.warning(
+                    "User not found for edit by admin",
+                    user_id=str(user_id),
+                    admin_user_id=str(current_user.id),
+                    error=str(e),
+                )
                 flash(_("User not found"), "error")
                 return redirect(url_for("admin.list_users"))
             except InsufficientPermissions as e:
-                logger.warning(f"Unauthorized user update attempt by user {current_user.id}: {e}")
+                logger.warning("Unauthorized user update attempt", user_id=str(current_user.id), error=str(e))
                 flash(_("You don't have permission to perform this action"), "error")
                 return redirect(url_for("admin.view_user", user_id=user_id))
             except ValueError as e:
-                logger.warning(f"Validation error updating user {user_id} by admin {current_user.id}: {e}")
+                logger.warning(
+                    "Validation error updating user",
+                    user_id=str(user_id),
+                    admin_user_id=str(current_user.id),
+                    error=str(e),
+                )
                 flash(str(e), "error")
             except Exception as e:
-                logger.error(f"Error updating user {user_id} by admin {current_user.id}: {e}")
+                logger.error(
+                    "Error updating user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+                )
                 flash(_("An error occurred while updating the user"), "error")
 
         return render_template("admin/user_edit.html", form=form, user=user), 200
 
     except UserNotFoundError as e:
-        logger.warning(f"User {user_id} not found for edit by admin {current_user.id}: {e}")
+        logger.warning(
+            "User not found for edit by admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized access to user edit by user {current_user.id}: {e}")
+        logger.warning("Unauthorized access to user edit", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error loading user edit page for user {user_id}, admin {current_user.id}: {e}")
+        logger.error(
+            "Error loading user edit page", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while loading the edit page"), "error")
         return redirect(url_for("admin.list_users"))
 
@@ -212,19 +232,28 @@ def disable_user_2fa(user_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("admin.view_user", user_id=user_id))
 
     except TwoFactorSetupError as e:
-        logger.warning(f"Error disabling 2FA for user {user_id} by admin {current_user.id}: {e}")
+        logger.warning(
+            "Error disabling 2FA for user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(str(e), "error")
         return redirect(url_for("admin.view_user", user_id=user_id))
     except UserNotFoundError as e:
-        logger.warning(f"User {user_id} not found for 2FA disable by admin {current_user.id}: {e}")
+        logger.warning(
+            "User not found for 2FA disable by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized 2FA disable attempt by user {current_user.id}: {e}")
+        logger.warning("Unauthorized 2FA disable attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error disabling 2FA for user {user_id} by admin {current_user.id}: {e}")
+        logger.error(
+            "Error disabling 2FA for user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while disabling two-factor authentication"), "error")
         return redirect(url_for("admin.view_user", user_id=user_id))
 
@@ -257,15 +286,25 @@ def view_user_2fa_audit_log(user_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
 
     except UserNotFoundError as e:
-        logger.warning(f"User {user_id} not found for 2FA audit log by admin {current_user.id}: {e}")
+        logger.warning(
+            "User not found for 2FA audit log by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized 2FA audit log access by user {current_user.id}: {e}")
+        logger.warning("Unauthorized 2FA audit log access", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error viewing 2FA audit log for user {user_id} by admin {current_user.id}: {e}")
+        logger.error(
+            "Error viewing 2FA audit log for user",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while loading the audit log"), "error")
         return redirect(url_for("admin.view_user", user_id=user_id))
 
@@ -287,11 +326,11 @@ def list_invites_page() -> ResponseReturnValue:
         return render_template("admin/invites.html", invites=invites, stats=stats), 200
 
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized access to invite list by user {current_user.id}: {e}")
+        logger.warning("Unauthorized access to invite list", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error listing invites for admin {current_user.id}: {e}")
+        logger.error("Error listing invites for admin", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the invite list"), "error")
         return render_template("errors/500.html"), 500
 
@@ -355,20 +394,20 @@ def create_invite() -> ResponseReturnValue:
                 return redirect(url_for("admin.view_invite", invite_id=invite.id))
 
             except UserNotFoundError as e:
-                logger.warning(f"User not found while creating invite by admin {current_user.id}: {e}")
+                logger.warning("User not found while creating invite", user_id=str(current_user.id), error=str(e))
                 flash(_("An error occurred while creating the invite"), "error")
             except InsufficientPermissions as e:
-                logger.warning(f"Unauthorized invite creation attempt by user {current_user.id}: {e}")
+                logger.warning("Unauthorized invite creation attempt", user_id=str(current_user.id), error=str(e))
                 flash(_("You don't have permission to perform this action"), "error")
                 return redirect(url_for("admin.list_invites_page"))
             except Exception as e:
-                logger.error(f"Error creating invite by admin {current_user.id}: {e}")
+                logger.error("Error creating invite", user_id=str(current_user.id), error=str(e))
                 flash(_("An error occurred while creating the invite"), "error")
 
         return render_template("admin/invite_create.html", form=form), 200
 
     except Exception as e:
-        logger.error(f"Error loading invite creation page for admin {current_user.id}: {e}")
+        logger.error("Error loading invite creation page", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the page"), "error")
         return redirect(url_for("admin.list_invites_page"))
 
@@ -386,15 +425,19 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
         return render_template("admin/invite_view.html", invite=invite), 200
 
     except InviteNotFoundError as e:
-        logger.warning(f"Invite {invite_id} not found for admin {current_user.id}: {e}")
+        logger.warning(
+            "Invite not found for admin", invite_id=str(invite_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("Invite not found"), "error")
         return redirect(url_for("admin.list_invites_page"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized access to invite view by user {current_user.id}: {e}")
+        logger.warning("Unauthorized access to invite view", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error viewing invite {invite_id} for admin {current_user.id}: {e}")
+        logger.error(
+            "Error viewing invite for admin", invite_id=str(invite_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while loading the invite details"), "error")
         return redirect(url_for("admin.list_invites_page"))
 
@@ -413,15 +456,20 @@ def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("admin.list_invites_page"))
 
     except InviteNotFoundError as e:
-        logger.warning(f"Invite {invite_id} not found for revocation by admin {current_user.id}: {e}")
+        logger.warning(
+            "Invite not found for revocation by admin",
+            invite_id=str(invite_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("Invite not found"), "error")
         return redirect(url_for("admin.list_invites_page"))
     except InsufficientPermissions as e:
-        logger.warning(f"Unauthorized invite revocation attempt by user {current_user.id}: {e}")
+        logger.warning("Unauthorized invite revocation attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(f"Error revoking invite {invite_id} by admin {current_user.id}: {e}")
+        logger.error("Error revoking invite", invite_id=str(invite_id), user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while revoking the invite"), "error")
         return redirect(url_for("admin.list_invites_page"))
 
@@ -446,7 +494,7 @@ def cleanup_invites() -> ResponseReturnValue:
         return redirect(url_for("admin.list_invites_page"))
 
     except Exception as e:
-        logger.error(f"Error cleaning up invites by admin {current_user.id}: {e}")
+        logger.error("Error cleaning up invites by admin", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while cleaning up invites"), "error")
         return redirect(url_for("admin.list_invites_page"))
 

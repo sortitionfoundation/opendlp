@@ -160,11 +160,13 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=selection_enabled,
         ), 200
     except NotFoundError as e:
-        logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        logger.warning(f"Insufficient permissions for assembly {assembly_id}: {e}")
+        logger.warning("Insufficient permissions for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
