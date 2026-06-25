@@ -7,6 +7,12 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.registration_page import RegistrationPage
+from opendlp.domain.respondent_field_schema import (
+    FieldOnRegistrationPage,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.blueprints.registration import _generate_timing_token
@@ -326,6 +332,89 @@ class TestRateLimit:
         )
 
         assert len(recorded_calls) == 1
+
+
+class TestSubmissionRecording:
+    """Which submissions count towards the rate-limit counters.
+
+    Bot signals (a filled honeypot, a too-fast timing token) are recorded so a
+    determined client still accrues counts even though each individual attempt
+    is rejected. Genuine validation failures are NOT recorded, because members
+    of the public may legitimately take several tries over a tricky form and
+    must not burn their own allowance by mistyping.
+    """
+
+    @pytest.fixture
+    def recorded(self, monkeypatch: pytest.MonkeyPatch) -> list[tuple]:
+        calls: list[tuple] = []
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.registration.record_registration_submission",
+            lambda *args, **kwargs: calls.append((args, kwargs)),
+        )
+        return calls
+
+    def test_honeypot_trigger_is_recorded(
+        self, client: FlaskClient, fake_store, admin_user: User, recorded: list[tuple]
+    ) -> None:
+        """A honeypot trip still increments the rate-limit counters for the IP/email."""
+        page = _seed_published_page(fake_store, admin_user)
+
+        client.post(
+            f"/register/{page.url_slug}",
+            data={"name": "Bot", "email": "bot@example.com", "_opendlp_ttoken_": "filled"},
+        )
+
+        assert len(recorded) == 1
+        assert recorded[0][0][1] == "bot@example.com"
+
+    def test_too_fast_submission_is_recorded(
+        self, app, client: FlaskClient, fake_store, admin_user: User, recorded: list[tuple]
+    ) -> None:
+        """A too-fast timing rejection still increments the rate-limit counters."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        app.config["REGISTRATION_MIN_FILL_SECONDS"] = 9999
+        page = _seed_published_page(fake_store, admin_user)
+
+        client.post(
+            f"/register/{page.url_slug}",
+            data={
+                "name": "Bot",
+                "email": "bot@example.com",
+                "_timing_token": _generate_timing_token(app.secret_key),
+            },
+        )
+
+        assert len(recorded) == 1
+        assert recorded[0][0][1] == "bot@example.com"
+
+    def test_validation_failure_is_not_recorded(
+        self, client: FlaskClient, fake_store, admin_user: User, recorded: list[tuple]
+    ) -> None:
+        """A genuine validation failure must not count against the rate limit."""
+        assembly_id = _make_assembly(fake_store, admin_user, "Required Field Assembly")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+            uow.respondent_field_definitions.bulk_add([
+                RespondentFieldDefinition(
+                    assembly_id=assembly_id,
+                    field_key="email",
+                    label="Email",
+                    group=RespondentFieldGroup.NAME_AND_CONTACT,
+                    sort_order=0,
+                    field_type=FieldType.EMAIL,
+                    on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+                )
+            ])
+            uow.commit()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            page = publish_registration_page(uow, admin_user.id, assembly_id)
+
+        response = client.post(f"/register/{page.url_slug}", data={"name": "Test User"})
+
+        assert response.status_code == 200
+        assert len(recorded) == 0
 
 
 class TestNoindexHeader:
