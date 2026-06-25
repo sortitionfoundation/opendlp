@@ -11,6 +11,7 @@ This document collects code quality rules and patterns to follow, gathered from 
 **Why:** Bare `pass` statements make debugging difficult because there's no trace of what happened. Even when silently ignoring an exception is the correct behavior, logging at `debug` level provides observability.
 
 **Bad:**
+
 ```python
 try:
     value = uuid.UUID(some_param)
@@ -19,6 +20,7 @@ except (ValueError, TypeError):
 ```
 
 **Good:**
+
 ```python
 try:
     value = uuid.UUID(some_param)
@@ -27,6 +29,7 @@ except (ValueError, TypeError):
 ```
 
 **Log levels:**
+
 - Use `debug` for expected invalid input that's gracefully handled
 - Use `warning` for unexpected but recoverable situations
 - Use `error` for failures that affect functionality
@@ -40,11 +43,13 @@ except (ValueError, TypeError):
 **Why:** High complexity makes code harder to understand, test, and maintain.
 
 **Solutions:**
+
 1. Extract helper functions for distinct logical blocks
 2. Use early returns to reduce nesting
 3. Replace complex conditionals with lookup tables or strategy patterns
 
 **Example refactoring:**
+
 ```python
 # Before: Complex function with nested conditionals
 def process_data(data, option_a, option_b):
@@ -79,6 +84,7 @@ def process_data(data, option_a, option_b):
 **Rule:** All `import` statements should be at the top of the file, not inside functions.
 
 **Why:**
+
 - Imports inside functions hide dependencies
 - Makes it harder to see what a module depends on
 - Can cause unexpected performance issues (import on every call)
@@ -89,12 +95,15 @@ def process_data(data, option_a, option_b):
 
 ### Run pre-commit hooks before committing
 
-**Rule:** Always run `just check` before committing to catch formatting issues.
+**Rule:** Always run `just check` before committing to catch formatting issues. Be aware that new files will be ignored by `just check` until they are added to git, as this is mostly running `prek` to run the pre-commit check files over all files.
 
 **Tools configured:**
+
 - `ruff check` - Linting (includes complexity checks)
 - `ruff format` - Code formatting
 - `DjHTML` - HTML template formatting
 - `DjCSS` - CSS formatting
 - `DjJS` - JavaScript formatting
+- `detect-secrets` - ensure no passwords/secrets committed to the repo
 - `mypy` - Type checking
+- `deptry` - check dependencies in `pyproject.toml` match what is used in the code
