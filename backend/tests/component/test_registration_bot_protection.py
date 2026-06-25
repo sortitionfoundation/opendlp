@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
+import time_machine
 from flask.testing import FlaskClient
 
 from opendlp.domain.registration_page import RegistrationPage
@@ -235,6 +236,26 @@ class TestTimingToken:
                 "email": "bot@example.com",
                 "_timing_token": "not-a-real-token",
             },
+        )
+
+        assert response.status_code == 200
+        assert b"open too long" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.count_by_assembly_id(page.assembly_id) == 0
+
+    def test_expired_token_rerenders_with_error(self, app, client: FlaskClient, fake_store, admin_user: User) -> None:
+        """A validly-signed token older than the max age (the slow-human case)
+        re-renders the form rather than saving — the realistic SignatureExpired
+        path, distinct from the forged BadSignature case above."""
+        app.config["REGISTRATION_TIMING_CHECK_ENABLED"] = True
+        page = _seed_published_page(fake_store, admin_user)
+
+        with time_machine.travel(datetime.now(UTC) - timedelta(days=8)):
+            stale_token = _generate_timing_token(app.secret_key)
+
+        response = client.post(
+            f"/register/{page.url_slug}",
+            data={"name": "Slow Human", "email": "slow@example.com", "_timing_token": stale_token},
         )
 
         assert response.status_code == 200
