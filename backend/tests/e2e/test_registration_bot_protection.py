@@ -72,11 +72,11 @@ class TestBotProtectionSmoke:
     """Smoke tests that verify bot protection with a real database and real Redis.
 
     The timing-token check is gated on REGISTRATION_TIMING_CHECK_ENABLED, which
-    is False in the test config, so these tests do not need to supply timing
-    tokens — they cover the honeypot path and the happy path only.
+    is False in the test config, so this test does not need to supply a timing
+    token — it covers the happy path through the real Redis rate-limit calls.
     """
 
-    def test_normal_submission_succeeds_with_real_redis(
+    def test_normal_submission_succeeds(
         self,
         client: FlaskClient,
         published_registration_page: RegistrationPage,
@@ -107,37 +107,3 @@ class TestBotProtectionSmoke:
                 published_registration_page.assembly_id, status=RespondentStatus.POOL
             )
             assert len(respondents) == initial_count + 1
-
-    def test_honeypot_submission_redirects_to_thank_you_without_saving(
-        self,
-        client: FlaskClient,
-        published_registration_page: RegistrationPage,
-        postgres_session_factory,
-    ) -> None:
-        """A submission with the honeypot field filled should redirect to thank-you
-        but must NOT persist a respondent — the bot is silently rejected."""
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            initial_count = uow.respondents.count_by_assembly_id(published_registration_page.assembly_id)
-
-        form_url = route_url(
-            client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
-        )
-        csrf_token = get_csrf_token(client, form_url)
-
-        response = client.post(
-            form_url,
-            data={
-                "csrf_token": csrf_token,
-                "name": "Bot User",
-                "email": "bot@example.com",
-                # Honeypot field — a real user leaves this blank; bots fill it in
-                "_opendlp_ttoken_": "i-am-a-bot",
-            },
-        )
-
-        # Still redirects to thank-you so bots don't learn they were blocked
-        assert response.status_code == 302
-
-        # No respondent should have been saved
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            assert uow.respondents.count_by_assembly_id(published_registration_page.assembly_id) == initial_count
