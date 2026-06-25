@@ -81,13 +81,14 @@ def _build_security_form_elements() -> str:
     csrf_input = f'<input type="hidden" name="csrf_token" value="{generate_csrf()}">'
     timing_input = f'<input type="hidden" name="_timing_token" value="{_generate_timing_token(_secret_key())}">'
     # _opendlp_ttoken_ is a honeypot field — see docs/bot-protection.md
+    i18n_label = _("Leave this blank")
     honeypot = (
-        '<div aria-hidden="true" style="position:absolute;left:-9999px;'
-        'width:1px;height:1px;overflow:hidden">'
-        '<label for="_opendlp_ttoken_">Leave this blank</label>'
-        '<input type="text" id="_opendlp_ttoken_" name="_opendlp_ttoken_" '
-        'tabindex="-1" autocomplete="off" value="">'
-        "</div>"
+        f'<div aria-hidden="true" style="position:absolute;left:-9999px;'
+        f'width:1px;height:1px;overflow:hidden">'
+        f'<label for="_opendlp_ttoken_">{i18n_label}</label>'
+        f'<input type="text" id="_opendlp_ttoken_" name="_opendlp_ttoken_" '
+        f'tabindex="-1" autocomplete="off" value="">'
+        f"</div>"
     )
     return csrf_input + timing_input + honeypot
 
