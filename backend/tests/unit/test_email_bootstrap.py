@@ -2,6 +2,7 @@
 ABOUTME: Tests email adapter configuration and multiple recipient handling"""
 
 import os
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
@@ -74,9 +75,10 @@ class TestEmailAdapterBootstrap:
 class TestEmailAdapterSendingIntegration:
     """Integration tests for sending emails with multiple recipients."""
 
-    def test_console_adapter_with_multiple_recipients(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_console_adapter_with_multiple_recipients(self) -> None:
         """Test sending email to multiple recipients via console adapter."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
         result = adapter.send_email(
             to=[
@@ -89,7 +91,7 @@ class TestEmailAdapterSendingIntegration:
             html_body="<p>This is a test email sent to multiple recipients</p>",
         )
 
-        out = capsys.readouterr().out
+        out = stream.getvalue()
         assert result is True
         assert "user1@example.com" in out
         assert "User Two <user2@example.com>" in out

@@ -3,6 +3,7 @@ ABOUTME: Supports SMTP, console logging, and future transactional email services
 
 import smtplib
 import sys
+import typing
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -79,6 +80,15 @@ class ConsoleEmailAdapter(EmailAdapter):
     Useful for development and testing environments.
     """
 
+    def __init__(self, output_stream: typing.TextIO | None = None):
+        """Initialize the console email adapter.
+
+        Args:
+            output_stream: Stream to write email output to. Defaults to
+                sys.stdout. Tests can pass a StringIO to capture output.
+        """
+        self.output_stream: typing.TextIO = output_stream if output_stream is not None else sys.stdout
+
     def send_email(
         self,
         to: list[str | tuple[str, str]],
@@ -121,7 +131,7 @@ class ConsoleEmailAdapter(EmailAdapter):
             f"  Subject: {subject}\n"
             f"  Has HTML: {has_html}\n"
             f"  Text Body Preview: {text_preview}",
-            file=sys.stdout,
+            file=self.output_stream,
         )
 
         return True

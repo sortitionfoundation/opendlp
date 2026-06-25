@@ -43,8 +43,27 @@ class TestConsoleEmailAdapter:
     triggers the email-in-log audit nor gets scrubbed by the redaction processor.
     """
 
-    def test_send_email_writes_to_stdout(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Test that ConsoleEmailAdapter writes email details to stdout."""
+    def test_send_email_writes_to_output_stream(self) -> None:
+        """Test that ConsoleEmailAdapter writes email details to its output stream."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
+
+        result = adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Test Subject",
+            text_body="This is the email body",
+        )
+
+        out = stream.getvalue()
+        assert result is True
+        assert "EMAIL (Console):" in out
+        assert "To: recipient@example.com" in out
+        assert "Subject: Test Subject" in out
+        assert "This is the email body" in out
+        assert "Has HTML: No" in out
+
+    def test_send_email_defaults_to_stdout(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test that ConsoleEmailAdapter writes to stdout when no stream is given."""
         adapter = ConsoleEmailAdapter()
 
         result = adapter.send_email(
@@ -57,9 +76,6 @@ class TestConsoleEmailAdapter:
         assert result is True
         assert "EMAIL (Console):" in out
         assert "To: recipient@example.com" in out
-        assert "Subject: Test Subject" in out
-        assert "This is the email body" in out
-        assert "Has HTML: No" in out
 
     def test_send_email_does_not_use_logging(self, caplog: pytest.LogCaptureFixture) -> None:
         """The recipient address must not be routed through the logging system."""
@@ -74,9 +90,10 @@ class TestConsoleEmailAdapter:
 
         assert "recipient@example.com" not in caplog.text
 
-    def test_send_email_writes_reply_to(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_send_email_writes_reply_to(self) -> None:
         """ConsoleEmailAdapter includes the reply-to address when provided."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
         adapter.send_email(
             to=["recipient@example.com"],
@@ -85,11 +102,12 @@ class TestConsoleEmailAdapter:
             reply_to="team@example.com",
         )
 
-        assert "Reply-To: team@example.com" in capsys.readouterr().out
+        assert "Reply-To: team@example.com" in stream.getvalue()
 
-    def test_send_email_with_html(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_send_email_with_html(self) -> None:
         """Test console output with HTML body."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
         result = adapter.send_email(
             to=["recipient@example.com"],
@@ -99,11 +117,12 @@ class TestConsoleEmailAdapter:
         )
 
         assert result is True
-        assert "Has HTML: Yes" in capsys.readouterr().out
+        assert "Has HTML: Yes" in stream.getvalue()
 
-    def test_send_email_with_multiple_recipients(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_send_email_with_multiple_recipients(self) -> None:
         """Test console output with multiple recipients."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
         result = adapter.send_email(
             to=["user1@example.com", ("User Two", "user2@example.com")],
@@ -111,14 +130,15 @@ class TestConsoleEmailAdapter:
             text_body="Body",
         )
 
-        out = capsys.readouterr().out
+        out = stream.getvalue()
         assert result is True
         assert "user1@example.com" in out
         assert "User Two <user2@example.com>" in out
 
-    def test_send_email_truncates_long_body(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_send_email_truncates_long_body(self) -> None:
         """Test that long email bodies are truncated in console output."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
         long_body = "A" * 500
 
         adapter.send_email(
@@ -127,7 +147,7 @@ class TestConsoleEmailAdapter:
             text_body=long_body,
         )
 
-        out = capsys.readouterr().out
+        out = stream.getvalue()
         assert "..." in out
         # Should show first 200 chars plus "..."
         assert long_body[:200] in out
