@@ -10,6 +10,8 @@ secret:
       name: password only used in setting up test data (see db_utils.py)
     - match: abc123
       name: password only used in dev postgres set up
+    - match: 'abc123 # pragma: allowlist secret'
+      name: password only used in dev postgres set up
     - match: strongpass123
       name: password only used in tests
 
