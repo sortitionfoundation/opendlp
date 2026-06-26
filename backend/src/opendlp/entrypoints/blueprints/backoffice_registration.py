@@ -273,10 +273,9 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect_preserving_scroll(error_redirect_url)
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Save assembly registration error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("Full traceback:")
         flash(_("An error occurred while saving registration settings"), "error")
         return redirect_preserving_scroll(error_redirect_url)
 
@@ -305,8 +304,7 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         flash(_("This assembly already has a registration page."), "warning")
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Error creating registration page for assembly", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full traceback:")
+        logger.exception("Error creating registration page for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while creating the registration page"), "error")
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
@@ -437,8 +435,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError:
         return jsonify({"error": _("Assembly not found")}), 404
     except Exception as e:
-        logger.error("Image upload error for assembly", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full traceback:")
+        logger.exception("Image upload error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
 
     return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201

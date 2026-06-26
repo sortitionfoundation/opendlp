@@ -323,8 +323,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("View assembly selection error", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("View assembly selection error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while loading the selection page"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -468,8 +467,7 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to run selection"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Start selection load error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Start selection load error", error=str(e))
         flash(_("An error occurred while starting the validation task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -503,8 +501,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to run selection"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Start selection run error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Start selection run error", error=str(e))
         flash(_("An error occurred while starting the selection task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -540,8 +537,7 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Cancel selection run error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Cancel selection run error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -571,8 +567,7 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage tabs"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Start manage tabs list error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Start manage tabs list error", error=str(e))
         flash(_("An error occurred while starting the list tabs task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -599,8 +594,7 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage tabs"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Start manage tabs delete error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Start manage tabs delete error", error=str(e))
         flash(_("An error occurred while starting the delete tabs task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -688,8 +682,7 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        logger.error("Cancel manage tabs error", error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Cancel manage tabs error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -738,8 +731,7 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("View run details error", assembly_id=str(assembly_id), run_id=str(run_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("View run details error", assembly_id=str(assembly_id), run_id=str(run_id), error=str(e))
         flash(_("An error occurred while loading the run details"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -1020,8 +1012,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
@@ -1048,7 +1039,6 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

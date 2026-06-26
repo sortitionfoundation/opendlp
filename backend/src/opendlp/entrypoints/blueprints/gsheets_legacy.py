@@ -1442,12 +1442,11 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Run view error",
             assembly_id=str(assembly_id),
             run_id=str(run_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("stacktrace")
         return render_template("errors/500.html"), 500

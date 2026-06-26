@@ -76,7 +76,7 @@ def dashboard() -> ResponseReturnValue:
 
         return render_template("backoffice/dashboard.html", assemblies=assemblies), 200
     except Exception as e:
-        logger.error("Backoffice dashboard error", user_id=str(current_user.id), error=str(e))
+        logger.exception("Backoffice dashboard error", user_id=str(current_user.id), error=str(e))
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
 
 
@@ -110,7 +110,7 @@ def new_assembly() -> ResponseReturnValue:
             flash(_("An error occurred while creating the assembly"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except Exception as e:
-            logger.error("Create assembly error", user_id=str(current_user.id), error=str(e))
+            logger.exception("Create assembly error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while creating the assembly"), "error")
             return redirect(url_for("backoffice.dashboard"))
 
@@ -174,7 +174,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("Backoffice assembly error", user_id=str(current_user.id), error=str(e))
+        logger.exception("Backoffice assembly error", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -257,7 +257,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 flash(_("An error occurred while updating the assembly"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except Exception as e:
-                logger.error(
+                logger.exception(
                     "Edit assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
                 )
                 flash(_("An error occurred while updating the assembly"), "error")
@@ -347,7 +347,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         try:
             sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
         except Exception as sel_error:
-            logger.error("Error loading selection settings", error=str(sel_error))
+            logger.exception("Error loading selection settings", error=str(sel_error))
 
         # Set up gsheet form if gsheet source is selected
         gsheet_mode = "new"
@@ -430,10 +430,9 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly data"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -486,10 +485,9 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly members error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("stacktrace")
         flash(_("An error occurred while loading team members"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -554,7 +552,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to add users to this assembly"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Unexpected error adding user to assembly",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
@@ -600,7 +598,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         flash(_("You don't have permission to remove users from this assembly"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Unexpected error removing user from assembly",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
@@ -638,7 +636,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         return jsonify([]), 403
     except Exception as e:
-        logger.error("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
+        logger.exception("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify([]), 500
 
 

@@ -154,10 +154,9 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly targets"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -233,8 +232,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form.csv_file.errors.append(_("Could not read CSV file. Please ensure it is UTF-8 encoded."))
         return _render_targets_upload_page(assembly_id, form)
     except Exception as e:
-        logger.error("Upload targets error", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Upload targets error", assembly_id=str(assembly_id), error=str(e))
         form.csv_file.errors.append(_("An unexpected error occurred during import"))
         return _render_targets_upload_page(assembly_id, form)
 
@@ -273,8 +271,9 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("Delete targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception(
+            "Delete targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while deleting targets"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -911,7 +910,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error("Error checking targets", assembly_id=str(assembly_id), error=str(e))
-        logger.exception("Full stacktrace:")
+        logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while checking targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

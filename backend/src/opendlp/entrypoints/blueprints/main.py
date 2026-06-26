@@ -91,8 +91,9 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error("View assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        logger.exception("stacktrace")
+        logger.exception(
+            "View assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -145,10 +146,9 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("stacktrace")
         return render_template("errors/500.html"), 500
 
 
@@ -195,10 +195,9 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly members error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        logger.exception("stacktrace")
         return render_template("errors/500.html"), 500
 
 

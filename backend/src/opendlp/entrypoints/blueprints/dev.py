@@ -162,8 +162,7 @@ def service_docs_execute() -> ResponseReturnValue:
         return jsonify(result), 200
 
     except Exception as e:
-        logger.error("Service docs execute error", error=str(e))
-        logger.exception("Full traceback:")
+        logger.exception("Service docs execute error", error=str(e))
         return jsonify({
             "status": "error",
             "error": "An internal error occurred while executing the service.",

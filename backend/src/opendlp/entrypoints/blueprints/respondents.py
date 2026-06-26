@@ -215,13 +215,12 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Upload respondents error",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while uploading respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -342,13 +341,12 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Delete respondents error",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while deleting respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -444,13 +442,12 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly respondents error",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -502,13 +499,12 @@ def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) ->
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Delete respondent error",
             respondent_id=str(respondent_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while deleting the respondent"), "error")
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
 
@@ -577,13 +573,12 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View respondent error",
             respondent_id=str(respondent_id),
             user_id=str(current_user.id),
             error=str(e),
         )
-        logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading the respondent"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
 
