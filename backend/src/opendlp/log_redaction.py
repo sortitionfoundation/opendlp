@@ -25,6 +25,7 @@ SENSITIVE_EXACT = frozenset({
     "authorization",
     "cookie",
     "csrf_token",
+    "csrf-token",
     "password",
     "secret",
     "token",
@@ -34,7 +35,8 @@ SENSITIVE_PARTIAL = (
     "api-key",
     "api_key",
     "authorization",
-    "security-token",
+    "-token",
+    "_token",
     "secret",
     "password",
 )
@@ -53,18 +55,37 @@ def is_sensitive_key(key: str) -> bool:
     return any(part in lower for part in SENSITIVE_PARTIAL)
 
 
+def _redact_value(value: object) -> object:
+    """Recursively scrub emails from strings and sensitive keys from nested dicts.
+
+    Containers (dict/list/tuple) are walked so that PII embedded in structured
+    values (e.g. a list of header tuples) is redacted, not just top-level
+    strings. Tuple-ness is preserved; scalars pass through unchanged.
+    """
+    if isinstance(value, str):
+        return redact_emails(value)
+    if isinstance(value, dict):
+        return {k: REDACTED if is_sensitive_key(str(k)) else _redact_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_redact_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_value(item) for item in value)
+    return value
+
+
 def censor_pii(logger: WrappedLogger, method_name: str, event_dict: EventDict) -> EventDict:
     """structlog processor: redact sensitive field values and scrub emails from strings.
 
     Registered in both the structlog processor chain and the stdlib
     ``foreign_pre_chain`` so it covers our own structlog calls and foreign
-    (stdlib / third-party) log records alike.
+    (stdlib / third-party) log records alike. Values are walked recursively so
+    that emails/secrets nested in lists and dicts are redacted too.
     """
     for key, value in event_dict.items():
         if is_sensitive_key(key):
             event_dict[key] = REDACTED
-        elif isinstance(value, str):
-            event_dict[key] = redact_emails(value)
+        else:
+            event_dict[key] = _redact_value(value)
     return event_dict
 
 

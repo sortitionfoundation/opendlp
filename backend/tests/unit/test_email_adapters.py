@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from opendlp.adapters.email import ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
+from opendlp.log_redaction import EMAIL_PLACEHOLDER
 
 
 class TestEmailAdapter:
@@ -390,6 +391,54 @@ class TestSMTPEmailAdapter:
 
             assert result is False
             assert "Unexpected error sending email" in capture_json_handler.getvalue()
+
+    def test_send_email_smtp_exception_redacts_recipient(self, capture_json_handler: StringIO) -> None:
+        """A recipient address echoed in an SMTP error must be redacted in the log output."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = smtplib.SMTPException(
+                "550 5.1.1 <recipient@example.com> unknown user"
+            )
+
+            result = adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Body")
+
+        assert result is False
+        output = capture_json_handler.getvalue()
+        assert "recipient@example.com" not in output
+        assert EMAIL_PLACEHOLDER in output
+
+    def test_send_email_general_exception_redacts_recipient(self, capture_json_handler: StringIO) -> None:
+        """A recipient address echoed in an unexpected error must be redacted in the log output."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = ValueError(
+                "bad address recipient@example.com"
+            )
+
+            result = adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Body")
+
+        assert result is False
+        output = capture_json_handler.getvalue()
+        assert "recipient@example.com" not in output
+        assert EMAIL_PLACEHOLDER in output
 
     def test_send_email_without_authentication(self) -> None:
         """Test sending email without authentication (empty username/password)."""

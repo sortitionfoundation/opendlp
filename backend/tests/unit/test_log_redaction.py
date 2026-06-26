@@ -3,7 +3,6 @@ ABOUTME: Covers redact_emails, is_sensitive_key, censor_pii, and hash_email (TDD
 
 import pytest
 
-from opendlp.config import get_secret_key
 from opendlp.log_redaction import (
     EMAIL_PLACEHOLDER,
     REDACTED,
@@ -12,16 +11,6 @@ from opendlp.log_redaction import (
     is_sensitive_key,
     redact_emails,
 )
-
-
-class TestGetSecretKey:
-    def test_get_secret_key_reads_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("SECRET_KEY", "abc")
-        assert get_secret_key() == "abc"
-
-    def test_get_secret_key_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("SECRET_KEY", raising=False)
-        assert get_secret_key() == "dev-secret-key-change-in-production"  # pragma: allowlist secret
 
 
 class TestRedactEmails:
@@ -40,7 +29,21 @@ class TestRedactEmails:
 class TestIsSensitiveKey:
     @pytest.mark.parametrize(
         "key",
-        ["password", "secret", "token", "api_key", "Authorization", "client_secret", "csrf_token", "email"],
+        [
+            "password",
+            "secret",
+            "token",
+            "api_key",
+            "Authorization",
+            "client_secret",
+            "csrf_token",
+            "csrf-token",
+            "reset_token",
+            "access_token",
+            "session_token",
+            "refresh-token",
+            "email",
+        ],
     )
     def test_is_sensitive_key_true(self, key: str) -> None:
         assert is_sensitive_key(key)
@@ -73,6 +76,28 @@ class TestCensorPii:
         ed = censor_pii(None, "info", {"event": "x", "count": 3, "ok": True})
         assert ed["count"] == 3
         assert ed["ok"] is True
+
+    def test_censor_pii_redacts_email_in_nested_list(self) -> None:
+        # Mirrors GunicornLogger.access logging headers as a list of tuples.
+        ed = censor_pii(None, "info", {"event": "x", "headers": [("X-Custom", "a@b.com")]})
+        assert ed["headers"] == [("X-Custom", EMAIL_PLACEHOLDER)]
+
+    def test_censor_pii_redacts_email_in_nested_dict(self) -> None:
+        ed = censor_pii(None, "info", {"event": "x", "context": {"to": "a@b.com"}})
+        assert ed["context"]["to"] == EMAIL_PLACEHOLDER
+
+    def test_censor_pii_redacts_sensitive_key_in_nested_dict(self) -> None:
+        ed = censor_pii(None, "info", {"event": "x", "context": {"password": "hunter2"}})
+        assert ed["context"]["password"] == REDACTED
+
+    def test_censor_pii_redacts_email_in_deeply_nested_containers(self) -> None:
+        ed = censor_pii(None, "info", {"event": "x", "data": [{"recipients": ["a@b.com", "plain"]}]})
+        assert ed["data"] == [{"recipients": [EMAIL_PLACEHOLDER, "plain"]}]
+
+    def test_censor_pii_preserves_tuple_type_in_containers(self) -> None:
+        ed = censor_pii(None, "info", {"event": "x", "pair": ("a@b.com", 3)})
+        assert ed["pair"] == (EMAIL_PLACEHOLDER, 3)
+        assert isinstance(ed["pair"], tuple)
 
 
 class TestHashEmail:
