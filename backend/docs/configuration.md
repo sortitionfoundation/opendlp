@@ -148,6 +148,33 @@ REGISTRATION_FORM_HTML_MAX_BYTES=204800
 REGISTRATION_THANK_YOU_HTML_MAX_BYTES=51200
 ```
 
+Bot protection for the public registration form is tuneable at runtime via
+the variables below (no deployment needed to tighten or loosen limits). See
+[docs/bot-protection.md](bot-protection.md) for the full feature description.
+
+```bash
+# Max registration submissions per source IP per window (default: 30)
+REGISTRATION_RATE_LIMIT_PER_IP=30
+
+# IP rate-limit window in minutes (default: 60)
+REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES=60
+
+# Max registration submissions per email address per window (default: 5)
+REGISTRATION_RATE_LIMIT_PER_EMAIL=5
+
+# Email rate-limit window in minutes (default: 1440 = 24 hours)
+REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES=1440
+
+# Minimum seconds between form render and submit; faster submissions are
+# treated as bots and silently redirected (default: 3)
+REGISTRATION_MIN_FILL_SECONDS=3
+```
+
+The form-timing check is additionally gated on the
+`REGISTRATION_TIMING_CHECK_ENABLED` config flag (default: on, disabled in
+the test config). This is a config-class setting rather than an environment
+variable; see [docs/bot-protection.md](bot-protection.md).
+
 ### Monitoring
 
 Enable end-to-end selection monitoring (issue #582) by pointing both

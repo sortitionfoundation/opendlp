@@ -388,6 +388,10 @@ class FlaskBaseConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
+    # Registration form-timing bot check. Gated separately from CSRF so it can
+    # be exercised in tests without a CSRF round-trip. Disabled in the test
+    # config (see FlaskTestConfig) like WTF_CSRF_ENABLED.
+    REGISTRATION_TIMING_CHECK_ENABLED = True
     # Don't expire CSRF tokens on a separate short clock; tie their validity to
     # the session instead. This avoids the common "form expired" 400 error when
     # a user leaves a page open longer than the default one hour.
@@ -443,6 +447,17 @@ class FlaskBaseConfig:
         self.LOGIN_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_EMAIL", "5"))
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
         self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
+
+        # Registration bot protection
+        self.REGISTRATION_RATE_LIMIT_PER_IP: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_IP", "30"))
+        self.REGISTRATION_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_EMAIL", "5"))
+        self.REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES: int = int(
+            os.environ.get("REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES", "60")
+        )
+        self.REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES: int = int(
+            os.environ.get("REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES", "1440")
+        )
+        self.REGISTRATION_MIN_FILL_SECONDS: int = int(os.environ.get("REGISTRATION_MIN_FILL_SECONDS", "3"))
 
         # File upload limit — the maximum across all per-upload-type limits so
         # the WSGI layer rejects obviously oversized requests before allocating
@@ -500,6 +515,7 @@ class FlaskTestConfig(FlaskBaseConfig):
 
     TESTING = True
     WTF_CSRF_ENABLED = False
+    REGISTRATION_TIMING_CHECK_ENABLED = False
 
     def __init__(self) -> None:
         super().__init__()
