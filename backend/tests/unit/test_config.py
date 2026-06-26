@@ -23,6 +23,7 @@ from opendlp.config import (
     get_registration_form_html_max_bytes,
     get_registration_image_max_edge_px,
     get_registration_thank_you_html_max_bytes,
+    get_secret_key,
     get_task_timeout_hours,
     to_bool,
 )
@@ -138,7 +139,7 @@ class TestFlaskProductionConfig:
 
     def test_production_config_with_secret_key(self, temp_env_vars):
         """Test that ProductionConfig works with proper SECRET_KEY."""
-        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="console")  # pragma: allowlist secret
+        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="smtp")  # pragma: allowlist secret
 
         config = FlaskProductionConfig()
 
@@ -148,6 +149,12 @@ class TestFlaskProductionConfig:
         """Test that ProductionConfig raises error without proper SECRET_KEY."""
         clear_env_vars("SECRET_KEY")
         with pytest.raises(InvalidConfig, match="SECRET_KEY must be set in production"):
+            FlaskProductionConfig()
+
+    def test_production_config_rejects_console_email_adapter(self, temp_env_vars):
+        """The console adapter prints recipient PII to stdout, so it is rejected in production."""
+        temp_env_vars(SECRET_KEY="production-secret-key", EMAIL_ADAPTER="console")  # pragma: allowlist secret
+        with pytest.raises(InvalidConfig, match="EMAIL_ADAPTER must not be 'console' in production"):
             FlaskProductionConfig()
 
 
@@ -184,7 +191,7 @@ class TestGetConfig:
         temp_env_vars(
             FLASK_ENV="production",
             SECRET_KEY="production-secret",  # pragma: allowlist secret
-            EMAIL_ADAPTER="console",
+            EMAIL_ADAPTER="smtp",
         )
 
         config = get_config()
@@ -456,3 +463,15 @@ class TestGetMaxImagesPerRegistrationPage:
     def test_clamps_above_ceiling(self, temp_env_vars):
         temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="500")
         assert get_max_images_per_registration_page() == 50
+
+
+class TestGetSecretKey:
+    """Test the get_secret_key function."""
+
+    def test_get_secret_key_reads_env(self, temp_env_vars):
+        temp_env_vars(SECRET_KEY="abc")  # pragma: allowlist secret
+        assert get_secret_key() == "abc"
+
+    def test_get_secret_key_default(self, clear_env_vars):
+        clear_env_vars("SECRET_KEY")
+        assert get_secret_key() == "dev-secret-key-change-in-production"  # pragma: allowlist secret

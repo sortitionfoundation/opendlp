@@ -555,9 +555,13 @@ class FlaskProductionConfig(FlaskConfig):
         if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105  # pragma: allowlist secret
             raise InvalidConfig("SECRET_KEY must be set in production")
 
-        # Ensure production has email adapter configured
+        # Ensure production has email adapter configured. The console adapter
+        # prints raw recipient addresses to stdout, bypassing log redaction, so
+        # it must not be used in production.
         if not os.environ.get("EMAIL_ADAPTER"):
             raise InvalidConfig("EMAIL_ADAPTER must be set in production")
+        if self.EMAIL_ADAPTER == "console":
+            raise InvalidConfig("EMAIL_ADAPTER must not be 'console' in production (it logs recipient PII to stdout)")
 
 
 def get_config(config_name: str = "") -> FlaskBaseConfig:
